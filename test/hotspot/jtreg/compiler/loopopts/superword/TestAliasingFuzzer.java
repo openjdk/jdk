@@ -162,8 +162,7 @@ public class TestAliasingFuzzer {
     enum ContainerKind {
         ARRAY,
         MEMORY_SEGMENT_LONG_ADR_SCALE,  // for (..; i++)  { access(i * 4); }
-        // TODO:
-        //MEMORY_SEGMENT_LONG_ADR_STRIDE, // for (..; i+=4) { access(i); }
+        MEMORY_SEGMENT_LONG_ADR_STRIDE, // for (..; i+=4) { access(i); }
         MEMORY_SEGMENT_AT_INDEX,
     }
 
@@ -300,9 +299,11 @@ public class TestAliasingFuzzer {
     // More details can be found in the implementation below.
     //
     public static record IndexForm(int con, int ivScale, int invar0Scale, int[] invarRestScales, int size) {
-        public static IndexForm random(int numInvarRest, int size) {
+        public static IndexForm random(int numInvarRest, int size, boolean withAbsOneIvScale) {
             int con = RANDOM.nextInt(-100_000, 100_000);
-            int ivScale = randomScale(size);
+            int ivScale = withAbsOneIvScale
+                          ? (RANDOM.nextBoolean() ? 1 : -1)
+                          : randomScale(size);
             int invar0Scale = randomScale(size);
             int[] invarRestScales = new int[numInvarRest];
             // Sample values [-1, 0, 1]
@@ -502,8 +503,8 @@ public class TestAliasingFuzzer {
             boolean loopForward = RANDOM.nextBoolean();
 
             int numInvarRest = RANDOM.nextInt(5);
-            var form0 = IndexForm.random(numInvarRest, 1);
-            var form1 = IndexForm.random(numInvarRest, 1);
+            var form0 = IndexForm.random(numInvarRest, 1, false);
+            var form1 = IndexForm.random(numInvarRest, 1, false);
 
             return new TestGenerator(
                 2,
@@ -532,7 +533,8 @@ public class TestAliasingFuzzer {
             MyType accessType1 = sample(primitiveTypes);
             ContainerKind containerKind = sample(List.of(
                 ContainerKind.MEMORY_SEGMENT_AT_INDEX,
-                ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE
+                ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
+                ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE
             ));
 
             if (containerKind == ContainerKind.MEMORY_SEGMENT_AT_INDEX) {
@@ -560,8 +562,9 @@ public class TestAliasingFuzzer {
                 indexSize0 = 1;
                 indexSize1 = 1;
             }
-            var form0 = IndexForm.random(numInvarRest, indexSize0);
-            var form1 = IndexForm.random(numInvarRest, indexSize1);
+            boolean withAbsOneIvScale = containerKind == ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE;
+            var form0 = IndexForm.random(numInvarRest, indexSize0, withAbsOneIvScale);
+            var form1 = IndexForm.random(numInvarRest, indexSize1, withAbsOneIvScale);
 
             return new TestGenerator(
                 2,
@@ -698,7 +701,8 @@ public class TestAliasingFuzzer {
                         case ContainerKind.ARRAY ->
                             generateArrayField(name, containerElementType);
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
-                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
                             generateMemorySegmentField(name, containerElementType);
                     }
                 ).toList(),
@@ -746,7 +750,8 @@ public class TestAliasingFuzzer {
                         case ContainerKind.ARRAY ->
                             generateContainerInitArray(name);
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
-                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
                             generateContainerInitMemorySegment(name);
                     }
                 ).toList()
@@ -795,7 +800,8 @@ public class TestAliasingFuzzer {
                      ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                     // Access with element index
                     containerByteSize / accessType[0].byteSize();
-                case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
+                case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
+                     ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
                     // Access with byte offset
                     containerByteSize;
             };
@@ -863,7 +869,24 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
+        private int memorySegmentLongAdrStride() {
+            // Take the smallest byteSize of all accessTypes. All others
+            // will get their ivScale adjusted.
+            int stride = Integer.MAX_VALUE;
+            for (MyType type : accessType) {
+                stride = Math.min(stride, type.byteSize());
+            }
+            return stride;
+        }
+
         private TemplateToken generateBoundsAndInvariants(String[] indexFormNames, String[] invarRest) {
+            // We want there to be at least 1000 iterations.
+            final int minIvRange = switch (containerKind) {
+                // With the larger stride, we essencially divide the range to get the iterations.
+                case ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE -> 1000 * memorySegmentLongAdrStride();
+                default ->                                           1000;
+            };
+
             var template = Template.make(() -> body(
                 let("containerByteSize", containerByteSize),
                 """
@@ -881,10 +904,11 @@ public class TestAliasingFuzzer {
                         """
                     )).asToken()
                 ).toList(),
+                let("minIvRange", minIvRange),
                 """
                 // Let's check that the range is large enough, so that the vectorized
                 // main loop can even be entered.
-                if (ivLo + 1000 > ivHi) { throw new RuntimeException("iv range too small: " + ivLo + " " + ivHi); }
+                if (ivLo + #minIvRange > ivHi) { throw new RuntimeException("iv range too small: " + ivLo + " " + ivHi); }
                 """,
                 Arrays.stream(invarRest).map(invar ->
                     List.of(invar, " = RANDOM.nextInt(-1, 2);\n")
@@ -963,7 +987,9 @@ public class TestAliasingFuzzer {
                     case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                         generateIRRulesMemorySegmentAtIndex();
                     case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
-                        generateIRRulesMemorySegmentLongAdr();
+                        generateIRRulesMemorySegmentLongAdrScale();
+                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
+                        generateIRRulesMemorySegmentLongAdrStride();
                 },
                 // In same scnearios, we know that a aliasing runtime check will never fail.
                 // That means if we have UseAutoVectorizationPredicate enabled, that predicate
@@ -1055,7 +1081,18 @@ public class TestAliasingFuzzer {
             return template.asToken();
         }
 
-        private TemplateToken generateIRRulesMemorySegmentLongAdr() {
+        private TemplateToken generateIRRulesMemorySegmentLongAdrStride() {
+           var template = Template.make(() -> body(
+                """
+                // Unfortunately, there are some issues that prevent RangeCheck elimination.
+                // The cases are currently quite unpredictable, so we cannot create any IR
+                // rules.
+                """
+            ));
+            return template.asToken();
+        }
+
+        private TemplateToken generateIRRulesMemorySegmentLongAdrScale() {
            var template = Template.make(() -> body(
                 """
                 // Unfortunately, there are some issues that prevent RangeCheck elimination.
@@ -1077,7 +1114,8 @@ public class TestAliasingFuzzer {
                         case ContainerKind.ARRAY ->
                             List.of("#containerElementType[] container_", i, ", int invar0_", i, ", ");
                         case ContainerKind.MEMORY_SEGMENT_AT_INDEX,
-                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE,
+                             ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
                             List.of("MemorySegment container_", i, ", int invar0_", i, ", ");
                     }
                 ).toList(),
@@ -1093,6 +1131,9 @@ public class TestAliasingFuzzer {
                     case ContainerKind.MEMORY_SEGMENT_AT_INDEX ->
                         generateTestLoopIterationMemorySegmentAtIndex(invarRest);
                     case ContainerKind.MEMORY_SEGMENT_LONG_ADR_SCALE ->
+                        generateTestLoopIterationMemorySegmentLongAdr(invarRest);
+                    case ContainerKind.MEMORY_SEGMENT_LONG_ADR_STRIDE ->
+                        // TODO:
                         generateTestLoopIterationMemorySegmentLongAdr(invarRest);
                 },
                 """
