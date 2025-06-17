@@ -57,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class HostHeaderTest {
 
+    private static final String SERVER_CTX_ROOT = "/8359709";
     private static final boolean allowsHostHeader = Boolean.getBoolean("sun.net.http.allowRestrictedHeaders");
 
     private static HttpServer server;
@@ -65,7 +66,7 @@ class HostHeaderTest {
     static void beforeAll() throws Exception {
         final InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         server = HttpServer.create(addr, 0);
-        server.createContext("/", new Handler());
+        server.createContext(SERVER_CTX_ROOT, new Handler());
         server.start();
         System.err.println("started server at " + server.getAddress());
     }
@@ -85,7 +86,7 @@ class HostHeaderTest {
                 .scheme("http")
                 .loopback()
                 .port(serverAddr.getPort())
-                .path("/?testHostHeader")
+                .path(SERVER_CTX_ROOT)
                 .build().toURL();
         final URLConnection conn = reqURL.openConnection(Proxy.NO_PROXY);
 
