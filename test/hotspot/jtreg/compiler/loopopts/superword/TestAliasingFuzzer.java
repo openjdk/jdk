@@ -69,6 +69,45 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
 
 /**
  * Simpler test cases can be found in {@link TestAliasing}.
+ *
+ * We randomly generate tests to verify the behavior of the aliasing runtime checks. We feature:
+ * - Different primitive types: for access type and backing type (additionally we have native memory)
+ * - Different AccessScenarios: copy (load and store), fill (using two stores)
+ * - Different Aliasing: in some cases we never alias at runtime, in other cases we might
+ *   -> Should exercise both the predicate and the multiversioning approach with the
+ *      aliasing runtime checks.
+ * - Backing memory
+ *   - Arrays: using int-index
+ *   - MemorySegment (backed by primitive array or native memory):
+ *     - Using long-index with MemorySegment::getAtIndex
+ *     - Using byte-offset with MemorySegment::get
+ * - Loop iv:
+ *   - forward (counting up) and backward (counting down)
+ *   - Different iv stride:
+ *     - inc/dec by one, and then scale with ivScale:   for (..; i++)  { access(i * 4); }
+ *     - abs(ivScale) == 1, but use iv stride instead:  for (..; i+=4) { access(i); }
+ * - IR rules:
+ *   - Verify that verification does (not) happen as expected.
+ *   - Verify that we do not use multiversioning when no aliasing is expected at runtime.
+ *     -> verify that the aliasing runtime check is not overly sensitive, so that the
+ *        predicate does not fail unnecessarily and we have to recompile with multiversioning.
+ *
+ * Possible extensions:
+ * - Access with Unsafe
+ * - Backing memory with Buffers
+ * - AccessScenario: type conversion (e.g. convert from float to double)
+ *   -> interesting access pattern with different access sizes
+ * - Improve IR rules, once more cases vectorize (see e.g. JDK-8359688)
+ * - Aliasing:
+ *   - MemorySegment on same backing memory, creating different MemorySegments
+ *     via slicing. Possibly overlapping MemorySegments.
+ *   - CONTAINER_UNKNOWN_ALIASING_NEVER: currently always has different
+ *     memory and split ranges. But we could alternate between same memory
+ *     and split ranges, and then different memory but overlapping ranges.
+ *     This would also be never aliasing.
+ *
+ * TODO: native memory backing
+ * TODO: pointer using stride instead of scale
  */
 public class TestAliasingFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -202,23 +241,6 @@ public class TestAliasingFuzzer {
                 ).generate()
             );
         }
-
-        // TODO:
-        // - array, MemorySegment, Unsafe
-        // - various types - do I need them from the library?
-        // - various pointer shapes - different summands, count up vs down, strided etc.
-        // - aliasing
-        // - conversions on native / unsafe / MemorySegment
-        // Tricky: IR rules. May not vectorize in all cases.. how do we handle that?
-        // General strategy: one method compiled, one interpreted -> compare!
-        //
-        // Array index:
-        //   iv: init and limit
-        //   forms: scale, offset, field/args, add/sub, mul for field/args
-        //   fields/args: determine safe range.
-        //   Form determines bounds on init / limit.
-        //   Can we just set a form, and then generate field/arg, and then determine bounds?
-
 
         // Create the test class, which runs all testTemplateTokens.
         return TestFrameworkClass.render(
@@ -725,8 +747,6 @@ public class TestAliasingFuzzer {
                         case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER,
                              Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                             generateContainerAliasingAssignment(i, containerNames[i], containerNames[0], iterations);
-                        // TODO: consider MemorySegment on same backing, but split into different sections.
-                        //       could also be done in allocation!
                     }
                 ).toList()
              ));
@@ -799,7 +819,7 @@ public class TestAliasingFuzzer {
                     case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN ->
                         templateAnyRanges.asToken();
                     case Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
-                        templateSplitRanges.asToken(); // TODO: could improve
+                        templateSplitRanges.asToken();
                     case Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                         templateAnyRanges.asToken();
                 }
@@ -1002,7 +1022,9 @@ public class TestAliasingFuzzer {
         private TemplateToken generateIRRulesMemorySegmentLongAdr() {
            var template = Template.make(() -> body(
                 """
-                // TODO: implement
+                // Unfortunately, there are some issues that prevent RangeCheck elimination.
+                // The cases are currently quite unpredictable, so we cannot create any IR
+                // rules.
                 """
             ));
             return template.asToken();
