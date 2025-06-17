@@ -3006,7 +3006,7 @@ void OuterStripMinedLoopNode::handle_sunk_stores_at_expansion(PhaseIterGVN* igvn
 
   // Sunk stores are reachable from the memory state of the outer loop safepoint
   SafePointNode* safepoint = outer_safepoint();
-  MergeMemNode* mm = safepoint->in(TypeFunc::Memory)->isa_MergeMem;
+  MergeMemNode* mm = safepoint->in(TypeFunc::Memory)->isa_MergeMem();
   if (mm == nullptr) {
     // There is no MergeMem, which should only happen if there was no memory node
     // sunk out of the loop.
