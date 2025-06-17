@@ -34,7 +34,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 12, EXPERIMENTAL,    \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 20, EXPERIMENTAL,    \
           "In selected ShenandoahControlIntervals (if 8 ms has passed "     \
           "since previous allocation rate sample), "                        \
           "we compute the allocation rate since the previous rate was "     \
