@@ -29,11 +29,13 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import javax.sound.SoundClip;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
@@ -101,14 +103,28 @@ public final class JavaSoundAudioClip implements MetaEventListener, LineListener
         return clip;
     }
 
-    public static JavaSoundAudioClip create(final URLConnection uc) {
-        JavaSoundAudioClip clip = new JavaSoundAudioClip();
+    /* Used [only] by sun.awt.www.content.MultiMediaContentHandlers */
+    public static SoundClip create(final URLConnection uc) {
+        File tmpFile = null;
         try {
-            clip.init(uc.getInputStream());
-        } catch (final Exception ignored) {
-            // Playing the clip will be a no-op if an exception occured in inititialization.
+            tmpFile = File.createTempFile("javaurl", ".aud");
+        } catch (IOException e) {
+            return null;
         }
-        return clip;
+
+        try (InputStream in = uc.getInputStream();
+             FileOutputStream out = new FileOutputStream(tmpFile)) {
+             in.transferTo(out);
+        } catch (IOException e) {
+        }
+
+        try {
+             return SoundClip.createSoundClip(tmpFile);
+        } catch (IOException e) {
+        } finally {
+            tmpFile.delete();
+        }
+        return null;
     }
 
     private void init(InputStream in) throws IOException {
