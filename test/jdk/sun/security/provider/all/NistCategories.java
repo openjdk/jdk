@@ -25,6 +25,7 @@ import jdk.test.lib.Asserts;
 import sun.security.util.KeyUtil;
 import sun.security.util.RawKeySpec;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
@@ -41,6 +42,8 @@ import java.util.HexFormat;
 public class NistCategories {
     public static void main(String[] args) throws Exception {
         Security.addProvider(PKCS11Test.getSunPKCS11(PKCS11Test.getNssConfig()));
+
+        // Test all asymmetric keys we can generate
         for (var p : Security.getProviders()) {
             for (var s : p.getServices()) {
                 switch (s.getType()) {
@@ -48,7 +51,13 @@ public class NistCategories {
                 }
             }
         }
+
+        // We cannot generate HSS/LMS keys
         testLMS();
+
+        // SecretKey has no NIST category
+        Asserts.assertEQ(-1, KeyUtil.getNistCategory(
+                new SecretKeySpec(new byte[32], "AES")));
     }
 
     static void test(Provider.Service s) throws Exception {
