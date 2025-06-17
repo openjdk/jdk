@@ -611,6 +611,13 @@ class TestMemorySegmentAliasingImpl {
     //
     // FAILS: but only on "native" and "byte-buffer-direct"
     //        The issue is that one of the VPointers is invalid.
+    //
+    // For now, we just assert that there is never multiversioning, which holds with or without vectorization:
+    @IR(counts = {".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test_fill_byte_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
         for (long i = 0; i < limit; i++) {
             a.set(ValueLayout.JAVA_BYTE, invar1 + i, (byte)0xa);
