@@ -93,10 +93,12 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *        predicate does not fail unnecessarily and we have to recompile with multiversioning.
  *
  * Possible extensions:
- * - Access with Unsafe
+ * - Access with Unsafe - side-step all issues with RangeChecks! - probably...
  * - Backing memory with Buffers
- * - AccessScenario: type conversion (e.g. convert from float to double)
- *   -> interesting access pattern with different access sizes
+ * - AccessScenario:
+ *   - type conversion (e.g. convert from float to double)
+ *     -> interesting access pattern with different access sizes
+ *   - More than two accesses
  * - Improve IR rules, once more cases vectorize (see e.g. JDK-8359688)
  * - Aliasing:
  *   - MemorySegment on same backing memory, creating different MemorySegments
@@ -107,6 +109,13 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *     This would also be never aliasing.
  *
  * TODO: pointer using stride instead of scale
+ * We could just pretend that the scale is 1, so that the ivLo and ivHi are ok.
+ * And then pick a stride with the randomScale method. Currently only works
+ * if all accesses have the same type, I guess.
+ *
+ * TODO: fill pattern with different types
+ *
+ * TODO: Unsafe access?
  */
 public class TestAliasingFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();
