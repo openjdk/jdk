@@ -111,13 +111,13 @@ class RegisterSaver {
     int_reg,
     float_reg,
     special_reg,
-    vs_reg
+    vec_reg
   } RegisterType;
 
   typedef enum {
     reg_size          = 8,
     half_reg_size     = reg_size / 2,
-    vs_reg_size       = 16
+    vec_reg_size      = 16
   } RegisterConstants;
 
   typedef struct {
@@ -137,8 +137,8 @@ class RegisterSaver {
 #define RegisterSaver_LiveSpecialReg(regname) \
   { RegisterSaver::special_reg, regname->encoding(), regname->as_VMReg() }
 
-#define RegisterSaver_LiveVSReg(regname) \
-  { RegisterSaver::vs_reg,      regname->encoding(), regname->as_VMReg() }
+#define RegisterSaver_LiveVecReg(regname) \
+  { RegisterSaver::vec_reg,      regname->encoding(), regname->as_VMReg() }
 
 static const RegisterSaver::LiveRegType RegisterSaver_LiveRegs[] = {
   // Live registers which get spilled to the stack. Register
@@ -220,42 +220,42 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveRegs[] = {
   RegisterSaver_LiveIntReg(   R31 )  // must be the last register (see save/restore functions below)
 };
 
-static const RegisterSaver::LiveRegType RegisterSaver_LiveVSRegs[] = {
+static const RegisterSaver::LiveRegType RegisterSaver_LiveVecRegs[] = {
   //
-  // live vector scalar registers (optional, only these ones are used by C2):
+  // live vector registers (optional, only these ones are used by C2):
   //
-  RegisterSaver_LiveVSReg( VSR32 ),
-  RegisterSaver_LiveVSReg( VSR33 ),
-  RegisterSaver_LiveVSReg( VSR34 ),
-  RegisterSaver_LiveVSReg( VSR35 ),
-  RegisterSaver_LiveVSReg( VSR36 ),
-  RegisterSaver_LiveVSReg( VSR37 ),
-  RegisterSaver_LiveVSReg( VSR38 ),
-  RegisterSaver_LiveVSReg( VSR39 ),
-  RegisterSaver_LiveVSReg( VSR40 ),
-  RegisterSaver_LiveVSReg( VSR41 ),
-  RegisterSaver_LiveVSReg( VSR42 ),
-  RegisterSaver_LiveVSReg( VSR43 ),
-  RegisterSaver_LiveVSReg( VSR44 ),
-  RegisterSaver_LiveVSReg( VSR45 ),
-  RegisterSaver_LiveVSReg( VSR46 ),
-  RegisterSaver_LiveVSReg( VSR47 ),
-  RegisterSaver_LiveVSReg( VSR48 ),
-  RegisterSaver_LiveVSReg( VSR49 ),
-  RegisterSaver_LiveVSReg( VSR50 ),
-  RegisterSaver_LiveVSReg( VSR51 ),
-  RegisterSaver_LiveVSReg( VSR52 ),
-  RegisterSaver_LiveVSReg( VSR53 ),
-  RegisterSaver_LiveVSReg( VSR54 ),
-  RegisterSaver_LiveVSReg( VSR55 ),
-  RegisterSaver_LiveVSReg( VSR56 ),
-  RegisterSaver_LiveVSReg( VSR57 ),
-  RegisterSaver_LiveVSReg( VSR58 ),
-  RegisterSaver_LiveVSReg( VSR59 ),
-  RegisterSaver_LiveVSReg( VSR60 ),
-  RegisterSaver_LiveVSReg( VSR61 ),
-  RegisterSaver_LiveVSReg( VSR62 ),
-  RegisterSaver_LiveVSReg( VSR63 )
+  RegisterSaver_LiveVecReg( VR0 ),
+  RegisterSaver_LiveVecReg( VR1 ),
+  RegisterSaver_LiveVecReg( VR2 ),
+  RegisterSaver_LiveVecReg( VR3 ),
+  RegisterSaver_LiveVecReg( VR4 ),
+  RegisterSaver_LiveVecReg( VR5 ),
+  RegisterSaver_LiveVecReg( VR6 ),
+  RegisterSaver_LiveVecReg( VR7 ),
+  RegisterSaver_LiveVecReg( VR8 ),
+  RegisterSaver_LiveVecReg( VR9 ),
+  RegisterSaver_LiveVecReg( VR10 ),
+  RegisterSaver_LiveVecReg( VR11 ),
+  RegisterSaver_LiveVecReg( VR12 ),
+  RegisterSaver_LiveVecReg( VR13 ),
+  RegisterSaver_LiveVecReg( VR14 ),
+  RegisterSaver_LiveVecReg( VR15 ),
+  RegisterSaver_LiveVecReg( VR16 ),
+  RegisterSaver_LiveVecReg( VR17 ),
+  RegisterSaver_LiveVecReg( VR18 ),
+  RegisterSaver_LiveVecReg( VR19 ),
+  RegisterSaver_LiveVecReg( VR20 ),
+  RegisterSaver_LiveVecReg( VR21 ),
+  RegisterSaver_LiveVecReg( VR22 ),
+  RegisterSaver_LiveVecReg( VR23 ),
+  RegisterSaver_LiveVecReg( VR24 ),
+  RegisterSaver_LiveVecReg( VR25 ),
+  RegisterSaver_LiveVecReg( VR26 ),
+  RegisterSaver_LiveVecReg( VR27 ),
+  RegisterSaver_LiveVecReg( VR28 ),
+  RegisterSaver_LiveVecReg( VR29 ),
+  RegisterSaver_LiveVecReg( VR30 ),
+  RegisterSaver_LiveVecReg( VR31 )
 };
 
 
@@ -277,10 +277,10 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   // calculate frame size
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
-  const int vsregstosave_num     = save_vectors ? (sizeof(RegisterSaver_LiveVSRegs) /
+  const int vecregstosave_num    = save_vectors ? (sizeof(RegisterSaver_LiveVecRegs) /
                                                    sizeof(RegisterSaver::LiveRegType))
                                                 : 0;
-  const int register_save_size   = regstosave_num * reg_size + vsregstosave_num * vs_reg_size;
+  const int register_save_size   = regstosave_num * reg_size + vecregstosave_num * vec_reg_size;
   const int frame_size_in_bytes  = align_up(register_save_size, frame::alignment_in_bytes)
                                    + frame::native_abi_reg_args_size;
 
@@ -298,8 +298,8 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
 
   // Save some registers in the last (non-vector) slots of the new frame so we
   // can use them as scratch regs or to determine the return pc.
-  __ std(R31, frame_size_in_bytes -   reg_size - vsregstosave_num * vs_reg_size, R1_SP);
-  __ std(R30, frame_size_in_bytes - 2*reg_size - vsregstosave_num * vs_reg_size, R1_SP);
+  __ std(R31, frame_size_in_bytes -   reg_size - vecregstosave_num * vec_reg_size, R1_SP);
+  __ std(R30, frame_size_in_bytes - 2*reg_size - vecregstosave_num * vec_reg_size, R1_SP);
 
   // save the flags
   // Do the save_LR by hand and adjust the return pc if requested.
@@ -360,37 +360,37 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   // the utilized instructions (PowerArchitecturePPC64).
   assert(is_aligned(offset, StackAlignmentInBytes), "should be");
   if (PowerArchitecturePPC64 >= 10) {
-    assert(is_even(vsregstosave_num), "expectation");
-    for (int i = 0; i < vsregstosave_num; i += 2) {
-      int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
-      assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
+    assert(is_even(vecregstosave_num), "expectation");
+    for (int i = 0; i < vecregstosave_num; i += 2) {
+      int reg_num = RegisterSaver_LiveVecRegs[i].reg_num;
+      assert(RegisterSaver_LiveVecRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
-      __ stxvp(as_VectorSRegister(reg_num), offset, R1_SP);
+      __ stxvp(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
       // Note: The contents were read in the same order (see loadV16_Power9 node in ppc.ad).
       if (generate_oop_map) {
         map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
-                              RegisterSaver_LiveVSRegs[i LITTLE_ENDIAN_ONLY(+1) ].vmreg);
-        map->set_callee_saved(VMRegImpl::stack2reg((offset + vs_reg_size) >> 2),
-                              RegisterSaver_LiveVSRegs[i BIG_ENDIAN_ONLY(+1) ].vmreg);
+                              RegisterSaver_LiveVecRegs[i LITTLE_ENDIAN_ONLY(+1) ].vmreg);
+        map->set_callee_saved(VMRegImpl::stack2reg((offset + vec_reg_size) >> 2),
+                              RegisterSaver_LiveVecRegs[i BIG_ENDIAN_ONLY(+1) ].vmreg);
       }
-      offset += (2 * vs_reg_size);
+      offset += (2 * vec_reg_size);
     }
   } else {
-    for (int i = 0; i < vsregstosave_num; i++) {
-      int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
+    for (int i = 0; i < vecregstosave_num; i++) {
+      int reg_num = RegisterSaver_LiveVecRegs[i].reg_num;
 
       if (PowerArchitecturePPC64 >= 9) {
-        __ stxv(as_VectorSRegister(reg_num), offset, R1_SP);
+        __ stxv(as_VectorRegister(reg_num)->to_vsr(), offset, R1_SP);
       } else {
         __ li(R31, offset);
-        __ stxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+        __ stxvd2x(as_VectorRegister(reg_num)->to_vsr(), R31, R1_SP);
       }
       // Note: The contents were read in the same order (see loadV16_Power8 / loadV16_Power9 node in ppc.ad).
       if (generate_oop_map) {
-        VMReg vsr = RegisterSaver_LiveVSRegs[i].vmreg;
+        VMReg vsr = RegisterSaver_LiveVecRegs[i].vmreg;
         map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), vsr);
       }
-      offset += vs_reg_size;
+      offset += vec_reg_size;
     }
   }
 
@@ -411,10 +411,10 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
                                                          bool save_vectors) {
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
-  const int vsregstosave_num     = save_vectors ? (sizeof(RegisterSaver_LiveVSRegs) /
+  const int vecregstosave_num    = save_vectors ? (sizeof(RegisterSaver_LiveVecRegs) /
                                                    sizeof(RegisterSaver::LiveRegType))
                                                 : 0;
-  const int register_save_size   = regstosave_num * reg_size + vsregstosave_num * vs_reg_size;
+  const int register_save_size   = regstosave_num * reg_size + vecregstosave_num * vec_reg_size;
 
   const int register_save_offset = frame_size_in_bytes - register_save_size;
 
@@ -456,26 +456,26 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
 
   assert(is_aligned(offset, StackAlignmentInBytes), "should be");
   if (PowerArchitecturePPC64 >= 10) {
-    for (int i = 0; i < vsregstosave_num; i += 2) {
-      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
-      assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
+    for (int i = 0; i < vecregstosave_num; i += 2) {
+      int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
+      assert(RegisterSaver_LiveVecRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
-      __ lxvp(as_VectorSRegister(reg_num), offset, R1_SP);
+      __ lxvp(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
 
-      offset += (2 * vs_reg_size);
+      offset += (2 * vec_reg_size);
     }
   } else {
-    for (int i = 0; i < vsregstosave_num; i++) {
-      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+    for (int i = 0; i < vecregstosave_num; i++) {
+      int reg_num  = RegisterSaver_LiveVecRegs[i].reg_num;
 
       if (PowerArchitecturePPC64 >= 9) {
-        __ lxv(as_VectorSRegister(reg_num), offset, R1_SP);
+        __ lxv(as_VectorRegister(reg_num).to_vsr(), offset, R1_SP);
       } else {
         __ li(R31, offset);
-        __ lxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+        __ lxvd2x(as_VectorRegister(reg_num).to_vsr(), R31, R1_SP);
       }
 
-      offset += vs_reg_size;
+      offset += vec_reg_size;
     }
   }
 
@@ -486,7 +486,7 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
   __ mtlr(R31);
 
   // restore scratch register's value
-  __ ld(R31, frame_size_in_bytes - reg_size - vsregstosave_num * vs_reg_size, R1_SP);
+  __ ld(R31, frame_size_in_bytes - reg_size - vecregstosave_num * vec_reg_size, R1_SP);
 
   // pop the frame
   __ addi(R1_SP, R1_SP, frame_size_in_bytes);

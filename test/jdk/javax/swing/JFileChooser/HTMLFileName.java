@@ -41,7 +41,7 @@ import javax.swing.filechooser.FileSystemView;
 
 /*
  * @test id=system
- * @bug 8139228
+ * @bug 8139228 8358532
  * @summary JFileChooser should not render Directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame

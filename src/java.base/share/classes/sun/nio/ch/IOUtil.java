@@ -479,7 +479,7 @@ public final class IOUtil {
 
     static void acquireScope(ByteBuffer bb, boolean async) {
         if (async && NIO_ACCESS.isThreadConfined(bb)) {
-            throw new IllegalStateException("Confined session not supported");
+            throw new IllegalArgumentException("Buffer is thread confined");
         }
         NIO_ACCESS.acquireSession(bb);
     }

@@ -156,7 +156,8 @@
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.auth.retrylimit}</b> (default: 3)<br>
  * The number of attempts the Basic authentication filter will attempt to retry a failed
- * authentication.
+ * authentication. The number of authentication attempts is always one greater than the
+ * retry limit, as the initial request does not count toward the retries.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.sendBufferSize}</b> (default: operating system
  * default)<br>The HTTP client {@linkplain java.nio.channels.SocketChannel socket}

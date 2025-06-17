@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,7 +494,10 @@ public:
   void optimize();
 #ifdef ASSERT
   void verify_optimize();
-  bool verify_node_value(Node* n);
+  bool verify_Value_for(Node* n);
+  bool verify_Ideal_for(Node* n, bool can_reshape);
+  bool verify_Identity_for(Node* n);
+  void verify_empty_worklist(Node* n);
 #endif
 
 #ifndef PRODUCT
@@ -592,6 +595,14 @@ public:
   static bool is_verify_Value() {
     // '-XX:VerifyIterativeGVN=10'
     return ((VerifyIterativeGVN % 100) / 10) == 1;
+  }
+  static bool is_verify_Ideal() {
+    // '-XX:VerifyIterativeGVN=100'
+    return ((VerifyIterativeGVN % 1000) / 100) == 1;
+  }
+  static bool is_verify_Identity() {
+    // '-XX:VerifyIterativeGVN=1000'
+    return ((VerifyIterativeGVN % 10000) / 1000) == 1;
   }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).

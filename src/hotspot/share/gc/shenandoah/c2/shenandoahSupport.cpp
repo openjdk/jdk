@@ -625,6 +625,34 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
 }
 #endif
 
+bool ShenandoahBarrierC2Support::is_anti_dependent_load_at_control(PhaseIdealLoop* phase, Node* maybe_load, Node* store,
+                                                                   Node* control) {
+  return maybe_load->is_Load() && phase->C->can_alias(store->adr_type(), phase->C->get_alias_index(maybe_load->adr_type())) &&
+         phase->ctrl_or_self(maybe_load) == control;
+}
+
+void ShenandoahBarrierC2Support::maybe_push_anti_dependent_loads(PhaseIdealLoop* phase, Node* maybe_store, Node* control, Unique_Node_List &wq) {
+  if (!maybe_store->is_Store() && !maybe_store->is_LoadStore()) {
+    return;
+  }
+  Node* mem = maybe_store->in(MemNode::Memory);
+  for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+    Node* u = mem->fast_out(i);
+    if (is_anti_dependent_load_at_control(phase, u, maybe_store, control)) {
+      wq.push(u);
+    }
+  }
+}
+
+void ShenandoahBarrierC2Support::push_data_inputs_at_control(PhaseIdealLoop* phase, Node* n, Node* ctrl, Unique_Node_List &wq) {
+  for (uint i = 0; i < n->req(); i++) {
+    Node* in = n->in(i);
+    if (in != nullptr && phase->has_ctrl(in) && phase->get_ctrl(in) == ctrl) {
+      wq.push(in);
+    }
+  }
+}
+
 bool ShenandoahBarrierC2Support::is_dominator_same_ctrl(Node* c, Node* d, Node* n, PhaseIdealLoop* phase) {
   // That both nodes have the same control is not sufficient to prove
   // domination, verify that there's no path from d to n
@@ -639,22 +667,9 @@ bool ShenandoahBarrierC2Support::is_dominator_same_ctrl(Node* c, Node* d, Node* 
     if (m->is_Phi() && m->in(0)->is_Loop()) {
       assert(phase->ctrl_or_self(m->in(LoopNode::EntryControl)) != c, "following loop entry should lead to new control");
     } else {
-      if (m->is_Store() || m->is_LoadStore()) {
-        // Take anti-dependencies into account
-        Node* mem = m->in(MemNode::Memory);
-        for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
-          Node* u = mem->fast_out(i);
-          if (u->is_Load() && phase->C->can_alias(m->adr_type(), phase->C->get_alias_index(u->adr_type())) &&
-              phase->ctrl_or_self(u) == c) {
-            wq.push(u);
-          }
-        }
-      }
-      for (uint i = 0; i < m->req(); i++) {
-        if (m->in(i) != nullptr && phase->ctrl_or_self(m->in(i)) == c) {
-          wq.push(m->in(i));
-        }
-      }
+      // Take anti-dependencies into account
+      maybe_push_anti_dependent_loads(phase, m, c, wq);
+      push_data_inputs_at_control(phase, m, c, wq);
     }
   }
   return true;
@@ -1006,7 +1021,20 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   phase->register_new_node(val, ctrl);
 }
 
-void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& uses_to_ignore, uint last, PhaseIdealLoop* phase) {
+void ShenandoahBarrierC2Support::collect_nodes_above_barrier(Unique_Node_List &nodes_above_barrier, PhaseIdealLoop* phase, Node* ctrl, Node* init_raw_mem) {
+  nodes_above_barrier.clear();
+  if (phase->has_ctrl(init_raw_mem) && phase->get_ctrl(init_raw_mem) == ctrl && !init_raw_mem->is_Phi()) {
+    nodes_above_barrier.push(init_raw_mem);
+  }
+  for (uint next = 0; next < nodes_above_barrier.size(); next++) {
+    Node* n = nodes_above_barrier.at(next);
+    // Take anti-dependencies into account
+    maybe_push_anti_dependent_loads(phase, n, ctrl, nodes_above_barrier);
+    push_data_inputs_at_control(phase, n, ctrl, nodes_above_barrier);
+  }
+}
+
+void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& nodes_above_barrier, uint last, PhaseIdealLoop* phase) {
   Node* ctrl = phase->get_ctrl(barrier);
   Node* init_raw_mem = fixer.find_mem(ctrl, barrier);
 
@@ -1017,30 +1045,17 @@ void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const Mem
   // control will be after the expanded barrier. The raw memory (if
   // its memory is control dependent on the barrier's input control)
   // must stay above the barrier.
-  uses_to_ignore.clear();
-  if (phase->has_ctrl(init_raw_mem) && phase->get_ctrl(init_raw_mem) == ctrl && !init_raw_mem->is_Phi()) {
-    uses_to_ignore.push(init_raw_mem);
-  }
-  for (uint next = 0; next < uses_to_ignore.size(); next++) {
-    Node *n = uses_to_ignore.at(next);
-    for (uint i = 0; i < n->req(); i++) {
-      Node* in = n->in(i);
-      if (in != nullptr && phase->has_ctrl(in) && phase->get_ctrl(in) == ctrl) {
-        uses_to_ignore.push(in);
-      }
-    }
-  }
+  collect_nodes_above_barrier(nodes_above_barrier, phase, ctrl, init_raw_mem);
   for (DUIterator_Fast imax, i = ctrl->fast_outs(imax); i < imax; i++) {
     Node* u = ctrl->fast_out(i);
     if (u->_idx < last &&
         u != barrier &&
         !u->depends_only_on_test() && // preserve dependency on test
-        !uses_to_ignore.member(u) &&
+        !nodes_above_barrier.member(u) &&
         (u->in(0) != ctrl || (!u->is_Region() && !u->is_Phi())) &&
         (ctrl->Opcode() != Op_CatchProj || u->Opcode() != Op_CreateEx)) {
       Node* old_c = phase->ctrl_or_self(u);
-      Node* c = old_c;
-      if (c != ctrl ||
+      if (old_c != ctrl ||
           is_dominator_same_ctrl(old_c, barrier, u, phase) ||
           ShenandoahBarrierSetC2::is_shenandoah_state_load(u)) {
         phase->igvn().rehash_node_delayed(u);
@@ -1315,7 +1330,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
   // Expand load-reference-barriers
   MemoryGraphFixer fixer(Compile::AliasIdxRaw, true, phase);
-  Unique_Node_List uses_to_ignore;
+  Unique_Node_List nodes_above_barriers;
   for (int i = state->load_reference_barriers_count() - 1; i >= 0; i--) {
     ShenandoahLoadReferenceBarrierNode* lrb = state->load_reference_barrier(i);
     uint last = phase->C->unique();
@@ -1410,7 +1425,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* out_val = val_phi;
     phase->register_new_node(val_phi, region);
 
-    fix_ctrl(lrb, region, fixer, uses, uses_to_ignore, last, phase);
+    fix_ctrl(lrb, region, fixer, uses, nodes_above_barriers, last, phase);
 
     ctrl = orig_ctrl;
 

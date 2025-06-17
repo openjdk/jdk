@@ -339,7 +339,7 @@ public:
   // a subroutine for debugging the GC
   static address verify_oop_subroutine_entry_address()     { return (address)&_verify_oop_subroutine_entry; }
 
-  static CallStub call_stub()                              { return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
+  static CallStub call_stub()                              { assert(_call_stub_entry != nullptr, ""); return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
 

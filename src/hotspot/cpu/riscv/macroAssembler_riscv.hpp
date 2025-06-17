@@ -44,7 +44,7 @@ class MacroAssembler: public Assembler {
 
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg = t0);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp_reg = t0);
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
@@ -660,7 +660,9 @@ class MacroAssembler: public Assembler {
   void cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
 
  public:
   // We try to follow risc-v asm menomics.

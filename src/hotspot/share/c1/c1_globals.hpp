@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_C1_C1_GLOBALS_HPP
 #define SHARE_C1_C1_GLOBALS_HPP
 
-#include "c1/c1_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
+#include CPU_HEADER(c1_globals)
 //
 // Declare all global flags used by the client compiler.
 //

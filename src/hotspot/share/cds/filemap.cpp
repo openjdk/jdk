@@ -44,6 +44,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -232,6 +233,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   } else {
     _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
   }
+  // Which JIT compier is used
+  _compiler_type = (u1)CompilerConfig::compiler_type();
   _type_profile_level = TypeProfileLevel;
   _type_profile_args_limit = TypeProfileArgsLimit;
   _type_profile_parms_limit = TypeProfileParmsLimit;
@@ -920,7 +923,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
                    " crc 0x%08x",
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
   } else {
-     aot_log_info(aot)("Shared file region (%s) %d: %8zu"
+    aot_log_info(aot)("Shared file region (%s) %d: %8zu"
                    " bytes", region_name(region), region, size);
   }
 
@@ -1933,6 +1936,23 @@ bool FileMapHeader::validate() {
                   " does not equal the current CompactStrings setting (%s).", file_type,
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
+    return false;
+  }
+  bool jvmci_compiler_is_enabled = CompilerConfig::is_jvmci_compiler_enabled();
+  CompilerType compiler_type = CompilerConfig::compiler_type();
+  CompilerType archive_compiler_type = CompilerType(_compiler_type);
+  // JVMCI compiler does different type profiling settigns and generate
+  // different code. We can't use archive which was produced
+  // without it and reverse.
+  // Only allow mix when JIT compilation is disabled.
+  // Interpreter is used by default when dumping archive.
+  bool intepreter_is_used = (archive_compiler_type == CompilerType::compiler_none) ||
+                            (compiler_type == CompilerType::compiler_none);
+  if (!intepreter_is_used &&
+      jvmci_compiler_is_enabled != (archive_compiler_type == CompilerType::compiler_jvmci)) {
+    MetaspaceShared::report_loading_error("The %s's JIT compiler setting (%s)"
+                                          " does not equal the current setting (%s).", file_type,
+                                          compilertype2name(archive_compiler_type), compilertype2name(compiler_type));
     return false;
   }
   if (TrainingData::have_data()) {

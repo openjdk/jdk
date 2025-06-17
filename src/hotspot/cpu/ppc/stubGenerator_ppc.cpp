@@ -4938,6 +4938,10 @@ void generate_lookup_secondary_supers_table_stub() {
   }
 
   // Initialization
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for ppc
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
@@ -5067,6 +5071,9 @@ void generate_lookup_secondary_supers_table_stub() {
  public:
   StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
+    case preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
     case initial_id:
       generate_initial_stubs();
       break;

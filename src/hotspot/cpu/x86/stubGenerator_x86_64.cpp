@@ -4049,6 +4049,11 @@ void StubGenerator::create_control_words() {
 }
 
 // Initialization
+void StubGenerator::generate_preuniverse_stubs() {
+  // atomic calls
+  StubRoutines::_fence_entry                = generate_orderaccess_fence();
+}
+
 void StubGenerator::generate_initial_stubs() {
   // Generates all stubs and initializes the entry points
 
@@ -4073,9 +4078,6 @@ void StubGenerator::generate_initial_stubs() {
 
   // is referenced by megamorphic call
   StubRoutines::_catch_exception_entry = generate_catch_exception();
-
-  // atomic calls
-  StubRoutines::_fence_entry                = generate_orderaccess_fence();
 
   // platform dependent
   StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
@@ -4344,6 +4346,9 @@ void StubGenerator::generate_compiler_stubs() {
 
 StubGenerator::StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
   switch(blob_id) {
+  case preuniverse_id:
+    generate_preuniverse_stubs();
+    break;
   case initial_id:
     generate_initial_stubs();
     break;

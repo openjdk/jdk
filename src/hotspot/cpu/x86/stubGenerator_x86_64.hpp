@@ -634,6 +634,7 @@ class StubGenerator: public StubCodeGenerator {
   void create_control_words();
 
   // Initialization
+  void generate_preuniverse_stubs();
   void generate_initial_stubs();
   void generate_continuation_stubs();
   void generate_compiler_stubs();

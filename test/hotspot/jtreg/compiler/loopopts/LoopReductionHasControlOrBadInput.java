@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8350576
+ * @summary Optimization bails out and hits an assert:
+ *          assert(false) failed: reduction has ctrl or bad vector_input
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.LoopReductionHasControlOrBadInput::*
+ *      compiler.loopopts.LoopReductionHasControlOrBadInput
+ * @run main compiler.loopopts.LoopReductionHasControlOrBadInput
  *
  */
 
-#ifndef OS_WINDOWS_C1_GLOBALS_WINDOWS_HPP
-#define OS_WINDOWS_C1_GLOBALS_WINDOWS_HPP
+package compiler.loopopts;
 
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
+public class LoopReductionHasControlOrBadInput {
+    static long lFld;
+    static long lArr[] = new long[400];
 
-//
-// Sets the default values for operating system dependent flags used by the
-// client compiler. (see c1_globals.hpp)
-//
+    static void test() {
+        int i = 1;
+        do {
+            long x = -1;
+            lArr[i] = i;
+            lFld += i | x;
+        } while (++i < 355);
+    }
 
-#endif // OS_WINDOWS_C1_GLOBALS_WINDOWS_HPP
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 100; i++) {
+            test();
+        }
+    }
+}

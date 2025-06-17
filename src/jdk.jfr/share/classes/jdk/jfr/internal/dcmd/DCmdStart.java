@@ -502,9 +502,11 @@ final class DCmdStart extends AbstractDCmd {
         """
 
           report-on-exit   Specifies the name of the view to display when the Java Virtual
-                           Machine (JVM) shuts down. This option is not available if the
-                           disk option is set to false. For a list of available views,
-                           see 'jfr help view'. By default, no report is generated.
+                           Machine (JVM) shuts down. To specify more than one view, use
+                           the `report-on-exit` parameter repeatedly, for each view. This
+                           option is not available if the disk option is set to false.
+                           For a list of available views, see `jfr help view`. By default,
+                           no report is generated.
         """;
     }
 

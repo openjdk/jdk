@@ -347,6 +347,10 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   _verifier->verify_region_sets_optional();
 
   uint obj_regions = (uint) humongous_obj_size_in_regions(word_size);
+  if (obj_regions > num_available_regions()) {
+    // Can't satisfy this allocation; early-return.
+    return nullptr;
+  }
 
   // Policy: First try to allocate a humongous object in the free list.
   G1HeapRegion* humongous_start = _hrm.allocate_humongous(obj_regions);
@@ -495,7 +499,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
 
   if (reserved.word_size() <= word_size) {
     log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = %zu"
-                       " bytes, heap = %zu bytes", word_size, reserved.word_size());
+                       " bytes, heap = %zu bytes", word_size * HeapWordSize, reserved.byte_size());
     return nullptr;
   }
 

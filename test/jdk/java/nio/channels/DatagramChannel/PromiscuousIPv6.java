@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  *        PromiscuousIPv6
  * @run main PromiscuousIPv6
  * @key randomness
+ * @requires (os.family == "linux") | (os.family == "mac")
  */
 
 import java.nio.ByteBuffer;
@@ -201,26 +202,15 @@ public class PromiscuousIPv6 {
         }
     }
 
-    /*
-     * returns true if platform allows an IPv6 socket join an IPv4 multicast group
-     */
-    private static boolean supportedByPlatform() {
-        return Platform.isOSX() || Platform.isLinux();
-    }
-
     public static void main(String[] args) throws IOException {
 
         boolean hasIPV6MulticastAll;
 
-        if (!supportedByPlatform()) {
-            throw new SkippedException("This test should not be run on this platform");
-        } else {
-            int major = Platform.getOsVersionMajor();
-            int minor = Platform.getOsVersionMinor();
-            hasIPV6MulticastAll =
-                Platform.isOSX() ||
-                (Platform.isLinux() && ((major > 4) || ((major == 4 && minor >= 20))));
-        }
+        int major = Platform.getOsVersionMajor();
+        int minor = Platform.getOsVersionMinor();
+        hasIPV6MulticastAll =
+            Platform.isOSX() ||
+            (Platform.isLinux() && ((major > 4) || ((major == 4 && minor >= 20))));
 
         NetworkConfiguration.printSystemConfiguration(System.out);
         List<NetworkInterface> nifs = NetworkConfiguration.probe()

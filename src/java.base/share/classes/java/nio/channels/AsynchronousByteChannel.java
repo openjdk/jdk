@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.nio.channels;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Future;
 
@@ -97,7 +99,8 @@ public interface AsynchronousByteChannel
      *          The completion handler
      *
      * @throws  IllegalArgumentException
-     *          If the buffer is read-only
+     *          If the buffer is read-only or a view of a {@link MemorySegment}
+     *          allocated from a {@linkplain Arena#ofConfined() thread-confined arena}
      * @throws  ReadPendingException
      *          If the channel does not allow more than one read to be outstanding
      *          and a previous read has not completed
@@ -128,7 +131,8 @@ public interface AsynchronousByteChannel
      * @return  A Future representing the result of the operation
      *
      * @throws  IllegalArgumentException
-     *          If the buffer is read-only
+     *          If the buffer is read-only or a view of a {@link MemorySegment}
+     *          allocated from a {@linkplain Arena#ofConfined() thread-confined arena}
      * @throws  ReadPendingException
      *          If the channel does not allow more than one read to be outstanding
      *          and a previous read has not completed
@@ -177,6 +181,9 @@ public interface AsynchronousByteChannel
      * @param   handler
      *          The completion handler object
      *
+     * @throws  IllegalArgumentException
+     *          If the buffer is a view of a {@link MemorySegment} allocated from a
+     *          {@linkplain Arena#ofConfined() thread-confined arena}
      * @throws  WritePendingException
      *          If the channel does not allow more than one write to be outstanding
      *          and a previous write has not completed
@@ -205,6 +212,9 @@ public interface AsynchronousByteChannel
      *
      * @return A Future representing the result of the operation
      *
+     * @throws  IllegalArgumentException
+     *          If the buffer is a view of a {@link MemorySegment} allocated from a
+     *          {@linkplain Arena#ofConfined() thread-confined arena}
      * @throws  WritePendingException
      *          If the channel does not allow more than one write to be outstanding
      *          and a previous write has not completed

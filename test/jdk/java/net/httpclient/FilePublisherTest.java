@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8235459
- * @summary Confirm that HttpRequest.BodyPublishers#ofFile(Path)
- *          assumes the default file system
+ * @bug 8235459 8358688
+ * @summary Verifies `HttpRequest.BodyPublishers#ofFile(Path)` against file
+ *          systems that support `Path#toFile()` and also those that don't
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
@@ -39,11 +39,10 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -61,6 +60,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 public class FilePublisherTest implements HttpServerAdapters {
     SSLContext sslContext;
@@ -156,6 +156,26 @@ public class FilePublisherTest implements HttpServerAdapters {
         send(uriString, path, expectedMsg, sameClient);
     }
 
+    @Test
+    public void testFileNotFound() throws Exception {
+        out.printf("\n\n--- testFileNotFound(): starting\n");
+        try (FileSystem fs = newZipFs()) {
+            Path fileInZip = fs.getPath("non-existent.txt");
+            BodyPublishers.ofFile(fileInZip);
+            fail();
+        } catch (FileNotFoundException e) {
+            out.println("Caught expected: " + e);
+        }
+        var path = Path.of("fileNotFound.txt");
+        try {
+            Files.deleteIfExists(path);
+            BodyPublishers.ofFile(path);
+            fail();
+        } catch (FileNotFoundException e) {
+            out.println("Caught expected: " + e);
+        }
+    }
+
     private static final int ITERATION_COUNT = 3;
 
     private void send(String uriString,
@@ -192,9 +212,6 @@ public class FilePublisherTest implements HttpServerAdapters {
         defaultFsPath = defaultFsFile();
         zipFs = newZipFs();
         zipFsPath = zipFsFile(zipFs);
-
-        InetSocketAddress sa =
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
         httpTestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new HttpEchoHandler(), "/http1/echo");

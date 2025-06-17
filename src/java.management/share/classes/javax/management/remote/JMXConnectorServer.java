@@ -133,8 +133,7 @@ public abstract class JMXConnectorServer
      * one new connection to this connector server.</p>
      *
      * <p>A given connector need not support the generation of client
-     * stubs.  However, the connectors specified by the JMX Remote API do
-     * (JMXMP Connector and RMI Connector).</p>
+     * stubs.  The RMI Connector does so.</p>
      *
      * <p>The default implementation of this method uses {@link
      * #getAddress} and {@link JMXConnectorFactory} to generate the

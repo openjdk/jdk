@@ -1189,9 +1189,11 @@
 
       <text name="locking-threshold" label="Locking Threshold" contentType="timespan" minimum="0 s">20 ms</text>
 
-      <text name="method-timing" label="Method Timing" contentType="text"></text>
+      <text name="method-timing" label="Method Timing Filter" contentType="method-filter"
+            description="A filter can be an annotation (@jakarta.ws.rs.GET), a full qualified class name (com.example.Foo), a fully qualified method reference (java.lang.HashMap::resize) or a class initializer (::&lt;clinit&gt;). Use &lt;init&gt; for constructors. Separate multiple filters with semicolon."></text>
 
-      <text name="method-trace" label="Method Trace" contentType="text"></text>
+      <text name="method-trace" label="Method Trace Filter" contentType="method-filter"
+            description="A filter can be an annotation (@jakarta.ws.rs.GET), a full qualified class name (com.example.Foo), a fully qualified method reference (java.lang.HashMap::resize) or a class initializer (::&lt;clinit&gt;). Use &lt;init&gt; for constructors. Separate multiple filters with semicolon."></text>
 
       <flag name="class-loading" label="Class Loading">false</flag>
     </control>

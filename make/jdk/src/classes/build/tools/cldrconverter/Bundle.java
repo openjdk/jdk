@@ -542,10 +542,10 @@ class Bundle {
                     if (pattern != null) {
                         // Perform date-time format pattern conversion which is
                         // applicable to both SimpleDateFormat and j.t.f.DateTimeFormatter.
-                        String transPattern = translateDateFormatLetters(calendarType, pattern, this::convertDateTimePatternLetter);
+                        String transPattern = translateDateFormatLetters(calendarType, key, pattern, this::convertDateTimePatternLetter);
                         dateTimePatterns.add(i, transPattern);
                         // Additionally, perform SDF specific date-time format pattern conversion
-                        sdfPatterns.add(i, translateDateFormatLetters(calendarType, transPattern, this::convertSDFLetter));
+                        sdfPatterns.add(i, translateDateFormatLetters(calendarType, key, transPattern, this::convertSDFLetter));
                     } else {
                         dateTimePatterns.add(i, null);
                         sdfPatterns.add(i, null);
@@ -568,7 +568,7 @@ class Bundle {
         }
     }
 
-    private String translateDateFormatLetters(CalendarType calendarType, String cldrFormat, ConvertDateTimeLetters converter) {
+    private String translateDateFormatLetters(CalendarType calendarType, String patternKey, String cldrFormat, ConvertDateTimeLetters converter) {
         String pattern = cldrFormat;
         int length = pattern.length();
         boolean inQuote = false;
@@ -587,7 +587,7 @@ class Bundle {
                     if (nextc == '\'') {
                         i++;
                         if (count != 0) {
-                            converter.convert(calendarType, lastLetter, count, jrePattern);
+                            converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
                             lastLetter = 0;
                             count = 0;
                         }
@@ -597,7 +597,7 @@ class Bundle {
                 }
                 if (!inQuote) {
                     if (count != 0) {
-                        converter.convert(calendarType, lastLetter, count, jrePattern);
+                        converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
                         lastLetter = 0;
                         count = 0;
                     }
@@ -614,7 +614,7 @@ class Bundle {
             }
             if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')) {
                 if (count != 0) {
-                    converter.convert(calendarType, lastLetter, count, jrePattern);
+                    converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
                     lastLetter = 0;
                     count = 0;
                 }
@@ -627,7 +627,7 @@ class Bundle {
                 count++;
                 continue;
             }
-            converter.convert(calendarType, lastLetter, count, jrePattern);
+            converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
             lastLetter = c;
             count = 1;
         }
@@ -637,7 +637,7 @@ class Bundle {
         }
 
         if (count != 0) {
-            converter.convert(calendarType, lastLetter, count, jrePattern);
+            converter.convert(calendarType, patternKey, lastLetter, count, jrePattern);
         }
         if (cldrFormat.contentEquals(jrePattern)) {
             return cldrFormat;
@@ -661,7 +661,7 @@ class Bundle {
      * on the support given by the SimpleDateFormat and the j.t.f.DateTimeFormatter
      * for date-time formatting.
      */
-    private void convertDateTimePatternLetter(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
+    private void convertDateTimePatternLetter(CalendarType calendarType, String patternKey, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {
             case 'u':
             case 'U':
@@ -683,7 +683,7 @@ class Bundle {
      * Perform a conversion of CLDR date-time format pattern letter which is
      * specific to the SimpleDateFormat.
      */
-    private void convertSDFLetter(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
+    private void convertSDFLetter(CalendarType calendarType, String patternKey, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {
             case 'G':
                 if (calendarType != CalendarType.GREGORIAN) {
@@ -720,6 +720,17 @@ class Bundle {
             case 'v':
             case 'V':
                 appendN('z', count, sb);
+                break;
+
+            case 'y':
+                // If the style is FULL/LONG for a Japanese Calendar, make the
+                // count == 4 for Gan-nen
+                if (calendarType == CalendarType.JAPANESE &&
+                        (patternKey.contains("full-") ||
+                         patternKey.contains("long-"))) {
+                    count = 4;
+                }
+                appendN(cldrLetter, count, sb);
                 break;
 
             case 'Z':
@@ -767,6 +778,7 @@ class Bundle {
             .collect(Collectors.toMap(
                 e -> calendarPrefix + e.getKey(),
                 e -> translateDateFormatLetters(calendarType,
+                        e.getKey(),
                         (String)e.getValue(),
                         this::convertDateTimePatternLetter)
             ))
@@ -775,7 +787,7 @@ class Bundle {
 
     @FunctionalInterface
     private interface ConvertDateTimeLetters {
-        void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb);
+        void convert(CalendarType calendarType, String patternKey, char cldrLetter, int count, StringBuilder sb);
     }
 
     /**
