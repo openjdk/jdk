@@ -1478,7 +1478,7 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
   _num_stack_arg_slots          = nm->_num_stack_arg_slots;
   _oops_size                    = nm->_oops_size;
 #if INCLUDE_JVMCI
-  _jvmci_data_size              = nm->_jvmci_data_size;
+  _metadata_size                = nm->_metadata_size;
 #endif
   _nul_chk_table_offset         = nm->_nul_chk_table_offset;
   _handler_table_offset         = nm->_handler_table_offset;
