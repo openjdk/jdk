@@ -976,7 +976,7 @@ class ConsoleIOContext extends IOContext {
     }
 
     private static final Charset stdinCharset =
-            Charset.forName(System.getProperty("stdin.encoding"),
+            Charset.forName(StaticProperty.stdinEncoding(),
                             Charset.defaultCharset());
     private String pendingLine;
     private int pendingLinePointer;

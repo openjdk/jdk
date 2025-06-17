@@ -29,6 +29,8 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.io.*;
 
+import jdk.internal.util.StaticProperty;
+
 /**
  * Simple implementation of ScriptContext.
  *
@@ -95,7 +97,7 @@ public class SimpleScriptContext  implements ScriptContext {
     }
 
     private static InputStreamReader stdinReader() {
-        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
         return new InputStreamReader(System.in, charset);
     }
 

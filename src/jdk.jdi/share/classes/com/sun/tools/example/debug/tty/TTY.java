@@ -44,6 +44,8 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.*;
 
+import jdk.internal.util.StaticProperty;
+
 public class TTY implements EventNotifier {
     /**
      * Commands that are repeatable on empty input.
@@ -797,7 +799,7 @@ public class TTY implements EventNotifier {
             this.handler = new EventHandler(this, true, trackVthreads);
         }
         try {
-            Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+            Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
 
             Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
