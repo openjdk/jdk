@@ -572,7 +572,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a G1HeapRegion boundary.)
-  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms = nullptr);
+  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers);
   bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.
