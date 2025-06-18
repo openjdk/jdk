@@ -96,19 +96,30 @@ public class RedefineClassHelper {
      * Replace class name in bytecodes to the class we're trying to redefine, so that both
      * old and new classes can be compiled with jtreg for the test.
      *
-     * @param loader ClassLoader to find the bytes for the class.
-     * @param oldString old class name.
-     * @param newString new class name to replace with old class name.
+     * @param byteBuffer buffer of old class bytes.
+     * @param oldClassName old class name.
+     * @param newClassName new class name to replace with old class name.
      */
-
-    public static byte[] replaceAllStrings(ClassLoader loader, String oldString, String newString) throws Exception {
-        byte[] buf = getBytecodes(loader, oldString);
-        assertTrue(oldString.length() == newString.length(), "must have same length");
+    public static byte[] replaceAllStrings(byte[] byteBuffer, String oldClassName, String newClassName) throws Exception {
+        assertTrue(oldClassName.length() == newClassName.length(), "must have same length");
         int index = -1;
-        while ((index = getStringIndex(oldString, buf, index + 1)) != 0) {
-            replaceString(buf, newString, index);
+        while ((index = getStringIndex(oldClassName, byteBuffer, index + 1)) != 0) {
+            replaceString(byteBuffer, newClassName, index);
         }
-        return buf;
+        return byteBuffer;
+    }
+
+    /*
+     * Replace class name in bytecodes to the class we're trying to redefine, so that both
+     * old and new classes can be compiled with jtreg for the test.
+     *
+     * @param loader ClassLoader to find the bytes for the class.
+     * @param oldClassName old class name.
+     * @param newClassName new class name to replace with old class name.
+     */
+    public static byte[] replaceAllStrings(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
+        byte[] buf = getBytecodes(loader, oldClassName);
+        return replaceAllStrings(buf, oldClassName, newClassName);
     }
 
     /**
