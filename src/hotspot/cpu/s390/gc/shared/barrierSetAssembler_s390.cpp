@@ -180,7 +180,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), Z_thread); // 6 bytes
 
     // Compare to current patched value:
-    __ z_cfi(Z_R0_scratch, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)
+    __ z_cfi(Z_R0_scratch, /* to be patched */ 0); // 6 bytes (2 + 4 byte imm val)
 
     // Conditional Jump
     __ z_larl(Z_R14, (Assembler::instr_len((unsigned long)LARL_ZOPC) + Assembler::instr_len((unsigned long)BCR_ZOPC)) / 2); // 6 bytes
