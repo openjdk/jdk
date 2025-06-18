@@ -52,10 +52,12 @@ import jtreg.SkippedException;
 public class MyanmarTextTest {
     private static final String TEXT = "\u1000\u103C";
 
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+
     private static final String FONT_WINDOWS = "Myanmar Text";
     private static final String FONT_LINUX = "Padauk";
     private static final String FONT_MACOS = "Myanmar MN";
-    private static final String osName = System.getProperty("os.name").toLowerCase();
+
     private static final String FONT_NAME = selectFontName();
 
     private final JFrame frame;
@@ -66,7 +68,7 @@ public class MyanmarTextTest {
     public static void main(String[] args) throws Exception {
         if (FONT_NAME == null) {
             System.err.println("Unsupported OS: exiting");
-            throw new SkippedException("Unsupported OS: "+osName);
+            throw new SkippedException("Unsupported OS: " + OS_NAME);
         }
         if (!fontExists()) {
             System.err.println("Required font is not installed: " + FONT_NAME);
@@ -134,11 +136,11 @@ public class MyanmarTextTest {
     }
 
     private static String selectFontName() {
-        if (osName.contains("windows")) {
+        if (OS_NAME.contains("windows")) {
             return FONT_WINDOWS;
-        } else if (osName.contains("linux")) {
+        } else if (OS_NAME.contains("linux")) {
             return FONT_LINUX;
-        } else if (osName.contains("mac")) {
+        } else if (OS_NAME.contains("mac")) {
             return FONT_MACOS;
         } else {
             return null;
