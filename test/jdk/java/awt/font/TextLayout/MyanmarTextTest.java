@@ -51,6 +51,7 @@ import jtreg.SkippedException;
 
 public class MyanmarTextTest {
     private static final String TEXT = "\u1000\u103C";
+
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
 
     private static final String[] FONTS_WINDOWS = {"Myanmar Text", "Noto Sans Myanmar"};
