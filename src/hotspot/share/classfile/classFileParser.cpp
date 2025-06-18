@@ -941,6 +941,7 @@ public:
     _jdk_internal_ValueBased,
     _java_lang_Deprecated,
     _java_lang_Deprecated_for_removal,
+    _jdk_internal_vm_annotation_MethodHandleArchived,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1896,6 +1897,10 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     case VM_SYMBOL_ENUM_NAME(java_lang_Deprecated): {
       return _java_lang_Deprecated;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_MethodHandleArchived): {
+      if (_location != _in_class)   break;  // only allow for classes
+      return _jdk_internal_vm_annotation_MethodHandleArchived;
+    }
     default: {
       break;
     }
@@ -1974,6 +1979,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
       Method* m = methods->at(i);
       m->set_deprecated_for_removal();
     }
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_MethodHandleArchived)) {
+    ik->set_is_method_handle_archived();
   }
 }
 

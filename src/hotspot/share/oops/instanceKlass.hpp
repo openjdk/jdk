@@ -761,6 +761,9 @@ public:
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
+  bool is_method_handle_archived() const { return _misc_flags.is_method_handle_archived(); }
+  void set_is_method_handle_archived()   { _misc_flags.set_is_method_handle_archived(true); }
+
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }

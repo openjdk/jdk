@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.MethodHandleArchived;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
@@ -36,6 +37,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * first.
  * @author jrose
  */
+@MethodHandleArchived
 final class SimpleMethodHandle extends BoundMethodHandle {
 
     private SimpleMethodHandle(MethodType type, LambdaForm form) {

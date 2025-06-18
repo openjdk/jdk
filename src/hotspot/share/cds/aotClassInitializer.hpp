@@ -31,8 +31,7 @@
 class InstanceKlass;
 
 class AOTClassInitializer : AllStatic {
-  class AllowedSpec;
-  static bool is_allowed(AllowedSpec* specs, InstanceKlass* ik);
+  static bool is_method_handle_archived(InstanceKlass* ik);
 
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in

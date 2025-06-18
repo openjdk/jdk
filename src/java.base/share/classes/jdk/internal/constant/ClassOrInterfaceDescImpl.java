@@ -27,6 +27,7 @@ package jdk.internal.constant;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 
+import jdk.internal.vm.annotation.MethodHandleArchived;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.constant.ConstantUtils.*;
@@ -41,6 +42,7 @@ import static jdk.internal.constant.ConstantUtils.*;
  * <li>No leading/trailing/consecutive '/'
  * </ul>
  */
+@MethodHandleArchived
 public final class ClassOrInterfaceDescImpl implements ClassDesc {
     private final String descriptor;
     private @Stable String internalName;

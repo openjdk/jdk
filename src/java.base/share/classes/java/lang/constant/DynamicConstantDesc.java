@@ -36,6 +36,8 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import jdk.internal.vm.annotation.MethodHandleArchived;
+
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_VarHandle;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
@@ -56,6 +58,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  *
  * @since 12
  */
+@MethodHandleArchived
 public abstract non-sealed class DynamicConstantDesc<T>
         implements ConstantDesc {
 

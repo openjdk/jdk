@@ -26,6 +26,9 @@
 package java.lang.invoke;
 
 import java.util.Arrays;
+
+import jdk.internal.vm.annotation.MethodHandleArchived;
+
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
@@ -36,6 +39,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * The delegating MH itself can hold extra "intentions" beyond the simple behavior.
  * @author jrose
  */
+@MethodHandleArchived
 /*non-public*/
 abstract sealed class DelegatingMethodHandle extends MethodHandle
     permits MethodHandleImpl.AsVarargsCollector,
@@ -193,5 +197,6 @@ abstract sealed class DelegatingMethodHandle extends MethodHandle
     }
 
     /* Placeholder class for DelegatingMethodHandles generated ahead of time */
+    @MethodHandleArchived
     final class Holder {}
 }

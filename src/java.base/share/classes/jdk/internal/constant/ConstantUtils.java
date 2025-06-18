@@ -24,6 +24,7 @@
  */
 package jdk.internal.constant;
 
+import jdk.internal.vm.annotation.MethodHandleArchived;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -41,6 +42,7 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.*;
 /**
  * Helper methods for the implementation of {@code java.lang.constant}.
  */
+@MethodHandleArchived
 public final class ConstantUtils {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 

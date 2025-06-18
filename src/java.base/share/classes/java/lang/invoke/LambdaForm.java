@@ -29,6 +29,7 @@ import java.lang.classfile.TypeKind;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Hidden;
+import jdk.internal.vm.annotation.MethodHandleArchived;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -122,6 +123,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * <p>
  * @author John Rose, JSR 292 EG
  */
+@MethodHandleArchived
 class LambdaForm {
     final int arity;
     final int result;
@@ -1032,6 +1034,7 @@ class LambdaForm {
         return false;
     }
 
+    @MethodHandleArchived
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
@@ -1728,6 +1731,7 @@ class LambdaForm {
     }
 
     /* Placeholder class for identity and constant forms generated ahead of time */
+    @MethodHandleArchived
     final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER

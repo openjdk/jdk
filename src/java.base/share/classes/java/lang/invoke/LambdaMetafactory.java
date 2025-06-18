@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.lang.reflect.Array;
 import java.util.Objects;
 
+import jdk.internal.vm.annotation.MethodHandleArchived;
+
 /**
  * <p>Methods to facilitate the creation of simple "function objects" that
  * implement one or more interfaces by delegation to a provided {@link MethodHandle},
@@ -247,6 +249,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@MethodHandleArchived
 public final class LambdaMetafactory {
 
     private LambdaMetafactory() {}

@@ -57,6 +57,7 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.MethodHandleArchived;
 
 /**
  * Implementations of {@link Collector} that implement various useful reduction
@@ -103,6 +104,7 @@ import jdk.internal.access.SharedSecrets;
  *
  * @since 1.8
  */
+@MethodHandleArchived
 public final class Collectors {
 
     static final Set<Collector.Characteristics> CH_CONCURRENT_ID
