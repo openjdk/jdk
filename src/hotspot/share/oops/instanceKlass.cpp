@@ -2409,7 +2409,7 @@ void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
   Atomic::release_store(&_methods_jmethod_ids, jmeths);
 }
 
-// Lookup or create a jmethodID
+// Lookup or create a jmethodID.
 jmethodID InstanceKlass::get_jmethod_id(Method* method) {
   int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();

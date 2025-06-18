@@ -2109,7 +2109,7 @@ void Method::clear_jmethod_id() {
   }
 }
 
-bool Method::validate_method_id(jmethodID mid) {
+bool Method::validate_jmethod_id(jmethodID mid) {
   Method* m = resolve_jmethod_id(mid);
   assert(m != nullptr, "should be called with non-null method");
   InstanceKlass* ik = m->method_holder();

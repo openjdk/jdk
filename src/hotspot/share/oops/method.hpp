@@ -715,7 +715,7 @@ public:
   static Method* checked_resolve_jmethod_id(jmethodID mid);
 
   static void change_method_associated_with_jmethod_id(jmethodID old_jmid_ptr, Method* new_method);
-  static bool validate_method_id(jmethodID mid);
+  static bool validate_jmethod_id(jmethodID mid);
 
   // Clear jmethodID
   void clear_jmethod_id();
