@@ -28,7 +28,7 @@ package jdk.internal.util;
 import java.util.Properties;
 
 /**
- * System Property access for internal use only.
+ * System Property access for `java.base` module internal use only.
  * Read-only access to System property values initialized during Phase 1
  * are cached.  Setting, clearing, or modifying the value using
  * {@link System#setProperty} or {@link System#getProperties()} is ignored.

@@ -273,17 +273,12 @@ module java.base {
         java.naming,
         java.rmi,
         java.net.http,
-        java.scripting,
         jdk.charsets,
-        jdk.hotspot.agent,
         jdk.incubator.vector,
         jdk.internal.vm.ci,
         jdk.httpserver,
-        jdk.jdi,
-        jdk.jfr,
         jdk.jlink,
         jdk.jpackage,
-        jdk.jshell,
         jdk.net;
     exports sun.net to
         java.net.http,

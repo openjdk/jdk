@@ -32,8 +32,6 @@ import java.text.*;
 import java.util.*;
 import javax.script.*;
 
-import jdk.internal.util.StaticProperty;
-
 /**
  * This is the main class for Java script shell.
  */
@@ -258,7 +256,7 @@ public class Main {
     private static void processSource(ScriptEngine se, String filename,
             String encoding) {
         if (filename.equals("-")) {
-            Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
+            Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
             boolean hitEOF = false;
             String prompt = getPrompt(se);

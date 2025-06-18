@@ -25,7 +25,6 @@
 
 package jdk.internal.jshell.tool;
 
-import jdk.internal.util.StaticProperty;
 import jdk.jshell.SourceCodeAnalysis.Documentation;
 import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
@@ -168,7 +167,7 @@ class ConsoleIOContext extends IOContext {
                                           return nonBlockingInput;
                                       })
                                       .nativeSignals(false)
-                                      .encoding(StaticProperty.stdinEncoding())
+                                      .encoding(System.getProperty("stdin.encoding"))
                                       .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
@@ -976,7 +975,7 @@ class ConsoleIOContext extends IOContext {
     }
 
     private static final Charset stdinCharset =
-            Charset.forName(StaticProperty.stdinEncoding(),
+            Charset.forName(System.getProperty("stdin.encoding"),
                             Charset.defaultCharset());
     private String pendingLine;
     private int pendingLinePointer;

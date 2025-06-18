@@ -30,7 +30,6 @@ import sun.jvm.hotspot.debugger.*;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
-import jdk.internal.util.StaticProperty;
 
 public class CLHSDB {
 
@@ -108,7 +107,7 @@ public class CLHSDB {
             };
 
 
-        Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
+        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
         CommandProcessor cp = new CommandProcessor(di, in, System.out, System.err);
         cp.run(true);
