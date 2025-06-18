@@ -34,8 +34,11 @@
 
 // Save (jmethod, Method*) in a hashtable to lookup Method.
 // The CHT is for performance because it has lock free lookup.
-
+// The value of the next jmethodID.  This only increments (always unique IDs).
 static uint64_t _jmethodID_counter = 0;
+// Tracks the number of jmethodID entries in the _jmethod_id_table.
+// Incremented on insert, decremented on remove. Use to track if we need to resize the table.
+static uint64_t _jmethodID_entry_count = 0;
 
 class JmethodEntry {
  public:
@@ -122,7 +125,7 @@ static unsigned table_size(Thread* current) {
 }
 
 static bool needs_resize(Thread* current) {
-  return ((_jmethodID_counter > (_resize_load_trigger * table_size(current))) &&
+  return ((_jmethodID_entry_count > (_resize_load_trigger * table_size(current))) &&
          !_jmethod_id_table->is_max_size_reached());
 }
 
@@ -141,6 +144,8 @@ jmethodID JmethodIDTable::make_jmethod_id(Method* m) {
   bool created = _jmethod_id_table->insert(current, lookup, new_entry, &grow_hint, &clean_hint);
   assert(created, "must be");
   log_debug(jmethod)("Inserted jmethod id " UINT64_FORMAT_X, _jmethodID_counter);
+  // Increment number of entries in the table.
+  _jmethodID_entry_count++;
 
   // Resize table if it needs to grow.  The _jmethod_id_table has a good distribution.
   if (needs_resize(current)) {
@@ -162,6 +167,8 @@ void JmethodIDTable::remove(jmethodID jmid) {
   bool removed = _jmethod_id_table->remove(current, lookup, get);
   assert(removed, "must be");
   log_debug(jmethod)("Removed jmethod id " UINT64_FORMAT_X, (uint64_t)jmid);
+  // Decrement number of entries in the table.
+  _jmethodID_entry_count--;
 }
 
 void JmethodIDTable::change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method) {
