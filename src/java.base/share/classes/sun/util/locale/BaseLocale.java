@@ -32,13 +32,11 @@
 
 package sun.util.locale;
 
-import jdk.internal.lang.stable.StableSupplier;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.function.Supplier;
 

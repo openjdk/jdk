@@ -40,19 +40,9 @@ public final class UnderlyingHolder<U> {
     }
 
     public void countDown() {
-/*        var e = new AssertionError();
-        var st = Stream.of(e.getStackTrace())
-                .limit(12)
-                .map(Objects::toString)
-                .collect(joining(System.lineSeparator()));
-        System.out.println(st);
-        System.out.print("Tested " + this + ", counter:" + counter + ": ");*/
         if (UNSAFE.getAndAddInt(this, COUNTER_OFFSET, -1) == 1) {
             // Do not reference the underlying function anymore so it can be collected.
             underlying = null;
-/*            System.out.println("removed");*/
-        } else {
-/*            System.out.println("retained");*/
         }
     }
 
