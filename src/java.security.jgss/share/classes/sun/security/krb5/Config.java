@@ -674,8 +674,7 @@ public class Config {
         }
         Set<Path> dupsCheck = new HashSet<>();
         Path fullp = Paths.get(fileName).toAbsolutePath();
-        Path path = Paths.get(fileName);
-        if (!Files.exists(path)) {
+        if (!Files.exists(fullp)) {
             // This is OK. There are other ways to get
             // Kerberos 5 settings
         } else {
@@ -815,7 +814,6 @@ public class Config {
      * a particular key in one place.
      *
      * @param entry path to config file, could be an included one
-     * @returns the parsed configuration
      * @throws KrbException if there is a file format error
      */
     @SuppressWarnings("unchecked")

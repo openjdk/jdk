@@ -23,10 +23,10 @@
 
 import jdk.test.lib.Asserts;
 import sun.security.krb5.Config;
+import sun.security.krb5.KrbException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 /*
  * @test
@@ -34,42 +34,39 @@ import java.util.List;
  * @summary Support "include" anywhere
  * @modules java.security.jgss/sun.security.krb5
  * @library /test/lib
- * @run main/othervm IncludeDup
+ * @run main/othervm DuplicatedIncludes
  */
-public class IncludeDup {
+public class DuplicatedIncludes {
     public static void main(String[] args) throws Exception {
+
         var cwd = Path.of("").toAbsolutePath().toString();
-        Files.writeString(Path.of("krb5.conf"), String.format("""
-                include %1$s/outside
-                [a]
-                include %1$s/beginsec
-                b = {
-                    c = 1
-                }
-                [a]
-                b = {
-                    c = 2
-                }
-                include %1$s/insec
-                include %1$s/insec2
-                b = {
-                include %1$s/insubsec
-                    c = 3
-                include %1$s/endsubsec
-                }
-                include %1$s/endsec
-                """, cwd));
-        for (var inc : List.of("outside", "beginsec", "insec", "insec2",
-                "insubsec", "endsubsec", "endsec")) {
-            Files.writeString(Path.of(inc), String.format("""
-                    [a]
-                    b = {
-                        c = %s
-                    }
-                    """, inc));
-        }
         System.setProperty("java.security.krb5.conf", "krb5.conf");
-        Asserts.assertEQ(Config.getInstance().getAll("a", "b", "c"),
-                "outside beginsec 1 2 insec insec2 insubsec 3 endsubsec endsec");
+
+        // It's OK to include a file multiple times
+        Files.writeString(Path.of("krb5.conf"), String.format("""
+                include %1$s/sub
+                include %1$s/sub
+                """, cwd));
+
+        Files.writeString(Path.of("sub"), """
+                [a]
+                b = c
+                """);
+        Config.refresh();
+
+        // But a file cannot include itself
+        Files.writeString(Path.of("sub"), String.format("""
+                include %1$s/sub
+                """, cwd));
+        Asserts.assertThrows(KrbException.class, () -> Config.refresh());
+
+        // A file also cannot include a file that includes it
+        Files.writeString(Path.of("sub"), String.format("""
+                include %1$s/sub2
+                """, cwd));
+        Files.writeString(Path.of("sub2"), String.format("""
+                include %1$s/sub
+                """, cwd));
+        Asserts.assertThrows(KrbException.class, () -> Config.refresh());
     }
 }
