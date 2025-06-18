@@ -71,6 +71,7 @@ void MemTracker::initialize() {
     _baseline.initialize();
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||
+        !VirtualMemorySummary::initialize() ||
         !VirtualMemoryTracker::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
