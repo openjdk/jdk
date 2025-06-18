@@ -332,12 +332,17 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
 // As loop optimizations transform the inner loop, the outer strip mined loop stays mostly unchanged. The only exception
 // is nodes referenced from the SafePoint and sunk from the inner loop: they end up in the outer strip mined loop.
 //
-// Not adding Phis to the outer loop head from the beginning, and only adding them after loop optimizations
-// does not conform to C2's IR rules: any variable or memory slice that is mutated in a loop should have a Phi.
-// The main motivation for such a design that doesn't conform to C2's IR rules is to allow existing loop optimizations
-// to be mostly unaffected by the outer strip mined loop: the only extra step needed in most cases is to step over the
+// Not adding Phis to the outer loop head from the beginning, and only adding them after loop optimizations does not
+// conform to C2's IR rules: any variable or memory slice that is mutated in a loop should have a Phi. The main
+// motivation for such a design that doesn't conform to C2's IR rules is to allow existing loop optimizations to be
+// mostly unaffected by the outer strip mined loop: the only extra step needed in most cases is to step over the
 // OuterStripMinedLoop. The main drawback is that once loop optimizations are over, an extra step is needed to finish
 // constructing the outer loop. This is handled by OuterStripMinedLoopNode::adjust_strip_mined_loop().
+//
+// Adding Phis to the outer loop is largely straightforward: there needs to be one Phi in the outer loop for every Phi
+// in the inner loop. Things may be more complicated for sunk Store nodes: there may not be any inner loop Phi left
+// after sinking for a particular memory slice but the outer loop needs a Phi. See
+// OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction()
 IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(Node* init_control,
                                                              IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                              Node*& entry_control, Node*& iffalse) {
@@ -3020,13 +3025,13 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
 // See comment above: PhaseIdealLoop::create_outer_strip_mined_loop()
 // We're now in the process of finishing the construction of the outer loop. For each Phi in the inner loop, a Phi in
 // the outer loop was just now created. However, Sunk Stores cause an extra challenge:
-// 1) If all Stores in the inner loop were sunk for a particular memory slice, there's no Phi left for that memory
-//    slice in the inner loop any more, and hence we did not yet add a Phi for the outer loop. So an extra Phi
-//    must now be added for each chain of sunk Stores for a particular memory slice.
+// 1) If all Stores in the inner loop were sunk for a particular memory slice, there's no Phi left for that memory slice
+//    in the inner loop anymore, and hence we did not yet add a Phi for the outer loop. So an extra Phi must now be
+//    added for each chain of sunk Stores for a particular memory slice.
 // 2) If some Stores were sunk and some left in the inner loop, a Phi was already created in the outer loop but
-//    its backedge input wasn't wired correctly to the last Store of the chain. We had wired the memory state at
-//    the inner loop exit to the Phi backedge, but we should have taken the last Store of the chain instead. We
-//    will now have to fix that too.
+//    its backedge input wasn't wired correctly to the last Store of the chain: the backedge input was set to the
+//    backedge of the inner loop Phi instead, but it needs to be the last Store of the chain in the outer loop. We now
+//    have to fix that too.
 void OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn) {
   IfFalseNode* cle_exit_proj = inner_loop_exit();
 
@@ -3198,8 +3203,9 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   }
 
   Node* iv_phi = nullptr;
-  // Make a clone of each phi in the inner loop
-  // for the outer loop
+  // Make a clone of each phi in the inner loop for the outer loop
+  // When Stores were Sunk, after this step, a Phi may still be missing or its backedge incorrectly wired. See
+  // handle_sunk_stores_when_finishing_construction()
   for (uint i = 0; i < inner_cl->outcnt(); i++) {
     Node* u = inner_cl->raw_out(i);
     if (u->is_Phi()) {
