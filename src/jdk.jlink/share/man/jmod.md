@@ -183,7 +183,7 @@ e.g. "2022-02-12T12:30:00-05:00".
     operating system and architecture. The value should follow
     the format `<os>-<arch>`, where `<os>` is the operating system
     and `<arch>` is the hardware architecture. Example values include
-    `linux-x64`, `windows-x64`, and `macos-aarch64`.
+    `linux-amd64`, `windows-amd64`, and `macos-aarch64`.
 
 `--version`
 :   Prints version information of the `jmod` tool.
