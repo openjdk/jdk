@@ -51,14 +51,14 @@ import jtreg.SkippedException;
 
 public class MyanmarTextTest {
     private static final String TEXT = "\u1000\u103C";
-
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
 
-    private static final String FONT_WINDOWS = "Myanmar Text";
-    private static final String FONT_LINUX = "Padauk";
-    private static final String FONT_MACOS = "Myanmar MN";
+    private static final String[] FONTS_WINDOWS = {"Myanmar Text", "Noto Sans Myanmar"};
+    private static final String[] FONTS_LINUX = {"Padauk", "Noto Sans Myanmar", "Myanmar Text"};
+    private static final String[] FONTS_MACOS = {"Myanmar MN", "Noto Sans Myanmar", "Myanmar Text"};
 
-    private static final String FONT_NAME = selectFontName();
+    private static final String[] FONT_CANDIDATES = selectFontCandidates();
+    private static final String FONT_NAME = selectAvailableFont();
 
     private final JFrame frame;
     private final JTextField myanmarTF;
@@ -66,13 +66,16 @@ public class MyanmarTextTest {
     private static volatile MyanmarTextTest mtt;
 
     public static void main(String[] args) throws Exception {
-        if (FONT_NAME == null) {
+        if (FONT_CANDIDATES == null) {
             System.err.println("Unsupported OS: exiting");
             throw new SkippedException("Unsupported OS: " + OS_NAME);
         }
-        if (!fontExists()) {
-            System.err.println("Required font is not installed: " + FONT_NAME);
-            throw new SkippedException("Required font is not installed: " + FONT_NAME);
+        if (FONT_NAME == null) {
+            String fontList = String.join(", ", FONT_CANDIDATES);
+            System.err.println("Required font is not installed for OS: " + OS_NAME);
+            System.err.println("Checked fonts: " + fontList);
+            throw new SkippedException("Required fonts not installed for OS: "
+                    + OS_NAME + ". Checked fonts: " + fontList);
         }
 
         try {
@@ -98,7 +101,6 @@ public class MyanmarTextTest {
         JPanel main = new JPanel();
         main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
         main.add(myanmarTF);
-
         main.setBorder(BorderFactory.createEmptyBorder(7, 7, 7, 7));
 
         frame.getContentPane().add(main);
@@ -135,22 +137,32 @@ public class MyanmarTextTest {
         }
     }
 
-    private static String selectFontName() {
+    private static String[] selectFontCandidates() {
         if (OS_NAME.contains("windows")) {
-            return FONT_WINDOWS;
+            return FONTS_WINDOWS;
         } else if (OS_NAME.contains("linux")) {
-            return FONT_LINUX;
+            return FONTS_LINUX;
         } else if (OS_NAME.contains("mac")) {
-            return FONT_MACOS;
+            return FONTS_MACOS;
         } else {
             return null;
         }
     }
 
-    private static boolean fontExists() {
-        String[] fontFamilyNames = GraphicsEnvironment
-                                   .getLocalGraphicsEnvironment()
-                                   .getAvailableFontFamilyNames();
-        return Arrays.asList(fontFamilyNames).contains(FONT_NAME);
+    private static String selectAvailableFont() {
+        if (FONT_CANDIDATES == null) {
+            return null;
+        }
+        String[] installedFonts = GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getAvailableFontFamilyNames();
+
+        for (String font : FONT_CANDIDATES) {
+            if (Arrays.asList(installedFonts).contains(font)) {
+                System.out.println("Using font: " + font);
+                return font;
+            }
+        }
+        return null;
     }
 }
