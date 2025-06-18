@@ -250,6 +250,10 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
 
 #define ROUNDUP(x, y)  ((((x)+((y)-1))/(y))*(y))
 
+#ifndef NT_FILE
+#define NT_FILE         0x46494c45
+#endif
+
 // read NT_PRSTATUS entries from core NOTE segment
 static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
    char* buf = NULL;
