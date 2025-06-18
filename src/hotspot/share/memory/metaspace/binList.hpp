@@ -77,8 +77,8 @@ class BinListImpl {
   struct Block {
     Block* const _next;
     Block(Block* next) : _next(next) {}
-    MetaWord* start() { return (MetaWord*) this; }
-    const MetaWord* start() const { return (MetaWord*) this; }
+    MetaWord* base() { return (MetaWord*) this; }
+    const MetaWord* base() const { return (MetaWord*) this; }
   };
 
 #define BLOCK_FORMAT              "Block @" PTR_FORMAT ": size: %zu, next: " PTR_FORMAT
@@ -128,13 +128,13 @@ private:
 #ifdef ASSERT
   static void zap_block(Block* b, size_t word_size) {
     if (word_size > 1) { // 1-word-sized blocks have no space for a canary
-      Zapper::zap_memory(b->start() + 1, word_size - 1);
+      Zapper::zap_memory(b->base() + 1, word_size - 1);
     }
   }
   static bool check_block_zap(const Block* b, size_t word_size) {
     return word_size == 1 || // 1-word-sized blocks have no space for a canary
-           ( Zapper::is_zapped_location(b->start() + 1) &&
-             Zapper::is_zapped_location(b->start() + word_size - 1) );
+           ( Zapper::is_zapped_location(b->base() + 1) &&
+             Zapper::is_zapped_location(b->base() + word_size - 1) );
   }
 #endif
 
