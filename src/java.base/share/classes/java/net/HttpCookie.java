@@ -71,11 +71,6 @@ public final class HttpCookie implements Cloneable {
     private boolean toDiscard;  // Discard ... discard cookie unconditionally
     private String domain;      // Domain=VALUE ... domain that sees cookie
     private long maxAge = MAX_AGE_UNSPECIFIED;  // Max-Age=VALUE ... cookies auto-expire
-
-    // Following two only used during parsing
-    private String maxAgeAttrVal;
-    private String expiresAttrVal;
-
     private String path;        // Path=VALUE ... URLs that see the cookie
     private String portlist;    // Port[="portlist"] ... the port cookie may be returned to
     private boolean secure;     // Secure ... e.g. use SSL
@@ -866,6 +861,10 @@ public final class HttpCookie implements Cloneable {
             throw new IllegalArgumentException("Empty cookie header string");
         }
 
+        // Attributes that require special handling
+        String expiresValue = null;
+        String maxAgeValue = null;
+
         // remaining name-value pairs are cookie's attributes
         while (tokenizer.hasMoreTokens()) {
             namevaluePair = tokenizer.nextToken();
@@ -878,10 +877,19 @@ public final class HttpCookie implements Cloneable {
                 name = namevaluePair.trim();
                 value = null;
             }
+            if (name.equalsIgnoreCase("max-age") && maxAgeValue == null) {
+                maxAgeValue = value;
+                continue;
+            }
+            if (name.equalsIgnoreCase("expires") && expiresValue == null) {
+                expiresValue = value;
+                continue;
+            }
+
             // assign attribute to cookie
             assignAttribute(cookie, name, value);
         }
-        setMaxAgeAttribute(cookie);
+        assignMaxAgeAttribute(cookie, expiresValue, maxAgeValue);
 
         return cookie;
     }
@@ -959,20 +967,6 @@ public final class HttpCookie implements Cloneable {
                     cookie.setHttpOnly(true);
                 }
             });
-        assignors.put("max-age", new CookieAttributeAssignor(){
-            public void assign(HttpCookie cookie,
-                               String attrName,
-                               String attrValue) {
-                cookie.maxAgeAttrVal = attrValue;
-            }
-        });
-        assignors.put("expires", new CookieAttributeAssignor(){
-            public void assign(HttpCookie cookie,
-                               String attrName,
-                               String attrValue) {
-                cookie.expiresAttrVal = attrValue;
-            }
-        });
         assignors.put("version", new CookieAttributeAssignor(){
                 public void assign(HttpCookie cookie,
                                    String attrName,
@@ -987,16 +981,18 @@ public final class HttpCookie implements Cloneable {
             });
     }
 
-    private static void setMaxAgeAttribute(HttpCookie cookie)
+    private static void assignMaxAgeAttribute(HttpCookie cookie,
+                                               String expiresValue,
+                                               String maxAgeValue)
     {
         if (cookie.getMaxAge() != MAX_AGE_UNSPECIFIED)
             return;
-        if (cookie.expiresAttrVal == null && cookie.maxAgeAttrVal == null)
+        if (expiresValue == null && maxAgeValue == null)
             return;
 
         // strip off the surrounding "-sign if there's any
-        String expiresValue = stripOffSurroundingQuote(cookie.expiresAttrVal);
-        String maxAgeValue = stripOffSurroundingQuote(cookie.maxAgeAttrVal);
+        expiresValue = stripOffSurroundingQuote(expiresValue);
+        maxAgeValue = stripOffSurroundingQuote(maxAgeValue);
 
         try {
             if (maxAgeValue != null) {
