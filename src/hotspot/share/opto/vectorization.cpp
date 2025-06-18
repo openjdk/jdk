@@ -26,6 +26,7 @@
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/divnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/noOverflowInt.hpp"
@@ -494,22 +495,32 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   OR
 //   for all iv in r: p2(iv) + size2 <= p1(iv)                    (P1-AFTER-P2)
 //
+// Note: apart from this strengthening, the checks we derive below are byte accurate,
+//       i.e. they are equivalent to the conditions above. This means we have NO case
+//       where:
+//       1) The check passes (predicts no overlap) but the pointers do actually overlap.
+//          This would be bad because we would wrongly vectorize, possibly leading to
+//          wrong results.
+//       2) The check does not pass (predicts overlap) but the pointers do not overlap.
+//          This would be suboptimal, as we would not be able to vectorize, and either
+//          trap (with predicate), or go into the slow-loop (with multiversioning).
+//
 //
 // We apply the "MemPointer Linearity Corrolary" to VPointer vp and the corresponding
 // pointer p:
 //   (C0) is given by the construction of VPointer vp, which simply wraps a MemPointer mp.
 //   (c1) with v = iv and scale_v = iv_scale
-//   (C2) with r = [init, init + stride_iv, .. limX - stride_v, limX], which is the set
+//   (C2) with r = [init, init + iv_stride, .. limX - stride_v, limX], which is the set
 //        of possible iv values in the loop, with init the first iv value, and limX
 //        the last iv value which is closest to limit.
-//        Note: stride_iv > 0  ->  limit - stride_iv <= limX < limit
-//              stride_iv < 0  ->  limit < limX <= limit + stride_iv
+//        Note: iv_stride > 0  ->  limit - iv_stride <= limX < limit
+//              iv_stride < 0  ->  limit < limX <= limit - iv_stride
 //        We have to be a little careful, and cannot just use limit instead of limX as
 //        the last value in r, because the iv never reaches limit in the main loop, and
 //        so we are not sure if the memory access at p(limit) is still in bounds.
 //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
 //        the program has undefined behaviour already.
-//   (C4) abs(iv_scale * stride_iv) < 2^31 is given by the checks in
+//   (C4) abs(iv_scale * iv_stride) < 2^31 is given by the checks in
 //        VPointer::init_are_scale_and_stride_not_too_large.
 //
 // Hence, it follows that we can see p and vp as linear functions of iv in r, i.e. for
@@ -625,71 +636,59 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //        =         p2(iv)                                       |     =         p1(iv)                                       |
 //                                                               |                                                            |
 //
-//   However, computing limX is cumbersone, we only have limit readily available.
-//   But we can use the following definition, using (LINEAR-FORM-INIT), so we do
-//   not have to compute p(limX) directly:
+//   The obtained conditions already look very simple. However, we would like to avoid
+//   computing 4 addresses (p1(init), p1(limX), p2(init), p2(limX)), and would instead
+//   prefer to only compute 2 addresses, and derive the other two from the distance (span)
+//   between the pointers at init and limx. Using (LINEAR-FORM-INIT), we get:
 //
-//     p1(limX) = p1(init) - init * iv_scale1 + limX * iv_scale1                 (SPAN-X1)
+//     p1(limX) = p1(init) - init * iv_scale1 + limX * iv_scale1                 (SPAN-1)
 //                         --------------- defines -------------
-//                p1(init) + spanX1
+//                p1(init) + span1
 //
-//     p2(limX) = p2(init) - init * iv_scale2 + limX * iv_scale2                 (SPAN-X2)
+//     p2(limX) = p2(init) - init * iv_scale2 + limX * iv_scale2                 (SPAN-2)
 //                         --------------- defines -------------
-//                p1(init) + spanX2
+//                p1(init) + span2
 //
-//     spanX1 = - init * iv_scale1 + limX * iv_scale1
-//     spanX2 = - init * iv_scale2 + limX * iv_scale2
+//     span1 = - init * iv_scale1 + limX * iv_scale1 = (limX - init) * iv_scale1
+//     span2 = - init * iv_scale2 + limX * iv_scale2 = (limX - init) * iv_scale2
 //
-//   Further, we define:
-//
-//     span1 = - init * iv_scale1 + limit * iv_scale1
-//     span2 = - init * iv_scale2 + limit * iv_scale2
-//
-//   Given that we assumed (without loss of generality), that iv_scale1 < iv_scale2, we know:
-//     If iv_stride >= 0 -> limX <= limit -> (limit - limX) >= 0
-//                        iv_scale2 >                    iv_scale1
-//       (limit - limX) * iv_scale2 >=  (limit - limX) * iv_scale1
-//       span2  - spanX2             >= span1  - spanX1
-//       spanX2 - span2              <= spanX1 - span1                            (RELAX-POS)
-//
-//     If iv_stride <= 0 -> limX >= limit -> (limit - limX) <= 0
-//                        iv_scale2 >                   iv_scale1
-//       (limit - limX) * iv_scale2 <= (limit - limX) * iv_scale1
-//       span2 - spanX2             <= span1 - spanX1
-//       spanX1 - span1             <= spanX2 - span2                             (RELAX-NEG)
-//
-//   We can use this inequality to relax the conditions ever so slightly, and use limit instead
-//   of limX in the condition:
-//
-//       p1(init) + size1 <= p2(init)       (if iv_stride >= 0)  |    p2(limX) + size2 <= p1(limX)      (if iv_stride >= 0)   |
-//       -> already as desired                                   |                                                            |
-//                                                               |    Instead, we take the following relaxed condition, which |
-//                                                               |    implies the condition above:                            |
-//                                                               |                                                            |
-//                                                               |    p2(init) + span2  + size2 <= p1(init) + span1           |
-//                                                               |    -------------- (add RELAX-POS) --------------           |
-//                                                               |    p2(init) + span2  + size2 <= p1(init) + span1           |
-//                                                               |    spanX2 - span2            <= spanX1 - span1             |
-//                                                               |    ----------------- (implies) -----------------           |
-//                                                               |    p2(init) + spanX2 + size2 <= p1(init) + spanX1          |
-//                                                               |                                                            |
-//                                                               |                                                            |
-//       p1(limX) + size1 <= p2(limX)       (if iv_stride <= 0)  |    p2(init) + size2 <= p1(init)      (if iv_stride <= 0)   |
-//                                                               |    -> already as desired                                   |
-//       Instead, we take the following relaxed condition, which |                                                            |
-//       implies the condition above:                            |                                                            |
-//                                                               |                                                            |
-//       p1(init) + span1  + size1 <= p2(init) + span2           |                                                            |
-//       -------------- (add RELAX-NEG) --------------           |                                                            |
-//       p1(init) + span1  + size1 <= p2(init) + span2           |                                                            |
-//       spanX1 - span1            <= spanX2 - span2             |                                                            |
-//       ----------------- (implies) -----------------           |                                                            |
-//       p1(init) + spanX1 + size1 <= p2(init) + spanX2          |                                                            |
-//                                                               |                                                            |
-//
-//   In summary, we can use the conditions below:
+//   Thus, we can use the conditions below:
 //     p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
 //     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+//
+// The only thing left to compute is limX.
+//  1) limX is the last iv value in the range r:
+//       [init, init + iv_stride, .. limX - stride_v, limX]
+//     It follows, for some k:
+//       limX = init + k * iv_stride
+//
+//  2) limX is very close to limit:
+//       iv_stride > 0  ->  limit - iv_stride <= limX < limit
+//       iv_stride < 0  ->  limit < limX <= limit - iv_stride
+//
+//  3) We want to find k:
+//       iv_stride > 0:
+//           limit        - iv_stride                      <= limX                 <   limit
+//           limit        - iv_stride                      <= init + k * iv_stride <   limit
+//           limit - init - iv_stride                      <=        k * iv_stride <   limit - init
+//           limit - init - iv_stride - 1                  <         k * iv_stride <=  limit - init - 1
+//          (limit - init - iv_stride - 1) / iv_stride     <         k             <= (limit - init - 1) / iv_stride
+//          (limit - init             - 1) / iv_stride - 1 <         k             <= (limit - init - 1) / iv_stride
+//       -> k = (limit - init - 1) / iv_stride
+//       -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
+//
+//       iv_stride < 0:
+//           limit                                  <  limX                 <=   limit        - iv_stride
+//           limit                                  <  init + k * iv_stride <=   limit        - iv_stride
+//           limit - init                           <         k * iv_stride <=   limit - init - iv_stride
+//           limit - init + 1                       <=        k * iv_stride <    limit - init - iv_stride + 1
+//          (limit - init + 1) /     iv_stride      >=        k             >   (limit - init - iv_stride + 1) /     iv_stride
+//         -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init - iv_stride + 1) / abs(iv_stride)
+//         -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init             + 1) / abs(iv_stride) - 1
+//          (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
+//          (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
+//       -> k = (init - limit - 1) / abs(iv_stride)
+//       -> dividend "init - limit" is >=0. So a regular round to zero division can be used.
 //
 bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
   const VPointer& vp1 = *this;
@@ -795,21 +794,39 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     // p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
     // p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
     // ---------------- condition1 ----------------      --------------- condition2 -----------------
-    Node* initL = new ConvI2LNode(init);
-    Node* limitL_x = new ConvI2LNode(limit);
-    // TODO: add to justification / proof!
-    Node* limitL = new AddLNode(limitL_x, igvn.longcon(_vloop.iv_stride() > 0 ? -1 : 1));
-    Node* limit_minus_init = new SubLNode(limitL, initL);
+    Node* initL  = new ConvI2LNode(init);
+    Node* limitL = new ConvI2LNode(limit);
+    Node* iv_strideL = igvn.longcon(_vloop.iv_stride());
+
+    // Compute k = (limit - init - 1) / iv_stride   (if iv_stride >= 0)
+    //         k = (init - limit - 1) / iv_stride   (if iv_stride <= 0)
+    Node* diffL = (_vloop.iv_stride() > 0) ? new SubLNode(limitL, initL)
+                                           : new SubLNode(initL, limitL);
+    Node* diffL_m1 = new AddLNode(diffL, igvn.longcon(-1));
+    Node* k = new DivLNode(nullptr, diffL_m1, iv_strideL);
+
+    // Compute limX = init + k * iv_stride
+    Node* k_mul_iv_stride = new MulLNode(k, iv_strideL);
+    Node* limX = new AddLNode(initL, k_mul_iv_stride);
+
+    // Compute span1 = (limX - init) * iv_scale1
+    //         span2 = (limX - init) * iv_scale2
+    Node* limX_minus_init = new SubLNode(limX, initL);
     Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
     Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
-    Node* span1 = new MulLNode(limit_minus_init, iv_scale1);
-    Node* span2 = new MulLNode(limit_minus_init, iv_scale2);
-    phase->register_new_node_with_ctrl_of(initL, init);
-    phase->register_new_node_with_ctrl_of(limitL_x, init);
-    phase->register_new_node_with_ctrl_of(limitL, init);
-    phase->register_new_node_with_ctrl_of(limit_minus_init, init);
-    phase->register_new_node_with_ctrl_of(span1, init);
-    phase->register_new_node_with_ctrl_of(span2, init);
+    Node* span1 = new MulLNode(limX_minus_init, iv_scale1);
+    Node* span2 = new MulLNode(limX_minus_init, iv_scale2);
+
+    phase->register_new_node_with_ctrl_of(initL,           init);
+    phase->register_new_node_with_ctrl_of(limitL,          init);
+    phase->register_new_node_with_ctrl_of(diffL,           init);
+    phase->register_new_node_with_ctrl_of(diffL_m1,        init);
+    phase->register_new_node_with_ctrl_of(k,               init);
+    phase->register_new_node_with_ctrl_of(k_mul_iv_stride, init);
+    phase->register_new_node_with_ctrl_of(limX,            init);
+    phase->register_new_node_with_ctrl_of(limX_minus_init, init);
+    phase->register_new_node_with_ctrl_of(span1,           init);
+    phase->register_new_node_with_ctrl_of(span2,           init);
 
     // In the proof, we assumend: iv_scale1 < iv_scale2.
     if (vp1.iv_scale() > vp2.iv_scale()) {
