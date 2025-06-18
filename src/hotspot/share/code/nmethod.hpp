@@ -475,7 +475,6 @@ public:
   // vmStructs_jvmci.cpp accordingly.
   enum class InvalidationReason : s1 {
     NOT_INVALIDATED = -1,
-    UNKNOWN,
     C1_CODEPATCH,
     C1_DEOPTIMIZE,
     C1_DEOPTIMIZE_FOR_PATCHING,
@@ -497,7 +496,7 @@ public:
     UNCOMMON_TRAP,
     WHITEBOX_DEOPTIMIZATION,
     ZOMBIE,
-    LAST_REASON
+    INVALIDATION_REASONS_COUNT
   };
 
 

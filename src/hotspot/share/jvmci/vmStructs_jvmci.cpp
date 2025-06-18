@@ -566,7 +566,6 @@
   declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
                                                                                           \
   declare_constant(nmethod::InvalidationReason::NOT_INVALIDATED)                          \
-  declare_constant(nmethod::InvalidationReason::UNKNOWN)                                  \
   declare_constant(nmethod::InvalidationReason::C1_CODEPATCH)                             \
   declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE)                            \
   declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING)               \
