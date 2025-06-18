@@ -876,24 +876,6 @@ public class IRNode {
     }
 
     // Only supported on x86.
-    public static final String LEA_P_COMPRESSED_OOP_OFFSET = PREFIX + "LEA_P_COMPRESSED_OOP_OFFSET" + POSTFIX;
-    static {
-        machOnly(LEA_P_COMPRESSED_OOP_OFFSET, "leaPCompressedOopOffset");
-    }
-
-    // Only supported on x86.
-    public static final String LEA_P_8_NARROW = PREFIX + "LEA_P_8_NARROW" + POSTFIX;
-    static {
-        machOnly(LEA_P_8_NARROW, "leaP8Narrow");
-    }
-
-    // Only supported on x86.
-    public static final String LEA_P_32_NARROW = PREFIX + "LEA_P_32_NARROW" + POSTFIX;
-    static {
-        machOnly(LEA_P_32_NARROW, "leaP32Narrow");
-    }
-
-    // Only supported on x86.
     public static final String LEA_P = PREFIX + "LEA_P" + POSTFIX;
     static {
         machOnly(LEA_P, "leaP(CompressedOopOffset|(8|32)Narrow)");

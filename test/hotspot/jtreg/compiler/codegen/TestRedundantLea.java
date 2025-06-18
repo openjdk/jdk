@@ -264,13 +264,8 @@ class RegexFindTest {
     }
 
     @Test
-    @IR(counts = {IRNode.LEA_P_8_NARROW, "=1"},
+    @IR(counts = {IRNode.LEA_P, "=1"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd = {"MaxHeapSize", "<1073741824", "UseAVX", "=3"},
-        applyIfPlatform = {"mac", "false"})
-    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd = {"MaxHeapSize", ">1073741824", "UseAVX", "=3"},
         applyIfPlatform = {"mac", "false"})
     // Due to unpredictable code generation, we cannot match the exact number of decodes below.
     // Negative test
