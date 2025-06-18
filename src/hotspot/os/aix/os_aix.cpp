@@ -76,9 +76,10 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
-
 // put OS-includes here (sorted alphabetically)
 #include <alloca.h>
+#include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -2717,3 +2718,22 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
+
+void os::print_file_descriptor_info(outputStream* st) {
+  char fd_dir[32];
+  snprintf(fd_dir, sizeof(fd_dir), "/proc/%d/fd", getpid());
+  DIR* dirp = opendir(fd_dir);
+  int fds = 0;
+  if (dirp != NULL) {
+    struct dirent* dentp;
+    while ((dentp = readdir(dirp)) != NULL) {
+      if (isdigit(dentp->d_name[0])) {
+        fds++;
+      }
+    }
+    closedir(dirp);
+    st->print_cr("OpenFileDescriptorCount = %d", fds - 1); // minus the opendir fd itself
+  } else {
+    st->print_cr("OpenFileDescriptorCount = N/A");
+  }
+}

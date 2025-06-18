@@ -76,12 +76,15 @@
 # include <fcntl.h>
 # include <fenv.h>
 # include <inttypes.h>
+# include <libproc.h>
+# include <mach/mach.h>
 # include <poll.h>
 # include <pthread.h>
 # include <pwd.h>
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
+# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/mman.h>
@@ -2501,3 +2504,47 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
+
+#ifdef __APPLE__
+void os::print_file_descriptor_info(outputStream* st) {
+  pid_t my_pid;
+  struct proc_bsdinfo bsdinfo;
+  struct proc_fdinfo* fds;
+  int nfiles;
+  kern_return_t kres;
+  int res;
+  size_t fds_size;
+
+  kres = pid_for_task(mach_task_self(), &my_pid);
+  if (kres != KERN_SUCCESS) {
+    st->print_cr("OpenFileDescriptorCount = N/A (pid_for_task failed)");
+    return;
+  }
+
+  res = proc_pidinfo(my_pid, PROC_PIDTBSDINFO, 0, &bsdinfo, PROC_PIDTBSDINFO_SIZE);
+  if (res <= 0) {
+    st->print_cr("OpenFileDescriptorCount = N/A (PROC_PIDTBSDINFO failed)");
+    return;
+  }
+
+  // Allocate memory to hold the fd info
+  fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
+  fds = (struct proc_fdinfo*)malloc(fds_size);
+  if (fds == NULL) {
+    st->print_cr("OpenFileDescriptorCount = N/A (malloc failed)");
+    return;
+  }
+
+  res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, fds_size);
+  if (res <= 0) {
+    free(fds);
+    st->print_cr("OpenFileDescriptorCount = N/A (PROC_PIDLISTFDS failed)");
+    return;
+  }
+
+  nfiles = res / sizeof(struct proc_fdinfo);
+  free(fds);
+
+  st->print_cr("OpenFileDescriptorCount = %d", nfiles);
+}
+#endif // __APPLE__
