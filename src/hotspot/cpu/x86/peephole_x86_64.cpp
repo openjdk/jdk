@@ -355,7 +355,7 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
 
   // Remove spill for the decode if the spill node does not have any other uses.
   if (is_spill) {
-    MachNode* decode_spill;
+    MachNode* decode_spill = decode->in(1)->as_Mach();
     if (decode_spill->outcnt() == 1 && block->contains(decode_spill)) {
       decode_spill->set_removed();
       block->find_remove(decode_spill);
