@@ -1094,6 +1094,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, CollectIndexSetStatistics, false,                           \
           "Collect information about IndexSets")                            \
                                                                             \
+  /* This value is later shifted left by up to LogBytesPerLong bits       */\
+  /* (to convert from element count to size in bytes), so we must ensure  */\
+  /* it does not overflow during the shift.                               */\
   develop(int, FastAllocateSizeLimit, 128*K,                                \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
