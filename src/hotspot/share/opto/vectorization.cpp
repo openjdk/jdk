@@ -657,38 +657,38 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
 //
 // The only thing left to compute is limX.
-//  1) limX is the last iv value in the range r:
-//       [init, init + iv_stride, .. limX - stride_v, limX]
-//     It follows, for some k:
-//       limX = init + k * iv_stride
+//  limX is the last iv value in the range r:
+//    [init, init + iv_stride, .. limX - stride_v, limX]
+//  It follows, for some k:
+//    limX = init + k * iv_stride
 //
-//  2) limX is very close to limit:
-//       iv_stride > 0  ->  limit - iv_stride <= limX < limit
-//       iv_stride < 0  ->  limit < limX <= limit - iv_stride
+//  limX is very close to limit:
+//    iv_stride > 0  ->  limit - iv_stride <= limX < limit
+//    iv_stride < 0  ->  limit < limX <= limit - iv_stride
 //
-//  3) We want to find k:
-//       iv_stride > 0:
-//           limit        - iv_stride                      <= limX                 <   limit
-//           limit        - iv_stride                      <= init + k * iv_stride <   limit
-//           limit - init - iv_stride                      <=        k * iv_stride <   limit - init
-//           limit - init - iv_stride - 1                  <         k * iv_stride <=  limit - init - 1
-//          (limit - init - iv_stride - 1) / iv_stride     <         k             <= (limit - init - 1) / iv_stride
-//          (limit - init             - 1) / iv_stride - 1 <         k             <= (limit - init - 1) / iv_stride
-//       -> k = (limit - init - 1) / iv_stride
-//       -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
+//  We want to find k:
+//    iv_stride > 0:
+//        limit        - iv_stride                      <= limX                 <   limit
+//        limit        - iv_stride                      <= init + k * iv_stride <   limit
+//        limit - init - iv_stride                      <=        k * iv_stride <   limit - init
+//        limit - init - iv_stride - 1                  <         k * iv_stride <=  limit - init - 1
+//       (limit - init - iv_stride - 1) / iv_stride     <         k             <= (limit - init - 1) / iv_stride
+//       (limit - init             - 1) / iv_stride - 1 <         k             <= (limit - init - 1) / iv_stride
+//    -> k = (limit - init - 1) / iv_stride
+//    -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
 //
-//       iv_stride < 0:
-//           limit                                  <  limX                 <=   limit        - iv_stride
-//           limit                                  <  init + k * iv_stride <=   limit        - iv_stride
-//           limit - init                           <         k * iv_stride <=   limit - init - iv_stride
-//           limit - init + 1                       <=        k * iv_stride <    limit - init - iv_stride + 1
-//          (limit - init + 1) /     iv_stride      >=        k             >   (limit - init - iv_stride + 1) /     iv_stride
-//         -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init - iv_stride + 1) / abs(iv_stride)
-//         -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init             + 1) / abs(iv_stride) - 1
-//          (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
-//          (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
-//       -> k = (init - limit - 1) / abs(iv_stride)
-//       -> dividend "init - limit" is >=0. So a regular round to zero division can be used.
+//    iv_stride < 0:
+//        limit                                  <  limX                 <=   limit        - iv_stride
+//        limit                                  <  init + k * iv_stride <=   limit        - iv_stride
+//        limit - init                           <         k * iv_stride <=   limit - init - iv_stride
+//        limit - init + 1                       <=        k * iv_stride <    limit - init - iv_stride + 1
+//       (limit - init + 1) /     iv_stride      >=        k             >   (limit - init - iv_stride + 1) /     iv_stride
+//      -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init - iv_stride + 1) / abs(iv_stride)
+//      -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init             + 1) / abs(iv_stride) - 1
+//       (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
+//       (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
+//    -> k = (init - limit - 1) / abs(iv_stride)
+//    -> dividend "init - limit" is >=0. So a regular round to zero division can be used.
 //
 bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
   const VPointer& vp1 = *this;
