@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @key headful
  * @summary Verifies that Myanmar script is rendered correctly:
  *          two characters combined into one glyph
+ * @library /test/lib
+ * @build jtreg.SkippedException
  * @run main MyanmarTextTest
  */
 
@@ -45,13 +47,15 @@ import javax.swing.plaf.TextUI;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Position;
 
+import jtreg.SkippedException;
+
 public class MyanmarTextTest {
     private static final String TEXT = "\u1000\u103C";
 
     private static final String FONT_WINDOWS = "Myanmar Text";
     private static final String FONT_LINUX = "Padauk";
     private static final String FONT_MACOS = "Myanmar MN";
-
+    private static final String osName = System.getProperty("os.name").toLowerCase();
     private static final String FONT_NAME = selectFontName();
 
     private final JFrame frame;
@@ -62,11 +66,11 @@ public class MyanmarTextTest {
     public static void main(String[] args) throws Exception {
         if (FONT_NAME == null) {
             System.err.println("Unsupported OS: exiting");
-            return;
+            throw new SkippedException("Unsupported OS: "+osName);
         }
         if (!fontExists()) {
             System.err.println("Required font is not installed: " + FONT_NAME);
-            return;
+            throw new SkippedException("Required font is not installed: " + FONT_NAME);
         }
 
         try {
@@ -130,7 +134,6 @@ public class MyanmarTextTest {
     }
 
     private static String selectFontName() {
-        String osName = System.getProperty("os.name").toLowerCase();
         if (osName.contains("windows")) {
             return FONT_WINDOWS;
         } else if (osName.contains("linux")) {
