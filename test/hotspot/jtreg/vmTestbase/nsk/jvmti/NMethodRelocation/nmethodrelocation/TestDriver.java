@@ -62,7 +62,7 @@ public class TestDriver {
         }
         Asserts.assertTrue(oa.getExitValue() == 0);
 
-        Pattern pattern = Pattern.compile("(?m)^Relocated nmethod from (\\d+) to (\\d+)$");
+        Pattern pattern = Pattern.compile("(?m)^Relocated nmethod from (0x[0-9a-f]{16}) to (0x[0-9a-f]{16})$");
         Matcher matcher = pattern.matcher(output);
 
         if (matcher.find()) {
@@ -75,6 +75,7 @@ public class TestDriver {
             oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + fromAddr);
             oa.shouldContain("<COMPILED_METHOD_UNLOAD>:   name: compiledMethod, code: " + toAddr);
         } else {
+            System.err.println(oa.getOutput());
             throw new RuntimeException("Unable to find relocation information");
         }
     }

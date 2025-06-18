@@ -109,7 +109,7 @@ public class nmethodrelocation extends DebugeeClass {
 
         status = checkStatus(status);
 
-        System.out.printf("Relocated nmethod from %d to %d%n", originalNMethod.code_begin, relocatedNMethod.code_begin);
+        System.out.printf("Relocated nmethod from 0x%016x to 0x%016x%n", originalNMethod.code_begin, relocatedNMethod.code_begin);
         System.out.flush();
 
         return status;
