@@ -591,7 +591,7 @@ void CompilationPolicy::initialize() {
       count = 3;
       FLAG_SET_ERGO(CICompilerCount, count);
     }
-#endif
+#endif // _LP64
 
     if (c1_only) {
       // No C2 compiler threads are needed
