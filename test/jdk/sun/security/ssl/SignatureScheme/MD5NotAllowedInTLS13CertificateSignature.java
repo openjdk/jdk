@@ -154,9 +154,8 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
         // so we check against local supported signature
         // algorithms which constitutes the fix being tested.
         System.setProperty(
-                "jdk.tls.keymanager.disableCertChecking", "true");
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-                KeyManagerFactory.getDefaultAlgorithm());
+                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
 
         ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
