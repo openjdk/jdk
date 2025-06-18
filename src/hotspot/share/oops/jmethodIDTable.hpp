@@ -48,6 +48,8 @@ class JmethodIDTable : public AllStatic {
   // RedefineClasses support
   static void change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method);
   static void clear_jmethod_id(jmethodID jmid, Method* m);
+
+  static uint64_t get_entry_count();
 };
 
 #endif // SHARE_OOPS_JMETHODIDTABLE_HPP

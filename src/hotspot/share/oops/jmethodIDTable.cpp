@@ -40,6 +40,8 @@ static uint64_t _jmethodID_counter = 0;
 // Incremented on insert, decremented on remove. Use to track if we need to resize the table.
 static uint64_t _jmethodID_entry_count = 0;
 
+uint64_t JmethodIDTable::get_entry_count() { return _jmethodID_entry_count; }
+
 class JmethodEntry {
  public:
   uint64_t _id;
