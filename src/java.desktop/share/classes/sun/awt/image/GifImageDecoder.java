@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,6 +730,7 @@ class GifFrame {
                 // clear saved_image using transparent pixels
                 // this will be used as the background in the next display
                 if( decoder.saved_image != null ) {
+                    tpix = (byte) decoder.saved_model.getTransparentPixel();
                     for( int i = 0; i < global_width * global_height; i ++ )
                         decoder.saved_image[i] = tpix;
                 }
