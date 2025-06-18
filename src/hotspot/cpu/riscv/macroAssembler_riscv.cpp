@@ -793,10 +793,10 @@ void MacroAssembler::emit_static_call_stub() {
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
-  int32_t offset = 0;
+  // int32_t offset = 0;
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
-  movptr(t1, entry_point, offset, t0);
-  jalr(t1, offset);
+  movptr(t1, RuntimeAddress(entry_point), t0);
+  jalr(t1);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
@@ -3405,7 +3405,7 @@ void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src, R
   // TODO: check decode_klass_not_null_for_aot() in hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
   int shift = CompressedKlassPointers::shift();
   assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
-  assert_different_registers(dst, tmp);
+  // assert_different_registers(dst, tmp); // can assert here!
   assert_different_registers(src, tmp);
   if (dst != src) {
     // we can load the base into dst then add the offset with a suitable shift
@@ -3416,6 +3416,7 @@ void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src, R
     shadd(dst, src, dst, t, shift);
   } else {
     assert (dst == src, "must");
+    assert_different_registers(src, tmp);
     la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
     ld(tmp, tmp);
     Register t = src == dst ? dst : t0;
@@ -4950,7 +4951,7 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  mv(t1, CAST_FROM_FN_PTR(address, Thread::current));
+  movptr(t1, ExternalAddress(CAST_FROM_FN_PTR(address, Thread::current)));
   jalr(t1);
   if (thread != c_rarg0) {
     mv(thread, c_rarg0);
