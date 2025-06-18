@@ -25,23 +25,68 @@
 #define SHARE_GC_Z_ZOBJECTALLOCATOR_HPP
 
 #include "gc/z/zAddress.hpp"
+#include "gc/z/zAllocationFlags.hpp"
+#include "gc/z/zDeferredConstructed.hpp"
+#include "gc/z/zLock.hpp"
+#include "gc/z/zPage.hpp"
 #include "gc/z/zPageAge.hpp"
-#include "memory/allStatic.hpp"
+#include "gc/z/zValue.hpp"
 
-class ZObjectAllocator : public AllStatic {
+class ZObjectAllocator {
+private:
+  class PerAge {
+  private:
+    const ZPageAge     _age;
+    const bool         _use_per_cpu_shared_small_pages;
+    ZPerCPU<ZPage*>    _shared_small_page;
+    ZContended<ZPage*> _shared_medium_page;
+    ZLock              _medium_page_alloc_lock;
+
+  public:
+    PerAge(ZPageAge age);
+
+    ZPage** shared_small_page_addr();
+    ZPage* const* shared_small_page_addr() const;
+
+    ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags);
+    void undo_alloc_page(ZPage* page);
+
+    // Allocate an object in a shared page. Allocate and
+    // atomically install a new page if necessary.
+    zaddress alloc_object_in_shared_page(ZPage** shared_page,
+                                         ZPageType page_type,
+                                         size_t page_size,
+                                         size_t size,
+                                         ZAllocationFlags flags);
+
+    zaddress alloc_object_in_medium_page(size_t size,
+                                         ZAllocationFlags flags);
+
+    zaddress alloc_large_object(size_t size, ZAllocationFlags flags);
+    zaddress alloc_medium_object(size_t size, ZAllocationFlags flags);
+    zaddress alloc_small_object(size_t size, ZAllocationFlags flags);
+    zaddress alloc_object(size_t size, ZAllocationFlags flags);
+
+    void retire_pages();
+  };
+
+  ZDeferredConstructed<PerAge> _allocators[ZPageAgeCount];
+
+  PerAge* allocator(ZPageAge age);
+  const PerAge* allocator(ZPageAge age) const;
+
 public:
-  static constexpr uint NumAllocators = ZPageAgeCount;
-  static constexpr uint NumRelocationAllocators = NumAllocators - 1;
+  ZObjectAllocator();
 
-  static void initialize();
+  void retire_pages(ZPageAgeRange range);
 
-  static void retire_pages(ZPageAgeRange range);
-
-  static size_t remaining_in_eden();
+  size_t fast_available(ZPageAge age) const;
 
   // Mutator allocation
-  static zaddress alloc_object(size_t size, ZPageAge age);
-  static void undo_alloc_object(zaddress addr, size_t size, ZPageAge age);
+  zaddress alloc(size_t size);
+
+  // Mutator relocation
+  zaddress alloc_for_relocation(size_t size, ZPageAge age);
 };
 
 #endif // SHARE_GC_Z_ZOBJECTALLOCATOR_HPP

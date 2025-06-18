@@ -841,7 +841,7 @@ void ZGenerationYoung::mark_start() {
   ZHeap::heap()->reset_tlab_used();
 
   // Retire allocating pages
-  ZObjectAllocator::retire_pages(ZPageAgeRangeYoung);
+  ZHeap::heap()->retire_allocating_pages(ZPageAgeRangeYoung);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -1198,7 +1198,7 @@ void ZGenerationOld::mark_start() {
   flip_mark_start();
 
   // Retire allocating pages
-  ZObjectAllocator::retire_pages(ZPageAgeRangeOld);
+  ZHeap::heap()->retire_allocating_pages(ZPageAgeRangeOld);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();

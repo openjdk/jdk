@@ -75,8 +75,12 @@ inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
   return page->is_object_strongly_live(addr);
 }
 
-inline zaddress ZHeap::alloc_object(size_t size) const {
-  const zaddress addr = ZObjectAllocator::alloc_object(size, ZPageAge::eden);
+inline void ZHeap::retire_allocating_pages(ZPageAgeRange range) {
+  _object_allocator.retire_pages(range);
+}
+
+inline zaddress ZHeap::alloc_object(size_t size) {
+  const zaddress addr = _object_allocator.alloc(size);
 
   if (is_null(addr)) {
     out_of_memory();
@@ -85,9 +89,13 @@ inline zaddress ZHeap::alloc_object(size_t size) const {
   return addr;
 }
 
-inline zaddress ZHeap::alloc_tlab(size_t size) const {
+inline zaddress ZHeap::alloc_tlab(size_t size) {
   guarantee(size <= max_tlab_size(), "TLAB too large");
-  return ZObjectAllocator::alloc_object(size, ZPageAge::eden);
+  return _object_allocator.alloc(size);
+}
+
+inline zaddress ZHeap::alloc_object_for_relocation(size_t size, ZPageAge age) {
+  return _object_allocator.alloc_for_relocation(size, age);
 }
 
 inline bool ZHeap::is_alloc_stalling() const {

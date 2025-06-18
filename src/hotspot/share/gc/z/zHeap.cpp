@@ -52,12 +52,15 @@
 
 static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterOutOfMemory("Memory", "Out Of Memory", ZStatUnitOpsPerSecond);
+static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
+static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
 
 ZHeap* ZHeap::_heap = nullptr;
 
 ZHeap::ZHeap()
   : _page_allocator(MinHeapSize, InitialHeapSize, SoftMaxHeapSize, MaxHeapSize),
     _page_table(),
+    _object_allocator(),
     _serviceability(InitialHeapSize, min_capacity(), max_capacity()),
     _old(&_page_table, &_page_allocator),
     _young(&_page_table, _old.forwarding_table(), &_page_allocator),
@@ -143,7 +146,7 @@ size_t ZHeap::max_tlab_size() const {
 }
 
 size_t ZHeap::unsafe_max_tlab_alloc() const {
-  size_t size = ZObjectAllocator::remaining_in_eden();
+  size_t size = _object_allocator.fast_available(ZPageAge::eden);
 
   if (size < MinTLABSize) {
     // The remaining space in the allocator is not enough to
@@ -156,6 +159,7 @@ size_t ZHeap::unsafe_max_tlab_alloc() const {
 
   return MIN2(size, max_tlab_size());
 }
+
 void ZHeap::reset_tlab_used() {
   _tlab_usage.reset();
 }
@@ -289,6 +293,21 @@ size_t ZHeap::free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages) {
   _page_allocator.free_pages(id, pages);
 
   return freed;
+}
+
+void ZHeap::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
+  ZPage* const page = this->page(addr);
+
+  if (page->is_large()) {
+    undo_alloc_page(page);
+    ZStatInc(ZCounterUndoObjectAllocationSucceeded);
+  } else {
+    if (page->undo_alloc_object_atomic(addr, size)) {
+      ZStatInc(ZCounterUndoObjectAllocationSucceeded);
+    } else {
+      ZStatInc(ZCounterUndoObjectAllocationFailed);
+    }
+  }
 }
 
 void ZHeap::keep_alive(oop obj) {

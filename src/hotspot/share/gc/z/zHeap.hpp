@@ -27,6 +27,7 @@
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zArray.hpp"
 #include "gc/z/zGeneration.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
@@ -42,19 +43,21 @@ class ZHeap {
   friend class VMStructs;
 
 private:
-  static ZHeap*           _heap;
+  static ZHeap*    _heap;
 
-  ZPageAllocator          _page_allocator;
-  ZPageTable              _page_table;
+  ZPageAllocator   _page_allocator;
+  ZPageTable       _page_table;
 
-  ZServiceability         _serviceability;
+  ZObjectAllocator _object_allocator;
 
-  ZGenerationOld          _old;
-  ZGenerationYoung        _young;
+  ZServiceability  _serviceability;
 
-  ZTLABUsage              _tlab_usage;
+  ZGenerationOld   _old;
+  ZGenerationYoung _young;
 
-  bool                    _initialized;
+  ZTLABUsage       _tlab_usage;
+
+  bool             _initialized;
 
   // Page allocation accounting
   void account_alloc_page(ZPage* page);
@@ -109,10 +112,14 @@ public:
   void undo_alloc_page(ZPage* page);
   void free_page(ZPage* page);
   size_t free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
+  void retire_allocating_pages(ZPageAgeRange range);
 
   // Object allocation
-  zaddress alloc_object(size_t size) const;
-  zaddress alloc_tlab(size_t size) const;
+  zaddress alloc_object(size_t size);
+  zaddress alloc_tlab(size_t size);
+  zaddress alloc_object_for_relocation(size_t size, ZPageAge age);
+  void undo_alloc_object_for_relocation(zaddress addr, size_t size);
+
   bool is_alloc_stalling() const;
   bool is_alloc_stalling_for_old() const;
   void handle_alloc_stalling_for_young();
