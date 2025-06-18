@@ -90,11 +90,7 @@ public final class StableEnumFunction<E extends Enum<E>, R> implements Function<
         final int index = value.ordinal() - firstOrdinal;
         // Since we did the member.test above, we know the index is in bounds
         return delegates[index].orElseSet(new Supplier<R>() {
-            @Override
-            public R get() {
-                return underlyingHolder.underlying().apply(value);
-            }
-        },this);
+            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, this);
 
     }
 

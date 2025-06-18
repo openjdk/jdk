@@ -66,11 +66,7 @@ public final class StableIntFunction<R> implements IntFunction<R>, UnderlyingHol
             throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }
         return delegate.orElseSet(new Supplier<R>() {
-            @Override
-            public R get() {
-                return underlyingHolder.underlying().apply(index);
-            }
-        }, this);
+            @Override public R get() { return underlyingHolder.underlying().apply(index); }}, this);
     }
 
     @Override

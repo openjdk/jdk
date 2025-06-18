@@ -73,11 +73,7 @@ public final class StableFunction<T, R> implements Function<T, R>, UnderlyingHol
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
         return stable.orElseSet(new Supplier<R>() {
-            @Override
-            public R get() {
-                return underlyingHolder.underlying().apply(value);
-            }
-        }, this);
+            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, this);
     }
 
     @Override

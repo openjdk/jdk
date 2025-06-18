@@ -819,8 +819,7 @@ class ImmutableCollections {
                 throw new IndexOutOfBoundsException(i);
             }
             return delegate.orElseSet(new Supplier<E>() {
-                        @Override  public E get() { return underlyingHolder.underlying().apply(i); }},
-                        this);
+                        @Override  public E get() { return underlyingHolder.underlying().apply(i); }}, this);
         }
 
         @Override
