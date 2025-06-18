@@ -762,8 +762,8 @@ void MacroAssembler::stop(const char* msg) {
   // Skip AOT caching C strings in scratch buffer.
   const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
   BLOCK_COMMENT(str);
+  la(c_rarg0, ExternalAddress((address) str));
   illegal_instruction(Assembler::csr::time);
-  emit_int64((uintptr_t)str);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -3398,11 +3398,30 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
+void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src, Register tmp) {
   // we have to load the klass base from the AOT constants area but
   // not the shift because it is not allowed to change
 
   // TODO: check decode_klass_not_null_for_aot() in hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
+  int shift = CompressedKlassPointers::shift();
+  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
+  if (dst != src) {
+    // we can load the base into dst then add the offset with a suitable shift
+    la(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ld(dst, dst);
+    Register t = src == dst ? dst : t0;
+    assert_different_registers(t, tmp);
+    shadd(dst, src, dst, t, shift);
+  } else {
+    assert (dst == src, "must");
+    la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ld(tmp, tmp);
+    Register t = src == dst ? dst : t0;
+    assert_different_registers(t, tmp);
+    shadd(dst, src, tmp, t, shift);
+  }
 }
 
 void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
@@ -3413,10 +3432,10 @@ void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
 void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
 
-//  if (AOTCodeCache::is_on_for_dump()) {
-//    decode_klass_not_null_for_aot(dst, src);
-//    return;
-//  }
+  if (AOTCodeCache::is_on_for_dump()) {
+    decode_klass_not_null_for_aot(dst, src, tmp);
+    return;
+  }
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
@@ -3433,14 +3452,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   }
 
   assert_different_registers(src, xbase);
-  // stop("decode_klass_not_null");
-  if (AOTCodeCache::is_on_for_dump()) {
-    // stop("AOTCodeCache::is_on_for_dump");
-    // la(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
-    mv(xbase, (uintptr_t)CompressedKlassPointers::base());
-  } else {
-    mv(xbase, (uintptr_t)CompressedKlassPointers::base());
-  }
+  mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
     stop("CompressedKlassPointers::shift");
@@ -3448,16 +3460,34 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
     assert_different_registers(t, xbase);
     shadd(dst, src, xbase, t, CompressedKlassPointers::shift());
   } else {
-    mv(t1, src);
     add(dst, xbase, src);
   }
 }
 
-void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
+void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src, Register tmp) {
   // we have to load the klass base from the AOT constants area but
   // not the shift because it is not allowed to change
 
   // TODO: check encode_klass_not_null_for_aot in hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
+  int shift = CompressedKlassPointers::shift();
+  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
+  if (dst != src) {
+    assert(dst != t0, "must not");
+    la(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ld(dst, dst);
+    sub(dst, src, dst);
+    srli(dst, dst, shift);
+  } else {
+    assert(dst == src, "must");
+    assert(dst != tmp, "must not");
+    // assert(false, "must not");
+    la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ld(tmp, tmp);
+    sub(dst, src, tmp);
+    srli(dst, dst, shift);
+  }
 }
 
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
@@ -3468,10 +3498,10 @@ void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
 void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register tmp) {
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
 
-//  if (AOTCodeCache::is_on_for_dump()) {
-//    encode_klass_not_null_for_aot(dst, src);
-//    return;
-//  }
+  if (AOTCodeCache::is_on_for_dump()) {
+    encode_klass_not_null_for_aot(dst, src, tmp);
+    return;
+  }
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
@@ -3494,11 +3524,8 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
   }
 
   assert_different_registers(src, xbase);
-  if (AOTCodeCache::is_on_for_dump()) {
-    la(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
-  } else {
-    mv(xbase, (uintptr_t)CompressedKlassPointers::base());
-  }
+  mv(xbase, (uintptr_t)CompressedKlassPointers::base());
+
   sub(dst, src, xbase);
   if (CompressedKlassPointers::shift() != 0) {
     srli(dst, dst, CompressedKlassPointers::shift());
