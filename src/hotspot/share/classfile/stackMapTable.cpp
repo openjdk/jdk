@@ -244,7 +244,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
   int offset;
   VerificationType* locals = nullptr;
   u1 frame_type = _stream->get_u1(CHECK_NULL);
-  if (frame_type < 64) {
+  if (frame_type < SAME_FRAME) {
     // same_frame
     if (_first) {
       offset = frame_type;
@@ -266,17 +266,17 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     _first = false;
     return frame;
   }
-  if (frame_type < 128) {
+  if (frame_type < SAME_LOCALS_1_STACK_ITEM_FRAME) {
     // same_locals_1_stack_item_frame
     if (_first) {
-      offset = frame_type - 64;
+      offset = frame_type - SAME_FRAME;
       // Can't share the locals array since that is updated by the verifier.
       if (_prev_frame->locals_size() > 0) {
         locals = NEW_RESOURCE_ARRAY_IN_THREAD(
           THREAD, VerificationType, _prev_frame->locals_size());
       }
     } else {
-      offset = _prev_frame->offset() + frame_type - 63;
+      offset = _prev_frame->offset() + frame_type - (SAME_FRAME - 1);
       locals = _prev_frame->locals();
     }
     VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(

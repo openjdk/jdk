@@ -29,6 +29,7 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
+#include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/verifier.hpp"
@@ -3266,7 +3267,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     // same_frame {
     //   u1 frame_type = SAME; /* 0-63 */
     // }
-    if (frame_type <= 63) {
+    if (frame_type < StackMapReader::SAME_FRAME) {
       // nothing more to do for same_frame
     }
 
@@ -3274,13 +3275,15 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = SAME_LOCALS_1_STACK_ITEM; /* 64-127 */
     //   verification_type_info stack[1];
     // }
-    else if (frame_type >= 64 && frame_type <= 127) {
+    else if (frame_type >= StackMapReader::SAME_FRAME &&
+             frame_type < StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME) {
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
     }
 
     // reserved for future use
-    else if (frame_type >= 128 && frame_type <= 246) {
+    else if (frame_type >= StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME &&
+             frame_type < StackMapReader::SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
       // nothing more to do for reserved frame_types
     }
 
@@ -3289,7 +3292,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 offset_delta;
     //   verification_type_info stack[1];
     // }
-    else if (frame_type == 247) {
+    else if (frame_type == StackMapReader::SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
       stackmap_p += 2;
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
@@ -3299,15 +3302,16 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = CHOP; /* 248-250 */
     //   u2 offset_delta;
     // }
-    else if (frame_type >= 248 && frame_type <= 250) {
+    else if (frame_type > StackMapReader::SAME_LOCALS_1_STACK_ITEM_EXTENDED &&
+             frame_type < StackMapReader::SAME_EXTENDED) {
       stackmap_p += 2;
     }
 
     // same_frame_extended {
-    //   u1 frame_type = SAME_FRAME_EXTENDED; /* 251*/
+    //   u1 frame_type = SAME_EXTENDED; /* 251 */
     //   u2 offset_delta;
     // }
-    else if (frame_type == 251) {
+    else if (frame_type == StackMapReader::SAME_EXTENDED) {
       stackmap_p += 2;
     }
 
@@ -3316,11 +3320,12 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 offset_delta;
     //   verification_type_info locals[frame_type - 251];
     // }
-    else if (frame_type >= 252 && frame_type <= 254) {
+    else if (frame_type > StackMapReader::SAME_EXTENDED &&
+             frame_type < StackMapReader::FULL) {
       assert(stackmap_p + 2 <= stackmap_end,
         "no room for offset_delta");
       stackmap_p += 2;
-      u1 len = frame_type - 251;
+      u1 len = frame_type - StackMapReader::SAME_EXTENDED;
       for (u1 i = 0; i < len; i++) {
         rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
           calc_number_of_entries, frame_type);
@@ -3335,7 +3340,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 number_of_stack_items;
     //   verification_type_info stack[number_of_stack_items];
     // }
-    else if (frame_type == 255) {
+    else if (frame_type == StackMapReader::FULL) {
       assert(stackmap_p + 2 + 2 <= stackmap_end,
         "no room for smallest full_frame");
       stackmap_p += 2;
