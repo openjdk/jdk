@@ -180,7 +180,7 @@ public class FSInfo {
      *                       file-system from a multi-release JAR (or
      *                       {@code null} to ignore release versioning).
      */
-    public static Map<String, ?> readOnlyJarFSEnv(String releaseVersion) {
+    public Map<String, ?> readOnlyJarFSEnv(String releaseVersion) {
         if (releaseVersion == null) {
             return READ_ONLY_JARFS_ENV;
         }

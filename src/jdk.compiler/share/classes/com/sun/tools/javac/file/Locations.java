@@ -1384,7 +1384,7 @@ public class Locations {
                         log.error(Errors.NoZipfsForArchive(p));
                         return null;
                     }
-                    try (FileSystem fs = jarFSProvider.newFileSystem(p, FSInfo.readOnlyJarFSEnv(releaseVersion))) {
+                    try (FileSystem fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(releaseVersion))) {
                         Path moduleInfoClass = fs.getPath("module-info.class");
                         if (Files.exists(moduleInfoClass)) {
                             String moduleName = readModuleName(moduleInfoClass);
@@ -1460,7 +1460,7 @@ public class Locations {
                                 log.error(Errors.LocnCantReadFile(p));
                                 return null;
                             }
-                            fs = jarFSProvider.newFileSystem(p, FSInfo.readOnlyJarFSEnv(null));
+                            fs = jarFSProvider.newFileSystem(p, fsInfo.readOnlyJarFSEnv(null));
                             try {
                                 Path moduleInfoClass = fs.getPath("classes/module-info.class");
                                 String moduleName = readModuleName(moduleInfoClass);
