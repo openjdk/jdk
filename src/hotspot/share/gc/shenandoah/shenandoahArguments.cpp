@@ -222,11 +222,6 @@ void ShenandoahArguments::initialize_alignments() {
   if (FLAG_IS_DEFAULT(TLABSize)) {
     TLABSize = MAX2(ShenandoahHeapRegion::region_size_bytes() / 256, (size_t) 32 * 1024);
   }
-#undef KELVIN_ARGUMENTS
-#ifdef KELVIN_ARGUMENTS
-  log_info(gc)("TLABAllocationWeight: %u", (unsigned int) TLABAllocationWeight);
-  log_info(gc)("            TLABSize: %zu", (size_t) TLABSize);
-#endif
 }
 
 CollectedHeap* ShenandoahArguments::create_heap() {
