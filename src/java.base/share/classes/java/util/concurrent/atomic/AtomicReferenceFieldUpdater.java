@@ -46,7 +46,7 @@ import java.lang.invoke.VarHandle;
 
 /**
  * A reflection-based utility that enables atomic updates to
- * designated {@code volatile} reference fields of designated
+ * designated non-static {@code volatile} reference fields of designated
  * classes.  This class is designed for use in atomic data structures
  * in which several reference fields of the same node are
  * independently subject to atomic updates. For example, a tree node
