@@ -109,11 +109,11 @@ import java.util.stream.Stream;
  *     }
  * }
  * }
- * <p>Stream resources (file descriptor or handle) are always paired; one in the invoking process
- * and the other end of that connection in the invoked process.
+ * <p>Operating system resources (file descriptor or handle) are always paired;
+ * one in the invoking process and the other end of that connection in the invoked process.
  * Closing a stream at either end terminates communication but does not have any direct effect
  * on the other Process. Typically, the other process responds to the closing of the stream
- * by exiting.
+ * by cleaning up its end of the communication.
  *
  * <p>There is no requirement that the process represented by a {@code
  * Process} object execute asynchronously or concurrently with respect
@@ -160,13 +160,13 @@ public abstract class Process {
      * then this method will return a
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
      *
-     * <p>The output stream should be {@linkplain OutputStream#close closed}
-     * when it is no longer needed.
-     *
      * @apiNote
      * When writing to both {@link #getOutputStream()} and either {@link #outputWriter()}
      * or {@link #outputWriter(Charset)}, {@link BufferedWriter#flush BufferedWriter.flush}
      * should be called before writes to the {@code OutputStream}.
+     *
+     * <p>The output stream should be {@linkplain OutputStream#close closed}
+     * when no longer needed.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -195,14 +195,16 @@ public abstract class Process {
      * then the input stream returned by this method will receive the
      * merged standard output and the standard error of the process.
      *
-     * <p>The input stream should be {@linkplain InputStream#close closed}
-     * when it is no longer needed.
-     *
      * @apiNote
-     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
-     * The input reader consumes and buffers bytes from the input stream.
-     * Bytes read from the input stream would not be seen by the reader and
-     * buffer contents are unpredictable.
+     * Reading from the process should use either {@link #getInputStream()} or
+     * {@link #inputReader(Charset)} but not both.
+     * The {@linkplain #inputReader(Charset) input reader} consumes and buffers bytes from
+     * the {@linkplain  #getInputStream input stream}.
+     * Bytes read directly from the {@linkplain #getInputStream() input stream}
+     * are not seen by the reader and the characters read could be unpredictable.
+     *
+     * <p>The input stream should be {@linkplain InputStream#close closed}
+     * when no longer needed.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -226,14 +228,16 @@ public abstract class Process {
      * then this method will return a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
-     * <p>The error stream should be {@linkplain InputStream#close closed}
-     * when it is no longer needed.
-     *
      * @apiNote
-     * Avoid using both {@link #getErrorStream} and {@link #inputReader(Charset)}.
-     * The error reader consumes and buffers bytes from the error stream.
-     * Bytes read from the error stream would not be seen by the reader and the
-     * buffer contents are unpredictable.
+     * Reading from the process should use either {@link #getErrorStream()} or
+     * {@link #errorReader(Charset)} but not both.
+     * The {@linkplain #errorReader(Charset) error reader} consumes and buffers bytes from
+     * the {@linkplain  #getErrorStream error stream}.
+     * Bytes read directly from the {@linkplain #getErrorStream() error stream}
+     * are not seen by the reader and the characters read could be unpredictable.
+     *
+     * <p>The error stream should be {@linkplain InputStream#close closed}
+     * when no longer needed.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -254,8 +258,20 @@ public abstract class Process {
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
      *
+     * @apiNote
+     * Reading from the process should use either {@link #getInputStream()} or
+     * {@link #inputReader(Charset)} but not both.
+     * The {@linkplain #inputReader(Charset) input reader} consumes and buffers bytes from
+     * the {@linkplain  #getInputStream input stream}.
+     * Bytes read directly from the {@linkplain #getInputStream() input stream}
+     * are not seen by the reader and the characters read could be unpredictable.
+     *
      * <p>The reader should be {@linkplain BufferedReader#close closed}
-     * when it is no longer needed.
+     * when no longer needed.
+     *
+     * <p>When the process has terminated, and the standard input has not been redirected,
+     * reading of the bytes available from the underlying stream is on a best effort basis and
+     * may be unpredictable.
      *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
@@ -287,9 +303,6 @@ public abstract class Process {
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
-     * <p>The reader should be {@linkplain BufferedReader#close closed}
-     * when it is no longer needed.
-     *
      * <p>Otherwise, if the standard error of the process has been redirected using
      * {@link ProcessBuilder#redirectErrorStream(boolean)
      * ProcessBuilder.redirectErrorStream} then the input reader returned by
@@ -297,10 +310,15 @@ public abstract class Process {
      * of the process.
      *
      * @apiNote
-     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
-     * The input reader consumes and buffers bytes from the input stream.
-     * Bytes read from the input stream would not be seen by the reader and the
-     * buffer contents are unpredictable.
+     * Reading from the process should use either {@link #getInputStream()} or
+     * {@link #inputReader(Charset)} but not both.
+     * The {@linkplain #inputReader(Charset) input reader} consumes and buffers bytes from
+     * the {@linkplain  #getInputStream input stream}.
+     * Bytes read directly from the {@linkplain #getInputStream() input stream}
+     * are not seen by the reader and the characters read could be unpredictable.
+     *
+     * <p>The reader should be {@linkplain BufferedReader#close closed}
+     * when no longer needed.
      *
      * <p>When the process has terminated, and the standard input has not been redirected,
      * reading of the bytes available from the underlying stream is on a best effort basis and
@@ -336,8 +354,20 @@ public abstract class Process {
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
      *
+     * @apiNote
+     * Reading from the process should use either {@link #getErrorStream()} or
+     * {@link #errorReader(Charset)} but not both.
+     * The {@linkplain #errorReader(Charset) error reader} consumes and buffers bytes from
+     * the {@linkplain  #getErrorStream error stream}.
+     * Bytes read directly from the {@linkplain #getErrorStream() error stream}
+     * are not seen by the reader and the characters read could be unpredictable.
+     *
      * <p>The error reader should be {@linkplain BufferedReader#close closed}
-     * when it is no longer needed.
+     * when no longer needed.
+     *
+     * <p>When the process has terminated, and the standard error has not been redirected,
+     * reading of the bytes available from the underlying stream is on a best effort basis and
+     * may be unpredictable.
      *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
@@ -370,14 +400,16 @@ public abstract class Process {
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
-     * <p>The error reader should be {@linkplain BufferedReader#close closed}
-     * when it is no longer needed.
-     *
      * @apiNote
-     * Avoid using both {@link #getErrorStream} and {@link #errorReader(Charset)}.
-     * The error reader consumes and buffers bytes from the error stream.
-     * Bytes read from the error stream would not be seen by the reader and the
-     * buffer contents are unpredictable.
+     * Reading from the process should use either {@link #getErrorStream()} or
+     * {@link #errorReader(Charset)} but not both.
+     * The {@linkplain #errorReader(Charset) error reader} consumes and buffers bytes from
+     * the {@linkplain  #getErrorStream error stream}.
+     * Bytes read directly from the {@linkplain #getErrorStream() error stream}
+     * are not seen by the reader and the characters read could be unpredictable.
+     *
+     * <p>The error reader should be {@linkplain BufferedReader#close closed}
+     * when no longer needed.
      *
      * <p>When the process has terminated, and the standard error has not been redirected,
      * reading of the bytes available from the underlying stream is on a best effort basis and
@@ -415,7 +447,7 @@ public abstract class Process {
      * the {@link Charset#defaultCharset()} is used.
      *
      * <p>The output writer should be {@linkplain BufferedWriter#close closed}
-     * when it is no longer needed.
+     * when no longer needed.
      *
      * @return a {@code BufferedWriter} to the standard input of the process using the charset
      *          for the {@code native.encoding} system property
@@ -447,7 +479,7 @@ public abstract class Process {
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
      *
      * <p>The output writer should be {@linkplain BufferedWriter#close closed}
-     * when it is no longer needed.
+     * when no longer needed.
      *
      * @apiNote
      * A {@linkplain BufferedWriter} writes characters, arrays of characters, and strings.
