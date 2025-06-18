@@ -125,13 +125,14 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier);
         return orElseSet(supplier, null);
     }
 
+    // `supplier` can be null if the `underlyingHolder` released it.
     @ForceInline
     public T orElseSet(Supplier<? extends T> supplier,
                        UnderlyingHolder<?> underlyingHolder) {
-        Objects.requireNonNull(supplier);
         final Object t = wrappedContentsAcquire();
         return (t == null) ? orElseSetSlowPath(supplier, underlyingHolder) : unwrap(t);
     }

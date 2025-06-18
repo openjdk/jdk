@@ -138,11 +138,11 @@ class ImmutableCollections {
                 }
                 public <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
                     // A stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
-                    return new StableList<>(size, mapper);
+                    return new StableList<>(size, new UnderlyingHolder<>(mapper, size));
                 }
                 public <K, V> Map<K, V> stableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
                     // A stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
-                    return new StableMap<>(keys, mapper);
+                    return new StableMap<>(keys, new UnderlyingHolder<>(mapper, keys.size()));
                 }
             });
         }
@@ -800,8 +800,8 @@ class ImmutableCollections {
         @Stable
         private final UnderlyingHolder<IntFunction<? extends E>> underlyingHolder;
 
-        StableList(int size, IntFunction<? extends E> mapper) {
-            this.underlyingHolder = new UnderlyingHolder<>(mapper, size);
+        StableList(int size, UnderlyingHolder<IntFunction<? extends E>> underlyingHolder) {
+            this.underlyingHolder = underlyingHolder;
             this.delegates = StableUtil.array(size);
         }
 
@@ -1612,9 +1612,9 @@ class ImmutableCollections {
         @Stable
         private final UnderlyingHolder<Function<? super K, ? extends V>> underlyingHolder;
 
-        StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        StableMap(Set<K> keys, UnderlyingHolder<Function<? super K, ? extends V>> underlyingHolder) {
             this.delegate = StableUtil.map(keys);
-            this.underlyingHolder = new UnderlyingHolder<>(mapper, keys.size());
+            this.underlyingHolder = underlyingHolder;
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }

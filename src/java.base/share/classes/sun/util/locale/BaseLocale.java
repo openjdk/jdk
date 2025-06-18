@@ -32,11 +32,13 @@
 
 package sun.util.locale;
 
+import jdk.internal.lang.stable.StableSupplier;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
+import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.function.Supplier;
 
@@ -174,10 +176,7 @@ public final class BaseLocale {
         // Obtain the "interned" BaseLocale from the cache. The returned
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
-        var rks = CACHE.get();
-        //System.out.println("rks = " + rks);
-
-        return rks.intern(new BaseLocale(
+        return CACHE.get().intern(new BaseLocale(
                 language.intern(), // guaranteed to be lower-case
                 LocaleUtils.toTitleString(script).intern(),
                 region.intern(), // guaranteed to be upper-case
