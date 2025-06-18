@@ -25,7 +25,6 @@
 #include "classfile/symbolTable.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/universe.hpp"
-#include "oops/constantPool.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
