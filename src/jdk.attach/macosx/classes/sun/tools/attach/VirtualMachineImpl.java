@@ -239,7 +239,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             if (user != null) {
                 for (String dir : platformSupport.getTemporaryDirectories(pid)) {
                     Path fullPath = Path.of(dir, HSPERFDATA_PREFIX + user, String.valueOf(pid));
-                    if(Files.exists(fullPath)) {
+                    if (Files.exists(fullPath)) {
                         return dir;
                     }
                 }
