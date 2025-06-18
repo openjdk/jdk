@@ -33,8 +33,6 @@
  * @run main/othervm PKIXExtendedTM 2
  */
 
-import java.net.*;
-import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
 import java.security.Security;
@@ -1114,7 +1112,7 @@ public class PKIXExtendedTM {
         // Disable KeyManager's algorithm constraints checking as this test
         // is about TrustManager's constraints check.
         System.setProperty(
-                "jdk.tls.keymanager.disableCertChecking", "true");
+                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
 
         if (args.length != 1) {
             throw new Exception("Incorrect number of arguments");

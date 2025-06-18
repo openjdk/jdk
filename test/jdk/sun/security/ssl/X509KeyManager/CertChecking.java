@@ -56,8 +56,9 @@ import sun.security.x509.X500Name;
 
 /*
  * @test
- * @bug 8359069
- * @summary Support certificate checks in SunX509 key manager
+ * @bug 8359956
+ * @summary Support algorithm constraints and certificate checks in SunX509
+ *          key manager
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
@@ -116,64 +117,64 @@ public class CertChecking {
             throw new RuntimeException("Wrong number of arguments");
         }
 
-        String disabled = args[0];
+        String enabled = args[0];
         String kmAlg = args[1];
 
         System.setProperty(
-                "jdk.tls.keymanager.disableCertChecking", disabled);
+                "jdk.tls.SunX509keymanager.certSelectionChecking", enabled);
 
         // --- Usage and expired test cases --
 
         // Both should fail with no usages at all
-        usageTestCase(disabled, kmAlg, "RSA", NONE_KEY_USAGES, true, true);
+        usageTestCase(enabled, kmAlg, "RSA", NONE_KEY_USAGES, true, true);
 
         // Only client should fail with RSA algorithm and
         // no digital signature bit set
-        usageTestCase(disabled, kmAlg, "RSA", NO_DG_USAGE, false, true);
+        usageTestCase(enabled, kmAlg, "RSA", NO_DG_USAGE, false, true);
 
         // Only server should fail with RSA algorithm and
         // no digital signature bit set
-        usageTestCase(disabled, kmAlg, "RSASSA-PSS", NO_DG_USAGE, true, false);
+        usageTestCase(enabled, kmAlg, "RSASSA-PSS", NO_DG_USAGE, true, false);
 
         // Both should fail with DSA algorithm and no digital signature bit set
-        usageTestCase(disabled, kmAlg, "DSA", NO_DG_USAGE, true, true);
+        usageTestCase(enabled, kmAlg, "DSA", NO_DG_USAGE, true, true);
 
         // Both should fail with EC algorithm and no digital signature bit set
-        usageTestCase(disabled, kmAlg, "EC", NO_DG_USAGE, true, true);
+        usageTestCase(enabled, kmAlg, "EC", NO_DG_USAGE, true, true);
 
         // Both should fail with RSA algorithm and missing digital signature and
         // key encipherment bits.
-        usageTestCase(disabled, kmAlg, "RSA", NO_DG_NO_KE_USAGE, true, true);
+        usageTestCase(enabled, kmAlg, "RSA", NO_DG_NO_KE_USAGE, true, true);
 
         // Both should fail with DH algorithm and no key agreement bit set.
-        usageTestCase(disabled, kmAlg, "DH", NO_KA_USAGE, true, true);
+        usageTestCase(enabled, kmAlg, "DH", NO_KA_USAGE, true, true);
 
         // Only server should fail with EC algorithm and
         // no digital signature bit set
-        usageTestCase(disabled, kmAlg, "EC", NO_KA_USAGE, true, false);
+        usageTestCase(enabled, kmAlg, "EC", NO_KA_USAGE, true, false);
 
         // --- Issuer match test cases ---
 
         // Check CA issuer match
-        issuerTestCase(disabled, kmAlg, "RSA",
+        issuerTestCase(enabled, kmAlg, "RSA",
                 new Principal[]{new X500Principal(CA_ISSUER_STRING)}, true);
 
         // Check CA issuer match with non-X500 principal
-        issuerTestCase(disabled, kmAlg, "RSA",
+        issuerTestCase(enabled, kmAlg, "RSA",
                 new Principal[]{new UserPrincipal(CA_ISSUER_STRING)}, true);
 
         // Non-convertable principal should match all
-        issuerTestCase(disabled, kmAlg, "RSA",
+        issuerTestCase(enabled, kmAlg, "RSA",
                 new Principal[]{new InvalidPrincipal()}, true);
 
         // Empty issuer array should match all
-        issuerTestCase(disabled, kmAlg, "RSA", new Principal[]{}, true);
+        issuerTestCase(enabled, kmAlg, "RSA", new Principal[]{}, true);
 
         // Null issuer array should match all
-        issuerTestCase(disabled, kmAlg, "RSA", null, true);
+        issuerTestCase(enabled, kmAlg, "RSA", null, true);
 
         // Issuer that is not in the chain should not match.
-        issuerTestCase(disabled, kmAlg, "RSA",
+        issuerTestCase(enabled, kmAlg, "RSA",
                 new Principal[]{new X500Principal(UNKNOWN_ISSUER_STRING)}, false);
 
         // --- Alias not found for given KeyType test cases ---
@@ -185,7 +186,7 @@ public class CertChecking {
         aliasNotFoundTestCase(kmAlg, "RSA", "EC");
     }
 
-    private static void usageTestCase(String disabled, String kmAlg,
+    private static void usageTestCase(String enabled, String kmAlg,
             String keyAlg, boolean[] certKeyUsages, boolean checkServer,
             boolean checkClient) throws Exception {
 
@@ -203,7 +204,7 @@ public class CertChecking {
         String[] allServerAliases = km.getServerAliases(keyAlg, null);
         String[] allClientAliases = km.getClientAliases(keyAlg, null);
 
-        if ("true".equals(disabled)) {
+        if ("false".equals(enabled) && kmAlg.equals("SunX509")) {
             // Initial order alias returned
             assertEquals(USAGE_MISMATCH_ALIAS,
                     normalizeAlias(chosenServerAlias));
@@ -259,7 +260,7 @@ public class CertChecking {
         }
     }
 
-    private static void issuerTestCase(String disabled, String kmAlg,
+    private static void issuerTestCase(String enabled, String kmAlg,
             String keyAlg, Principal[] issuers, boolean found) throws Exception {
 
         X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
@@ -278,7 +279,7 @@ public class CertChecking {
         String[] allClientAliases = km.getClientAliases(keyAlg, issuers);
 
         if (found) {
-            if ("true".equals(disabled)) {
+            if ("false".equals(enabled) && kmAlg.equals("SunX509")) {
                 chosenAliases.forEach(a ->
                         assertEquals(USAGE_MISMATCH_ALIAS, normalizeAlias(a)));
 

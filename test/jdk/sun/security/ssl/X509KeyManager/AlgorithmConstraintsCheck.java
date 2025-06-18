@@ -51,8 +51,9 @@ import sun.security.x509.X500Name;
 
 /*
  * @test
- * @bug 8170706
- * @summary Support algorithm constraints in SunX509 key manager
+ * @bug 8359956
+ * @summary Support algorithm constraints and certificate checks in SunX509
+ *          key manager
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
@@ -72,12 +73,12 @@ public class AlgorithmConstraintsCheck {
             throw new RuntimeException("Wrong number of arguments");
         }
 
-        String disabled = args[0];
+        String enabled = args[0];
         String kmAlg = args[1];
         String certSignatureAlg = args[2];
 
         System.setProperty(
-                "jdk.tls.keymanager.disableCertChecking", disabled);
+                "jdk.tls.SunX509keymanager.certSelectionChecking", enabled);
         SecurityUtils.addToDisabledTlsAlgs(certSignatureAlg);
 
         X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
@@ -94,7 +95,7 @@ public class AlgorithmConstraintsCheck {
         String serverAliasPrefix = kmAlg.equalsIgnoreCase("PKIX") ? "1.0." : "";
         String clientAliasPrefix = kmAlg.equalsIgnoreCase("PKIX") ? "2.0." : "";
 
-        if ("true".equals(disabled)) {
+        if ("false".equals(enabled) && kmAlg.equals("SunX509")) {
             assertEquals(CERT_ALIAS, normalizeAlias(serverAlias));
             assertEquals(CERT_ALIAS, normalizeAlias(engineServerAlias));
             assertEquals(CERT_ALIAS, normalizeAlias(clientAlias));

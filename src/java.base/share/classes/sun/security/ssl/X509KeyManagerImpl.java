@@ -35,7 +35,6 @@ import java.security.KeyStore.PrivateKeyEntry;
 import java.security.KeyStoreException;
 import java.security.Principal;
 import java.security.PrivateKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,6 +82,11 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         this.builders = builders;
         uidCounter = new AtomicLong();
         entryCacheMap = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    boolean isCheckingDisabled() {
+        return false;
     }
 
     // LinkedHashMap with a max size of 10

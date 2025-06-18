@@ -235,7 +235,7 @@ public class ShortRSAKeyWithinTLS {
     public static void main(String[] args) throws Exception {
         // Disable KeyManager's algorithm constraints checking.
         System.setProperty(
-                "jdk.tls.keymanager.disableCertChecking", "true");
+                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
 
         if (debug) {
             System.setProperty("javax.net.debug", "all");

@@ -53,10 +53,8 @@ import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
 /*
- * Layer that adds algorithm constraints and certificate
- * checking to a key manager. Checks can be disabled by setting
- * "jdk.tls.keymanager.disableCertChecking" system property to "true"
- * before creating a KeyManager object.
+ * Layer that adds algorithm constraints and certificate checking to a key
+ * manager.
  */
 
 abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
@@ -65,9 +63,10 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
     private final boolean checksDisabled;
 
     protected X509KeyManagerCertChecking() {
-        checksDisabled = "true".equals(System.getProperty(
-                "jdk.tls.keymanager.disableCertChecking"));
+        checksDisabled = isCheckingDisabled();
     }
+
+    abstract boolean isCheckingDisabled();
 
     // Gets algorithm constraints of the socket.
     protected AlgorithmConstraints getAlgorithmConstraints(Socket socket) {

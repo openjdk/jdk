@@ -50,15 +50,18 @@ import javax.security.auth.x500.X500Principal;
 
 /**
  * An implementation of X509KeyManager backed by a KeyStore.
- *
+ * <p>
  * The backing KeyStore is inspected when this object is constructed.
  * All key entries containing a PrivateKey and a non-empty chain of
  * X509Certificate are then copied into an internal store. This means
  * that subsequent modifications of the KeyStore have no effect on the
  * X509KeyManagerImpl object.
- *
+ * <p>
  * Note that this class assumes that all keys are protected by the same
  * password.
+ * <p>
+ * Algorithm constraints and certificate checks can be disabled by setting
+ * "jdk.tls.SunX509keymanager.certSelectionChecking" system property to "false".
  *
  */
 
@@ -69,6 +72,12 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
      * Map: String(alias) -> X509Credentials(credentials)
      */
     private final Map<String, X509Credentials> credentialsMap;
+
+    @Override
+    boolean isCheckingDisabled() {
+        return "false".equalsIgnoreCase(System.getProperty(
+                "jdk.tls.SunX509keymanager.certSelectionChecking", "true"));
+    }
 
     /*
      * Basic container for credentials implemented as an inner class.

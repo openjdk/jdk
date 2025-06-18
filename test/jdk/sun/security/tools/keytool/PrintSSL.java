@@ -51,7 +51,7 @@ public class PrintSSL {
     public static void main(String[] args) throws Throwable {
         // Disable KeyManager's algorithm constraints checking.
         System.setProperty(
-                "jdk.tls.keymanager.disableCertChecking", "true");
+                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
 
         Files.deleteIfExists(Paths.get("keystore"));
 

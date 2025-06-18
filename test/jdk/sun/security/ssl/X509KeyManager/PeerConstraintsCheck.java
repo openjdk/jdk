@@ -55,9 +55,9 @@ import sun.security.x509.X500Name;
 
 /*
  * @test
- * @bug 8353113
- * @summary Peer supported certificate signature algorithms are not being
- *          checked with default SunX509 key manager
+ * @bug 8359956
+ * @summary Support algorithm constraints and certificate checks in SunX509
+ *          key manager
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /javax/net/ssl/templates
@@ -103,13 +103,13 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         System.setProperty(
                 "jdk.tls.server.SignatureSchemes", CLIENT_CERT_SIG_SCHEME);
 
-        String disabled = args[0];
+        String enabled = args[0];
         String kmAlg = args[1];
 
         System.setProperty(
-                "jdk.tls.keymanager.disableCertChecking", disabled);
+                "jdk.tls.SunX509keymanager.certSelectionChecking", enabled);
 
-        if ("true".equals(disabled)) {
+        if ("false".equals(enabled) && kmAlg.equals("SunX509")) {
             new PeerConstraintsCheck(kmAlg).run();
         } else {
             runAndCheckException(
