@@ -3019,11 +3019,14 @@ void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIte
 // The outer strip mined loop is initially only partially constructed. In particular Phis are omitted.
 // See comment above: PhaseIdealLoop::create_outer_strip_mined_loop()
 // We're now in the process of finishing the construction of the outer loop. For each Phi in the inner loop, a Phi in
-// the outer loop was created. Sunk Stores cause an extra challenge as, if all Stores in the inner loop were sunk for
-// a particular memory slice, there's no Phi left for that memory slice in the inner loop. So an extra Phi must be added
-// for each chain of sunk Stores for a particular memory slice. If some Stores were sunk and some left in the inner loop,
-// a Phi was already created in the outer loop but its backedge input wasn't wired correctly to the last Store of the
-// chain.
+// the outer loop was just now created. However, Sunk Stores cause an extra challenge:
+// 1) If all Stores in the inner loop were sunk for a particular memory slice, there's no Phi left for that memory
+//    slice in the inner loop any more, and hence we did not yet add a Phi for the outer loop. So an extra Phi
+//    must now be added for each chain of sunk Stores for a particular memory slice.
+// 2) If some Stores were sunk and some left in the inner loop, a Phi was already created in the outer loop but
+//    its backedge input wasn't wired correctly to the last Store of the chain. We had wired the memory state at
+//    the inner loop exit to the Phi backedge, but we should have taken the last Store of the chain instead. We
+//    will now have to fix that too.
 void OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn) {
   IfFalseNode* cle_exit_proj = inner_loop_exit();
 
