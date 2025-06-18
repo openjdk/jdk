@@ -155,6 +155,7 @@ Mutex*   ScratchObjects_lock          = nullptr;
 Mutex*   FinalImageRecipes_lock       = nullptr;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = nullptr;
+Mutex*   NMTRecorder_lock             = nullptr;
 
 #if INCLUDE_JVMCI
 Monitor* JVMCI_lock                   = nullptr;
@@ -296,6 +297,7 @@ void mutex_init() {
   MUTEX_DEFN(NMTQuery_lock                   , PaddedMutex  , safepoint);
   MUTEX_DEFN(NMTCompilationCostHistory_lock  , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(NmtVirtualMemory_lock           , PaddedMutex  , service-4); // Must be lower than G1Mapper_lock used from G1RegionsSmallerThanCommitSizeMapper::commit_regions
+
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
   MUTEX_DEFN(CDSClassFileStream_lock         , PaddedMutex  , safepoint);
@@ -359,6 +361,8 @@ void mutex_init() {
 #endif
   MUTEX_DEFL(JvmtiThreadState_lock          , PaddedMutex  , JvmtiVTMSTransition_lock);   // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFL(SharedDecoder_lock             , PaddedMutex  , NmtVirtualMemory_lock); // Must be lower than NmtVirtualMemory_lock due to MemTracker::print_containing_region
+
+  MUTEX_DEFN(NMTRecorder_lock               , PaddedMutex , nosafepoint);
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();
