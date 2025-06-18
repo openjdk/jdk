@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,6 +25,7 @@
 
 #ifdef _LP64
 
+#include "memory/metaspace.hpp"
 #include "oops/compressedKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -32,15 +33,25 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   char* result = nullptr;
 
-  // Optimize for unscaled encoding; failing that, for zero-based encoding:
-  if (optimize_for_zero_base) {
-    result = reserve_address_space_for_unscaled_encoding(size, aslr);
-    if (result == nullptr) {
-      result = reserve_address_space_for_zerobased_encoding(size, aslr);
-    }
-  } // end: low-address reservation
+  assert(CompressedKlassPointers::narrow_klass_pointer_bits() == 32 ||
+         CompressedKlassPointers::narrow_klass_pointer_bits() == 22, "Rethink if we ever use different nKlass bit sizes");
 
-  // Nothing more to optimize for on x64. If base != 0, we will always emit the full 64-bit immediate.
+  // Unconditionally attempting to reserve in lower 4G first makes always sense:
+  // -CDS -COH: Try to get unscaled mode (zero base, zero shift)
+  // +CDS -COH: No zero base possible (CDS prevents it); but we still benefit from small base pointers (imm32 movabs)
+  // -CDS +COH: No zero base possible (22bit nKlass + zero base zero shift = 4MB encoding range, way too small);
+  //            but we still benefit from small base pointers (imm32 movabs)
+  // +CDS +COH: No zero base possible for multiple reasons (CDS prevents it and encoding range too small);
+  //            but we still benefit from small base pointers (imm32 movabs)
+
+  result = reserve_address_space_below_4G(size, aslr);
+
+  if (result == nullptr && optimize_for_zero_base) {
+    // Failing that, if we are running without CDS, attempt to allocate below 32G.
+    // This allows us to use zero-based encoding with a non-zero shift.
+    result = reserve_address_space_for_zerobased_encoding(size, aslr);
+  }
+
   return result;
 }
 
