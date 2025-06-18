@@ -1046,8 +1046,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     if (failtype != nullptr) {
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != nullptr) {
-        failtype = failtype->join(type2)->is_int();
-        if (failtype->empty()) {
+        if (failtype->filter(type2) == Type::TOP) {
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));

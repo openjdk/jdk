@@ -12862,16 +12862,17 @@ myInit() {
       parameters  uniquely identify the current location
       (where the exception was detected) and allow
       the mapping to source file and line number when that information is
-      available. The <code>exception</code> field identifies the thrown
+      available. The <code>exception</code> parameter identifies the thrown
       exception object. The <code>catch_method</code>
       and <code>catch_location</code> identify the location of the catch clause,
       if any, that handles the thrown exception. If there is no such catch clause,
-      each field is set to 0. There is no guarantee that the thread will ever
+      the <code>catch_method</code> is set to null and the <code>catch_location</code>is set to 0.
+      There is no guarantee that the thread will ever
       reach this catch clause. If there are native methods on the call stack
       between the throw location and the catch clause, the exception may
       be reset by one of those native methods.
-      Similarly, exceptions that are reported as uncaught (<code>catch_klass</code>
-      et al. set to 0) may in fact be caught by native code.
+      Similarly, exceptions that are reported as uncaught (<code>catch_method</code>
+      set to null) may in fact be caught by native code.
       Agents can check for these occurrences by monitoring
       <eventlink id="ExceptionCatch"></eventlink> events.
       Note that finally clauses are implemented as catch and re-throw. Therefore they
@@ -12960,7 +12961,7 @@ myInit() {
       available. For exceptions caught in a Java programming language method, the
       <code>exception</code> object identifies the exception object. Exceptions
       caught in native methods are not necessarily available by the time the
-      exception catch is reported, so the <code>exception</code> field is set
+      exception catch is reported, so the <code>exception</code> parameter is set
       to null.
     </description>
     <origin>jvmdi</origin>
