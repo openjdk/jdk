@@ -40,10 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class ListDragCursor {
-    static Frame testFrame;
-    static Frame instructionsFrame;
-    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
-    static String INSTRUCTIONS = """
+    private static final String INSTRUCTIONS = """
                 1. Move mouse to the TextArea.
                 2. Press the left mouse button.
                 3. Drag mouse to the list.
@@ -52,14 +49,19 @@ public class ListDragCursor {
                 The mouse cursor should appear as an I-beam cursor
                 and should stay the same while dragging across the
                 components. Once you reach the list, release the
-                left mouse button. Immediately after, the cursor
-                should change to a Hand cursor. If true, this test
-                passes.
+                left mouse button. As soon as you release the left
+                mouse button, the cursor should change to a Hand
+                cursor. If true, this test passes.
 
                 The test fails if the cursor updates while dragging
                 over the components before releasing the left
                 mouse button.
                 """;
+
+    private static Frame testFrame;
+    private static Frame instructionsFrame;
+
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
         try {
@@ -71,7 +73,6 @@ public class ListDragCursor {
                 throw new RuntimeException("Test timeout : No action was"
                         + " taken on the test.");
             }
-            System.out.println("Test passed.");
         } finally {
             EventQueue.invokeAndWait(ListDragCursor::disposeFrames);
         }
@@ -110,16 +111,18 @@ public class ListDragCursor {
                 15, 35, TextArea.SCROLLBARS_NONE);
 
         Panel btnPanel = new Panel();
-        Button passBtn = new Button("PASS");
-        Button failBtn = new Button("FAIL");
+        Button passBtn = new Button("Pass");
+        Button failBtn = new Button("Fail");
         btnPanel.add(passBtn);
         btnPanel.add(failBtn);
 
         passBtn.addActionListener(e -> {
             countDownLatch.countDown();
+            System.out.println("Test passed.");
         });
         failBtn.addActionListener(e -> {
-            throw new RuntimeException("Test Failed");
+            countDownLatch.countDown();
+            throw new RuntimeException("Test Failed.");
         });
 
         mainPanel.add(textArea, BorderLayout.CENTER);
