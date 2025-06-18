@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,19 +25,12 @@
 
 /*
  * @test
- * @bug 8173609
- * @summary printing of modules
- * @compile/ref=module-info.out -Xprint p/P.java module-info.java
+ * @bug 8359596
+ * @summary Verify behavior when both "-Xlint:options" and "-Xlint:-options" are given
+ * @compile/fail/ref=LintOptions.out -Werror -XDrawDiagnostics -source 21 -target 21                                LintOptions.java
+ * @compile/fail/ref=LintOptions.out -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options                 LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21                -Xlint:-options LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options -Xlint:-options LintOptions.java
  */
-
-/**
- * Printing of modules
- */
-@Deprecated
-module printing {
-    requires static transitive java.compiler;
-    exports p to m.m1, m.m2;
-    opens p to m.m1, m.m2;
-    uses p.P;
-    provides p.P with p.P.P1, p.P.P2;
+class LintOptions {
 }
