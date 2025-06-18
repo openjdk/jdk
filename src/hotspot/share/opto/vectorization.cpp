@@ -797,13 +797,14 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     Node* initL  = new ConvI2LNode(init);
     Node* limitL = new ConvI2LNode(limit);
     Node* iv_strideL = igvn.longcon(_vloop.iv_stride());
+    Node* abs_iv_strideL = igvn.longcon(abs(_vloop.iv_stride()));
 
-    // Compute k = (limit - init - 1) / iv_stride   (if iv_stride >= 0)
-    //         k = (init - limit - 1) / iv_stride   (if iv_stride <= 0)
+    // Compute k = (limit - init - 1) /     iv_stride    (if iv_stride >= 0)
+    //         k = (init - limit - 1) / abs(iv_stride)   (if iv_stride <= 0)
     Node* diffL = (_vloop.iv_stride() > 0) ? new SubLNode(limitL, initL)
                                            : new SubLNode(initL, limitL);
     Node* diffL_m1 = new AddLNode(diffL, igvn.longcon(-1));
-    Node* k = new DivLNode(nullptr, diffL_m1, iv_strideL);
+    Node* k = new DivLNode(nullptr, diffL_m1, abs_iv_strideL);
 
     // Compute limX = init + k * iv_stride
     Node* k_mul_iv_stride = new MulLNode(k, iv_strideL);
