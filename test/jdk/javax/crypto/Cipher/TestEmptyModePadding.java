@@ -66,7 +66,7 @@ public class TestEmptyModePadding {
 
         for (String t : testTransformations) {
             test(t, provider);
-        };
+        }
     }
 
     private static void test(String t, Provider p) throws Exception {
