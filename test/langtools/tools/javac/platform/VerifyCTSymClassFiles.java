@@ -27,12 +27,15 @@
  * @summary Verify classfile inside ct.sym
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.platform
  *          jdk.compiler/com.sun.tools.javac.util:+open
  * @build toolbox.ToolBox VerifyCTSymClassFiles
  * @run main VerifyCTSymClassFiles
  */
+
+import com.sun.tools.javac.file.FSInfo;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -60,7 +63,12 @@ public class VerifyCTSymClassFiles {
             //no ct.sym, nothing to check:
             return ;
         }
-        try (FileSystem fs = FileSystems.newFileSystem(ctSym)) {
+        // Expected to always be a ZIP filesystem.
+        try (FileSystem fs = FileSystems.newFileSystem(ctSym, FSInfo.readOnlyJarFSEnv(null))) {
+            // Check that the file system is read only (not true if not a zip file system).
+            if (!fs.isReadOnly()) {
+                throw new AssertionError("Expected read-only file system");
+            }
             Files.walk(fs.getRootDirectories().iterator().next())
                  .filter(p -> Files.isRegularFile(p))
                  .forEach(p -> checkClassFile(p));
