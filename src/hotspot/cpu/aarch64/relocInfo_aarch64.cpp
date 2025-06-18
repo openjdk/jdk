@@ -81,11 +81,19 @@ void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_call_at(addr())) {
     NativeCall* call = nativeCall_at(addr());
-    call->set_destination(x);
+    CodeBlob* cb = CodeCache::find_blob(addr());
+    if (cb->is_nmethod()) {
+      // Relocation for trampoline stub will fix its own destination
+      call->set_destination_mt_safe(x, false);
+      assert(pd_call_destination(addr()) == x || pd_call_destination(addr()) == call->get_trampoline(), "fail in reloc");
+    } else {
+      call->set_destination(x);
+      assert(pd_call_destination(addr()) == x, "fail in reloc");
+    }
   } else {
     MacroAssembler::pd_patch_instruction(addr(), x);
+    assert(pd_call_destination(addr()) == x, "fail in reloc");
   }
-  assert(pd_call_destination(addr()) == x, "fail in reloc");
 }
 
 void trampoline_stub_Relocation::pd_fix_owner_after_move() {

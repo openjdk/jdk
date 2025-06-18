@@ -410,19 +410,6 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
     callee = addr() + offset;
   }
 
-// We must check that the new offset can still fit in the instruction
-// for architectures that have small branch ranges
-#if defined(AARCH64) || defined(RISV)
-  if (!Assembler::reachable_from_branch_at(addr(), callee)) {
-    if (NativeCall::is_call_at(addr())) {
-      NativeCall* call = nativeCall_at(addr());
-      address trampoline = call->get_trampoline();
-      guarantee(trampoline != nullptr, "Must have trampoline for far call");
-      callee = trampoline;
-    }
-  }
-#endif
-
   // Reassert the callee address, this time in the new copy of the code.
   pd_set_call_destination(callee);
 }
