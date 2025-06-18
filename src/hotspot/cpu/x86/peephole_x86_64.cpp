@@ -293,9 +293,7 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   // If this is a spill, move lea_address and decode_address one node further up to the
   // grandparents of lea_derived_oop and decode respectively. This lets us look through
   // the indirection of the spill.
-  MachNode* decode_spill;
   if (is_spill) {
-    decode_spill = decode_address->as_Mach();
     decode_address = decode_address->in(1);
     lea_address = lea_address->in(1);
   }
@@ -356,11 +354,14 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   }
 
   // Remove spill for the decode if the spill node does not have any other uses.
-  if (is_spill && decode_spill->outcnt() == 1 && block->contains(decode_spill)) {
-    decode_spill->set_removed();
-    block->find_remove(decode_spill);
-    cfg_->map_node_to_block(decode_spill, nullptr);
-    decode_spill->del_req(1);
+  if (is_spill) {
+    MachNode* decode_spill;
+    if (decode_spill->outcnt() == 1 && block->contains(decode_spill)) {
+      decode_spill->set_removed();
+      block->find_remove(decode_spill);
+      cfg_->map_node_to_block(decode_spill, nullptr);
+      decode_spill->del_req(1);
+    }
   }
 
   // Remove the decode
