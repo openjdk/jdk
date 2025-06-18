@@ -618,20 +618,27 @@ public class TestAliasingFuzzer {
 
                     @Run(test = "$test")
                     @Warmup(100)
-                    public static void $run() {
-                        $iterations++;
+                    public static void $run(RunInfo info) {
+
+                        // Once warmup is over (100x), repeat 10x to get reasonable coverage of the
+                        // randomness in the tests.
+                        int reps = info.isWarmUp() ? 10 : 1;
+                        for (int r = 0; r < reps; r++) {
+
+                            $iterations++;
                     """,
                     generateContainerInit(containerNames),
                     generateContainerAliasing(containerNames, $("iterations")),
                     generateRanges(),
                     generateBoundsAndInvariants(indexFormNames, invarRest),
                     """
-                    // Run test and compare with interpreter results.
+                            // Run test and compare with interpreter results.
                     """,
                     generateCallMethod("result", $("test"), "test"),
                     generateCallMethod("expected", $("reference"), "reference"),
                     """
-                    Verify.checkEQ(result, expected);
+                            Verify.checkEQ(result, expected);
+                        } // end reps
                     } // end $run
 
                     @Test
@@ -826,8 +833,27 @@ public class TestAliasingFuzzer {
                 let("size", size),
                 """
                 int middle = RANDOM.nextInt(#size / 3, #size * 2 / 3);
-                var r0 = new IndexForm.Range(0, middle);
-                var r1 = new IndexForm.Range(middle, #size);
+                int rnd = Math.min(256, #size / 10);
+                int range = #size / 3 - RANDOM.nextInt(rnd);
+                """,
+                (RANDOM.nextBoolean()
+                 // Maximal range
+                 ?  """
+                    var r0 = new IndexForm.Range(0, middle);
+                    var r1 = new IndexForm.Range(middle, #size);
+                    """
+                 // Same size range
+                 // If the accesses run towards each other, and the runtime
+                 // check is too relaxed, we may fail the checks even though
+                 // there is no overlap. Having same size ranges makes this
+                 // more likely, and we could detect it if we get multiversioning
+                 // unexpectedly.
+                 :  """
+                    var r0 = new IndexForm.Range(middle - range, middle);
+                    var r1 = new IndexForm.Range(middle, middle + range);
+                    """
+                ),
+                """
                 if (RANDOM.nextBoolean()) {
                     var tmp = r0;
                     r0 = r1;
@@ -854,11 +880,36 @@ public class TestAliasingFuzzer {
                 """
             ));
 
+            var templateSmallOverlapRanges = Template.make(() -> body(
+                // Idea: same size ranges, with size "range". A small overlap,
+                //       so that bad runtime checks would create wrong results.
+                let("size", size),
+                """
+                int rnd = Math.min(256, #size / 10);
+                int middle = #size / 2 + RANDOM.nextInt(-rnd, rnd);
+                int range = #size / 3 - RANDOM.nextInt(rnd);
+                int overlap = RANDOM.nextInt(-rnd, rnd);
+                var r0 = new IndexForm.Range(middle - range + overlap, middle + overlap);
+                var r1 = new IndexForm.Range(middle, middle + range);
+                if (RANDOM.nextBoolean()) {
+                    var tmp = r0;
+                    r0 = r1;
+                    r1 = tmp;
+                }
+                """
+                // Can this go out of bounds? Assume worst case on lower end:
+                //   middle         - range          + overlap
+                //   (size/2 - rnd) - (size/3 - rnd) - rnd
+                //   size/6 - rnd
+                // -> safe with rnd = size/10
+            ));
+
             var templateAnyRanges = Template.make(() -> body(
-                switch(RANDOM.nextInt(3)) {
+                switch(RANDOM.nextInt(4)) {
                     case 0 -> templateSplitRanges.asToken();
                     case 1 -> templateWholeRanges.asToken();
                     case 2 -> templateRandomRanges.asToken();
+                    case 3 -> templateSmallOverlapRanges.asToken();
                     default -> throw new RuntimeException("impossible");
                 }
             ));
