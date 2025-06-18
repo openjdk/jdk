@@ -2546,7 +2546,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   int opc = in->Opcode();
 
   // For shorts and chars, check an additional set of nodes.
-  if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
+  if (type->isa_int() == TypeInt::SHORT || type->isa_int() == TypeInt::CHAR) {
     switch (opc) {
     case Op_ReverseBytesS:
     case Op_ReverseBytesUS:
@@ -2554,6 +2554,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
     }
   }
 
+  // Can be truncated:
   switch (opc) {
   case Op_AddI:
   case Op_SubI:
@@ -2565,10 +2566,13 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   }
 
 #ifdef ASSERT
+  // While shifts have subword vectorized forms, they require knowing the precise type of input loads so they are
+  // considered non-truncating.
   if (VectorNode::is_shift_opcode(opc)) {
     return false;
   }
 
+  // Cannot be truncated:
   switch (opc) {
   case Op_AbsI:
   case Op_DivI:
@@ -2582,9 +2586,12 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
   case Op_CountTrailingZerosI:
-    break;
+    return false;
   default:
-    assert(false, "Unexpected node: %s", NodeClassNames[in->Opcode()]);
+    // If this assert it hit, that means that we need to determine if the node can be safely truncated,
+    // and then add it to the list of truncating nodes or the list of non-truncating ones just above.
+    // In product, we just return false, which is always correct.
+    assert(false, "Unexpected node in SuperWord truncation: %s", NodeClassNames[in->Opcode()]);
   }
 #endif
 
