@@ -51,9 +51,9 @@ public class JavaRuntimeURLConnection extends URLConnection {
     //
     // It is important to note that all of this information comes from the given
     // URL's path part, and there's no requirement for there to be distinct rules
-    // about percent encoding. However, we choose to treat the module name is if
-    // it were a URL authority (since Java package/module names are historically
-    // strongly associated with internet domain names).
+    // about percent encoding, and it is likely that any differences between how
+    // module names and resource names are treated is unintentional. The rules
+    // about percent encoding may well be tightened up in the future.
     //
     // The module name is not percent-decoded, and can be empty.
     private final String module;
@@ -65,7 +65,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
 
     JavaRuntimeURLConnection(URL url) throws IOException {
         super(url);
-        // TODO: Reject module names which appear to be using percent encoding.
+        // TODO: Allow percent encoding in module names.
         // TODO: Consider rejecting URLs with fragments, queries or authority.
         String urlPath = url.getPath();
         if (urlPath.isEmpty() || urlPath.charAt(0) != '/') {
@@ -134,7 +134,8 @@ public class JavaRuntimeURLConnection extends URLConnection {
             // Nothing to decode (overwhelmingly common case).
             return path;
         }
-        // TODO: Reject over-encoded paths, especially %2F (/) and %24 ($).
+        // TODO: Maybe reject over-encoded paths here to reduce obfuscation
+        //  (especially %2F (/) and %24 ($), but probably just all ASCII).
         try {
             return ParseUtil.decode(path);
         } catch (IllegalArgumentException e) {
