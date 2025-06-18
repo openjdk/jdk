@@ -696,31 +696,6 @@ public class DescriptorSupport
         descriptorMap.remove(fieldName);
     }
 
-    /**
-     * Compares this descriptor to the given object.  The objects are equal if
-     * the given object is also a Descriptor, and if the two Descriptors have
-     * the same field names (possibly differing in case) and the same
-     * associated values.  The respective values for a field in the two
-     * Descriptors are equal if the following conditions hold:
-     *
-     * <ul>
-     * <li>If one value is null then the other must be too.</li>
-     * <li>If one value is a primitive array then the other must be a primitive
-     * array of the same type with the same elements.</li>
-     * <li>If one value is an object array then the other must be too and
-     * {@link java.util.Arrays#deepEquals(Object[],Object[]) Arrays.deepEquals}
-     * must return true.</li>
-     * <li>Otherwise {@link Object#equals(Object)} must return true.</li>
-     * </ul>
-     *
-     * @param o the object to compare with.
-     *
-     * @return {@code true} if the objects are the same; {@code false}
-     * otherwise.
-     *
-     */
-    // Note: this Javadoc is copied from javax.management.Descriptor
-    //       due to 6369229.
     @Override
     public synchronized boolean equals(Object o) {
         if (o == this)
@@ -732,28 +707,6 @@ public class DescriptorSupport
         return new ImmutableDescriptor(descriptorMap).equals(o);
     }
 
-    /**
-     * <p>Returns the hash code value for this descriptor.  The hash
-     * code is computed as the sum of the hash codes for each field in
-     * the descriptor.  The hash code of a field with name {@code n}
-     * and value {@code v} is {@code n.toLowerCase().hashCode() ^ h}.
-     * Here {@code h} is the hash code of {@code v}, computed as
-     * follows:</p>
-     *
-     * <ul>
-     * <li>If {@code v} is null then {@code h} is 0.</li>
-     * <li>If {@code v} is a primitive array then {@code h} is computed using
-     * the appropriate overloading of {@code java.util.Arrays.hashCode}.</li>
-     * <li>If {@code v} is an object array then {@code h} is computed using
-     * {@link java.util.Arrays#deepHashCode(Object[]) Arrays.deepHashCode}.</li>
-     * <li>Otherwise {@code h} is {@code v.hashCode()}.</li>
-     * </ul>
-     *
-     * @return A hash code value for this object.
-     *
-     */
-    // Note: this Javadoc is copied from javax.management.Descriptor
-    //       due to 6369229.
     @Override
     public synchronized int hashCode() {
         final int size = descriptorMap.size();
