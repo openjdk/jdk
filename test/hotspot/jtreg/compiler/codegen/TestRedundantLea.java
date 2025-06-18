@@ -134,17 +134,11 @@ public class TestRedundantLea {
             }
         }
 
-        int i = 0;
         Scenario[] scenarios = new Scenario[2];
-        for (boolean negativeTest : new boolean[] {false, true}) {
-            if (negativeTest) {
-                scenarios[i] = new Scenario(i, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
-            } else {
-                scenarios[i] = new Scenario(i, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+OptoPeephole");
-            }
-            i += 1;
-        }
-
+        // Scenario for the negative test without peephole optimizations.
+        scenarios[0] = new Scenario(0, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
+        // Scenario for the positive test with +OptoPeephole (the default on x64).
+        scenarios[1] = new Scenario(1);
         framework.addScenarios(scenarios).start();
     }
 }
