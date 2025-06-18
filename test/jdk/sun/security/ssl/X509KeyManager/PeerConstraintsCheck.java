@@ -203,7 +203,6 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         };
 
         ctx.init(kmf.getKeyManagers(), trustAll, null);
-
         return ctx;
     }
 

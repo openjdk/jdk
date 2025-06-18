@@ -111,7 +111,6 @@ public class AlgorithmConstraintsCheck {
     // PKIX KeyManager adds a cache prefix to an alias.
     private static String normalizeAlias(String alias) {
         return alias.substring(alias.lastIndexOf(".") + 1);
-
     }
 
     private static X509KeyManager getKeyManager(String kmAlg,
