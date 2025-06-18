@@ -82,6 +82,9 @@ class BSMAttributeEntry {
   u2 _bootstrap_method_index;
   u2 _argument_count;
 
+  // The argument indexes are stored right after the object, in a contiguous array.
+  // [ bsmi_0 argc_0 arg_00 arg_01 ... arg_0N bsmi_1 argc_1 arg_10 ... arg_1N ... ]
+  // So in order to find the argument array, jump over ourselves.
   const u2* argument_indexes() const {
     return reinterpret_cast<const u2*>(this + 1);
   }
