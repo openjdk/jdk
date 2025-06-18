@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class HostHeaderTest {
 
-    private static final String SERVER_CTX_ROOT = "/8359709";
+    private static final String SERVER_CTX_ROOT = "/8359709/";
     private static final boolean allowsHostHeader = Boolean.getBoolean("sun.net.http.allowRestrictedHeaders");
 
     private static HttpServer server;
