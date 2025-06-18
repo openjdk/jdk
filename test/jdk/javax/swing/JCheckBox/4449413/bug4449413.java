@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,8 +189,8 @@ public class bug4449413 extends JFrame {
         };
 
         b.setOpaque(true);
-        b.setBackground(Color.black);
-        b.setForeground(Color.white);
+        b.setBackground(Color.red);
+        b.setForeground(Color.blue);
         b.setEnabled(enabled == 1);
         b.setSelected(true);
         return b;
