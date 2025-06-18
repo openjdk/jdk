@@ -21,12 +21,11 @@
  * questions.
  */
 
-
-
 /*
  * @test
  *
- * @summary
+ * @bug 8316694
+ * @summary Verify that nmethod relocation posts the correct JVMTI events
  *
  * @library /vmTestbase /test/lib
  * @build jdk.test.whitebox.WhiteBox

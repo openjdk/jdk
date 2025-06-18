@@ -89,8 +89,8 @@ callbackCompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
         return;
     }
 
-    printf("<COMPILED_METHOD_LOAD>:   name: %s, code: 0x%016lx\n",
-        name, (unsigned long)code_addr);
+    printf("<COMPILED_METHOD_LOAD>:   name: %s, code: 0x%016" PRIxPTR "\n",
+        name, (uintptr_t)code_addr);
     fflush(stdout);
 }
 
@@ -108,8 +108,8 @@ callbackCompiledMethodUnload(jvmtiEnv* jvmti, jmethodID method,
         fflush(stdout);
         return;
     }
-    printf("<COMPILED_METHOD_UNLOAD>:   name: %s, code: 0x%016lx\n",
-        name, (unsigned long)code_addr);
+    printf("<COMPILED_METHOD_UNLOAD>:   name: %s, code: 0x%016" PRIxPTR "\n",
+        name, (uintptr_t)code_addr);
     fflush(stdout);
 }
 
