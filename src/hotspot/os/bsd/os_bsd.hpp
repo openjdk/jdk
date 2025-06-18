@@ -64,6 +64,10 @@ class os::Bsd {
   static uid_t get_process_uid(pid_t pid);
   static bool is_process_root(pid_t pid);
 
+#ifdef __APPLE__
+  static int get_user_tmp_dir_macos(const char* user, int vmid, char *output_buffer, int buffer_size /* = PATH_MAX */);
+#endif
+
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 
