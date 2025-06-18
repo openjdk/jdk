@@ -120,7 +120,7 @@ public class SetLabelTest {
         });
         frame.setMenuBar(mb);
         frame.setSize(300, 200);
-        frame.setLocation(500,500);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
