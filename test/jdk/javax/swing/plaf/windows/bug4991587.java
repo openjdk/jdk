@@ -34,14 +34,11 @@
 
 import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.Rectangle;
 
-import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
-import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.border.LineBorder;
 
 public class bug4991587 {
     static final String INSTRUCTIONS = """
@@ -68,27 +65,14 @@ public class bug4991587 {
         f.setSize(400, 100);
 
         JButton button1 = new JButton("\u0114 Enabled JButton");
-        button1.setUI(new MyButtonUI());
+        button1.setBorder(new LineBorder(Color.BLUE));
         f.add(button1);
 
         JButton button2 = new JButton("\u0114 Disabled JButton");
         button2.setEnabled(false);
-        button2.setUI(new MyButtonUI());
+        button2.setBorder(new LineBorder(Color.BLUE));
         f.add(button2);
 
         return f;
-    }
-
-    static class MyButtonUI extends BasicButtonUI {
-        protected void paintText(Graphics g, AbstractButton b,
-                                 Rectangle textRect, String text) {
-            g.setColor(Color.blue);
-            g.drawRect(textRect.x,
-                    textRect.y,
-                    textRect.width + 1, // add 1 for the shadow, otherwise it
-                                        // will be painted over the textRect
-                    textRect.height);
-            super.paintText(g, b, textRect, text);
-        }
     }
 }
