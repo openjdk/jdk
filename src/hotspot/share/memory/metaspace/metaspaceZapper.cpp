@@ -30,12 +30,7 @@
 
 namespace metaspace {
 
-void Zapper::zap_memory(MetaWord* start, size_t word_size) {
-  assert(start != nullptr && word_size > 0, "Sanity");
-  assert(is_aligned(start, AllocationAlignmentByteSize), "Sanity");
-  for (size_t pos = 0; pos < word_size; pos ++) {
-    zap_location(start + pos);
-  }
-}
+// Pre C++17, we need to define static constexpr members
+constexpr uint64_t Zapper::zap_pattern;
 
 } // namespace metaspace

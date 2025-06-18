@@ -128,7 +128,7 @@ private:
 #ifdef ASSERT
   static void zap_block(Block* b, size_t word_size) {
     if (word_size > 1) { // 1-word-sized blocks have no space for a canary
-      Zapper::zap_memory(b->base() + 1, word_size - 1);
+      Zapper::zap_payload(b, word_size);
     }
   }
   static bool check_block_zap(const Block* b, size_t word_size) {

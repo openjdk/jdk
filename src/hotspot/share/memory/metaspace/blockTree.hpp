@@ -113,8 +113,7 @@ class BlockTree: public CHeapObj<mtMetaspace> {
     void zap() {
       // Zap first word of header and payload that follows
       Zapper::zap_location(&_canary);
-      Zapper::zap_memory(base() + node_header_wordsize,
-                         _word_size - node_header_wordsize);
+      Zapper::zap_payload(this, _word_size);
     }
     bool check_zap() const {
       return Zapper::is_zapped_location(&_canary) &&
