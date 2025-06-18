@@ -53,15 +53,9 @@ public class SigTestDriver {
         switch (signame) {
             case "SIGWAITING":
             case "SIGKILL":
-            case "SIGSTOP": {
-                throw new SkippedException("signals SIGWAITING, SIGKILL and SIGSTOP can't be tested");
-            }
+            case "SIGSTOP":
             case "SIGUSR2": {
-                if (Platform.isLinux()) {
-                    throw new SkippedException("SIGUSR2 can't be tested on Linux");
-                } else if (Platform.isOSX()) {
-                    throw new SkippedException("SIGUSR2 can't be tested on OS X");
-                }
+                throw new SkippedException("signals SIGWAITING, SIGKILL, SIGSTOP and SIGUSR2 can't be tested");
             }
         }
 
