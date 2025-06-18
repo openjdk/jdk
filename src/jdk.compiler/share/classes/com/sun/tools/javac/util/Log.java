@@ -170,8 +170,8 @@ public class Log extends AbstractLog {
                 boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?       // is the warning not enabled by default?
                   lint.isEnabled(category) :                            // then emit if the category is enabled
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
-                    !lint.isSuppressed(category) :                          // ...suppression happens via @SuppressWarnings
-                    !options.isExplicitlyDisabled(Option.XLINT, category);  // ...suppression happens via -Xlint:-category
+                    !lint.isSuppressed(category) :                      // ...suppression happens via @SuppressWarnings
+                    !options.isDisabled(Option.XLINT, category);        // ...suppression happens via -Xlint:-category
                 if (!emit)
                     return;
             }
