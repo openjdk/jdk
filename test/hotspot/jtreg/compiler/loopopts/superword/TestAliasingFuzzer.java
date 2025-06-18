@@ -209,7 +209,8 @@ public class TestAliasingFuzzer {
             "-XX:" + randomPlusMinus(5, 1) + "UseAutoVectorizationPredicate",
             "-XX:" + randomPlusMinus(5, 1) + "LoopMultiversioningOptimizeSlowLoop",
             // Either way is ok.
-            "-XX:" + randomPlusMinus(1, 1) + "UseCompactObjectHeaders"
+            "-XX:" + randomPlusMinus(1, 1) + "UseCompactObjectHeaders",
+            "-XX:SuperWordAutomaticAlignment=" + RANDOM.nextInt(0,3)
         };
     }
 

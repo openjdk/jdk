@@ -364,6 +364,30 @@ class TestMemorySegmentAliasingImpl {
             test_fill_byte_sameMS_noalias(A, A, invar1, invar2, limit);
             reference_fill_byte_sameMS_noalias(A_REFERENCE, A_REFERENCE, invar1, invar2, limit);
         });
+        referenceTests.put("test_fill_byte_sameMS_maybeAlias", () -> {
+            // The accesses either start at the middle and go out,
+            // or start from opposite sides and meet in the middle.
+            // In the middle, sometimes we overlap and sometimes not.
+            //      <------|------>
+            //      ------>|<------
+            //
+            // This tests that the checks we emit are not too relaxed.
+            int middle = BACKING_SIZE / 2 + RANDOM.nextInt(-256, 256);
+            int limit = BACKING_SIZE / 3 + RANDOM.nextInt(256);
+            int invar1 = middle + RANDOM.nextInt(-256, 256);
+            int invar2 = middle + RANDOM.nextInt(-256, 256);
+            // Are the bounds safe? Assume extreme values:
+            // invar1 = 8k/2 + 256 + 256
+            // limit = 8k/3 + 256
+            // invar1 + limit = 8k * 5/6 + 3 * 256
+            //                = 8k * 5/6 + 3/4 * 1k = 7.41k < 8k
+            if (RANDOM.nextBoolean()) {
+                invar1 -= limit;
+                invar2 += limit;
+            }
+            test_fill_byte_sameMS_maybeAlias(A, A, invar1, invar2, limit);
+            reference_fill_byte_sameMS_maybeAlias(A_REFERENCE, A_REFERENCE, invar1, invar2, limit);
+        });
         referenceTests.put("test_fill_int_sameMS_alias", () -> {
             int invar1 = RANDOM.nextInt(64);
             int invar2 = RANDOM.nextInt(64);
@@ -532,10 +556,11 @@ class TestMemorySegmentAliasingImpl {
                  "test_int_to_long_noaliasing",
                  "test_fill_byte_sameMS_alias",
                  "test_fill_byte_sameMS_noalias",
+                 "test_fill_byte_sameMS_maybeAlias",
                  "test_fill_int_sameMS_alias",
                  "test_fill_int_sameMS_noalias",
                  "test_fill_int_sameMS_maybeAlias"})
-    void runTests() {
+    void runTests(RunInfo info) {
         for (Map.Entry<String,TestFunction> entry : goldTests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
@@ -552,22 +577,28 @@ class TestMemorySegmentAliasingImpl {
                 throw new RuntimeException("Verify failed for " + name, e);
             }
         }
-        for (Map.Entry<String,TestFunction> entry : referenceTests.entrySet()) {
-            String name = entry.getKey();
-            TestFunction test = entry.getValue();
-            // Init data for test and reference
-            init();
-            initReference();
-            // Run test and reference
-            test.run();
-            // Capture results from test and reference
-            Object result = snapshot();
-            Object expected = snapshotReference();
-            // Compare expected and new result
-            try {
-                Verify.checkEQ(expected, result);
-            } catch (VerifyException e) {
-                throw new RuntimeException("Verify failed for " + name, e);
+
+        // Once warmup is over (100x), repeat 10x to get reasonable coverage of the
+        // randomness in the tests.
+        int reps = info.isWarmUp() ? 10 : 1;
+        for (int r = 0; r < reps; r++) {
+            for (Map.Entry<String,TestFunction> entry : referenceTests.entrySet()) {
+                String name = entry.getKey();
+                TestFunction test = entry.getValue();
+                // Init data for test and reference
+                init();
+                initReference();
+                // Run test and reference
+                test.run();
+                // Capture results from test and reference
+                Object result = snapshot();
+                Object expected = snapshotReference();
+                // Compare expected and new result
+                try {
+                    Verify.checkEQ(expected, result);
+                } catch (VerifyException e) {
+                    throw new RuntimeException("Verify failed for " + name, e);
+                }
             }
         }
     }
@@ -706,6 +737,32 @@ class TestMemorySegmentAliasingImpl {
 
     @DontCompile
     static void reference_fill_byte_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
+        for (long i = 0; i < limit; i++) {
+            a.set(ValueLayout.JAVA_BYTE, invar1 + i, (byte)0xa);
+            b.set(ValueLayout.JAVA_BYTE, invar2 - i, (byte)0xb);
+        }
+    }
+
+    @Test
+    // @IR(counts = {IRNode.STORE_VECTOR,  "> 0"},
+    //     phase = CompilePhase.PRINT_IDEAL,
+    //     applyIfPlatform = {"64-bit", "true"},
+    //     applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    //
+    // FAILS: but only on "native" and "byte-buffer-direct"
+    //        The issue is that one of the VPointers is invalid.
+    //
+    // Note: we may or may not use multiversioning, depending if we alias or not at runtime.
+    static void test_fill_byte_sameMS_maybeAlias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
+        for (long i = 0; i < limit; i++) {
+            a.set(ValueLayout.JAVA_BYTE, invar1 + i, (byte)0xa);
+            b.set(ValueLayout.JAVA_BYTE, invar2 - i, (byte)0xb);
+        }
+    }
+
+    @DontCompile
+    static void reference_fill_byte_sameMS_maybeAlias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
         for (long i = 0; i < limit; i++) {
             a.set(ValueLayout.JAVA_BYTE, invar1 + i, (byte)0xa);
             b.set(ValueLayout.JAVA_BYTE, invar2 - i, (byte)0xb);
