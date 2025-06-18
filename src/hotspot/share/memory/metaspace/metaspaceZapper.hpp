@@ -38,6 +38,7 @@ public:
 
   static void zap_memory(MetaWord* start, size_t word_size);
 
+  static void zap_location(MetaWord* p) { ((uintptr_t*)p)[0] = zap_pattern; }
   static bool is_zapped_location(const MetaWord* p) { return ((uintptr_t*)p)[0] == zap_pattern; }
 
 };

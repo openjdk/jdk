@@ -34,7 +34,7 @@ void Zapper::zap_memory(MetaWord* start, size_t word_size) {
   assert(start != nullptr && word_size > 0, "Sanity");
   assert(is_aligned(start, AllocationAlignmentByteSize), "Sanity");
   for (size_t pos = 0; pos < word_size; pos ++) {
-    ((uintptr_t*)start)[pos] = zap_pattern;
+    zap_location(start + pos);
   }
 }
 
