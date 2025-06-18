@@ -31,6 +31,8 @@
  * @compile/fail/ref=LintOptions.out -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options                 LintOptions.java
  * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21                -Xlint:-options LintOptions.java
  * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options -Xlint:-options LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21                -Xlint:none     LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options -Xlint:none     LintOptions.java
  */
 class LintOptions {
 }
