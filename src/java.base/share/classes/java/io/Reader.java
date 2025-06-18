@@ -28,6 +28,7 @@ package java.io;
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -448,64 +449,52 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public List<String> readAllLines() throws IOException {
-        char[] cb = new char[TRANSFER_BUFFER_SIZE];
-        int pos = 0;
-        List<String> lines = new ArrayList<String>();
-
+        List<String> lines = new ArrayList<>();
         StringBuilder sb = new StringBuilder(82);
-        int n = read(cb, 0, cb.length);
-        boolean eos = (n == -1);
-        while (!eos) {
-            boolean eol = false;
-            boolean stringAdded = false;
-            while (!eol) {
-                // Find the next line terminator. If none is found,
-                // "term" will equal "n".
+
+        char[] cb = new char[TRANSFER_BUFFER_SIZE];
+        boolean skipLF = false;
+        int n;
+        while ((n = read(cb, 0, cb.length)) != -1) {
+            int pos = 0;
+            while (pos < n) {
+                // find next line terminator; if none found, "term" equals "n"
                 int term = pos;
                 while (term < n) {
                     char c = cb[term];
-                    if (c == '\r' || c == '\n')
+                    if (c == '\n' || c == '\r')
                         break;
                     term++;
                 }
 
-                // Terminator found so at EOL.
-                if (term < n)
-                    eol = true;
-
-                if (term == pos) {
-                    // Current position is terminator so skip it.
-                    pos++;
-                } else { // term > pos
-                    if (eol && sb.length() == 0) {
-                        // Create and add a string to avoid the StringBuilder.
-                        lines.add(new String(cb, pos, term - pos));
-                        stringAdded = true;
-                    } else
-                        sb.append(cb, pos, term - pos);
-                    pos = term + 1;
-                }
-
-                if (pos >= n) {
-                    // Buffer content consumed so reload it.
-                    if ((n = read(cb, 0, cb.length)) < 0) {
-                        eos = eol = true;
-                        break;
+                if (term < n) { // line terminator
+                    boolean isCR = (cb[term] == '\r');
+                    if (isCR || !(skipLF && term == pos)) {
+                        // line terminator is a CR or an LF just after a CR
+                        if (sb.length() == 0) {
+                            // avoid the StringBuilder if possible
+                            lines.add(new String(cb, pos, term - pos));
+                        } else {
+                            sb.append(cb, pos, term - pos);
+                            lines.add(sb.toString());
+                            sb.setLength(0);
+                        }
                     }
-                    pos = 0;
+                    skipLF = isCR;
+                } else { // no line terminator
+                    sb.append(cb, pos, n - pos);
+                    skipLF = false;
                 }
-            }
 
-            if (!stringAdded) {
-                // Derive a string and add it to the list.
-                lines.add(sb.toString());
-                sb.setLength(0);
+                pos = term + 1;
             }
-
-            eol = false;
         }
 
-        return lines;
+        // add a string if EOS terminates the last line
+        if (sb.length() > 0)
+            lines.add(sb.toString());
+
+        return Collections.unmodifiableList(lines);
     }
 
     /**
