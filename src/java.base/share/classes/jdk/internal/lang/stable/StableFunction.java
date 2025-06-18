@@ -25,14 +25,11 @@
 
 package jdk.internal.lang.stable;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 // Note: It would be possible to just use `StableMap::get` with some additional logic
@@ -43,27 +40,15 @@ import java.util.function.Supplier;
  * Implementation of a stable Function.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
- * rely on reflection, MethodHandles, Streams etc.
+ *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <T>      the type of the input to the function
- * @param <R>      the type of the result of the function
+ * @param values           a delegate map of inputs to StableValue mappings
+ * @param underlyingHolder of the original underlying Function
+ * @param <T>              the type of the input to the function
+ * @param <R>              the type of the result of the function
  */
-public final class StableFunction<T, R> implements Function<T, R>, UnderlyingHolder.Has {
-
-    @Stable
-    private final Map<? extends T, StableValueImpl<R>> values;
-    @Stable
-    private final UnderlyingHolder<Function<? super T, ? extends R>> underlyingHolder;
-
-    /**
-     * @param values     a delegate map of inputs to StableValue mappings
-     * @param underlying the original underlying Function
-     */
-    private StableFunction(Map<? extends T, StableValueImpl<R>> values,
-                           Function<? super T, ? extends R> underlying) {
-        this.values = values;
-        this.underlyingHolder = new UnderlyingHolder<>(underlying, values.size());
-    }
+public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
+                                   UnderlyingHolder<Function<? super T, ? extends R>> underlyingHolder) implements Function<T, R> , UnderlyingHolder.Has {
 
     @ForceInline
     @Override
@@ -77,18 +62,23 @@ public final class StableFunction<T, R> implements Function<T, R>, UnderlyingHol
     }
 
     @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == this;
+    }
+
+    @Override
     public String toString() {
         return StableUtil.renderMappings(this, "StableFunction", values.entrySet(), true);
     }
 
-    @Override
-    public UnderlyingHolder<?> underlyingHolder() {
-        return underlyingHolder;
-    }
-
     public static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,
                                                  Function<? super T, ? extends R> original) {
-        return new StableFunction<>(StableUtil.map(inputs), original);
+        return new StableFunction<>(StableUtil.map(inputs), new UnderlyingHolder<>(original, inputs.size()));
     }
 
 }

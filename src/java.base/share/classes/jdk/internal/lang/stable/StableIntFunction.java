@@ -34,27 +34,16 @@ import java.util.function.Supplier;
 /**
  * Implementation of a stable IntFunction.
  * <p>
- * For performance reasons (~10%), we are not delegating to a StableList but are using the
- * more primitive functions in StableValueUtil that are shared with
- * StableList/StableValueImpl.
+ * For performance reasons (~10%), we are not delegating to a StableList but are using
+ * the more primitive functions in StableValueUtil that are shared with StableList/StableValueImpl.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
- * rely on reflection, MethodHandles, Streams etc.
-
+ *           rely on reflection, MethodHandles, Streams etc.
+ *
  * @param <R> the return type
  */
-public final class StableIntFunction<R> implements IntFunction<R>, UnderlyingHolder.Has {
-
-    @Stable
-    private final StableValueImpl<R>[] delegates;
-    @Stable
-    private final UnderlyingHolder<IntFunction<? extends R>> underlyingHolder;
-
-    private StableIntFunction(StableValueImpl<R>[] delegates,
-                              IntFunction<? extends R> underlying) {
-        this.delegates = delegates;
-        this.underlyingHolder = new UnderlyingHolder<>(underlying, delegates.length);
-    }
+public record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
+                                   UnderlyingHolder<IntFunction<? extends R>> underlyingHolder) implements IntFunction<R>, UnderlyingHolder.Has {
 
     @ForceInline
     @Override
@@ -70,8 +59,13 @@ public final class StableIntFunction<R> implements IntFunction<R>, UnderlyingHol
     }
 
     @Override
-    public UnderlyingHolder<?> underlyingHolder() {
-        return underlyingHolder;
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == this;
     }
 
     @Override
@@ -80,7 +74,7 @@ public final class StableIntFunction<R> implements IntFunction<R>, UnderlyingHol
     }
 
     public static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> underlying) {
-        return new StableIntFunction<>(StableUtil.array(size), underlying);
+        return new StableIntFunction<>(StableUtil.array(size), new UnderlyingHolder<>(underlying, size));
     }
 
 }

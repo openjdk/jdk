@@ -43,43 +43,23 @@ import java.util.function.Supplier;
  * Optimized implementation of a stable Function with enums as keys.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
- * rely on reflection, MethodHandles, Streams etc.
+ *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <E>          the type of the input to the function
- * @param <R>          the type of the result of the function
+ * @param enumType         the class type of the Enum
+ * @param firstOrdinal     the lowest ordinal used
+ * @param member           an int predicate that can be used to test if an enum is a member
+ *                         of the valid inputs (as there might be "holes")
+ * @param delegates        a delegate array of inputs to StableValue mappings
+ * @param underlyingHolder of the original underlying Function
+ * @param <E>              the type of the input to the function
+ * @param <R>              the type of the result of the function
  */
-public final class StableEnumFunction<E extends Enum<E>, R> implements Function<E, R>, UnderlyingHolder.Has {
-
-    @Stable
-    private final Class<E> enumType;
-    @Stable
-    private final int firstOrdinal;
-    @Stable
-    private final IntPredicate member;
-    @Stable
-    private final StableValueImpl<R>[] delegates;
-    @Stable
-    private final UnderlyingHolder<Function<? super E, ? extends R>> underlyingHolder;
-    /**
-     * @param enumType     the class type of the Enum
-     * @param firstOrdinal the lowest ordinal used
-     * @param member       an int predicate that can be used to test if an enum is a
-     *                     member of the valid inputs (as there might be "holes")
-     * @param delegates    a delegate array of inputs to StableValue mappings
-     * @param underlying   the original underlying Function
-     */
-    public StableEnumFunction(Class<E> enumType,
-                              int firstOrdinal,
-                              IntPredicate member,
-                              StableValueImpl<R>[] delegates,
-                              int initialCounter,
-                              Function<? super E, ? extends R> underlying) {
-        this.enumType = enumType;
-        this.firstOrdinal = firstOrdinal;
-        this.member = member;
-        this.delegates = delegates;
-        this.underlyingHolder = new UnderlyingHolder<>(underlying, initialCounter);
-    }
+public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
+                                                       int firstOrdinal,
+                                                       IntPredicate member,
+                                                       @Stable StableValueImpl<R>[] delegates,
+                                                       UnderlyingHolder<Function<? super E, ? extends R>> underlyingHolder)
+        implements Function<E, R>, UnderlyingHolder.Has {
 
     @ForceInline
     @Override
@@ -95,6 +75,16 @@ public final class StableEnumFunction<E extends Enum<E>, R> implements Function<
     }
 
     @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == this;
+    }
+
+    @Override
     public String toString() {
         final Collection<Map.Entry<E, StableValueImpl<R>>> entries = new ArrayList<>(delegates.length);
         final E[] enumElements = enumType.getEnumConstants();
@@ -107,14 +97,10 @@ public final class StableEnumFunction<E extends Enum<E>, R> implements Function<
         return StableUtil.renderMappings(this, "StableFunction", entries, true);
     }
 
-    @Override
-    public UnderlyingHolder<?> underlyingHolder() {
-        return underlyingHolder;
-    }
 
     @SuppressWarnings("unchecked")
     public static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
-                                                              Function<? super T, ? extends R> original) {
+                                                              Function<? super T, ? extends R> underlying) {
         // The input set is not empty
         final Class<E> enumType = ((E) inputs.iterator().next()).getDeclaringClass();
         final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
@@ -128,7 +114,7 @@ public final class StableEnumFunction<E extends Enum<E>, R> implements Function<
         }
         final int size = max - min + 1;
         final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
-        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), bitSet.cardinality(), (Function<E, R>) original);
+        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), new UnderlyingHolder<>((Function<E, R>) underlying, bitSet.cardinality()));
     }
 
 }
