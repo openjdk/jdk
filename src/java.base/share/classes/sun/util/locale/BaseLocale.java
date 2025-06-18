@@ -174,7 +174,10 @@ public final class BaseLocale {
         // Obtain the "interned" BaseLocale from the cache. The returned
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
-        return CACHE.get().intern(new BaseLocale(
+        var rks = CACHE.get();
+        //System.out.println("rks = " + rks);
+
+        return rks.intern(new BaseLocale(
                 language.intern(), // guaranteed to be lower-case
                 LocaleUtils.toTitleString(script).intern(),
                 region.intern(), // guaranteed to be upper-case

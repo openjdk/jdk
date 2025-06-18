@@ -25,7 +25,7 @@
  * @summary Basic tests for StableMap methods
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
- * @run junit StableMapTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED StableMapTest
  */
 
 import jdk.internal.lang.stable.StableUtil;
@@ -347,7 +347,7 @@ final class StableMapTest {
         StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
         Map<Integer, Integer> f1 = StableValue.map(KEYS, cif);
 
-        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
 
         int i = 0;
         for (Integer input : KEYS) {
@@ -366,7 +366,7 @@ final class StableMapTest {
         StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
         Map<Integer, Integer> f1 = StableValue.map(KEYS, cif);
 
-        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
 
         int i = 0;
         for (Map.Entry<Integer, Integer> e : f1.entrySet()) {
@@ -385,7 +385,7 @@ final class StableMapTest {
         StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(IDENTITY);
         Map<Integer, Integer> f1 = StableValue.map(KEYS, cif);
 
-        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
 
         final AtomicInteger i = new AtomicInteger();
         f1.entrySet().forEach(e -> {

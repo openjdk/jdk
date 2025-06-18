@@ -48,7 +48,7 @@ import java.util.function.Supplier;
  * @param <R>              the type of the result of the function
  */
 public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
-                                   UnderlyingHolder<Function<? super T, ? extends R>> underlyingHolder) implements Function<T, R> , UnderlyingHolder.Has {
+                                   UnderlyingHolder<Function<? super T, ? extends R>> underlyingHolder) implements Function<T, R> {
 
     @ForceInline
     @Override
@@ -58,7 +58,7 @@ public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
         return stable.orElseSet(new Supplier<R>() {
-            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, this);
+            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, underlyingHolder);
     }
 
     @Override
@@ -77,8 +77,8 @@ public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
     }
 
     public static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,
-                                                 Function<? super T, ? extends R> original) {
-        return new StableFunction<>(StableUtil.map(inputs), new UnderlyingHolder<>(original, inputs.size()));
+                                                 Function<? super T, ? extends R> underlying) {
+        return new StableFunction<>(StableUtil.map(inputs), new UnderlyingHolder<>(underlying, inputs.size()));
     }
 
 }

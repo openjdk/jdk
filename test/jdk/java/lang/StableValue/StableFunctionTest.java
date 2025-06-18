@@ -25,7 +25,7 @@
  * @summary Basic tests for StableFunction methods
  * @enablePreview
  * @modules java.base/jdk.internal.lang.stable
- * @run junit StableFunctionTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED StableFunctionTest
  */
 
 import jdk.internal.lang.stable.UnderlyingHolder;
@@ -217,7 +217,7 @@ final class StableFunctionTest {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(MAPPER);
         Function<Value, Integer> f1 = StableValue.function(inputs, cif);
 
-        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
 
         int i = 0;
         for (Value input : inputs) {

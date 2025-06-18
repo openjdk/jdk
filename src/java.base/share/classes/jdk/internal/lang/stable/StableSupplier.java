@@ -38,12 +38,12 @@ import java.util.function.Supplier;
  * @param <T> the return type
  */
 public record StableSupplier<T>(StableValueImpl<T> delegate,
-                                Supplier<? extends T> original) implements Supplier<T> {
+                                UnderlyingHolder<Supplier<? extends T>> underlyingHolder) implements Supplier<T> {
 
     @ForceInline
     @Override
     public T get() {
-        return delegate.orElseSet(original);
+        return delegate.orElseSet(underlyingHolder.underlying(), underlyingHolder);
     }
 
     @Override
@@ -62,8 +62,8 @@ public record StableSupplier<T>(StableValueImpl<T> delegate,
         return t == this ? "(this StableSupplier)" : StableValueImpl.renderWrapped(t);
     }
 
-    public static <T> StableSupplier<T> of(Supplier<? extends T> original) {
-        return new StableSupplier<>(StableValueImpl.of(), original);
+    public static <T> StableSupplier<T> of(Supplier<? extends T> underlying) {
+        return new StableSupplier<>(StableValueImpl.of(), new UnderlyingHolder<>(underlying, 0));
     }
 
 }

@@ -58,8 +58,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
                                                        int firstOrdinal,
                                                        IntPredicate member,
                                                        @Stable StableValueImpl<R>[] delegates,
-                                                       UnderlyingHolder<Function<? super E, ? extends R>> underlyingHolder)
-        implements Function<E, R>, UnderlyingHolder.Has {
+                                                       UnderlyingHolder<Function<? super E, ? extends R>> underlyingHolder) implements Function<E, R> {
 
     @ForceInline
     @Override
@@ -70,7 +69,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         final int index = value.ordinal() - firstOrdinal;
         // Since we did the member.test above, we know the index is in bounds
         return delegates[index].orElseSet(new Supplier<R>() {
-            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, this);
+            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, underlyingHolder);
 
     }
 

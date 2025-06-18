@@ -793,7 +793,7 @@ class ImmutableCollections {
     @jdk.internal.ValueBased
     static final class StableList<E>
             extends AbstractImmutableList<E>
-            implements HasStableDelegates<E>, UnderlyingHolder.Has {
+            implements HasStableDelegates<E> {
 
         @Stable
         final StableValueImpl<E>[] delegates;
@@ -819,7 +819,7 @@ class ImmutableCollections {
                 throw new IndexOutOfBoundsException(i);
             }
             return delegate.orElseSet(new Supplier<E>() {
-                        @Override  public E get() { return underlyingHolder.underlying().apply(i); }}, this);
+                        @Override  public E get() { return underlyingHolder.underlying().apply(i); }}, underlyingHolder);
         }
 
         @Override
@@ -887,11 +887,6 @@ class ImmutableCollections {
         @Override
         public StableValueImpl<E>[] delegates() {
             return delegates;
-        }
-
-        @Override
-        public UnderlyingHolder<IntFunction<? extends E>> underlyingHolder() {
-            return underlyingHolder;
         }
 
         private static final class StableSubList<E> extends SubList<E>
@@ -1610,8 +1605,7 @@ class ImmutableCollections {
     }
 
     static final class StableMap<K, V>
-            extends AbstractImmutableMap<K, V>
-            implements UnderlyingHolder.Has {
+            extends AbstractImmutableMap<K, V> {
 
         @Stable
         private final Map<K, StableValueImpl<V>> delegate;
@@ -1643,12 +1637,7 @@ class ImmutableCollections {
             @SuppressWarnings("unchecked")
             final K k = (K) key;
             return stable.orElseSet(new Supplier<V>() {
-                @Override public V get() { return underlyingHolder.underlying().apply(k); }}, this);
-        }
-
-        @Override
-        public UnderlyingHolder<Function<? super K, ? extends V>> underlyingHolder() {
-            return underlyingHolder;
+                @Override public V get() { return underlyingHolder.underlying().apply(k); }}, underlyingHolder);
         }
 
         @jdk.internal.ValueBased
@@ -1704,7 +1693,7 @@ class ImmutableCollections {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
                     return new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
-                        @Override public V get() { return outer.outer.underlyingHolder().underlying().apply(k); }}, outer.outer);
+                        @Override public V get() { return outer.outer.underlyingHolder.underlying().apply(k); }}, outer.outer.underlyingHolder);
                 }
 
                 @Override
@@ -1715,7 +1704,7 @@ class ImmutableCollections {
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
                                     final K k = inner.getKey();
                                     action.accept(new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
-                                        @Override public V get() { return outer.outer.underlyingHolder().underlying().apply(k); }}, outer.outer));
+                                        @Override public V get() { return outer.outer.underlyingHolder.underlying().apply(k); }}, outer.outer.underlyingHolder));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
@@ -1732,7 +1721,7 @@ class ImmutableCollections {
         private record StableEntry<K, V>(K getKey, // trick
                                          StableValueImpl<V> stableValue,
                                          Supplier<? extends V> supplier,
-                                         UnderlyingHolder.Has underlyingHolder) implements Map.Entry<K, V> {
+                                         UnderlyingHolder<?> underlyingHolder) implements Map.Entry<K, V> {
 
             @Override public V setValue(V value) { throw uoe(); }
             @Override public V getValue() { return stableValue.orElseSet(supplier, underlyingHolder); }

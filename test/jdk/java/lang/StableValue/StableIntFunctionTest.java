@@ -25,7 +25,7 @@
  * @summary Basic tests for StableIntFunction methods
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
- * @run junit StableIntFunctionTest
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED StableIntFunctionTest
  */
 
 import jdk.internal.lang.stable.UnderlyingHolder;
@@ -113,7 +113,7 @@ final class StableIntFunctionTest {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(MAPPER);
         IntFunction<Integer> f1 = StableValue.intFunction(SIZE, cif);
 
-        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(SIZE - i, holder.counter());
             assertSame(cif, holder.underlying());

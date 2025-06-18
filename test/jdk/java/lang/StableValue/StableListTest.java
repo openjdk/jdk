@@ -25,7 +25,7 @@
  * @summary Basic tests for StableList methods
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
- * @run junit StableListTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED StableListTest
  */
 
 import jdk.internal.lang.stable.StableUtil;
@@ -439,7 +439,7 @@ final class StableListTest {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
         List<Integer> f1 = StableValue.list(SIZE, cif);
 
-        UnderlyingHolder<?> holder = ((UnderlyingHolder.Has) f1).underlyingHolder();
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(SIZE - i, holder.counter());
             assertSame(cif, holder.underlying());

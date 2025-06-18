@@ -43,7 +43,7 @@ import java.util.function.Supplier;
  * @param <R> the return type
  */
 public record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
-                                   UnderlyingHolder<IntFunction<? extends R>> underlyingHolder) implements IntFunction<R>, UnderlyingHolder.Has {
+                                   UnderlyingHolder<IntFunction<? extends R>> underlyingHolder) implements IntFunction<R> {
 
     @ForceInline
     @Override
@@ -55,7 +55,7 @@ public record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
             throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }
         return delegate.orElseSet(new Supplier<R>() {
-            @Override public R get() { return underlyingHolder.underlying().apply(index); }}, this);
+            @Override public R get() { return underlyingHolder.underlying().apply(index); }}, underlyingHolder);
     }
 
     @Override
