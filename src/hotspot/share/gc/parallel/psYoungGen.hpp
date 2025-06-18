@@ -65,6 +65,10 @@ class PSYoungGen : public CHeapObj<mtGC> {
   void resize_spaces(size_t requested_eden_size,
                      size_t requested_survivor_size);
 
+  // Try to expand eden to hold at least word_size.
+  // Return true iff the expansion is successful.
+  bool try_expand_to_hold(size_t word_size);
+
   // Adjust the spaces to be consistent with the virtual space.
   void post_resize();
 

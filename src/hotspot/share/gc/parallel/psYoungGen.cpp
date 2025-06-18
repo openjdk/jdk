@@ -247,6 +247,53 @@ void PSYoungGen::space_invariants() {
 }
 #endif
 
+bool PSYoungGen::try_expand_to_hold(size_t word_size) {
+  assert(eden_space()->free_in_words() < word_size, "precondition");
+
+  // For logging purpose
+  size_t original_committed_size = virtual_space()->committed_size();
+
+  assert(is_aligned(virtual_space()->committed_high_addr(), SpaceAlignment), "inv");
+  if (pointer_delta(virtual_space()->committed_high_addr(), eden_space()->top(), sizeof(HeapWord)) >= word_size) {
+    // eden needs expansion but no OS committing
+    assert(virtual_space()->committed_high_addr() > (char*)eden_space()->end(), "inv");
+  } else {
+    // eden needs OS committing and expansion
+    assert(virtual_space()->reserved_high_addr() > virtual_space()->committed_high_addr(), "inv");
+
+    const size_t existing_free_in_eden = eden_space()->free_in_words();
+    assert(existing_free_in_eden < word_size, "inv");
+
+    size_t delta_words = word_size - existing_free_in_eden;
+    size_t delta_bytes = delta_words * HeapWordSize;
+    delta_bytes = align_up(delta_bytes, virtual_space()->alignment());
+    if (!virtual_space()->expand_by(delta_bytes)) {
+      // Expansion fails at OS level.
+      return false;
+    }
+
+    assert(is_aligned(virtual_space()->committed_high_addr(), SpaceAlignment), "inv");
+  }
+
+  HeapWord* new_eden_end = (HeapWord*) virtual_space()->committed_high_addr();
+  assert(new_eden_end > eden_space()->end(), "inv");
+  MemRegion edenMR = MemRegion(eden_space()->bottom(), new_eden_end);
+
+  eden_space()->initialize(edenMR,
+                           eden_space()->is_empty(),
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           &ParallelScavengeHeap::heap()->workers());
+
+  if (ZapUnusedHeapArea) {
+    eden_space()->mangle_unused_area();
+  }
+  post_resize();
+  log_debug(gc, ergo)("PSYoung size changed (eden expansion): %zuK->%zuK",
+                      original_committed_size / K, virtual_space()->committed_size() / K);
+  return true;
+}
+
 HeapWord* PSYoungGen::expand_and_allocate(size_t word_size) {
   assert(SafepointSynchronize::is_at_safepoint(), "precondition");
   assert(Thread::current()->is_VM_thread(), "precondition");
@@ -260,63 +307,10 @@ HeapWord* PSYoungGen::expand_and_allocate(size_t word_size) {
     }
   }
 
-  // Enough room for this allocation size
-  HeapWord* new_eden_end = nullptr;
-  // For logging purpose
-  size_t original_committed_size = virtual_space()->committed_size();
-
-  // Single-iteration "loop"
-  while (true) {
-    // Case1: eden is enough without expansion
-    if (eden_space()->free_in_words() >= word_size) {
-      break;
-    }
-
-    assert(is_aligned(virtual_space()->committed_high_addr(), SpaceAlignment), "inv");
-
-    // Case2: eden needs expansion but no OS committing
-    if (pointer_delta(virtual_space()->committed_high_addr(), eden_space()->top(), sizeof(HeapWord)) >= word_size) {
-      assert(virtual_space()->committed_high_addr() > (char*)eden_space()->end(), "inv");
-      new_eden_end = (HeapWord*) virtual_space()->committed_high_addr();
-      break;
-    }
-
-    // Case3: eden needs OS committing and expansion
-    assert(virtual_space()->reserved_high_addr() > virtual_space()->committed_high_addr(), "inv");
-
-    const size_t existing_free_in_eden = eden_space()->free_in_words();
-    assert(existing_free_in_eden < word_size, "inv");
-
-    size_t delta_words = word_size - existing_free_in_eden;
-    size_t delta_bytes = delta_words * HeapWordSize;
-    delta_bytes = align_up(delta_bytes, virtual_space()->alignment());
-    if (!virtual_space()->expand_by(delta_bytes)) {
-      // Expansion fails at OS level.
+  if (eden_space()->free_in_words() < word_size) {
+    if (!try_expand_to_hold(word_size)) {
       return nullptr;
     }
-
-    assert(is_aligned(virtual_space()->committed_high_addr(), SpaceAlignment), "inv");
-    new_eden_end = (HeapWord*) virtual_space()->committed_high_addr();
-    break;
-  }
-
-  if (new_eden_end != nullptr) {
-    assert(new_eden_end > eden_space()->end(), "inv");
-    // Eden should be expanded.
-    MemRegion edenMR = MemRegion(eden_space()->bottom(), new_eden_end);
-
-    eden_space()->initialize(edenMR,
-                             eden_space()->is_empty(),
-                             SpaceDecorator::DontMangle,
-                             MutableSpace::SetupPages,
-                             &ParallelScavengeHeap::heap()->workers());
-
-    if (ZapUnusedHeapArea) {
-      eden_space()->mangle_unused_area();
-    }
-    post_resize();
-    log_debug(gc, ergo)("PSYoung size changed (eden expansion): %zuK->%zuK",
-                        original_committed_size/K, virtual_space()->committed_size()/K);
   }
 
   HeapWord* result = eden_space()->cas_allocate(word_size);
@@ -339,12 +333,12 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
   PSAdaptiveSizePolicy* size_policy = ParallelScavengeHeap::heap()->size_policy();
 
   // eden-space
-  eden_size = align_up(size_policy->compute_desired_eden_size(is_survivor_overflowing, current_eden_size),
-                       SpaceAlignment);
+  eden_size = size_policy->compute_desired_eden_size(is_survivor_overflowing, current_eden_size);
+  eden_size = align_up(eden_size, SpaceAlignment);
   assert(eden_size >= SpaceAlignment, "inv");
 
-  survivor_size = MAX3(size_policy->compute_desired_survivor_size(current_survivor_size,
-                                                                  max_gen_size()),
+  survivor_size = size_policy->compute_desired_survivor_size(current_survivor_size, max_gen_size());
+  survivor_size = MAX3(survivor_size,
                        from_space()->used_in_bytes(),
                        SpaceAlignment);
   survivor_size = align_up(survivor_size, SpaceAlignment);
