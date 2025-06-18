@@ -27,12 +27,12 @@
  * @bug 8358159 8359388
  * @summary test that the Cipher.getInstance() would reject improper
  *     transformations with empty mode and/or padding.
- * @run main TestEmptyModePadding
  */
 
-
-import java.security.*;
-import javax.crypto.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import javax.crypto.Cipher;
 
 public class TestEmptyModePadding {
 
@@ -46,12 +46,17 @@ public class TestEmptyModePadding {
             // transformations w/ only 1 component, i.e. algo
             " ",
             // transformations w/ only 2 components
-            "AES/", "AES/ ", "AES/CBC",
+            "AES/",
+            "AES/ ",
+            "AES/CBC",
             "PBEWithHmacSHA512/224AndAES_128/",
             "PBEWithHmacSHA512/256AndAES_128/ ",
             "PBEWithHmacSHA512/224AndAES_128/CBC",
             // 3-component transformations w/ empty component(s)
-            "AES//", "AES/ /", "AES// ", "AES/ / ",
+            "AES//",
+            "AES/ /",
+            "AES// ",
+            "AES/ / ",
             "AES/CBC/", "AES/CBC/ ",
             "AES//PKCS5Padding", "AES/ /NoPadding",
             "PBEWithHmacSHA512/224AndAES_128//",
