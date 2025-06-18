@@ -114,6 +114,13 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 #ifdef ASSERT
   Node* ctrl = kit.control();
 #endif
+  Unique_Node_List ctrl_succ;
+  for (DUIterator_Fast imax, i = kit.control()->fast_outs(imax); i < imax; i++) {
+    Node* out = kit.control()->fast_out(i);
+    if (out->is_CFG()) {
+      ctrl_succ.push(out);
+    }
+  }
   // Try to inline the intrinsic.
   if (callee->check_intrinsic_candidate() &&
       kit.try_to_inline(_last_predicate)) {
@@ -135,6 +142,14 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 
   // The intrinsic bailed out
   assert(ctrl == kit.control(), "Control flow was added although the intrinsic bailed out");
+  for (DUIterator_Fast imax, i = kit.control()->fast_outs(imax); i < imax; i++) {
+    Node* out = kit.control()->fast_out(i);
+    if (out->is_CFG() && out->in(0) == kit.control() && out != kit.map() && !ctrl_succ.member(out)) {
+      out->set_req(0, C->top());
+      C->record_for_igvn(out);
+      --i; --imax;
+    }
+  }
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg;
