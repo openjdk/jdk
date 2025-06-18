@@ -217,7 +217,7 @@ class Compilation: public StackObj {
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
   static uint desired_max_code_buffer_size() {
-    return (uint)NMethodSizeLimit;  // default 64K
+    return (uint)NMethodSizeLimit;  // default 64K*wordSize
   }
   static uint desired_max_constant_size() {
     return desired_max_code_buffer_size() / 10;
