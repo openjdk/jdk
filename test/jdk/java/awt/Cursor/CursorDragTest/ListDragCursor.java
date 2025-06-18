@@ -67,7 +67,7 @@ public class ListDragCursor {
                 instructionsFrame = createInstructionsFrame();
                 testFrame = createTestFrame();
             });
-            if (!countDownLatch.await(2, TimeUnit.MINUTES)) {
+            if (!countDownLatch.await(5, TimeUnit.MINUTES)) {
                 throw new RuntimeException("Test timeout : No action was"
                         + " taken on the test.");
             }
@@ -107,7 +107,7 @@ public class ListDragCursor {
         Frame frame = new Frame("Test Instructions");
         Panel mainPanel = new Panel(new BorderLayout());
         TextArea textArea = new TextArea(INSTRUCTIONS,
-                15, 60, TextArea.SCROLLBARS_NONE);
+                15, 35, TextArea.SCROLLBARS_NONE);
 
         Panel btnPanel = new Panel();
         Button passBtn = new Button("PASS");
