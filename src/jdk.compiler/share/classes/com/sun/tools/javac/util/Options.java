@@ -172,55 +172,35 @@ public class Options {
     }
 
     /**
-     * Check whether the given lint category is explicitly enabled or disabled.
+     * Determine if a specific {@link LintCategory} is explicitly enabled via a custom
+     * option flag of the form {@code -Flag:key}.
      *
      * <p>
-     * If the category is neither enabled nor disabled, return the given default value.
+     * Note: It's possible the category was also explicitly disabled; this method does not check that.
      *
-     * @param option the plain (non-custom) option
-     * @param lc the {@link LintCategory} in question
-     * @param defaultValue presumed default value
-     * @return true if {@code lc} would be included
-     */
-    public boolean isSet(Option option, LintCategory lc, boolean defaultValue) {
-        Option customOption = option.getCustom();
-        if (lc.optionList.stream().anyMatch(alias -> isSet(customOption, alias))) {
-            return true;
-        }
-        if (lc.optionList.stream().anyMatch(alias -> isSet(customOption, "-" + alias))) {
-            return false;
-        }
-        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
-            return true;
-        }
-        if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
-            return false;
-        }
-        return defaultValue;
-    }
-
-    /**
-     * Determine if a specific {@link LintCategory} was explicitly enabled via a custom option flag
-     * of the form {@code -Flag:all} or {@code -Flag:key}.
-     *
-     * @param option the option
+     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
      * @param lc the {@link LintCategory} in question
      * @return true if {@code lc} has been explicitly enabled
      */
     public boolean isExplicitlyEnabled(Option option, LintCategory lc) {
-        return isSet(option, lc, false);
+        Option customOption = option.getCustom();
+        return lc.optionList.stream().anyMatch(alias -> isSet(customOption, alias));
     }
 
     /**
-     * Determine if a specific {@link LintCategory} was explicitly disabled via a custom option flag
-     * of the form {@code -Flag:none} or {@code -Flag:-key}.
+     * Determine if a specific {@link LintCategory} is explicitly disabled via a custom
+     * option flag of the form {@code -Flag:-key}.
      *
-     * @param option the option
+     * <p>
+     * Note: It's possible the category was also explicitly enabled; this method does not check that.
+     *
+     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
      * @param lc the {@link LintCategory} in question
      * @return true if {@code lc} has been explicitly disabled
      */
     public boolean isExplicitlyDisabled(Option option, LintCategory lc) {
-        return !isSet(option, lc, true);
+        Option customOption = option.getCustom();
+        return lc.optionList.stream().anyMatch(alias -> isSet(customOption, "-" + alias));
     }
 
     public void put(String name, String value) {
