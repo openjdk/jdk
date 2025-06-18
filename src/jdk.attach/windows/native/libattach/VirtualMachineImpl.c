@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,11 +291,12 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
 
     hPipe = CreateNamedPipe(
           name,                         // pipe name
-          ver == 1 ? PIPE_ACCESS_INBOUND  // read access
-                   : PIPE_ACCESS_DUPLEX,  // read-write access
+          (ver == 1 ? PIPE_ACCESS_INBOUND : PIPE_ACCESS_DUPLEX) | // read or read-write access
+            FILE_FLAG_FIRST_PIPE_INSTANCE,
           PIPE_TYPE_BYTE |              // byte mode
             PIPE_READMODE_BYTE |
-            PIPE_WAIT,                  // blocking mode
+            PIPE_WAIT |                 // blocking mode
+            PIPE_REJECT_REMOTE_CLIENTS,
           1,                            // max. instances
           128,                          // output buffer size
           8192,                         // input buffer size

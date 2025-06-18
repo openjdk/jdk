@@ -1728,11 +1728,6 @@ const int ObjectAlignmentInBytes = 8;
           "The string %p in the file name (if present) "                    \
           "will be replaced by pid")                                        \
                                                                             \
-  product(int, PerfDataSamplingInterval, 50,                                \
-          "Data sampling interval (in milliseconds)")                       \
-          range(PeriodicTask::min_interval, max_jint)                       \
-          constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
-                                                                            \
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \
                                                                             \
@@ -2010,6 +2005,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
           "Use an extra lock during Thread start and exit to alleviate"     \
           "contention on Threads_lock.")                                    \
+                                                                            \
+  develop(uint, BinarySearchThreshold, 16,                                  \
+          "Minimal number of elements in a sorted collection to prefer"     \
+          "binary search over simple linear search." )                      \
 
 // end of RUNTIME_FLAGS
 

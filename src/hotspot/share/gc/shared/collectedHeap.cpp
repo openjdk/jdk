@@ -382,7 +382,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
 
     VMThread::execute(&op);
 
-    if (op.prologue_succeeded()) {
+    if (op.gc_succeeded()) {
       return op.result();
     }
     loop_count++;

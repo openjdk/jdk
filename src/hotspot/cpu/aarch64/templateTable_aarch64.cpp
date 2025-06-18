@@ -1144,6 +1144,7 @@ void TemplateTable::aastore() {
   // Get the value we will store
   __ ldr(r0, at_tos());
   // Now store using the appropriate barrier
+  // Clobbers: r10, r11, r3
   do_oop_store(_masm, element_address, r0, IS_ARRAY);
   __ b(done);
 
@@ -1152,6 +1153,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(r2);
 
   // Store a null
+  // Clobbers: r10, r11, r3
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
@@ -2882,6 +2884,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ pop(atos);
     if (!is_static) pop_and_check_object(obj);
     // Store into the field
+    // Clobbers: r10, r11, r3
     do_oop_store(_masm, field, r0, IN_HEAP);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_aputfield, bc, r1, true, byte_no);
@@ -3077,12 +3080,12 @@ void TemplateTable::fast_storefield(TosState state)
   // access constant pool cache
   __ load_field_entry(r2, r1);
 
-  // R1: field offset, R2: field holder, R3: flags
-  load_resolved_field_entry(r2, r2, noreg, r1, r3);
+  // R1: field offset, R2: field holder, R5: flags
+  load_resolved_field_entry(r2, r2, noreg, r1, r5);
 
   {
     Label notVolatile;
-    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }
@@ -3098,6 +3101,7 @@ void TemplateTable::fast_storefield(TosState state)
   // access field
   switch (bytecode()) {
   case Bytecodes::_fast_aputfield:
+    // Clobbers: r10, r11, r3
     do_oop_store(_masm, field, r0, IN_HEAP);
     break;
   case Bytecodes::_fast_lputfield:
@@ -3130,7 +3134,7 @@ void TemplateTable::fast_storefield(TosState state)
 
   {
     Label notVolatile;
-    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
   }
