@@ -24,6 +24,7 @@
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertNull;
 
+import com.sun.security.auth.UserPrincipal;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -37,10 +38,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 import javax.security.auth.x500.X500Principal;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.security.CertificateBuilder;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.GeneralName;
@@ -153,20 +158,46 @@ public class CertChecking {
         issuerTestCase(disabled, kmAlg, "RSA",
                 new Principal[]{new X500Principal(CA_ISSUER_STRING)}, true);
 
+        // Check CA issuer match with non-X500 principal
+        issuerTestCase(disabled, kmAlg, "RSA",
+                new Principal[]{new UserPrincipal(CA_ISSUER_STRING)}, true);
+
+        // Non-convertable principal should match all
+        issuerTestCase(disabled, kmAlg, "RSA",
+                new Principal[]{new InvalidPrincipal()}, true);
+
+        // Empty issuer array should match all
+        issuerTestCase(disabled, kmAlg, "RSA", new Principal[]{}, true);
+
+        // Null issuer array should match all
+        issuerTestCase(disabled, kmAlg, "RSA", null, true);
+
         // Issuer that is not in the chain should not match.
         issuerTestCase(disabled, kmAlg, "RSA",
                 new Principal[]{new X500Principal(UNKNOWN_ISSUER_STRING)}, false);
+
+        // --- Alias not found for given KeyType test cases ---
+
+        // Null KeyType
+        aliasNotFoundTestCase(kmAlg, "RSA", null);
+
+        // Wrong KeyType
+        aliasNotFoundTestCase(kmAlg, "RSA", "EC");
     }
 
     private static void usageTestCase(String disabled, String kmAlg,
             String keyAlg, boolean[] certKeyUsages, boolean checkServer,
             boolean checkClient) throws Exception {
 
-        X509KeyManager km = getKeyManager(
+        X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
                 kmAlg, keyAlg, certKeyUsages);
 
         String chosenServerAlias = km.chooseServerAlias(keyAlg, null, null);
+        String chosenEngineServerAlias = km.chooseEngineServerAlias(
+                keyAlg, null, null);
         String chosenClientAlias = km.chooseClientAlias(
+                new String[]{keyAlg}, null, null);
+        String chosenEngineClientAlias = km.chooseEngineClientAlias(
                 new String[]{keyAlg}, null, null);
 
         String[] allServerAliases = km.getServerAliases(keyAlg, null);
@@ -178,6 +209,10 @@ public class CertChecking {
                     normalizeAlias(chosenServerAlias));
             assertEquals(USAGE_MISMATCH_ALIAS,
                     normalizeAlias(chosenClientAlias));
+            assertEquals(USAGE_MISMATCH_ALIAS,
+                    normalizeAlias(chosenEngineServerAlias));
+            assertEquals(USAGE_MISMATCH_ALIAS,
+                    normalizeAlias(chosenEngineClientAlias));
 
             // Assert the initial order of all aliases.
             assertEquals(USAGE_MISMATCH_ALIAS,
@@ -194,6 +229,8 @@ public class CertChecking {
                 // Preferred alias returned
                 assertEquals(PREFERRED_ALIAS,
                         normalizeAlias(chosenServerAlias));
+                assertEquals(PREFERRED_ALIAS,
+                        normalizeAlias(chosenEngineServerAlias));
 
                 // Assert the correct sorted order of all aliases.
                 assertEquals(PREFERRED_ALIAS,
@@ -208,6 +245,8 @@ public class CertChecking {
                 // Preferred alias returned
                 assertEquals(PREFERRED_ALIAS,
                         normalizeAlias(chosenClientAlias));
+                assertEquals(PREFERRED_ALIAS,
+                        normalizeAlias(chosenEngineClientAlias));
 
                 // Assert the correct sorted order of all aliases.
                 assertEquals(PREFERRED_ALIAS,
@@ -223,20 +262,25 @@ public class CertChecking {
     private static void issuerTestCase(String disabled, String kmAlg,
             String keyAlg, Principal[] issuers, boolean found) throws Exception {
 
-        X509KeyManager km = getKeyManager(
+        X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
                 kmAlg, keyAlg, NONE_KEY_USAGES);
 
-        String chosenServerAlias = km.chooseServerAlias(keyAlg, issuers, null);
-        String chosenClientAlias = km.chooseClientAlias(
-                new String[]{keyAlg}, issuers, null);
+        List<String> chosenAliases = new ArrayList<>(4);
+
+        chosenAliases.add(km.chooseServerAlias(keyAlg, issuers, null));
+        chosenAliases.add(km.chooseEngineServerAlias(keyAlg, issuers, null));
+        chosenAliases.add(
+                km.chooseClientAlias(new String[]{keyAlg}, issuers, null));
+        chosenAliases.add(km.chooseEngineClientAlias(
+                new String[]{keyAlg}, issuers, null));
 
         String[] allServerAliases = km.getServerAliases(keyAlg, issuers);
         String[] allClientAliases = km.getClientAliases(keyAlg, issuers);
 
         if (found) {
             if ("true".equals(disabled)) {
-                assertEquals(USAGE_MISMATCH_ALIAS, normalizeAlias(chosenServerAlias));
-                assertEquals(USAGE_MISMATCH_ALIAS, normalizeAlias(chosenClientAlias));
+                chosenAliases.forEach(a ->
+                        assertEquals(USAGE_MISMATCH_ALIAS, normalizeAlias(a)));
 
                 // Assert the initial order of all aliases.
                 assertEquals(USAGE_MISMATCH_ALIAS,
@@ -248,8 +292,8 @@ public class CertChecking {
                 assertEquals(EXPIRED_ALIAS, normalizeAlias(allServerAliases[2]));
                 assertEquals(EXPIRED_ALIAS, normalizeAlias(allClientAliases[2]));
             } else {
-                assertEquals(PREFERRED_ALIAS, normalizeAlias(chosenServerAlias));
-                assertEquals(PREFERRED_ALIAS, normalizeAlias(chosenClientAlias));
+                chosenAliases.forEach(a ->
+                        assertEquals(PREFERRED_ALIAS, normalizeAlias(a)));
 
                 // Assert the correct sorted order of all aliases.
                 assertEquals(PREFERRED_ALIAS,
@@ -260,18 +304,39 @@ public class CertChecking {
                         normalizeAlias(allServerAliases[2]));
             }
         } else {
-            assertNull(chosenServerAlias);
-            assertNull(chosenClientAlias);
+            chosenAliases.forEach(Asserts::assertNull);
             assertNull(allServerAliases);
             assertNull(allClientAliases);
         }
     }
 
+    private static void aliasNotFoundTestCase(
+            String kmAlg, String keyAlg, String keyType) throws Exception {
 
-        // PKIX KeyManager adds a cache prefix to an alias.
+        X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
+                kmAlg, keyAlg, DEFAULT_KEY_USAGES);
+
+        assertNull(km.chooseServerAlias(keyType, null, null));
+        assertNull(km.chooseEngineServerAlias(keyType, null, null));
+        assertNull(km.chooseClientAlias(new String[]{keyType}, null, null));
+        assertNull(
+                km.chooseEngineClientAlias(new String[]{keyType}, null, null));
+        assertNull(km.getServerAliases(keyType, null));
+        assertNull(km.getClientAliases(keyType, null));
+    }
+
+    // PKIX KeyManager adds a cache prefix to an alias.
     private static String normalizeAlias(String alias) {
         return alias.substring(alias.lastIndexOf(".") + 1);
 
+    }
+
+    private static class InvalidPrincipal implements Principal {
+
+        @Override
+        public String getName() {
+            return null;
+        }
     }
 
     private static X509KeyManager getKeyManager(String kmAlg,

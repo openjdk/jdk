@@ -33,7 +33,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -48,6 +47,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.StandardConstants;
 import javax.net.ssl.X509ExtendedKeyManager;
+import javax.security.auth.x500.X500Principal;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
@@ -129,7 +129,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
     }
 
     // Algorithm constraints check.
-    protected boolean conformsToAlgorithmConstraints(
+    private boolean conformsToAlgorithmConstraints(
             AlgorithmConstraints constraints, Certificate[] chain,
             String variant) {
 
@@ -170,7 +170,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         return true;
     }
 
-    protected CheckResult certificateCheck(
+    private CheckResult certificateCheck(
             CheckType checkType, X509Certificate cert, Date date,
             List<SNIServerName> serverNames, String idAlgorithm) {
         return checksDisabled ? CheckResult.OK
@@ -455,18 +455,35 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         return list;
     }
 
-    // Make a Set out of the array
-    protected Set<Principal> getIssuerSet(Principal[] issuers) {
-        if ((issuers != null) && (issuers.length != 0)) {
-            return new HashSet<>(Arrays.asList(issuers));
+    // Make a Set out of the array.
+    protected static Set<X500Principal> getIssuerSet(Principal[] issuers) {
+
+        if (issuers != null && issuers.length != 0) {
+            Set<X500Principal> ret = new HashSet<>(issuers.length);
+
+            for (Principal p : issuers) {
+                if (p instanceof X500Principal) {
+                    ret.add((X500Principal) p);
+                } else {
+                    // Normally, this will never happen but try to recover if
+                    // it does.
+                    try {
+                        ret.add(new X500Principal(p.getName()));
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+            }
+            return ret.isEmpty() ? null : ret;
         } else {
             return null;
         }
     }
 
+    // Entry point to do all certificate checks.
     protected EntryStatus checkAlias(int keyStoreIndex, String alias,
             Certificate[] chain, Date verificationDate, List<KeyType> keyTypes,
-            Set<Principal> issuerSet, CheckType checkType,
+            Set<X500Principal> issuerSet, CheckType checkType,
             AlgorithmConstraints constraints,
             List<SNIServerName> requestedServerNames, String idAlgorithm) {
 
@@ -505,7 +522,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         }
 
         // Check issuers
-        if (issuerSet != null) {
+        if (issuerSet != null && !issuerSet.isEmpty()) {
             boolean found = false;
             for (Certificate cert : chain) {
                 X509Certificate xcert = (X509Certificate) cert;

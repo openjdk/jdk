@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 import jdk.test.lib.security.CertificateBuilder;
 import jdk.test.lib.security.SecurityUtils;
@@ -79,9 +80,14 @@ public class AlgorithmConstraintsCheck {
                 "jdk.tls.keymanager.disableCertChecking", disabled);
         SecurityUtils.addToDisabledTlsAlgs(certSignatureAlg);
 
-        X509KeyManager km = getKeyManager(kmAlg, certSignatureAlg);
+        X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
+                kmAlg, certSignatureAlg);
         String serverAlias = km.chooseServerAlias(KEY_TYPE, null, null);
+        String engineServerAlias = km.chooseEngineServerAlias(
+                KEY_TYPE, null, null);
         String clientAlias = km.chooseClientAlias(
+                new String[]{KEY_TYPE}, null, null);
+        String engineClientAlias = km.chooseEngineClientAlias(
                 new String[]{KEY_TYPE}, null, null);
 
         // PKIX KeyManager adds a cache prefix to an alias.
@@ -89,12 +95,22 @@ public class AlgorithmConstraintsCheck {
         String clientAliasPrefix = kmAlg.equalsIgnoreCase("PKIX") ? "2.0." : "";
 
         if ("true".equals(disabled)) {
-            assertEquals(serverAliasPrefix + CERT_ALIAS, serverAlias);
-            assertEquals(clientAliasPrefix + CERT_ALIAS, clientAlias);
+            assertEquals(CERT_ALIAS, normalizeAlias(serverAlias));
+            assertEquals(CERT_ALIAS, normalizeAlias(engineServerAlias));
+            assertEquals(CERT_ALIAS, normalizeAlias(clientAlias));
+            assertEquals(CERT_ALIAS, normalizeAlias(engineClientAlias));
         } else {
             assertNull(serverAlias);
+            assertNull(engineServerAlias);
             assertNull(clientAlias);
+            assertNull(engineClientAlias);
         }
+    }
+
+    // PKIX KeyManager adds a cache prefix to an alias.
+    private static String normalizeAlias(String alias) {
+        return alias.substring(alias.lastIndexOf(".") + 1);
+
     }
 
     private static X509KeyManager getKeyManager(String kmAlg,

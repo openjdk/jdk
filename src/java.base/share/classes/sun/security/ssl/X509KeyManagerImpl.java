@@ -32,13 +32,16 @@ import java.security.KeyStore;
 import java.security.KeyStore.Builder;
 import java.security.KeyStore.Entry;
 import java.security.KeyStore.PrivateKeyEntry;
+import java.security.KeyStoreException;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.*;
+import javax.security.auth.x500.X500Principal;
 
 /**
  * The new X509 key manager implementation. The main differences to the
@@ -245,8 +248,9 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
             return null;
         }
 
-        Set<Principal> issuerSet = getIssuerSet(issuers);
+        Set<X500Principal> issuerSet = getIssuerSet(issuers);
         List<EntryStatus> allResults = null;
+
         for (int i = 0, n = builders.size(); i < n; i++) {
             try {
                 List<EntryStatus> results = getAliases(i, keyTypeList,
@@ -266,7 +270,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                     }
                     allResults.addAll(results);
                 }
-            } catch (Exception e) {
+            } catch (KeyStoreException e) {
                 // ignore
             }
         }
@@ -293,13 +297,15 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
      */
     private String[] getAliases(
             String keyType, Principal[] issuers, CheckType checkType) {
+
         if (keyType == null) {
             return null;
         }
 
-        Set<Principal> issuerSet = getIssuerSet(issuers);
+        Set<X500Principal> issuerSet = getIssuerSet(issuers);
         List<KeyType> keyTypeList = getKeyTypes(keyType);
         List<EntryStatus> allResults = null;
+
         for (int i = 0, n = builders.size(); i < n; i++) {
             try {
                 List<EntryStatus> results = getAliases(i, keyTypeList,
@@ -310,7 +316,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                     }
                     allResults.addAll(results);
                 }
-            } catch (Exception e) {
+            } catch (KeyStoreException e) {
                 // ignore
             }
         }
@@ -364,11 +370,11 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
      *     matches
      */
     private List<EntryStatus> getAliases(int builderIndex,
-            List<KeyType> keyTypes, Set<Principal> issuerSet,
+            List<KeyType> keyTypes, Set<X500Principal> issuerSet,
             boolean findAll, CheckType checkType,
             AlgorithmConstraints constraints,
             List<SNIServerName> requestedServerNames,
-            String idAlgorithm) throws Exception {
+            String idAlgorithm) throws KeyStoreException {
 
         Builder builder = builders.get(builderIndex);
         KeyStore ks = builder.getKeyStore();

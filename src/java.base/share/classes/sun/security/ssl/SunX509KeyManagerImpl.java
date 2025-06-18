@@ -238,10 +238,6 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
             CheckType checkType, AlgorithmConstraints constraints,
             List<SNIServerName> requestedServerNames, String idAlgorithm) {
 
-        if (keyTypes == null) {
-            return null;
-        }
-
         String[] aliases = getAliases(
                 keyTypes, issuers, checkType,
                 constraints, requestedServerNames, idAlgorithm);
@@ -269,16 +265,7 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
             return null;
         }
 
-        if (issuers == null) {
-            issuers = new X500Principal[0];
-        }
-
-        if (!(issuers instanceof X500Principal[])) {
-            // normally, this will never happen but try to recover if it does
-            issuers = convertPrincipals(issuers);
-        }
-
-        Set<Principal> issuerSet = getIssuerSet(issuers);
+        Set<X500Principal> issuerSet = getIssuerSet(issuers);
         List<EntryStatus> results = null;
 
         for (Map.Entry<String, X509Credentials> entry :
@@ -310,26 +297,5 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
         // Sort results in order of alias preference.
         Collections.sort(results);
         return results.stream().map(r -> r.alias).toArray(String[]::new);
-    }
-
-    /*
-     * Convert an array of Principals to an array of X500Principals, if
-     * possible. Principals that cannot be converted are ignored.
-     */
-    private static X500Principal[] convertPrincipals(Principal[] principals) {
-        List<X500Principal> list = new ArrayList<>(principals.length);
-        for (int i = 0; i < principals.length; i++) {
-            Principal p = principals[i];
-            if (p instanceof X500Principal) {
-                list.add((X500Principal) p);
-            } else {
-                try {
-                    list.add(new X500Principal(p.getName()));
-                } catch (IllegalArgumentException e) {
-                    // ignore
-                }
-            }
-        }
-        return list.toArray(new X500Principal[0]);
     }
 }
