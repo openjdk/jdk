@@ -332,6 +332,8 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
 // As loop optimizations transform the inner loop, the outer strip mined loop stays mostly unchanged. The only exception
 // is nodes referenced from the SafePoint and sunk from the inner loop: they end up in the outer strip mined loop.
 //
+// Not adding Phis to the outer loop head from the beginning, and only adding them after loop optimizations
+// does not conform to C2's IR rules: any variable or memory slice that is mutated in a loop should have a Phi.
 // The main motivation for such a design that doesn't conform to C2's IR rules is to allow existing loop optimizations
 // to be mostly unaffected by the outer strip mined loop: the only extra step needed in most cases is to step over the
 // OuterStripMinedLoop. The main drawback is that once loop optimizations are over, an extra step is needed to finish
