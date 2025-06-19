@@ -234,12 +234,14 @@
                                                                             \
   product(intx, Tier3LoadFeedback, 5,                                       \
           "Tier 3 thresholds will increase twofold when C1 queue size "     \
-          "reaches this amount per compiler thread")                        \
+          "reaches this amount per compiler thread"                         \
+          "Passing 0 disables the threshold scaling")                       \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4LoadFeedback, 3,                                       \
           "Tier 4 thresholds will increase twofold when C2 queue size "     \
-          "reaches this amount per compiler thread")                        \
+          "reaches this amount per compiler thread"                         \
+          "Passing 0 disables the threshold scaling")                       \
           range(0, max_jint)                                                \
                                                                             \
   product(intx, TieredCompileTaskTimeout, 50,                               \
