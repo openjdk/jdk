@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
  * @requires vm.debug != true
  *
  * @run main/othervm/timeout=300
- *      -XX:ReservedCodeCacheSize=100m
+ *      -XX:ReservedCodeCacheSize=200m
  *      vm.mlvm.meth.stress.compiler.deoptimize.Test
  *      -threadsPerCpu 4
  *      -threadsExtra 2
@@ -66,7 +66,7 @@
  * @requires vm.debug == true
  *
  * @run main/othervm/timeout=300
- *      -XX:ReservedCodeCacheSize=100m
+ *      -XX:ReservedCodeCacheSize=200m
  *      vm.mlvm.meth.stress.compiler.deoptimize.Test
  *      -threadsPerCpu 2
  *      -threadsExtra 2
