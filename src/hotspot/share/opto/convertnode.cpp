@@ -282,7 +282,7 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
     if (conF != nullptr &&
         varS != nullptr &&
-        conF->bottom_type()->is_float_constant() &&
+        conF->bottom_type()->isa_float_constant() &&
         Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(binopF->Opcode())) &&
         Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
         Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
