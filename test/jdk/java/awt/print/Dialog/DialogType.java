@@ -67,11 +67,11 @@ public class DialogType {
     }
 
     private static void testDialogType() {
-        setPrintDialogAttributes(DialogSelectionType.NATIVE);
-        setPrintDialogAttributes(DialogSelectionType.COMMON);
+        setPrintDialogAttributes(DialogTypeSelection.NATIVE);
+        setPrintDialogAttributes(DialogTypeSelection.COMMON);
     }
 
-    private static void setPrintDialogAttributes(DialogSelectionType selection) {
+    private static void setPrintDialogAttributes(DialogTypeSelection selection) {
         PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
         aset.add(selection);
         job.printDialog(aset);
