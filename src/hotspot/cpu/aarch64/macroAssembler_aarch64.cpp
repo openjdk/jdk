@@ -984,11 +984,19 @@ void MacroAssembler::emit_static_call_stub() {
   mov_metadata(rmethod, nullptr);
 
   // Jump to the entry point of the c2i stub.
-  movptr(rscratch1, 0);
-  br(rscratch1);
+  if (codestub_branch_needs_far_jump()) {
+    movptr(rscratch1, 0);
+    br(rscratch1);
+  } else {
+    b(pc());
+  }
 }
 
 int MacroAssembler::static_call_stub_size() {
+  if (!codestub_branch_needs_far_jump()) {
+    // isb; movk; movz; movz; b
+    return 5 * NativeInstruction::instruction_size;
+  }
   // isb; movk; movz; movz; movk; movz; movz; br
   return 8 * NativeInstruction::instruction_size;
 }

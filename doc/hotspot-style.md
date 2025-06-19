@@ -770,6 +770,32 @@ ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
 
+### Initializing variables with static storage duration
+
+Variables with static storage duration and _dynamic initialization_
+[C++14 3.6.2](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+should be avoided, unless an implementation is permitted to perform the
+initialization as a static initialization. The order in which dynamic
+initializations occur is incompletely specified.  Initialization order
+problems can be difficult to deal with and lead to surprises.
+
+Variables with static storage duration and non-trivial destructors should be
+avoided. HotSpot doesn't generally try to cleanup on exit, and running
+destructors at exit can lead to problems.
+
+Some of the approaches used in HotSpot to avoid dynamic initialization
+include:
+
+* Use the `Deferred<T>` class template. Add a call to its initialization
+function at an appropriate place during VM initialization. The underlying
+object is never destroyed.
+
+* For objects of class type, use a variable whose value is a pointer to the
+class, initialized to `nullptr`. Provide an initialization function that sets
+the variable to a dynamically allocated object. Add a call to that function at
+an appropriate place during VM initialization. Such objects are usually never
+destroyed.
+
 ### Uniform Initialization
 
 The use of _uniform initialization_
@@ -1198,13 +1224,6 @@ namespace std;` to avoid needing to qualify Standard Library names.
 * Propagating exceptions
 ([n2179](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html)) &mdash;
 HotSpot does not permit the use of exceptions, so this feature isn't useful.
-
-* Avoid non-local variables with non-constexpr initialization.
-In particular, avoid variables with types requiring non-trivial
-initialization or destruction.  Initialization order problems can be
-difficult to deal with and lead to surprises, as can destruction
-ordering.  HotSpot doesn't generally try to cleanup on exit, and
-running destructors at exit can also lead to problems.
 
 * Avoid most operator overloading, preferring named functions.  When
 operator overloading is used, ensure the semantics conform to the
