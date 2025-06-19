@@ -85,9 +85,9 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         // report error
         int enh = getEnhancedExceptionsAllowed(env);
         if (enh == ENH_INIT_ERROR && (*env)->ExceptionCheck(env)) {
-            return;
+            return NULL;
         }
-        char *hmsg = (enh == ENH_ENABLED) ? hostname : "";
+        const char *hmsg = (enh == ENH_ENABLED) ? hostname : "";
         NET_ThrowByNameWithLastError(env, "java/net/UnknownHostException", hmsg);
         goto cleanupAndReturn;
     } else {
