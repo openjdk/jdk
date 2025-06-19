@@ -6260,6 +6260,16 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   return nullptr;
 }
 
+bool os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not supported on Windows.
+  return false;
+}
+
+bool os::print_max_file_descriptor_count(outputStream* st) {
+  // File descriptor counting not supported on Windows.
+  return false;
+}
+
 /*
  * Windows/x64 does not use stack frames the way expected by Java:
  * [1] in most cases, there is no frame pointer. All locals are addressed via RSP

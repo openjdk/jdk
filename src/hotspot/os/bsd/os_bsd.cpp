@@ -2528,7 +2528,7 @@ bool os::print_open_file_descriptors(outputStream* st) {
   // Allocate memory to hold the fd info
   fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
   fds = (struct proc_fdinfo*)os::malloc(fds_size, mtInternal);
-  if (fds == NULL) {
+  if (fds == nullptr) {
     return false;
   }
 

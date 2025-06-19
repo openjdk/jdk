@@ -5403,9 +5403,9 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 bool os::print_open_file_descriptors(outputStream* st) {
   DIR* dirp = opendir("/proc/self/fd");
   int fds = 0;
-  if (dirp != NULL) {
+  if (dirp != nullptr) {
     struct dirent* dentp;
-    while ((dentp = readdir(dirp)) != NULL) {
+    while ((dentp = readdir(dirp)) != nullptr) {
       if (isdigit(dentp->d_name[0])) {
         fds++;
       }
