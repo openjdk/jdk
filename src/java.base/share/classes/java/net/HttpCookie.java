@@ -51,10 +51,12 @@ import jdk.internal.access.SharedSecrets;
  * <i>http://www.ietf.org/rfc/rfc2965.txt</i></a>
  * </blockquote>
  *
- * <p> HttpCookie class can accept all these 3 forms of syntax.
+ * <p> HttpCookie class can accept all these 3 forms of syntax. This class also provides
+ * partial support for RFC 6265.
  *
  * @spec https://www.rfc-editor.org/info/rfc2109 RFC 2109: HTTP State Management Mechanism
  * @spec https://www.rfc-editor.org/info/rfc2965 RFC 2965: HTTP State Management Mechanism
+ * @spec https://www.rfc-editor.org/info/rfc6265 RFC 6265: HTTP State Management Mechanism
  * @author Edward Wang
  * @since 1.6
  */
