@@ -199,8 +199,7 @@ void VM_Version::common_initialize() {
       FLAG_SET_DEFAULT(UseRVV, false);
     } else {
       // read vector length from vector CSR vlenb
-      //_initial_vector_length = cpu_vector_length();
-      _initial_vector_length = 16;
+      _initial_vector_length = cpu_vector_length();
     }
   }
 
