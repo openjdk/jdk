@@ -579,7 +579,9 @@ public:
     return VMOp_ZMarkFlushOperation;
   }
 
-  virtual bool is_gc_operation() const { return true; }
+  virtual bool is_gc_operation() const {
+    return true;
+  }
 };
 
 bool ZMark::flush() {

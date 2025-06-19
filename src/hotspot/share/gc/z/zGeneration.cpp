@@ -442,7 +442,9 @@ public:
     OopMapCache::try_trigger_cleanup();
   }
 
-  virtual bool is_gc_operation() const { return true; }
+  virtual bool is_gc_operation() const {
+    return true;
+  }
 
   bool success() const {
     return _success;
@@ -1310,7 +1312,9 @@ class ZRendezvousGCThreads: public VM_Operation {
     return true;
   }
 
-  virtual bool is_gc_operation() const { return true; }
+  virtual bool is_gc_operation() const {
+    return true;
+  }
 
   void doit() {
     // Light weight "handshake" of the GC threads
