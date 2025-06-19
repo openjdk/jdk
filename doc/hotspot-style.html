@@ -77,6 +77,9 @@ SFINAE</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
+<li><a href="#initializing-variables-with-static-storage-duration"
+id="toc-initializing-variables-with-static-storage-duration">Initializing
+variables with static storage duration</a></li>
 <li><a href="#uniform-initialization"
 id="toc-uniform-initialization">Uniform Initialization</a></li>
 <li><a href="#local-function-objects"
@@ -791,6 +794,33 @@ differ from what the Java compilers implement.</p>
 "conservative" memory ordering, which may differ from (may be stronger
 than) sequentially consistent. There are algorithms in HotSpot that are
 believed to rely on that ordering.</p>
+<h3
+id="initializing-variables-with-static-storage-duration">Initializing
+variables with static storage duration</h3>
+<p>Variables with static storage duration and <em>dynamic
+initialization</em> <a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf">C++14
+3.6.2</a>). should be avoided, unless an implementation is permitted to
+perform the initialization as a static initialization. The order in
+which dynamic initializations occur is incompletely specified.
+Initialization order problems can be difficult to deal with and lead to
+surprises.</p>
+<p>Variables with static storage duration and non-trivial destructors
+should be avoided. HotSpot doesn't generally try to cleanup on exit, and
+running destructors at exit can lead to problems.</p>
+<p>Some of the approaches used in HotSpot to avoid dynamic
+initialization include:</p>
+<ul>
+<li><p>Use the <code>Deferred&lt;T&gt;</code> class template. Add a call
+to its initialization function at an appropriate place during VM
+initialization. The underlying object is never destroyed.</p></li>
+<li><p>For objects of class type, use a variable whose value is a
+pointer to the class, initialized to <code>nullptr</code>. Provide an
+initialization function that sets the variable to a dynamically
+allocated object. Add a call to that function at an appropriate place
+during VM initialization. Such objects are usually never
+destroyed.</p></li>
+</ul>
 <h3 id="uniform-initialization">Uniform Initialization</h3>
 <p>The use of <em>uniform initialization</em> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2672.htm">n2672</a>),
@@ -1198,12 +1228,6 @@ Library names.</p></li>
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html">n2179</a>)
 — HotSpot does not permit the use of exceptions, so this feature isn't
 useful.</p></li>
-<li><p>Avoid non-local variables with non-constexpr initialization. In
-particular, avoid variables with types requiring non-trivial
-initialization or destruction. Initialization order problems can be
-difficult to deal with and lead to surprises, as can destruction
-ordering. HotSpot doesn't generally try to cleanup on exit, and running
-destructors at exit can also lead to problems.</p></li>
 <li><p>Avoid most operator overloading, preferring named functions. When
 operator overloading is used, ensure the semantics conform to the normal
 expected behavior of the operation.</p></li>
