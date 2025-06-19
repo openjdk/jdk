@@ -28,7 +28,7 @@
 #include <utilities/sort.hpp>
 #include "unittest.hpp"
 
-constexpr size_t SIZE = 128;
+constexpr int TEST_ARRAY_SIZE = 128;
 
 class TwoInt {
 public:
@@ -39,19 +39,19 @@ public:
   TwoInt(int val, int idx) : val(val), idx(idx) {}
 };
 
-int ARRAY0[SIZE];
-TwoInt ARRAY1[SIZE];
+int ARRAY0[TEST_ARRAY_SIZE];
+TwoInt ARRAY1[TEST_ARRAY_SIZE];
 
 // Verify that the sort is correct, i.e. a[i] <= a[i + 1]
 void test_insertion_sort() {
-  for (size_t i = 0; i < SIZE; i++) {
+  for (int i = 0; i < TEST_ARRAY_SIZE; i++) {
     ARRAY0[i] = os::random();
   }
-  GrowableArrayFromArray<int> view(ARRAY0, SIZE);
+  GrowableArrayFromArray<int> view(ARRAY0, TEST_ARRAY_SIZE);
   InsertionSort::sort(view.ncbegin(), view.ncend(), [](int a, int b) {
     return a < b;
   });
-  for (size_t i = 0; i < SIZE - 1; i++) {
+  for (int i = 0; i < TEST_ARRAY_SIZE - 1; i++) {
     ASSERT_TRUE(ARRAY0[i] <= ARRAY0[i + 1]);
   }
 }
@@ -61,14 +61,14 @@ void test_insertion_sort() {
 // keys of 2 elements are the same, then the element that has the smaller idx will be ordered
 // before the one with the larger idx.
 void test_insertion_sort_stable() {
-  for (size_t i = 0; i < SIZE; i++) {
+  for (int i = 0; i < TEST_ARRAY_SIZE; i++) {
     ARRAY1[i] = TwoInt(os::random() & 15, i);
   }
-  GrowableArrayFromArray<TwoInt> view(ARRAY1, SIZE);
+  GrowableArrayFromArray<TwoInt> view(ARRAY1, TEST_ARRAY_SIZE);
   InsertionSort::sort(view.ncbegin(), view.ncend(), [](TwoInt a, TwoInt b) {
     return a.val < b.val;
   });
-  for (size_t i = 0; i < SIZE - 1; i++) {
+  for (int i = 0; i < TEST_ARRAY_SIZE - 1; i++) {
     TwoInt a = ARRAY1[i];
     TwoInt b = ARRAY1[i + 1];
     ASSERT_TRUE(a.val <= b.val);
