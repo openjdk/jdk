@@ -5399,3 +5399,21 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
+
+bool os::print_open_file_descriptors(outputStream* st) {
+  DIR* dirp = opendir("/proc/self/fd");
+  int fds = 0;
+  if (dirp != NULL) {
+    struct dirent* dentp;
+    while ((dentp = readdir(dirp)) != NULL) {
+      if (isdigit(dentp->d_name[0])) {
+        fds++;
+      }
+    }
+    closedir(dirp);
+    st->print_cr("OpenFileDescriptorCount = %d", fds - 1); // matches management code
+    return true;
+  } else {
+    return false;
+  }
+}

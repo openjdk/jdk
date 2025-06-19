@@ -2719,7 +2719,7 @@ void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
 
-void os::print_file_descriptor_info(outputStream* st) {
+bool os::print_open_file_descriptors(outputStream* st) {
   char fd_dir[32];
   snprintf(fd_dir, sizeof(fd_dir), "/proc/%d/fd", getpid());
   DIR* dirp = opendir(fd_dir);
@@ -2733,7 +2733,8 @@ void os::print_file_descriptor_info(outputStream* st) {
     }
     closedir(dirp);
     st->print_cr("OpenFileDescriptorCount = %d", fds - 1); // minus the opendir fd itself
+    return true;
   } else {
-    st->print_cr("OpenFileDescriptorCount = N/A");
+    return false;
   }
 }

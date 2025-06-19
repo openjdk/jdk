@@ -843,7 +843,10 @@ class os: AllStatic {
   static void print_elapsed_time(outputStream* st, double time);
 
   // Prints the number of open file descriptors for the current process
-  static void print_file_descriptor_info(outputStream* st);
+  static bool print_open_file_descriptors(outputStream* st);
+
+  // Prints the max file descriptor count
+  static bool print_max_file_descriptor_count(outputStream* st);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
