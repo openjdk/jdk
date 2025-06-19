@@ -161,11 +161,11 @@
           "When expanding, % of uncommitted space to claim.")               \
           range(0, 100)                                                     \
                                                                             \
-  product(size_t, G1ShrinkByPercentOfAvailable, 50, EXPERIMENTAL,           \
+  product(uint, G1ShrinkByPercentOfAvailable, 50, EXPERIMENTAL,           \
           "When shrinking, maximum % of free space to claim.")              \
           range(0, 100)                                                     \
                                                                             \
-  product(size_t, G1MinimumPercentOfGCTimeRatio, 25, EXPERIMENTAL,          \
+  product(uint, G1MinimumPercentOfGCTimeRatio, 25, EXPERIMENTAL,          \
           "Percentage of GCTimeRatio G1 will try to avoid going below.")    \
           range(0, 100)                                                     \
                                                                             \
