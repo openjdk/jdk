@@ -184,7 +184,7 @@ inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_li
 // that are indirectly referenced by hazard ptrs. An instance of this
 // class only contains one type of pointer.
 //
-class ThreadScanHashtable : public CHeapObj<mtThread> {
+class ThreadScanHashtable {
  private:
   static unsigned int ptr_hash(void * const& s1) {
     // 2654435761 = 2^32 * Phi (golden ratio)
@@ -196,15 +196,10 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
   typedef ResourceHashtable<void *, int, 1031,
                             AnyObj::C_HEAP, mtThread,
                             &ThreadScanHashtable::ptr_hash> PtrTable;
-  PtrTable * _ptrs;
+  PtrTable _ptrs;
 
  public:
-  // ResourceHashtable is passed to various functions and populated in
-  // different places so we allocate it using C_HEAP to make it immune
-  // from any ResourceMarks that happen to be in the code paths.
-  ThreadScanHashtable() : _ptrs(new (mtThread) PtrTable()) {}
-
-  ~ThreadScanHashtable() { delete _ptrs; }
+  ThreadScanHashtable() : _ptrs() {}
 
   bool has_entry(void *pointer) {
     int *val_ptr = _ptrs->get(pointer);
@@ -910,8 +905,8 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   }
 
   // Gather a hash table of the current hazard ptrs:
-  ThreadScanHashtable *scan_table = new ThreadScanHashtable();
-  ScanHazardPtrGatherThreadsListClosure scan_cl(scan_table);
+  ThreadScanHashtable scan_table();
+  ScanHazardPtrGatherThreadsListClosure scan_cl(&scan_table);
   threads_do(&scan_cl);
   OrderAccess::acquire(); // Must order reads of hazard ptr before reads of
                           // nested reference counters
@@ -924,7 +919,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   bool threads_is_freed = false;
   while (current != nullptr) {
     next = current->next_list();
-    if (!scan_table->has_entry((void*)current) && current->_nested_handle_cnt == 0) {
+    if (!scan_table.has_entry((void*)current) && current->_nested_handle_cnt == 0) {
       // This ThreadsList is not referenced by a hazard ptr.
       if (prev != nullptr) {
         prev->set_next_list(next);
@@ -956,8 +951,6 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   ValidateHazardPtrsClosure validate_cl;
   threads_do(&validate_cl);
 #endif
-
-  delete scan_table;
 }
 
 // Return true if the specified JavaThread is protected by a hazard
