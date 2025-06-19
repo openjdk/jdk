@@ -2546,7 +2546,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   int opc = in->Opcode();
 
   // For shorts and chars, check an additional set of nodes.
-  if (type->isa_int() == TypeInt::SHORT || type->isa_int() == TypeInt::CHAR) {
+  if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
     switch (opc) {
     case Op_ReverseBytesS:
     case Op_ReverseBytesUS:
@@ -2588,7 +2588,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_CountTrailingZerosI:
     return false;
   default:
-    // If this assert it hit, that means that we need to determine if the node can be safely truncated,
+    // If this assert is hit, that means that we need to determine if the node can be safely truncated,
     // and then add it to the list of truncating nodes or the list of non-truncating ones just above.
     // In product, we just return false, which is always correct.
     assert(false, "Unexpected node in SuperWord truncation: %s", NodeClassNames[in->Opcode()]);
