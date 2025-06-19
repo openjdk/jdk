@@ -140,7 +140,7 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  * tasks, as well as method {@link #submitWithTimeout} to cancel tasks
  * that take too long. The scheduled functions or actions may create
  * and invoke other {@linkplain ForkJoinTask ForkJoinTasks}. Delayed
- * actions become <em>enabled</em> for execution and behave as ordinary submitted
+ * actions become enabled for execution and behave as ordinary submitted
  * tasks when their delays elapse.  Scheduling methods return
  * {@linkplain ForkJoinTask ForkJoinTasks} that implement the {@link
  * ScheduledFuture} interface. Resource exhaustion encountered after

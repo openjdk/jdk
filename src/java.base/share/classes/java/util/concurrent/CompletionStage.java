@@ -99,8 +99,8 @@ import java.util.function.Function;
  * requiring its completion complete exceptionally as well, with a
  * {@link CompletionException} holding the exception as its
  * cause. This distinguishes exceptions in an action itself from those
- * it depends on. If you want them handled in the same way, you might
- * choose to catch {@link RuntimeException}.  If a stage is dependent
+ * it depends on. If they are to be handled in the same way, instead
+ * catch {@link RuntimeException}.  If a stage is dependent
  * on <em>both</em> of two stages, and both complete exceptionally,
  * then the CompletionException may correspond to either one of these
  * exceptions.  If a stage is dependent on <em>either</em> of two
@@ -150,9 +150,9 @@ import java.util.function.Function;
  *
  * <p>Memory consistency effects: Actions in a thread prior to the
  * submission of a computation producing a {@code CompletionStage}
- * <i>happen-before</I> that computation begins. And actions taken by
- * a {@code CompletionStage} <i>happen-before</i> actions of any
- * dependent stage subsequent to its completion.
+ * <i>happen-before</i> that computation begins. And actions taken by
+ * {@code CompletionStage x} <i>happen-before</i> actions of any
+ * dependent stage subsequent to {@code x}'s completion.
  *
  * @param <T> the type of values the stage produces or consumes
  *
