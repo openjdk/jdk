@@ -115,7 +115,7 @@ class StubGenerator: public StubCodeGenerator {
   //   [SP+176]  - thread                   : Thread*
   //
   address generate_call_stub(address& return_address) {
-    // Set up a new C frame, copy Java arguments, call frame manager
+    // Set up a new C frame, copy Java arguments, call template interpreter
     // or native_entry, and process result.
 
     StubGenStubId stub_id = StubGenStubId::call_stub_id;
@@ -272,10 +272,10 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("call {");
     {
-      // Call frame manager or native entry.
+      // Call template interpreter or native entry.
 
       //
-      // Register state on entry to frame manager / native entry:
+      // Register state on entry to template interpreter / native entry:
       //
       //   Z_ARG1 = r_top_of_arguments_addr  - intptr_t *sender tos (prepushed)
       //                                       Lesp = (SP) + copied_arguments_offset - 8
@@ -290,7 +290,7 @@ class StubGenerator: public StubCodeGenerator {
       __ z_lgr(Z_esp, r_top_of_arguments_addr);
 
       //
-      // Stack on entry to frame manager / native entry:
+      // Stack on entry to template interpreter / native entry:
       //
       //     F0      [TOP_IJAVA_FRAME_ABI]
       //             [outgoing Java arguments]
@@ -300,7 +300,7 @@ class StubGenerator: public StubCodeGenerator {
       //
 
       // Do a light-weight C-call here, r_new_arg_entry holds the address
-      // of the interpreter entry point (frame manager or native entry)
+      // of the interpreter entry point (template interpreter or native entry)
       // and save runtime-value of return_pc in return_address
       // (call by reference argument).
       return_address = __ call_stub(r_new_arg_entry);
@@ -309,11 +309,11 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       BLOCK_COMMENT("restore registers {");
-      // Returned from frame manager or native entry.
+      // Returned from template interpreter or native entry.
       // Now pop frame, process result, and return to caller.
 
       //
-      // Stack on exit from frame manager / native entry:
+      // Stack on exit from template interpreter / native entry:
       //
       //     F0      [ABI]
       //             ...
@@ -330,7 +330,7 @@ class StubGenerator: public StubCodeGenerator {
       __ pop_frame();
 
       // Reload some volatile registers which we've spilled before the call
-      // to frame manager / native entry.
+      // to template interpreter / native entry.
       // Access all locals via frame pointer, because we know nothing about
       // the topmost frame's size.
       __ z_lg(r_arg_result_addr, result_address_offset, r_entryframe_fp);
@@ -1468,11 +1468,120 @@ class StubGenerator: public StubCodeGenerator {
     return __ addr_at(start_off);
   }
 
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    Z_ARG1   - destination array address
+  //    Z_ARG2   - byte count (size_t)
+  //    Z_ARG3   - byte value
+  //
+  address generate_unsafe_setmemory(address unsafe_byte_fill) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
+    unsigned int start_off = __ offset();
+
+    // bump this on entry, not on exit:
+    // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    const Register dest = Z_ARG1;
+    const Register size = Z_ARG2;
+    const Register byteVal = Z_ARG3;
+    NearLabel tail, finished;
+    // fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
+
+    // Mark remaining code as such which performs Unsafe accesses.
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    __ z_vlvgb(Z_V0, byteVal, 0);
+    __ z_vrepb(Z_V0, Z_V0, 0);
+
+    __ z_aghi(size, -32);
+    __ z_brl(tail);
+
+    {
+      NearLabel again;
+      __ bind(again);
+      __ z_vst(Z_V0, Address(dest, 0));
+      __ z_vst(Z_V0, Address(dest, 16));
+      __ z_aghi(dest, 32);
+      __ z_aghi(size, -32);
+      __ z_brnl(again);
+    }
+
+    __ bind(tail);
+
+    {
+      NearLabel dont;
+      __ testbit(size, 4);
+      __ z_brz(dont);
+      __ z_vst(Z_V0, Address(dest, 0));
+      __ z_aghi(dest, 16);
+      __ bind(dont);
+    }
+
+    {
+      NearLabel dont;
+      __ testbit(size, 3);
+      __ z_brz(dont);
+      __ z_vsteg(Z_V0, 0, Z_R0, dest, 0);
+      __ z_aghi(dest, 8);
+      __ bind(dont);
+    }
+
+    __ z_tmll(size, 7);
+    __ z_brc(Assembler::bcondAllZero, finished);
+
+    {
+      NearLabel dont;
+      __ testbit(size, 2);
+      __ z_brz(dont);
+      __ z_vstef(Z_V0, 0, Z_R0, dest, 0);
+      __ z_aghi(dest, 4);
+      __ bind(dont);
+    }
+
+    {
+      NearLabel dont;
+      __ testbit(size, 1);
+      __ z_brz(dont);
+      __ z_vsteh(Z_V0, 0, Z_R0, dest, 0);
+      __ z_aghi(dest, 2);
+      __ bind(dont);
+    }
+
+    {
+      NearLabel dont;
+      __ testbit(size, 0);
+      __ z_brz(dont);
+      __ z_vsteb(Z_V0, 0, Z_R0, dest, 0);
+      __ bind(dont);
+    }
+
+    __ bind(finished);
+    __ z_br(Z_R14);
+
+    return __ addr_at(start_off);
+  }
+
+  // This is common errorexit stub for UnsafeMemoryAccess.
+  address generate_unsafecopy_common_error_exit() {
+    unsigned int start_off = __ offset();
+    __ z_lghi(Z_RET, 0); // return 0
+    __ z_br(Z_R14);
+    return __ addr_at(start_off);
+  }
 
   void generate_arraycopy_stubs() {
 
     // Note: the disjoint stubs must be generated first, some of
     // the conjoint stubs use them.
+
+    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
+
     StubRoutines::_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::jbyte_disjoint_arraycopy_id);
     StubRoutines::_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubGenStubId::jshort_disjoint_arraycopy_id);
     StubRoutines::_jint_disjoint_arraycopy       = generate_disjoint_nonoop_copy  (StubGenStubId::jint_disjoint_arraycopy_id);
@@ -1500,6 +1609,12 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jlong_arraycopy      = generate_conjoint_nonoop_copy(StubGenStubId::arrayof_jlong_arraycopy_id);
     StubRoutines::_arrayof_oop_arraycopy        = generate_conjoint_oop_copy(StubGenStubId::arrayof_oop_arraycopy_id);
     StubRoutines::_arrayof_oop_arraycopy_uninit = generate_conjoint_oop_copy(StubGenStubId::arrayof_oop_arraycopy_uninit_id);
+
+#ifdef COMPILER2
+    StubRoutines::_unsafe_setmemory =
+             VM_Version::has_VectorFacility() ? generate_unsafe_setmemory(StubRoutines::_jbyte_fill) : nullptr;
+
+#endif // COMPILER2
   }
 
   // Call interface for AES_encryptBlock, AES_decryptBlock stubs.
@@ -3168,6 +3283,10 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for s390
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
 
@@ -3183,6 +3302,10 @@ class StubGenerator: public StubCodeGenerator {
 
     //----------------------------------------------------------------------
     // Entry points that are platform specific.
+
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(4); // 4 for setMemory
+    }
 
     if (UseCRC32Intrinsics) {
       StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
@@ -3299,6 +3422,9 @@ class StubGenerator: public StubCodeGenerator {
  public:
   StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
+    case preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
     case initial_id:
       generate_initial_stubs();
       break;

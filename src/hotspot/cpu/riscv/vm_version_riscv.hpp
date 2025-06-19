@@ -221,13 +221,13 @@ class VM_Version : public Abstract_VM_Version {
       FLAG_SET_DEFAULT(UseExtension, true);     \
     }                                           \
 
-  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
+  // https://github.com/riscv/riscv-profiles/blob/main/src/profiles.adoc#rva20-profiles
   #define RV_USE_RVA20U64                            \
     RV_ENABLE_EXTENSION(UseRVC)                      \
 
   static void useRVA20U64Profile();
 
-  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
+  // https://github.com/riscv/riscv-profiles/blob/main/src/profiles.adoc#rva22-profiles
   #define RV_USE_RVA22U64                            \
     RV_ENABLE_EXTENSION(UseRVC)                      \
     RV_ENABLE_EXTENSION(UseZba)                      \
@@ -241,7 +241,7 @@ class VM_Version : public Abstract_VM_Version {
 
   static void useRVA22U64Profile();
 
-  // https://github.com/riscv/riscv-profiles/blob/main/rva23-profile.adoc#rva23u64-profile
+  // https://github.com/riscv/riscv-profiles/blob/main/src/rva23-profile.adoc#rva23u64-profile
   #define RV_USE_RVA23U64                           \
     RV_ENABLE_EXTENSION(UseRVC)                     \
     RV_ENABLE_EXTENSION(UseRVV)                     \
