@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8159055
- * @summary Verifies ImageIcon setImage and constructor handles null parameter
+ * @summary Verifies ImageIcon.setImage and ImageIcon(Image) constructor
+ *          handles null parameter
  * @run main ImageIconNullImageTest
  */
 
@@ -39,14 +40,14 @@ public class ImageIconNullImageTest {
     }
 
     private static void testImageIconNull() {
-        // Setting null image shouldn't cause NPE
+        // Passing null image shouldn't cause NPE
         new ImageIcon((Image) null);
     }
 
     private static void testSetImageNull() {
         ImageIcon icon = new ImageIcon();
 
-        // Setting null image shouldn't cause NPE
+        // Passing null image shouldn't cause NPE
         icon.setImage(null);
     }
 }
