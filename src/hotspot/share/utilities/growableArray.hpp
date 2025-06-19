@@ -27,10 +27,12 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <type_traits>
 
 // A growable array.
 
@@ -101,7 +103,7 @@ public:
   }
 };
 
-template <typename E> class GrowableArrayIterator;
+template <typename E, bool is_const = true> class GrowableArrayIterator;
 
 // Extends GrowableArrayBase with a typed data array.
 //
@@ -187,6 +189,14 @@ public:
 
   GrowableArrayIterator<E> end() const {
     return GrowableArrayIterator<E>(this, length());
+  }
+
+  GrowableArrayIterator<E, false> ncbegin() {
+    return GrowableArrayIterator<E, false>(this, 0);
+  }
+
+  GrowableArrayIterator<E, false> ncend() {
+    return GrowableArrayIterator<E, false>(this, length());
   }
 
   E pop() {
@@ -865,32 +875,84 @@ public:
 
 // Custom STL-style iterator to iterate over GrowableArrays
 // It is constructed by invoking GrowableArray::begin() and GrowableArray::end()
-template <typename E>
+template <typename E, bool is_const>
 class GrowableArrayIterator : public StackObj {
   friend class GrowableArrayView<E>;
 
- private:
-  const GrowableArrayView<E>* _array; // GrowableArray we iterate over
-  int _position;                      // The current position in the GrowableArray
+private:
+  using C = std::conditional_t<is_const, const GrowableArrayView<E>, GrowableArrayView<E>>;
+
+  C* _array;     // GrowableArray we iterate over
+  int _position; // The current position in the GrowableArray
 
   // Private constructor used in GrowableArray::begin() and GrowableArray::end()
-  GrowableArrayIterator(const GrowableArrayView<E>* array, int position) : _array(array), _position(position) {
+  GrowableArrayIterator(C* array, int position) : _array(array), _position(position) {
     assert(0 <= position && position <= _array->length(), "illegal position");
   }
 
- public:
-  GrowableArrayIterator() : _array(nullptr), _position(0) { }
-  GrowableArrayIterator& operator++() { ++_position; return *this; }
-  E operator*()                       { return _array->at(_position); }
+public:
+  using value_type = std::conditional_t<is_const, const E, E>;
+  using difference_type = int;
+  using reference = std::add_lvalue_reference_t<value_type>;
 
-  bool operator==(const GrowableArrayIterator& rhs)  {
+  GrowableArrayIterator() : _array(nullptr), _position(0) {}
+
+  GrowableArrayIterator operator+(difference_type i) const {
+    int new_pos = checked_cast<int>(jlong(_position) + jlong(i));
+    return GrowableArrayIterator(_array, new_pos);
+  }
+
+  GrowableArrayIterator operator-(difference_type i) const {
+    assert(i != min_jint, "invalid operand");
+    return *this + (-i);
+  }
+
+  GrowableArrayIterator& operator++() {
+    assert(_position < _array->length(), "illegal position");
+    ++_position;
+    return *this;
+  }
+
+  GrowableArrayIterator operator++(int) {
+    GrowableArrayIterator old = *this;
+    ++(*this);
+    return old;
+  }
+
+  GrowableArrayIterator& operator--() {
+    assert(_position > 0, "illegal position");
+    --_position;
+    return *this;
+  }
+
+  GrowableArrayIterator operator--(int) {
+    GrowableArrayIterator old = *this;
+    --(*this);
+    return old;
+  }
+
+  reference operator*() const {
+    return _array->at(_position);
+  }
+
+  bool operator==(const GrowableArrayIterator& rhs) const {
     assert(_array == rhs._array, "iterator belongs to different array");
     return _position == rhs._position;
   }
 
-  bool operator!=(const GrowableArrayIterator& rhs)  {
+  bool operator!=(const GrowableArrayIterator& rhs) const {
     assert(_array == rhs._array, "iterator belongs to different array");
     return _position != rhs._position;
+  }
+
+  bool operator<(const GrowableArrayIterator& rhs) const {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position < rhs._position;
+  }
+
+  bool operator>(const GrowableArrayIterator& rhs) const {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position > rhs._position;
   }
 };
 
