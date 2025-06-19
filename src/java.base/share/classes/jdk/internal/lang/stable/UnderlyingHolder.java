@@ -1,6 +1,7 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -19,24 +20,29 @@ public final class UnderlyingHolder<U> {
     private static final long COUNTER_OFFSET =
             UNSAFE.objectFieldOffset(UnderlyingHolder.class, "counter");
 
-    // Used reflectively
-    private volatile U underlying;
+    // Used reflectively. This field can only transition at most once from being set to a
+    // non-null reference to being `null`. Once `null`, it is never read. This allows
+    // the field to be non-volatile, which is crucial for getting optimum performance.
+    private U underlying;
 
     // Used reflectively
-    private volatile int counter;
+    private int counter;
 
     public UnderlyingHolder(U underlying, int counter) {
         this.underlying = underlying;
         this.counter = counter;
+        // Safe publication
+        UNSAFE.storeStoreFence();
     }
 
+    @ForceInline
     public U underlying() {
         return underlying;
     }
 
     // For testing only
     public int counter() {
-        return counter;
+        return UNSAFE.getIntVolatile(this, COUNTER_OFFSET);
     }
 
     public void countDown() {
