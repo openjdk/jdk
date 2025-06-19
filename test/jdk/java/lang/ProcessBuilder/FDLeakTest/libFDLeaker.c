@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,16 @@
  * questions.
  */
 
-/* @test
- * @bug 4189640
- * @summary Make setTTL/getTTL works
- * @run main SetTTLAndGetTTL
- */
+#include <stdio.h>
+#include "jvmti.h"
 
-import java.net.*;
-
-public class SetTTLAndGetTTL {
-
-    public static void main(String args[]) throws Exception {
-        MulticastSocket soc = null;
-
-        try {
-            soc = new MulticastSocket();
-        } catch(Exception e) {
-            throw new Exception("Unexpected Exception");
-        }
-
-        soc.setTTL((byte)200);
-        byte ttlValue = soc.getTTL();
-        if (ttlValue != (byte)200)
-            throw new Exception("setTTL/getTTL is broken");
-    }
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  const char* filename = "./testfile_FDLeaker.txt";
+  FILE* f = fopen(filename, "w");
+  if (f == NULL) {
+    return JNI_ERR;
+  }
+  printf("Opened and leaked %s (%d)", filename, fileno(f));
+  return JNI_OK;
 }
