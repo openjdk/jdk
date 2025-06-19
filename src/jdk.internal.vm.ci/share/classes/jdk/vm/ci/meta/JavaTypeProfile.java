@@ -37,8 +37,13 @@ public final class JavaTypeProfile extends AbstractJavaProfile<ProfiledType, Res
 
     private final TriState nullSeen;
 
+    /**
+     * @param nullSeen               whether a null value was at the type check.
+     * @param notRecordedProbability estimated probability of all types that could not be recorded due to profiling limitation
+     * @param pitems                 an array of profile items. This array is now owned by this object and should not be mutated by the caller.
+     */
     public JavaTypeProfile(TriState nullSeen, double notRecordedProbability, ProfiledType[] pitems) {
-        this(nullSeen, notRecordedProbability, List.of(pitems));
+        this(nullSeen, notRecordedProbability, MetaUtil.listFromTrustedArray(pitems));
     }
 
     private JavaTypeProfile(TriState nullSeen, double notRecordedProbability, List<ProfiledType> pitems) {

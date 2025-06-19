@@ -65,7 +65,7 @@ public class CallingConvention {
     public CallingConvention(int stackSize, AllocatableValue returnLocation, AllocatableValue... argumentLocations) {
         assert argumentLocations != null;
         assert returnLocation != null;
-        this.argumentLocations = List.of(argumentLocations);
+        this.argumentLocations = CodeUtil.listFromTrustedArray(argumentLocations);
         this.stackSize = stackSize;
         this.returnLocation = returnLocation;
         assert verify();

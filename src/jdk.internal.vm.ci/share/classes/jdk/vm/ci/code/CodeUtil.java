@@ -432,7 +432,7 @@ public class CodeUtil {
         }
 
         RegisterConfig registerConfig = codeCache.getRegisterConfig();
-        return registerConfig.getCallingConvention(type, retType, argTypes, valueKindFactory);
+        return registerConfig.getCallingConvention(type, retType, listFromTrustedArray(argTypes), valueKindFactory);
     }
 
     /**

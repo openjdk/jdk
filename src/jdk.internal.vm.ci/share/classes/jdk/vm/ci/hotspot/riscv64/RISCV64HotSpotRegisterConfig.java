@@ -189,7 +189,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory) {
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, List<JavaType> parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.NativeCall) {
             return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
@@ -208,16 +208,16 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         };
     }
 
-    private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
+    private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, List<JavaType> parameterTypes, HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
-        AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
+        AllocatableValue[] locations = new AllocatableValue[parameterTypes.size()];
 
         int currentGeneral = 0;
         int currentFP = 0;
         int currentStackOffset = 0;
 
-        for (int i = 0; i < parameterTypes.length; i++) {
-            final JavaKind kind = parameterTypes[i].getJavaKind().getStackKind();
+        for (int i = 0; i < parameterTypes.size(); i++) {
+            final JavaKind kind = parameterTypes.get(i).getJavaKind().getStackKind();
 
             switch (kind) {
                 case Byte:

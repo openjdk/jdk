@@ -54,7 +54,7 @@ public interface MetaAccessProvider {
         for (int i = 0; i < result.length; i++) {
             result[i] = lookupJavaType(classes[i]);
         }
-        return List.of(result);
+        return MetaUtil.listFromTrustedArray(result);
     }
 
     /**

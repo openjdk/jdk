@@ -186,7 +186,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory) {
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, List<? extends JavaType> parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.NativeCall) {
             return callingConvention(nativeGeneralParameterRegisters, nativeXMMParameterRegisters, windowsOS, returnType, parameterTypes, hotspotType, valueKindFactory);
@@ -218,18 +218,18 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
      *
      * @return the resulting calling convention
      */
-    private CallingConvention callingConvention(List<Register> generalParameterRegisters, List<Register> xmmParameterRegisters, boolean unified, JavaType returnType, JavaType[] parameterTypes,
+    private CallingConvention callingConvention(List<Register> generalParameterRegisters, List<Register> xmmParameterRegisters, boolean unified, JavaType returnType, List<JavaType> parameterTypes,
                     HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
         assert !unified || generalParameterRegisters.size() == xmmParameterRegisters.size() : "must be same size in unified mode";
-        AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
+        AllocatableValue[] locations = new AllocatableValue[parameterTypes.size()];
 
         int currentGeneral = 0;
         int currentXMM = 0;
         int currentStackOffset = type == HotSpotCallingConventionType.NativeCall && needsNativeStackHomeSpace ? generalParameterRegisters.size() * target.wordSize : 0;
 
-        for (int i = 0; i < parameterTypes.length; i++) {
-            final JavaKind kind = parameterTypes[i].getJavaKind().getStackKind();
+        for (int i = 0; i < parameterTypes.size(); i++) {
+            final JavaKind kind = parameterTypes.get(i).getJavaKind().getStackKind();
 
             switch (kind) {
                 case Byte:

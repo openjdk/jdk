@@ -33,8 +33,12 @@ import java.util.List;
  */
 public final class JavaMethodProfile extends AbstractJavaProfile<ProfiledMethod, ResolvedJavaMethod> {
 
+    /**
+     * @param notRecordedProbability estimated probability of all types that could not be recorded due to profiling limitation
+     * @param pitems                 an array of profile items. This array is now owned by this object and should not be mutated by the caller.
+     */
     public JavaMethodProfile(double notRecordedProbability, ProfiledMethod[] pitems) {
-        super(notRecordedProbability, List.of(pitems));
+        super(notRecordedProbability, MetaUtil.listFromTrustedArray(pitems));
     }
 
     public List<ProfiledMethod> getMethods() {
