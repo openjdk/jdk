@@ -53,13 +53,12 @@ import jtreg.SkippedException;
 public class MyanmarTextTest {
     private static final String TEXT = "\u1000\u103C";
 
-    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
-
     private static final List<String> FONT_CANDIDATES =
             List.of("Myanmar MN",
                     "Padauk",
                     "Myanmar Text",
                     "Noto Sans Myanmar");
+
     private static final String FONT_NAME = selectFontName();
 
     private final JFrame frame;
@@ -69,11 +68,8 @@ public class MyanmarTextTest {
 
     public static void main(String[] args) throws Exception {
         if (FONT_NAME == null) {
-            String fontList = String.join(", ", FONT_CANDIDATES);
-            System.err.println("Required font is not installed for OS: " + OS_NAME);
-            System.err.println("Checked fonts: " + fontList);
-            throw new SkippedException("Required fonts not installed for OS: "
-                    + OS_NAME + ". Checked fonts: " + fontList);
+            throw new SkippedException("No suitable font found out of the list: "
+                    + String.join(", ", FONT_CANDIDATES));
         }
 
         try {
@@ -138,11 +134,11 @@ public class MyanmarTextTest {
 
     private static String selectFontName() {
         return Arrays.stream(GraphicsEnvironment
-                        .getLocalGraphicsEnvironment()
-                        .getAvailableFontFamilyNames())
-                .filter(FONT_CANDIDATES::contains)
-                .findFirst()
-                .orElse(null);
+                             .getLocalGraphicsEnvironment()
+                             .getAvailableFontFamilyNames())
+                     .filter(FONT_CANDIDATES::contains)
+                     .findFirst()
+                     .orElse(null);
     }
 
 }
