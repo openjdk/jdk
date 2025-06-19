@@ -26,7 +26,6 @@
 package sun.net;
 
 import java.security.Security;
-import sun.util.logging.PlatformLogger;
 
 public final class InetAddressCachePolicy {
 
@@ -81,9 +80,6 @@ public final class InetAddressCachePolicy {
      */
     private static volatile int negativeCachePolicy = NEVER;
 
-    private static final PlatformLogger logger =
-            PlatformLogger.getLogger("sun.net.InetAddressCachePolicy");
-
     /*
      * Initialize
      */
@@ -108,50 +104,26 @@ public final class InetAddressCachePolicy {
                 staleCachePolicy = tmp;
             }
         }
-
-        // Log the resolved InetAddress cache policies
-        if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
-            logger.config(String.format(
-                    "InetAddressCachePolicy configuration: positive=%s, stale=%s, negative=%s",
-                    cachePolicy, staleCachePolicy, negativeCachePolicy));
-        }
     }
 
     private static Integer getProperty(String cachePolicyProp,
                                        String cachePolicyPropFallback) {
-        String tmpString = null;
         try {
-            tmpString = Security.getProperty(cachePolicyProp);
+            String tmpString = Security.getProperty(cachePolicyProp);
             if (tmpString != null) {
-                if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
-                    logger.config(String.format(
-                            "Security property '%s' resolved to '%s'", cachePolicyProp, tmpString));
-                }
                 return Integer.valueOf(tmpString);
             }
         } catch (NumberFormatException ignored) {
             // Ignore
-            if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
-                logger.warning("Invalid format for security property '" + cachePolicyProp +
-                        "' incorrectly set as: '" + tmpString + "'");
-            }
         }
 
         try {
-            tmpString = System.getProperty(cachePolicyPropFallback);
+            String tmpString = System.getProperty(cachePolicyPropFallback);
             if (tmpString != null) {
-                if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
-                    logger.config(String.format(
-                            "System property '%s' resolved to '%s'", cachePolicyPropFallback, tmpString));
-                }
                 return Integer.decode(tmpString);
             }
         } catch (NumberFormatException ignored) {
             // Ignore
-            if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
-                logger.warning("Invalid format for system property '" + cachePolicyPropFallback +
-                        "' incorrectly set as: '" + tmpString + "'");
-            }
         }
         return null;
     }
