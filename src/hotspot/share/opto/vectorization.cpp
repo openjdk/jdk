@@ -481,7 +481,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
-// Computing aliasing runtime check using init and limX of main loop
+// Computing aliasing runtime check using init and last of main loop
 // -----------------------------------------------------------------
 //
 // We have two VPointer vp1 and vp2, and would like to create a runtime check that
@@ -513,14 +513,16 @@ void VLoopDependencyGraph::PredsIterator::next() {
 // pointer p:
 //   (C0) is given by the construction of VPointer vp, which simply wraps a MemPointer mp.
 //   (c1) with v = iv and scale_v = iv_scale
-//   (C2) with r = [init, init + iv_stride, .. limX - stride_v, limX], which is the set
-//        of possible iv values in the loop, with init the first iv value, and limX
+//   (C2) with r = [init, init + iv_stride, .. last - stride_v, last], which is the set
+//        of possible iv values in the loop, with "init" the first iv value, and "last"
 //        the last iv value which is closest to limit.
-//        Note: iv_stride > 0  ->  limit - iv_stride <= limX < limit
-//              iv_stride < 0  ->  limit < limX <= limit - iv_stride
-//        We have to be a little careful, and cannot just use limit instead of limX as
+//        Note: iv_stride > 0  ->  limit - iv_stride <= last < limit
+//              iv_stride < 0  ->  limit < last <= limit - iv_stride
+//        We have to be a little careful, and cannot just use "limit" instead of "last" as
 //        the last value in r, because the iv never reaches limit in the main loop, and
 //        so we are not sure if the memory access at p(limit) is still in bounds.
+//        For now, we just assume that we can compute init and limit, and we will derive
+//        the computation of these values later on.
 //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
 //        the program has undefined behaviour already.
 //   (C4) abs(iv_scale * iv_stride) < 2^31 is given by the checks in
@@ -536,14 +538,14 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   p2(iv)  = p2(init) - init * iv_scale2 + iv * iv_scale2
 //
 // With the (Alternative Corrolary P) we get the alternative linar form:
-//   p1(iv)  = p1(limX) - limX * iv_scale1 + iv * iv_scale1             (LINEAR-FORM-LIMX)
-//   p2(iv)  = p2(limX) - limX * iv_scale2 + iv * iv_scale2
+//   p1(iv)  = p1(last) - last * iv_scale1 + iv * iv_scale1             (LINEAR-FORM-LAST)
+//   p2(iv)  = p2(last) - last * iv_scale2 + iv * iv_scale2
 //
 //
 // We can now use this linearity to construct aliasing runtime checks, depending on the
 // different "geometry" of the two VPointer over their iv, i.e. the "slopes" of the linear
 // functions. In the following graphs, the x-axis denotes the values of iv, from init to
-// limX. And the y-axis denotes the pointer position p(iv). Intuitively, this problem
+// last. And the y-axis denotes the pointer position p(iv). Intuitively, this problem
 // can be seen as having two bands that should not overlap.
 //
 //       Case 1                     Case 2                     Case 3
@@ -588,17 +590,17 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   Without loss of generality, we assume iv_scale1 < iv_scale2.
 //   (Otherwise, we just swap p1 and p2).
 //
-//   If iv_stride >= 0, i.e. init <= iv <= limX:
+//   If iv_stride >= 0, i.e. init <= iv <= last:
 //     (iv - init) * scale_1 <= (iv - init) * iv_scale
-//     (iv - limX) * scale_1 >= (iv - limX) * iv_scale                   (POS-STRIDE)
-//   If iv_stride <= 0, i.e. limX <= iv <= init:
+//     (iv - last) * scale_1 >= (iv - last) * iv_scale                   (POS-STRIDE)
+//   If iv_stride <= 0, i.e. last <= iv <= init:
 //     (iv - init) * scale_1 >= (iv - init) * iv_scale
-//     (iv - limX) * scale_1 <= (iv - limX) * iv_scale                   (NEG-STRIDE)
+//     (iv - last) * scale_1 <= (iv - last) * iv_scale                   (NEG-STRIDE)
 //
 //   Below, we show that these conditions are equivalent:
 //
-//       p1(init) + size1 <= p2(init)       (if iv_stride >= 0)  |    p2(limX) + size2 <= p1(limX)      (if iv_stride >= 0)   |
-//       p1(limX) + size1 <= p2(limX)       (if iv_stride <= 0)  |    p2(init) + size2 <= p1(init)      (if iv_stride <= 0)   |
+//       p1(init) + size1 <= p2(init)       (if iv_stride >= 0)  |    p2(last) + size2 <= p1(last)      (if iv_stride >= 0)   |
+//       p1(last) + size1 <= p2(last)       (if iv_stride <= 0)  |    p2(init) + size2 <= p1(init)      (if iv_stride <= 0)   |
 //       ----- is equivalent to -----                            |    ----- is equivalent to -----                            |
 //              (P1-BEFORE-P2)                                   |           (P1-AFTER-P2)                                    |
 //                                                               |                                                            |
@@ -606,54 +608,54 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //                                                               |                                                            |
 //     Assume: (P1-BEFORE-P2)                                    |  Assume: (P1-AFTER-P2)                                     |
 //       for all iv in r: p1(iv) + size1 <= p2(iv)               |    for all iv in r: p2(iv) + size2 <= p1(iv)               |
-//       => And since init and limX in r =>                      |    => And since init and limX in r =>                      |
+//       => And since init and last in r =>                      |    => And since init and last in r =>                      |
 //       p1(init) + size1 <= p2(init)                            |    p2(init) + size2 <= p1(init)                            |
-//       p1(limX) + size1 <= p2(limX)                            |    p2(limX) + size2 <= p1(limX)                            |
+//       p1(last) + size1 <= p2(last)                            |    p2(last) + size2 <= p1(last)                            |
 //                                                               |                                                            |
 //                                                               |                                                            |
-//     Assume: p1(init) + size1 <= p2(init)                      |  Assume: p2(limX) + size2 <= p1(limX)                      |
+//     Assume: p1(init) + size1 <= p2(init)                      |  Assume: p2(last) + size2 <= p1(last)                      |
 //        and: iv_stride >= 0                                    |     and: iv_stride >= 0                                    |
 //                                                               |                                                            |
 //          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
-//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LIMX) --------- |
-//        = size1 + p1(init) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(limX) - init * iv_scale2 + iv * iv_scale2 |
+//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LAST) --------- |
+//        = size1 + p1(init) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(last) - init * iv_scale2 + iv * iv_scale2 |
 //                           ------ apply (POS-STRIDE) --------- |                        ------ apply (POS-STRIDE) --------- |
-//       <= size1 + p1(init) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(limX) - init * iv_scale1 + iv * iv_scale1 |
+//       <= size1 + p1(init) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(last) - init * iv_scale1 + iv * iv_scale1 |
 //          -- assumption --                                     |       -- assumption --                                     |
-//       <=         p2(init) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(limX) - init * iv_scale1 + iv * iv_scale1 |
-//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LIMX) --------- |
+//       <=         p2(init) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(last) - init * iv_scale1 + iv * iv_scale1 |
+//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LAST) --------- |
 //        =         p2(iv)                                       |     =         p1(iv)                                       |
 //                                                               |                                                            |
 //                                                               |                                                            |
-//     Assume: p1(limX) + size1 <= p2(limX)                      |  Assume: p2(init) + size2 <= p1(init)                      |
+//     Assume: p1(last) + size1 <= p2(last)                      |  Assume: p2(init) + size2 <= p1(init)                      |
 //        and: iv_stride <= 0                                    |     and: iv_stride <= 0                                    |
 //                                                               |                                                            |
 //          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
-//                  --------- apply (LINEAR-FORM-LIMX) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
-//        = size1 + p1(limX) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(init) - init * iv_scale2 + iv * iv_scale2 |
+//                  --------- apply (LINEAR-FORM-LAST) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
+//        = size1 + p1(last) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(init) - init * iv_scale2 + iv * iv_scale2 |
 //                           ------ apply (NEG-STRIDE) --------- |                        ------ apply (NEG-STRIDE) --------- |
-//       <= size1 + p1(limX) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(init) - init * iv_scale1 + iv * iv_scale1 |
+//       <= size1 + p1(last) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(init) - init * iv_scale1 + iv * iv_scale1 |
 //          -- assumption --                                     |       -- assumption --                                     |
-//       <=         p2(limX) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(init) - init * iv_scale1 + iv * iv_scale1 |
-//                  --------- apply (LINEAR-FORM-LIMX) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
+//       <=         p2(last) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(init) - init * iv_scale1 + iv * iv_scale1 |
+//                  --------- apply (LINEAR-FORM-LAST) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
 //        =         p2(iv)                                       |     =         p1(iv)                                       |
 //                                                               |                                                            |
 //
 //   The obtained conditions already look very simple. However, we would like to avoid
-//   computing 4 addresses (p1(init), p1(limX), p2(init), p2(limX)), and would instead
+//   computing 4 addresses (p1(init), p1(last), p2(init), p2(last)), and would instead
 //   prefer to only compute 2 addresses, and derive the other two from the distance (span)
-//   between the pointers at init and limx. Using (LINEAR-FORM-INIT), we get:
+//   between the pointers at init and last. Using (LINEAR-FORM-INIT), we get:
 //
-//     p1(limX) = p1(init) - init * iv_scale1 + limX * iv_scale1                 (SPAN-1)
+//     p1(last) = p1(init) - init * iv_scale1 + last * iv_scale1                 (SPAN-1)
 //                         --------------- defines -------------
 //                p1(init) + span1
 //
-//     p2(limX) = p2(init) - init * iv_scale2 + limX * iv_scale2                 (SPAN-2)
+//     p2(last) = p2(init) - init * iv_scale2 + last * iv_scale2                 (SPAN-2)
 //                         --------------- defines -------------
 //                p1(init) + span2
 //
-//     span1 = - init * iv_scale1 + limX * iv_scale1 = (limX - init) * iv_scale1
-//     span2 = - init * iv_scale2 + limX * iv_scale2 = (limX - init) * iv_scale2
+//     span1 = - init * iv_scale1 + last * iv_scale1 = (last - init) * iv_scale1
+//     span2 = - init * iv_scale2 + last * iv_scale2 = (last - init) * iv_scale2
 //
 //   Thus, we can use the conditions below:
 //     p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
@@ -661,29 +663,133 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //
 // -------------------------------------------------------------------------------------------------------------------------
 //
-// Computing init and limX for the main loop
+// Computing the last iv value in a loop
+// -------------------------------------
+//
+// Let us define a helper function, that computes the last iv value in a loop,
+// given variable init and limit values, and a constant stride. If the loop
+// is never entered, we just return the init value.
+//
+//   LAST(init, stride, limit), where stride > 0:   |  LAST(init, stride, limit), where stride < 0:
+//     last = init                                  |  last = init
+//     for (iv = init; iv < limit; iv += stride)    |  for (iv = init; iv > limit; iv += stride)
+//       last = iv                                  |    last = iv
+//
+// It follows that for some k:
+//    last = init + k * stride
+//
+// If the loop is not entered, we can set k=0.
+//
+// If the loop is entered:
+//   last is very close to limit:
+//     stride > 0  ->  limit - stride <= last < limit
+//     stride < 0  ->  limit < last <= limit - stride
+//
+//     If stride > 0:
+//         limit        - stride                   <= last              <   limit
+//         limit        - stride                   <= init + k * stride <   limit
+//         limit - init - stride                   <=        k * stride <   limit - init
+//         limit - init - stride - 1               <         k * stride <=  limit - init - 1
+//        (limit - init - stride - 1) / stride     <         k          <= (limit - init - 1) / stride
+//        (limit - init          - 1) / stride - 1 <         k          <= (limit - init - 1) / stride
+//     -> k = (limit - init - 1) / stride
+//     -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
+//        Note: to incorporate the case where the loop is not entered (init >= limit), we see
+//              that the divident is zero or negative, and so the result will be zero or
+//              negative. Thus, we can just clamp the result to zero, to get a general solution:
+//
+//              k = MAX(0, (limit - init - 1) / abs(stride))
+//
+//     If stride < 0:
+//         limit                               <  last              <=   limit        - stride
+//         limit                               <  init + k * stride <=   limit        - stride
+//         limit - init                        <         k * stride <=   limit - init - stride
+//         limit - init + 1                    <=        k * stride <    limit - init - stride + 1
+//        (limit - init + 1) /     stride      >=        k          >   (limit - init - stride + 1) /     stride
+//       -(limit - init + 1) / abs(stride)     >=        k          >  -(limit - init - stride + 1) / abs(stride)
+//       -(limit - init + 1) / abs(stride)     >=        k          >  -(limit - init          + 1) / abs(stride) - 1
+//        (init - limit - 1) / abs(stride)     >=        k          >   (init - limit          - 1) / abs(stride) - 1
+//        (init - limit - 1) / abs(stride)     >=        k          >   (init - limit          - 1) / abs(stride) - 1
+//     -> k = (init - limit - 1) / abs(stride)
+//     -> dividend "init - limit" is >=0. So a regular round to zero division can be used.
+//        Note: to incorporate the case where the loop is not entered (init <= limit), we see
+//              that the divident is zero or negative, and so the result will be zero or
+//              negative. Thus, we can just clamp the result to zero, to get a general solution:
+//
+//              k = MAX(0, (init - limit - 1) / abs(stride))
+//
+// Now we can put it all together:
+//   LAST(init, stride, limit)
+//     If stride > 0:  k = MAX(0, (limit - init - 1) / abs(stride))
+//     If stride < 0:  k = MAX(0, (init - limit - 1) / abs(stride))
+//     return init + k * stride
+//
+// -------------------------------------------------------------------------------------------------------------------------
+//
+// Computing init and last for the main loop
 // -----------------------------------------
 //
-// TODO: need to compute limX
-// TODO: rename limX -> limit
+// As we have seen above, we always need the "init" of the main loop. And if "iv_scale1 != iv_scale2", then we
+// also need the "last" of the main loop. These values need to be pre-loop invariant, because the check is
+// to be performed before the pre-loop (at the predicate or multiversioning selector_if). It will be helpful
+// to recall the iv structure in the pre and main loop:
+//
+//                  | iv = pre_init
+//                  |
+//   Pre-Loop       | +----------------+
+//                  phi                |
+//                   |                 |
+//                   + pre_iv_stride   |
+//                   |                 |  -> pre_last: last iv value in pre-loop
+//                   |-----------------+
+//                   |
+//                   | exit check: < pre_limit
+//                   |
+//                   | iv = main_init = init
+//                   |
+//   Main-Loop       | +------------------------------+
+//                   phi                              |
+//                    |                               |
+//                    + main_iv_stride = iv_stride    |
+//                    |                               | -> last: last iv value in main-loop
+//                    |-------------------------------+
+//                    |
+//                    | exit check: < main_limit = limit
+//
+// Unfortunately, the init (aka. main_init) is not pre-loop invariant, rather it is only available
+// after the pre-loop. We will have to compute:
+//
+//   init = LAST(pre_init, pre_iv_stride, pre_limit) + pre_iv_stride
+//
+// If we need "last", we unfortunately must compute it as well:
+//
+//   last = LAST(init, iv_stride, limit)
+//
+// This works well under the assumption that both the pre and the main loop are entered.
+// Of course, whenever the main-loop is entered, the pre-loop must have been entered.
+// This is sufficent for correctness: only when we enter the main loop to we need the
+// guarantee that the aliasing runtime check passed.
+//
+//
+// TODO: need to compute last
 //
 // TODO: define compute_last(init, stride, limit)
 //
 // TODO: compute pre_last -> main_init
 //
-// The only thing left to compute is limX.
-//  limX is the last iv value in the range r:
-//    [init, init + iv_stride, .. limX - stride_v, limX]
+// The only thing left to compute is last.
+//  last is the last iv value in the range r:
+//    [init, init + iv_stride, .. last - stride_v, last]
 //  It follows, for some k:
-//    limX = init + k * iv_stride
+//    last = init + k * iv_stride
 //
-//  limX is very close to limit:
-//    iv_stride > 0  ->  limit - iv_stride <= limX < limit
-//    iv_stride < 0  ->  limit < limX <= limit - iv_stride
+//  last is very close to limit:
+//    iv_stride > 0  ->  limit - iv_stride <= last < limit
+//    iv_stride < 0  ->  limit < last <= limit - iv_stride
 //
 //  We want to find k:
 //    iv_stride > 0:
-//        limit        - iv_stride                      <= limX                 <   limit
+//        limit        - iv_stride                      <= last                 <   limit
 //        limit        - iv_stride                      <= init + k * iv_stride <   limit
 //        limit - init - iv_stride                      <=        k * iv_stride <   limit - init
 //        limit - init - iv_stride - 1                  <         k * iv_stride <=  limit - init - 1
@@ -693,7 +799,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //    -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
 //
 //    iv_stride < 0:
-//        limit                                  <  limX                 <=   limit        - iv_stride
+//        limit                                  <  last                 <=   limit        - iv_stride
 //        limit                                  <  init + k * iv_stride <=   limit        - iv_stride
 //        limit - init                           <         k * iv_stride <=   limit - init - iv_stride
 //        limit - init + 1                       <=        k * iv_stride <    limit - init - iv_stride + 1
@@ -821,17 +927,17 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     Node* diffL_m1 = new AddLNode(diffL, igvn.longcon(-1));
     Node* k = new DivLNode(nullptr, diffL_m1, abs_iv_strideL);
 
-    // Compute limX = init + k * iv_stride
+    // Compute last = init + k * iv_stride
     Node* k_mul_iv_stride = new MulLNode(k, iv_strideL);
-    Node* limX = new AddLNode(initL, k_mul_iv_stride);
+    Node* last = new AddLNode(initL, k_mul_iv_stride);
 
-    // Compute span1 = (limX - init) * iv_scale1
-    //         span2 = (limX - init) * iv_scale2
-    Node* limX_minus_init = new SubLNode(limX, initL);
+    // Compute span1 = (last - init) * iv_scale1
+    //         span2 = (last - init) * iv_scale2
+    Node* last_minus_init = new SubLNode(last, initL);
     Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
     Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
-    Node* span1 = new MulLNode(limX_minus_init, iv_scale1);
-    Node* span2 = new MulLNode(limX_minus_init, iv_scale2);
+    Node* span1 = new MulLNode(last_minus_init, iv_scale1);
+    Node* span2 = new MulLNode(last_minus_init, iv_scale2);
 
     phase->register_new_node_with_ctrl_of(initL,           init);
     phase->register_new_node_with_ctrl_of(limitL,          init);
@@ -839,8 +945,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     phase->register_new_node_with_ctrl_of(diffL_m1,        init);
     phase->register_new_node_with_ctrl_of(k,               init);
     phase->register_new_node_with_ctrl_of(k_mul_iv_stride, init);
-    phase->register_new_node_with_ctrl_of(limX,            init);
-    phase->register_new_node_with_ctrl_of(limX_minus_init, init);
+    phase->register_new_node_with_ctrl_of(last,            init);
+    phase->register_new_node_with_ctrl_of(last_minus_init, init);
     phase->register_new_node_with_ctrl_of(span1,           init);
     phase->register_new_node_with_ctrl_of(span2,           init);
 
