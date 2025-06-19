@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,15 @@ public class VirtualAllocTestType {
 
       // If the second mapping happens to be adjacent to the first mapping, reserve another mapping and release the second mapping; for
       // this test, we want to see two disjunct mappings.
-      if (addr2 == addr1 + reserveSize) {
-        long tmp = wb.NMTReserveMemory(reserveSize);
+      if ((addr2 == addr1 + reserveSize) || (addr2 + reserveSize == addr1)) {
+        // Reserve three adjacent regions and release the middle one.
+        long tmp = wb.NMTReserveMemory(reserveSize * 3);
+        wb.NMTReleaseMemory(tmp + reserveSize, reserveSize);
+
+        wb.NMTReleaseMemory(addr1, reserveSize);
         wb.NMTReleaseMemory(addr2, reserveSize);
-        addr2 = tmp;
+        addr1 = tmp;
+        addr2 = addr1 + reserveSize * 2;
       }
 
       output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
