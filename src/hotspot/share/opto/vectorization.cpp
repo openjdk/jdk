@@ -481,6 +481,9 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
+// Computing aliasing runtime check using init and limX of main loop
+// -----------------------------------------------------------------
+//
 // We have two VPointer vp1 and vp2, and would like to create a runtime check that
 // guarantees that the corresponding pointers p1 and p2 do not overlap (alias) for
 // any iv value in the strided range r = [init, init + iv_stride, .. limit).
@@ -655,6 +658,18 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   Thus, we can use the conditions below:
 //     p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
 //     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+//
+// -------------------------------------------------------------------------------------------------------------------------
+//
+// Computing init and limX for the main loop
+// -----------------------------------------
+//
+// TODO: need to compute limX
+// TODO: rename limX -> limit
+//
+// TODO: define compute_last(init, stride, limit)
+//
+// TODO: compute pre_last -> main_init
 //
 // The only thing left to compute is limX.
 //  limX is the last iv value in the range r:
