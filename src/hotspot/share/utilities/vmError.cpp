@@ -1556,12 +1556,14 @@ void VMError::print_vm_info(outputStream* st) {
   os::print_memory_info(st);
   st->cr();
 
+  // STEP("printing file descriptor info")
+
+  os::print_file_descriptor_info(st);
+  st->cr();
+
   // STEP("printing internal vm info")
 
   st->print_cr("vm_info: %s", VM_Version::internal_vm_info_string());
-  st->cr();
-
-  os::print_file_descriptor_info(st);
   st->cr();
 
   // print a defined marker to show that error handling finished correctly.
