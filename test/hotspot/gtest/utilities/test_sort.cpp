@@ -23,8 +23,8 @@
  */
 
 #include "runtime/os.hpp"
-#include "utilities/growableArray.hpp"
 #include <utilities/globalDefinitions.hpp>
+#include "utilities/powerOfTwo.hpp"
 #include <utilities/sort.hpp>
 #include "unittest.hpp"
 
@@ -43,15 +43,15 @@ int ARRAY0[TEST_ARRAY_SIZE];
 TwoInt ARRAY1[TEST_ARRAY_SIZE];
 
 // Verify that the sort is correct, i.e. a[i] <= a[i + 1]
-void test_insertion_sort() {
-  for (int i = 0; i < TEST_ARRAY_SIZE; i++) {
+void test_insertion_sort(int size) {
+  assert(size <= TEST_ARRAY_SIZE, "invalid parameter");
+  for (int i = 0; i < size; i++) {
     ARRAY0[i] = os::random();
   }
-  GrowableArrayFromArray<int> view(ARRAY0, TEST_ARRAY_SIZE);
-  InsertionSort::sort(view.ncbegin(), view.ncend(), [](int a, int b) {
-    return a < b;
+  InsertionSort::sort(ARRAY0, size, [](int a, int b) {
+    return a > b ? 1 : 0;
   });
-  for (int i = 0; i < TEST_ARRAY_SIZE - 1; i++) {
+  for (int i = 0; i < size - 1; i++) {
     ASSERT_TRUE(ARRAY0[i] <= ARRAY0[i + 1]);
   }
 }
@@ -60,15 +60,16 @@ void test_insertion_sort() {
 // values, there will inevitably be a lot of elements with the same key. We then verify that if the
 // keys of 2 elements are the same, then the element that has the smaller idx will be ordered
 // before the one with the larger idx.
-void test_insertion_sort_stable() {
-  for (int i = 0; i < TEST_ARRAY_SIZE; i++) {
-    ARRAY1[i] = TwoInt(os::random() & 15, i);
+void test_insertion_sort_stable(int size, int key_bound) {
+  assert(size <= TEST_ARRAY_SIZE, "invalid parameter");
+  assert(is_power_of_2(key_bound), "invalid parameter");
+  for (int i = 0; i < size; i++) {
+    ARRAY1[i] = TwoInt(os::random() & (key_bound - 1), i);
   }
-  GrowableArrayFromArray<TwoInt> view(ARRAY1, TEST_ARRAY_SIZE);
-  InsertionSort::sort(view.ncbegin(), view.ncend(), [](TwoInt a, TwoInt b) {
-    return a.val < b.val;
+  InsertionSort::sort(ARRAY1, size, [](TwoInt a, TwoInt b) {
+    return a.val > b.val ? 1 : 0;
   });
-  for (int i = 0; i < TEST_ARRAY_SIZE - 1; i++) {
+  for (int i = 0; i < size - 1; i++) {
     TwoInt a = ARRAY1[i];
     TwoInt b = ARRAY1[i + 1];
     ASSERT_TRUE(a.val <= b.val);
@@ -80,7 +81,15 @@ void test_insertion_sort_stable() {
 
 TEST(utilities, insertion_sort) {
   for (int i = 0; i < 100; i++) {
-    test_insertion_sort();
-    test_insertion_sort_stable();
+    test_insertion_sort(0);
+    test_insertion_sort(1);
+    test_insertion_sort(2);
+    test_insertion_sort(10);
+    test_insertion_sort(TEST_ARRAY_SIZE);
+    test_insertion_sort_stable(1, 1);
+    test_insertion_sort_stable(2, 1);
+    test_insertion_sort_stable(3, 2);
+    test_insertion_sort_stable(10, 4);
+    test_insertion_sort_stable(TEST_ARRAY_SIZE, 16);
   }
 }

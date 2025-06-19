@@ -29,39 +29,41 @@
 // An insertion sort that is stable and inplace.
 // This algorithm should be the ideal solution to sort a sequence with few elements. Arrays::sort
 // uses insertion sort for arrays up to around 50 elements.
-// For the requirements for the parameters, see those of std::sort.
+// comp should return a value > 0 iff the first argument is larger than the second argument. A full
+// comparison function satisfies this requirement but a simple a > b ? 1 : 0 also satisfies it.
 class InsertionSort : AllStatic {
 public:
-  template <class RandomIt, class Compare>
-  static void sort(RandomIt begin, RandomIt end, Compare comp) {
-    if (begin == end) {
+  template <class T, class Compare>
+  static void sort(T* data, int size, Compare comp) {
+    if (size == 0) {
       // Empty array
       return;
     }
 
-    for (RandomIt current = begin + 1; current < end; current++) {
-      typename RandomIt::value_type current_elem = *current;
+    T* begin = data;
+    T* end = data + size;
+    for (T* current = begin + 1; current < end; current++) {
+      T current_elem = *current;
 
       // Elements in [begin, current) has already been sorted, we search backward to find a
-      // location to insert the element at current
-      RandomIt pos = current;
+      // location to insert the element at current. In the meantime, shift all elements on the way
+      // up by 1.
+      T* pos = current;
       while (pos > begin) {
         // Since the sort is stable, we must insert the current element at the first location at
         // which the element is not greater than the current element (note that we are traversing
         // backward)
-        RandomIt prev = pos - 1;
-        if (!comp(current_elem, *prev)) {
+        T* prev = pos - 1;
+        if (comp(*prev, current_elem) <= 0) {
           break;
         }
 
+        *pos = *prev;
         pos = prev;
       }
 
       // Shift all elements in [pos, current) up by one then move current_elem to pos
       if (pos < current) {
-        for (RandomIt i = current; i > pos; i--) {
-          *i = *(i - 1);
-        }
         *pos = current_elem;
       }
     }
