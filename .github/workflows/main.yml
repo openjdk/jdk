@@ -369,7 +369,6 @@ jobs:
       runs-on: windows-11-arm
       msvc-toolset-version: '14.43'
       msvc-toolset-architecture: 'arm64'
-      make-target: 'hotspot'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
