@@ -734,9 +734,9 @@ public class ReentrantReadWriteLock
          * Acquires the read lock.
          *
          * <p>Acquires the read lock if the write lock is not held by
-         * another thread and returns immediately.
+         * any thread and returns immediately.
          *
-         * <p>If the write lock is held by another thread then
+         * <p>If the write lock is held by any thread then
          * the current thread becomes disabled for thread scheduling
          * purposes and lies dormant until the read lock has been acquired.
          */
@@ -749,9 +749,9 @@ public class ReentrantReadWriteLock
          * {@linkplain Thread#interrupt interrupted}.
          *
          * <p>Acquires the read lock if the write lock is not held
-         * by another thread and returns immediately.
+         * by any thread and returns immediately.
          *
-         * <p>If the write lock is held by another thread then the
+         * <p>If the write lock is held by any thread then the
          * current thread becomes disabled for thread scheduling
          * purposes and lies dormant until one of two things happens:
          *
@@ -791,10 +791,10 @@ public class ReentrantReadWriteLock
 
         /**
          * Acquires the read lock only if the write lock is not held by
-         * another thread at the time of invocation.
+         * any thread at the time of invocation.
          *
          * <p>Acquires the read lock if the write lock is not held by
-         * another thread and returns immediately with the value
+         * any thread and returns immediately with the value
          * {@code true}. Even when this lock has been set to use a
          * fair ordering policy, a call to {@code tryLock()}
          * <em>will</em> immediately acquire the read lock if it is
@@ -806,7 +806,7 @@ public class ReentrantReadWriteLock
          * tryLock(0, TimeUnit.SECONDS)} which is almost equivalent
          * (it also detects interruption).
          *
-         * <p>If the write lock is held by another thread then
+         * <p>If the write lock is held by any thread then
          * this method will return immediately with the value
          * {@code false}.
          *
