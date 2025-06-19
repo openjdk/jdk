@@ -294,11 +294,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     public void close() throws IOException {
         List<IOException> errors = ucp.closeLoaders();
 
-        // Log the initial close loaders operation
-        if (!errors.isEmpty()) {
-            System.err.println("Encountered IOException(s) while closing loaders: " + errors.size());
-        }
-
         // now close any remaining streams.
 
         synchronized (closeables) {
@@ -306,9 +301,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             for (Closeable c : keys) {
                 try {
                     c.close();
-                    System.err.println("Successfully closed: " + c);
                 } catch (IOException ioex) {
-                    System.err.println("Failed to close: " + c + ", Exception: " + ioex.getMessage());
                     errors.add(ioex);
                 }
             }
@@ -316,18 +309,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         }
 
         if (errors.isEmpty()) {
-            System.err.println("All resources closed successfully.");
             return;
         }
 
         IOException firstex = errors.remove(0);
 
         // Suppress any remaining exceptions
-
-        // Log the number of suppressed exceptions
-        if (!errors.isEmpty()) {
-            System.err.println("Suppressing " + errors.size() + " exceptions.");
-        }
 
         for (IOException error: errors) {
             firstex.addSuppressed(error);
