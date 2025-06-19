@@ -24,7 +24,6 @@
 /* @test
  * @bug 4449413
  * @summary Tests that checkbox and radiobuttons' check marks are visible when background is black
- * @author Ilya Boyandin
  * @run main/manual bug4449413
  */
 
