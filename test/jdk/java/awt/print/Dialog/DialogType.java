@@ -48,20 +48,18 @@ public class DialogType {
         It verifies that the dialogs behave properly when using new API
         to optionally select a native dialog where one is present.
         Two dialogs are shown in succession.
-        The test passes as long as no exceptions are thrown, *AND*
-        if running on Windows only, the first dialog is a native windows
+        The test passes as long as no exceptions are thrown.
+        Note: On Mac OS & on Windows, the first dialog is a native
         control which differs in appearance from the second dialog
     """;
 
     public static void main(String[] args) throws Exception {
         job = PrinterJob.getPrinterJob();
         if (job.getPrintService() == null) {
-            throw new SkippedException("Printer not configured or not available");
+            throw new SkippedException("Test skipped, printer is unavailable");
         }
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
-            .title("DialogType Test Instructions")
             .instructions(INSTRUCTIONS)
-            .rows((int)INSTRUCTIONS.lines().count() + 2)
             .columns(40)
             .build();
         testDialogType();
@@ -69,16 +67,15 @@ public class DialogType {
     }
 
     private static void testDialogType() {
+        setPrintDialogAttributes(DialogSelectionType.NATIVE);
+        setPrintDialogAttributes(DialogSelectionType.COMMON);
+    }
+
+    private static void setPrintDialogAttributes(DialogSelectionType selection) {
         PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
-        aset.add(DialogTypeSelection.NATIVE);
+        aset.add(selection);
         job.printDialog(aset);
         Attribute[] attrs = aset.toArray();
-        for (int i = 0; i < attrs.length; i++) {
-            System.out.println(attrs[i]);
-        }
-        aset.add(DialogTypeSelection.COMMON);
-        job.printDialog(aset);
-        attrs = aset.toArray();
         for (int i = 0; i < attrs.length; i++) {
             System.out.println(attrs[i]);
         }
