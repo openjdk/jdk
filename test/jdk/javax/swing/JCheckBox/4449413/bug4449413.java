@@ -56,8 +56,16 @@ import java.util.concurrent.TimeUnit;
 
 public class bug4449413 extends JFrame {
 
+    private static boolean isWindowsLF;
+
+    private static String INSTRUCTIONS_WINDOWSLF =
+        "There are eight controls, JCheckBox/JRadioButton with black background\n" +
+        "and JRadioButtonMenuItem/JCheckboxMenuItem with gray background\n";
+
     private static final String INSTRUCTIONS =
-            "There are eight controls with black backgrounds.\n" +
+            "There are eight controls with black backgrounds.\n";
+
+    private static final String INSTRUCTIONS_COMMON =
             "Four enabled (on the left side) and four disabled (on the right side)\n" +
             "checkboxes and radiobuttons.\n\n" +
             "1. If at least one of the controls' check marks is not visible:\n" +
@@ -82,6 +90,8 @@ public class bug4449413 extends JFrame {
     }
 
     public static void main(String[] args) throws Exception {
+        isWindowsLF = "Windows".equals(UIManager.getLookAndFeel().getID());
+
         SwingUtilities.invokeLater(() -> {
             instance = new bug4449413();
             instance.createAndShowGUI();
@@ -150,8 +160,10 @@ public class bug4449413 extends JFrame {
 
         JTextArea instructionArea = new JTextArea(
                 isMetalLookAndFeel()
-                        ? INSTRUCTIONS + INSTRUCTIONS_ADDITIONS_METAL
-                        : INSTRUCTIONS
+                        ? INSTRUCTIONS + INSTRUCTIONS_COMMON + INSTRUCTIONS_ADDITIONS_METAL
+                        : isWindowsLF
+                            ? (INSTRUCTIONS_WINDOWSLF + INSTRUCTIONS_COMMON)
+                            : (INSTRUCTIONS + INSTRUCTIONS_COMMON)
                 );
 
         instructionArea.setEditable(false);
@@ -189,8 +201,14 @@ public class bug4449413 extends JFrame {
         };
 
         b.setOpaque(true);
-        b.setBackground(Color.red);
-        b.setForeground(Color.blue);
+        if (isWindowsLF
+            && ((b instanceof JRadioButtonMenuItem)
+               || (b instanceof JCheckBoxMenuItem))) {
+            b.setBackground(Color.lightGray);
+        } else {
+            b.setBackground(Color.black);
+        }
+        b.setForeground(Color.white);
         b.setEnabled(enabled == 1);
         b.setSelected(true);
         return b;
