@@ -96,6 +96,9 @@ public:
   // Maximal (incl) word size a block can have to be manageable by this structure.
   const static size_t MaxWordSize = num_lists;
 
+  // for tests
+  static constexpr size_t header_wordsize = sizeof(Block) / BytesPerWord;
+
 private:
 
   Block* _blocks[num_lists];
@@ -132,9 +135,9 @@ private:
     }
   }
   static bool check_block_zap(const Block* b, size_t word_size) {
-    return word_size == 1 || // 1-word-sized blocks have no space for a canary
-           ( Zapper::is_zapped_location(b->base() + 1) &&
-             Zapper::is_zapped_location(b->base() + word_size - 1) );
+    return word_size <= header_wordsize || // 1-word-sized blocks have no space for a canary
+           ( Zapper::is_zapped_location(b->base() + header_wordsize) &&
+             Zapper::is_zapped_location(b->base() + word_size - header_wordsize) );
   }
 #endif
 

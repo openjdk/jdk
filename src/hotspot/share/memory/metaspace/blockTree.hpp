@@ -128,7 +128,6 @@ class BlockTree: public CHeapObj<mtMetaspace> {
   };
 
   STATIC_ASSERT(is_aligned(sizeof(Node), sizeof(MetaWord)));
-  static constexpr size_t node_header_wordsize = sizeof(Node) / sizeof(MetaWord);
 
   // Needed for verify() and print_tree()
   struct walkinfo;
@@ -140,9 +139,12 @@ class BlockTree: public CHeapObj<mtMetaspace> {
 
 public:
 
+  // Public only for tests
+  static constexpr size_t header_wordsize = sizeof(Node) / sizeof(MetaWord);
+
   // Minimum word size a block has to be to be added to this structure
   // (Node size + at least one word; smaller blocks -> BinList)
-  constexpr static size_t MinWordSize = node_header_wordsize + 1;
+  constexpr static size_t MinWordSize = header_wordsize + 1;
 
 private:
 
