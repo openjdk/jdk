@@ -198,13 +198,8 @@ public final class Track {
         // Or: document that the ticks() length will not be reduced
         // by deleting events (unless the EOT event is removed)
         synchronized(eventsList) {
-            if (set.remove(event)) {
-                if (eventsList.remove(event)) {
-                    return true;
-                }
-            }
+            return set.remove(event) && eventsList.remove(event);
         }
-        return false;
     }
 
     /**
