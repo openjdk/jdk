@@ -127,7 +127,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     public static final Register threadRegister = x23;
     public static final Register heapBaseRegister = x27;
 
-    private static final List<Register> reservedRegisters =List.of(zero, ra, sp, gp, tp, t0, t1, t2, fp);
+    private static final List<Register> reservedRegisters = List.of(zero, ra, sp, gp, tp, t0, t1, t2, fp);
 
     private static List<Register> initAllocatable(Architecture arch, boolean reserveForHeapBase) {
         List<Register> allRegisters = arch.getAvailableValueRegisters();
@@ -140,7 +140,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
                 continue;
             }
             assert !(reg.equals(zero) || reg.equals(ra) || reg.equals(sp) || reg.equals(gp) || reg.equals(tp) ||
-                     reg.equals(t0) || reg.equals(t1) || reg.equals(t2) || reg.equals(fp));
+                    reg.equals(t0) || reg.equals(t1) || reg.equals(t2) || reg.equals(fp));
             if (reserveForHeapBase && reg.equals(heapBaseRegister)) {
                 // skip heap base register
                 continue;
@@ -189,7 +189,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, List<JavaType> parameterTypes, ValueKindFactory<?> valueKindFactory) {
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, List<? extends JavaType> parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.NativeCall) {
             return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
@@ -208,8 +208,9 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         };
     }
 
-    private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, List<JavaType> parameterTypes, HotSpotCallingConventionType type,
-                    ValueKindFactory<?> valueKindFactory) {
+    private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType,
+                                                List<? extends JavaType> parameterTypes, HotSpotCallingConventionType type,
+                                                ValueKindFactory<?> valueKindFactory) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.size()];
 
         int currentGeneral = 0;

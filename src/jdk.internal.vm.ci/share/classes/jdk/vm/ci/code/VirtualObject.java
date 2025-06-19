@@ -109,7 +109,7 @@ public final class VirtualObject implements JavaValue {
                             appendValue(buf, vo.values[i], visited);
                         }
                     } else {
-                        List<ResolvedJavaField> fields = vo.type.getInstanceFields(true);
+                        List<? extends ResolvedJavaField> fields = vo.type.getInstanceFields(true);
                         int fieldIndex = 0;
                         for (int i = 0; i < vo.values.length; i++, fieldIndex++) {
                             if (i != 0) {
@@ -156,7 +156,7 @@ public final class VirtualObject implements JavaValue {
 
     public void verifyLayout(LayoutVerifier verifier) {
         if (!type.isArray()) {
-            List<ResolvedJavaField> fields = type.getInstanceFields(true);
+            List<? extends ResolvedJavaField> fields = type.getInstanceFields(true);
             int fieldIndex = 0;
             for (int i = 0; i < values.length; i++, fieldIndex++) {
                 JavaKind slotKind = slotKinds.get(i);

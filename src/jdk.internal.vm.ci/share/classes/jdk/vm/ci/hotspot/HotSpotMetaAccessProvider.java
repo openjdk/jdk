@@ -88,7 +88,7 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
 
         HotSpotResolvedJavaType holder = runtime.fromClass(fieldHolder);
         assert holder != null : fieldHolder;
-        List<ResolvedJavaField> fields;
+        List<? extends ResolvedJavaField> fields;
         if (Modifier.isStatic(reflectionField.getModifiers())) {
             fields = holder.getStaticFields();
         } else {

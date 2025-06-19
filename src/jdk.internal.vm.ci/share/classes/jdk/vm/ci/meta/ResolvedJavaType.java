@@ -167,7 +167,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * {@link Class#getInterfaces()} and as such, only returns the interfaces directly implemented
      * or extended by this type.
      */
-    List<ResolvedJavaType> getInterfaces();
+    List<? extends ResolvedJavaType> getInterfaces();
 
     /**
      * Gets the single implementor of this type. Calling this method on a non-interface type causes
@@ -285,14 +285,14 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *            type are included in the result with superclass fields coming before subclass fields
      * @return a list of non-static fields
      */
-    List<ResolvedJavaField> getInstanceFields(boolean includeSuperclasses);
+    List<? extends ResolvedJavaField> getInstanceFields(boolean includeSuperclasses);
 
     /**
      * Returns the static fields of this class, including {@linkplain ResolvedJavaField#isInternal()
      * internal} fields. A zero-length array is returned for array and primitive types. The order of
      * fields returned by this method is the same as {@link Class#getDeclaredFields}.
      */
-    List<ResolvedJavaField> getStaticFields();
+    List<? extends ResolvedJavaField> getStaticFields();
 
     /**
      * Returns the instance field of this class (or one of its super classes) at the given offset,
@@ -328,7 +328,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * similar to {@link Class#getDeclaredConstructors()} in terms of returned constructors. Calling
      * this method forces this type to be {@link #link linked}.
      */
-    List<ResolvedJavaMethod> getDeclaredConstructors();
+    List<? extends ResolvedJavaMethod> getDeclaredConstructors();
 
     /**
      * Returns a list reflecting all the constructors declared by this type. This method is
@@ -336,7 +336,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *
      * @param forceLink if {@code true}, forces this type to be {@link #link linked}
      */
-    default List<ResolvedJavaMethod> getDeclaredConstructors(boolean forceLink) {
+    default List<? extends ResolvedJavaMethod> getDeclaredConstructors(boolean forceLink) {
         throw new UnsupportedOperationException();
     }
 
@@ -345,7 +345,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * {@link Class#getDeclaredMethods()} in terms of returned methods. Calling this method forces
      * this type to be {@link #link linked}.
      */
-    List<ResolvedJavaMethod> getDeclaredMethods();
+    List<? extends ResolvedJavaMethod> getDeclaredMethods();
 
     /**
      * Returns a list reflecting all the methods declared by this type. This method is similar to
@@ -353,7 +353,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *
      * @param forceLink if {@code true}, forces this type to be {@link #link linked}
      */
-    default List<ResolvedJavaMethod> getDeclaredMethods(boolean forceLink) {
+    default List<? extends ResolvedJavaMethod> getDeclaredMethods(boolean forceLink) {
         throw new UnsupportedOperationException();
     }
 
@@ -366,7 +366,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *
      * @param forceLink if {@code true}, forces this type to be {@link #link linked}
      */
-    List<ResolvedJavaMethod> getAllMethods(boolean forceLink);
+    List<? extends ResolvedJavaMethod> getAllMethods(boolean forceLink);
 
     /**
      * Returns the {@code <clinit>} method for this class if there is one.

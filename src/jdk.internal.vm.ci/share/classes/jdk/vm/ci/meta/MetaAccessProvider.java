@@ -49,7 +49,7 @@ public interface MetaAccessProvider {
      * @param classes the Java class objects
      * @return the resolved Java type objects
      */
-    default List<ResolvedJavaType> lookupJavaTypes(Class<?>[] classes) {
+    default List<? extends ResolvedJavaType> lookupJavaTypes(Class<?>[] classes) {
         ResolvedJavaType[] result = new ResolvedJavaType[classes.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = lookupJavaType(classes[i]);

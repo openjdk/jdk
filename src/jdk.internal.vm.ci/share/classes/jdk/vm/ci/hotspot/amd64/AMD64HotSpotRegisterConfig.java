@@ -218,9 +218,10 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
      *
      * @return the resulting calling convention
      */
-    private CallingConvention callingConvention(List<Register> generalParameterRegisters, List<Register> xmmParameterRegisters, boolean unified, JavaType returnType, List<JavaType> parameterTypes,
-                    HotSpotCallingConventionType type,
-                    ValueKindFactory<?> valueKindFactory) {
+    private CallingConvention callingConvention(List<Register> generalParameterRegisters, List<Register> xmmParameterRegisters, boolean unified, JavaType returnType,
+                                                List<? extends JavaType> parameterTypes,
+                                                HotSpotCallingConventionType type,
+                                                ValueKindFactory<?> valueKindFactory) {
         assert !unified || generalParameterRegisters.size() == xmmParameterRegisters.size() : "must be same size in unified mode";
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.size()];
 
