@@ -1939,19 +1939,19 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // cp2's bootstrap specifier at idx2.
 bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
   BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
-  BSMAttributeEntry* e2 = bsm_attribute_entry(idx2);
+  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
   int k1 = e1->bootstrap_method_index();
-  int k2 = cp2->e2->bootstrap_method_index();
+  int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
   }
   int argc = e1->argument_count();
-  if (argc == cp2->e2->argument_count()) {
+  if (argc == e2->argument_count()) {
     for (int j = 0; j < argc; j++) {
       k1 = e1->argument_index(j);
-      k2 = cp2->e2->argument_index(j);
+      k2 = e2->argument_index(j);
       match = compare_entry_to(k1, cp2, k2);
       if (!match) {
         return false;
