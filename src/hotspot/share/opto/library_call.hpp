@@ -126,6 +126,15 @@ class LibraryCallKit : public GraphKit {
 
   virtual int reexecute_sp() { return _reexecute_sp; }
 
+  struct SavedState {
+    uint sp;
+    JVMState* jvms;
+    SafePointNode* map;
+    Unique_Node_List ctrl_succ;
+  };
+  SavedState clone_map_and_save_state();
+  void restore_state(const SavedState&);
+
   // Helper functions to inline natives
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node* test, RegionNode* region);
