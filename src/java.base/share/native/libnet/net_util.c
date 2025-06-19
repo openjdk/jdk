@@ -91,7 +91,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 }
 
 static int enhancedExceptionsInitialized = 0;
-static int enhancedExceptionsAllowed = -1;
+static int enhancedExceptionsAllowed = 0;
 
 int getEnhancedExceptionsAllowed(JNIEnv *env) {
     jclass cls;
@@ -101,9 +101,9 @@ int getEnhancedExceptionsAllowed(JNIEnv *env) {
         return enhancedExceptionsAllowed;
     }
     cls = (*env)->FindClass(env, "jdk/internal/util/Exceptions");
-    CHECK_NULL_RETURN(cls, JNI_FALSE);
+    CHECK_NULL_RETURN(cls, ENH_INIT_ERROR);
     fid = (*env)->GetStaticFieldID(env, cls, "enhancedNonSocketExceptionText", "Z");
-    CHECK_NULL_RETURN(fid, JNI_FALSE);
+    CHECK_NULL_RETURN(fid, -1);
     enhancedExceptionsAllowed = (*env)->GetStaticBooleanField(env, cls, fid);
     enhancedExceptionsInitialized = 1;
     return enhancedExceptionsAllowed;
