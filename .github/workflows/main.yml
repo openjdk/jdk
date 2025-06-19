@@ -310,7 +310,7 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
-      msvc-toolset-version: '14.43'
+      msvc-toolset-version: '14.44'
       msvc-toolset-architecture: 'x86.x64'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -322,7 +322,7 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-aarch64
-      msvc-toolset-version: '14.43'
+      msvc-toolset-version: '14.44'
       msvc-toolset-architecture: 'arm64'
       make-target: 'hotspot'
       extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
