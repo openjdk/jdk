@@ -770,46 +770,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 // This is sufficent for correctness: only when we enter the main loop to we need the
 // guarantee that the aliasing runtime check passed.
 //
-//
-// TODO: need to compute last
-//
-// TODO: define compute_last(init, stride, limit)
-//
-// TODO: compute pre_last -> main_init
-//
-// The only thing left to compute is last.
-//  last is the last iv value in the range r:
-//    [init, init + iv_stride, .. last - stride_v, last]
-//  It follows, for some k:
-//    last = init + k * iv_stride
-//
-//  last is very close to limit:
-//    iv_stride > 0  ->  limit - iv_stride <= last < limit
-//    iv_stride < 0  ->  limit < last <= limit - iv_stride
-//
-//  We want to find k:
-//    iv_stride > 0:
-//        limit        - iv_stride                      <= last                 <   limit
-//        limit        - iv_stride                      <= init + k * iv_stride <   limit
-//        limit - init - iv_stride                      <=        k * iv_stride <   limit - init
-//        limit - init - iv_stride - 1                  <         k * iv_stride <=  limit - init - 1
-//       (limit - init - iv_stride - 1) / iv_stride     <         k             <= (limit - init - 1) / iv_stride
-//       (limit - init             - 1) / iv_stride - 1 <         k             <= (limit - init - 1) / iv_stride
-//    -> k = (limit - init - 1) / iv_stride
-//    -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
-//
-//    iv_stride < 0:
-//        limit                                  <  last                 <=   limit        - iv_stride
-//        limit                                  <  init + k * iv_stride <=   limit        - iv_stride
-//        limit - init                           <         k * iv_stride <=   limit - init - iv_stride
-//        limit - init + 1                       <=        k * iv_stride <    limit - init - iv_stride + 1
-//       (limit - init + 1) /     iv_stride      >=        k             >   (limit - init - iv_stride + 1) /     iv_stride
-//      -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init - iv_stride + 1) / abs(iv_stride)
-//      -(limit - init + 1) / abs(iv_stride)     >=        k             >  -(limit - init             + 1) / abs(iv_stride) - 1
-//       (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
-//       (init - limit - 1) / abs(iv_stride)     >=        k             >   (init - limit             - 1) / abs(iv_stride) - 1
-//    -> k = (init - limit - 1) / abs(iv_stride)
-//    -> dividend "init - limit" is >=0. So a regular round to zero division can be used.
+// TODO: note about failing check if main loop not entered?
 //
 bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
   const VPointer& vp1 = *this;
