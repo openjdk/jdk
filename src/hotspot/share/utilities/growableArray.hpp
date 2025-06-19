@@ -105,6 +105,9 @@ public:
 
 template <typename E, bool is_const = true> class GrowableArrayIterator;
 
+template <typename E>
+using GrowableArrayNonConstIterator = GrowableArrayIterator<E, false>;
+
 // Extends GrowableArrayBase with a typed data array.
 //
 // E: Element type
@@ -192,11 +195,11 @@ public:
   }
 
   GrowableArrayIterator<E, false> ncbegin() {
-    return GrowableArrayIterator<E, false>(this, 0);
+    return GrowableArrayNonConstIterator<E>(this, 0);
   }
 
   GrowableArrayIterator<E, false> ncend() {
-    return GrowableArrayIterator<E, false>(this, length());
+    return GrowableArrayNonConstIterator<E>(this, length());
   }
 
   E pop() {
