@@ -46,15 +46,24 @@ public class TestArrayCopySelect {
     public static char[] output_arrU;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders", "-XX:-CompactStrings", "-XX:MaxInlineSize=70", "-XX:MinInlineFrequencyRatio=0");
-        TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders", "-XX:-CompactStrings", "-XX:MaxInlineSize=70", "-XX:MinInlineFrequencyRatio=0");
+        TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders",
+                                   "-XX:-CompactStrings",
+                                   "-XX:CompileCommand=inline,java.lang.StringBuilder::toString",
+                                   "-XX:CompileCommand=inline,java.lang.StringUTF16::getChars",
+                                   "-XX:CompileCommand=inline,java.lang.StringUTF16::toBytes");
+
+        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders",
+                                   "-XX:-CompactStrings",
+                                   "-XX:CompileCommand=inline,java.lang.StringBuilder::toString",
+                                   "-XX:CompileCommand=inline,java.lang.StringUTF16::getChars",
+                                   "-XX:CompileCommand=inline,java.lang.StringUTF16::toBytes");
     }
 
     @Test
     @Warmup(10000)
     @IR(applyIf = {"UseCompactObjectHeaders", "false"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
-    static void testStrUConcatAligned() {
+    static void testSBToStringAligned() {
         // Exercise the StringBuilder.toString API
         StringBuilder sb = new StringBuilder(input_strU);
         output_strU = sb.append(input_strU).toString();
@@ -64,7 +73,7 @@ public class TestArrayCopySelect {
     @Warmup(10000)
     @IR(applyIf = {"UseCompactObjectHeaders", "true"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
-    static void testStrUConcatUnAligned() {
+    static void testSBToStringUnAligned() {
         // Exercise the StringBuilder.toString API
         StringBuilder sb = new StringBuilder(input_strU);
         output_strU = sb.append(input_strU).toString();
