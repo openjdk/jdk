@@ -265,11 +265,11 @@
                                                                             \
   product(intx, TieredRateUpdateMinTime, 1,                                 \
           "Minimum rate sampling interval (in milliseconds)")               \
-          range(0, max_intx)                                                \
+          range(1, max_intx)                                                \
                                                                             \
   product(intx, TieredRateUpdateMaxTime, 25,                                \
           "Maximum rate sampling interval (in milliseconds)")               \
-          range(0, max_intx)                                                \
+          range(1, max_intx)                                                \
                                                                             \
   product(double, Tier0ProfileDelayFactor, 100.0, DIAGNOSTIC,               \
           "Delay profiling/compiling of methods that were "                 \
