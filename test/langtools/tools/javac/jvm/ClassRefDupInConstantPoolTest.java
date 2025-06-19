@@ -25,37 +25,19 @@
  * @test
  * @bug 8015927
  * @summary Class reference duplicates in constant pool
- * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.JavacTask toolbox.ToolBox
+ * @clean ClassRefDupInConstantPoolTest$Duplicates
  * @run main ClassRefDupInConstantPoolTest
  */
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.TreeSet;
-
-import toolbox.JavacTask;
-import toolbox.ToolBox;
 
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 
 public class ClassRefDupInConstantPoolTest {
-
-    private static final String DUPLICATE_REFS_CLASS =
-            """
-            class Duplicates {
-                String concat(String s1, String s2) {
-                    return s1 + (s2 == s1 ? " " : s2);
-                }
-            }""";
-
     public static void main(String[] args) throws Exception {
-        new JavacTask(new ToolBox()).sources(DUPLICATE_REFS_CLASS).run();
-
-        ClassModel cls = ClassFile.of().parse(Files.readAllBytes(Path.of("Duplicates.class")));
+        ClassModel cls = ClassFile.of().parse(ClassRefDupInConstantPoolTest.class.
+                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class").readAllBytes());
         ConstantPool pool = cls.constantPool();
 
         int duplicates = 0;
