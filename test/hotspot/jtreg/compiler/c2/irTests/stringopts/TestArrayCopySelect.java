@@ -30,102 +30,80 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8359270
  * @requires vm.debug == true & vm.compiler2.enabled
- * @summary C2: alignment check should consider base offset when emitting
-            arraycopy runtime call.
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64" | os.arch=="aarch64"
+ * @summary C2: alignment check should consider base offset when emitting arraycopy runtime call.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.stringopts.TestArrayCopySelect
  */
 
 public class TestArrayCopySelect {
 
+    public static final String input_strU = "\u0f21\u0f22\u0f23\u0f24\u0f25\u0f26\u0f27\u0f28";
+    public static final char[] input_arrU = new char[] {'\u0f21', '\u0f22', '\u0f23', '\u0f24',
+                                                        '\u0f25', '\u0f26', '\u0f27', '\u0f28'};
+
+    public static String output_strU;
+    public static char[] output_arrU;
+
     public static void main(String[] args) {
-        TestFramework framework = new TestFramework();
-        framework.addScenarios(new Scenario(0, "-XX:-UseCompactObjectHeaders"),
-                               new Scenario(1, "-XX:+UseCompactObjectHeaders"));
-        framework.start();
+        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders", "-XX:-CompactStrings", "-XX:MaxInlineSize=70", "-XX:MinInlineFrequencyRatio=0");
+        TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders", "-XX:-CompactStrings", "-XX:MaxInlineSize=70", "-XX:MinInlineFrequencyRatio=0");
     }
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = {IRNode.CALL_OF, "arrayof_jbyte_disjoint_arraycopy", ">0"})
-    static String testStrLConcatAligned() {
-        // Exercise the StringBuilder.toString API
-        StringBuilder sb = new StringBuilder("abcdefghijklmnop");
-        return sb.append("ABCDEFGHIJKLMNOP").toString();
-    }
-
-    @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "true"},
-        counts = {IRNode.CALL_OF, "arrayof_jbyte_disjoint_arraycopy", "0"})
-    static String testStrLConcatUnAligned() {
-        // Exercise the StringBuilder.toString API
-        StringBuilder sb = new StringBuilder("abcdefghijklmnop");
-        return sb.append("ABCDEFGHIJKLMNOP").toString();
-    }
-
-    @Test
+    @Warmup(10000)
     @IR(applyIf = {"UseCompactObjectHeaders", "false"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
-    static char[] testStrUGetCharsAligned(String strU) {
-        // Exercise the StringUTF16.getChars API
-        return strU.toCharArray();
+    static void testStrUConcatAligned() {
+        // Exercise the StringBuilder.toString API
+        StringBuilder sb = new StringBuilder(input_strU);
+        output_strU = sb.append(input_strU).toString();
     }
 
     @Test
+    @Warmup(10000)
     @IR(applyIf = {"UseCompactObjectHeaders", "true"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
-    static char[] testStrUGetCharsUnAligned(String strU) {
-        // Exercise the StringUTF16.getChars API
-        return strU.toCharArray();
+    static void testStrUConcatUnAligned() {
+        // Exercise the StringBuilder.toString API
+        StringBuilder sb = new StringBuilder(input_strU);
+        output_strU = sb.append(input_strU).toString();
     }
 
     @Test
+    @Warmup(10000)
     @IR(applyIf = {"UseCompactObjectHeaders", "false"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
-    static String testStrUtoBytesAligned(char[] arrU) {
-        // Exercise the StringUTF16.toBytes API
-        return String.valueOf(arrU);
+    static void testStrUGetCharsAligned() {
+        // Exercise the StringUTF16.getChars API
+        output_arrU = input_strU.toCharArray();
     }
 
     @Test
+    @Warmup(10000)
     @IR(applyIf = {"UseCompactObjectHeaders", "true"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
-    static String testStrUtoBytesUnAligned(char[] arrU) {
-        // Exercise the StringUTF16.toBytes API
-        return String.valueOf(arrU);
+    static void testStrUGetCharsUnAligned() {
+        // Exercise the StringUTF16.getChars API
+        output_arrU = input_strU.toCharArray();
     }
 
-    @Run(test = {"testStrLConcatAligned",
-                 "testStrLConcatUnAligned",
-                 "testStrUGetCharsAligned",
-                 "testStrUGetCharsUnAligned",
-                 "testStrUtoBytesAligned",
-                 "testStrUtoBytesUnAligned"})
-    public void runTests() {
-        {
-            String strL = testStrLConcatAligned();
-        }
-        {
-            String strL = testStrLConcatUnAligned();
-        }
-        {
-            String strU = "\u0f21\u0f22\u0f23\u0f24\u0f25\u0f26\u0f27\u0f28";
-            char[] arrU = testStrUGetCharsAligned(strU);
-        }
-        {
-            String strU = "\u0f21\u0f22\u0f23\u0f24\u0f25\u0f26\u0f27\u0f28";
-            char[] arrU = testStrUGetCharsUnAligned(strU);
-        }
-        {
-            char[] arrU = new char[] {'\u0f21', '\u0f22', '\u0f23', '\u0f24',
-                                      '\u0f25', '\u0f26', '\u0f27', '\u0f28'};
-            String strU = testStrUtoBytesAligned(arrU);
-        }
-        {
-            char[] arrU = new char[] {'\u0f21', '\u0f22', '\u0f23', '\u0f24',
-                                      '\u0f25', '\u0f26', '\u0f27', '\u0f28'};
-            String strU = testStrUtoBytesUnAligned(arrU);
-        }
+    @Test
+    @Warmup(10000)
+    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
+        counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
+    static void testStrUtoBytesAligned() {
+        // Exercise the StringUTF16.toBytes API
+        output_strU = String.valueOf(input_arrU);
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(applyIf = {"UseCompactObjectHeaders", "true"},
+        counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
+    static void testStrUtoBytesUnAligned() {
+        // Exercise the StringUTF16.toBytes API
+        output_strU = String.valueOf(input_arrU);
     }
 
 }
