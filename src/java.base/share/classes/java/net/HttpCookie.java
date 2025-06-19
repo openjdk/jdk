@@ -424,7 +424,8 @@ public final class HttpCookie implements Cloneable {
      * the object was created. By default, {@code -1} indicating the cookie will
      * persist until browser shutdown.
      *
-     * The value of this attribute is determined by the following steps:
+     * The value of this attribute is determined by the following steps, in line
+     * with RFC 6265:
      *
      * <ol><li>If {@link #setMaxAge(long)} was called, return the value set.</li>
      * <li>If previous step failed, and a {@code Max-Age} attribute was parsed
