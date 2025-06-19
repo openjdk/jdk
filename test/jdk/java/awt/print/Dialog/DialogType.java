@@ -44,7 +44,7 @@ public class DialogType {
     private static PrinterJob job;
 
     private static final String INSTRUCTIONS = """
-        This test assumes and requires that you have a printer installed
+        This test assumes and requires that you have a printer installed.
         It verifies that the dialogs behave properly when using new API
         to optionally select a native dialog where one is present.
         Two dialogs are shown in succession.
