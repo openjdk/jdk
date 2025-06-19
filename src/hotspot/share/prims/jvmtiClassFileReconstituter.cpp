@@ -411,7 +411,7 @@ void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
     write_u2(bsme->bootstrap_method_index());
     write_u2(num_bootstrap_arguments);
     for (int arg = 0; arg < num_bootstrap_arguments; arg++) {
-      u2 bootstrap_argument = cpool()->bsm_attribute_entry(n)->argument_index(arg);
+      u2 bootstrap_argument = bsme->argument_index(arg);
       write_u2(bootstrap_argument);
     }
   }
