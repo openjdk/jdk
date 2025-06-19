@@ -64,14 +64,24 @@ public class VirtualAllocTestType {
       // If the second mapping happens to be adjacent to the first mapping, reserve another mapping and release the second mapping; for
       // this test, we want to see two disjunct mappings.
       if ((addr2 == addr1 + reserveSize) || (addr2 + reserveSize == addr1)) {
-        // Reserve three adjacent regions and release the middle one.
-        long tmp = wb.NMTReserveMemory(reserveSize * 3);
-        wb.NMTReleaseMemory(tmp + reserveSize, reserveSize);
-
-        wb.NMTReleaseMemory(addr1, reserveSize);
-        wb.NMTReleaseMemory(addr2, reserveSize);
-        addr1 = tmp;
-        addr2 = addr1 + reserveSize * 2;
+        //            <---r1---><---r2---><---tmp--->
+        // <---tmp---><---r1---><---r2--->
+        //
+        long tmp = wb.NMTReserveMemory(reserveSize);
+        long r1 = addr1 < addr2 ? addr1 : addr2;
+        long r2 = addr1 > addr2 ? addr1 : addr2;
+        long tmp_end = tmp + reserveSize;
+        long r1_end = r1 + reserveSize;
+        long r2_end = r2 + reserveSize;
+        if (tmp >= r2_end) {
+          wb.NMTReleaseMemory(r2, reserveSize);
+          addr1 = r1;
+          addr2 = tmp;
+        } else if (tmp_end <= r1) {
+          wb.NMTReleaseMemory(r1, reserveSize);
+          addr1 = tmp;
+          addr2 = r2;
+        }
       }
 
       output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
