@@ -303,7 +303,7 @@ class ScanHazardPtrGatherThreadsListClosure : public ThreadClosure {
     assert_locked_or_safepoint(Threads_lock);
 
     if (thread == nullptr) return;
-    ThreadsList *hazard_ptr = thread->get_threads_hazard_ptr();
+    ThreadsList* hazard_ptr = thread->get_threads_hazard_ptr();
     if (hazard_ptr == nullptr) return;
 #ifdef ASSERT
     if (!Thread::is_hazard_ptr_tagged(hazard_ptr)) {
@@ -731,7 +731,7 @@ void ThreadsList::inc_nested_handle_cnt() {
   Atomic::inc(&_nested_handle_cnt);
 }
 
-bool ThreadsList::includes(const JavaThread * const p) const {
+bool ThreadsList::includes(const JavaThread* const p) const {
   if (p == nullptr) {
     return false;
   }
@@ -1022,7 +1022,7 @@ void ThreadsSMRSupport::remove_thread(JavaThread* thread) {
   // Final _java_thread_list will not generate a "Threads::remove" mesg.
   log_debug(thread, smr)("tid=%zu: Threads::remove: new ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(new_list));
 
-  ThreadsList *old_list = ThreadsSMRSupport::xchg_java_thread_list(new_list);
+  ThreadsList* old_list = ThreadsSMRSupport::xchg_java_thread_list(new_list);
   ThreadsSMRSupport::free_list(old_list);
 }
 
@@ -1035,7 +1035,7 @@ void ThreadsSMRSupport::set_delete_notify() {
 // Safely delete a JavaThread when it is no longer in use by a
 // ThreadsListHandle.
 //
-void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
+void ThreadsSMRSupport::smr_delete(JavaThread*thread) {
   elapsedTimer timer;
   if (EnableThreadSMRStatistics) {
     timer.start();
@@ -1118,13 +1118,13 @@ void ThreadsSMRSupport::wait_until_not_protected(JavaThread* thread) {
 
 // Apply the closure to all threads in the system, with a snapshot of
 // all JavaThreads provided by the list parameter.
-void ThreadsSMRSupport::threads_do(ThreadClosure *tc, ThreadsList *list) {
+void ThreadsSMRSupport::threads_do(ThreadClosure* tc, ThreadsList* list) {
   list->threads_do(tc);
   Threads::non_java_threads_do(tc);
 }
 
 // Apply the closure to all threads in the system.
-void ThreadsSMRSupport::threads_do(ThreadClosure *tc) {
+void ThreadsSMRSupport::threads_do(ThreadClosure* tc) {
   threads_do(tc, _java_thread_list);
 }
 
@@ -1205,7 +1205,7 @@ void ThreadsSMRSupport::print_info_on(outputStream* st) {
                    p2i(_to_delete_list), _to_delete_list->length());
       print_info_elements_on(st, _to_delete_list);
       st->print_cr("}");
-      for (ThreadsList *t_list = _to_delete_list->next_list();
+      for (ThreadsList* t_list = _to_delete_list->next_list();
            t_list != nullptr; t_list = t_list->next_list()) {
         st->print("next-> " INTPTR_FORMAT ", length=%u, elements={",
                   p2i(t_list), t_list->length());
@@ -1265,7 +1265,7 @@ void ThreadsSMRSupport::print_info_on(outputStream* st) {
 void ThreadsSMRSupport::print_info_elements_on(outputStream* st, ThreadsList* t_list) {
   uint cnt = 0;
   JavaThreadIterator jti(t_list);
-  for (JavaThread *jt = jti.first(); jt != nullptr; jt = jti.next()) {
+  for (JavaThread* jt = jti.first(); jt != nullptr; jt = jti.next()) {
     st->print(INTPTR_FORMAT, p2i(jt));
     if (cnt < t_list->length() - 1) {
       // Separate with comma or comma-space except for the last one.
