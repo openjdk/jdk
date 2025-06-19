@@ -61,12 +61,12 @@ public class VirtualAllocTestType {
       addr2 = wb.NMTReserveMemory(reserveSize);
       info = "reserve 2: addr2=" + addr2;
 
-      // If the second mapping happens to be adjacent to the first mapping, reserve another mapping and release the second mapping; for
-      // this test, we want to see two disjunct mappings.
-      if ((addr2 == addr1 + reserveSize) || (addr2 + reserveSize == addr1)) {
-        //            <---r1---><---r2---><---tmp--->
-        // <---tmp---><---r1---><---r2--->
+      // For this test, we want to see two disjunct mappings.
+      if ((addr2 == addr1 + reserveSize) || (addr2 == addr1 - reserveSize)) {
+        //               <---r1---><---r2--->...<---tmp--->
+        // <---tmp--->...<---r1---><---r2--->
         //
+        // Reserve a new region and find whether r1 or r2 to be released.
         long tmp = wb.NMTReserveMemory(reserveSize);
         long r1 = addr1 < addr2 ? addr1 : addr2;
         long r2 = addr1 > addr2 ? addr1 : addr2;
