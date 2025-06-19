@@ -1449,9 +1449,10 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     `report-on-exit=`*identifier*
     :   Specifies the name of the view to display when the Java Virtual Machine
-        (JVM) shuts down. This option is not available if the disk option is set
-        to false. For a list of available views, see `jfr help view`. By default,
-        no report is generated.
+        (JVM) shuts down. To specify more than one view, use the report-on-exit
+        parameter repeatedly. This option is not available if the disk option
+        is set to false. For a list of available views, see `jfr help view`.
+        By default, no report is generated.
 
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
