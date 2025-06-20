@@ -114,13 +114,6 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 #ifdef ASSERT
   Node* ctrl = kit.control();
 #endif
-  Unique_Node_List ctrl_succ;
-  for (DUIterator_Fast imax, i = kit.control()->fast_outs(imax); i < imax; i++) {
-    Node* out = kit.control()->fast_out(i);
-    if (out->is_CFG()) {
-      ctrl_succ.push(out);
-    }
-  }
   // Try to inline the intrinsic.
   if (callee->check_intrinsic_candidate() &&
       kit.try_to_inline(_last_predicate)) {
@@ -2390,6 +2383,7 @@ LibraryCallKit::SavedState LibraryCallKit::clone_map_and_save_state() {
 
 void LibraryCallKit::restore_state(const SavedState& state) {
   jvms()->set_map(state.map);
+  jvms()->set_sp(state.sp);
   state.map->set_jvms(jvms());
   set_map(state.map);
   set_sp(state.sp);
