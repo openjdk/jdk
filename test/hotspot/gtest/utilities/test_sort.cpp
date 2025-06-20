@@ -23,9 +23,8 @@
  */
 
 #include "runtime/os.hpp"
-#include <utilities/globalDefinitions.hpp>
 #include "utilities/powerOfTwo.hpp"
-#include <utilities/sort.hpp>
+#include "utilities/sort.hpp"
 #include "unittest.hpp"
 
 constexpr int TEST_ARRAY_SIZE = 128;

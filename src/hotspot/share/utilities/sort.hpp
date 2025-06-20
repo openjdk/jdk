@@ -36,7 +36,6 @@ public:
   template <class T, class Compare>
   static void sort(T* data, int size, Compare comp) {
     if (size == 0) {
-      // Empty array
       return;
     }
 
