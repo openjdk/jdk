@@ -61,7 +61,7 @@ public:
         pos = prev;
       }
 
-      // Shift all elements in [pos, current) up by one then move current_elem to pos
+      // Move current_elem to pos since all elements in [pos, current) have been shifted up by 1
       if (pos < current) {
         *pos = current_elem;
       }
