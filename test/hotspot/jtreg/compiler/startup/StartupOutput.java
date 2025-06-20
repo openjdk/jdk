@@ -36,6 +36,7 @@
 
 package compiler.startup;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
@@ -60,8 +61,9 @@ public class StartupOutput {
             throw new Exception("VM crashed with exit code " + exitCode);
         }
 
+        int minInitialSize = 800 + (Platform.isS390x() ? 800 : 0);
         for (int i = 0; i < 200; i++) {
-            int initialCodeCacheSizeInKb = 800 + rand.nextInt(400);
+            int initialCodeCacheSizeInKb = minInitialSize + rand.nextInt(400);
             int reservedCodeCacheSizeInKb = initialCodeCacheSizeInKb + rand.nextInt(200);
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=" + initialCodeCacheSizeInKb + "K", "-XX:ReservedCodeCacheSize=" + reservedCodeCacheSizeInKb + "k", "-version");
             out = new OutputAnalyzer(pb.start());
