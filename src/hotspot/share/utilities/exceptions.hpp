@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,9 @@ class Exceptions {
 
   // Count linkage errors
   static volatile int _linkage_errors;
+
+  // Logging
+  static void maybe_log_call_stack(Handle exception, bool omit_if_same);
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
@@ -190,6 +193,8 @@ class Exceptions {
 
   // for logging exceptions
   static void log_exception(Handle exception, const char* message);
+  static void log_exception_stacktrace(Handle exception);
+  static void log_exception_stacktrace(Handle exception, methodHandle method, int bci);
 };
 
 
