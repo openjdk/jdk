@@ -764,7 +764,7 @@ public:
   bool is_method_handle_archived() const { return _misc_flags.is_method_handle_archived(); }
   void set_is_method_handle_archived()   { _misc_flags.set_is_method_handle_archived(true); }
 
-  // If this class has been aot-inititalized, do we need to call its runtimeSetup()
+  // If this class has been aot-initialized, do we need to call its runtimeSetup()
   // method during the production run?
   bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
   void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }

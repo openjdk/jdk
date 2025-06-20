@@ -116,7 +116,6 @@ abstract class MethodHandleImpl {
         return mh;
     }
 
-    @MethodHandleArchived
     enum ArrayAccess {
         GET, SET, LENGTH;
 
@@ -1345,7 +1344,6 @@ abstract class MethodHandleImpl {
     }
 
     /** Intrinsic IDs */
-    @MethodHandleArchived
     /*non-public*/
     enum Intrinsic {
         SELECT_ALTERNATIVE,
