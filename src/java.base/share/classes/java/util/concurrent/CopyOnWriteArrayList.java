@@ -1997,22 +1997,11 @@ public class CopyOnWriteArrayList<E>
         }
 
         public E getFirst() {
-            synchronized (lock) {
-                int size = base.size();
-                if (size == 0)
-                    throw new NoSuchElementException();
-                else
-                    return base.get(size - 1);
-            }
+            return base.getLast();
         }
 
         public E getLast() {
-            synchronized (lock) {
-                if (base.size() == 0)
-                    throw new NoSuchElementException();
-                else
-                    return base.get(0);
-            }
+            return base.getFirst();
         }
 
         public int indexOf(Object o) {
@@ -2044,22 +2033,11 @@ public class CopyOnWriteArrayList<E>
         }
 
         public E removeFirst() {
-            synchronized (lock) {
-                int size = base.size();
-                if (size == 0)
-                    throw new NoSuchElementException();
-                else
-                    return base.remove(size - 1);
-            }
+            return base.removeLast();
         }
 
         public E removeLast() {
-            synchronized (lock) {
-                if (base.size() == 0)
-                    throw new NoSuchElementException();
-                else
-                    return base.remove(0);
-            }
+            return base.removeFirst();
         }
 
         public boolean removeIf(Predicate<? super E> filter) {
