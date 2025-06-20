@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
@@ -72,7 +73,7 @@ protected:
   volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
   size_t _soft_max_capacity;
-
+  ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
 
 private:
@@ -126,6 +127,8 @@ private:
   ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
+
+  virtual void post_initialize(ShenandoahHeap* heap);
 
   size_t soft_max_capacity() const override { return _soft_max_capacity; }
   size_t max_capacity() const override      { return _max_capacity; }
@@ -237,7 +240,33 @@ private:
 
   void increase_humongous_waste(size_t bytes);
   void decrease_humongous_waste(size_t bytes);
-  size_t get_humongous_waste() const { return _humongous_waste; }
+  size_t get_humongous_waste() const {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->humongous_waste_in_old();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->humongous_waste_in_mutator();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->humongous_waste_in_mutator() + _free_set->humongous_waste_in_old();
+      break;
+    }
+    result *= HeapWordSize;
+
+#define KELVIN_MONITOR_HUMONGOUS
+#ifdef KELVIN_MONITOR_HUMONGOUS
+    if (result != _humongous_waste) {
+      log_info(gc)("Generation %s expects consistency between humongous waste in free set (%zu) and in generation (%zu)",
+                   shenandoah_generation_name(_type), result, _humongous_waste);
+    }
+#endif
+
+    return result;
+  }
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();

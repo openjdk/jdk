@@ -752,9 +752,9 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.
     size_t first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     // Free set construction uses reserve quantities, because they are known to be valid here
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
+    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
   }
 }
 
@@ -807,6 +807,7 @@ ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
   _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
   _used(0), _bytes_allocated_since_gc_start(0),
   _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
+  _free_set(nullptr),
   _heuristics(nullptr)
 {
   _is_marking_complete.set();
@@ -823,6 +824,11 @@ ShenandoahGeneration::~ShenandoahGeneration() {
     delete q;
   }
   delete _task_queues;
+}
+
+void ShenandoahGeneration::post_initialize(ShenandoahHeap* heap) {
+  _free_set = heap->free_set();
+  assert(_free_set != nullptr, "bad initialization order");
 }
 
 void ShenandoahGeneration::reserve_task_queues(uint workers) {
@@ -906,6 +912,10 @@ void ShenandoahGeneration::increase_used(size_t bytes) {
 void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
   if (bytes > 0) {
     Atomic::add(&_humongous_waste, bytes);
+#ifdef KELVIN_MONITOR_HUMONGOUS
+    log_info(gc)("Generation %s humongous waste increased by %zu to %zu",
+                 shenandoah_generation_name(_type), bytes, _humongous_waste);
+#endif
   }
 }
 
@@ -914,6 +924,10 @@ void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
     assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
            "Waste (%zu) cannot be negative (after subtracting %zu)", _humongous_waste, bytes);
     Atomic::sub(&_humongous_waste, bytes);
+#ifdef KELVIN_MONITOR_HUMONGOUS
+    log_info(gc)("Generation %s humongous waste decreased by %zu to %zu",
+                 shenandoah_generation_name(_type), bytes, _humongous_waste);
+#endif
   }
 }
 

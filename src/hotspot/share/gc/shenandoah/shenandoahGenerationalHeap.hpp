@@ -40,6 +40,7 @@ public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
   void initialize_heuristics() override;
+  void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
     shenandoah_assert_generational();

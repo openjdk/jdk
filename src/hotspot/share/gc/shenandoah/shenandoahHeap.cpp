@@ -421,10 +421,10 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
 
-    size_t young_cset_regions, old_cset_regions;
 
+    post_initialize_heuristics();
     // We are initializing free set.  We ignore cset region tallies.
-    size_t first_old, last_old, num_old;
+    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
@@ -526,6 +526,10 @@ void ShenandoahHeap::initialize_mode() {
 void ShenandoahHeap::initialize_heuristics() {
   _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
   _global_generation->initialize_heuristics(mode());
+}
+
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize(this);
 }
 
 #ifdef _MSC_VER

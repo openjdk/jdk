@@ -907,6 +907,10 @@ void ShenandoahHeapRegion::decrement_humongous_waste() const {
   if (waste_bytes > 0) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahGeneration* generation = heap->generation_for(affiliation());
+#define KELVIN_HUMONGOUS_HEAP_REGION
+#ifdef KELVIN_HUMONGOUS_HEAP_REGION
+    log_info(gc)("Decrementing humongous waste by %zu in ShenHeapRegion", waste_bytes);
+#endif
     heap->decrease_humongous_waste(generation, waste_bytes);
   }
 }

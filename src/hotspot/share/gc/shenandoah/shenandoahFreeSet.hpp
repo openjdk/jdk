@@ -30,6 +30,9 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
+
+#define KELVIN_HUMONGOUS_WASTE
+
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
   Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
@@ -240,25 +243,13 @@ public:
 
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
 
-  inline void increase_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
-    _total_region_counts[int(which_partition)] += regions;
-  }
-
-  inline void decrease_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
-    assert(_total_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
-    _total_region_counts[int(which_partition)] -= regions;
-  }
+  inline void increase_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  inline void decrease_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
 
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
 
-  inline void increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words) {
-    _humongous_waste[int(which_partition)] += words;
-  }
-
-  inline void decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words) {
-    assert(_humongous_waste[int(which_partition)] >= words, "Cannot decrease waste beyond what is there");
-    _humongous_waste[int(which_partition)] -= words;
-  }
+  inline void increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words);
+  inline void decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words);
 
   inline void set_bias_from_left_to_right(ShenandoahFreeSetPartitionId which_partition, bool value) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
@@ -288,6 +279,13 @@ public:
            _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
            partition_membership_name(ssize_t(which_partition)));
     return _available[int(which_partition)];
+  }
+
+  // Returns words of humongous waste
+  inline size_t humongous_waste(ShenandoahFreeSetPartitionId which_partition) const {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    // This may be called with or without the global heap lock.  Changes to _humongous_waste[] are always made with heap lock.
+    return _humongous_waste[int(which_partition)];
   }
 
   // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
@@ -541,6 +539,9 @@ public:
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
   inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
+
+  inline size_t humongous_waste_in_mutator()  const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator); }
+  inline size_t humongous_waste_in_old() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::OldCollector); }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 

@@ -282,6 +282,10 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     // usage totals, including humongous waste, after evacuation is done.
     log_debug(gc)("promoting humongous region %zu, spanning %zu", region->index(), spanned_regions);
 
+#ifdef KELVIN_HUMONGOUS_WASTE
+    log_info(gc)("Promoting humongous object, transferring %zu bytes of humongous waste", humongous_waste);
+#endif
+
     young_gen->decrease_used(used_bytes);
     young_gen->decrease_humongous_waste(humongous_waste);
     young_gen->decrease_affiliated_region_count(spanned_regions);

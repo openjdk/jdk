@@ -199,6 +199,7 @@ public:
   void post_initialize() override;
   void initialize_mode();
   virtual void initialize_heuristics();
+  virtual void post_initialize_heuristics();
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
