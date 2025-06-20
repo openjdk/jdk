@@ -27,6 +27,7 @@ package java.io;
 
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -397,16 +398,6 @@ public abstract class Reader implements Readable, Closeable {
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
-    private String readAllCharsAsString() throws IOException {
-        StringBuilder result = new StringBuilder();
-        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
-        int nread;
-        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
-            result.append(cbuf, 0, nread);
-        }
-        return result.toString();
-    }
-
     /**
      * Reads all remaining characters as lines of text. This method blocks until
      * all remaining characters have been read and end of stream is detected,
@@ -457,7 +448,64 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public List<String> readAllLines() throws IOException {
-        return readAllCharsAsString().lines().toList();
+        char[] cb = new char[TRANSFER_BUFFER_SIZE];
+        int pos = 0;
+        List<String> lines = new ArrayList<String>();
+
+        StringBuilder sb = new StringBuilder(82);
+        int n = read(cb, 0, cb.length);
+        boolean eos = (n == -1);
+        while (!eos) {
+            boolean eol = false;
+            boolean stringAdded = false;
+            while (!eol) {
+                // Find the next line terminator. If none is found,
+                // "term" will equal "n".
+                int term = pos;
+                while (term < n) {
+                    char c = cb[term];
+                    if (c == '\r' || c == '\n')
+                        break;
+                    term++;
+                }
+
+                // Terminator found so at EOL.
+                if (term < n)
+                    eol = true;
+
+                if (term == pos) {
+                    // Current position is terminator so skip it.
+                    pos++;
+                } else { // term > pos
+                    if (eol && sb.length() == 0) {
+                        // Create and add a string to avoid the StringBuilder.
+                        lines.add(new String(cb, pos, term - pos));
+                        stringAdded = true;
+                    } else
+                        sb.append(cb, pos, term - pos);
+                    pos = term + 1;
+                }
+
+                if (pos >= n) {
+                    // Buffer content consumed so reload it.
+                    if ((n = read(cb, 0, cb.length)) < 0) {
+                        eos = eol = true;
+                        break;
+                    }
+                    pos = 0;
+                }
+            }
+
+            if (!stringAdded) {
+                // Derive a string and add it to the list.
+                lines.add(sb.toString());
+                sb.setLength(0);
+            }
+
+            eol = false;
+        }
+
+        return lines;
     }
 
     /**
@@ -499,7 +547,13 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public String readAllAsString() throws IOException {
-        return readAllCharsAsString();
+        StringBuilder result = new StringBuilder();
+        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
+        int nread;
+        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
+            result.append(cbuf, 0, nread);
+        }
+        return result.toString();
     }
 
     /** Maximum skip-buffer size */
