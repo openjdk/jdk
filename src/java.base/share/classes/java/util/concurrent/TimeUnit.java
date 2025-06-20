@@ -399,7 +399,7 @@ public enum TimeUnit {
      * @param timeout the maximum time to wait. If less than
      * or equal to zero, do not wait at all.
      * @throws  IllegalMonitorStateException  if the current thread is not
-     *               the owner of this object's monitor.
+     *               the owner of the object's monitor.
      * @throws InterruptedException if interrupted while waiting
      */
     public void timedWait(Object obj, long timeout)

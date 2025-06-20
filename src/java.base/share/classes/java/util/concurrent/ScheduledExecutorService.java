@@ -40,7 +40,7 @@ package java.util.concurrent;
  * delay, or to execute periodically.
  *
  * <p>The {@code schedule} methods create tasks with various delays
- * and return a task object that can be used to cancel or check
+ * and return {@link ScheduledFuture} objects that can be used to cancel or check
  * execution. When delays elapse, tasks are enabled for execution and
  * behave in accord with other {@link ExecutorService} tasks, except
  * that {@code scheduleAtFixedRate} and {@code scheduleWithFixedDelay}
