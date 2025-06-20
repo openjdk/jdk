@@ -439,7 +439,7 @@ Method* jniCheck::validate_jmethod_id(JavaThread* thr, jmethodID method_id) {
   }
   // jmethodIDs are handles in the class loader data,
   // but that can be expensive so check it last
-  else if (!Method::is_method_id(method_id)) {
+  else if (!Method::validate_jmethod_id(method_id)) {
     ReportJNIFatalError(thr, fatal_non_weak_method);
   }
   return m;
