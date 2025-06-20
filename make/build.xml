@@ -108,6 +108,15 @@
 
     <!-- The following locations can be used to override default property values. -->
 
+    <property environment="env"/>
+
+    <condition property="boot.java.home" value="${env.JAVA_HOME}">
+        <isset property="env.JAVA_HOME"/>
+    </condition>
+    <condition property="target.java.home" value="${env.JAVA_HOME}">
+        <isset property="env.JAVA_HOME"/>
+    </condition>
+
     <!-- Use this location for customizations specific to this instance of this workspace -->
     <property file="build.properties"/>
 
