@@ -661,6 +661,15 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //     p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
 //     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
 //
+//   We can express the same conditions in words and a graphical representation,
+//   that may help the reader with the intuition:
+//     if iv_stride > 0
+//
+//  TODO:
+//
+//     p1 p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
+//     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+//
 // -------------------------------------------------------------------------------------------------------------------------
 //
 // Computing the last iv value in a loop
@@ -898,6 +907,9 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
 #ifdef ASSERT
   if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
     tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
+    tty->print("pre_init:    "); pre_init->dump();
+    tty->print("pre_limit:   "); pre_limit->dump();
+    tty->print("pre_lastL:   "); pre_lastL->dump();
     tty->print("main_initL:  "); main_initL->dump();
     tty->print_cr("p1_init:");
     p1_init->dump_bfs(5, nullptr, "");
@@ -911,6 +923,7 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   if (vp1.iv_scale() == vp2.iv_scale()) {
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print_cr("  Same iv_scale(%d) -> parallel lines -> simple conditions:", vp1.iv_scale());
       tty->print_cr("  p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)");
       tty->print_cr("  -------- condition1 --------      ------- condition2 ---------");
     }
@@ -918,72 +931,68 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
     condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
     condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
   } else {
-    assert(false, "debug");
-    // TODO: compute and dump limit!
-    // also assert invariance
-    return nullptr;
-// x //    // p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
-// x //    // p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
-// x //    // ---------------- condition1 ----------------      --------------- condition2 -----------------
-// x //    Node* initL  = new ConvI2LNode(init);
-// x //    Node* limitL = new ConvI2LNode(limit);
-// x //    Node* iv_strideL = igvn.longcon(_vloop.iv_stride());
-// x //    Node* abs_iv_strideL = igvn.longcon(abs(_vloop.iv_stride()));
-// x //
-// x //    Node* pre_last = make_last(pre_initL, pre_iv_stride, pre_limitL);
-// x //
-// x //    Node* initL = new AddL(pre_last, pre_iv_strideL);
-// x //
-// x //    Node* last = make_last(initL, iv_stride, limitL);
-// x //
-// x //    // Compute span1 = (last - init) * iv_scale1
-// x //    //         span2 = (last - init) * iv_scale2
-// x //    Node* last_minus_init = new SubLNode(last, initL);
-// x //    Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
-// x //    Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
-// x //    Node* span1 = new MulLNode(last_minus_init, iv_scale1);
-// x //    Node* span2 = new MulLNode(last_minus_init, iv_scale2);
-// x //
-// x //    phase->register_new_node_with_ctrl_of(initL,           init);
-// x //    phase->register_new_node_with_ctrl_of(limitL,          init);
-// x //    phase->register_new_node_with_ctrl_of(diffL,           init);
-// x //    phase->register_new_node_with_ctrl_of(diffL_m1,        init);
-// x //    phase->register_new_node_with_ctrl_of(k,               init);
-// x //    phase->register_new_node_with_ctrl_of(k_mul_iv_stride, init);
-// x //    phase->register_new_node_with_ctrl_of(last,            init);
-// x //    phase->register_new_node_with_ctrl_of(last_minus_init, init);
-// x //    phase->register_new_node_with_ctrl_of(span1,           init);
-// x //    phase->register_new_node_with_ctrl_of(span2,           init);
-// x //
-// x //    // In the proof, we assumend: iv_scale1 < iv_scale2.
-// x //    if (vp1.iv_scale() > vp2.iv_scale()) {
-// x //      swap(p1_init, p2_init);
-// x //      swap(size1, size2);
-// x //      swap(span1, span2);
-// x //    }
-// x //
-// x //#ifdef ASSERT
-// x //    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-// x //      tty->print("p1_init: "); p1_init->dump();
-// x //      tty->print("p2_init: "); p2_init->dump();
-// x //      tty->print("size1: "); size1->dump();
-// x //      tty->print("size2: "); size2->dump();
-// x //      tty->print_cr("span1: "); span1->dump_bfs(5, nullptr, "");
-// x //      tty->print_cr("span2: "); span2->dump_bfs(5, nullptr, "");
-// x //    }
-// x //#endif
-// x //
-// x //    Node* p1_init_plus_span1 = new AddLNode(p1_init, span1);
-// x //    Node* p2_init_plus_span2 = new AddLNode(p2_init, span2);
-// x //    phase->register_new_node_with_ctrl_of(p1_init_plus_span1, init);
-// x //    phase->register_new_node_with_ctrl_of(p2_init_plus_span2, init);
-// x //    if (_vloop.iv_stride() >= 0) {
-// x //      condition1 = make_a_plus_b_leq_c(p1_init,            size1, p2_init,            phase);
-// x //      condition2 = make_a_plus_b_leq_c(p2_init_plus_span2, size2, p1_init_plus_span1, phase);
-// x //    } else {
-// x //      condition1 = make_a_plus_b_leq_c(p1_init_plus_span1, size1, p2_init_plus_span2, phase);
-// x //      condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase);
-// x //    }
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print_cr("  Different iv_scale -> lines with different slopes -> more complex conditions:");
+      tty->print_cr("  p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1  (if iv_stride >= 0)");
+      tty->print_cr("  p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)          (if iv_stride <= 0)");
+      tty->print_cr("  ---------------- condition1 ----------------      --------------- condition2 -----------------");
+    }
+#endif
+
+    // last (aka main_last): compute from main-loop structure.
+    jint main_iv_stride = _vloop.iv_stride();
+    Node* main_limit = _vloop.cl()->limit();
+    assert(_vloop.is_pre_loop_invariant(main_limit), "needed for aliasing check before pre-loop");
+
+    Node* main_limitL = new ConvI2LNode(main_limit);
+    phase->register_new_node_with_ctrl_of(main_limitL, pre_init);
+
+    Node* main_lastL = make_last(main_initL, main_iv_stride, main_limitL, phase);
+
+    // Compute span1 = (last - init) * iv_scale1
+    //         span2 = (last - init) * iv_scale2
+    Node* last_minus_init = new SubLNode(main_lastL, main_initL);
+    Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
+    Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
+    Node* span1 = new MulLNode(last_minus_init, iv_scale1);
+    Node* span2 = new MulLNode(last_minus_init, iv_scale2);
+
+    phase->register_new_node_with_ctrl_of(last_minus_init, pre_init);
+    phase->register_new_node_with_ctrl_of(span1,           pre_init);
+    phase->register_new_node_with_ctrl_of(span2,           pre_init);
+
+    // In the proof, we assumend: iv_scale1 < iv_scale2.
+    if (vp1.iv_scale() > vp2.iv_scale()) {
+      swap(p1_init, p2_init);
+      swap(size1, size2);
+      swap(span1, span2);
+    }
+
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print("main_limitL: "); main_limitL->dump();
+      tty->print("main_lastL: "); main_lastL->dump();
+      tty->print("p1_init: "); p1_init->dump();
+      tty->print("p2_init: "); p2_init->dump();
+      tty->print("size1: "); size1->dump();
+      tty->print("size2: "); size2->dump();
+      tty->print_cr("span1: "); span1->dump_bfs(5, nullptr, "");
+      tty->print_cr("span2: "); span2->dump_bfs(5, nullptr, "");
+    }
+#endif
+
+    Node* p1_init_plus_span1 = new AddLNode(p1_init, span1);
+    Node* p2_init_plus_span2 = new AddLNode(p2_init, span2);
+    phase->register_new_node_with_ctrl_of(p1_init_plus_span1, pre_init);
+    phase->register_new_node_with_ctrl_of(p2_init_plus_span2, pre_init);
+    if (_vloop.iv_stride() >= 0) {
+      condition1 = make_a_plus_b_leq_c(p1_init,            size1, p2_init,            phase);
+      condition2 = make_a_plus_b_leq_c(p2_init_plus_span2, size2, p1_init_plus_span1, phase);
+    } else {
+      condition1 = make_a_plus_b_leq_c(p1_init_plus_span1, size1, p2_init_plus_span2, phase);
+      condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase);
+    }
   }
 
 #ifdef ASSERT
