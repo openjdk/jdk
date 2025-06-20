@@ -65,9 +65,6 @@ public:
                          max_capacity,
                          curr_capacity) {}
 
-  void update_capacity(size_t capacity) {
-    update_all(capacity);
-  }
 };
 
 // Class to expose perf counters used by jstat.
