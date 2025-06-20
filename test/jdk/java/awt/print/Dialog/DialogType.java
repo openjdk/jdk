@@ -49,7 +49,7 @@ public class DialogType {
 
         On macOS & on Windows, the first dialog is a native
         dialog provided by the OS, the second dialog is
-        implemented in Swing, the dialog differ in appearance.
+        implemented in Swing, the dialogs differ in appearance.
 
         The test passes as long as no exceptions are thrown.
         (If there's an exception, the test will fail automatically.)
