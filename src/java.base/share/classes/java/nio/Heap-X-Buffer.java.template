@@ -160,6 +160,10 @@ class Heap$Type$Buffer$RW$
 #end[rw]
     }
 
+    public long address() {
+        throw new UnsupportedOperationException();
+    }
+
 #if[rw]
 
     protected int ix(int i) {
