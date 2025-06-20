@@ -1897,7 +1897,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     case VM_SYMBOL_ENUM_NAME(java_lang_Deprecated): {
       return _java_lang_Deprecated;
     }
-    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_MethodHandleArchived): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_MethodHandleArchived_signature): {
       if (_location != _in_class)   break;  // only allow for classes
       return _jdk_internal_vm_annotation_MethodHandleArchived;
     }

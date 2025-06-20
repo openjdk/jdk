@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.vm.annotation.MethodHandleArchived;
 import sun.invoke.util.Wrapper;
 

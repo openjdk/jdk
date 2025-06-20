@@ -28,9 +28,6 @@ package java.lang.invoke;
 import jdk.internal.vm.annotation.MethodHandleArchived;
 import jdk.internal.vm.annotation.Stable;
 
-import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.*;
-
 /**
  * A method handle whose behavior is determined only by its LambdaForm.
  * Access to SimpleMethodHandle should ensure BoundMethodHandle is initialized
