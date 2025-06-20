@@ -40,33 +40,27 @@ import sun.net.www.URLConnection;
 
 /**
  * URLConnection implementation that can be used to connect to resources
- * contained in the runtime image.
+ * contained in the runtime image. See section "New URI scheme for naming stored
+ * modules, classes, and resources" in <a href="https://openjdk.org/jeps/220">
+ * JEP 220</a>.
  */
 public class JavaRuntimeURLConnection extends URLConnection {
 
-    // ImageReader to access resources in jimage (never null).
+    // ImageReader to access resources in jimage.
     private static final ImageReader READER = ImageReaderFactory.getImageReader();
 
-    // The module and resource name in the URL ("jrt:/<module-name>/<resource-name>").
-    //
-    // It is important to note that all of this information comes from the given
-    // URL's path part, and there's no requirement for there to be distinct rules
-    // about percent encoding, and it is likely that any differences between how
-    // module names and resource names are treated is unintentional. The rules
-    // about percent encoding may well be tightened up in the future.
+    // The module and resource name in the URL (i.e. "jrt:/[$MODULE[/$PATH]]").
     //
     // The module name is not percent-decoded, and can be empty.
     private final String module;
     // The resource name permits UTF-8 percent encoding of non-ASCII characters.
-    private final String name;
+    private final String path;
 
     // The resource node (when connected).
-    private volatile Node resource;
+    private volatile Node resourceNode;
 
     JavaRuntimeURLConnection(URL url) throws IOException {
         super(url);
-        // TODO: Allow percent encoding in module names.
-        // TODO: Consider rejecting URLs with fragments, queries or authority.
         String urlPath = url.getPath();
         if (urlPath.isEmpty() || urlPath.charAt(0) != '/') {
             throw new MalformedURLException(url + " missing path or /");
@@ -74,13 +68,12 @@ public class JavaRuntimeURLConnection extends URLConnection {
         int pathSep = urlPath.indexOf('/', 1);
         if (pathSep == -1) {
             // No trailing resource path. This can never "connect" or return a
-            // resource, but might be useful as a representation to pass around.
-            // The module name *can* be empty here (e.g. "jrt:/") but not null.
+            // resource (see JEP 220 for details).
             this.module = urlPath.substring(1);
-            this.name = null;
+            this.path = null;
         } else {
             this.module = urlPath.substring(1, pathSep);
-            this.name = percentDecode(urlPath.substring(pathSep + 1));
+            this.path = percentDecode(urlPath.substring(pathSep + 1));
         }
     }
 
@@ -89,18 +82,18 @@ public class JavaRuntimeURLConnection extends URLConnection {
      * connection as "connected".
      */
     private synchronized Node getResourceNode() throws IOException {
-        if (resource == null) {
-            if (name == null) {
+        if (resourceNode == null) {
+            if (path == null) {
                 throw new IOException("cannot connect to jrt:/" + module);
             }
-            Node node = READER.findNode("/modules/" + module + "/" + name);
+            Node node = READER.findNode("/modules/" + module + "/" + path);
             if (node == null || !node.isResource()) {
-                throw new IOException(module + "/" + name + " not found");
+                throw new IOException(module + "/" + path + " not found");
             }
-            this.resource = node;
+            this.resourceNode = node;
             super.connected = true;
         }
-        return resource;
+        return resourceNode;
     }
 
     @Override
@@ -134,8 +127,6 @@ public class JavaRuntimeURLConnection extends URLConnection {
             // Nothing to decode (overwhelmingly common case).
             return path;
         }
-        // TODO: Maybe reject over-encoded paths here to reduce obfuscation
-        //  (especially %2F (/) and %24 ($), but probably just all ASCII).
         try {
             return ParseUtil.decode(path);
         } catch (IllegalArgumentException e) {
