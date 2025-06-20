@@ -239,7 +239,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     worker_slices[i] = new ShenandoahHeapRegionSet();
   }
 
-  ShenandoahGenerationalHeap::TransferResult result;
   {
     // The rest of code performs region moves, where region status is undefined
     // until all phases run together.
@@ -253,14 +252,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     phase4_compact_objects(worker_slices);
 
-    result = phase5_epilog();
-  }
-  if (heap->mode()->is_generational()) {
-    LogTarget(Info, gc, ergo) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      result.print_on("Full GC", &ls);
-    }
+    phase5_epilog();
   }
 
   // Resize metaspace
@@ -534,6 +526,7 @@ public:
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_trash()) {
       r->try_recycle_under_lock();
+      // No need to adjust_interval_for_recycled_old_region.  That will be taken care of during freeset rebuild.
     }
     if (r->is_cset()) {
       // Leave affiliation unchanged
@@ -983,6 +976,7 @@ public:
     if (r->is_trash()) {
       live = 0;
       r->try_recycle_under_lock();
+      // No need to adjust_interval_for_recycled_old_region.  That will be taken care of during freeset rebuild.
     } else {
       if (r->is_old()) {
         ShenandoahGenerationalFullGC::account_for_region(r, _old_regions, _old_usage, _old_humongous_waste);
@@ -1128,10 +1122,9 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
   }
 }
 
-ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
+void ShenandoahFullGC::phase5_epilog() {
   GCTraceTime(Info, gc, phases) time("Phase 5: Full GC epilog", _gc_timer);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGenerationalHeap::TransferResult result;
 
   // Reset complete bitmap. We're about to reset the complete-top-at-mark-start pointer
   // and must ensure the bitmap is in sync.
@@ -1153,17 +1146,7 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     }
 
     heap->collection_set()->clear();
-    size_t young_cset_regions, old_cset_regions;
-    size_t first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-
-    // We also do not expand old generation size following Full GC because we have scrambled age populations and
-    // no longer have objects separated by age into distinct regions.
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalFullGC::compute_balances();
-    }
-
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    heap->free_set()->rebuild();
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     heap->global_generation()->set_mark_incomplete();
@@ -1177,8 +1160,6 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
   // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
   // abbreviated cycle.
   if (heap->mode()->is_generational()) {
-    result = ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
-  return result;
 }
