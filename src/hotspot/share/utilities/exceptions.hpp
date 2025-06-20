@@ -194,6 +194,7 @@ class Exceptions {
   // for logging exceptions
   static void log_exception(Handle exception, const char* message);
   static void log_exception_stacktrace(Handle exception);
+  static void log_exception_stacktrace(Handle exception, methodHandle method, int bci);
 };
 
 

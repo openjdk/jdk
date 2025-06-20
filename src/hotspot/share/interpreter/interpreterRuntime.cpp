@@ -501,9 +501,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
       Exceptions::log_exception(h_exception, tempst.as_string());
     }
     if (log_is_enabled(Info, exceptions, stacktrace)) {
-      if (!h_method->is_native() && (Bytecodes::Code) *h_method->bcp_from(current_bci) == Bytecodes::_athrow) {
-        Exceptions::log_exception_stacktrace(h_exception);
-      }
+      Exceptions::log_exception_stacktrace(h_exception, h_method, current_bci);
     }
 
 // Don't go paging in something which won't be used.

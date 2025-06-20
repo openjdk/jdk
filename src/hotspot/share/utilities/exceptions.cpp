@@ -126,7 +126,9 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
                            p2i(h_exception()), file, line, p2i(thread),
                            Universe::vm_exception()->print_value_string());
     }
-    log_exception_stacktrace(h_exception);
+    if (log_is_enabled(Info, exceptions, stacktrace)) {
+      log_exception_stacktrace(h_exception);
+    }
     // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
@@ -158,7 +160,9 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
                          MAX_LEN, message ? message : "",
                          p2i(h_exception()), file, line, p2i(thread));
   }
-  log_exception_stacktrace(h_exception);
+  if (log_is_enabled(Info, exceptions, stacktrace)) {
+    log_exception_stacktrace(h_exception);
+  }
 
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
@@ -617,23 +621,73 @@ void Exceptions::log_exception(Handle exception, const char* message) {
   }
 }
 
+// This is called from InterpreterRuntime::exception_handler_for_exception(), which is the only
+// easy way to be notified in the VM that an _athrow bytecode has been executed. (The alternative
+// would be to add hooks into the interpreter and compiler, for all platforms ...).
+//
+// Unfortunately, InterpreterRuntime::exception_handler_for_exception() is called for every level
+// of the Java stack when looking for an exception handler. To avoid excessive output,
+// we print the stack only when the bci points to an _athrow bytecode.
+//
+// NOTE: exceptions that are NOT thrown by _athrow are handled by Exceptions::special_exception()
+// and Exceptions::_throw()).
+void Exceptions::log_exception_stacktrace(Handle exception, methodHandle method, int bci) {
+  if (method->is_native() || (Bytecodes::Code) *method->bcp_from(bci) == Bytecodes::_athrow) {
+    // TODO: it would be nice to filter out exceptions re-thrown by finally blocks (which include
+    // try-with-resource statements):
+    //
+    // try {
+    //     nullObject.toString(); // throws NPE
+    // } finally {
+    //     do_something();
+    // }
+    //
+    // The finally block is compiled like this:
+    //
+    //   8: astore_1            // the exception thrown in the try block
+    //   9: invokestatic #23    // Method: do_something()V
+    //  12: aload_1
+    //  13: athrow              // re-throw exception
+    // Exception table:
+    //  from    to  target type
+    //   0     3     8   any
+    //
+    // However, we need to distinguish with finally blocks whose last statement is a throw:
+    //
+    // try {
+    //     nullObject.toString(); // throws NPE
+    // } finally {
+    //     throw new RuntimeException("");
+    // }
+    //
+    // To do this, we need to check that:
+    //    - bci is the last bytecode of an exception handler
+    //    - the previous bytecode is an aload_1
+    //    - the catch type is "any" (#0).
+    //
+    // But, the "end of exception handler" is not defined in the classfile, so we need to use
+    // abstract interpretation to find out. Let's do that later ...
+    log_exception_stacktrace(exception);
+  }
+}
+
 // This should be called only from a live Java thread.
 void Exceptions::log_exception_stacktrace(Handle exception) {
   LogStreamHandle(Info, exceptions, stacktrace) st;
-  if (st.is_enabled()) {
-    JavaThread* t = JavaThread::current();
-    if (t->has_last_Java_frame()) {
-      ResourceMark rm;
-      const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
-      if (detail_message != nullptr) {
-        st.print_cr("Exception <%.*s: %.*s>",
-                     MAX_LEN, exception->print_value_string(),
-                     MAX_LEN, detail_message);
-      } else {
-        st.print_cr("Exception <%.*s>",
-             MAX_LEN, exception->print_value_string());
-      }
-      t->print_active_stack_on(&st);
-    }
+  ResourceMark rm;
+  const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
+  if (detail_message != nullptr) {
+    st.print_cr("Exception <%.*s: %.*s>",
+                MAX_LEN, exception->print_value_string(),
+                MAX_LEN, detail_message);
+  } else {
+    st.print_cr("Exception <%.*s>",
+                MAX_LEN, exception->print_value_string());
+  }
+  JavaThread* t = JavaThread::current();
+  if (t->has_last_Java_frame()) {
+    t->print_active_stack_on(&st);
+  } else {
+    st.print_cr("(Cannot print stracktrace)");
   }
 }
