@@ -4446,6 +4446,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>চুক সময়</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="provisional">তুর্কী সময়</generic>
+					<standard draft="provisional">তুর্কী মান সময়</standard>
+					<daylight draft="provisional">তুর্কী গ্রীষ্মকাল সময়</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>তুর্কমেনিস্তান সময়</generic>

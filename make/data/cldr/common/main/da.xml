@@ -3723,6 +3723,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuuk-tid</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Tyrkisk tid</generic>
+					<standard>Tyrkisk normaltid</standard>
+					<daylight>Tyrkisk sommertid</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmensk tid</generic>

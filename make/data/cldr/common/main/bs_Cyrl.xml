@@ -4649,6 +4649,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Трук вријеме</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Турска време</generic>
+					<standard>Турска стандардно време</standard>
+					<daylight>Турска летње рачунање времена</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Туркменистан вријеме</generic>

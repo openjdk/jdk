@@ -4604,6 +4604,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>चूक वेळ</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>तुर्की वेळ</generic>
+					<standard>तुर्की प्रमाणवेळ</standard>
+					<daylight>तुर्की ग्रीष्मकालीन वेळ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>तुर्कमेनिस्तान वेळ</generic>

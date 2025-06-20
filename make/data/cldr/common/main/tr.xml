@@ -3733,6 +3733,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</long>
 			</metazone>
 			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Saati</generic>
+					<standard>Türkiye Standart Saati</standard>
+					<daylight>Türkiye Yaz Saati</daylight>
+				</long>
 				<short>
 					<generic>TSİ</generic>
 				</short>

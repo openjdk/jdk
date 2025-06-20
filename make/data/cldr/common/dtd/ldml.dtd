@@ -3136,11 +3136,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT rbnf ( alias | ( rulesetGrouping*, special* ) ) >
 
-<!ELEMENT rulesetGrouping ( alias | ( ruleset*, special* ) ) >
+<!ELEMENT rulesetGrouping ( alias | ( rbnfRules?, ruleset*, special* ) ) >
 <!ATTLIST rulesetGrouping type NMTOKEN #REQUIRED >
     <!--@MATCH:literal/NumberingSystemRules, OrdinalRules, SpelloutRules-->
 <!ATTLIST rulesetGrouping draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
+
+<!ELEMENT rbnfRules ( #PCDATA )>
+
+<!ATTLIST rbnfRules alt NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/variant-->
+
+<!ATTLIST rbnfRules draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
 
 <!ELEMENT ruleset ( alias | ( rbnfrule*, special* ) ) >
     <!--@ORDERED-->

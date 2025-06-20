@@ -5217,6 +5217,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>เวลาชุก</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">เวลาตุรกี</generic>
+					<standard draft="contributed">เวลามาตรฐานตุรกี</standard>
+					<daylight draft="contributed">เวลาฤดูร้อนตุรกี</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>เวลาเติร์กเมนิสถาน</generic>

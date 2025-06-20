@@ -5461,6 +5461,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Трук</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Турецкое время</generic>
+					<standard draft="contributed">Турецкое стандартное время</standard>
+					<daylight draft="contributed">Турецкое летнее время</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Туркменистан</generic>

@@ -5109,6 +5109,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>추크 시간</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="provisional">터키 시간</generic>
+					<standard draft="provisional">터키 표준시</standard>
+					<daylight draft="provisional">터키 일광 절약 시간</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>투르크메니스탄 시간</generic>

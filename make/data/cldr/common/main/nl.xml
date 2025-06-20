@@ -4774,6 +4774,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuukse tijd</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Turkse tijd</generic>
+					<standard draft="contributed">Turkse standaardtijd</standard>
+					<daylight draft="contributed">Turkse zomertijd</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmeense tijd</generic>

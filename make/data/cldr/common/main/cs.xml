@@ -4198,6 +4198,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>chuukský čas</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Turecký čas</generic>
+					<standard>Turecký standardní čas</standard>
+					<daylight>Turecký letní čas</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>turkmenský čas</generic>

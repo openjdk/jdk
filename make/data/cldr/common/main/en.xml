@@ -5798,6 +5798,13 @@ annotations.
 					<standard>Chuuk Time</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiye Time</generic>
+					<standard>Türkiye Standard Time</standard>
+					<daylight>Türkiye Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmenistan Time</generic>

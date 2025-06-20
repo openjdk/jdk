@@ -4981,6 +4981,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Време во Чуук</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Турција време</generic>
+					<standard>Турција стандардно време</standard>
+					<daylight>Турција летно сметање на времето</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Време во Туркменистан</generic>

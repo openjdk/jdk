@@ -3835,6 +3835,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuuki aeg</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türgi aeg</generic>
+					<standard>Türgi standardaeg</standard>
+					<daylight>Türgi suveaeg</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Türkmenistani aeg</generic>

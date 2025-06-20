@@ -5036,6 +5036,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>שעון צ׳וק</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="provisional">שעון טורקיה</generic>
+					<standard draft="provisional">שעון רגיל טורקיה</standard>
+					<daylight draft="provisional">שעון קיץ טורקיה</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>שעון טורקמניסטן</generic>

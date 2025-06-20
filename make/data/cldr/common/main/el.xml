@@ -4683,6 +4683,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Ώρα Τσουκ</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Ώρα Τουρκίας</generic>
+					<standard draft="contributed">Χειμερινή ώρα Τουρκίας</standard>
+					<daylight draft="contributed">Θερινή ώρα Τουρκίας</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Ώρα Τουρκμενιστάν</generic>

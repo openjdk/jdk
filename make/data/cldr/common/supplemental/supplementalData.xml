@@ -4307,7 +4307,6 @@ XXX Code for transations where no currency is involved
            </eras>
         </calendar>
         <calendar type="generic"/>
-                <!-- gregorian territories are assumed, so these are all in addition -->
         <calendar type="japanese">
           <calendarSystem type="solar" />
           <inheritEras calendar="gregorian" />
@@ -4556,48 +4555,48 @@ XXX Code for transations where no currency is involved
         <calendar type="islamic">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15" code="islamic" aliases="ah"/>
-              <era type="1" end="622-7-14" code="islamic-inverse" aliases="bh"/>
+              <era type="0" start="622-07-19" code="islamic" aliases="ah"/>
+              <era type="1" end="622-07-18" code="islamic-inverse" aliases="bh"/>
           </eras>
         </calendar>
         <calendar type="islamic-civil">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-16" code="islamic-civil" aliases="islamicc ah"/>
-              <era type="1" end="622-7-15" code="islamic-civil-inverse" aliases="bh"/>
+              <era type="0" start="622-07-19" code="islamic-civil" aliases="islamicc ah"/>
+              <era type="1" end="622-07-18" code="islamic-civil-inverse" aliases="bh"/>
           </eras>
         </calendar>
         <calendar type="islamic-rgsa">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15" code="islamic-rgsa" aliases="ah"/>
-              <era type="1" end="622-7-14" code="islamic-rgsa-inverse" aliases="bh"/>
+              <era type="0" start="622-07-19" code="islamic-rgsa" aliases="ah"/>
+              <era type="1" end="622-07-18" code="islamic-rgsa-inverse" aliases="bh"/>
           </eras>
         </calendar>
         <calendar type="islamic-tbla">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15" code="islamic-tbla" aliases="ah"/>
-              <era type="1" end="622-7-14" code="islamic-tbla-inverse" aliases="bh"/>
+              <era type="0" start="622-07-18" code="islamic-tbla" aliases="ah"/>
+              <era type="1" end="622-07-17" code="islamic-tbla-inverse" aliases="bh"/>
           </eras>
         </calendar>
         <calendar type="islamic-umalqura">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15" code="islamic-umalqura" aliases="ah"/>
-              <era type="1" end="622-7-14" code="islamic-umalqura-inverse" aliases="bh"/>
+              <era type="0" start="622-07-19" code="islamic-umalqura" aliases="ah"/>
+              <era type="1" end="622-07-18" code="islamic-umalqura-inverse" aliases="bh"/>
           </eras>
         </calendar>
         <calendar type="chinese">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-2636-01-01" code="chinese"/> <!-- 'sequential' year -->
+              <era type="0" start="-2636-02-15" code="chinese"/> <!-- 'sequential' year -->
           </eras>
         </calendar>
         <calendar type="hebrew">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-3760-10-7" code="hebrew" aliases="am"/>
+              <era type="0" start="-3760-09-07" code="hebrew" aliases="am"/>
           </eras>
         </calendar>
         <calendar type="buddhist">
@@ -4616,30 +4615,30 @@ XXX Code for transations where no currency is involved
         <calendar type="persian">
           <calendarSystem type="solar"/>
           <eras>
-              <era type="0" start="622-01-01" code="persian" aliases="ap"/>
+              <era type="0" start="622-03-21" code="persian" aliases="ap"/>
           </eras>
         </calendar>
         <calendar type="dangi">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-2332-01-01" code="dangi"/> <!-- 'sequential' year -->
+              <era type="0" start="-2332-02-15" code="dangi"/> <!-- 'sequential' year -->
           </eras>
         </calendar>
         <calendar type="ethiopic">
           <calendarSystem type="other"/>
           <eras>
-              <era type="0" end="8-08-28" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
-              <era type="1" start="8-08-29" code="ethiopic" aliases="incar"/>
+              <era type="0" start="-5492-07-17" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
+              <era type="1" start="8-08-27" code="ethiopic" aliases="incar"/>
           </eras>
         </calendar>
         <calendar type="ethiopic-amete-alem">
           <eras>
-              <era type="0" end="-5492-08-29" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
+              <era type="0" start="-5492-07-17" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
           </eras>
         </calendar>
         <calendar type="indian">
           <eras>
-              <era type="0" start="79-01-01" code="indian" aliases="saka"/>
+              <era type="0" start="79-03-22" code="indian" aliases="saka"/>
           </eras>
         </calendar>
         <calendar type="roc">

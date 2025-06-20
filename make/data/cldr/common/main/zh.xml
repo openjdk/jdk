@@ -5709,6 +5709,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>楚克时间</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>土耳其时间</generic>
+					<standard>土耳其标准时间</standard>
+					<daylight>土耳其夏令时间</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>土库曼斯坦时间</generic>

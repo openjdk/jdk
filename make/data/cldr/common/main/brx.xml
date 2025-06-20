@@ -4079,6 +4079,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>चूक सम</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>तुर्की टाईम</generic>
+					<standard>तुर्की स्टैंडर्ड टाईम</standard>
+					<daylight>तुर्की समर टाईम</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>तुर्कमेनीस्तान सम</generic>

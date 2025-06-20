@@ -3665,6 +3665,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ٹٔرک ٹایِم</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>تُرکی ٹایِم</generic>
+					<standard>تُرکی سٹینڑاڑ ٹایِم</standard>
+					<daylight>تُرکی سَمَر ٹایِم</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>ترکمانستان ٹائم</generic>

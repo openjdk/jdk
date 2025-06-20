@@ -3904,6 +3904,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Waktu Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Waktu Turki</generic>
+					<standard>Waktu Standar Turki</standard>
+					<daylight>Waktu Musim Panas Turki</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Waktu Turkmenistan</generic>

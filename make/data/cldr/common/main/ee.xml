@@ -2773,6 +2773,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Chuuk gaƒoƒo me</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="unconfirmed">Tɛrki gaƒoƒome</generic>
+					<standard draft="unconfirmed">Tɛrki gaƒoƒoɖoanyime</standard>
+					<daylight draft="unconfirmed">Tɛrki dzomeŋɔli gaƒoƒome</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmenistan gaƒoƒo me</generic>

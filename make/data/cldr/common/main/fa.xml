@@ -4822,6 +4822,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>وقت چوئوک</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>وقت ترکیه</generic>
+					<standard>وقت عادی ترکیه</standard>
+					<daylight>وقت تابستانی ترکیه</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>وقت ترکمنستان</generic>

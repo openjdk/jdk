@@ -4584,6 +4584,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Chuuktid</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">turkisk tid</generic>
+					<standard draft="contributed">turkisk normaltid</standard>
+					<daylight draft="contributed">turkisk sommartid</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>turkmensk tid</generic>

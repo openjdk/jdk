@@ -4080,6 +4080,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>vrijeme Chuuka</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>tursko vrijeme</generic>
+					<standard>tursko standardno vrijeme</standard>
+					<daylight>tursko ljetno vrijeme</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>turkmenistansko vrijeme</generic>

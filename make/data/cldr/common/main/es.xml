@@ -4066,6 +4066,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>hora de Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Hora de Turquía</generic>
+					<standard>Hora estándar de Turquía</standard>
+					<daylight>Hora de verano de Turquía</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>hora de Turkmenistán</generic>

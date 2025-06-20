@@ -4215,6 +4215,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ಚುಕ್ ಸಮಯ</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="unconfirmed">ಟರ್ಕಿ ಸಮಯ</generic>
+					<standard draft="unconfirmed">ಟರ್ಕಿ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
+					<daylight draft="unconfirmed">ಟರ್ಕಿ ಬೇಸಿಗೆ ಸಮಯ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>ತುರ್ಕ್‌ಮೇನಿಸ್ತಾನ್ ಸಮಯ</generic>

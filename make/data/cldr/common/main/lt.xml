@@ -4912,6 +4912,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Čuko laikas</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Turkijos laikas</generic>
+					<standard>Turkijos žiemos laikas</standard>
+					<daylight>Turkijos vasaros laikas</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmėnistano laikas</generic>

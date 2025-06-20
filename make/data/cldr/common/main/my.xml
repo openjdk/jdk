@@ -3798,6 +3798,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>ချုခ် အချိန်</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>တူရကီ အချိန်</generic>
+					<standard>တူရကီ စံတော်ချိန်</standard>
+					<daylight>တူရကီ နွေရာသီ အချိန်</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>တာ့ခ်မင်နစ္စတန် အချိန်</generic>

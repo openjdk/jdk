@@ -3737,6 +3737,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>truki idő</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Törökországi idő</generic>
+					<standard>Törökországi zónaidő</standard>
+					<daylight>Törökországi nyári idő</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>türkmenisztáni idő</generic>

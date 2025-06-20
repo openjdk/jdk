@@ -4830,6 +4830,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Чуук време</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Турска време</generic>
+					<standard>Турска стандардно време</standard>
+					<daylight>Турска летње рачунање времена</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Туркменистан време</generic>

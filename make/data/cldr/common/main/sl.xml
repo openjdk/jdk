@@ -3750,6 +3750,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Čas: Otok Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Turški čas</generic>
+					<standard>Turški standardni čas</standard>
+					<daylight>Turški poletni čas</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmenistanski čas</generic>

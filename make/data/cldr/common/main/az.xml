@@ -3745,6 +3745,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Çuuk Vaxtı</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic>Türkiya vaxtı</generic>
+					<standard>Türkiya standart vaxtı</standard>
+					<daylight>Türkiya yay vaxtı</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Türkmənistan Vaxtı</generic>

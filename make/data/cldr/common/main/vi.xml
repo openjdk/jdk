@@ -3808,6 +3808,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>Giờ Chuuk</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">Giờ Thổ Nhĩ Kỳ</generic>
+					<standard draft="contributed">Giờ Chuẩn Thổ Nhĩ Kỳ</standard>
+					<daylight draft="contributed">Giờ Mùa Hè Thổ Nhĩ Kỳ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Giờ Turkmenistan</generic>

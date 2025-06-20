@@ -5288,6 +5288,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<standard>за часом на островах Чуук</standard>
 				</long>
 			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="contributed">за турецьким часом</generic>
+					<standard draft="contributed">за турецьким стандартним часом</standard>
+					<daylight draft="contributed">за турецьким літнім часом</daylight>
+				</long>
+			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>за часом у Туркменістані</generic>
