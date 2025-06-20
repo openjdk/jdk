@@ -144,7 +144,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     public ImageIcon(String filename, String description) {
         image = Toolkit.getDefaultToolkit().getImage(filename);
         if (image == null) {
-            this.description = null;
             return;
         }
         this.filename = filename;
@@ -184,7 +183,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     public ImageIcon(URL location, String description) {
         image = Toolkit.getDefaultToolkit().getImage(location);
         if (image == null) {
-            this.description = null;
             return;
         }
         this.location = location;
@@ -218,8 +216,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     /**
      * Creates an ImageIcon from an image object.
      * Setting a {@code null} image means
-     * any existing image will be removed
-     * and no image will be rendered.
+     * no image will be rendered.
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
      * @param image the image
@@ -229,7 +226,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     public ImageIcon (Image image) {
         this.image = image;
         if (image == null) {
-            this.description = null;
             return;
         }
         Object o = image.getProperty("comment", imageObserver);
@@ -255,7 +251,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     public ImageIcon (byte[] imageData, String description) {
         this.image = Toolkit.getDefaultToolkit().createImage(imageData);
         if (image == null) {
-            this.description = null;
             return;
         }
         this.description = description;
@@ -281,7 +276,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     public ImageIcon (byte[] imageData) {
         this.image = Toolkit.getDefaultToolkit().createImage(imageData);
         if (image == null) {
-            this.description = null;
             return;
         }
         Object o = image.getProperty("comment", imageObserver);
@@ -387,6 +381,8 @@ public class ImageIcon implements Icon, Serializable, Accessible {
         this.image = image;
         if (image == null) {
             this.description = null;
+            width = -1;
+            height = -1;
             return;
         }
         loadImage(image);
