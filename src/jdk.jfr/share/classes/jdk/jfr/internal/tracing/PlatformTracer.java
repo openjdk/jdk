@@ -158,10 +158,6 @@ public final class PlatformTracer {
         }
     }
 
-    public static boolean isValidFilter(String text) {
-        return Filter.of(text, null) != null;
-    }
-
     public static void setFilters(Modification modification, List<String> filters) {
         ensureInitialized();
         publishClasses(applyFilter(modification, filters));
