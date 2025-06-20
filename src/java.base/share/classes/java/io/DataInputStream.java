@@ -599,7 +599,7 @@ loop:   while (true) {
         if (ascii == utflen) {
             String str;
             if (trusted) {
-                str = JLA.uncheckedNewStringNoRepl(bytearr, StandardCharsets.ISO_8859_1);
+                str = JLA.uncheckedNewString(bytearr, StandardCharsets.ISO_8859_1);
             } else {
                 str = new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
             }

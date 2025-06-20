@@ -55,7 +55,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2121,28 +2120,33 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
-            public String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringNoRepl(bytes, cs);
+
+            public String uncheckedNewString(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newString(bytes, cs);
             }
+
             public char uncheckedGetUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
+
             public void uncheckedPutCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
-            public byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesNoRepl(s, cs);
+
+            public byte[] uncheckedGetBytes(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytes(s, cs);
             }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len, true);
+            public String newStringUTF8NoReplacementChar(byte[] bytes, int off, int len) {
+                return String.newStringUTF8NoReplacementChar(bytes, off, len, true);
             }
 
-            public byte[] getBytesUTF8NoRepl(String s) {
-                return String.getBytesUTF8NoRepl(s);
+            public byte[] getBytesUTF8NoReplacementChar(String s) {
+                return String.getBytesUTF8NoReplacementChar(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {

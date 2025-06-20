@@ -4145,7 +4145,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             buf[highIntSize] = '.';
             DecimalDigits.uncheckedPutPairLatin1(buf, highIntSize + 1, lowInt);
             try {
-                return JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                return JLA.uncheckedNewString(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException cce) {
                 throw new AssertionError(cce);
             }
