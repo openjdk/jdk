@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,26 @@
  */
 
 import java.awt.Frame;
-import java.awt.Graphics;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @test
- * @bug 8235638 8235739 8285094 8346952
+ * @bug 8346952
+ * @summary dispose the frame while flooding the EDT with Notify events.
  * @key headful
  */
-public final class GetGraphicsStressTest {
 
+public final class NotifyStressTest {
     static volatile Throwable failed;
-    static volatile long endtime;
 
     public static void main(final String[] args) throws Exception {
-        // Catch all uncaught exceptions and treat them as test failure
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> failed = e);
 
-        // Will run the test no more than 20 seconds
-        for (int i = 0; i < 4; i++) {
-            endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        for (int i = 0; i < 100; i++) {
             test();
         }
-        /*
-         * This test needs to give the desktop time to recover to avoid
-         * destabilising other tests.
-         */
-        Thread.sleep(10000);
+
+        // let the system recover.
+        Thread.sleep(5000);
     }
 
     private static void test() throws Exception {
@@ -56,56 +49,21 @@ public final class GetGraphicsStressTest {
         f.setSize(100, 100);
         f.setLocationRelativeTo(null);
         f.setVisible(true);
+        f.dispose();
 
         Thread thread1 = new Thread(() -> {
-            while (!isComplete()) {
+            for (int i = 0; i < 10; i++) {
                 f.removeNotify();
                 f.addNotify();
             }
         });
-        Thread thread2 = new Thread(() -> {
-            while (!isComplete()) {
-                Graphics g = f.getGraphics();
-                if (g != null) {
-                    g.dispose();
-                }
-            }
-        });
-        Thread thread3 = new Thread(() -> {
-            while (!isComplete()) {
-                Graphics g = f.getGraphics();
-                if (g != null) {
-                    g.dispose();
-                }
-            }
-        });
-        Thread thread4 = new Thread(() -> {
-            while (!isComplete()) {
-                Graphics g = f.getGraphics();
-                if (g != null) {
-                    g.drawLine(0, 0, 4, 4); // just in case...
-                    g.dispose();
-                }
-            }
-        });
         thread1.start();
-        thread2.start();
-        thread3.start();
-        thread4.start();
         thread1.join();
-        thread2.join();
-        thread3.join();
-        thread4.join();
 
-        f.dispose();
         if (failed != null) {
             System.err.println("Test failed");
             failed.printStackTrace();
             throw new RuntimeException(failed);
         }
-    }
-
-    private static boolean isComplete() {
-        return endtime - System.nanoTime() < 0 || failed != null;
     }
 }
