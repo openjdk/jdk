@@ -244,9 +244,6 @@
   develop(bool, GenerateArrayStoreCheck, true,                              \
           "Generates code for array store checks")                          \
                                                                             \
-  develop(bool, DeoptC1, true,                                              \
-          "Use deoptimization in C1")                                       \
-                                                                            \
   develop(bool, PrintBailouts, false,                                       \
           "Print bailout and its reason")                                   \
                                                                             \
