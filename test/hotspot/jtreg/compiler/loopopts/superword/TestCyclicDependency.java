@@ -500,7 +500,6 @@ public class TestCyclicDependency {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     @IR(counts = {IRNode.ADD_VI, "> 0",
                   IRNode.ADD_VF, "= 0"},
-    // TODO: even though we do not vectorize the floats, we still add aliasing checks. That could be avoided.
         phase = CompilePhase.PRINT_IDEAL,
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
@@ -608,7 +607,6 @@ public class TestCyclicDependency {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     @IR(counts = {IRNode.ADD_VI, "= 0",
                   IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
-    // TODO: even though we do not vectorize the ints, we still add aliasing checks. That could be avoided.
         phase = CompilePhase.PRINT_IDEAL,
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
