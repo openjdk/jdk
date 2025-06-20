@@ -954,7 +954,6 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   Node* main_initL = new AddLNode(pre_lastL, igvn.longcon(pre_iv_stride));
   phase->register_new_node_with_ctrl_of(main_initL, pre_init);
 
-  // TODO: think about overflows again -> refactor and do it with int iv values?
   Node* main_init = new ConvL2INode(main_initL);
   phase->register_new_node_with_ctrl_of(main_init, pre_init);
 
