@@ -311,7 +311,7 @@ jobs:
     with:
       platform: windows-x64
       runs-on: windows-2025
-      msvc-toolset-version: '14.44'
+      msvc-toolset-version: '14.43'
       msvc-toolset-architecture: 'x86.x64'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -324,8 +324,8 @@ jobs:
     with:
       platform: windows-aarch64
       runs-on: windows-11-arm
-      msvc-toolset-version: '14.44'
-      msvc-toolset-architecture: 'arm64'
+      msvc-toolset-version: '14.43'
+      msvc-toolset-architecture: 'ARM64'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.windows-aarch64 == 'true'
