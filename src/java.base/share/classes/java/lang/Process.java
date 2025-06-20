@@ -78,9 +78,42 @@ import java.util.stream.Stream;
  * process I/O can also be redirected</a>
  * using methods of the {@link ProcessBuilder} class.
  *
- * <p>The process is not killed when there are no more references to
- * the {@code Process} object, but rather the process
- * continues executing asynchronously.
+ * <p>{@linkplain ProcessBuilder#start() Starting a process} uses resources in both the invoking process and the invoked
+ * process and for the communication streams between them.
+ * The resources to control the process and for communication between the processes are retained
+ * until there are no longer any references to the Process or the input, error, and output streams
+ * or readers, or they have been closed.
+ *
+ * <p>The process is not killed when there are no more references to the {@code Process} object,
+ * but rather the process continues executing asynchronously.
+ * The process implementation closes file descriptors and handles for streams
+ * that are no longer referenced to prevent leaking operating system resources.
+ * Processes that have terminated or been terminated are monitored and their resources released.
+ *
+ * <p>Streams should be {@code closed} when they are no longer needed, to avoid delaying
+ * releasing the operating system resources.
+ * {@code Try-with-resources} can be used to open and close the streams.
+ * <p>For example, to capture the output of a program known to produce some output and then exit:
+ * {@snippet lang = "java" :
+ * List<String> capture(List<String> args) throws Exception {
+ *     ProcessBuilder pb = new ProcessBuilder().command(args);
+ *     Process process = pb.start();
+ *     try (BufferedReader in = process.inputReader()) {
+ *         List<String> captured = in.lines().toList();
+ *         int status = process.waitFor();
+ *         if (status != 0) {
+ *             throw new RuntimeException("Process %d: %s failed with %d"
+ *                         .formatted(process.pid(), args, status));
+ *         }
+ *         return captured;
+ *     }
+ * }
+ * }
+ * <p>Stream resources (file descriptor or handle) are always paired; one in the invoking process
+ * and the other end of that connection in the invoked process.
+ * Closing a stream at either end terminates communication but does not have any direct effect
+ * on the other Process. Typically, the other process responds to the closing of the stream
+ * by exiting.
  *
  * <p>There is no requirement that the process represented by a {@code
  * Process} object execute asynchronously or concurrently with respect
@@ -127,6 +160,9 @@ public abstract class Process {
      * then this method will return a
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
      *
+     * <p>The output stream should be {@linkplain OutputStream#close closed}
+     * when it is no longer needed.
+     *
      * @apiNote
      * When writing to both {@link #getOutputStream()} and either {@link #outputWriter()}
      * or {@link #outputWriter(Charset)}, {@link BufferedWriter#flush BufferedWriter.flush}
@@ -159,9 +195,14 @@ public abstract class Process {
      * then the input stream returned by this method will receive the
      * merged standard output and the standard error of the process.
      *
+     * <p>The input stream should be {@linkplain InputStream#close closed}
+     * when it is no longer needed.
+     *
      * @apiNote
-     * Use {@link #getInputStream()} and {@link #inputReader()} with extreme care.
-     * The {@code BufferedReader} may have buffered input from the input stream.
+     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
+     * The input reader consumes and buffers bytes from the input stream.
+     * Bytes read from the input stream would not be seen by the reader and
+     * buffer contents are unpredictable.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -185,9 +226,14 @@ public abstract class Process {
      * then this method will return a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
+     * <p>The error stream should be {@linkplain InputStream#close closed}
+     * when it is no longer needed.
+     *
      * @apiNote
-     * Use {@link #getErrorStream()} and {@link #errorReader()} with extreme care.
-     * The {@code BufferedReader} may have buffered input from the error stream.
+     * Avoid using both {@link #getErrorStream} and {@link #inputReader(Charset)}.
+     * The error reader consumes and buffers bytes from the error stream.
+     * Bytes read from the error stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
      *
      * @implNote
      * Implementation note: It is a good idea for the returned
@@ -207,6 +253,9 @@ public abstract class Process {
      * {@link Charset} named by the {@code native.encoding} system property.
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
+     *
+     * <p>The reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
      *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
@@ -238,6 +287,9 @@ public abstract class Process {
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
+     * <p>The reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
+     *
      * <p>Otherwise, if the standard error of the process has been redirected using
      * {@link ProcessBuilder#redirectErrorStream(boolean)
      * ProcessBuilder.redirectErrorStream} then the input reader returned by
@@ -245,9 +297,10 @@ public abstract class Process {
      * of the process.
      *
      * @apiNote
-     * Using both {@link #getInputStream} and {@link #inputReader(Charset)} has
-     * unpredictable behavior since the buffered reader reads ahead from the
-     * input stream.
+     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
+     * The input reader consumes and buffers bytes from the input stream.
+     * Bytes read from the input stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
      *
      * <p>When the process has terminated, and the standard input has not been redirected,
      * reading of the bytes available from the underlying stream is on a best effort basis and
@@ -283,6 +336,9 @@ public abstract class Process {
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
      *
+     * <p>The error reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
+     *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
      *          {@link Charset#defaultCharset()}
@@ -314,10 +370,14 @@ public abstract class Process {
      * then the {@code InputStreamReader} will be reading from a
      * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
+     * <p>The error reader should be {@linkplain BufferedReader#close closed}
+     * when it is no longer needed.
+     *
      * @apiNote
-     * Using both {@link #getErrorStream} and {@link #errorReader(Charset)} has
-     * unpredictable behavior since the buffered reader reads ahead from the
-     * error stream.
+     * Avoid using both {@link #getErrorStream} and {@link #errorReader(Charset)}.
+     * The error reader consumes and buffers bytes from the error stream.
+     * Bytes read from the error stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
      *
      * <p>When the process has terminated, and the standard error has not been redirected,
      * reading of the bytes available from the underlying stream is on a best effort basis and
@@ -354,6 +414,9 @@ public abstract class Process {
      * If the {@code native.encoding} is not a valid charset name or not supported
      * the {@link Charset#defaultCharset()} is used.
      *
+     * <p>The output writer should be {@linkplain BufferedWriter#close closed}
+     * when it is no longer needed.
+     *
      * @return a {@code BufferedWriter} to the standard input of the process using the charset
      *          for the {@code native.encoding} system property
      * @since 17
@@ -382,6 +445,9 @@ public abstract class Process {
      * {@link ProcessBuilder#redirectInput(Redirect)
      * ProcessBuilder.redirectInput} then the {@code OutputStreamWriter} writes to a
      * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
+     *
+     * <p>The output writer should be {@linkplain BufferedWriter#close closed}
+     * when it is no longer needed.
      *
      * @apiNote
      * A {@linkplain BufferedWriter} writes characters, arrays of characters, and strings.
@@ -674,11 +740,12 @@ public abstract class Process {
      * free the current thread and block only if and when the value is needed.
      * <br>
      * For example, launching a process to compare two files and get a boolean if they are identical:
-     * <pre> {@code   Process p = new ProcessBuilder("cmp", "f1", "f2").start();
-     *    Future<Boolean> identical = p.onExit().thenApply(p1 -> p1.exitValue() == 0);
-     *    ...
-     *    if (identical.get()) { ... }
-     * }</pre>
+     * {@snippet lang = "java" :
+     *     Process p = new ProcessBuilder("cmp", "f1", "f2").start();
+     *     Future<Boolean> identical = p.onExit().thenApply(p1 -> p1.exitValue() == 0);
+     *     ...
+     *     if (identical.get()) { ... }
+     * }
      *
      * @implSpec
      * This implementation executes {@link #waitFor()} in a separate thread
@@ -695,11 +762,11 @@ public abstract class Process {
      * External implementations should override this method and provide
      * a more efficient implementation. For example, to delegate to the underlying
      * process, it can do the following:
-     * <pre>{@code
+     * {@snippet lang = "java" :
      *    public CompletableFuture<Process> onExit() {
      *       return delegate.onExit().thenApply(p -> this);
      *    }
-     * }</pre>
+     * }
      * @apiNote
      * The process may be observed to have terminated with {@link #isAlive}
      * before the ComputableFuture is completed and dependent actions are invoked.
