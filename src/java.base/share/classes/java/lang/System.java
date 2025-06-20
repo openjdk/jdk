@@ -1816,8 +1816,8 @@ public final class System {
         // stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding
-        setOut0(newPrintStream(fdOut, StaticProperty.stdoutEncoding()));
-        initialErr = newPrintStream(fdErr, StaticProperty.stderrEncoding());
+        setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
+        initialErr = newPrintStream(fdErr, props.getProperty("stderr.encoding"));
         setErr0(initialErr);
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
