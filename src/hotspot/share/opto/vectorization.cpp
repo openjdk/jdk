@@ -481,7 +481,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
-// Computing aliasing runtime check using init and last of main loop
+// Computing aliasing runtime check using init and last of main-loop
 // -----------------------------------------------------------------
 //
 // We have two VPointer vp1 and vp2, and would like to create a runtime check that
@@ -519,7 +519,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //        Note: iv_stride > 0  ->  limit - iv_stride <= last < limit
 //              iv_stride < 0  ->  limit < last <= limit - iv_stride
 //        We have to be a little careful, and cannot just use "limit" instead of "last" as
-//        the last value in r, because the iv never reaches limit in the main loop, and
+//        the last value in r, because the iv never reaches limit in the main-loop, and
 //        so we are not sure if the memory access at p(limit) is still in bounds.
 //        For now, we just assume that we can compute init and limit, and we will derive
 //        the computation of these values later on.
@@ -756,13 +756,13 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //
 // -------------------------------------------------------------------------------------------------------------------------
 //
-// Computing init and last for the main loop
+// Computing init and last for the main-loop
 // -----------------------------------------
 //
-// As we have seen above, we always need the "init" of the main loop. And if "iv_scale1 != iv_scale2", then we
-// also need the "last" of the main loop. These values need to be pre-loop invariant, because the check is
+// As we have seen above, we always need the "init" of the main-loop. And if "iv_scale1 != iv_scale2", then we
+// also need the "last" of the main-loop. These values need to be pre-loop invariant, because the check is
 // to be performed before the pre-loop (at the predicate or multiversioning selector_if). It will be helpful
-// to recall the iv structure in the pre and main loop:
+// to recall the iv structure in the pre and main-loop:
 //
 //                  | iv = pre_init
 //                  |
@@ -792,28 +792,42 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //
 //   last = LAST(init, iv_stride, limit)
 //
-// TODO:
 //
+// These computations assume that we indeed do enter the main-loop - otherwise
+// it does not make sense to talk about the "last main iteration". Of course
+// entering the main-loop implies that we entered the pre-loop already. But
+// what happens if we check the aliasing runtime check, but later would never
+// enter the main-loop?
 //
-// We must now consider the implications of executing this
+// First: no matter if we pass or fail the aliasing runtime check, we will
+// not get wrong results. If we fail the check, we end up in the less optimized
+// slow-loop. If we pass the check, and we don't enter the main-loop, we
+// never rely on the aliasing check, after all only the vectorized main-loop
+// (and the vectorized post-loop) rely on the aliasing check.
 //
-// There are 3 cases:
-//  1) The pre-loop is not entered. Implies that the main-loop is not entered.
-//     And it implies that the loop limit predicate would fail, i.e. we have
-//     init > limit (if iv_stride > 0) and init < limit (if iv_stride < 0).
+// But: The worry is that we may fail the aliasing runtime check "spuriously",
+// i.e. even though we would never enter the main-loop, and that this could have
+// unfortunate side-effects (for example deopting unnecessarily). Let's
+// look at the two possible cases:
+//  1) We would never even enter the pre-loop.
+//     There are only predicates between the aliasing runtime check and the pre-loop,
+//     so a predicate would have to fail. These are rather rare cases. If we
+//     are using multiversioning for the aliasing runtime check, we would
+//     immediately fail the predicate in either the slow or fast loop, so
+//     the decision of the aliasing runtime check does not matter. But if
+//     we are using a predicate for the aliaing runtime check, then we may
+//     end up deopting twice: once for the aliasing runtime check, and then
+//     again for the other predicate. This would not be great, but again,
+//     failing predicates are rare in the first place.
 //
-//     Should we be using multiversioning for the aliasing check, then we might
-//     pass or fail that aliasing check, and then go either to the fast or slow
-//     loop. There, we would immediately fail the loop limit predicate, and then
-//     compile without this predicate.
-//     Should we now execute the aliasing analysis check first
-//
-// This works well under the assumption that both the pre and the main loop are entered.
-// Of course, whenever the main-loop is entered, the pre-loop must have been entered.
-// This is sufficent for correctness: only when we enter the main loop to we need the
-// guarantee that the aliasing runtime check passed.
-//
-// TODO: note about failing check if main loop not entered?
+//  2) We would enter the pre-loop, but not the main-loop.
+//     The pre_last must be accurate, because we are entering the pre-loop.
+//     But then we fail the zero-trip guard of the main-loop. Thus, for the
+//     main-loop, the init lies "after" the limit. Thus, the computed last
+//     for the main-loop equals the init. This means that span1 and span2
+//     are zero. Hence, p1(init) and p2(init) would have to alias for the
+//     aliasing runtime check to fail. Hence, it would not be surprising
+//     at all if we deopted because of the aliasing runtime check.
 //
 bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
   const VPointer& vp1 = *this;
