@@ -4294,6 +4294,16 @@ public:
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
   }
 
+  // SVE2 programmable table lookup in two vector table
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1,
+               FloatRegister Zn2, FloatRegister Zm) {
+    starti;
+    assert(T != Q, "invalid size");
+    assert(Zn1->successor() == Zn2, "invalid order of registers");
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b1, 21), rf(Zm, 16);
+    f(0b001010, 15, 10), rf(Zn1, 5), rf(Zd, 0);
+  }
+
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset);
 
