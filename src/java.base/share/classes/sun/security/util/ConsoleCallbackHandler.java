@@ -25,6 +25,8 @@
 
 package sun.security.util;
 
+import jdk.internal.util.StaticProperty;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.ConfirmationCallback;
@@ -131,7 +133,7 @@ public class ConsoleCallbackHandler implements CallbackHandler {
 
     /* Reads a line of input */
     private String readLine() throws IOException {
-        Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+        Charset charset = Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset());
         InputStreamReader reader = new InputStreamReader(System.in, charset);
         String result = new BufferedReader(reader).readLine();
         if (result == null) {
