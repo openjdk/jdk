@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -460,15 +462,14 @@ public final class Long extends Number
      */
     public static String toString(long i) {
         int size = DecimalDigits.stringSize(i);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[size];
+        byte coder = COMPACT_STRINGS ? LATIN1 : UTF16;
+        byte[] buf = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, size << coder);
+        if (coder == LATIN1) {
             DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
-            return new String(buf, LATIN1);
         } else {
-            byte[] buf = new byte[size * 2];
             DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
-            return new String(buf, UTF16);
         }
+        return new String(buf, coder);
     }
 
     /**
