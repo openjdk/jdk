@@ -49,7 +49,7 @@ public class DialogType {
         to optionally select a native dialog where one is present.
         Two dialogs are shown in succession.
         The test passes as long as no exceptions are thrown.
-        Note: On Mac OS & on Windows, the first dialog is a native
+        Note: On macOS & on Windows, the first dialog is a native
         control which differs in appearance from the second dialog
     """;
 
