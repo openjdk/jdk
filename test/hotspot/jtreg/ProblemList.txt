@@ -111,6 +111,7 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
+runtime/NMT/VirtualAllocTestType.java 8359959 generic-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
