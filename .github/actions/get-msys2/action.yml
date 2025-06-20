@@ -43,6 +43,7 @@ runs:
         echo "${{ steps.msys2.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
 
+    # Remove the default config.site file provided by MSYS2 to ensure config.guess accurately detects the host system.  
     - name: 'Remove default config.site'
       run: |
         echo "Removing default config.site"

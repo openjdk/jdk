@@ -97,26 +97,6 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
 
-      # - name: 'Test platform'
-      #   id: test-platform
-      #   run: |
-      #     echo "=== Environment ==="
-      #     echo "PROCESSOR_IDENTIFIER: ${PROCESSOR_IDENTIFIER}"
-      #     echo "uname -s: $(uname -s)"
-      #     echo "uname -m: $(uname -m)"
-      #     echo "uname -ar: $(uname -ar)"
-      #     echo ""
-      #     echo "=== Testing config.guess ==="
-      #     cd make/autoconf/build-aux
-      #     echo "Direct autoconf-config.guess:"
-      #     ./autoconf-config.guess || echo "autoconf-config.guess failed"
-      #     echo ""
-      #     echo "Custom config.guess:"
-      #     bash -x ./config.guess
-      #     echo "config.site"
-      #     cat /etc/config.site
-      #   shell: env /usr/bin/bash --login -eo pipefail {0}
-
       - name: 'Get JTReg'
         id: jtreg
         uses: ./.github/actions/get-jtreg
