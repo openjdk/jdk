@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,8 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Creates an ImageIcon from an image object.
+     * Setting a {@code null} image means
+     * no image will be rendered.
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
      * @param image the image
@@ -223,6 +225,9 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     public ImageIcon (Image image) {
         this.image = image;
+        if (image == null) {
+            return;
+        }
         Object o = image.getProperty("comment", imageObserver);
         if (o instanceof String) {
             description = (String) o;
@@ -367,10 +372,19 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Sets the image displayed by this icon.
+     * Setting a {@code null} image means
+     * any existing image will be removed
+     * and no image will be rendered.
      * @param image the image
      */
     public void setImage(Image image) {
         this.image = image;
+        if (image == null) {
+            this.description = null;
+            width = -1;
+            height = -1;
+            return;
+        }
         loadImage(image);
     }
 
