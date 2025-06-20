@@ -308,21 +308,11 @@ void InterpreterMacroAssembler::push_2ptrs(Register first, Register second) {
 }
 
 void InterpreterMacroAssembler::move_l_to_d(Register l, FloatRegister d) {
-  if (VM_Version::has_mtfprd()) {
-    mtfprd(d, l);
-  } else {
-    std(l, 0, R15_esp);
-    lfd(d, 0, R15_esp);
-  }
+  mtfprd(d, l);
 }
 
 void InterpreterMacroAssembler::move_d_to_l(FloatRegister d, Register l) {
-  if (VM_Version::has_mtfprd()) {
-    mffprd(l, d);
-  } else {
-    stfd(d, 0, R15_esp);
-    ld(l, 0, R15_esp);
-  }
+  mffprd(l, d);
 }
 
 void InterpreterMacroAssembler::push(TosState state) {
@@ -793,19 +783,27 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
 }
 
 // Support function for remove_activation & Co.
-void InterpreterMacroAssembler::merge_frames(Register Rsender_sp, Register return_pc,
-                                             Register Rscratch1, Register Rscratch2) {
-  // Pop interpreter frame.
-  ld(Rscratch1, 0, R1_SP); // *SP
-  ld(Rsender_sp, _ijava_state_neg(sender_sp), Rscratch1); // top_frame_sp
-  ld(Rscratch2, 0, Rscratch1); // **SP
-  if (return_pc!=noreg) {
-    ld(return_pc, _abi0(lr), Rscratch1); // LR
-  }
+void InterpreterMacroAssembler::load_fp(Register fp) {
+  ld(fp, _abi0(callers_sp), R1_SP); // *SP
+}
 
-  // Merge top frames.
-  subf(Rscratch1, R1_SP, Rsender_sp); // top_frame_sp - SP
-  stdux(Rscratch2, R1_SP, Rscratch1); // atomically set *(SP = top_frame_sp) = **SP
+void InterpreterMacroAssembler::remove_top_frame_given_fp(Register fp, Register sender_sp, Register sender_fp,
+                                                          Register return_pc, Register temp) {
+  assert_different_registers(sender_sp, sender_fp, return_pc, temp);
+  ld(sender_sp, _ijava_state_neg(sender_sp), fp);
+  ld(sender_fp, _abi0(callers_sp), fp); // **SP
+  if (return_pc != noreg) {
+    ld(return_pc, _abi0(lr), fp); // last usage of fp, register can be reused
+  }
+  subf(temp, R1_SP, sender_sp);   // sender_sp - SP
+  stdux(sender_fp, R1_SP, temp);  // atomically set *(SP = sender_sp) = sender_fp
+}
+
+void InterpreterMacroAssembler::merge_frames(Register sender_sp, Register return_pc,
+                                             Register temp1, Register temp2) {
+  Register fp = temp1, sender_fp = temp2;
+  load_fp(fp);
+  remove_top_frame_given_fp(fp, sender_sp, sender_fp, return_pc, /* temp */ fp);
 }
 
 void InterpreterMacroAssembler::narrow(Register result) {
@@ -864,11 +862,16 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
                                                   bool install_monitor_exception) {
   BLOCK_COMMENT("remove_activation {");
 
+  unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
+
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
   // that would normally not be safe to use. Such bad returns into unsafe territory of
   // the stack, will call InterpreterRuntime::at_unwind.
-  Label slow_path;
-  Label fast_path;
+  Label slow_path, fast_path;
+  Register fp = R22_tmp2;
+  load_fp(fp);
+
+  JFR_ONLY(enter_jfr_critical_section();)
   safepoint_poll(slow_path, R11_scratch1, true /* at_return */, false /* in_nmethod */);
   b(fast_path);
   bind(slow_path);
@@ -879,8 +882,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   pop(state);
   align(32);
   bind(fast_path);
-
-  unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
 
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, NotifyJVMTI, true);
@@ -901,9 +902,10 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // call could have a smaller SP, so that this compare succeeds for an
     // inner call of the method annotated with ReservedStack.
     ld_ptr(R0, JavaThread::reserved_stack_activation_offset(), R16_thread);
-    ld_ptr(R11_scratch1, _abi0(callers_sp), R1_SP); // Load frame pointer.
-    cmpld(CR0, R11_scratch1, R0);
+    cmpld(CR0, fp, R0);
     blt_predict_taken(CR0, no_reserved_zone_enabling);
+
+    JFR_ONLY(leave_jfr_critical_section();)
 
     // Enable reserved zone again, throw stack overflow exception.
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), R16_thread);
@@ -916,11 +918,25 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   verify_oop(R17_tos, state);
 
-  merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
+  remove_top_frame_given_fp(fp, R21_sender_SP, R23_tmp3, /*return_pc*/ R0, R11_scratch1);
   mtlr(R0);
   pop_cont_fastpath();
+  JFR_ONLY(leave_jfr_critical_section();)
+
   BLOCK_COMMENT("} remove_activation");
 }
+
+#if INCLUDE_JFR
+void InterpreterMacroAssembler::enter_jfr_critical_section() {
+  li(R0, 1);
+  stb(R0, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR), R16_thread);
+}
+
+void InterpreterMacroAssembler::leave_jfr_critical_section() {
+  li(R0, 0);
+  stb(R0, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR), R16_thread);
+}
+#endif // INCLUDE_JFR
 
 // Lock object
 //
@@ -958,17 +974,18 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // markWord displaced_header = obj->mark().set_unlocked();
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, object);
-      lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
-      testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
-      bne(CR0, slow_case);
-    }
-
     if (LockingMode == LM_LIGHTWEIGHT) {
       lightweight_lock(monitor, object, header, tmp, slow_case);
       b(done);
     } else if (LockingMode == LM_LEGACY) {
+
+      if (DiagnoseSyncOnValueBasedClasses != 0) {
+        load_klass(tmp, object);
+        lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
+        testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
+        bne(CR0, slow_case);
+      }
+
       // Load markWord from object into header.
       ld(header, oopDesc::mark_offset_in_bytes(), object);
 
@@ -2379,12 +2396,6 @@ static bool verify_return_address(Method* m, int bci) {
   if (*jsr_pc == Bytecodes::_jsr_w && jsr_pc >= m->code_base())    return true;
 #endif // PRODUCT
   return false;
-}
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  if (VerifyFPU) {
-    unimplemented("verfiyFPU");
-  }
 }
 
 void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Register Rtmp) {

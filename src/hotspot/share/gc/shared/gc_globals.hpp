@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,11 +362,11 @@
           range(0, 100)                                                     \
                                                                             \
   product(uint, YoungGenerationSizeSupplement, 80,                          \
-          "Supplement to YoungedGenerationSizeIncrement used at startup")   \
+          "Supplement to YoungGenerationSizeIncrement used at startup")     \
           range(0, 100)                                                     \
                                                                             \
   product(uintx, YoungGenerationSizeSupplementDecay, 8,                     \
-          "Decay factor to YoungedGenerationSizeSupplement")                \
+          "Decay factor to YoungGenerationSizeSupplement")                  \
           range(1, max_uintx)                                               \
                                                                             \
   product(uint, TenuredGenerationSizeIncrement, 20,                         \
@@ -412,7 +412,7 @@
                                                                             \
   product(uintx, InitialSurvivorRatio, 8,                                   \
           "Initial ratio of young generation/survivor space size")          \
-          range(0, max_uintx)                                               \
+          range(3, max_uintx)                                               \
                                                                             \
   product(bool, UseGCOverheadLimit, true,                                   \
           "Use policy to limit of proportion of time spent in GC "          \

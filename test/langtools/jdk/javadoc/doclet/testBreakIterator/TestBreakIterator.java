@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,16 +70,16 @@ public class TestBreakIterator extends JavadocTester {
         checkOutput("pkg/BreakIteratorTest.html", true,
                 """
                     <div class="block">with an anchor for the
-                     <a href="../index-all.html">top level index</a>.</div>""");
+                    <a href="../index-all.html">top level index</a>.</div>""");
 
         checkOutput("pkg/BreakIteratorTest.html", true,
                 """
                     <div class="block">A constant indicating that the keyLocation is indeterminate
-                     or not relevant.</div>""");
+                    or not relevant.</div>""");
 
         checkOutput("pkg/BreakIteratorTest.html", true,
                 """
                     <div class="block">Inline tags <i><a href="../index-all.html">extending
-                     beyond the first sentence.</a></i></div>""");
+                    beyond the first sentence.</a></i></div>""");
     }
 }

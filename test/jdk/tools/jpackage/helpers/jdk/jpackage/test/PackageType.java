@@ -22,10 +22,14 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -33,7 +37,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.Log;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 
 /**
  * jpackage type traits.
@@ -86,11 +89,20 @@ public enum PackageType {
     }
 
     public boolean isEnabled() {
-        return supported;
+        return enabled;
     }
 
     public String getType() {
         return type;
+    }
+
+    public static RuntimeException throwSkippedExceptionIfNativePackagingUnavailable() {
+        if (NATIVE.stream().noneMatch(PackageType::isSupported)) {
+            TKit.throwSkippedException("None of the native packagers supported in this environment");
+        } else if (NATIVE.stream().noneMatch(PackageType::isEnabled)) {
+            TKit.throwSkippedException("All native packagers supported in this environment are disabled");
+        }
+        return null;
     }
 
     private static boolean isBundlerSupportedImpl(String bundlerClass) {
@@ -131,14 +143,18 @@ public enum PackageType {
         return reply.get();
     }
 
+    private static Set<PackageType> orderedSet(PackageType... types) {
+        return new LinkedHashSet<>(List.of(types));
+    }
+
     private final String type;
     private final String suffix;
     private final boolean enabled;
     private final boolean supported;
 
-    public static final Set<PackageType> LINUX = Set.of(LINUX_DEB, LINUX_RPM);
-    public static final Set<PackageType> WINDOWS = Set.of(WIN_EXE, WIN_MSI);
-    public static final Set<PackageType> MAC = Set.of(MAC_PKG, MAC_DMG);
+    public static final Set<PackageType> LINUX = orderedSet(LINUX_DEB, LINUX_RPM);
+    public static final Set<PackageType> WINDOWS = orderedSet(WIN_MSI, WIN_EXE);
+    public static final Set<PackageType> MAC = orderedSet(MAC_DMG, MAC_PKG);
     public static final Set<PackageType> NATIVE = Stream.concat(
             Stream.concat(LINUX.stream(), WINDOWS.stream()),
             MAC.stream()).collect(Collectors.toUnmodifiableSet());

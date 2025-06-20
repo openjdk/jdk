@@ -127,15 +127,18 @@ public:
   // Called after the operation is completed.
   // If reply_writer is provided, writes the results.
   void complete() {
-    JavaThread* thread = JavaThread::current();
-    ThreadBlockInVM tbivm(thread);
-    flush_reply();
+    if (_reply_writer != nullptr) {
+      JavaThread* thread = JavaThread::current();
+      ThreadBlockInVM tbivm(thread);
+      flush_reply();
+    }
   }
 
   virtual void write(const char* str, size_t len) override {
     if (is_streaming()) {
       if (!_error) {
         _error = !_reply_writer->write_fully(str, (int)len);
+        update_position(str, len);
       }
     } else {
       bufferedStream::write(str, len);
@@ -169,8 +172,8 @@ volatile AttachListenerState AttachListener::_state = AL_NOT_INITIALIZED;
 
 AttachAPIVersion AttachListener::_supported_version = ATTACH_API_V1;
 
-// Default is false (if jdk.attach.vm.streaming property is not set).
-bool AttachListener::_default_streaming_output = false;
+// Default is true (if jdk.attach.vm.streaming property is not set).
+bool AttachListener::_default_streaming_output = true;
 
 static bool get_bool_sys_prop(const char* name, bool default_value, TRAPS) {
   ResourceMark rm(THREAD);

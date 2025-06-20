@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+
 /**
  * A tree node representing an HTML element, containing the name of the element,
  * a collection of attributes, and content.
@@ -1153,6 +1155,18 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree WBR() {
         return WBR_INSTANCE;
+    }
+
+    /**
+     * {@return an HTML {@code IMG} element}
+     *
+     * @param src the path of the image
+     * @param alt alternate text for the image
+     */
+    public static HtmlTree IMG(DocPath src, String alt) {
+        return new HtmlTree(HtmlTag.IMG)
+                .put(HtmlAttr.SRC, src.getPath())
+                .put(HtmlAttr.ALT, alt);
     }
 
     @Override

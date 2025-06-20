@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,9 +145,6 @@ class CodeHeap : public CHeapObj<mtCode> {
   // Iteration helpers
   void*      next_used(HeapBlock* b) const;
   HeapBlock* block_start(void* p) const;
-
-  // to perform additional actions on creation of executable code
-  void on_code_mapping(char* base, size_t size);
 
  public:
   CodeHeap(const char* name, const CodeBlobType code_blob_type);

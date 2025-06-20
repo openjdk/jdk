@@ -139,11 +139,16 @@ public class TestFramework {
                     "UseAVX",
                     "UseSSE",
                     "UseSVE",
-                    "UseZbb",
-                    "UseRVV",
                     "Xlog",
                     "LogCompilation",
-                    "UseCompactObjectHeaders"
+                    "UseCompactObjectHeaders",
+                    "UseFMA",
+                    // Riscv
+                    "UseRVV",
+                    "UseZbb",
+                    "UseZfh",
+                    "UseZicond",
+                    "UseZvbb"
             )
     );
 
@@ -175,6 +180,7 @@ public class TestFramework {
     private List<String> flags;
     private int defaultWarmup = -1;
     private boolean testClassesOnBootClassPath;
+    private boolean isAllowNotCompilable = false;
 
     /*
      * Public interface methods
@@ -406,6 +412,19 @@ public class TestFramework {
     public TestFramework setDefaultWarmup(int defaultWarmup) {
         TestFormat.checkAndReport(defaultWarmup >= 0, "Cannot specify a negative default warm-up");
         this.defaultWarmup = defaultWarmup;
+        return this;
+    }
+
+    /**
+     * In rare cases, methods may not be compilable because of a compilation bailout. By default, this leads to a
+     * test failure. However, if such cases are expected in multiple methods in a test class, this flag can be set to
+     * true, which allows any test to pass even if there is a compilation bailout. If only selected methods are prone
+     * to bail out, it is preferred to use {@link Test#allowNotCompilable()} instead for more fine-grained control.
+     * By setting this flag, any associated {@link IR} rule of a test is only executed if the test method was compiled,
+     * and else it is ignored silently.
+     */
+    public TestFramework allowNotCompilable() {
+        this.isAllowNotCompilable = true;
         return this;
     }
 
@@ -773,10 +792,10 @@ public class TestFramework {
 
     private void runTestVM(List<String> additionalFlags) {
         TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
-                                                        testClassesOnBootClassPath);
+                                                        isAllowNotCompilable, testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
-                TestClassParser testClassParser = new TestClassParser(testClass);
+                TestClassParser testClassParser = new TestClassParser(testClass, isAllowNotCompilable);
                 Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
                                                                      testVMProcess.getIrEncoding());
                 IRMatcher matcher = new IRMatcher(testClassMatchable);

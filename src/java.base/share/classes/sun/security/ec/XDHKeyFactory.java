@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package sun.security.ec;
 
-import java.security.KeyFactorySpi;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.InvalidKeyException;
-import java.security.ProviderException;
+import sun.security.pkcs.PKCS8Key;
+
+import java.security.*;
 import java.security.interfaces.XECKey;
 import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
@@ -147,54 +144,72 @@ public class XDHKeyFactory extends KeyFactorySpi {
     private PublicKey generatePublicImpl(KeySpec keySpec)
         throws InvalidKeyException, InvalidKeySpecException {
 
-        if (keySpec instanceof X509EncodedKeySpec) {
-            X509EncodedKeySpec x509Spec = (X509EncodedKeySpec) keySpec;
-            XDHPublicKeyImpl result =
-                new XDHPublicKeyImpl(x509Spec.getEncoded());
-            checkLockedParams(InvalidKeySpecException::new,
-                result.getParams());
-            return result;
-        } else if (keySpec instanceof XECPublicKeySpec) {
-            XECPublicKeySpec publicKeySpec = (XECPublicKeySpec) keySpec;
-            XECParameters params = XECParameters.get(
-                InvalidKeySpecException::new, publicKeySpec.getParams());
-            checkLockedParams(InvalidKeySpecException::new, params);
-            return new XDHPublicKeyImpl(params, publicKeySpec.getU());
-        } else {
-            throw new InvalidKeySpecException(
-                "Only X509EncodedKeySpec and XECPublicKeySpec are supported");
-        }
+        return switch (keySpec) {
+            case X509EncodedKeySpec x509Spec -> {
+                XDHPublicKeyImpl result =
+                    new XDHPublicKeyImpl(x509Spec.getEncoded());
+                checkLockedParams(InvalidKeySpecException::new,
+                    result.getParams());
+                yield result;
+            }
+            case XECPublicKeySpec publicKeySpec -> {
+                XECParameters params = XECParameters.get(
+                    InvalidKeySpecException::new, publicKeySpec.getParams());
+                checkLockedParams(InvalidKeySpecException::new, params);
+                yield new XDHPublicKeyImpl(params, publicKeySpec.getU());
+            }
+            case PKCS8EncodedKeySpec p8 -> {
+                PKCS8Key p8key = new XDHPrivateKeyImpl(p8.getEncoded());
+                if (!p8key.hasPublicKey()) {
+                    throw new InvalidKeySpecException("No public key found.");
+                }
+                XDHPublicKeyImpl result =
+                    new XDHPublicKeyImpl(p8key.getPubKeyEncoded());
+                checkLockedParams(InvalidKeySpecException::new,
+                    result.getParams());
+                yield result;
+            }
+            case null -> throw new InvalidKeySpecException(
+                "keySpec must not be null");
+            default ->
+                throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                    " not supported.");
+        };
     }
 
     private PrivateKey generatePrivateImpl(KeySpec keySpec)
         throws InvalidKeyException, InvalidKeySpecException {
 
-        if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec) keySpec;
-            byte[] encoded = pkcsSpec.getEncoded();
-            try {
-                XDHPrivateKeyImpl result = new XDHPrivateKeyImpl(encoded);
-                checkLockedParams(InvalidKeySpecException::new,
+        return switch (keySpec) {
+            case PKCS8EncodedKeySpec pkcsSpec -> {
+                byte[] encoded = pkcsSpec.getEncoded();
+                try {
+                    XDHPrivateKeyImpl result = new XDHPrivateKeyImpl(encoded);
+                    checkLockedParams(InvalidKeySpecException::new,
                         result.getParams());
-                return result;
-            } finally {
-                Arrays.fill(encoded, (byte) 0);
+                    yield result;
+                } finally {
+                    Arrays.fill(encoded, (byte) 0);
+                }
             }
-        } else if (keySpec instanceof XECPrivateKeySpec) {
-            XECPrivateKeySpec privateKeySpec = (XECPrivateKeySpec) keySpec;
-            XECParameters params = XECParameters.get(
-                InvalidKeySpecException::new, privateKeySpec.getParams());
-            checkLockedParams(InvalidKeySpecException::new, params);
-            byte[] scalar = privateKeySpec.getScalar();
-            try {
-                return new XDHPrivateKeyImpl(params, scalar);
-            } finally {
-                Arrays.fill(scalar, (byte)0);
+            case XECPrivateKeySpec privateKeySpec -> {
+                XECParameters params = XECParameters.get(
+                    InvalidKeySpecException::new, privateKeySpec.getParams());
+                checkLockedParams(InvalidKeySpecException::new, params);
+
+                byte[] scalar = privateKeySpec.getScalar();
+                try {
+                    yield new XDHPrivateKeyImpl(params, scalar);
+                } finally {
+                    Arrays.fill(scalar, (byte) 0);
+                }
             }
-        } else {
-            throw new InvalidKeySpecException(
-                "Only PKCS8EncodedKeySpec and XECPrivateKeySpec supported");
-        }
+            case null -> throw new InvalidKeySpecException(
+                "keySpec must not be null");
+            default ->
+                throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                    " not supported.");
+        };
     }
 
     protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)

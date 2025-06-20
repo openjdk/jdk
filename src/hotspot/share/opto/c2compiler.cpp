@@ -616,6 +616,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   case vmIntrinsics::_dtanh:
+  case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -792,6 +793,13 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:
+  case vmIntrinsics::_kyberNtt:
+  case vmIntrinsics::_kyberInverseNtt:
+  case vmIntrinsics::_kyberNttMult:
+  case vmIntrinsics::_kyberAddPoly_2:
+  case vmIntrinsics::_kyberAddPoly_3:
+  case vmIntrinsics::_kyber12To16:
+  case vmIntrinsics::_kyberBarrettReduce:
   case vmIntrinsics::_dilithiumAlmostNtt:
   case vmIntrinsics::_dilithiumAlmostInverseNtt:
   case vmIntrinsics::_dilithiumNttMult:
@@ -841,6 +849,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_IndexVector:
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return EnableVectorSupport;
+  case vmIntrinsics::_VectorUnaryLibOp:
+  case vmIntrinsics::_VectorBinaryLibOp:
+    return EnableVectorSupport && Matcher::supports_vector_calling_convention();
   case vmIntrinsics::_blackhole:
 #if INCLUDE_JVMTI
   case vmIntrinsics::_notifyJvmtiVThreadStart:

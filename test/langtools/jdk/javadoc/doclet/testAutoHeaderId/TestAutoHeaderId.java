@@ -133,8 +133,8 @@ public class TestAutoHeaderId extends JavadocTester {
                     """,
                 """
                     <h2 id="3-0-multi-line-heading-with-extra-whitespace-heading"> 3.0 Multi-line
-                           heading   with extra
-                                     whitespace</h2>""");
+                          heading   with extra
+                                    whitespace</h2>""");
     }
 
     private void checkSearchIndex() {

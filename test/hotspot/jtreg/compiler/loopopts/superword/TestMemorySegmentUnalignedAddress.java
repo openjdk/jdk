@@ -227,7 +227,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   "multiversion",       "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     // We never fail the alignment check in the auto vectorization Predicate,
     // hence we never even create the multiversioned loops.
@@ -247,7 +247,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   "multiversion_slow",  "= 2"}, // main, post
         applyIf = {"AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     // We add alignment checks to the auto vectorization Predicate. It fails
     // at runtime, deopts, and recompiles with multiversioning.
@@ -258,7 +258,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   "multiversion_slow",  "= 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     // We never add any conditions to the auto vectorization Predicate, so
     // we also never deopt and never end up multiversioning.
@@ -278,7 +278,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   "multiversion_slow",  "= 2"}, // main, post
         applyIf = {"AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     // We add alignment checks to the auto vectorization Predicate. It fails
     // at runtime, deopts, and recompiles with multiversioning.
@@ -289,7 +289,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   "multiversion_slow",  "= 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     // We never add any conditions to the auto vectorization Predicate, so
     // we also never deopt and never end up multiversioning.

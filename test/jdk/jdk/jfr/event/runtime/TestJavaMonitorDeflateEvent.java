@@ -56,8 +56,11 @@ public class TestJavaMonitorDeflateEvent {
     static class Lock {
     }
 
+    // Make sure the object stays reachable.
+    // This guarantees the fields are fully set up on deflation.
+    static final Lock lock = new Lock();
+
     public static void main(String[] args) throws Exception {
-        final Lock lock = new Lock();
         final String lockClassName = lock.getClass().getName().replace('.', '/');
 
         List<RecordedEvent> events = new CopyOnWriteArrayList<>();

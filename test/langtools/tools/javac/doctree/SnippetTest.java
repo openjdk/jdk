@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666
+ * @bug 8266666 8352249
  * @summary Implementation for snippets
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -41,18 +41,18 @@ class SnippetTest {
      */
     void inline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Snippet[SNIPPET, pos:1
+    Snippet[SNIPPET, pos:0
       attributes: 1
-        Attribute[ATTRIBUTE, pos:11
+        Attribute[ATTRIBUTE, pos:10
           name: attr1
           vkind: DOUBLE
           value: 1
-            Text[TEXT, pos:18, val1]
+            Text[TEXT, pos:17, val1]
         ]
       body:
-        Text[TEXT, pos:26, _____Hello,_Snippet!|_]
+        Text[TEXT, pos:25, ____Hello,_Snippet!|]
     ]
   body: empty
   block tags: empty

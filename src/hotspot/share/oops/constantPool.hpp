@@ -162,7 +162,6 @@ class ConstantPool : public Metadata {
     assert(is_within_bounds(cp_index), "index out of bounds");
     return (jdouble*) &base()[cp_index];
   }
-  static void check_and_add_dumped_interned_string(oop obj);
 
   ConstantPool(Array<u1>* tags);
   ConstantPool();
@@ -684,7 +683,6 @@ class ConstantPool : public Metadata {
 #if INCLUDE_CDS
   // CDS support
   objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 private:

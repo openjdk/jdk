@@ -218,6 +218,9 @@ JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
 JNIEXPORT void JNICALL
 JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 
+JNIEXPORT jboolean JNICALL
+JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls);
+
 /*
  * java.lang.Throwable
  */
@@ -297,6 +300,9 @@ JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
 
 JNIEXPORT jobject JNICALL
 JVM_GetStackTrace(JNIEnv *env, jobject thread);
+
+JNIEXPORT jobject JNICALL
+JVM_CreateThreadSnapshot(JNIEnv* env, jobject thread);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetAllThreads(JNIEnv *env, jclass dummy);

@@ -44,11 +44,14 @@ import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Name;
 import jdk.jfr.Period;
+import jdk.jfr.SettingControl;
+import jdk.jfr.Throttle;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.settings.Throttler;
 import jdk.jfr.internal.util.Utils;
 
 public final class MetadataRepository {
@@ -59,7 +62,6 @@ public final class MetadataRepository {
     private final Map<String, EventControl> nativeControls = LinkedHashMap.newHashMap(150);
     private final SettingsManager settingsManager = new SettingsManager();
     private final HiddenWait threadSleeper = new HiddenWait();
-    private Constructor<EventConfiguration> cachedEventConfigurationConstructor;
     private boolean staleMetadata = true;
     private boolean unregistered;
     private long lastUnloaded = -1;
@@ -103,7 +105,7 @@ public final class MetadataRepository {
         List<EventType> eventTypes = new ArrayList<>(configurations.size() + nativeEventTypes.size());
         for (EventConfiguration ec : configurations) {
             if (ec.isRegistered()) {
-                eventTypes.add(ec.getEventType());
+                eventTypes.add(ec.eventType());
             }
         }
         for (EventType t : nativeEventTypes.values()) {
@@ -117,7 +119,7 @@ public final class MetadataRepository {
     public synchronized EventType getEventType(Class<? extends jdk.internal.event.Event> eventClass) {
         EventConfiguration ec = getConfiguration(eventClass, false);
         if (ec != null && ec.isRegistered()) {
-            return ec.getEventType();
+            return ec.eventType();
         }
         throw new IllegalStateException("Event class " + eventClass.getName() + " is not registered");
     }
@@ -125,7 +127,7 @@ public final class MetadataRepository {
     public synchronized void unregister(Class<? extends Event> eventClass) {
         EventConfiguration configuration = getConfiguration(eventClass, false);
         if (configuration != null) {
-            configuration.getPlatformEventType().setRegistered(false);
+            configuration.platformEventType().setRegistered(false);
         }
         // never registered, ignore call
     }
@@ -147,14 +149,14 @@ public final class MetadataRepository {
             PlatformEventType pe = findMirrorType(eventClass);
             configuration = makeConfiguration(eventClass, pe, dynamicAnnotations, dynamicFields);
         }
-        configuration.getPlatformEventType().setRegistered(true);
-        TypeLibrary.addType(configuration.getPlatformEventType());
+        configuration.platformEventType().setRegistered(true);
+        TypeLibrary.addType(configuration.platformEventType());
         if (JVM.isRecording()) {
-            settingsManager.setEventControl(configuration.getEventControl(), true, JVM.counterTime());
+            settingsManager.setEventControl(configuration.eventControl(), true, JVM.counterTime());
             settingsManager.updateRetransform(Collections.singletonList((eventClass)));
        }
        setStaleMetadata();
-       return configuration.getEventType();
+       return configuration.eventType();
     }
 
     private PlatformEventType findMirrorType(Class<? extends jdk.internal.event.Event> eventClass) throws InternalError {
@@ -177,20 +179,6 @@ public final class MetadataRepository {
             Utils.ensureInitialized(eventClass);
         }
         return JVMSupport.getConfiguration(eventClass);
-    }
-
-    private EventConfiguration newEventConfiguration(EventType eventType, EventControl ec) {
-        try {
-            if (cachedEventConfigurationConstructor == null) {
-                var argClasses = new Class<?>[] { EventType.class, EventControl.class};
-                Constructor<EventConfiguration> c = EventConfiguration.class.getDeclaredConstructor(argClasses);
-                c.setAccessible(true);
-                cachedEventConfigurationConstructor = c;
-            }
-            return cachedEventConfigurationConstructor.newInstance(eventType, ec);
-        } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            throw new InternalError(e);
-        }
     }
 
     private EventConfiguration makeConfiguration(Class<? extends jdk.internal.event.Event> eventClass, PlatformEventType pEventType, List<AnnotationElement> dynamicAnnotations, List<ValueDescriptor> dynamicFields) throws InternalError {
@@ -219,19 +207,24 @@ public final class MetadataRepository {
                     nativeEventTypes.remove(n);
                     nativeControls.remove(n);
                     TypeLibrary.removeType(nativeType.getId());
-                    pEventType.setAnnotations(nativeType.getAnnotationElements());
-                    pEventType.setFields(nativeType.getFields());
+                    PrivateAccess access = PrivateAccess.getInstance();
+                    for (int i = 0; i < nativeFields.size(); i++) {
+                        access.setAnnotations(nativeFields.get(i), eventFields.get(i).getAnnotationElements());
+                    }
+                    pEventType.setFields(nativeFields);
                 }
             }
         }
         EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
+        pEventType.setHasThrottle(pEventType.getAnnotation(Throttle.class) != null);
         EventControl ec = new EventControl(pEventType, eventClass);
-        EventConfiguration configuration = newEventConfiguration(eventType, ec);
-        PlatformEventType pe = configuration.getPlatformEventType();
-        pe.setRegistered(true);
+        SettingControl[] settings = ec.getSettingControls().toArray(new SettingControl[0]);
+        Throttler throttler = pEventType.getThrottler();
+        EventConfiguration configuration = new EventConfiguration(pEventType, eventType, ec, settings, throttler, eventType.getId());
+        pEventType.setRegistered(true);
         // If class is instrumented or should not be instrumented, mark as instrumented.
-        if (JVM.isInstrumented(eventClass) || !JVMSupport.shouldInstrument(pe.isJDK(), pe.getName())) {
-            pe.setInstrumented();
+        if (JVM.isInstrumented(eventClass) || !JVMSupport.shouldInstrument(pEventType.isJDK(), pEventType.getName())) {
+            pEventType.setInstrumented();
         }
         JVMSupport.setConfiguration(eventClass, configuration);
         return configuration;
@@ -254,7 +247,7 @@ public final class MetadataRepository {
         for (Class<? extends jdk.internal.event.Event> clazz : eventClasses) {
             EventConfiguration eh = JVMSupport.getConfiguration(clazz);
             if (eh != null) {
-                controls.add(eh.getEventControl());
+                controls.add(eh.eventControl());
             }
         }
         return controls;

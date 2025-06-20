@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,34 +24,37 @@
  */
 package sun.security.ssl;
 
-import sun.security.provider.X509Factory;
-
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Queue;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.zip.Adler32;
+import javax.crypto.KDF;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.net.ssl.ExtendedSSLSession;
-import javax.net.ssl.SNIHostName;
-import javax.net.ssl.SNIServerName;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSessionBindingEvent;
-import javax.net.ssl.SSLSessionBindingListener;
-import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.*;
+
+import sun.security.ssl.CipherSuite.HashAlg;
+import sun.security.internal.spec.TlsPrfParameterSpec;
+import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
+import static sun.security.ssl.ProtocolVersion.*;
+import sun.security.util.KeyUtil;
+import sun.security.provider.X509Factory;
+import sun.security.ssl.X509Authentication.X509Possession;
 
 /**
  * Implements the SSL session interface, and exposes the session context
@@ -100,6 +103,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private Collection<SignatureScheme> peerSupportedSignAlgs; //for certificate
     private boolean             useDefaultPeerSignAlgs = false;
     private List<byte[]>        statusResponses;
+    private SecretKey           exporterMasterSecret;  // TLSv1.3+ exporter info
+    private RandomCookie        clientRandom;          // TLSv1.2- exporter info
+    private RandomCookie        serverRandom;
     private SecretKey           resumptionMasterSecret;
     private SecretKey           preSharedKey;
     private byte[]              pskIdentity;
@@ -195,10 +201,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.sessionId = id;
         this.host = hc.conContext.transport.getPeerHost();
         this.port = hc.conContext.transport.getPeerPort();
-        this.localSupportedSignAlgs = hc.localSupportedSignAlgs == null ?
+        this.localSupportedSignAlgs = hc.localSupportedCertSignAlgs == null ?
                 Collections.emptySet() :
                 Collections.unmodifiableCollection(
-                        new ArrayList<>(hc.localSupportedSignAlgs));
+                        new ArrayList<>(hc.localSupportedCertSignAlgs));
         this.serverNameIndication = hc.negotiatedServerName;
         this.requestedServerNames = List.copyOf(hc.getRequestedServerNames());
         if (hc.sslConfig.isClientMode) {
@@ -256,266 +262,216 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
+     * Reassemble new session ticket.
+     * <p>
      * < 2 bytes > protocolVersion
      * < 2 bytes > cipherSuite
      * < 1 byte > localSupportedSignAlgs entries
      *   < 2 bytes per entries > localSupportedSignAlgs
-     * < 1 bytes > peerSupportedSignAlgs entries
-     *   < 2 bytes per entries > peerSupportedSignAlgs
-     * < 2 bytes > preSharedKey length
-     * < length in bytes > preSharedKey
-     * < 1 byte > pskIdentity length
-     * < length in bytes > pskIdentity
-     * < 1 byte > masterSecret length
-     *   < 1 byte > masterSecret algorithm length
-     *   < length in bytes > masterSecret algorithm
-     *   < 2 bytes > masterSecretKey length
-     *   < length in bytes> masterSecretKey
-     * < 1 byte > useExtendedMasterSecret
+     * select (protocolVersion)
+     *   case TLS13Plus:
+     *     < 2 bytes > preSharedKey length
+     *     < length in bytes > preSharedKey
+     *   case non-TLS13Plus:
+     *     < 2 bytes > masterSecretKey length
+     *     < length in bytes> masterSecretKey
+     *     < 1 byte > useExtendedMasterSecret
      * < 1 byte > identificationProtocol length
-     * < length in bytes > identificationProtocol
+     *   < length in bytes > identificationProtocol
      * < 1 byte > serverNameIndication length
-     * < length in bytes > serverNameIndication
+     *   < length in bytes > serverNameIndication
      * < 1 byte > Number of requestedServerNames entries
-     *   < 1 byte > ServerName length
-     *   < length in bytes > ServerName
+     *   For each entry {
+     *     < 1 byte > ServerName length
+     *     < length in bytes > ServerName
+     *   }
+     * < 4 bytes > maximumPacketSize
+     * < 4 bytes > negotiatedMaxFragSize
      * < 4 bytes > creationTime
-     * < 2 byte > status response length
-     *   < 2 byte > status response entry length
-     *   < length in byte > status response entry
      * < 1 byte > Length of peer host
      *   < length in bytes > peer host
      * < 2 bytes> peer port
-     * < 1 byte > Number of peerCerts entries
-     *   < 4 byte > peerCert length
-     *   < length in bytes > peerCert
-     * < 1 byte > localCerts type (Cert, PSK, Anonymous)
-     *   Certificate
-     *     < 1 byte > Number of Certificate entries
-     *       < 4 byte> Certificate length
-     *       < length in bytes> Certificate
-     *   PSK
-     *     < 1 byte > Number of PSK entries
-     *       < 1 bytes > PSK algorithm length
-     *       < length in bytes > PSK algorithm string
-     *       < 4 bytes > PSK key length
-     *       < length in bytes> PSK key
-     *       < 4 bytes > PSK identity length
-     *       < length in bytes> PSK identity
-     *   Anonymous
-     *     < 1 byte >
-     * < 4 bytes > maximumPacketSize
-     * < 4 bytes > negotiatedMaxFragSize
+     * < 1 byte > Number of Peer Certificate entries
+     *   For each entry {
+     *     < 4 bytes > Peer certificate length
+     *     < length in bytes> Peer certificate
+     *   }
+     * < 1 byte > Number of Local Certificate entries
+     *   For each entry {
+     *     < 1 byte > Local Certificate algorithm length
+     *     < length in bytes> Local Certificate algorithm
+     *     < 4 bytes > Certificate checksum
+     *   }
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
+        int len;
+        byte[] b;
         boundValues = new ConcurrentHashMap<>();
         this.protocolVersion =
-                ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
+                ProtocolVersion.valueOf(Record.getInt16(buf));
 
         // The CH session id may reset this if it's provided
         this.sessionId = new SessionId(true,
                 hc.sslContext.getSecureRandom());
 
         this.cipherSuite =
-                CipherSuite.valueOf(Short.toUnsignedInt(buf.getShort()));
+                CipherSuite.valueOf(Record.getInt16(buf));
 
         // Local Supported signature algorithms
-        ArrayList<SignatureScheme> list = new ArrayList<>();
-        int i = Byte.toUnsignedInt(buf.get());
-        while (i-- > 0) {
+        List<SignatureScheme> list = new ArrayList<>();
+        len = Record.getInt8(buf);
+        while (len-- > 0) {
             list.add(SignatureScheme.valueOf(
-                    Short.toUnsignedInt(buf.getShort())));
+                    Record.getInt16(buf)));
         }
         this.localSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
-        // Peer Supported signature algorithms
-        i = Byte.toUnsignedInt(buf.get());
-        list.clear();
-        while (i-- > 0) {
-            list.add(SignatureScheme.valueOf(
-                    Short.toUnsignedInt(buf.getShort())));
-        }
-        this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
+        if (protocolVersion.useTLS13PlusSpec()) {
+            // PSK
+            b = Record.getBytes16(buf);
+            if (b.length > 0) {
+                this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
+            } else {
+                this.preSharedKey = null;
+            }
 
-        // PSK
-        byte[] b;
-        i = Short.toUnsignedInt(buf.getShort());
-        if (i > 0) {
-            b = new byte[i];
-            // Get algorithm string
-            buf.get(b, 0, i);
-            // Encoded length
-            i = Short.toUnsignedInt(buf.getShort());
-            // Encoded SecretKey
-            b = new byte[i];
-            buf.get(b);
-            this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
+            this.useExtendedMasterSecret = false;
         } else {
-            this.preSharedKey = null;
-        }
+            // Master secret
+            b = Record.getBytes16(buf);
+            if (b.length > 0) {
+                this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
+            } else {
+                this.masterSecret = null;
+            }
 
-        // PSK identity
-        i = buf.get();
-        if (i > 0) {
-            b = new byte[i];
-            buf.get(b);
-            this.pskIdentity = b;
-        } else {
-            this.pskIdentity = null;
+            // Extended master secret usage.
+            this.useExtendedMasterSecret = (Record.getInt8(buf) != 0);
         }
-
-        // Master secret length of secret key algorithm  (one byte)
-        i = buf.get();
-        if (i > 0) {
-            b = new byte[i];
-            // Get algorithm string
-            buf.get(b, 0, i);
-            // Encoded length
-            i = Short.toUnsignedInt(buf.getShort());
-            // Encoded SecretKey
-            b = new byte[i];
-            buf.get(b);
-            this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
-        } else {
-            this.masterSecret = null;
-        }
-        // Use extended master secret
-        this.useExtendedMasterSecret = (buf.get() != 0);
 
         // Identification Protocol
-        i = buf.get();
-        if (i == 0) {
+        b = Record.getBytes8(buf);
+        if (b.length == 0) {
             identificationProtocol = null;
         } else {
-            b = new byte[i];
-            buf.get(b);
             identificationProtocol = new String(b);
         }
 
         // SNI
-        i = buf.get();  // length
-        if (i == 0) {
+        b = Record.getBytes8(buf);
+        if (b.length == 0) {
             serverNameIndication = null;
         } else {
-            b = new byte[i];
-            buf.get(b, 0, b.length);
             serverNameIndication = new SNIHostName(b);
         }
 
         // List of SNIServerName
-        int len = Short.toUnsignedInt(buf.getShort());
+        len = Record.getInt16(buf);
         if (len == 0) {
             this.requestedServerNames = Collections.emptyList();
         } else {
             requestedServerNames = new ArrayList<>();
             while (len > 0) {
-                int l = buf.get();
-                b = new byte[l];
-                buf.get(b, 0, l);
+                b = Record.getBytes8(buf);
                 requestedServerNames.add(new SNIHostName(new String(b)));
                 len--;
             }
         }
-
         maximumPacketSize = buf.getInt();
         negotiatedMaxFragLen = buf.getInt();
 
         // Get creation time
         this.creationTime = buf.getLong();
 
-        // Get Buffer sizes
-
-        // Status Response
-        len = Short.toUnsignedInt(buf.getShort());
-        if (len == 0) {
-            statusResponses = Collections.emptyList();
-        } else {
-            statusResponses = new ArrayList<>();
-        }
-        while (len-- > 0) {
-            b = new byte[Short.toUnsignedInt(buf.getShort())];
-            buf.get(b);
-            statusResponses.add(b);
-        }
-
         // Get Peer host & port
-        i = Byte.toUnsignedInt(buf.get());
-        if (i == 0) {
+        b = Record.getBytes8(buf);
+        if (b.length == 0) {
             this.host = "";
         } else {
-            b = new byte[i];
-            buf.get(b, 0, i);
             this.host = new String(b);
         }
-        this.port = Short.toUnsignedInt(buf.getShort());
+        this.port = Record.getInt16(buf);
 
-        // Peer certs
-        i = buf.get();
-        if (i == 0) {
+        // Peer certs.
+        len = Record.getInt8(buf);
+        if (len == 0) {
             this.peerCerts = null;
         } else {
-            this.peerCerts = new X509Certificate[i];
-            int j = 0;
-            while (i > j) {
+            this.peerCerts = new X509Certificate[len];
+            for (int i = 0; len > i; i++) {
                 b = new byte[buf.getInt()];
                 buf.get(b);
                 try {
-                    this.peerCerts[j] = X509Factory.cachedGetX509Cert(b);
+                    this.peerCerts[i] = X509Factory.cachedGetX509Cert(b);
                 } catch (Exception e) {
                     throw new IOException(e);
                 }
-                j++;
             }
         }
 
-        // Get local certs of PSK
-        switch (buf.get()) {
-            case 0:
-                break;
-            case 1:
-                // number of certs
-                len = buf.get();
-                this.localCerts = new X509Certificate[len];
-                i = 0;
-                while (len > i) {
-                    b = new byte[buf.getInt()];
-                    buf.get(b);
+        // Restore local certificates if cert algorithm(s) present.
+        len = Record.getInt8(buf);
+        if (len == 0) {
+            this.localCerts = null;
+        } else {
+            String[] certAlgs = new String[len];
+            int[] certCheckSums = new int[len];
+
+            for (int i = 0; len > i; i++) {
+                certAlgs[i] = new String(Record.getBytes8(buf));
+                certCheckSums[i] = Record.getInt32(buf);
+            }
+
+            SSLPossession pos = X509Authentication.createPossession(
+                    hc, certAlgs);
+            boolean same = false;
+
+            if (pos instanceof X509Possession x509Pos
+                    && x509Pos.popCerts != null
+                    && x509Pos.popCerts.length == len) {
+                // Make sure we got the exact same cert chain.
+                for (int i = 0; i < x509Pos.popCerts.length; i++) {
                     try {
-                        this.localCerts[i] = X509Factory.cachedGetX509Cert(b);
+                        byte[] encoded = x509Pos.popCerts[i].getEncoded();
+                        String popAlg = x509Pos.popCerts[i]
+                                .getPublicKey().getAlgorithm();
+
+                        if (certCheckSums[i] == getChecksum(encoded)
+                                && certAlgs[i].equals(popAlg)) {
+                            // Use certs from cache.
+                            x509Pos.popCerts[i] =
+                                    X509Factory.cachedGetX509Cert(encoded);
+                            same = true;
+                        } else {
+                            same = false;
+                            break;
+                        }
                     } catch (Exception e) {
                         throw new IOException(e);
                     }
-                    i++;
                 }
-                break;
-            case 2:
-                // pre-shared key
-                // Length of pre-shared key algorithm  (one byte)
-                i = buf.get();
-                b = new byte[i];
-                buf.get(b, 0, i);
-                String alg = new String(b);
-                // Get length of encoding
-                i = Short.toUnsignedInt(buf.getShort());
-                // Get encoding
-                b = new byte[i];
-                buf.get(b);
-                this.preSharedKey = new SecretKeySpec(b, alg);
-                // Get identity len
-                i = buf.get();
-                if (i > 0) {
-                    this.pskIdentity = new byte[buf.get()];
-                    buf.get(pskIdentity);
-                } else {
-                    this.pskIdentity = null;
+            }
+
+            if (same) {
+                this.localCerts = ((X509Possession) pos).popCerts;
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
+                    SSLLogger.fine("Restored " + len
+                            + " local certificates from session ticket"
+                            + " for algorithms " + Arrays.toString(certAlgs));
                 }
-                break;
-            default:
-                throw new SSLException("Failed local certs of session.");
+            } else {
+                this.localCerts = null;
+                this.invalidated = true;
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
+                    SSLLogger.warning("Local certificates can not be restored "
+                            + "from session ticket "
+                            + "for algorithms " + Arrays.toString(certAlgs));
+                }
+            }
         }
 
-        context = (SSLSessionContextImpl)
+        this.context = (SSLSessionContextImpl)
                 hc.sslContext.engineGetServerSessionContext();
         this.lastUsedTime = System.currentTimeMillis();
     }
@@ -560,49 +516,25 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             hos.putInt16(s.id);
         }
 
-        // Peer Supported signature algorithms
-        hos.putInt8(peerSupportedSignAlgs.size());
-        for (SignatureScheme s : peerSupportedSignAlgs) {
-            hos.putInt16(s.id);
-        }
-
-        // PSK
-        if (preSharedKey == null ||
-                preSharedKey.getAlgorithm() == null) {
-            hos.putInt16(0);
-        } else {
-            hos.putInt16(preSharedKey.getAlgorithm().length());
-            if (preSharedKey.getAlgorithm().length() != 0) {
-                hos.write(preSharedKey.getAlgorithm().getBytes());
+        // PreSharedKey is only needed by TLSv1.3,
+        // masterSecret is only needed by pre-TLSv1.3.
+        if (protocolVersion.useTLS13PlusSpec()) {
+            // PSK
+            if (preSharedKey == null) {
+                hos.putInt16(0);
+            } else {
+                hos.putBytes16(preSharedKey.getEncoded());
             }
-            b = preSharedKey.getEncoded();
-            hos.putInt16(b.length);
-            hos.write(b, 0, b.length);
-        }
-
-        // PSK Identity
-        if (pskIdentity == null) {
-            hos.putInt8(0);
         } else {
-            hos.putInt8(pskIdentity.length);
-            hos.write(pskIdentity, 0, pskIdentity.length);
-        }
-
-        // Master Secret
-        if (getMasterSecret() == null ||
-                getMasterSecret().getAlgorithm() == null) {
-            hos.putInt8(0);
-        } else {
-            hos.putInt8(getMasterSecret().getAlgorithm().length());
-            if (getMasterSecret().getAlgorithm().length() != 0) {
-                hos.write(getMasterSecret().getAlgorithm().getBytes());
+            // Master Secret
+            if (getMasterSecret() == null) {
+                hos.putInt16(0);
+            } else {
+                hos.putBytes16(masterSecret.getEncoded());
             }
-            b = getMasterSecret().getEncoded();
-            hos.putInt16(b.length);
-            hos.write(b, 0, b.length);
-        }
 
-        hos.putInt8(useExtendedMasterSecret ? 1 : 0);
+            hos.putInt8(useExtendedMasterSecret ? 1 : 0);
+        }
 
         // Identification Protocol
         if (identificationProtocol == null) {
@@ -636,20 +568,11 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         hos.putInt32(maximumPacketSize);
         hos.putInt32(negotiatedMaxFragLen);
 
-        // creation time
+        // Creation time
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         hos.writeBytes(buffer.putLong(creationTime).array());
 
-        // Status Responses
-        List<byte[]> list = getStatusResponses();
-        int l = list.size();
-        hos.putInt16(l);
-        for (byte[] e : list) {
-            hos.putInt16(e.length);
-            hos.write(e);
-        }
-
-        // peer Host & Port
+        // Peer Host & Port
         if (host == null || host.length() == 0) {
             hos.putInt8(0);
         } else {
@@ -658,7 +581,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
         hos.putInt16(port);
 
-        // Peer cert
+        // Peer certs.
         if (peerCerts == null || peerCerts.length == 0) {
             hos.putInt8(0);
         } else {
@@ -670,36 +593,39 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
         }
 
-        // Client identity
-        if (localCerts != null && localCerts.length > 0) {
-            // certificate based
-            hos.putInt8(1);
+        // Local certificates' algorithms and checksums.
+        // We don't include the complete local certificates in a session ticket
+        // to decrease the size of ClientHello message.
+        if (localCerts == null || localCerts.length == 0) {
+            hos.putInt8(0);
+        } else {
             hos.putInt8(localCerts.length);
             for (X509Certificate c : localCerts) {
-                b = c.getEncoded();
-                hos.putInt32(b.length);
-                hos.writeBytes(b);
+                hos.putBytes8(c.getPublicKey().getAlgorithm().getBytes());
+                hos.putInt32(getChecksum(c.getEncoded()));
             }
-        } else if (preSharedKey != null) {
-            // pre-shared key
-            hos.putInt8(2);
-            hos.putInt8(preSharedKey.getAlgorithm().length());
-            hos.write(preSharedKey.getAlgorithm().getBytes());
-            b = preSharedKey.getEncoded();
-            hos.putInt32(b.length);
-            hos.writeBytes(b);
-            hos.putInt32(pskIdentity.length);
-            hos.writeBytes(pskIdentity);
-        } else {
-            // anonymous
-            hos.putInt8(0);
         }
 
         return hos.toByteArray();
     }
 
+    private static int getChecksum(byte[] input) {
+        Adler32 adler32 = new Adler32();
+        adler32.update(input);
+        return (int) adler32.getValue();
+    }
+
     void setMasterSecret(SecretKey secret) {
         masterSecret = secret;
+    }
+
+    void setExporterMasterSecret(SecretKey secret) {
+        exporterMasterSecret = secret;
+    }
+
+    void setRandoms(RandomCookie client, RandomCookie server) {
+        clientRandom = client;
+        serverRandom = server;
     }
 
     void setResumptionMasterSecret(SecretKey secret) {
@@ -1300,12 +1226,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /**
      * Use large packet sizes now or follow RFC 2246 packet sizes (2^14)
      * until changed.
-     *
+     * <P>
      * In the TLS specification (section 6.2.1, RFC2246), it is not
      * recommended that the plaintext has more than 2^14 bytes.
      * However, some TLS implementations violate the specification.
      * This is a workaround for interoperability with these stacks.
-     *
+     * <P>
      * Application could accept large fragments up to 2^15 bytes by
      * setting the system property jsse.SSLEngine.acceptLargeFragments
      * to "true".
@@ -1318,7 +1244,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Expand the buffer size of both SSL/TLS network packet and
      * application data.
      */
-    protected void expandBufferSizes() {
+    void expandBufferSizes() {
         sessionLock.lock();
         try {
             acceptLargeFragments = true;
@@ -1485,6 +1411,269 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     @Override
     public List<SNIServerName> getRequestedServerNames() {
         return requestedServerNames;
+    }
+
+    /*
+     * keyAlg is used for switching between Keys/Data.  If keyAlg is
+     * non-null, we are producing a Key, otherwise data.
+     */
+    public Object exportKeyingMaterial(
+            String keyAlg, String label, byte[] context, int length)
+            throws SSLKeyException {
+
+        // Global preconditions
+
+        Objects.requireNonNull(label, "label can not be null");
+        if (length < 1) {
+            throw new IllegalArgumentException(
+                    "length must be positive");
+        }
+
+        // Calculations are primarily based on protocol version.
+        if (protocolVersion.useTLS13PlusSpec()) {
+
+            // Unlikely, but check anyway.
+            if (exporterMasterSecret == null) {
+                throw new IllegalStateException(
+                        "Exporter master secret not captured");
+            }
+
+            // TLS 1.3+ using HKDF-based calcs.
+            //     TLS 1.3 (RFC 8446)
+
+            // Check the label/context lengths:
+            //       struct {
+            //           uint16 length = Length;
+            //           opaque label<7..255> = "tls13 " + Label;
+            //           opaque context<0..255> = Context;
+            //       } HkdfLabel;
+            // label can have 249 bytes (+6 for "tls13 "), and context 255
+
+            // RFC 8446 allows for length of 2^16-1 (65536), but RFC 5869
+            // states:
+            //
+            //     L    length of output keying material in octets
+            //          (<= 255*HashLen)
+            if (length > (255 * cipherSuite.hashAlg.hashLength )) {
+                throw new IllegalArgumentException(
+                        "length is too large");
+            }
+
+            byte[] hkdfInfoLabel =
+                        ("tls13 " + label).getBytes(StandardCharsets.UTF_8);
+            if ((hkdfInfoLabel.length < 7) || hkdfInfoLabel.length > 255) {
+                throw new IllegalArgumentException(
+                        "label length outside range");
+            }
+
+            // If no context (null) is provided, RFC 8446 requires an empty
+            // context be used, unlike RFC 5705.
+            context = (context != null ? context : new byte[0]);
+            if (context.length > 255) {
+                throw new IllegalArgumentException(
+                        "context length outside range");
+            }
+
+            // Do RFC 8446:7.1-7.5 calculations
+
+            /*
+             * TLS-Exporter(label, context_value, key_length) =
+             *     HKDF-Expand-Label(Derive-Secret(Secret, label, ""),
+             *         "exporter", Hash(context_value), key_length)
+             *
+             * Derive-Secret(Secret, Label, Messages) =
+             *     HKDF-Expand-Label(Secret, Label,
+             *         Transcript-Hash(Messages), Hash.length)
+             */
+
+            try {
+                // Use the ciphersuite's hashAlg for these calcs.
+                HashAlg hashAlg = cipherSuite.hashAlg;
+                KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+
+                // First calculate the inner Derive-Secret(Secret, label, "")
+                MessageDigest md;
+                byte[] emptyHash;
+
+                // Create the "" digest...
+                try {
+                    md = MessageDigest.getInstance(hashAlg.toString());
+                    emptyHash = md.digest();
+                } catch (NoSuchAlgorithmException nsae) {
+                    throw new ProviderException(
+                            "Hash algorithm " + cipherSuite.hashAlg.name +
+                                    " is not available", nsae);
+                }
+
+                // ...then the hkdfInfo...
+                byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
+                        hkdfInfoLabel, emptyHash, hashAlg.hashLength);
+
+                // ...then the "inner" HKDF-Expand-Label() to get the
+                // derivedSecret that is used as the Secret in the "outer"
+                // HKDF-Expand-Label().
+                SecretKey derivedSecret = hkdf.deriveKey("TlsKey",
+                        HKDFParameterSpec.expandOnly(exporterMasterSecret,
+                        hkdfInfo, hashAlg.hashLength));
+                try {
+                    // Now do the "outer" HKDF-Expand-Label.
+                    //     HKDF-Expand-Label(derivedSecret, "exporter",
+                    //         Hash(context_value), key_length)
+
+                    // If a context was supplied, use it, otherwise, use the
+                    // previous hashed value of ""...
+                    byte[] hash = ((context.length > 0) ?
+                            md.digest(context) : emptyHash);
+
+                    // ...now the hkdfInfo...
+                    hkdfInfo = SSLSecretDerivation.createHkdfInfo(
+                            ("tls13 exporter").getBytes(StandardCharsets.UTF_8),
+                            hash, length);
+
+                    // ...now the final expand.
+                    return ((keyAlg != null) ?
+                            hkdf.deriveKey(keyAlg,
+                                    HKDFParameterSpec.expandOnly(derivedSecret,
+                                            hkdfInfo, length)) :
+                            hkdf.deriveData(
+                                    HKDFParameterSpec.expandOnly(derivedSecret,
+                                            hkdfInfo, length)));
+                } finally {
+                    KeyUtil.destroySecretKeys(derivedSecret);
+                }
+            } catch (Exception e) {
+                // For whatever reason, we couldn't generate.  Wrap and return.
+                throw new SSLKeyException("Couldn't generate Exporter/HKDF", e);
+            }
+        } else if (protocolVersion.useTLS10PlusSpec()) {
+
+            // Unlikely, but check if randoms were not captured.
+            if (clientRandom == null || serverRandom == null) {
+                throw new IllegalStateException("Random nonces not captured");
+            }
+
+            // RFC 7505 using PRF-based calcs.
+            //     TLS 1/1.1/1.2 (RFCs 2246/4346/5246) or
+            //     DTLS 1.0/1.2 (RFCs 4347/6347)
+
+            // Note:  In RFC 7627:
+            //
+            //   If a client or server chooses to continue with a full handshake
+            //   without the extended master secret extension ... they MUST NOT
+            //   export any key material based on the new master secret for any
+            //   subsequent application-level authentication ... it MUST
+            //   disable [RFC5705] ...
+            if (!useExtendedMasterSecret) {
+                throw new SSLKeyException(
+                        "Exporters require extended master secrets");
+            }
+
+            // Check for a "disambiguating label string" (i.e. non-empty).
+            // Don't see a max length restriction.
+            if (label.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "label length outside range");
+            }
+
+            // context length must fit in 2 unsigned bytes.
+            if ((context != null) && (context.length > 0xFFFF)) {
+                throw new IllegalArgumentException(
+                        "Only 16-bit context lengths supported");
+            }
+
+            // Perform RFC 5705 calculations using the internal SunJCE PRF.
+            String prfAlg;
+            HashAlg hashAlg;
+            if (protocolVersion == TLS12) {
+                prfAlg = "SunTls12Prf";
+                hashAlg = cipherSuite.hashAlg;
+            } else {  //  all other cases
+                prfAlg = "SunTlsPrf";
+                hashAlg = H_NONE;
+            }
+
+            // Make a seed with randoms and optional context
+            // Note that if context is null, it is omitted from the calc
+            byte[] clientRandomBytes = clientRandom.randomBytes;
+            byte[] serverRandomBytes = serverRandom.randomBytes;
+            byte[] seed = new byte[
+                    clientRandomBytes.length + serverRandomBytes.length +
+                            ((context != null) ? (2 + context.length) : 0)];
+
+            int pos = 0;
+            System.arraycopy(
+                    clientRandomBytes, 0, seed, pos, clientRandomBytes.length);
+            pos += clientRandomBytes.length;
+            System.arraycopy(
+                    serverRandomBytes, 0, seed, pos, serverRandomBytes.length);
+            pos += serverRandomBytes.length;
+            if (context != null) {
+                // RFC 5705, "If no context is provided, ..."
+                seed[pos++] = (byte) ((context.length >> 8) & 0xFF);
+                seed[pos++] = (byte) ((context.length) & 0xFF);
+                System.arraycopy(
+                        context, 0, seed, pos, context.length);
+            }
+
+            // Call the PRF function.
+            try {
+                @SuppressWarnings("deprecation")
+                TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
+                        masterSecret, (keyAlg == null) ? "TlsKey" : keyAlg,
+                        label, seed, length,
+                        hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
+                KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
+                kg.init(spec);
+                SecretKey key = kg.generateKey();
+                if (keyAlg != null) {
+                    return key;
+                } else {
+                    byte[] b = key.getEncoded();
+                    if (b == null) {
+                        throw new UnsupportedOperationException(
+                                "Could not extract encoding from SecretKey");
+                    }
+                    return b;
+                }
+            } catch (NoSuchAlgorithmException |
+                     InvalidAlgorithmParameterException e) {
+                throw new SSLKeyException("Could not generate Exporter/PRF", e);
+            }
+        } else {
+            // SSLv3 is vulnerable to a triple handshake attack and can't be
+            // mitigated by RFC 7627.  Don't support this or any other
+            // unknown protocol.
+            throw new SSLKeyException(
+                    "Exporters not supported in " + protocolVersion);
+        }
+    }
+
+    /**
+     * Generate Exported Key Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     */
+    @Override
+    public SecretKey exportKeyingMaterialKey(String keyAlg,
+            String label, byte[] context, int length) throws SSLKeyException {
+
+        Objects.requireNonNull(keyAlg, "keyAlg can not be null");
+        if (keyAlg.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "keyAlg is empty");
+        }
+
+        return (SecretKey) exportKeyingMaterial(keyAlg, label, context,
+                length);
+    }
+
+    /**
+     * Generate Exported Key Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     */
+    @Override
+    public byte[] exportKeyingMaterialData(
+            String label, byte[] context, int length) throws SSLKeyException {
+        return (byte[])exportKeyingMaterial(null, label, context, length);
     }
 
     /** Returns a string representation of this SSL session */

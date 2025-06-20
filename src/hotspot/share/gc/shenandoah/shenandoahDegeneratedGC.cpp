@@ -39,9 +39,9 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -409,7 +409,7 @@ void ShenandoahDegenGC::op_evacuate() {
 void ShenandoahDegenGC::op_init_update_refs() {
   // Evacuation has completed
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->prepare_update_heap_references(false /*concurrent*/);
+  heap->prepare_update_heap_references();
   heap->set_update_refs_in_progress(true);
 }
 

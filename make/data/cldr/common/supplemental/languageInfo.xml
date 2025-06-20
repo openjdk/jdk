@@ -36,7 +36,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			    and in the absence of better information. -->
 			<languageMatch desired="ab"	supported="ru"	distance="30"	oneway="true"/>	<!-- Abkhazian: ab ⇒ ru -->
 			<languageMatch desired="ach"	supported="en"	distance="30"	oneway="true"/>	<!-- Acoli (Southern Luo dialect in Uganda): ach ⇒ en -->
-			<languageMatch desired="af"	supported="nl"	distance="20"	oneway="true"/>	<!-- Afrikaans: af ⇒ nl -->
+			<languageMatch desired="af"	supported="en"	distance="20"	oneway="true"/>	<!-- Afrikaans: af ⇒ en -->
 			<languageMatch desired="ak"	supported="en"	distance="30"	oneway="true"/>	<!-- Akan: ak ⇒ en -->
 			<languageMatch desired="am"	supported="en"	distance="30"	oneway="true"/>	<!-- Amharic ⇒ English -->
 			<languageMatch desired="ay"	supported="es"	distance="20"	oneway="true"/>	<!-- Aymara: ay ⇒ es -->

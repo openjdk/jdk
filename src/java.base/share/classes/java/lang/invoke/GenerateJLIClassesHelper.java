@@ -430,24 +430,21 @@ class GenerateJLIClassesHelper {
             names.add(form.kind.defaultLambdaName);
         }
         for (Wrapper wrapper : Wrapper.values()) {
-            if (wrapper == Wrapper.VOID) {
-                continue;
-            }
+            int ftype = wrapper == Wrapper.VOID ? DirectMethodHandle.FT_CHECKED_REF : DirectMethodHandle.ftypeKind(wrapper.primitiveType());
             for (byte b = DirectMethodHandle.AF_GETFIELD; b < DirectMethodHandle.AF_LIMIT; b++) {
-                int ftype = DirectMethodHandle.ftypeKind(wrapper.primitiveType());
                 LambdaForm form = DirectMethodHandle
                         .makePreparedFieldLambdaForm(b, /*isVolatile*/false, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
-                }
+                if (form.kind == GENERIC)
+                    throw new InternalError(b + " non-volatile " + ftype);
+                forms.add(form);
+                names.add(form.kind.defaultLambdaName);
                 // volatile
                 form = DirectMethodHandle
                         .makePreparedFieldLambdaForm(b, /*isVolatile*/true, ftype);
-                if (form.kind != LambdaForm.Kind.GENERIC) {
-                    forms.add(form);
-                    names.add(form.kind.defaultLambdaName);
-                }
+                if (form.kind == GENERIC)
+                    throw new InternalError(b + " volatile " + ftype);
+                forms.add(form);
+                names.add(form.kind.defaultLambdaName);
             }
         }
         return generateCodeBytesForLFs(className,

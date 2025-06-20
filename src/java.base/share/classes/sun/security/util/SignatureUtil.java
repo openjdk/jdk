@@ -198,7 +198,7 @@ public class SignatureUtil {
         static {
             try {
                 sha512 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHA_512));
-                shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256));
+                shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256_512));
                 shake256$512 = new AlgorithmId(
                         ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
                         new DerValue((byte) 2, new byte[]{2, 0})); // int 512

@@ -103,6 +103,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             throw new IOException("Detached from target VM");
         }
 
+        // If writeCommand, below, throws IOException, we need to process it further.
+        IOException write_ioe = null;
+
         try {
             // enqueue the command to the process.
             if (props.version() == VERSION_1) {
@@ -115,31 +118,31 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // wait for the target VM to connect to the pipe.
             connectPipe(hPipe);
 
-            IOException ioe = null;
-
             if (props.version() == VERSION_2) {
                 PipeOutputStream writer = new PipeOutputStream(hPipe);
 
                 try {
                     writeCommand(writer, props, cmd, args);
                 } catch (IOException x) {
-                    ioe = x;
+                    write_ioe = x;
                 }
             }
-
-            // create an input stream for the pipe
-            SocketInputStreamImpl in = new SocketInputStreamImpl(hPipe);
-
-            // Process the command completion status
-            processCompletionStatus(ioe, cmd, in);
-
-            // return the input stream
-            return in;
 
         } catch (IOException ioe) {
             closePipe(hPipe);
             throw ioe;
         }
+
+        // create an input stream for the pipe
+        SocketInputStreamImpl in = new SocketInputStreamImpl(hPipe);
+
+        // Process the command completion status - this closes the stream
+        // and thus the pipe if an exception is to be thrown.
+        processCompletionStatus(write_ioe, cmd, in);
+
+        // return the input stream
+        return in;
+
     }
 
     private static class PipeOutputStream implements AttachOutputStream {

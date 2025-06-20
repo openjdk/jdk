@@ -825,21 +825,15 @@ void DefNewGeneration::verify() {
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {
-  st->print(" %-10s", name());
+  st->print("%-10s", name());
 
-  st->print(" total %zuK, used %zuK",
-            capacity()/K, used()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(_virtual_space.low_boundary()),
-               p2i(_virtual_space.high()),
-               p2i(_virtual_space.high_boundary()));
+  st->print(" total %zuK, used %zuK ", capacity() / K, used() / K);
+  _virtual_space.print_space_boundaries_on(st);
 
-  st->print("  eden");
-  eden()->print_on(st);
-  st->print("  from");
-  from()->print_on(st);
-  st->print("  to  ");
-  to()->print_on(st);
+  StreamIndentor si(st, 1);
+  eden()->print_on(st, "eden ");
+  from()->print_on(st, "from ");
+  to()->print_on(st, "to   ");
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size) {

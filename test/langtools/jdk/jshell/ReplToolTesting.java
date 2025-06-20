@@ -57,19 +57,8 @@ import static org.testng.Assert.fail;
 public class ReplToolTesting {
 
     private final static String DEFAULT_STARTUP_MESSAGE = "|  Welcome to";
-    final static List<ImportInfo> START_UP_IMPORTS = Stream.of(
-                    "java.io.*",
-                    "java.math.*",
-                    "java.net.*",
-                    "java.nio.file.*",
-                    "java.util.*",
-                    "java.util.concurrent.*",
-                    "java.util.function.*",
-                    "java.util.prefs.*",
-                    "java.util.regex.*",
-                    "java.util.stream.*")
-                    .map(s -> new ImportInfo("import " + s + ";", "", s))
-                    .collect(toList());
+    final static List<ImportInfo> START_UP_IMPORTS = List.of(
+            new ImportInfo("import module java.base;", "", "java.base"));
     final static List<MethodInfo> START_UP_METHODS = Stream.<MethodInfo>of()
                     .collect(toList());
     final static List<String> START_UP_CMD_METHOD = Stream.<String>of()

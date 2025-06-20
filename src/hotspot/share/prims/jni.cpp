@@ -215,7 +215,7 @@ intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, int offset) {
       field_klass = super_klass;   // super contains the field also
       super_klass = field_klass->super();
     }
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
     uintptr_t klass_hash = field_klass->identity_hash();
     return ((klass_hash & klass_mask) << klass_shift) | checked_mask_in_place;
   } else {
@@ -235,7 +235,7 @@ bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
   uintptr_t as_uint = (uintptr_t) id;
   intptr_t klass_hash = (as_uint >> klass_shift) & klass_mask;
   do {
-    debug_only(NoSafepointVerifier nosafepoint;)
+    DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
     // Could use a non-blocking query for identity_hash here...
     if ((k->identity_hash() & klass_mask) == klass_hash)
       return true;
@@ -410,7 +410,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
     int offset = InstanceKlass::cast(k1)->field_offset( slot );
     JNIid* id = InstanceKlass::cast(k1)->jni_id_for(offset);
     assert(id != nullptr, "corrupt Field object");
-    debug_only(id->set_is_static_field_id();)
+    DEBUG_ONLY(id->set_is_static_field_id();)
     // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
     ret = jfieldIDWorkaround::to_static_jfieldID(id);
     return ret;
@@ -472,7 +472,7 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   // return mirror for superclass
   Klass* super = k->java_super();
   // super2 is the value computed by the compiler's getSuperClass intrinsic:
-  debug_only(Klass* super2 = ( k->is_array_klass()
+  DEBUG_ONLY(Klass* super2 = ( k->is_array_klass()
                                  ? vmClasses::Object_klass()
                                  : k->super() ) );
   assert(super == super2,
@@ -906,7 +906,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
         selected_method = m;
     } else if (!m->has_itable_index()) {
       // non-interface call -- for that little speed boost, don't handlize
-      debug_only(NoSafepointVerifier nosafepoint;)
+      DEBUG_ONLY(NoSafepointVerifier nosafepoint;)
       // jni_GetMethodID makes sure class is linked and initialized
       // so m should have a valid vtable index.
       assert(m->valid_vtable_index(), "no valid vtable index");
@@ -1995,9 +1995,9 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
 
   // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
   JNIid* id = fd.field_holder()->jni_id_for(fd.offset());
-  debug_only(id->set_is_static_field_id();)
+  DEBUG_ONLY(id->set_is_static_field_id();)
 
-  debug_only(id->verify(fd.field_holder()));
+  DEBUG_ONLY(id->verify(fd.field_holder()));
 
   ret = jfieldIDWorkaround::to_static_jfieldID(id);
   return ret;
@@ -2285,9 +2285,11 @@ JNI_ENTRY(jobjectArray, jni_NewObjectArray(JNIEnv *env, jsize length, jclass ele
   jobjectArray ret = nullptr;
   DT_RETURN_MARK(NewObjectArray, jobjectArray, (const jobjectArray&)ret);
   Klass* ek = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(elementClass));
-  Klass* ak = ek->array_klass(CHECK_NULL);
-  ObjArrayKlass::cast(ak)->initialize(CHECK_NULL);
-  objArrayOop result = ObjArrayKlass::cast(ak)->allocate(length, CHECK_NULL);
+
+  // Make sure bottom_klass is initialized.
+  ek->initialize(CHECK_NULL);
+  objArrayOop result = oopFactory::new_objArray(ek, length, CHECK_NULL);
+
   oop initial_value = JNIHandles::resolve(initialElement);
   if (initial_value != nullptr) {  // array already initialized with null
     for (int index = 0; index < length; index++) {
@@ -2400,7 +2402,7 @@ static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
     size_t size = os::vm_allocation_granularity();
-    bad_address = os::reserve_memory(size, false, mtInternal);
+    bad_address = os::reserve_memory(size, mtInternal);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
@@ -3804,6 +3806,10 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   thread->cache_global_variables();
 
+  // Set the _monitor_owner_id to the next thread_id temporarily while initialization runs.
+  // Do it now before we make this thread visible in Threads::add().
+  thread->set_monitor_owner_id(ThreadIdentifier::next());
+
   // This thread will not do a safepoint check, since it has
   // not been added to the Thread list yet.
   { MutexLocker ml(Threads_lock);
@@ -3842,6 +3848,9 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     thread->smr_delete();
     return JNI_ERR;
   }
+
+  // Update the _monitor_owner_id with the tid value.
+  thread->set_monitor_owner_id(java_lang_Thread::thread_id(thread->threadObj()));
 
   // Want this inside 'attaching via jni'.
   JFR_ONLY(Jfr::on_thread_start(thread);)

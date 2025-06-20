@@ -35,7 +35,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -201,9 +200,6 @@ class SynthParser extends DefaultHandler {
     /**
      * Parses a set of styles from <code>inputStream</code>, adding the
      * resulting styles to the passed in DefaultSynthStyleFactory.
-     * Resources are resolved either from a URL or from a Class. When calling
-     * this method, one of the URL or the Class must be null but not both at
-     * the same time.
      *
      * @param inputStream XML document containing the styles to read
      * @param factory DefaultSynthStyleFactory that new styles are added to

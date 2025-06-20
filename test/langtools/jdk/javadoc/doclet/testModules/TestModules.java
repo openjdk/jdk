@@ -889,11 +889,11 @@ public class TestModules extends JavadocTester {
                      href="moduletags/module-summary.html">moduletags</a></div>
                     <div class="col-last odd-row-color all-modules-table all-modules-table-tab1">
                     <div class="block">This is a test description for the moduletags module.<br>
-                     Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title\
+                    Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title\
                     ="class in testpkgmdltags"><code>TestClassInModuleTags</code></a>.<br>
-                     Member Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html#test\
+                    Member Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html#test\
                     Method(java.lang.String)"><code>TestClassInModuleTags.testMethod(String)</code></a>.<br>
-                     Package Link: <a href="moduletags/testpkgmdltags/package-summary.html"><code>testpkgmdltags</code></a>.<br></div>
+                    Package Link: <a href="moduletags/testpkgmdltags/package-summary.html"><code>testpkgmdltags</code></a>.<br></div>
                     </div>""");
         checkOutput("moduleA/module-summary.html", true,
                 """

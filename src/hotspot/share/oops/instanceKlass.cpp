@@ -97,7 +97,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeStackPrinter.hpp"
-#include "utilities/pair.hpp"
 #include "utilities/stringUtils.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
@@ -687,6 +686,11 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_fieldinfo_stream(nullptr);
 
+  if (fieldinfo_search_table() != nullptr && !fieldinfo_search_table()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_search_table());
+  }
+  set_fieldinfo_search_table(nullptr);
+
   if (fields_status() != nullptr && !fields_status()->is_shared()) {
     MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
   }
@@ -861,9 +865,15 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
     return;
   }
 
-  if (log_is_enabled(Info, cds, init)) {
+  if (is_runtime_setup_required()) {
+    // Need to take the slow path, which will call the runtimeSetup() function instead
+    // of <clinit>
+    initialize(CHECK);
+    return;
+  }
+  if (log_is_enabled(Info, aot, init)) {
     ResourceMark rm;
-    log_info(cds, init)("%s (aot-inited)", external_name());
+    log_info(aot, init)("%s (aot-inited)", external_name());
   }
 
   link_class(CHECK);
@@ -879,7 +889,6 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
 #endif
 
   set_init_thread(THREAD);
-  AOTClassInitializer::call_runtime_setup(THREAD, this);
   set_initialization_state_and_notify(fully_initialized, CHECK);
 }
 #endif
@@ -1322,7 +1331,8 @@ void InstanceKlass::initialize_impl(TRAPS) {
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
     set_initialization_state_and_notify(fully_initialized, CHECK);
-    debug_only(vtable().verify(tty, true);)
+    DEBUG_ONLY(vtable().verify(tty, true);)
+    CompilationPolicy::replay_training_at_init(this, THREAD);
   }
   else {
     // Step 10 and 11
@@ -1781,13 +1791,12 @@ FieldInfo InstanceKlass::field(int index) const {
 }
 
 bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
-  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
-    Symbol* f_name = fs.name();
-    Symbol* f_sig  = fs.signature();
-    if (f_name == name && f_sig == sig) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
-      return true;
-    }
+  JavaFieldStream fs(this);
+  if (fs.lookup(name, sig)) {
+    assert(fs.name() == name, "name must match");
+    assert(fs.signature() == sig, "signature must match");
+    fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
+    return true;
   }
   return false;
 }
@@ -1854,7 +1863,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
 bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     if (fs.offset() == offset) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
       if (fd->is_static() == is_static) return true;
     }
   }
@@ -1915,19 +1924,16 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
-  fieldDescriptor fd;
-  int length = java_fields_count();
-  for (int i = 0; i < length; i += 1) {
-    fd.reinitialize(this, i);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    fieldDescriptor& fd = fs.field_descriptor();
     if (!fd.is_static()) {
       cl->do_field(&fd);
     }
   }
 }
 
-// first in Pair is offset, second is index.
-static int compare_fields_by_offset(Pair<int,int>* a, Pair<int,int>* b) {
-  return a->first - b->first;
+static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
+  return a->offset() - b->offset();
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
@@ -1936,25 +1942,20 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
     super->print_nonstatic_fields(cl);
   }
   ResourceMark rm;
-  fieldDescriptor fd;
   // In DebugInfo nonstatic fields are sorted by offset.
-  GrowableArray<Pair<int,int> > fields_sorted;
-  int i = 0;
+  GrowableArray<FieldInfo> fields_sorted;
   for (AllFieldStream fs(this); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
-      fd = fs.field_descriptor();
-      Pair<int,int> f(fs.offset(), fs.index());
-      fields_sorted.push(f);
-      i++;
+      fields_sorted.push(fs.to_FieldInfo());
     }
   }
-  if (i > 0) {
-    int length = i;
-    assert(length == fields_sorted.length(), "duh");
+  int length = fields_sorted.length();
+  if (length > 0) {
     fields_sorted.sort(compare_fields_by_offset);
+    fieldDescriptor fd;
     for (int i = 0; i < length; i++) {
-      fd.reinitialize(this, fields_sorted.at(i).second);
-      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
+      fd.reinitialize(this, fields_sorted.at(i));
+      assert(!fd.is_static() && fd.offset() == checked_cast<int>(fields_sorted.at(i).offset()), "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
@@ -2510,6 +2511,7 @@ void InstanceKlass::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, Kl
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
+  assert_lock_strong(CodeCache_lock);
   dependencies().add_dependent_nmethod(nm);
 }
 
@@ -2570,9 +2572,9 @@ void InstanceKlass::clean_method_data() {
 void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   Klass::metaspace_pointers_do(it);
 
-  if (log_is_enabled(Trace, cds)) {
+  if (log_is_enabled(Trace, aot)) {
     ResourceMark rm;
-    log_trace(cds)("Iter(InstanceKlass): %p (%s)", this, external_name());
+    log_trace(aot)("Iter(InstanceKlass): %p (%s)", this, external_name());
   }
 
   it->push(&_annotations);
@@ -2612,6 +2614,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 
   it->push(&_fieldinfo_stream);
+  it->push(&_fieldinfo_search_table);
   // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
   it->push(&_fields_status, MetaspaceClosure::_writable);
 
@@ -2649,6 +2652,8 @@ void InstanceKlass::remove_unshareable_info() {
     // Remember this so we can avoid walking the hierarchy at runtime.
     set_verified_at_dump_time();
   }
+
+  _misc_flags.set_has_init_deps_processed(false);
 
   Klass::remove_unshareable_info();
 
@@ -2699,7 +2704,7 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  if (CDSConfig::is_dumping_invokedynamic() && HeapShared::is_lambda_proxy_klass(this)) {
+  if (CDSConfig::is_dumping_method_handles() && HeapShared::is_lambda_proxy_klass(this)) {
     // keep _nest_host
   } else {
     // clear _nest_host to ensure re-load at runtime
@@ -2710,6 +2715,8 @@ void InstanceKlass::remove_unshareable_info() {
   DEBUG_ONLY(_shared_class_load_count = 0);
 
   remove_unshareable_flags();
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 void InstanceKlass::remove_unshareable_flags() {
@@ -2737,7 +2744,7 @@ void InstanceKlass::init_shared_package_entry() {
   _package_entry = nullptr;
 #else
   if (CDSConfig::is_dumping_full_module_graph()) {
-    if (is_shared_unregistered_class()) {
+    if (defined_by_other_loaders()) {
       _package_entry = nullptr;
     } else {
       _package_entry = PackageEntry::get_archived_entry(_package_entry);
@@ -2816,6 +2823,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 // Check if a class or any of its supertypes has a version older than 50.
@@ -2845,17 +2854,6 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   return true;
 }
 
-int InstanceKlass::shared_class_loader_type() const {
-  if (is_shared_boot_class()) {
-    return ClassLoader::BOOT_LOADER;
-  } else if (is_shared_platform_class()) {
-    return ClassLoader::PLATFORM_LOADER;
-  } else if (is_shared_app_class()) {
-    return ClassLoader::APP_LOADER;
-  } else {
-    return ClassLoader::OTHER;
-  }
-}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
@@ -2971,8 +2969,8 @@ void InstanceKlass::set_minor_version(u2 minor_version) { _constants->set_minor_
 u2 InstanceKlass::major_version() const                 { return _constants->major_version(); }
 void InstanceKlass::set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
 
-InstanceKlass* InstanceKlass::get_klass_version(int version) {
-  for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
+const InstanceKlass* InstanceKlass::get_klass_version(int version) const {
+  for (const InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
     if (ik->constants()->version() == version) {
       return ik;
     }
@@ -3503,7 +3501,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
   for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
     nmethod *inv = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), l, true);
     if (inv != nullptr && inv->is_in_use()) {
-      inv->make_not_entrant("OSR invalidation of lower levels");
+      inv->make_not_entrant(nmethod::ChangeReason::OSR_invalidation_of_lower_level);
     }
   }
 }
@@ -3763,7 +3761,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   ik->print_nonstatic_fields(&print_nonstatic_field);
 
-  st->print(BULLET"non-static oop maps: ");
+  st->print(BULLET"non-static oop maps (%d entries): ", nonstatic_oop_map_count());
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {
@@ -3771,6 +3769,11 @@ void InstanceKlass::print_on(outputStream* st) const {
     map++;
   }
   st->cr();
+
+  if (fieldinfo_search_table() != nullptr) {
+    st->print_cr(BULLET"---- field info search table:");
+    FieldInfoStream::print_search_table(st, _constants, _fieldinfo_stream, _fieldinfo_search_table);
+  }
 }
 
 void InstanceKlass::print_value_on(outputStream* st) const {
@@ -4200,7 +4203,7 @@ JNIid::JNIid(Klass* holder, int offset, JNIid* next) {
   _holder = holder;
   _offset = offset;
   _next = next;
-  debug_only(_is_static_field_id = false;)
+  DEBUG_ONLY(_is_static_field_id = false;)
 }
 
 
@@ -4470,7 +4473,7 @@ void InstanceKlass::add_previous_version(InstanceKlass* scratch_class,
 
 #endif // INCLUDE_JVMTI
 
-Method* InstanceKlass::method_with_idnum(int idnum) {
+Method* InstanceKlass::method_with_idnum(int idnum) const {
   Method* m = nullptr;
   if (idnum < methods()->length()) {
     m = methods()->at(idnum);
@@ -4489,7 +4492,7 @@ Method* InstanceKlass::method_with_idnum(int idnum) {
 }
 
 
-Method* InstanceKlass::method_with_orig_idnum(int idnum) {
+Method* InstanceKlass::method_with_orig_idnum(int idnum) const {
   if (idnum >= methods()->length()) {
     return nullptr;
   }
@@ -4509,13 +4512,12 @@ Method* InstanceKlass::method_with_orig_idnum(int idnum) {
 }
 
 
-Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
-  InstanceKlass* holder = get_klass_version(version);
+Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) const {
+  const InstanceKlass* holder = get_klass_version(version);
   if (holder == nullptr) {
     return nullptr; // The version of klass is gone, no method is found
   }
-  Method* method = holder->method_with_orig_idnum(idnum);
-  return method;
+  return holder->method_with_orig_idnum(idnum);
 }
 
 #if INCLUDE_JVMTI

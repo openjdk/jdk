@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8349637
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @summary Ensure that vectorization of numberOfLeadingZeros and numberOfTrailingZeros outputs correct values
  * @library /test/lib /
  * @run main/othervm compiler.vectorization.TestVectorZeroCount
@@ -50,8 +51,13 @@ public class TestVectorZeroCount {
     private static final long[] LONG_EXPECTED_TRAILING = new long[SIZE];
     private static final long[] LONG_RESULT_TRAILING = new long[SIZE];
 
-    private static int intCounter = Integer.MIN_VALUE;
-    private static int longIterations = 100_000_000;
+    private static final int INT_START_INDEX  = Integer.MIN_VALUE;
+    private static final int INT_END_INDEX    = Integer.MAX_VALUE;
+    private static final int LONG_START_INDEX = 0;
+    private static final int LONG_END_INDEX   = 100_000_000;
+
+    private static int intCounter;
+    private static int longCounter;
 
     public static boolean testInt() {
         boolean done = false;
@@ -59,7 +65,7 @@ public class TestVectorZeroCount {
         // Non-vectorized loop as baseline (not vectorized because source array is initialized)
         for (int i = 0; i < SIZE; ++i) {
             INT_VALUES[i] = intCounter++;
-            if (intCounter == Integer.MAX_VALUE) {
+            if (intCounter == INT_END_INDEX) {
                 done = true;
             }
             INT_EXPECTED_LEADING[i] = Integer.numberOfLeadingZeros(INT_VALUES[i]);
@@ -92,7 +98,7 @@ public class TestVectorZeroCount {
         for (int i = 0; i < SIZE; ++i) {
             // Use random values because the long range is too large to iterate over it
             LONG_VALUES[i] = RANDOM.nextLong();
-            if (longIterations-- == 0) {
+            if (longCounter++ == LONG_END_INDEX) {
                 done = true;
             }
             LONG_EXPECTED_LEADING[i] = Long.numberOfLeadingZeros(LONG_VALUES[i]);
@@ -121,6 +127,8 @@ public class TestVectorZeroCount {
     public static void main(String[] args) {
         // Run twice to make sure compiled code is used from the beginning
         for (int i = 0; i < 2; ++i) {
+            intCounter = INT_START_INDEX;
+            longCounter = LONG_START_INDEX;
             while (!testLong()) ;
             while (!testInt()) ;
         }
