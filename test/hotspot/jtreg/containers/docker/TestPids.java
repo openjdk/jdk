@@ -35,6 +35,9 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver TestPids
  */
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
@@ -85,6 +88,52 @@ public class TestPids {
         return opts;
     }
 
+    private static long getDefaultTasksMax() throws IOException {
+        String output = runSystemctlShow();
+        long value = parseDefaultTasksMax(output);
+
+        // Example check: ensure it's a positive number
+        if (value <= 0) {
+            throw new AssertionError("DefaultTasksMax should be greater than 0");
+        }
+        return value;
+    }
+
+    private static String runSystemctlShow() throws IOException {
+        ProcessBuilder pb = new ProcessBuilder("systemctl", "show", "--property=DefaultTasksMax");
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))) {
+            String line = reader.readLine();
+            if (line == null || !line.startsWith("DefaultTasksMax=")) {
+                throw new IOException("Unexpected output: " + line);
+            }
+            return line;
+        }
+    }
+
+    private static long parseDefaultTasksMax(String line) {
+        String[] parts = line.split("=", 2);
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid format: " + line);
+        }
+
+        String valueStr = parts[1].trim();
+
+        if ("infinity".equalsIgnoreCase(valueStr)) {
+            // Represent "infinity" with -1 or Long.MAX_VALUE depending on your needs
+            return Long.MAX_VALUE;
+        }
+
+        try {
+            return Long.parseLong(valueStr);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Not a number: " + valueStr);
+        }
+    }
+
     private static void checkResult(List<String> lines, String lineMarker, String expectedValue) {
         boolean lineMarkerFound = false;
 
@@ -121,10 +170,17 @@ public class TestPids {
                         try {
                             // Unlimited pids leads on some setups not to "max" in the output, but to a high number
                             int ai = Integer.parseInt(actual);
-                            if (ai > 20000) {
-                                System.out.println("Limit value " + ai + " got accepted as unlimited, log line was " + line);
+                            long tasksMax;
+                            try {
+                                tasksMax = getDefaultTasksMax();
+                            } catch (IOException ex) {
+                                throw new RuntimeException("Cannot find out systemd's DefaultTasksMax: " + ex.getMessage());
+                            }
+                            String tail = "accepted as unlimited (DefaultTasksMax = " + tasksMax + "), log line was " + line;
+                            if (ai >= tasksMax) {
+                                System.out.println("Limit value " + ai + " got " + tail;
                             } else {
-                                throw new RuntimeException("Limit value " + ai + " is not accepted as unlimited, log line was " + line);
+                                throw new RuntimeException("Limit value " + ai + " is not " + tail;
                             }
                         } catch (NumberFormatException ex) {
                             throw new RuntimeException("Could not convert " + actual + " to an integer, log line was " + line);
