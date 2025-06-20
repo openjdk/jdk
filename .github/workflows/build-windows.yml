@@ -97,25 +97,25 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
 
-      - name: 'Test platform'
-        id: test-platform
-        run: |
-          echo "=== Environment ==="
-          echo "PROCESSOR_IDENTIFIER: ${PROCESSOR_IDENTIFIER}"
-          echo "uname -s: $(uname -s)"
-          echo "uname -m: $(uname -m)"
-          echo "uname -ar: $(uname -ar)"
-          echo ""
-          echo "=== Testing config.guess ==="
-          cd make/autoconf/build-aux
-          echo "Direct autoconf-config.guess:"
-          ./autoconf-config.guess || echo "autoconf-config.guess failed"
-          echo ""
-          echo "Custom config.guess:"
-          bash -x ./config.guess
-          echo "config.site"
-          cat /etc/config.site
-        shell: env /usr/bin/bash --login -eo pipefail {0}
+      # - name: 'Test platform'
+      #   id: test-platform
+      #   run: |
+      #     echo "=== Environment ==="
+      #     echo "PROCESSOR_IDENTIFIER: ${PROCESSOR_IDENTIFIER}"
+      #     echo "uname -s: $(uname -s)"
+      #     echo "uname -m: $(uname -m)"
+      #     echo "uname -ar: $(uname -ar)"
+      #     echo ""
+      #     echo "=== Testing config.guess ==="
+      #     cd make/autoconf/build-aux
+      #     echo "Direct autoconf-config.guess:"
+      #     ./autoconf-config.guess || echo "autoconf-config.guess failed"
+      #     echo ""
+      #     echo "Custom config.guess:"
+      #     bash -x ./config.guess
+      #     echo "config.site"
+      #     cat /etc/config.site
+      #   shell: env /usr/bin/bash --login -eo pipefail {0}
 
       - name: 'Get JTReg'
         id: jtreg
@@ -153,18 +153,7 @@ jobs:
 
       - name: 'Configure'
         run: >
-          echo "=== Platform Detection During Configure ===" &&
-          echo "Before configure - PROCESSOR_IDENTIFIER: ${PROCESSOR_IDENTIFIER}" &&
-          echo "Before configure - config.guess output:" &&
-          make/autoconf/build-aux/config.guess &&
-          echo "=== Environment Check ===" &&
-          echo "BUILD_PLATFORM: ${BUILD_PLATFORM:-not set}" &&
-          echo "HOST_PLATFORM: ${HOST_PLATFORM:-not set}" &&
-          echo "TARGET_PLATFORM: ${TARGET_PLATFORM:-not set}" &&
-          echo "Remove /etc/config.site" &&
-          rm -f /etc/config.site &&
-          echo "=== Running Configure ===" &&
-          bash -x configure
+          bash configure
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -173,11 +162,9 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
           --with-jmod-compress=zip-1
-          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} 2>&1 | tee configure.log || (
+          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
-          echo "Dumping configure.log:" &&
-          cat configure.log &&
           exit 1)
         env:
           # We need a minimal PATH on Windows
@@ -185,12 +172,6 @@ jobs:
           PATH: ''
         shell: env /usr/bin/bash --login -eo pipefail {0}
         if: ${{ inputs.dry-run == false }}
-
-      - name: 'Upload configure log'
-        uses: actions/upload-artifact@v4
-        with:
-          name: configure-log-${{ inputs.platform }}${{ matrix.suffix }}
-          path: configure.log
 
       - name: 'Build'
         id: build
