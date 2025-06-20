@@ -44,21 +44,18 @@ public class DialogType {
     private static PrinterJob job;
 
     private static final String INSTRUCTIONS = """
-        This test assumes and requires that you have a printer installed.
         Two print dialogs are shown in succession.
         Click Cancel in the dialogs to close them.
-        
+ 
         On macOS & on Windows, the first dialog is a native
         dialog provided by the OS, the second dialog is
         implemented in Swing, the dialog differ in appearance.
-        
+ 
         The test passes as long as no exceptions are thrown.
         (If there's an exception, the test will fail automatically.)
-        
+
         The test verifies that the dialogs behave properly when using new API
         to optionally select a native dialog where one is present.
-        Note: On macOS & on Windows, the first dialog is a native
-        control which differs in appearance from the second dialog
     """;
 
     public static void main(String[] args) throws Exception {
