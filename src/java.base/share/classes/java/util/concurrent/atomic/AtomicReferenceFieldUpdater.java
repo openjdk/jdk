@@ -87,7 +87,7 @@ import java.lang.invoke.VarHandle;
  *    RIGHT = l.findVarHandle(Node.class, "right", Node.class);
  *   } catch (ReflectiveOperationException e) {
  *     throw new ExceptionInInitializerError(e);
- * }}}</pre>
+ * }}}}</pre>
  *
  * <p>Note that the guarantees of the {@code compareAndSet}
  * method in this class are weaker than in other atomic classes.
