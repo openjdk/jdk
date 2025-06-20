@@ -251,11 +251,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     if (is_method_handle_archived(ik)) {
       return true;
     }
-
-    // TODO what about anonymous classes?
-    if (ik->name()->starts_with("java/lang/invoke/MethodHandleImpl")) {
-      return true;
-    }
   }
 
 #ifdef ASSERT
