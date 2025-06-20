@@ -37,11 +37,11 @@ TEST_VM(jmethodIDTable, test_jmethod_ids) {
   // How many entries are in the jmethodID table?
   uint64_t initial_entries = JmethodIDTable::get_entry_count();
   ResourceMark rm;
-  GrowableArray<uint64_t> ints;
+  GrowableArray<uint64_t> ints(10);
   for (int i = 0; i < length; i++) {
     Method* m = methods->at(i);
     jmethodID mid = m->jmethod_id();
-    ints.at_put(i, (uint64_t)mid);
+    ints.push((uint64_t)mid);
   }
   uint64_t entries_now = JmethodIDTable::get_entry_count();
   ASSERT_TRUE(entries_now == initial_entries + length) << "should have more entries " << entries_now << " " << initial_entries + length;
