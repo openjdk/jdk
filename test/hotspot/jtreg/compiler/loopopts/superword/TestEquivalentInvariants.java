@@ -67,9 +67,9 @@ public class TestEquivalentInvariants {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:-AlignVector");
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector");
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+AlignVector");
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector");
     }
 
     public TestEquivalentInvariants() {
