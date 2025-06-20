@@ -4334,8 +4334,9 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2, Register tmp3) {
     Label CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
     assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
+    assert(CryptoPmullForCRC32LowLimit >= 256, "must be for CRC_by128_loop");
 
-    subs(tmp0, len, 384);
+    subs(tmp0, len, CryptoPmullForCRC32LowLimit);
     mvnw(crc, crc);
     br(Assembler::GE, CRC_by128_pre);
   BIND(CRC_less128);
@@ -4349,13 +4350,13 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
     b(L_exit);
 
   BIND(CRC_by32_loop);
-    ldp(tmp0, tmp1, Address(buf));
-    crc32x(crc, crc, tmp0);
-    ldp(tmp2, tmp3, Address(buf, 16));
-    crc32x(crc, crc, tmp1);
-    add(buf, buf, 32);
-    crc32x(crc, crc, tmp2);
+    ldp(tmp0, tmp1, Address(post(buf, 16)));
     subs(len, len, 32);
+    crc32x(crc, crc, tmp0);
+    ldr(tmp2, Address(post(buf, 8)));
+    crc32x(crc, crc, tmp1);
+    ldr(tmp3, Address(post(buf, 8)));
+    crc32x(crc, crc, tmp2);
     crc32x(crc, crc, tmp3);
     br(Assembler::GE, CRC_by32_loop);
     cmn(len, (u1)32);
@@ -4699,8 +4700,9 @@ void MacroAssembler::kernel_crc32c_using_crypto_pmull(Register crc, Register buf
         Register len, Register tmp0, Register tmp1, Register tmp2, Register tmp3) {
     Label CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
     assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
+    assert(CryptoPmullForCRC32LowLimit >= 256, "must be for CRC_by128_loop");
 
-    subs(tmp0, len, 384);
+    subs(tmp0, len, CryptoPmullForCRC32LowLimit);
     br(Assembler::GE, CRC_by128_pre);
   BIND(CRC_less128);
     subs(len, len, 32);
@@ -4713,14 +4715,13 @@ void MacroAssembler::kernel_crc32c_using_crypto_pmull(Register crc, Register buf
     b(L_exit);
 
   BIND(CRC_by32_loop);
-    ldp(tmp0, tmp1, Address(buf));
-    crc32cx(crc, crc, tmp0);
-    ldr(tmp2, Address(buf, 16));
-    crc32cx(crc, crc, tmp1);
-    ldr(tmp3, Address(buf, 24));
-    crc32cx(crc, crc, tmp2);
-    add(buf, buf, 32);
+    ldp(tmp0, tmp1, Address(post(buf, 16)));
     subs(len, len, 32);
+    crc32cx(crc, crc, tmp0);
+    ldr(tmp2, Address(post(buf, 8)));
+    crc32cx(crc, crc, tmp1);
+    ldr(tmp3, Address(post(buf, 8)));
+    crc32cx(crc, crc, tmp2);
     crc32cx(crc, crc, tmp3);
     br(Assembler::GE, CRC_by32_loop);
     cmn(len, (u1)32);
