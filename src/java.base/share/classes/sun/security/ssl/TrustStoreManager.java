@@ -376,8 +376,9 @@ final class TrustStoreManager {
             }
 
             if (!"NONE".equals(descriptor.storeName)) {
-                try (FileInputStream fis =
-                        new FileInputStream(descriptor.storeFile)) {
+                try (BufferedInputStream fis =
+                        new BufferedInputStream(
+                                new FileInputStream(descriptor.storeFile))) {
                     ks.load(fis, password);
                 } catch (FileNotFoundException fnfe) {
                     // No file available, no KeyStore available.
