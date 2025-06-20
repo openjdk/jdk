@@ -458,4 +458,5 @@ jobs:
       platform: windows-aarch64
       bootjdk-platform: windows-aarch64
       runs-on: windows-11-arm
+      debug-suffix: -debug
 
