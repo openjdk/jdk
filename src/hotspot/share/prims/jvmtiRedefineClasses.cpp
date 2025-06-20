@@ -3318,7 +3318,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     // append_frame {
     //   u1 frame_type = APPEND; /* 252-254 */
     //   u2 offset_delta;
-    //   verification_type_info locals[frame_type - 251];
+    //   verification_type_info locals[frame_type - SAME_EXTENDED];
     // }
     else if (frame_type > StackMapReader::SAME_EXTENDED &&
              frame_type < StackMapReader::FULL) {
