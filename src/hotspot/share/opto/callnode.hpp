@@ -916,6 +916,7 @@ public:
 class CallLeafPureNode : public CallLeafNode {
 protected:
   bool is_unused() const;
+  bool is_dead() const;
   TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
 
 public:

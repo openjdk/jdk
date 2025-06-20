@@ -3299,6 +3299,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     n->subsume_by(n->in(1), this);
     break;
   case Op_CallLeafPure: {
+    // If the pure call is not supported, then lower to a CallLeaf.
     if (!Matcher::match_rule_supported(Op_CallLeafPure)) {
       CallNode* call = n->as_Call();
       CallNode* new_call = new CallLeafNode(call->tf(), call->entry_point(),
@@ -3308,8 +3309,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       new_call->init_req(TypeFunc::Memory, C->top());
       new_call->init_req(TypeFunc::ReturnAdr, C->top());
       new_call->init_req(TypeFunc::FramePtr, C->top());
-      for (unsigned int i = 0; i < call->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-        new_call->init_req(TypeFunc::Parms + i, call->in(TypeFunc::Parms + i));
+      for (unsigned int i = TypeFunc::Parms; i < call->tf()->domain()->cnt(); i++) {
+        new_call->init_req(i, call->in(i));
       }
       n->subsume_by(new_call, this);
     }

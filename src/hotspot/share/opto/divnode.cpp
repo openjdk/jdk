@@ -1520,7 +1520,7 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
-  if (proj_out_or_null(TypeFunc::Control) == nullptr) { // dead node
+  if (is_dead()) { // dead node
     return nullptr;
   }
 
@@ -1574,7 +1574,7 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
-  if (proj_out_or_null(TypeFunc::Control) == nullptr) { // dead node
+  if (is_dead()) { // dead node
     return nullptr;
   }
 

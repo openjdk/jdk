@@ -106,7 +106,22 @@ public:
   ProjNode* other_if_proj() const;
 };
 
-//------------------------------TupleNode---------------------------------------
+/* Tuples are used to avoid manual graph surgery. When a node with Proj outputs (such as a call)
+ * must be removed and its ouputs replaced by its input, or some other value, we can make its
+ * ::Ideal return a tuple of what we want for each output: the ::Identity of output Proj will
+ * take care to jump over the Tuple and directly pick up the right input of the Tuple.
+ *
+ * For instance, if a function call is proven to have no side effect and return the constant 0,
+ * we can replace it with the 6-tuple:
+ * (control input, IO input, memory input, frame ptr input, return addr input, Con:0)
+ * all the output projections will pick up the input of the now gone call, except for the result
+ * projection that is replaced by 0.
+ *
+ * Using TupleNode avoid manual graph surgery and leave that to our expert surgeon: IGVN.
+ * Since the user of a Tuple are expected to be Proj, when creating a tuple during idealization,
+ * the output Proj should be enqueued for IGVN immediately after, and the tuple should not survive
+ * after the current IGVN.
+ */
 class TupleNode : public MultiNode {
   const TypeTuple* _tf;
 
@@ -124,6 +139,10 @@ public:
   int Opcode() const override;
   const Type* bottom_type() const override { return _tf; }
 
+  /* Give as many `Node*` as you want in the `nn` pack:
+   * TupleNode::make(tf, input1)
+   * TupleNode::make(tf, input1, input2, input3, input4)
+   */
   template <typename... NN>
   static TupleNode* make(const TypeTuple* tf, NN... nn) {
     TupleNode* tn = new TupleNode(tf);

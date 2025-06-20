@@ -1306,7 +1306,20 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
 bool CallLeafPureNode::is_unused() const {
   return proj_out_or_null(TypeFunc::Parms) == nullptr;
 }
-// We make a tuple of the global input state + TOP for the output values.
+
+bool CallLeafPureNode::is_dead() const {
+  return proj_out_or_null(TypeFunc::Control) == nullptr;
+}
+
+/* We make a tuple of the global input state + TOP for the output values.
+ * We use this to delete a pure function that is not used: by replacing the call with
+ * such a tuple, we let output Proj's idealization pick the corresponding input of the
+ * pure call, so jumping over it, and effectively, removing the call from the graph.
+ * This avoids doing the graph surgery manually, but leave that to IGVN
+ * that is specialized for doing that right. We need also tuple components for output
+ * values of the function to respect the return arity, and in case there is a projection
+ * that would pick an output (which shouldn't happen at the moment).
+ */
 TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
   // Transparently propagate input state but parameters
   TupleNode* tuple = TupleNode::make(
@@ -1326,7 +1339,7 @@ TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(con
 }
 
 Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (proj_out_or_null(TypeFunc::Control) == nullptr) { // dead node
+  if (is_dead()) { // dead node
     return nullptr;
   }
 
