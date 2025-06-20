@@ -93,7 +93,6 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
                     .findFirst()
                     .orElseThrow(() -> new Error("cannot find JRT filesystem for " + root))
                     .newFileSystem(root, Map.of());
-            //reader = ImageReader.open(root);
         } catch (IOException e) {
             throw new Error("can not open " + root + " : " + e.getMessage(), e);
         }
