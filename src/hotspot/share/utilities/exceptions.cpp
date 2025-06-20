@@ -632,7 +632,7 @@ void Exceptions::log_exception(Handle exception, const char* message) {
 // NOTE: exceptions that are NOT thrown by _athrow are handled by Exceptions::special_exception()
 // and Exceptions::_throw()).
 void Exceptions::log_exception_stacktrace(Handle exception, methodHandle method, int bci) {
-  if (method->is_native() || (Bytecodes::Code) *method->bcp_from(bci) == Bytecodes::_athrow) {
+  if (!method->is_native() && (Bytecodes::Code) *method->bcp_from(bci) == Bytecodes::_athrow) {
     // TODO: it would be nice to filter out exceptions re-thrown by finally blocks (which include
     // try-with-resource statements):
     //

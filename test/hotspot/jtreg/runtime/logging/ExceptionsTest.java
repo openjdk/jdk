@@ -46,7 +46,7 @@ public class ExceptionsTest {
     }
 
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.shouldContain("<a 'java/lang/RuntimeException'").shouldContain(": Test exception 1 for logging>");
         output.shouldContain(" thrown in interpreter method ");
         output.shouldMatch("info..exceptions,stacktrace.*at ExceptionsTest[$]InternalClass.bar[(]ExceptionsTest.java:[0-9]+" +
