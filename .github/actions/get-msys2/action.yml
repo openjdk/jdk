@@ -42,3 +42,9 @@ runs:
         # Prepend msys2/msys64/usr/bin to the PATH
         echo "$env:RUNNER_TOOL_CACHE/msys2/msys64/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
+
+    - name: 'Remove default config.site'
+      run: |
+        echo "Removing default config.site"
+        rm -f /etc/config.site
+      shell: env /usr/bin/bash --login -eo pipefail {0}
