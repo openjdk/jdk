@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "code/codeBehaviours.hpp"
-#include "code/nmethod.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
-
-CompiledICProtectionBehaviour* CompiledICProtectionBehaviour::_current = nullptr;
-
-bool DefaultICProtectionBehaviour::lock(nmethod* method) {
-  if (is_safe(method)) {
-    return false;
-  }
-  CompiledIC_lock->lock_without_safepoint_check();
-  return true;
-}
-
-void DefaultICProtectionBehaviour::unlock(nmethod* method) {
-  CompiledIC_lock->unlock();
-}
-
-bool DefaultICProtectionBehaviour::is_safe(nmethod* method) {
-  return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self() || method->is_not_installed();
-}
+#include "native_thread.cpp"
+#include "nsk_tools.cpp"
+#include "jni_tools.cpp"
+#include "jvmti_tools.cpp"
+#include "agent_tools.cpp"
+#include "jvmti_FollowRefObjects.cpp"
+#include "Injector.cpp"
+#include "JVMTITools.cpp"
+#include "agent_common.cpp"
+#include "agentnmethodrelocation001.cpp"
