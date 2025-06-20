@@ -662,7 +662,8 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
 //
 //   Below, we visualize the conditions, so that the reader can gain an intuitiion.
-//   For simplicity, we only show the case with iv_stride > 0:
+//   For simplicity, we only show the case with iv_stride > 0. Also, remember that
+//   iv_scale1 < iv_scale2.
 //
 //                             +---------+                     +---------+
 //                             |        #|                     |        #| <-- p1(init) + span1
