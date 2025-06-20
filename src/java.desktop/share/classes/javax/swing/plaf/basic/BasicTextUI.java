@@ -1029,10 +1029,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
 
     /**
-     * Gets the allocation to give the root View.  Due
-     * to an unfortunate set of historical events this
-     * method is inappropriately named.  The Rectangle
-     * returned has nothing to do with visibility.
+     * Gets the allocation to give the root View.
+     * The Rectangle returned has nothing to do with visibility but
+     * the method is thus named to preserve backward compatibility.
      * The component must have a non-zero positive size for
      * this translation to be computed.
      *
