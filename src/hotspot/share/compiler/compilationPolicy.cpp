@@ -385,7 +385,7 @@ public:
 
 double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   int comp_count = compiler_count(level);
-  if (comp_count > 0) {
+  if (comp_count > 0 && feedback_k > 0) {
     double queue_size = CompileBroker::queue_size(level);
     double k = (double)queue_size / ((double)feedback_k * (double)comp_count) + 1;
 
