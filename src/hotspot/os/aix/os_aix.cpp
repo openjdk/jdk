@@ -169,7 +169,7 @@ static void vmembk_print_on(outputStream* os);
 ////////////////////////////////////////////////////////////////////////////////
 // global variables (for a description see os_aix.hpp)
 
-julong    os::Aix::_physical_memory = 0;
+size_t    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
 
@@ -254,41 +254,41 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
-julong os::free_memory() {
+MemRes os::free_memory() {
   return Aix::available_memory();
 }
 
-julong os::available_memory() {
+MemRes os::available_memory() {
   return Aix::available_memory();
 }
 
-julong os::Aix::available_memory() {
+MemRes os::Aix::available_memory() {
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    return mi.real_free;
+    return MemRes(mi.real_free);
   } else {
-    return ULONG_MAX;
+    return MemRes(0, -1);
   }
 }
 
-jlong os::total_swap_space() {
+MemRes os::total_swap_space() {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    return -1;
+    return MemRes(0, -1);
   }
-  return (jlong)(memory_info.pgsp_total * 4 * K);
+  return MemRes(static_cast<size_t>(memory_info.pgsp_total * 4 * K));
 }
 
-jlong os::free_swap_space() {
+MemRes os::free_swap_space() {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    return -1;
+    return MemRes(0, -1);
   }
-  return (jlong)(memory_info.pgsp_free * 4 * K);
+  return MemRes(static_cast<size_t>(memory_info.pgsp_free * 4 * K));
 }
 
-julong os::physical_memory() {
-  return Aix::physical_memory();
+MemRes os::physical_memory() {
+  return MemRes(Aix::physical_memory());
 }
 
 size_t os::rss() { return (size_t)0; }

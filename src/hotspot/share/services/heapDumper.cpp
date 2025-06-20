@@ -2612,7 +2612,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     // (DumpWriter buffer, DumperClassCacheTable, GZipCompressor buffers).
     // For the OOM handling we may already be limited in memory.
     // Lets ensure we have at least 20MB per thread.
-    julong max_threads = os::free_memory() / (20 * M);
+    julong max_threads = os::free_memory().value / (20 * M);
     if (num_dump_threads > max_threads) {
       num_dump_threads = MAX2<uint>(1, (uint)max_threads);
     }

@@ -848,40 +848,54 @@ jlong os::elapsed_frequency() {
 }
 
 
-julong os::available_memory() {
+MemRes os::available_memory() {
   return win32::available_memory();
 }
 
-julong os::free_memory() {
+MemRes os::free_memory() {
   return win32::available_memory();
 }
 
-julong os::win32::available_memory() {
+MemRes os::win32::available_memory() {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-
-  return (julong)ms.ullAvailPhys;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (!res) {
+    errno = ::GetLastError();
+    log_debug(os)("available_memory() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return MemRes(0,-1);
+  }
+  return MemRes(static_cast<size_t>(ms.ullAvailPhys));
 }
 
-jlong os::total_swap_space() {
+MemRes os::total_swap_space() {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullTotalPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (!res) {
+    errno = ::GetLastError();
+    log_debug(os)("total_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return MemRes(0, -1);
+  }
+  return MemRes(static_cast<size_t>(ms.ullTotalPageFile));
 }
 
-jlong os::free_swap_space() {
+MemRes os::free_swap_space() {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullAvailPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (!res) {
+    errno = ::GetLastError();
+    log_debug(os)("free_swap_space() failed to GlobalMemoryStatusEx: GetLastError->%ld.", errno);
+    return MemRes(0, -1);
+  }
+  return MemRes(static_cast<size_t>(ms.ullAvailPageFile));
 }
 
-julong os::physical_memory() {
-  return win32::physical_memory();
+MemRes os::physical_memory() {
+  return MemRes(win32::physical_memory());
 }
 
 size_t os::rss() {
@@ -3900,7 +3914,7 @@ int os::current_process_id() {
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
-julong os::win32::_physical_memory           = 0;
+size_t os::win32::_physical_memory           = 0;
 
 bool   os::win32::_is_windows_server         = false;
 

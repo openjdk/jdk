@@ -1486,7 +1486,7 @@ size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
 void Arguments::set_heap_size() {
-  julong phys_mem;
+  size_t phys_mem;
 
   // If the user specified one of these options, they
   // want specific memory sizing so do not limit memory
@@ -1500,14 +1500,14 @@ void Arguments::set_heap_size() {
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
-      phys_mem = os::physical_memory();
+      phys_mem = os::physical_memory().value;
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
-      phys_mem = (julong)MaxRAM;
+      phys_mem = static_cast<size_t>(MaxRAM);
     }
   } else {
-    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
-                                       : (julong)MaxRAM;
+    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory().value, static_cast<size_t>(MaxRAM))
+                                       : static_cast<size_t>(MaxRAM);
   }
 
   // If the maximum heap size has not been set with -Xmx,
@@ -1628,7 +1628,7 @@ jint Arguments::set_aggressive_heap_flags() {
   // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
   julong initHeapSize;
-  julong total_memory = os::physical_memory();
+  julong total_memory = static_cast<julong>(os::physical_memory().value);
 
   if (total_memory < (julong) 256 * M) {
     jio_fprintf(defaultStream::error_stream(),
