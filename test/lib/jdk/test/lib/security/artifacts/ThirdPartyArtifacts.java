@@ -33,7 +33,7 @@ public class ThirdPartyArtifacts {
 
     // Version of the NSS artifact. This coincides with the version of
     // the NSS version
-    public static final String NSS_BUNDLE_VERSION = "3.107";
+    public static final String NSS_BUNDLE_VERSION = "3.111";
     public static final String NSSLIB =  ARTIFACT_BASE + ".nsslib";
 
     @Artifact(
