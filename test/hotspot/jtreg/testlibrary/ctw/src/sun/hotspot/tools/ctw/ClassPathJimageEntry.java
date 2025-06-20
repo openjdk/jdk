@@ -57,7 +57,7 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
         try {
             Files.walkFileTree(modulesRoot, collectClassNames);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new Error(e);
         }
         return classNames.stream();
     }
@@ -79,7 +79,6 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
         }
     }
 
-    //private final ImageReader reader;
     private final FileSystem jrtFileSystem;
 
     public ClassPathJimageEntry(Path root) {

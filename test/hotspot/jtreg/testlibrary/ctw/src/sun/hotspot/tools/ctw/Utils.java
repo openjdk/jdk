@@ -205,8 +205,6 @@ public class Utils {
      *
      * @param classname fully qualified class name to convert
      * @return corresponding filename
-     * @throws AssertionError if filename isn't valid filename for class file -
-     *                        {@link #isClassFile(String)}
      */
     public static String classNameToFileName(String classname) {
         return classname.replace('.', '/')
