@@ -603,6 +603,7 @@ void ClassLoaderData::remove_jmethod_ids() {
     JmethodIDTable::remove(mid);
   }
   delete _jmethod_ids;
+  _jmethod_ids = nullptr;
 }
 
 void ClassLoaderData::unload() {

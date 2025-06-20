@@ -4277,7 +4277,7 @@ bool InstanceKlass::should_clean_previous_versions_and_reset() {
   return ret;
 }
 
-// This nulls out jmethodIDs for all obsolete methods in the previous version of the 'klass'
+// This nulls out jmethodIDs for all obsolete methods in the previous version of the 'klass'.
 // These obsolete methods only exist in the previous version and we're about to delete the memory for them.
 // The jmethodID for these are deallocated when we unload the class, so this doesn't remove them from the table.
 void InstanceKlass::clear_obsolete_jmethod_ids(InstanceKlass* klass) {

@@ -437,7 +437,7 @@ void Universe::genesis(TRAPS) {
 
     vmSymbols::initialize();
 
-    // Initialize table for matching jmethodID, before SystemDictionary
+    // Initialize table for matching jmethodID, before SystemDictionary.
     JmethodIDTable::initialize();
 
     SystemDictionary::initialize(CHECK);
