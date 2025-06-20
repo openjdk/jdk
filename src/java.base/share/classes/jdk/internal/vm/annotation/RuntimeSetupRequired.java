@@ -30,9 +30,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/// Indicates a class or interface is part of the method handle infrastructure
-/// for AOT archives.  The exact list of classes can be verified with
-/// CDSHeapVerifier.  See `aotConstantPoolResolver.cpp` for more details.
+/// Indicates a class or interface requires run-time setup when loaded from AOT
+/// archives.  They must declare a `runtimeSetup` method to be called by the VM,
+/// and this method must be called by the static initializer too.  See
+/// `aotClassInitializer.cpp` for more details.
 ///
 /// This annotation is only recognized on privileged code and is ignored
 /// elsewhere.
@@ -40,5 +41,5 @@ import java.lang.annotation.Target;
 /// @since 26
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface MethodHandleArchived {
+public @interface RuntimeSetupRequired {
 }

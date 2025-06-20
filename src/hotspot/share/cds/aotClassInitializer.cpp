@@ -267,17 +267,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   return false;
 }
 
-// TODO: currently we have a hard-coded list. We should turn this into
-// an annotation: @jdk.internal.vm.annotation.RuntimeSetupRequired
-// See JDK-8342481.
-bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
-  return ik == vmClasses::Class_klass() ||
-         ik == vmClasses::internal_Unsafe_klass() ||
-         ik == vmClasses::ConcurrentHashMap_klass() ||
-         ik == vmClasses::MethodHandleImpl_klass() ||
-         ik == vmClasses::Reference_klass();
-}
-
 void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
   assert(ik->has_aot_initialized_mirror(), "sanity");
   if (ik->is_runtime_setup_required()) {

@@ -942,6 +942,7 @@ public:
     _java_lang_Deprecated,
     _java_lang_Deprecated_for_removal,
     _jdk_internal_vm_annotation_MethodHandleArchived,
+    _jdk_internal_vm_annotation_RuntimeSetupRequired,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1899,7 +1900,13 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_MethodHandleArchived_signature): {
       if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
       return _jdk_internal_vm_annotation_MethodHandleArchived;
+    }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_RuntimeSetupRequired_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_RuntimeSetupRequired;
     }
     default: {
       break;
@@ -1982,6 +1989,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   }
   if (has_annotation(_jdk_internal_vm_annotation_MethodHandleArchived)) {
     ik->set_is_method_handle_archived();
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_RuntimeSetupRequired)) {
+    ik->set_is_runtime_setup_required();
   }
 }
 

@@ -732,7 +732,8 @@ class SerializeClosure;
   template(java_lang_invoke_DelegatingMethodHandle_Holder,  "java/lang/invoke/DelegatingMethodHandle$Holder")     \
   template(jdk_internal_loader_ClassLoaders,                "jdk/internal/loader/ClassLoaders")                   \
   template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
-  template(jdk_internal_vm_annotation_MethodHandleArchived_signature, "Ljdk/internal/vm/annotation/MethodHandleArchived;")    \
+  template(jdk_internal_vm_annotation_MethodHandleArchived_signature, "Ljdk/internal/vm/annotation/MethodHandleArchived;")\
+  template(jdk_internal_vm_annotation_RuntimeSetupRequired_signature, "Ljdk/internal/vm/annotation/RuntimeSetupRequired;")\
   template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
   template(java_util_ArrayList,                             "java/util/ArrayList")                                \
   template(runtimeSetup,                                    "runtimeSetup")                                       \
