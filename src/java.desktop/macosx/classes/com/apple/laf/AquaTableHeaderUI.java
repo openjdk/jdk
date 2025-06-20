@@ -37,7 +37,7 @@ import com.apple.laf.ClientPropertyApplicator;
 import com.apple.laf.ClientPropertyApplicator.Property;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaTableHeaderUI extends BasicTableHeaderUI {
+public final class AquaTableHeaderUI extends BasicTableHeaderUI {
     private int originalHeaderAlignment;
     protected int sortColumn;
     protected int sortOrder;
@@ -46,6 +46,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
         return new AquaTableHeaderUI();
     }
 
+    @Override
     public void installDefaults() {
         super.installDefaults();
 
@@ -57,6 +58,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
         }
     }
 
+    @Override
     public void uninstallDefaults() {
         final TableCellRenderer renderer = header.getDefaultRenderer();
         if (renderer instanceof UIResource && renderer instanceof DefaultTableCellRenderer) {
@@ -112,7 +114,8 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
+    final class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
+        @Override
         public Component getTableCellRendererComponent(final JTable localTable, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
             if (localTable != null) {
                 if (header != null) {
@@ -165,11 +168,13 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
         return (AquaTableHeaderBorder)border;
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         getTableHeaderApplicators().attachAndApplyClientProperties(header);
     }
 
+    @Override
     protected void uninstallListeners() {
         getTableHeaderApplicators().removeFrom(header);
         super.uninstallListeners();
@@ -232,6 +237,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
      * Return the minimum size of the header. The minimum width is the sum of the minimum widths of each column (plus
      * inter-cell spacing).
      */
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         long width = 0;
         final Enumeration<TableColumn> enumeration = header.getColumnModel().getColumns();
@@ -247,6 +253,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
      * the components provided by the header renderers. The preferred width is the sum of the preferred widths of each
      * column (plus inter-cell spacing).
      */
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         long width = 0;
         final Enumeration<TableColumn> enumeration = header.getColumnModel().getColumns();

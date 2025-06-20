@@ -40,7 +40,7 @@ import sun.lwawt.macosx.CMenuBar;
 
 import com.apple.laf.AquaMenuBarUI;
 
-class _AppMenuBarHandler {
+final class _AppMenuBarHandler {
     private static final int MENU_ABOUT = 1;
     private static final int MENU_PREFS = 2;
 

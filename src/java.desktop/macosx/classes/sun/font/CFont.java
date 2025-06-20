@@ -44,33 +44,40 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
      * because a CFont can sometimes be returned where a PhysicalFont
      * is expected.
      */
+    @Override
     StrikeMetrics getFontMetrics(long pScalerContext) {
        throw new InternalError("Not implemented");
     }
 
+    @Override
     float getGlyphAdvance(long pScalerContext, int glyphCode) {
        throw new InternalError("Not implemented");
     }
 
+    @Override
     void getGlyphMetrics(long pScalerContext, int glyphCode,
                                   Point2D.Float metrics) {
        throw new InternalError("Not implemented");
     }
 
+    @Override
     long getGlyphImage(long pScalerContext, int glyphCode) {
        throw new InternalError("Not implemented");
     }
 
+    @Override
     Rectangle2D.Float getGlyphOutlineBounds(long pScalerContext,
                                                      int glyphCode) {
        throw new InternalError("Not implemented");
     }
 
+    @Override
     GeneralPath getGlyphOutline(long pScalerContext, int glyphCode,
                                          float x, float y) {
        throw new InternalError("Not implemented");
     }
 
+    @Override
     GeneralPath getGlyphVectorOutline(long pScalerContext,
                                                int[] glyphs, int numGlyphs,
                                                float x, float y) {
@@ -194,6 +201,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
     private native long getCGFontPtrNative(long ptr);
 
     // This digs the CGFont out of the AWTFont.
+    @Override
     protected synchronized long getPlatformNativeFontPtr() {
         return getCGFontPtrNative(getNativeFontPtr());
     }
@@ -240,6 +248,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
 
     private CompositeFont compFont;
 
+    @Override
     public CompositeFont getCompositeFont2D() {
         if (compFont == null) {
            compFont = createCompositeFont();
@@ -247,6 +256,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         return compFont;
     }
 
+    @Override
     @SuppressWarnings("removal")
     protected synchronized void finalize() {
         if (nativeFontPtr != 0) {
@@ -255,6 +265,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         nativeFontPtr = 0;
     }
 
+    @Override
     protected CharToGlyphMapper getMapper() {
         if (mapper == null) {
             mapper = new CCharToGlyphMapper(this);
@@ -262,6 +273,7 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         return mapper;
     }
 
+    @Override
     protected FontStrike createStrike(FontStrikeDesc desc) {
         if (isFakeItalic) {
             desc = new FontStrikeDesc(desc);
@@ -276,10 +288,12 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
     // Simple answer: don't cache.
     private static FontRenderContext DEFAULT_FRC =
         new FontRenderContext(null, false, false);
+    @Override
     public FontStrike getStrike(final Font font) {
         return getStrike(font, DEFAULT_FRC);
     }
 
+    @Override
     public boolean equals(Object o) {
          if (!super.equals(o)) {
              return false;
@@ -288,10 +302,12 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
          return ((Font2D)o).getStyle() == this.getStyle();
     }
 
+    @Override
     public int hashCode() {
         return super.hashCode() ^ this.getStyle();
     }
 
+    @Override
     public String toString() {
         return "CFont { fullName: " + fullName +
             ",  familyName: " + familyName + ", style: " + style +

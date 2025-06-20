@@ -44,7 +44,7 @@ import javax.swing.text.JTextComponent;
 import javax.swing.SwingUtilities;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaCaret extends DefaultCaret
+public final class AquaCaret extends DefaultCaret
         implements UIResource, PropertyChangeListener {
 
     private boolean isMultiLineEditor;

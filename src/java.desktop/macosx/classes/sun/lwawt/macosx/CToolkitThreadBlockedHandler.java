@@ -37,6 +37,7 @@ final class CToolkitThreadBlockedHandler extends Mutex implements ToolkitThreadB
         this.processEvents = true;
     }
 
+    @Override
     public void enter() {
         if (!isOwned()) {
             throw new IllegalMonitorStateException();
@@ -47,6 +48,7 @@ final class CToolkitThreadBlockedHandler extends Mutex implements ToolkitThreadB
         lock();
     }
 
+    @Override
     public void exit() {
         if (!isOwned()) {
             throw new IllegalMonitorStateException();

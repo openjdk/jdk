@@ -44,7 +44,7 @@ import sun.lwawt.LWLightweightFramePeer;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.PlatformWindow;
 
-public class CPlatformLWWindow extends CPlatformWindow {
+public final class CPlatformLWWindow extends CPlatformWindow {
 
     @Override
     public void initialize(Window target, LWWindowPeer peer, PlatformWindow owner) {
