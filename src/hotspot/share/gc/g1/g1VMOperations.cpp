@@ -57,7 +57,7 @@ void VM_G1CollectFull::doit() {
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
                                                    GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count_before, gc_cause),
+  VM_GC_Collect_Operation(gc_count_before, gc_cause),
   _transient_failure(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
