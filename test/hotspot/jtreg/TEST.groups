@@ -62,17 +62,34 @@ hotspot_handshake = \
 hotspot_serviceability = \
   serviceability
 
+# The resourcehogs tests might require a lot of resources and
+# shouldn't be executed concurrently with ANY other tests.
+# So the group shouldn't be part of any other group.
 hotspot_resourcehogs = \
   resourcehogs
+
+# The other tests includes all tests that don't
+# test hotspot itself.
+non_hotspot_tests = \
+  testlibrary_tests \
+  sources
+
+# Gtest unit-test with jtreg wrapper, VM flags are set by test,
+# and so should not be executed with VM flags.
+hotspot_gtest = \
+ gtest
 
 hotspot_misc = \
   / \
  -applications \
  -vmTestbase \
+ -:non_hotspot_tests \
  -:hotspot_compiler \
  -:hotspot_gc \
  -:hotspot_runtime \
  -:hotspot_serviceability \
+ -:hotspot_gtest \
+ -:hotspot_resourcehogs \
  -:hotspot_containers
 
 hotspot_native_sanity = \
@@ -138,15 +155,15 @@ serviceability_ttf_virtual = \
   -serviceability/jvmti/events  \
   -serviceability/jvmti/negative
 
+# tier1_common shouldn't be executed with VM flags, because
+# non_hotspot and gtest ignore them.
+# hotspot_misc should be used for execution of
+# all non-component tests with VM flags.
 tier1_common = \
-  sources \
-  sanity/BasicVMTest.java \
-  gtest/GTestWrapper.java \
-  gtest/LockStackGtests.java \
-  gtest/MetaspaceGtests.java \
-  gtest/LargePageGtests.java \
-  gtest/NMTGtests.java \
-  gtest/WindowsProcessorGroups.java
+  sanity \
+  native_sanity \
+  :non_hotspot_tests \
+  :hotspot_gtest
 
 tier1_compiler = \
   :tier1_compiler_1 \
