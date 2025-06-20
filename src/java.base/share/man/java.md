@@ -2701,14 +2701,6 @@ Java HotSpot VM.
 
     >   `-XX:ParallelGCThreads=2`
 
-`-XX:+ParallelRefProcEnabled`
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
 `-XX:+PrintAdaptiveSizePolicy`
 :   Enables printing of information about adaptive-generation sizing. By
     default, this option is disabled.
@@ -2903,6 +2895,14 @@ they're used.
 `-XX:+FlightRecorder`
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
+
+`-XX:+ParallelRefProcEnabled`
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
 
 ## Obsolete Java Options
 
