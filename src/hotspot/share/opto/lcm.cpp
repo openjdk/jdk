@@ -31,9 +31,9 @@
 #include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
 #include "opto/machnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/chaitin.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 

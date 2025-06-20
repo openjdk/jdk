@@ -32,8 +32,8 @@
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates_enums.hpp"
-#include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 
