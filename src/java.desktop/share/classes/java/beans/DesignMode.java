@@ -34,7 +34,7 @@ package java.beans;
  * The JavaBeans specification defines the notion of design time as is a
  * mode in which JavaBeans instances should function during their composition
  * and customization in a interactive design, composition or construction tool,
- * as opposed to runtime when the JavaBean is part of an applet, application,
+ * as opposed to runtime when the JavaBean is part of an application,
  * or other live Java executable abstraction.
  *
  * @author Laurence P. G. Cable
