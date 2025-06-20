@@ -2436,10 +2436,7 @@ jmethodID InstanceKlass::get_jmethod_id(Method* method) {
     if (jmeths == nullptr) {
       size_t size = idnum_allocated_count();
       assert(size > (size_t)idnum, "should already have space");
-      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size + 1, mtClass);
-      memset(jmeths, 0, (size + 1) * sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
-      jmeths[0] = (jmethodID)size;
+      jmeths = create_jmethod_id_cache(size);
       jmethodID new_id = update_jmethod_id(jmeths, method, idnum);
 
       // publish jmeths

@@ -37,7 +37,7 @@
 // The value of the next jmethodID.  This only increments (always unique IDs).
 static uint64_t _jmethodID_counter = 0;
 // Tracks the number of jmethodID entries in the _jmethod_id_table.
-// Incremented on insert, decremented on remove. Use to track if we need to resize the table.
+// Incremented on insert, decremented on remove. Used to track if we need to resize the table.
 static uint64_t _jmethodID_entry_count = 0;
 
 uint64_t JmethodIDTable::get_entry_count() { return _jmethodID_entry_count; }
@@ -138,7 +138,6 @@ jmethodID JmethodIDTable::make_jmethod_id(Method* m) {
   assert_locked_or_safepoint(JmethodIdCreation_lock);
   // Update jmethodID global counter.
   _jmethodID_counter++;
-  guarantee(_jmethodID_counter != 0, "must never go back to zero");
 
   JmethodEntry new_entry(_jmethodID_counter, m);
   Thread* current = Thread::current();
