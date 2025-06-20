@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1312,10 +1313,13 @@ final class StringUTF16 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    private static void putChars(byte[] val, int index, char[] str, int off, int end) {
-        while (off < end) {
-            putChar(val, index++, str[off++]);
-        }
+    private static void putCharsUnchecked(byte[] val, int index, char[] str, int off, int end) {
+        Unsafe.getUnsafe().copyMemory(
+                str,
+                Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) off << 1),
+                val,
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) index << 1),
+                ((long) (end - off)) << 1);
     }
 
     public static String newString(byte[] val, int index, int len) {
@@ -1486,7 +1490,8 @@ final class StringUTF16 {
 
     public static void putCharsSB(byte[] val, int index, char[] ca, int off, int end) {
         checkBoundsBeginEnd(index, index + end - off, val);
-        putChars(val, index, ca, off, end);
+        checkBoundsBeginEnd(off, end, ca);
+        putCharsUnchecked(val, index, ca, off, end);
     }
 
     public static void putCharsSB(byte[] val, int index, CharSequence s, int off, int end) {
@@ -1656,6 +1661,10 @@ final class StringUTF16 {
 
     public static void checkBoundsBeginEnd(int begin, int end, byte[] val) {
         String.checkBoundsBeginEnd(begin, end, length(val));
+    }
+
+    private static void checkBoundsBeginEnd(int begin, int end, char[] val) {
+        String.checkBoundsBeginEnd(begin, end, val.length);
     }
 
     public static void checkBoundsOffCount(int offset, int count, byte[] val) {
