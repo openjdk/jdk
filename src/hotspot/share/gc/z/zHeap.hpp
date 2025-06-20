@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZHEAP_HPP
 
 #include "gc/z/zAllocationFlags.hpp"
-#include "gc/z/zAllocator.hpp"
 #include "gc/z/zArray.hpp"
 #include "gc/z/zGeneration.hpp"
 #include "gc/z/zPageAge.hpp"
@@ -48,9 +47,6 @@ private:
   ZPageAllocator          _page_allocator;
   ZPageTable              _page_table;
 
-  ZAllocatorEden          _allocator_eden;
-  ZAllocatorForRelocation _allocator_relocation[ZAllocator::_relocation_allocators];
-
   ZServiceability         _serviceability;
 
   ZGenerationOld          _old;
@@ -71,7 +67,7 @@ public:
 
   bool is_initialized() const;
 
-  void out_of_memory();
+  void out_of_memory() const;
 
   // Heap metrics
   size_t min_capacity() const;
@@ -115,6 +111,8 @@ public:
   size_t free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
 
   // Object allocation
+  zaddress alloc_object(size_t size) const;
+  zaddress alloc_tlab(size_t size) const;
   bool is_alloc_stalling() const;
   bool is_alloc_stalling_for_old() const;
   void handle_alloc_stalling_for_young();
