@@ -97,6 +97,18 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
 
+      - name: 'Test platform'
+        id: test-platform
+        run: |
+          echo "Processor identifier: ${PROCESSOR_IDENTIFIER}"
+          echo "Architecture details: $(uname -ar)"
+          bash make/autoconf/build-aux/config.guess
+        env:
+          # We need a minimal PATH on Windows
+          # Set PATH to "", so just GITHUB_PATH is included
+          PATH: ''
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+
       - name: 'Get JTReg'
         id: jtreg
         uses: ./.github/actions/get-jtreg
