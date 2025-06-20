@@ -1055,7 +1055,6 @@ void InterpreterMacroAssembler::profile_taken_branch(Register mdp) {
     Label profile_continue;
 
     // If no method data exists, go to profile_continue.
-    // Otherwise, assign to mdp
     test_method_data_pointer(mdp, profile_continue);
 
     // We are taking a branch.  Increment the taken count.
