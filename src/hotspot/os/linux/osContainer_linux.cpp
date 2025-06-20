@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,11 @@ jlong OSContainer::memory_soft_limit_in_bytes() {
   return cgroup_subsystem->memory_soft_limit_in_bytes();
 }
 
+jlong OSContainer::memory_throttle_limit_in_bytes() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->memory_throttle_limit_in_bytes();
+}
+
 jlong OSContainer::memory_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->memory_usage_in_bytes();
@@ -175,6 +180,11 @@ int OSContainer::cpu_period() {
 int OSContainer::cpu_shares() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->cpu_shares();
+}
+
+jlong OSContainer::cpu_usage_in_micros() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->cpu_usage_in_micros();
 }
 
 jlong OSContainer::pids_max() {
