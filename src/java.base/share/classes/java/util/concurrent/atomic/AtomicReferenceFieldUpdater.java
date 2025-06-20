@@ -71,19 +71,23 @@ import java.lang.invoke.VarHandle;
  *
  * However, it is preferable to use {@link VarHandle}:
  * <pre> {@code
+ * import java.lang.invoke.VarHandle;
+ * import java.lang.invoke.MethodHandles;
  * class Node {
- *   private volatile Node left, right;
- *
- *   private static final VarHandle LEFT = MethodHandles.lookup().
- *      findVarHandle(Node.class, "left", Node.class);
- *   private static final VarHandle RIGHT = MethodHandles.lookup().
- *      findVarHandle(Node.class, "right", Node.class);
- *   Node getLeft() { return left; }
- *   boolean compareAndSetLeft(Node expect, Node update) {
- *     return LEFT.compareAndSet(this, expect, update);
- *   }
- *   // ... and so on
- * }}</pre>
+ *  private volatile Node left, right;
+ *  private static final VarHandle LEFT, RIGHT;
+ *  Node getLeft() { return left; }
+ *  boolean compareAndSetLeft(Node expect, Node update) {
+ *    return LEFT.compareAndSet(this, expect, update);
+ *  }
+ *  // ... and so on
+ *  static { try {
+ *    MethodHandles.Lookup l = MethodHandles.lookup();
+ *    LEFT  = l.findVarHandle(Node.class, "left", Node.class);
+ *    RIGHT = l.findVarHandle(Node.class, "right", Node.class);
+ *   } catch (ReflectiveOperationException e) {
+ *     throw new ExceptionInInitializerError(e);
+ * }}}</pre>
  *
  * <p>Note that the guarantees of the {@code compareAndSet}
  * method in this class are weaker than in other atomic classes.

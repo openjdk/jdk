@@ -604,7 +604,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
      * Flow.Subscriber#onComplete() onComplete} signals to current
      * subscribers, and disallows subsequent attempts to publish. To
      * ensure uniform ordering among subscribers, this method may
-     * await completion of in-progress offer.  Upon return, this
+     * await completion of in-progress offers.  Upon return, this
      * method does <em>NOT</em> guarantee that all subscribers have
      * yet completed.
      */

@@ -791,7 +791,7 @@ public class ReentrantReadWriteLock
 
         /**
          * Acquires the read lock only if the write lock is not held by
-         * any thread at the time of invocation.
+         * another thread at the time of invocation.
          *
          * <p>Acquires the read lock if the write lock is not held by
          * any thread and returns immediately with the value
