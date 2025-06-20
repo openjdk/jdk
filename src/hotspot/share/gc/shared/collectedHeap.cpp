@@ -38,6 +38,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/stringdedup/stringDedupProcessor.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -66,6 +67,7 @@ size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
+jlong CollectedHeap::_vm_vtime = 0;
 
 class GCLogMessage : public FormatBuffer<512> {};
 
@@ -200,6 +202,23 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 }
 
+class VCPUThreadClosure : public ThreadClosure {
+private:
+  volatile jlong _vtime = 0;
+
+public:
+  virtual void do_thread(Thread* thread) {
+    Atomic::add(&_vtime, os::thread_cpu_time(thread));
+  }
+  jlong vtime() { return _vtime; };
+};
+
+double CollectedHeap::elapsed_gc_vtime() {
+  VCPUThreadClosure cl;
+  gc_threads_do(&cl);
+  return (double)(cl.vtime() + Universe::heap()->vm_vtime()) / NANOSECS_PER_SEC;
+}
+
 void CollectedHeap::print_before_gc() const {
   print_relative_to_gc(GCWhen::BeforeGC);
 }
@@ -211,6 +230,27 @@ void CollectedHeap::print_after_gc() const {
 void CollectedHeap::print() const {
   print_heap_on(tty);
   print_gc_on(tty);
+}
+
+void CollectedHeap::log_gc_vtime() {
+  if (os::is_thread_cpu_time_supported() && log_is_enabled(Info, gc)) {
+    double process_vtime = os::elapsed_process_vtime();
+    double gc_vtime = elapsed_gc_vtime();
+    double string_dedup_vtime = UseStringDeduplication ? os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
+    if (process_vtime == -1 || gc_vtime == -1 || string_dedup_vtime == -1) {
+      return;
+    }
+
+    double usage = -1;
+    if (gc_vtime > process_vtime || process_vtime == 0 || gc_vtime == 0) {
+      // This can happen e.g. for short running processes with
+      // low CPU utilization
+      usage = 0;
+    } else {
+      usage = 100 * (gc_vtime + string_dedup_vtime) / process_vtime;
+    }
+    log_info(gc)("GC CPU usage: %2.2f%%", usage);
+  }
 }
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
@@ -601,6 +641,10 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 void CollectedHeap::post_initialize() {
   StringDedup::initialize();
   initialize_serviceability();
+}
+
+void CollectedHeap::stop() {
+  log_gc_vtime();
 }
 
 #ifndef PRODUCT

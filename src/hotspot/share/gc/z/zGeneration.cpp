@@ -442,6 +442,8 @@ public:
     OopMapCache::try_trigger_cleanup();
   }
 
+  bool is_gc_operation() const { return true; }
+
   bool success() const {
     return _success;
   }
