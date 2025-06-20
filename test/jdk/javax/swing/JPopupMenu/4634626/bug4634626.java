@@ -27,7 +27,6 @@
  * @bug 4634626
  * @summary Implement context popup menus for components
  * @library /lib/client
- * @build ExtendedRobot
  * @run main bug4634626
  */
 
@@ -40,6 +39,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -172,9 +172,9 @@ public class bug4634626 {
 
     class RobotThread implements Runnable {
         public void run() {
-            ExtendedRobot robo;
+            Robot robo;
             try {
-                robo = new ExtendedRobot();
+                robo = new Robot();
             }catch(Exception ex) {
                 ex.printStackTrace();
                 throw new RuntimeException("Cannot create Robot");
@@ -247,7 +247,7 @@ public class bug4634626 {
         }
     }
 
-    private void clickMouseOn(ExtendedRobot robot, Component c, int button) {
+    private void clickMouseOn(Robot robot, Component c, int button) {
         java.awt.Point p = c.getLocationOnScreen();
         java.awt.Dimension size = c.getSize();
         p.x += size.width / 2;

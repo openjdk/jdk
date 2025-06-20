@@ -37,7 +37,6 @@
  * @build LWComponent
  * @build LWButton
  * @build LWList
- * @build ExtendedRobot
  * @run main/timeout=300 ExtendedModifiersTest
  */
 import java.awt.Button;
@@ -48,6 +47,7 @@ import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.List;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.TextArea;
 import java.awt.TextField;
 import java.awt.event.InputEvent;
@@ -69,7 +69,7 @@ public class ExtendedModifiersTest implements KeyListener {
     List list;
     LWList listLW;
 
-    private final ExtendedRobot robot;
+    private final Robot robot;
     private static final int WAIT_DELAY = 5000;
     private static final int KEY_DELAY = 100;
     private final Object lock;
@@ -146,7 +146,7 @@ public class ExtendedModifiersTest implements KeyListener {
 
     public ExtendedModifiersTest() throws Exception {
         lock = new Object();
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::createGUI);
     }
 
@@ -223,7 +223,7 @@ public class ExtendedModifiersTest implements KeyListener {
             Point center = new Point(xc, yc);
 
             robot.waitForIdle();
-            robot.glide(origin, center);
+            robot.glide(origin.x, origin.y, center.x, center.y);
             robot.click();
             robot.waitForIdle();
 

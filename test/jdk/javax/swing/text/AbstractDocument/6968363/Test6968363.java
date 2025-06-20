@@ -47,7 +47,6 @@ import static javax.swing.SwingUtilities.invokeAndWait;
  * @summary Ensures that a custom document may not extend AbstractDocument
  * @author Sergey Malenkov
  * @library /lib/client/
- * @build ExtendedRobot
  * @run main Test6968363
  */
 public class Test6968363 implements Runnable, Thread.UncaughtExceptionHandler {
@@ -56,7 +55,7 @@ public class Test6968363 implements Runnable, Thread.UncaughtExceptionHandler {
     public static void main(String[] args) throws Exception {
         Runnable task = new Test6968363();
         invokeAndWait(task);
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.waitForIdle(100);
         robot.keyPress(VK_LEFT);
         robot.waitForIdle(100);

@@ -31,7 +31,7 @@ public class FrameToFrontModelessTest {
     private volatile TestFrame  leftFrame, rightFrame;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private boolean isModeless;
 
@@ -40,7 +40,7 @@ public class FrameToFrontModelessTest {
 
     public FrameToFrontModelessTest(boolean modeless) throws Exception {
         isModeless = modeless;
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 
