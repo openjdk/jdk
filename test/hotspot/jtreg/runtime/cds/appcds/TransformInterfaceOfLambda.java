@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @requires vm.cds
  * @requires vm.jvmti
  * @requires vm.flagless
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @compile test-classes/SimpleTest.java
  * @compile test-classes/TransformBootClass.java
