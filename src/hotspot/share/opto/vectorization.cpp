@@ -661,14 +661,24 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //     p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
 //     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
 //
-//   We can express the same conditions in words and a graphical representation,
-//   that may help the reader with the intuition:
-//     if iv_stride > 0
+//   Below, we visualize the conditions, so that the reader can gain an intuitiion.
+//   For simplicity, we only show the case with iv_stride > 0:
 //
-//  TODO:
-//
-//     p1 p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
-//     p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+//                             +---------+                     +---------+
+//                             |        #|                     |        #| <-- p1(init) + span1
+//                             |       # |  ^ span2    span1 ^ |      # ^|
+//                             |      #  |  |                | |    #   ||
+//                             |     #   |  |                | |  #     v| <-- p2(init) + span2 + size2
+//                             |    #    |  |                v |#       #|
+//                             |   #     |  |          span2 ^ |       # |
+//                             |  #      |  |                | |      #  |
+//                             | #       |  |                | |     #   |
+//        p2(init)         --> |#       #|  v                | |    #    |
+//                             |^     #  |  ^ span1          | |   #     |
+//                             ||   #    |  |                | |  #      |
+//        p1(init) + size1 --> |v #      |  |                | | #       |
+//                             |#        |  v                v |#        |
+//                             +---------+                     +---------+
 //
 // -------------------------------------------------------------------------------------------------------------------------
 //
@@ -899,18 +909,22 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   Node* main_initL = new AddLNode(pre_lastL, igvn.longcon(pre_iv_stride));
   phase->register_new_node_with_ctrl_of(main_initL, pre_init);
 
-  Node* p1_init = vp1.make_pointer_expression(main_initL);
-  Node* p2_init = vp2.make_pointer_expression(main_initL);
+  // TODO: think about overflows again
+  Node* main_init = new ConvL2INode(main_initL);
+  phase->register_new_node_with_ctrl_of(main_init, pre_init);
+
+  Node* p1_init = vp1.make_pointer_expression(main_init);
+  Node* p2_init = vp2.make_pointer_expression(main_init);
   Node* size1 = igvn.longcon(vp1.size());
   Node* size2 = igvn.longcon(vp2.size());
 
 #ifdef ASSERT
   if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
     tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
-    tty->print("pre_init:    "); pre_init->dump();
-    tty->print("pre_limit:   "); pre_limit->dump();
-    tty->print("pre_lastL:   "); pre_lastL->dump();
-    tty->print("main_initL:  "); main_initL->dump();
+    tty->print("pre_init:  "); pre_init->dump();
+    tty->print("pre_limit: "); pre_limit->dump();
+    tty->print("pre_lastL: "); pre_lastL->dump();
+    tty->print("main_init: "); main_init->dump();
     tty->print_cr("p1_init:");
     p1_init->dump_bfs(5, nullptr, "");
     tty->print_cr("p2_init:");
