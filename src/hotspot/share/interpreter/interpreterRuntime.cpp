@@ -495,15 +495,17 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm(current);
       stringStream tempst;
-      bool is_throw_bytecode = false;
-      if (!h_method->is_native()) {
-        is_throw_bytecode = (Bytecodes::Code) *h_method->bcp_from(current_bci) == Bytecodes::_athrow;
-      }
       tempst.print("interpreter method <%s>\n"
                    " at bci %d for thread " INTPTR_FORMAT " (%s)",
                    h_method->print_value_string(), current_bci, p2i(current), current->name());
-      Exceptions::log_exception(h_exception, tempst.as_string(), is_throw_bytecode);
+      Exceptions::log_exception(h_exception, tempst.as_string());
     }
+    if (log_is_enabled(Info, exceptions, stacktrace)) {
+      if (!h_method->is_native() && (Bytecodes::Code) *h_method->bcp_from(current_bci) == Bytecodes::_athrow) {
+        Exceptions::log_exception_stacktrace(h_exception);
+      }
+    }
+
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
 //       // disabled for now - interpreter is not using shortcut yet

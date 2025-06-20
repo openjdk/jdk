@@ -192,9 +192,8 @@ class Exceptions {
   static void debug_check_abort(const char *value_string, const char* message = nullptr);
 
   // for logging exceptions
-  static void log_exception(Handle exception, const char* message, bool is_throw_bytecode = false);
-
-  static void clear_logging_cache();
+  static void log_exception(Handle exception, const char* message);
+  static void log_exception_stacktrace(Handle exception);
 };
 
 

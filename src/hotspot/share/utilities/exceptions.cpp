@@ -115,16 +115,18 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
 #endif // ASSERT
 
   if (h_exception.is_null() && !thread->can_call_java()) {
-    ResourceMark rm(thread);
-    const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
-    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
-                        "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
-                        "throwing pre-allocated exception: %s",
-                        MAX_LEN, exc_value, message ? ": " : "",
-                        MAX_LEN, message ? message : "",
-                        p2i(h_exception()), file, line, p2i(thread),
-                        Universe::vm_exception()->print_value_string());
-    maybe_log_call_stack(h_exception, false);
+    if (log_is_enabled(Info, exceptions)) {
+      ResourceMark rm(thread);
+      const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
+      log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
+                           "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
+                           "throwing pre-allocated exception: %s",
+                           MAX_LEN, exc_value, message ? ": " : "",
+                           MAX_LEN, message ? message : "",
+                           p2i(h_exception()), file, line, p2i(thread),
+                           Universe::vm_exception()->print_value_string());
+    }
+    log_exception_stacktrace(h_exception);
     // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
@@ -146,15 +148,17 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   ResourceMark rm(thread);
   assert(h_exception() != nullptr, "exception should not be null");
 
-  // tracing (do this up front - so it works during boot strapping)
-  // Note, the print_value_string() argument is not called unless logging is enabled!
-  log_info(exceptions)("Exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
-                       "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
-                       MAX_LEN, h_exception->print_value_string(),
-                       message ? ": " : "",
-                       MAX_LEN, message ? message : "",
-                       p2i(h_exception()), file, line, p2i(thread));
-  maybe_log_call_stack(h_exception, false);
+  if (log_is_enabled(Info, exceptions)) {
+    // tracing (do this up front - so it works during boot strapping)
+    // Note, the print_value_string() argument is not called unless logging is enabled!
+    log_info(exceptions)("Exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
+                         "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
+                         MAX_LEN, h_exception->print_value_string(),
+                         message ? ": " : "",
+                         MAX_LEN, message ? message : "",
+                         p2i(h_exception()), file, line, p2i(thread));
+  }
+  log_exception_stacktrace(h_exception);
 
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
@@ -598,7 +602,7 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
 }
 
 // for logging exceptions
-void Exceptions::log_exception(Handle exception, const char* message, bool is_throw_bytecode) {
+void Exceptions::log_exception(Handle exception, const char* message) {
   ResourceMark rm;
   const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
   if (detail_message != nullptr) {
@@ -611,34 +615,25 @@ void Exceptions::log_exception(Handle exception, const char* message, bool is_th
                          MAX_LEN, exception->print_value_string(),
                          MAX_LEN, message);
   }
-  maybe_log_call_stack(exception, !is_throw_bytecode);
 }
-
-// We don't want to use an OopHandle, or else we may prevent this object from being collected.
-// Whenever a GC happens, this will be cleared by Exceptions::clear_logging_cache().
-static oop _last_logged_exception;
 
 // This should be called only from a live Java thread.
-void Exceptions::maybe_log_call_stack(Handle exception, bool omit_if_same) {
+void Exceptions::log_exception_stacktrace(Handle exception) {
   LogStreamHandle(Info, exceptions, stacktrace) st;
   if (st.is_enabled()) {
-    oop exception_oop = exception();
-    oop old_exception = NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(&_last_logged_exception, exception_oop);
-    if (omit_if_same && old_exception == exception_oop) {
-      // This is called again when InterpreterRuntime::exception_handler_for_exception() is looking for
-      // an exception handler. Don't print the stack again to avoid excessive output.
-      //
-      // TODO: we should cache one exception per JavaThread, or else concurrently thrown exceptions
-      // may cause excessive logging (this is probably rare).
-    } else {
-      JavaThread* t = JavaThread::current();
-      if (t->has_last_Java_frame()) {
-        t->print_active_stack_on(&st);
+    JavaThread* t = JavaThread::current();
+    if (t->has_last_Java_frame()) {
+      ResourceMark rm;
+      const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
+      if (detail_message != nullptr) {
+        st.print_cr("Exception <%.*s: %.*s>",
+                     MAX_LEN, exception->print_value_string(),
+                     MAX_LEN, detail_message);
+      } else {
+        st.print_cr("Exception <%.*s>",
+             MAX_LEN, exception->print_value_string());
       }
+      t->print_active_stack_on(&st);
     }
   }
-}
-
-void Exceptions::clear_logging_cache() {
-  NativeAccess<>::oop_store(&_last_logged_exception, nullptr);
 }
