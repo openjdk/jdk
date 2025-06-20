@@ -85,7 +85,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
     }
 
     @Override
-    boolean isCheckingDisabled() {
+    protected boolean isCheckingDisabled() {
         return false;
     }
 

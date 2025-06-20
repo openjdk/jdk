@@ -61,7 +61,8 @@ import javax.security.auth.x500.X500Principal;
  * password.
  * <p>
  * Algorithm constraints and certificate checks can be disabled by setting
- * "jdk.tls.SunX509keymanager.certSelectionChecking" system property to "false".
+ * "jdk.tls.SunX509keymanager.certSelectionChecking" system property to "false"
+ * before calling a class constructor.
  *
  */
 
@@ -74,7 +75,7 @@ final class SunX509KeyManagerImpl extends X509KeyManagerCertChecking {
     private final Map<String, X509Credentials> credentialsMap;
 
     @Override
-    boolean isCheckingDisabled() {
+    protected boolean isCheckingDisabled() {
         return "false".equalsIgnoreCase(System.getProperty(
                 "jdk.tls.SunX509keymanager.certSelectionChecking", "true"));
     }

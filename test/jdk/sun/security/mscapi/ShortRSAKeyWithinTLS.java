@@ -29,6 +29,7 @@
  * @modules java.base/sun.security.util
  *          java.base/sun.security.tools.keytool
  *          java.base/sun.security.x509
+ * @library /test/lib
  * @run main ShortRSAKeyWithinTLS 1024
  * @run main ShortRSAKeyWithinTLS 768
  * @run main ShortRSAKeyWithinTLS 512
@@ -42,6 +43,7 @@ import java.security.cert.*;
 import javax.net.*;
 import javax.net.ssl.*;
 
+import jdk.test.lib.security.SecurityUtils;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.util.KeyUtil;
 import sun.security.x509.X500Name;
@@ -233,9 +235,9 @@ public class ShortRSAKeyWithinTLS {
     private static String clientCiperSuite = null;
 
     public static void main(String[] args) throws Exception {
-        // Disable KeyManager's algorithm constraints checking.
-        System.setProperty(
-                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
+        // Make sure we don't block the key on algorithm constraints check.
+        SecurityUtils.removeFromDisabledAlgs("jdk.certpath.disabledAlgorithms",
+                List.of("RSA keySize < 1024"));
 
         if (debug) {
             System.setProperty("javax.net.debug", "all");

@@ -39,7 +39,6 @@
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.Security;
 import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -49,7 +48,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class PrintSSL {
 
     public static void main(String[] args) throws Throwable {
-        // Disable KeyManager's algorithm constraints checking.
+        // Disable KeyManager's algorithm constraints checking,
+        // so we can make keytool print certificate with weak
+        // MD5withRSA signature algorithm.
         System.setProperty(
                 "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
 

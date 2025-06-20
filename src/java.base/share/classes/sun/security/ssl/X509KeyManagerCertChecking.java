@@ -68,6 +68,91 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
 
     abstract boolean isCheckingDisabled();
 
+    // Entry point to do all certificate checks.
+    protected EntryStatus checkAlias(int keyStoreIndex, String alias,
+            Certificate[] chain, Date verificationDate, List<KeyType> keyTypes,
+            Set<X500Principal> issuerSet, CheckType checkType,
+            AlgorithmConstraints constraints,
+            List<SNIServerName> requestedServerNames, String idAlgorithm) {
+
+        // --- Mandatory checks ---
+
+        if ((chain == null) || (chain.length == 0)) {
+            return null;
+        }
+
+        for (Certificate cert : chain) {
+            if (!(cert instanceof X509Certificate)) {
+                // Not an X509Certificate, ignore this alias
+                return null;
+            }
+        }
+
+        // Check key type, get key type index.
+        int keyIndex = -1;
+        int j = 0;
+
+        for (KeyType keyType : keyTypes) {
+            if (keyType.matches(chain)) {
+                keyIndex = j;
+                break;
+            }
+            j++;
+        }
+
+        if (keyIndex == -1) {
+            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                SSLLogger.fine("Ignore alias " + alias
+                        + ": key algorithm does not match");
+            }
+            return null;
+        }
+
+        // Check issuers
+        if (issuerSet != null && !issuerSet.isEmpty()) {
+            boolean found = false;
+            for (Certificate cert : chain) {
+                X509Certificate xcert = (X509Certificate) cert;
+                if (issuerSet.contains(xcert.getIssuerX500Principal())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                    SSLLogger.fine(
+                            "Ignore alias " + alias
+                                    + ": issuers do not match");
+                }
+                return null;
+            }
+        }
+
+        // --- Optional checks, depending on "checksDisabled" toggle ---
+
+        // Check the algorithm constraints
+        if (constraints != null &&
+                !conformsToAlgorithmConstraints(constraints, chain,
+                        checkType.getValidator())) {
+
+            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                SSLLogger.fine("Ignore alias " + alias +
+                        ": certificate chain does not conform to " +
+                        "algorithm constraints");
+            }
+            return null;
+        }
+
+        // Endpoint certificate check
+        CheckResult checkResult = certificateCheck(checkType,
+                (X509Certificate) chain[0],
+                verificationDate == null ? new Date() : verificationDate,
+                requestedServerNames, idAlgorithm);
+
+        return new EntryStatus(
+                keyStoreIndex, keyIndex, alias, chain, checkResult);
+    }
+
     // Gets algorithm constraints of the socket.
     protected AlgorithmConstraints getAlgorithmConstraints(Socket socket) {
 
@@ -477,91 +562,5 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         } else {
             return null;
         }
-    }
-
-    // Entry point to do all certificate checks.
-    protected EntryStatus checkAlias(int keyStoreIndex, String alias,
-            Certificate[] chain, Date verificationDate, List<KeyType> keyTypes,
-            Set<X500Principal> issuerSet, CheckType checkType,
-            AlgorithmConstraints constraints,
-            List<SNIServerName> requestedServerNames, String idAlgorithm) {
-
-        // --- Mandatory checks ---
-
-        if ((chain == null) || (chain.length == 0)) {
-            // Must be secret key entry, ignore
-            return null;
-        }
-
-        for (Certificate cert : chain) {
-            if (!(cert instanceof X509Certificate)) {
-                // Not an X509Certificate, ignore this alias
-                return null;
-            }
-        }
-
-        // Check keytype
-        int keyIndex = -1;
-        int j = 0;
-
-        for (KeyType keyType : keyTypes) {
-            if (keyType.matches(chain)) {
-                keyIndex = j;
-                break;
-            }
-            j++;
-        }
-
-        if (keyIndex == -1) {
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                SSLLogger.fine("Ignore alias " + alias
-                        + ": key algorithm does not match");
-            }
-            return null;
-        }
-
-        // Check issuers
-        if (issuerSet != null && !issuerSet.isEmpty()) {
-            boolean found = false;
-            for (Certificate cert : chain) {
-                X509Certificate xcert = (X509Certificate) cert;
-                if (issuerSet.contains(xcert.getIssuerX500Principal())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                    SSLLogger.fine(
-                            "Ignore alias " + alias
-                                    + ": issuers do not match");
-                }
-                return null;
-            }
-        }
-
-        // --- Optional checks, depending on "checksDisabled" toggle ---
-
-        // Check the algorithm constraints
-        if (constraints != null &&
-                !conformsToAlgorithmConstraints(constraints, chain,
-                        checkType.getValidator())) {
-
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                SSLLogger.fine("Ignore alias " + alias +
-                        ": certificate chain does not conform to " +
-                        "algorithm constraints");
-            }
-            return null;
-        }
-
-        // Endpoint certificate check
-        CheckResult checkResult = certificateCheck(checkType,
-                (X509Certificate) chain[0],
-                verificationDate == null ? new Date() : verificationDate,
-                requestedServerNames, idAlgorithm);
-
-        return new EntryStatus(
-                keyStoreIndex, keyIndex, alias, chain, checkResult);
     }
 }
