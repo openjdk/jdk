@@ -183,10 +183,10 @@ class VM_GC_HeapInspection : public VM_GC_Service_Operation {
   VM_GC_HeapInspection(outputStream* out, bool request_full_gc,
                        uint parallel_thread_num = 1) :
     VM_GC_Service_Operation(0 /* total collections,      dummy, ignored */,
-                    GCCause::_heap_inspection /* GC Cause */,
-                    0 /* total full collections, dummy, ignored */,
-                    request_full_gc), _out(out), _full_gc(request_full_gc),
-                    _parallel_thread_num(parallel_thread_num) {}
+                            GCCause::_heap_inspection /* GC Cause */,
+                            0 /* total full collections, dummy, ignored */,
+                            request_full_gc), _out(out), _full_gc(request_full_gc),
+                            _parallel_thread_num(parallel_thread_num) {}
 
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }
