@@ -203,6 +203,7 @@ public:
   void refine_strip_mined_loop_macro_nodes();
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
+  void eliminate_opaque_looplimit_macro_nodes();
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
   static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);
