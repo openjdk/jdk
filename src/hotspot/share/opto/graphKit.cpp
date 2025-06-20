@@ -3803,6 +3803,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     assert(!StressReflectiveCode, "stress mode does not use these paths");
     // Increase the size limit if we have exact knowledge of array type.
     int log2_esize = Klass::layout_helper_log2_element_size(layout_con);
+    assert(fast_size_limit == 0 || count_leading_zeros(fast_size_limit) > static_cast<unsigned>(LogBytesPerLong - log2_esize),
+           "fast_size_limit (%d) overflow when shifted left by %d", fast_size_limit, LogBytesPerLong - log2_esize);
     fast_size_limit <<= (LogBytesPerLong - log2_esize);
   }
 
