@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @requires vm.flagless
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile test-classes/Hello.java ClassSpecializerTestApp.java ClassListWithCustomClassNoSource.java
  * @run main/othervm TestDumpClassListSource
