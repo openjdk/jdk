@@ -2180,6 +2180,7 @@ void nmethod::purge(bool unregister_nmethod) {
   }
   CodeCache::unregister_old_nmethod(this);
 
+  JVMCI_ONLY( _metadata_size = 0; )
   CodeBlob::purge();
 }
 
