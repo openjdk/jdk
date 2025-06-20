@@ -49,7 +49,7 @@ public:
       // up by 1.
       T* pos = current;
       while (pos > begin) {
-        // Since the sort is stable, we must insert the current element at the first location at
+        // Because the sort is stable, we must insert the current element at the first location at
         // which the element is not greater than the current element (note that we are traversing
         // backward)
         T* prev = pos - 1;
