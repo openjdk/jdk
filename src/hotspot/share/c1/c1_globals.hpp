@@ -274,12 +274,6 @@
   develop(bool, InstallMethods, true,                                       \
           "Install methods at the end of successful compilations")          \
                                                                             \
-  /* The compiler assumes, in many places, that methods are at most 1MB. */ \
-  /* Therefore, we restrict this flag to at most 1MB.                    */ \
-  develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
-          "Maximum size of a compiled method.")                             \
-          range(0, 1*M)                                                     \
-                                                                            \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \
           range(0, max_jint)                                                \
