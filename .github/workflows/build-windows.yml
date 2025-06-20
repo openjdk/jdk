@@ -161,6 +161,8 @@ jobs:
           echo "BUILD_PLATFORM: ${BUILD_PLATFORM:-not set}" &&
           echo "HOST_PLATFORM: ${HOST_PLATFORM:-not set}" &&
           echo "TARGET_PLATFORM: ${TARGET_PLATFORM:-not set}" &&
+          echo "Remove /etc/config.site" &&
+          rm -f /etc/config.site &&
           echo "=== Running Configure ===" &&
           bash -x configure
           --with-conf-name=${{ inputs.platform }}
@@ -181,7 +183,6 @@ jobs:
           # We need a minimal PATH on Windows
           # Set PATH to "", so just GITHUB_PATH is included
           PATH: ''
-          CONFIG_SITE: ''
         shell: env /usr/bin/bash --login -eo pipefail {0}
         if: ${{ inputs.dry-run == false }}
 
