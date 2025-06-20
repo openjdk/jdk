@@ -698,7 +698,10 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //              that the divident is zero or negative, and so the result will be zero or
 //              negative. Thus, we can just clamp the result to zero, to get a general solution:
 //
-//              k = MAX(0, (limit - init - 1) / abs(stride))
+//              k = (limit - init - 1) / abs(stride)
+//              last = MAX(init, init + k * stride)
+//              TODO: not sure how exactly to do the clamping. Should I do it at all???
+//                    would be nice if it did not prevent the masking instead of div...
 //
 //     If stride < 0:
 //         limit                               <  last              <=   limit        - stride
@@ -738,22 +741,18 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //                  |
 //   Pre-Loop       | +----------------+
 //                  phi                |
-//                   |                 |
-//                   + pre_iv_stride   |
 //                   |                 |  -> pre_last: last iv value in pre-loop
+//                   + pre_iv_stride   |
 //                   |-----------------+
-//                   |
 //                   | exit check: < pre_limit
 //                   |
 //                   | iv = main_init = init
 //                   |
 //   Main-Loop       | +------------------------------+
 //                   phi                              |
-//                    |                               |
-//                    + main_iv_stride = iv_stride    |
 //                    |                               | -> last: last iv value in main-loop
+//                    + main_iv_stride = iv_stride    |
 //                    |-------------------------------+
-//                    |
 //                    | exit check: < main_limit = limit
 //
 // Unfortunately, the init (aka. main_init) is not pre-loop invariant, rather it is only available
@@ -790,32 +789,63 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
   // The speculative aliasing check happens either at the AutoVectorization predicate
   // or at the multiversion_if. That is before the pre-loop. From the construction of
   // VPointer, we already know that all its variables (except iv) are pre-loop invariant.
-  // For the check, we are going to replace the iv with init, and in some cases we also
-  // use the limit in the check. Hence, we must check that the init is also pre-loop
-  // invariant, and if the limit is used it must also be pre-loop invarinat.
-  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
-  Node* init = pre_opaq->in(1);
-  Node* limit = _vloop.cl()->limit();
+  //
+  // For the computation of main_init, we also need the pre_limit, and so we need
+  // to check that this value is pre-loop invariant. In the case of non-equal iv_scales,
+  // we also need toe main_limit in the aliasing check, and so this value must then
+  // also be pre-loop invariant.
+  Opaque1Node* pre_limit_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* pre_limit = pre_limit_opaq->in(1);
+  Node* main_limit = _vloop.cl()->limit();
 
-  if (!_vloop.is_pre_loop_invariant(init)) {
+  if (!_vloop.is_pre_loop_invariant(pre_limit)) {
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis()) {
-      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: init is not pre-loop independent!");
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: pre_limit is not pre-loop independent!");
     }
 #endif
     return false;
   }
 
-  if (vp1.iv_scale() != vp2.iv_scale() && !_vloop.is_pre_loop_invariant(limit)) {
+  if (vp1.iv_scale() != vp2.iv_scale() && !_vloop.is_pre_loop_invariant(main_limit)) {
 #ifdef ASSERT
     if (_vloop.is_trace_speculative_aliasing_analysis()) {
-      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: limit is not pre-loop independent!");
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: main_limit is not pre-loop independent!");
     }
 #endif
     return false;
   }
 
   return true;
+}
+
+Node* make_last(Node* initL, jint stride, Node* limitL, PhaseIdealLoop* phase) {
+  PhaseIterGVN& igvn = phase->igvn();
+
+  // TODO: for now I'll just ignore clamping, we have to think about it again later.
+
+//     If stride > 0:  k = MAX(0, (limit - init - 1) / abs(stride))
+//     If stride < 0:  k = MAX(0, (init - limit - 1) / abs(stride))
+//     return init + k * stride
+  Node* abs_strideL = igvn.longcon(abs(stride));
+  Node* strideL = igvn.longcon(stride);
+
+  Node* diffL = (stride > 0) ? new SubLNode(limitL, initL)
+                             : new SubLNode(initL, limitL);
+  Node* diffL_m1 = new AddLNode(diffL, igvn.longcon(-1));
+  Node* k = new DivLNode(nullptr, diffL_m1, abs_strideL);
+
+  // Compute last = init + k * iv_stride
+  Node* k_mul_stride = new MulLNode(k, strideL);
+  Node* last = new AddLNode(initL, k_mul_stride);
+
+  phase->register_new_node_with_ctrl_of(diffL,        initL);
+  phase->register_new_node_with_ctrl_of(diffL_m1,     initL);
+  phase->register_new_node_with_ctrl_of(k,            initL);
+  phase->register_new_node_with_ctrl_of(k_mul_stride, initL);
+  phase->register_new_node_with_ctrl_of(last,         initL);
+
+  return last;
 }
 
 BoolNode* make_a_plus_b_leq_c(Node* a, Node* b, Node* c, PhaseIdealLoop* phase) {
@@ -837,139 +867,154 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   PhaseIdealLoop* phase = _vloop.phase();
   PhaseIterGVN& igvn = phase->igvn();
 
-  // The main-init is usually dependent on the pre-loop iv, and so it is not pre-loop independent,
-  // i.e. we canot use it before the pre-loop. But we can use the pre-loop limit, it is pre-loop
-  // independent in most cases.
-  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
-  Node* init = pre_opaq->in(1);
-  Node* limit = _vloop.cl()->limit();
+  // init (aka main_init): compute it from the the pre-loop structure.
+  // As described above, we cannot just take the _vloop.cl().init_trip(), because that
+  // value is pre-loop dependent, and we need a pre-loop independent value, so we can
+  // have it available at the predicate / multiversioning selector_if.
+  // For this, we need to be sure that the pre_limit is pre-loop independent as well,
+  // see can_make_speculative_aliasing_check_with.
+  Node* pre_init = _vloop.pre_loop_end()->init_trip();
+  jint pre_iv_stride = _vloop.pre_loop_end()->stride_con();
+  Opaque1Node* pre_limit_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* pre_limit = pre_limit_opaq->in(1);
+  assert(_vloop.is_pre_loop_invariant(pre_init),  "needed for aliasing check before pre-loop");
+  assert(_vloop.is_pre_loop_invariant(pre_limit), "needed for aliasing check before pre-loop");
 
-  Node* p1_init = vp1.make_pointer_expression(init);
-  Node* p2_init = vp2.make_pointer_expression(init);
-  Node* size1 = igvn.longcon(vp1.size());
-  Node* size2 = igvn.longcon(vp2.size());
+  Node* pre_initL = new ConvI2LNode(pre_init);
+  Node* pre_limitL = new ConvI2LNode(pre_limit);
+  phase->register_new_node_with_ctrl_of(pre_initL, pre_init);
+  phase->register_new_node_with_ctrl_of(pre_limitL, pre_init);
 
-#ifdef ASSERT
-  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-    tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
-    tty->print("init:  "); init->dump();
-    tty->print("limit: "); limit->dump();
-    tty->print_cr("p1_init:");
-    p1_init->dump_bfs(5, nullptr, "");
-    tty->print_cr("p2_init:");
-    p2_init->dump_bfs(5, nullptr, "");
-  }
-#endif
+  Node* pre_lastL = make_last(pre_initL, pre_iv_stride, pre_limitL, phase);
 
-  BoolNode* condition1 = nullptr;
-  BoolNode* condition2 = nullptr;
-  if (vp1.iv_scale() == vp2.iv_scale()) {
-#ifdef ASSERT
-    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-      tty->print_cr("  p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)");
-      tty->print_cr("  -------- condition1 --------      ------- condition2 ---------");
-    }
-#endif
-    condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
-    condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
-  } else {
-    // p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
-    // p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
-    // ---------------- condition1 ----------------      --------------- condition2 -----------------
-    Node* initL  = new ConvI2LNode(init);
-    Node* limitL = new ConvI2LNode(limit);
-    Node* iv_strideL = igvn.longcon(_vloop.iv_stride());
-    Node* abs_iv_strideL = igvn.longcon(abs(_vloop.iv_stride()));
+  Node* main_initL = new AddLNode(pre_lastL, igvn.longcon(pre_iv_stride));
+  phase->register_new_node_with_ctrl_of(main_initL, pre_init);
 
-    // Compute k = (limit - init - 1) /     iv_stride    (if iv_stride >= 0)
-    //         k = (init - limit - 1) / abs(iv_stride)   (if iv_stride <= 0)
-    Node* diffL = (_vloop.iv_stride() > 0) ? new SubLNode(limitL, initL)
-                                           : new SubLNode(initL, limitL);
-    Node* diffL_m1 = new AddLNode(diffL, igvn.longcon(-1));
-    Node* k = new DivLNode(nullptr, diffL_m1, abs_iv_strideL);
-
-    // Compute last = init + k * iv_stride
-    Node* k_mul_iv_stride = new MulLNode(k, iv_strideL);
-    Node* last = new AddLNode(initL, k_mul_iv_stride);
-
-    // Compute span1 = (last - init) * iv_scale1
-    //         span2 = (last - init) * iv_scale2
-    Node* last_minus_init = new SubLNode(last, initL);
-    Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
-    Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
-    Node* span1 = new MulLNode(last_minus_init, iv_scale1);
-    Node* span2 = new MulLNode(last_minus_init, iv_scale2);
-
-    phase->register_new_node_with_ctrl_of(initL,           init);
-    phase->register_new_node_with_ctrl_of(limitL,          init);
-    phase->register_new_node_with_ctrl_of(diffL,           init);
-    phase->register_new_node_with_ctrl_of(diffL_m1,        init);
-    phase->register_new_node_with_ctrl_of(k,               init);
-    phase->register_new_node_with_ctrl_of(k_mul_iv_stride, init);
-    phase->register_new_node_with_ctrl_of(last,            init);
-    phase->register_new_node_with_ctrl_of(last_minus_init, init);
-    phase->register_new_node_with_ctrl_of(span1,           init);
-    phase->register_new_node_with_ctrl_of(span2,           init);
-
-    // In the proof, we assumend: iv_scale1 < iv_scale2.
-    if (vp1.iv_scale() > vp2.iv_scale()) {
-      swap(p1_init, p2_init);
-      swap(size1, size2);
-      swap(span1, span2);
-    }
-
-#ifdef ASSERT
-    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-      tty->print("p1_init: "); p1_init->dump();
-      tty->print("p2_init: "); p2_init->dump();
-      tty->print("size1: "); size1->dump();
-      tty->print("size2: "); size2->dump();
-      tty->print_cr("span1: "); span1->dump_bfs(5, nullptr, "");
-      tty->print_cr("span2: "); span2->dump_bfs(5, nullptr, "");
-    }
-#endif
-
-    Node* p1_init_plus_span1 = new AddLNode(p1_init, span1);
-    Node* p2_init_plus_span2 = new AddLNode(p2_init, span2);
-    phase->register_new_node_with_ctrl_of(p1_init_plus_span1, init);
-    phase->register_new_node_with_ctrl_of(p2_init_plus_span2, init);
-    if (_vloop.iv_stride() >= 0) {
-      condition1 = make_a_plus_b_leq_c(p1_init,            size1, p2_init,            phase);
-      condition2 = make_a_plus_b_leq_c(p2_init_plus_span2, size2, p1_init_plus_span1, phase);
-    } else {
-      condition1 = make_a_plus_b_leq_c(p1_init_plus_span1, size1, p2_init_plus_span2, phase);
-      condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase);
-    }
-  }
-
-#ifdef ASSERT
-  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-    tty->print_cr("condition1:");
-    condition1->dump_bfs(5, nullptr, "");
-    tty->print_cr("condition2:");
-    condition2->dump_bfs(5, nullptr, "");
-  }
-#endif
-
-  // Construct "condition1 OR condition2". Convert the bol value back to an int value
-  // that we can "OR" to create a single bol value. On x64, the two CMove are converted
-  // to two setbe instructions which capture the condition bits to a register, meaning
-  // we only have a single branch in the end.
-  Node* zero = igvn.intcon(0);
-  Node* one  = igvn.intcon(1);
-  Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
-  Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
-  phase->register_new_node_with_ctrl_of(cmov1, init);
-  phase->register_new_node_with_ctrl_of(cmov2, init);
-
-  Node* c1_or_c2 = new OrINode(cmov1, cmov2);
-  Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
-  BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
-  phase->register_new_node_with_ctrl_of(c1_or_c2, init);
-  phase->register_new_node_with_ctrl_of(cmp, init);
-  phase->register_new_node_with_ctrl_of(bol, init);
-
-  return bol;
+  assert(false, "debug");
+  return nullptr;
+// x //  Node* limit = _vloop.cl()->limit();
+// x //
+// x //  Node* p1_init = vp1.make_pointer_expression(init);
+// x //  Node* p2_init = vp2.make_pointer_expression(init);
+// x //  Node* size1 = igvn.longcon(vp1.size());
+// x //  Node* size2 = igvn.longcon(vp2.size());
+// x //
+// x //#ifdef ASSERT
+// x //  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+// x //    tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
+// x //    tty->print("init:  "); init->dump();
+// x //    tty->print("limit: "); limit->dump();
+// x //    tty->print_cr("p1_init:");
+// x //    p1_init->dump_bfs(5, nullptr, "");
+// x //    tty->print_cr("p2_init:");
+// x //    p2_init->dump_bfs(5, nullptr, "");
+// x //  }
+// x //#endif
+// x //
+// x //  BoolNode* condition1 = nullptr;
+// x //  BoolNode* condition2 = nullptr;
+// x //  if (vp1.iv_scale() == vp2.iv_scale()) {
+// x //#ifdef ASSERT
+// x //    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+// x //      tty->print_cr("  p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)");
+// x //      tty->print_cr("  -------- condition1 --------      ------- condition2 ---------");
+// x //    }
+// x //#endif
+// x //    condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
+// x //    condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
+// x //  } else {
+// x //    // p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
+// x //    // p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+// x //    // ---------------- condition1 ----------------      --------------- condition2 -----------------
+// x //    Node* initL  = new ConvI2LNode(init);
+// x //    Node* limitL = new ConvI2LNode(limit);
+// x //    Node* iv_strideL = igvn.longcon(_vloop.iv_stride());
+// x //    Node* abs_iv_strideL = igvn.longcon(abs(_vloop.iv_stride()));
+// x //
+// x //    Node* pre_last = make_last(pre_initL, pre_iv_stride, pre_limitL);
+// x //
+// x //    Node* initL = new AddL(pre_last, pre_iv_strideL);
+// x //
+// x //    Node* last = make_last(initL, iv_stride, limitL);
+// x //
+// x //    // Compute span1 = (last - init) * iv_scale1
+// x //    //         span2 = (last - init) * iv_scale2
+// x //    Node* last_minus_init = new SubLNode(last, initL);
+// x //    Node* iv_scale1 = igvn.longcon(vp1.iv_scale());
+// x //    Node* iv_scale2 = igvn.longcon(vp2.iv_scale());
+// x //    Node* span1 = new MulLNode(last_minus_init, iv_scale1);
+// x //    Node* span2 = new MulLNode(last_minus_init, iv_scale2);
+// x //
+// x //    phase->register_new_node_with_ctrl_of(initL,           init);
+// x //    phase->register_new_node_with_ctrl_of(limitL,          init);
+// x //    phase->register_new_node_with_ctrl_of(diffL,           init);
+// x //    phase->register_new_node_with_ctrl_of(diffL_m1,        init);
+// x //    phase->register_new_node_with_ctrl_of(k,               init);
+// x //    phase->register_new_node_with_ctrl_of(k_mul_iv_stride, init);
+// x //    phase->register_new_node_with_ctrl_of(last,            init);
+// x //    phase->register_new_node_with_ctrl_of(last_minus_init, init);
+// x //    phase->register_new_node_with_ctrl_of(span1,           init);
+// x //    phase->register_new_node_with_ctrl_of(span2,           init);
+// x //
+// x //    // In the proof, we assumend: iv_scale1 < iv_scale2.
+// x //    if (vp1.iv_scale() > vp2.iv_scale()) {
+// x //      swap(p1_init, p2_init);
+// x //      swap(size1, size2);
+// x //      swap(span1, span2);
+// x //    }
+// x //
+// x //#ifdef ASSERT
+// x //    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+// x //      tty->print("p1_init: "); p1_init->dump();
+// x //      tty->print("p2_init: "); p2_init->dump();
+// x //      tty->print("size1: "); size1->dump();
+// x //      tty->print("size2: "); size2->dump();
+// x //      tty->print_cr("span1: "); span1->dump_bfs(5, nullptr, "");
+// x //      tty->print_cr("span2: "); span2->dump_bfs(5, nullptr, "");
+// x //    }
+// x //#endif
+// x //
+// x //    Node* p1_init_plus_span1 = new AddLNode(p1_init, span1);
+// x //    Node* p2_init_plus_span2 = new AddLNode(p2_init, span2);
+// x //    phase->register_new_node_with_ctrl_of(p1_init_plus_span1, init);
+// x //    phase->register_new_node_with_ctrl_of(p2_init_plus_span2, init);
+// x //    if (_vloop.iv_stride() >= 0) {
+// x //      condition1 = make_a_plus_b_leq_c(p1_init,            size1, p2_init,            phase);
+// x //      condition2 = make_a_plus_b_leq_c(p2_init_plus_span2, size2, p1_init_plus_span1, phase);
+// x //    } else {
+// x //      condition1 = make_a_plus_b_leq_c(p1_init_plus_span1, size1, p2_init_plus_span2, phase);
+// x //      condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase);
+// x //    }
+// x //  }
+// x //
+// x //#ifdef ASSERT
+// x //  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+// x //    tty->print_cr("condition1:");
+// x //    condition1->dump_bfs(5, nullptr, "");
+// x //    tty->print_cr("condition2:");
+// x //    condition2->dump_bfs(5, nullptr, "");
+// x //  }
+// x //#endif
+// x //
+// x //  // Construct "condition1 OR condition2". Convert the bol value back to an int value
+// x //  // that we can "OR" to create a single bol value. On x64, the two CMove are converted
+// x //  // to two setbe instructions which capture the condition bits to a register, meaning
+// x //  // we only have a single branch in the end.
+// x //  Node* zero = igvn.intcon(0);
+// x //  Node* one  = igvn.intcon(1);
+// x //  Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
+// x //  Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
+// x //  phase->register_new_node_with_ctrl_of(cmov1, init);
+// x //  phase->register_new_node_with_ctrl_of(cmov2, init);
+// x //
+// x //  Node* c1_or_c2 = new OrINode(cmov1, cmov2);
+// x //  Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
+// x //  BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
+// x //  phase->register_new_node_with_ctrl_of(c1_or_c2, init);
+// x //  phase->register_new_node_with_ctrl_of(cmp, init);
+// x //  phase->register_new_node_with_ctrl_of(bol, init);
+// x //
+// x //  return bol;
 }
 
 Node* VPointer::make_pointer_expression(Node* iv_value) const {
