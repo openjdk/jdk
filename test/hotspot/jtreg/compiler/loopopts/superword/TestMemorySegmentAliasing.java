@@ -812,7 +812,7 @@ class TestMemorySegmentAliasingImpl {
         applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test_fill_int_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
-        for (long i = 0; i < limit; i+=4) {
+        for (long i = 0; i <= limit - 4; i+=4) {
             a.set(ValueLayout.JAVA_INT_UNALIGNED, invar1 + i, 0x01020304);
             b.set(ValueLayout.JAVA_INT_UNALIGNED, invar2 - i, 0x11121314);
         }
@@ -820,7 +820,7 @@ class TestMemorySegmentAliasingImpl {
 
     @DontCompile
     static void reference_fill_int_sameMS_noalias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
-        for (long i = 0; i < limit; i+=4) {
+        for (long i = 0; i <= limit - 4; i+=4) {
             a.set(ValueLayout.JAVA_INT_UNALIGNED, invar1 + i, 0x01020304);
             b.set(ValueLayout.JAVA_INT_UNALIGNED, invar2 - i, 0x11121314);
         }
@@ -838,7 +838,7 @@ class TestMemorySegmentAliasingImpl {
     //
     // Note: we may or may not use multiversioning, depending if we alias or not at runtime.
     static void test_fill_int_sameMS_maybeAlias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
-        for (long i = 0; i < limit; i+=4) {
+        for (long i = 0; i <= limit - 4; i+=4) {
             a.set(ValueLayout.JAVA_INT_UNALIGNED, invar1 + i, 0x01020304);
             b.set(ValueLayout.JAVA_INT_UNALIGNED, invar2 - i, 0x11121314);
         }
@@ -846,7 +846,7 @@ class TestMemorySegmentAliasingImpl {
 
     @DontCompile
     static void reference_fill_int_sameMS_maybeAlias(MemorySegment a, MemorySegment b, long invar1, long invar2, long limit) {
-        for (long i = 0; i < limit; i+=4) {
+        for (long i = 0; i <= limit - 4; i+=4) {
             a.set(ValueLayout.JAVA_INT_UNALIGNED, invar1 + i, 0x01020304);
             b.set(ValueLayout.JAVA_INT_UNALIGNED, invar2 - i, 0x11121314);
         }
