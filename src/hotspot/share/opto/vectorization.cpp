@@ -716,12 +716,11 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //     -> dividend "limit - init - 1" is >=0. So a regular round to zero division can be used.
 //        Note: to incorporate the case where the loop is not entered (init >= limit), we see
 //              that the divident is zero or negative, and so the result will be zero or
-//              negative. Thus, we can just clamp the result to zero, to get a general solution:
+//              negative. Thus, we can just clamp k to zero, or last to init, so that we get
+//              a solution that also works when the loop is not entered:
 //
 //              k = (limit - init - 1) / abs(stride)
 //              last = MAX(init, init + k * stride)
-//              TODO: not sure how exactly to do the clamping. Should I do it at all???
-//                    would be nice if it did not prevent the masking instead of div...
 //
 //     If stride < 0:
 //         limit                               <  last              <=   limit        - stride
@@ -737,15 +736,23 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //     -> dividend "init - limit" is >=0. So a regular round to zero division can be used.
 //        Note: to incorporate the case where the loop is not entered (init <= limit), we see
 //              that the divident is zero or negative, and so the result will be zero or
-//              negative. Thus, we can just clamp the result to zero, to get a general solution:
+//              negative. Thus, we can just clamp k to zero, or last to init, so that we get
+//              a solution that also works when the loop is not entered:
 //
-//              k = MAX(0, (init - limit - 1) / abs(stride))
+//              k = (init - stride - 1) / abs(stride)
+//              last = MAX(init, init + k * stride)
 //
 // Now we can put it all together:
 //   LAST(init, stride, limit)
-//     If stride > 0:  k = MAX(0, (limit - init - 1) / abs(stride))
-//     If stride < 0:  k = MAX(0, (init - limit - 1) / abs(stride))
-//     return init + k * stride
+//     If stride > 0:
+//       k = (limit - init - 1) / abs(stride)
+//       last = MAX(init, init + k * stride)
+//     If stride < 0:
+//       k = (init - stride - 1) / abs(stride)
+//       last = MAX(init, init + k * stride)
+//
+// We will have to consider the implications of clamping to init when the loop is not entered
+// at the use of LAST further down.
 //
 // -------------------------------------------------------------------------------------------------------------------------
 //
@@ -778,11 +785,28 @@ void VLoopDependencyGraph::PredsIterator::next() {
 // Unfortunately, the init (aka. main_init) is not pre-loop invariant, rather it is only available
 // after the pre-loop. We will have to compute:
 //
-//   init = LAST(pre_init, pre_iv_stride, pre_limit) + pre_iv_stride
+//   pre_last = LAST(pre_init, pre_iv_stride, pre_limit)
+//   init = pre_last + pre_iv_stride
 //
 // If we need "last", we unfortunately must compute it as well:
 //
 //   last = LAST(init, iv_stride, limit)
+//
+// TODO:
+//
+//
+// We must now consider the implications of executing this
+//
+// There are 3 cases:
+//  1) The pre-loop is not entered. Implies that the main-loop is not entered.
+//     And it implies that the loop limit predicate would fail, i.e. we have
+//     init > limit (if iv_stride > 0) and init < limit (if iv_stride < 0).
+//
+//     Should we be using multiversioning for the aliasing check, then we might
+//     pass or fail that aliasing check, and then go either to the fast or slow
+//     loop. There, we would immediately fail the loop limit predicate, and then
+//     compile without this predicate.
+//     Should we now execute the aliasing analysis check first
 //
 // This works well under the assumption that both the pre and the main loop are entered.
 // Of course, whenever the main-loop is entered, the pre-loop must have been entered.
@@ -839,17 +863,19 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
   return true;
 }
 
+// For description and derivation see "Computing the last iv value in a loop".
+// Note: the iv computations here should not overflow. But out of an abundance
+//       of caution, we compute everything in long anyway.
 Node* make_last(Node* initL, jint stride, Node* limitL, PhaseIdealLoop* phase) {
   PhaseIterGVN& igvn = phase->igvn();
 
-  // TODO: for now I'll just ignore clamping, we have to think about it again later.
-
-//     If stride > 0:  k = MAX(0, (limit - init - 1) / abs(stride))
-//     If stride < 0:  k = MAX(0, (init - limit - 1) / abs(stride))
-//     return init + k * stride
   Node* abs_strideL = igvn.longcon(abs(stride));
   Node* strideL = igvn.longcon(stride);
 
+  // If in some rare case the limit is "before" init, then
+  // this subtraction could overflow. Doing the calculations
+  // in long prevents this. Below, we clamp the "last" value
+  // back to init, which gets us back into the safe int range.
   Node* diffL = (stride > 0) ? new SubLNode(limitL, initL)
                              : new SubLNode(initL, limitL);
   Node* diffL_m1 = new AddLNode(diffL, igvn.longcon(-1));
@@ -914,7 +940,7 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   Node* main_initL = new AddLNode(pre_lastL, igvn.longcon(pre_iv_stride));
   phase->register_new_node_with_ctrl_of(main_initL, pre_init);
 
-  // TODO: think about overflows again
+  // TODO: think about overflows again -> refactor and do it with int iv values?
   Node* main_init = new ConvL2INode(main_initL);
   phase->register_new_node_with_ctrl_of(main_init, pre_init);
 
