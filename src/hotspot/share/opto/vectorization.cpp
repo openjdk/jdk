@@ -890,39 +890,38 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   Node* main_initL = new AddLNode(pre_lastL, igvn.longcon(pre_iv_stride));
   phase->register_new_node_with_ctrl_of(main_initL, pre_init);
 
-  assert(false, "debug");
-  return nullptr;
-// x //  Node* limit = _vloop.cl()->limit();
-// x //
-// x //  Node* p1_init = vp1.make_pointer_expression(init);
-// x //  Node* p2_init = vp2.make_pointer_expression(init);
-// x //  Node* size1 = igvn.longcon(vp1.size());
-// x //  Node* size2 = igvn.longcon(vp2.size());
-// x //
-// x //#ifdef ASSERT
-// x //  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-// x //    tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
-// x //    tty->print("init:  "); init->dump();
-// x //    tty->print("limit: "); limit->dump();
-// x //    tty->print_cr("p1_init:");
-// x //    p1_init->dump_bfs(5, nullptr, "");
-// x //    tty->print_cr("p2_init:");
-// x //    p2_init->dump_bfs(5, nullptr, "");
-// x //  }
-// x //#endif
-// x //
-// x //  BoolNode* condition1 = nullptr;
-// x //  BoolNode* condition2 = nullptr;
-// x //  if (vp1.iv_scale() == vp2.iv_scale()) {
-// x //#ifdef ASSERT
-// x //    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-// x //      tty->print_cr("  p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)");
-// x //      tty->print_cr("  -------- condition1 --------      ------- condition2 ---------");
-// x //    }
-// x //#endif
-// x //    condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
-// x //    condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
-// x //  } else {
+  Node* p1_init = vp1.make_pointer_expression(main_initL);
+  Node* p2_init = vp2.make_pointer_expression(main_initL);
+  Node* size1 = igvn.longcon(vp1.size());
+  Node* size2 = igvn.longcon(vp2.size());
+
+#ifdef ASSERT
+  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+    tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
+    tty->print("main_initL:  "); main_initL->dump();
+    tty->print_cr("p1_init:");
+    p1_init->dump_bfs(5, nullptr, "");
+    tty->print_cr("p2_init:");
+    p2_init->dump_bfs(5, nullptr, "");
+  }
+#endif
+
+  BoolNode* condition1 = nullptr;
+  BoolNode* condition2 = nullptr;
+  if (vp1.iv_scale() == vp2.iv_scale()) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print_cr("  p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)");
+      tty->print_cr("  -------- condition1 --------      ------- condition2 ---------");
+    }
+#endif
+    condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
+    condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
+  } else {
+    assert(false, "debug");
+    // TODO: compute and dump limit!
+    // also assert invariance
+    return nullptr;
 // x //    // p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
 // x //    // p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
 // x //    // ---------------- condition1 ----------------      --------------- condition2 -----------------
@@ -985,36 +984,36 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
 // x //      condition1 = make_a_plus_b_leq_c(p1_init_plus_span1, size1, p2_init_plus_span2, phase);
 // x //      condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase);
 // x //    }
-// x //  }
-// x //
-// x //#ifdef ASSERT
-// x //  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
-// x //    tty->print_cr("condition1:");
-// x //    condition1->dump_bfs(5, nullptr, "");
-// x //    tty->print_cr("condition2:");
-// x //    condition2->dump_bfs(5, nullptr, "");
-// x //  }
-// x //#endif
-// x //
-// x //  // Construct "condition1 OR condition2". Convert the bol value back to an int value
-// x //  // that we can "OR" to create a single bol value. On x64, the two CMove are converted
-// x //  // to two setbe instructions which capture the condition bits to a register, meaning
-// x //  // we only have a single branch in the end.
-// x //  Node* zero = igvn.intcon(0);
-// x //  Node* one  = igvn.intcon(1);
-// x //  Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
-// x //  Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
-// x //  phase->register_new_node_with_ctrl_of(cmov1, init);
-// x //  phase->register_new_node_with_ctrl_of(cmov2, init);
-// x //
-// x //  Node* c1_or_c2 = new OrINode(cmov1, cmov2);
-// x //  Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
-// x //  BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
-// x //  phase->register_new_node_with_ctrl_of(c1_or_c2, init);
-// x //  phase->register_new_node_with_ctrl_of(cmp, init);
-// x //  phase->register_new_node_with_ctrl_of(bol, init);
-// x //
-// x //  return bol;
+  }
+
+#ifdef ASSERT
+  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+    tty->print_cr("condition1:");
+    condition1->dump_bfs(5, nullptr, "");
+    tty->print_cr("condition2:");
+    condition2->dump_bfs(5, nullptr, "");
+  }
+#endif
+
+  // Construct "condition1 OR condition2". Convert the bol value back to an int value
+  // that we can "OR" to create a single bol value. On x64, the two CMove are converted
+  // to two setbe instructions which capture the condition bits to a register, meaning
+  // we only have a single branch in the end.
+  Node* zero = igvn.intcon(0);
+  Node* one  = igvn.intcon(1);
+  Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
+  Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
+  phase->register_new_node_with_ctrl_of(cmov1, main_initL);
+  phase->register_new_node_with_ctrl_of(cmov2, main_initL);
+
+  Node* c1_or_c2 = new OrINode(cmov1, cmov2);
+  Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
+  BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
+  phase->register_new_node_with_ctrl_of(c1_or_c2, main_initL);
+  phase->register_new_node_with_ctrl_of(cmp, main_initL);
+  phase->register_new_node_with_ctrl_of(bol, main_initL);
+
+  return bol;
 }
 
 Node* VPointer::make_pointer_expression(Node* iv_value) const {
