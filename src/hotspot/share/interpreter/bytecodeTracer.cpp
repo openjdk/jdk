@@ -36,7 +36,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/osthread.hpp"
+#include "runtime/osThread.hpp"
 #include "utilities/align.hpp"
 
 // Prints the current bytecode and its attributes using bytecode-specific information.
