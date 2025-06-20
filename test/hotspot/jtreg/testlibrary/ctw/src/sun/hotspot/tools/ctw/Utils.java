@@ -186,10 +186,10 @@ public class Utils {
     }
 
     /**
-     * Converts the filename to classname.
+     * Converts the {@code /}-separated filename to its corresponding class name.
      *
      * @param filename filename to convert
-     * @return corresponding classname
+     * @return corresponding class name
      * @throws AssertionError if filename isn't valid filename for class file -
      *                        {@link #isClassFile(String)}
      */
@@ -200,6 +200,14 @@ public class Utils {
                        .replace(nameSeparator, '.');
     }
 
+    /**
+     * Converts a fully qualified class name to a {@code /}-separated filename.
+     *
+     * @param classname fully qualified class name to convert
+     * @return corresponding filename
+     * @throws AssertionError if filename isn't valid filename for class file -
+     *                        {@link #isClassFile(String)}
+     */
     public static String classNameToFileName(String classname) {
         return classname.replace('.', '/')
                         .concat(CLASSFILE_EXT);
