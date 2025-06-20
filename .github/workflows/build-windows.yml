@@ -129,7 +129,7 @@ jobs:
         id: toolchain-check
         run: |
           set +e
-          if [ "${{ inputs.msvc-toolset-architecture }}" = "arm64" ]; then
+          if [ "${{ inputs.msvc-toolset-architecture }}" = "ARM64" ]; then
             vcvars="vcvarsarm64.bat"
           else
             vcvars="vcvars64.bat"
