@@ -1040,3 +1040,14 @@ bool Metaspace::is_in_shared_metaspace(const void* ptr) {
 bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }
+
+#ifdef ASSERT
+bool Metaspace::metadata_is_live(const Metadata* md) {
+  return md->metadata_token_is_valid() && contains(md); // flesh out later
+}
+
+bool Metaspace::klass_is_live(const Klass* k, bool must_have_narrow_klass_id) {
+  return ((const Metadata*)k)->metadata_token_is_valid_klass() && contains(k); // flesh out later
+}
+
+#endif // ASSERT

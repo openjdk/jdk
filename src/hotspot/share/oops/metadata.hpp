@@ -29,13 +29,56 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
+#define BUILD_MARKER(c1, c2) ( ((unsigned)c1 << 8) | c2 )
+
+#ifndef PRODUCT
+
+struct MetadataToken {
+
+  static constexpr unsigned common_prefix      = BUILD_MARKER('m', 'e') << 16;
+  static constexpr unsigned common_prefix_mask = 0xFFFF0000;
+
+  static constexpr unsigned klass_any          = common_prefix | BUILD_MARKER(0, 'K');          // "me.K"
+  static constexpr unsigned klass_any_mask     = 0xFFFF00FF;
+
+  static constexpr unsigned metadata_token_instance_klass   = klass_any | ((unsigned)'I' << 8); // 0x6D65494B, "meIK"
+  static constexpr unsigned metadata_token_array_klass      = klass_any | ((unsigned)'A' << 8); // 0x6D65414B, "meAK"
+  // ... define more when needed
+
+  // default for any other metadata:
+  static constexpr unsigned metadata_token_other            = common_prefix | BUILD_MARKER('X', 'X'); // 0x6D655858, "meXX"
+
+
+  unsigned _token;
+
+public:
+  MetadataToken() : _token(metadata_token_other) {}
+
+  bool is_valid() const                   { return (_token & common_prefix_mask) == common_prefix; }
+  bool is_valid_klass() const             { return (_token & klass_any_mask) == klass_any; }
+  bool is_valid_instance_klass() const    { return _token == metadata_token_instance_klass; }
+  bool is_valid_array_klass() const       { return _token == metadata_token_array_klass; }
+
+  void set_as_instance_klass()            { _token = metadata_token_instance_klass; }
+  void set_as_array_klass()               { _token = metadata_token_array_klass; }
+
+};
+
+#endif // !PRODUCT
+
 // This is the base class for an internal Class related metadata
 class Metadata : public MetaspaceObj {
+protected:
   // Debugging hook to check that the metadata has not been deleted.
-  NOT_PRODUCT(int _valid;)
- public:
-  NOT_PRODUCT(Metadata() : _valid(0) {})
-  NOT_PRODUCT(bool is_valid() const { return _valid == 0; })
+  NOT_PRODUCT(MetadataToken _token;)
+
+public:
+
+#ifndef PRODUCT
+  bool metadata_token_is_valid() const                    { return _token.is_valid(); }
+  bool metadata_token_is_valid_klass() const              { return _token.is_valid_klass(); }
+  bool is_valid() const                                   { return metadata_token_is_valid(); }
+#endif // !PRODUCT
 
   int identity_hash()                { return (int)(uintptr_t)this; }
 
