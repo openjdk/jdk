@@ -91,6 +91,7 @@
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
   flags(AFTER_LOOP_OPTS,                "After Loop Optimizations") \
   flags(AFTER_MERGE_STORES,             "After Merge Stores") \
+  flags(AFTER_WIDEN_TYPES,              "After Widen Types") \
   flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
   flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
   flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
@@ -122,7 +123,7 @@
 
 #define table_entry(name, description) PHASE_##name,
 enum CompilerPhaseType {
-  COMPILER_PHASES(table_entry)
+  COMPILER_PHASES(table_entry)    
   PHASE_NUM_TYPES,
   PHASE_NONE
 };

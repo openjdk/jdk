@@ -513,6 +513,9 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
   }
+  if (for_widen_types_igvn()) {
+    n->remove_flag(Node::NodeFlags::Flag_for_widen_types_igvn);
+  }
   if (n->is_ParsePredicate()) {
     C->add_parse_predicate(n->as_ParsePredicate());
   }
@@ -625,6 +628,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(this);
+  }
+  if (for_widen_types_igvn()) {
+    compile->remove_from_widen_types_igvn(this);
   }
 
   if (is_SafePoint()) {
@@ -1081,7 +1087,7 @@ void Node::init_NodeProperty() {
 
 //-----------------------------max_flags---------------------------------------
 juint Node::max_flags() {
-  return (PD::_last_flag << 1) - 1; // allow flags combination
+  return (((juint)PD::_last_flag) << 1) - 1; // allow flags combination
 }
 #endif
 

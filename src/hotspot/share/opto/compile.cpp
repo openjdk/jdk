@@ -408,6 +408,9 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_merge_stores_igvn()) {
     remove_from_merge_stores_igvn(dead);
   }
+  if (dead->for_widen_types_igvn()) {
+    remove_from_widen_types_igvn(dead);
+  }
   if (dead->is_Call()) {
     remove_useless_late_inlines(                &_late_inlines, dead);
     remove_useless_late_inlines(         &_string_late_inlines, dead);
@@ -461,6 +464,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_merge_stores_igvn, useful); // remove useless node recorded for merge stores IGVN pass
+  remove_useless_nodes(_for_widen_types_igvn, useful);
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
 #ifdef ASSERT
@@ -641,6 +645,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
+      _widen_type_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -666,6 +671,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
+      _for_widen_types_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
@@ -924,6 +930,7 @@ Compile::Compile(ciEnv* ci_env,
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
       _merge_stores_phase(false),
+      _widen_type_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -943,6 +950,7 @@ Compile::Compile(ciEnv* ci_env,
       _first_failure_details(nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
+      _for_widen_types_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
           _unique(0),
@@ -1944,6 +1952,35 @@ void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
   }
 }
 
+void Compile::record_for_widen_types_igvn(Node* n) {
+  if (!n->for_widen_types_igvn()) {
+    assert(!_for_widen_types_igvn.contains(n), "duplicate");
+    n->add_flag(Node::NodeFlags::Flag_for_widen_types_igvn);
+    _for_widen_types_igvn.append(n);
+  }
+}
+
+void Compile::remove_from_widen_types_igvn(Node* n) {
+  n->remove_flag(Node::NodeFlags::Flag_for_widen_types_igvn);
+  _for_widen_types_igvn.remove(n);
+}
+
+void Compile::process_for_widen_types_igvn(PhaseIterGVN& igvn) {
+  C->set_widen_types_phase(); // no more loop opts allowed
+
+  if (_for_widen_types_igvn.length() > 0) {
+    while (_for_widen_types_igvn.length() > 0) {
+      Node* n = _for_widen_types_igvn.pop();
+      n->remove_flag(Node::NodeFlags::Flag_for_widen_types_igvn);
+      igvn._worklist.push(n);
+    }
+    igvn.optimize();
+    if (failing()) return;
+    assert(_for_widen_types_igvn.length() == 0, "no more delayed nodes allowed");
+    print_method(PHASE_AFTER_WIDEN_TYPES, 3);
+  }
+}
+
 void Compile::record_unstable_if_trap(UnstableIfTrap* trap) {
   if (OptimizeUnstableIf) {
     _unstable_if_traps.append(trap);
@@ -2551,6 +2588,10 @@ void Compile::Optimize() {
     igvn.optimize();
     if (failing()) return;
   }
+
+  process_for_widen_types_igvn(igvn);
+
+  if (failing()) return;
 
   DEBUG_ONLY( _modified_nodes = nullptr; )
 
@@ -3527,6 +3568,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
   case Op_CastII: {
+    assert(!UseNewCode || !n->in(1)->is_Con(), "");
     n->as_CastII()->remove_range_check_cast(this);
     break;
   }
