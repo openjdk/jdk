@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -33,11 +34,14 @@ import java.lang.management.ThreadMXBean;
  * @test
  * @bug 8318757
  * @summary Test concurrent monitor deflation by MonitorDeflationThread and thread dumping
- * @library /test/lib
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedAsyncDeflationInterval=2000 -XX:LockingMode=0 ConcurrentDeflation
+ * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedAsyncDeflationInterval=2000 -XX:+WhiteBoxAPI ConcurrentDeflation
  */
 
 public class ConcurrentDeflation {
+    static final WhiteBox WB = WhiteBox.getWhiteBox();
     public static final long TOTAL_RUN_TIME_NS = 10_000_000_000L;
     public static Object[] monitors = new Object[1000];
     public static int monitorCount;
@@ -73,6 +77,7 @@ public class ConcurrentDeflation {
             index = index++ % 1000;
             monitors[index] = new Object();
             synchronized (monitors[index]) {
+                WB.forceInflateMonitorLockedObject(monitors[index]);
                 monitorCount++;
             }
         }

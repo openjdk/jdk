@@ -49,13 +49,12 @@ public class TestRecursiveMonitorChurn {
     }
 
     static final WhiteBox WB = WhiteBox.getWhiteBox();
-    static final int LM_MONITOR = 0;
     static final int COUNT = 100000;
 
     public static volatile Monitor monitor;
     public static void main(String[] args) {
-        if (WB.getIntVMFlag("LockingMode") == LM_MONITOR) {
-            throw new SkippedException("LM_MONITOR always inflates. Invalid test.");
+        if (WB.getBooleanVMFlag("VerifyHeavyMonitors")) {
+            throw new SkippedException("VerifyHeavyMonitors always inflates. Invalid test.");
         }
         final long pre_monitor_count = WB.getInUseMonitorCount();
         System.out.println(" Precount = " + pre_monitor_count);
