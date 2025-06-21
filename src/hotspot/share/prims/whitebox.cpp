@@ -85,6 +85,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -1902,6 +1903,20 @@ WB_ENTRY(jboolean, WB_IsMonitorInflated(JNIEnv* env, jobject wb, jobject obj))
   return (jboolean) obj_oop->mark().has_monitor();
 WB_END
 
+WB_ENTRY(void, WB_ForceInflateMonitorLockedObject(JNIEnv* env, jobject wb, jobject obj))
+  oop obj_oop = JNIHandles::resolve(obj);
+  if (obj_oop->mark().has_monitor()) {
+    return; // Already inflated
+  }
+  ObjectSynchronizer::InflateCause cause = ObjectSynchronizer::InflateCause::inflate_cause_vm_internal;
+  JavaThread* current = JavaThread::current();
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    LightweightSynchronizer::inflate_fast_locked_object(obj_oop, cause, current, current);
+  } else {
+    ObjectSynchronizer::inflate(current, obj_oop, cause);
+  }
+WB_END
+
 WB_ENTRY(jboolean, WB_IsAsanEnabled(JNIEnv* env))
   return (jboolean) WhiteBox::is_asan_enabled();
 WB_END
@@ -2906,6 +2921,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExportsToAll },
   {CC"deflateIdleMonitors", CC"()Z",                  (void*)&WB_DeflateIdleMonitors },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
+  {CC"forceInflateMonitorLockedObject0", CC"(Ljava/lang/Object;)V", (void*)&WB_ForceInflateMonitorLockedObject },
   {CC"isAsanEnabled", CC"()Z",                        (void*)&WB_IsAsanEnabled },
   {CC"isUbsanEnabled", CC"()Z",                       (void*)&WB_IsUbsanEnabled },
   {CC"getInUseMonitorCount", CC"()J", (void*)&WB_getInUseMonitorCount  },
