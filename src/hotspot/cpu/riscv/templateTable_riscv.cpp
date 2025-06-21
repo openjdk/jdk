@@ -1665,12 +1665,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ ld(t0, Address(xmethod, Method::method_counters_offset()));
     __ bnez(t0, has_counters);
     __ push_reg(x10);
-    __ push_reg(x11);
     __ push_reg(x12);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
             InterpreterRuntime::build_method_counters), xmethod);
     __ pop_reg(x12);
-    __ pop_reg(x11);
     __ pop_reg(x10);
     __ ld(t0, Address(xmethod, Method::method_counters_offset()));
     __ beqz(t0, dispatch); // No MethodCounters allocated, OutOfMemory
