@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
 
+import jdk.internal.vm.annotation.MethodHandleArchived;
+
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
 import static java.util.Objects.requireNonNull;
@@ -43,6 +45,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  * {@link MethodHandle}.  A {@linkplain DirectMethodHandleDescImpl} corresponds to
  * a {@code Constant_MethodHandle_info} entry in the constant pool of a classfile.
  */
+@MethodHandleArchived
 public final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
 
     private final Kind kind;

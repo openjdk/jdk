@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,30 +21,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CDS_AOTCLASSINITIALIZER_HPP
-#define SHARE_CDS_AOTCLASSINITIALIZER_HPP
+package jdk.internal.vm.annotation;
 
-#include "memory/allStatic.hpp"
-#include "utilities/exceptions.hpp"
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-class InstanceKlass;
-
-class AOTClassInitializer : AllStatic {
-  static bool is_method_handle_archived(InstanceKlass* ik);
-
-public:
-  // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
-  // the initialized state.
-  static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
-
-  static void call_runtime_setup(JavaThread* current, InstanceKlass* ik);
-
-  // Support for regression testing. Available in debug builds only.
-  static void init_test_class(TRAPS) NOT_DEBUG_RETURN;
-  static bool has_test_class() NOT_DEBUG({ return false; });
-};
-
-#endif // SHARE_CDS_AOTCLASSINITIALIZER_HPP
+/// Indicates a class or interface is part of the method handle infrastructure
+/// for AOT archives.  The exact list of classes can be verified with
+/// CDSHeapVerifier.  See `aotConstantPoolResolver.cpp` for more details.
+///
+/// This annotation is only recognized on privileged code and is ignored
+/// elsewhere.
+///
+/// @since 26
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface MethodHandleArchived {
+}

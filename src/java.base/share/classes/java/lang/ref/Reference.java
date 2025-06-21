@@ -31,6 +31,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.Cleaner;
+import jdk.internal.vm.annotation.RuntimeSetupRequired;
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -43,7 +44,7 @@ import jdk.internal.ref.Cleaner;
  * @since    1.2
  * @sealedGraph
  */
-
+@RuntimeSetupRequired
 public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     permits PhantomReference, SoftReference, WeakReference, FinalReference {
 

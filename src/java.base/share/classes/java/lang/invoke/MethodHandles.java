@@ -33,6 +33,7 @@ import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.MethodHandleArchived;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
@@ -83,6 +84,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
+@MethodHandleArchived
 public final class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate

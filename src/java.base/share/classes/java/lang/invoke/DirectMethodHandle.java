@@ -28,6 +28,7 @@ package java.lang.invoke;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.MethodHandleArchived;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
@@ -49,6 +50,7 @@ import static java.lang.invoke.MethodTypeForm.*;
  * to a class member.
  * @author jrose
  */
+@MethodHandleArchived
 sealed class DirectMethodHandle extends MethodHandle {
     final MemberName member;
     final boolean crackable;
@@ -466,6 +468,7 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     /** This subclass handles constructor references. */
+    @MethodHandleArchived
     static final class Constructor extends DirectMethodHandle {
         final MemberName initMethod;
         final Class<?>   instanceClass;
@@ -937,5 +940,6 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     /* Placeholder class for DirectMethodHandles generated ahead of time */
+    @MethodHandleArchived
     final class Holder {}
 }
