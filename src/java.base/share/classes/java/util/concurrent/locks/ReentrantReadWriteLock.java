@@ -736,9 +736,11 @@ public class ReentrantReadWriteLock
          * <p>Acquires the read lock if the write lock is not held by
          * any thread and returns immediately.
          *
-         * <p>If the write lock is held by any thread then
-         * the current thread becomes disabled for thread scheduling
-         * purposes and lies dormant until the read lock has been acquired.
+         * <p>If the write lock is held by any thread or the fairness
+         * policy prohibits acquisition of the read lock at this time,
+         * then the current thread becomes disabled for thread
+         * scheduling purposes and lies dormant until the read lock
+         * has been acquired.
          */
         public void lock() {
             sync.acquireShared(1);
@@ -751,9 +753,11 @@ public class ReentrantReadWriteLock
          * <p>Acquires the read lock if the write lock is not held
          * by any thread and returns immediately.
          *
-         * <p>If the write lock is held by any thread then the
-         * current thread becomes disabled for thread scheduling
-         * purposes and lies dormant until one of two things happens:
+         * <p>If the write lock is held by any thread or the fairness
+         * policy prohibits acquisition of the read lock at this time,
+         * then the current thread becomes disabled for thread
+         * scheduling purposes and lies dormant until one of two
+         * things happens:
          *
          * <ul>
          *
