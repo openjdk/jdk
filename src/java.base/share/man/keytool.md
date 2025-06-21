@@ -1222,7 +1222,8 @@ These options can appear for all commands operating on a keystore:
     -   `env`: Retrieve the password from the environment variable named
         *argument*.
 
-    -   `file`: Retrieve the password from the file named *argument*.
+    -   `file`: Retrieve the password from the file named *argument*. Only
+        the first line of the file is used, with the trailing newline removed.
 
     **Note:** All other options that require passwords, such as `-keypass`,
     `-srckeypass`, `-destkeypass`, `-srcstorepass`, and `-deststorepass`,
@@ -2346,10 +2347,15 @@ then there is no interaction with the user.
 
 Most commands that operate on a keystore require the store password. Some
 commands require a private/secret key password. Passwords can be specified on
-the command line in the `-storepass` and `-keypass` options. However, a
+the command line via options such as `-storepass` and `-keypass`. However, a
 password shouldn't be specified on a command line or in a script unless it is
-for testing, or you are on a secure system. When you don't specify a required
-password option on a command line, you are prompted for it.
+for testing, or you are on a secure system. As a safer alternative, use
+`-storepass:file` or `-storepass:env` to supply the password from a file or an
+environment variable.
+
+When you don't specify a required password option on a command line, you are
+prompted for it. Password input is typically hidden, unless the `keytool`
+output is redirected to a file or pipe, in which case the input may be echoed.
 
 ## Certificate Conformance Warning
 

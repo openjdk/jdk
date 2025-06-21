@@ -1044,15 +1044,10 @@ public final class Main {
                         command == IDENTITYDB) {
                     int count = 0;
                     do {
-                        if (command == IMPORTKEYSTORE) {
-                            System.err.print
-                                    (rb.getString("Enter.destination.keystore.password."));
-                        } else {
-                            System.err.print
-                                    (rb.getString("Enter.keystore.password."));
-                        }
-                        System.err.flush();
-                        storePass = Password.readPassword(System.in);
+                        String prompt = command == IMPORTKEYSTORE
+                                ? rb.getString("Enter.destination.keystore.password.")
+                                : rb.getString("Enter.keystore.password.");
+                        storePass = Password.toolReadPassword(prompt);
                         passwords.add(storePass);
 
                         // If we are creating a new non nullStream-based keystore,
@@ -1066,8 +1061,8 @@ public final class Main {
                         // If the keystore file does not exist and needs to be
                         // created, the storepass should be prompted twice.
                         if (storePass != null && !nullStream && ksStream == null) {
-                            System.err.print(rb.getString("Re.enter.new.password."));
-                            char[] storePassAgain = Password.readPassword(System.in);
+                            char[] storePassAgain = Password.toolReadPassword(
+                                    rb.getString("Re.enter.new.password."));
                             passwords.add(storePassAgain);
                             if (!Arrays.equals(storePass, storePassAgain)) {
                                 System.err.println
@@ -1088,9 +1083,8 @@ public final class Main {
                 } else {
                     // here we have EXPORTCERT and LIST (info valid until STOREPASSWD)
                     if (command != PRINTCRL && command != PRINTCERT) {
-                        System.err.print(rb.getString("Enter.keystore.password."));
-                        System.err.flush();
-                        storePass = Password.readPassword(System.in);
+                        storePass = Password.toolReadPassword(
+                                rb.getString("Enter.keystore.password."));
                         passwords.add(storePass);
                     }
                 }
@@ -1729,27 +1723,26 @@ public final class Main {
                 MessageFormat form = new MessageFormat(rb.getString
                         ("Enter.key.password.for.alias."));
                 Object[] source = {alias};
-                System.err.print(form.format(source));
+                String prompt = form.format(source);
                 if (origPass != null) {
-                    System.err.println();
+                    prompt += "\n";
                     if (orig == null) {
-                        System.err.print(rb.getString
-                                (".RETURN.if.same.as.keystore.password."));
+                        prompt += rb.getString
+                                (".RETURN.if.same.as.keystore.password.");
                     } else {
                         form = new MessageFormat(rb.getString
                                 (".RETURN.if.same.as.for.otherAlias."));
                         Object[] src = {orig};
-                        System.err.print(form.format(src));
+                        prompt += form.format(src);
                     }
                 }
-                System.err.flush();
-                char[] entered = Password.readPassword(System.in);
+                char[] entered = Password.toolReadPassword(prompt);
                 passwords.add(entered);
                 if (entered == null && origPass != null) {
                     return origPass;
                 } else if (entered != null && entered.length >= 6) {
-                    System.err.print(rb.getString("Re.enter.new.password."));
-                    char[] passAgain = Password.readPassword(System.in);
+                    char[] passAgain = Password.toolReadPassword(
+                            rb.getString("Re.enter.new.password."));
                     passwords.add(passAgain);
                     if (!Arrays.equals(entered, passAgain)) {
                         System.err.println
@@ -1789,13 +1782,11 @@ public final class Main {
 
         int count;
         for (count = 0; count < 3; count++) {
-            System.err.print(
-                rb.getString("Enter.the.password.to.be.stored."));
-            System.err.flush();
-            char[] entered = Password.readPassword(System.in);
+            char[] entered = Password.toolReadPassword(
+                    rb.getString("Enter.the.password.to.be.stored."));
             passwords.add(entered);
-            System.err.print(rb.getString("Re.enter.password."));
-            char[] passAgain = Password.readPassword(System.in);
+            char[] passAgain = Password.toolReadPassword(
+                    rb.getString("Re.enter.password."));
             passwords.add(passAgain);
             if (!Arrays.equals(entered, passAgain)) {
                 System.err.println(rb.getString("They.don.t.match.Try.again"));
@@ -2403,9 +2394,8 @@ public final class Main {
                     && !srcprotectedPath
                     && !KeyStoreUtil.isWindowsKeyStore(srcstoretype)
                     && !srcIsPasswordless) {
-                System.err.print(rb.getString("Enter.source.keystore.password."));
-                System.err.flush();
-                srcstorePass = Password.readPassword(System.in);
+                srcstorePass = Password.toolReadPassword(
+                        rb.getString("Enter.source.keystore.password."));
                 passwords.add(srcstorePass);
             }
 
@@ -3485,8 +3475,7 @@ public final class Main {
             MessageFormat form = new MessageFormat
                 (rb.getString("New.prompt."));
             Object[] source = {prompt};
-            System.err.print(form.format(source));
-            entered = Password.readPassword(System.in);
+            entered = Password.toolReadPassword(form.format(source));
             passwords.add(entered);
             if (entered == null || entered.length < 6) {
                 System.err.println(rb.getString
@@ -3497,8 +3486,7 @@ public final class Main {
                 form = new MessageFormat
                         (rb.getString("Re.enter.new.prompt."));
                 Object[] src = {prompt};
-                System.err.print(form.format(src));
-                reentered = Password.readPassword(System.in);
+                reentered = Password.toolReadPassword(form.format(src));
                 passwords.add(reentered);
                 if (!Arrays.equals(entered, reentered)) {
                     System.err.println
@@ -3569,18 +3557,15 @@ public final class Main {
             MessageFormat form = new MessageFormat(rb.getString
                     ("Enter.key.password.for.alias."));
             Object[] source = {alias};
+            String prompt = form.format(source);
             if (otherKeyPass != null) {
-                System.err.println(form.format(source));
-
                 form = new MessageFormat(rb.getString
                         (".RETURN.if.same.as.for.otherAlias."));
                 Object[] src = {otherAlias};
-                System.err.print(form.format(src));
-            } else {
-                System.err.print(form.format(source));
+                prompt += form.format(src);
             }
             System.err.flush();
-            keyPass = Password.readPassword(System.in);
+            keyPass = Password.toolReadPassword(prompt);
             passwords.add(keyPass);
             if (keyPass == null) {
                 keyPass = otherKeyPass;
@@ -5278,6 +5263,10 @@ public final class Main {
                     "Use.keytool.help.for.all.available.commands"));
             System.err.println(rb.getString(
                     "Use.keytool.command.name.help.for.usage.of.command.name"));
+            System.err.println();
+            System.err.println(rb.getString("for.more.information.see.the.online.documentation.at."));
+            System.err.println("https://docs.oracle.com/en/java/javase/"
+                    + Runtime.version().feature() + "/docs/specs/man/keytool.html");
         }
     }
 

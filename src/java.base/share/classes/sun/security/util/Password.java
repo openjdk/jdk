@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,26 @@ import jdk.internal.access.SharedSecrets;
  *
  */
 public class Password {
+
+    private static final String PASS_ECHO_WARNING
+            = ResourcesMgr.getString("pass.echo.warning");
+
+    /**
+     * Reads user password from stdin. Shows a warning if cannot suppress echo.
+     * Used by keytool and jarsigner.
+     */
+    public static char[] toolReadPassword(String prompt) throws IOException {
+        // If the password is piped into the command, typically
+        // System.in.available() will not be zero. We don't show
+        // the warning in this case.
+        if (System.in.available() == 0 && System.console() == null) {
+            System.err.println(PASS_ECHO_WARNING);
+        }
+        System.err.print(prompt);
+        System.err.flush();
+        return readPassword(System.in, false);
+    }
+
     /** Reads user password from given input stream. */
     public static char[] readPassword(InputStream in) throws IOException {
         return readPassword(in, false);
