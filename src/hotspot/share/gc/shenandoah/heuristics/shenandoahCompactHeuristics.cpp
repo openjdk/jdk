@@ -57,6 +57,8 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
   size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
+  log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu", available, capacity);
+
   if (available < min_threshold) {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
@@ -66,6 +68,8 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
   }
 
   size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
+  log_debug(gc)("should_start_gc? allocated: %zu", bytes_allocated);
+
   if (bytes_allocated > threshold_bytes_allocated) {
     log_trigger("Allocated since last cycle (%zu%s) is larger than allocation threshold (%zu%s)",
                 byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),

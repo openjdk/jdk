@@ -1011,3 +1011,9 @@ void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
   heuristics()->record_success_concurrent();
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent(is_young(), abbreviated);
 }
+
+size_t ShenandoahGeneration::soft_max_capacity() const {
+  size_t capacity = ShenandoahGenerationalHeap::heap()->soft_max_capacity();
+  log_debug(gc)("soft_max_capacity: %zu", capacity);
+  return capacity;
+}

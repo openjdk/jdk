@@ -98,6 +98,8 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
@@ -201,8 +203,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  // Default to max heap size.
-  _soft_max_size = _num_regions * reg_size_bytes;
+  _soft_max_size = Atomic::load(&SoftMaxHeapSize);
 
   _committed = _initial_size;
 
