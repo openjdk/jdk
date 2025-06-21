@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,131 @@ import jdk.internal.util.ArraysSupport;
  */
 
 public class ByteArrayOutputStream extends OutputStream {
+
+    /**
+     * Internal implementation of {@code ByteArrayOutputStream} whose methods are
+     * not synchronized.
+     *
+     * @see java.io.ByteArrayOutputStream()
+     */
+    private static class UnsynchronizedByteArrayOutputStream extends ByteArrayOutputStream {
+
+        /**
+         * Creates an instance with default sizing.
+         */
+        private UnsynchronizedByteArrayOutputStream() {
+            super();
+        }
+
+        /**
+         * Creates an instance with the specified initial size.
+         */
+        private UnsynchronizedByteArrayOutputStream(int size) {
+            super(size);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void write(int b) {
+            internalWrite(b);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void write(byte[] b, int off, int len) {
+            internalWrite(b, off, len);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void writeTo(OutputStream out) throws IOException {
+            internalWriteTo(out);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+       @Override
+        public void reset() {
+            internalReset();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+       @Override
+        public byte[] toByteArray() {
+            return internalToByteArray();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int size() {
+            return internalSize();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return internalToString();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString(String charsetName) throws UnsupportedEncodingException {
+            return internalToString(charsetName);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString(Charset charset) {
+            return internalToString(charset);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString(int hibyte) {
+            return internalToString(hibyte);
+        }
+
+    }
+
+    /**
+     * Factory method to create a {@code ByteArrayOutputStream} whose methods are
+     * not synchronized.
+     *
+     * @return new ByteArrayOutputStream with zero synchronization
+     */
+    public static ByteArrayOutputStream unsynchronized() {
+        return new UnsynchronizedByteArrayOutputStream();
+    }
+
+    /**
+     * Factory method to create a {@code ByteArrayOutputStream} whose methods are
+     * not synchronized, with the specified initial size in bytes.
+     *
+     * @param initialCapacity initial size of the buffer
+     * @return new ByteArrayOutputStream with zero synchronization
+     */
+    public static ByteArrayOutputStream unsynchronized(int initialCapacity) {
+        return new UnsynchronizedByteArrayOutputStream(initialCapacity);
+    }
 
     /**
      * The buffer where data is stored.
@@ -105,18 +230,24 @@ public class ByteArrayOutputStream extends OutputStream {
     /**
      * Writes the specified byte to this {@code ByteArrayOutputStream}.
      *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
+     *
      * @param   b   the byte to be written.
      */
     @Override
     public synchronized void write(int b) {
-        ensureCapacity(count + 1);
-        buf[count] = (byte) b;
-        count += 1;
+        internalWrite(b);
     }
 
     /**
      * Writes {@code len} bytes from the specified byte array
      * starting at offset {@code off} to this {@code ByteArrayOutputStream}.
+     *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
      *
      * @param   b     {@inheritDoc}
      * @param   off   {@inheritDoc}
@@ -128,10 +259,7 @@ public class ByteArrayOutputStream extends OutputStream {
      */
     @Override
     public synchronized void write(byte[] b, int off, int len) {
-        Objects.checkFromIndexSize(off, len, b.length);
-        ensureCapacity(count + len);
-        System.arraycopy(b, off, buf, count, len);
-        count += len;
+        internalWrite(b, off, len);
     }
 
     /**
@@ -147,7 +275,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * @since   11
      */
     public void writeBytes(byte[] b) {
-        write(b, 0, b.length);
+        internalWriteBytes(b);
     }
 
     /**
@@ -155,12 +283,16 @@ public class ByteArrayOutputStream extends OutputStream {
      * the specified output stream argument, as if by calling the output
      * stream's write method using {@code out.write(buf, 0, count)}.
      *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
+     *
      * @param   out   the output stream to which to write the data.
      * @throws  NullPointerException if {@code out} is {@code null}.
      * @throws  IOException if an I/O error occurs.
      */
     public synchronized void writeTo(OutputStream out) throws IOException {
-        out.write(buf, 0, count);
+        internalWriteTo(out);
     }
 
     /**
@@ -169,10 +301,14 @@ public class ByteArrayOutputStream extends OutputStream {
      * output stream is discarded. The output stream can be used again,
      * reusing the already allocated buffer space.
      *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
+     *
      * @see     java.io.ByteArrayInputStream#count
      */
     public synchronized void reset() {
-        count = 0;
+        internalReset();
     }
 
     /**
@@ -180,22 +316,30 @@ public class ByteArrayOutputStream extends OutputStream {
      * size of this output stream and the valid contents of the buffer
      * have been copied into it.
      *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
+     *
      * @return  the current contents of this output stream, as a byte array.
      * @see     java.io.ByteArrayOutputStream#size()
      */
     public synchronized byte[] toByteArray() {
-        return Arrays.copyOf(buf, count);
+        return internalToByteArray();
     }
 
     /**
      * Returns the current size of the buffer.
+     *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
      *
      * @return  the value of the {@code count} field, which is the number
      *          of valid bytes in this output stream.
      * @see     java.io.ByteArrayOutputStream#count
      */
     public synchronized int size() {
-        return count;
+        return internalSize();
     }
 
     /**
@@ -210,13 +354,17 @@ public class ByteArrayOutputStream extends OutputStream {
      * class should be used when more control over the decoding process is
      * required.
      *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
+     *
      * @see Charset#defaultCharset()
      * @return String decoded from the buffer's contents.
      * @since  1.1
      */
     @Override
     public synchronized String toString() {
-        return new String(buf, 0, count);
+        return internalToString();
     }
 
     /**
@@ -241,6 +389,10 @@ public class ByteArrayOutputStream extends OutputStream {
      * }
      *
      *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
+     *
      * @param  charsetName  the name of a supported
      *         {@link Charset charset}
      * @return String decoded from the buffer's contents.
@@ -251,7 +403,7 @@ public class ByteArrayOutputStream extends OutputStream {
     public synchronized String toString(String charsetName)
         throws UnsupportedEncodingException
     {
-        return new String(buf, 0, count, charsetName);
+        return internalToString(charsetName);
     }
 
     /**
@@ -265,13 +417,17 @@ public class ByteArrayOutputStream extends OutputStream {
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
+     *
      * @param      charset  the {@linkplain Charset charset}
      *             to be used to decode the {@code bytes}
      * @return     String decoded from the buffer's contents.
      * @since      10
      */
     public synchronized String toString(Charset charset) {
-        return new String(buf, 0, count, charset);
+        return internalToString(charset);
     }
 
     /**
@@ -283,6 +439,10 @@ public class ByteArrayOutputStream extends OutputStream {
      * {@snippet lang=java :
      *     c == (char)(((hibyte & 0xff) << 8) | (b & 0xff))
      * }
+     *
+     * @apiNote
+     * This method is synchronized by default, unless this object was created
+     * via the factory method {@code ByteArrayOutputStream.unsynchronized()}.
      *
      * @deprecated This method does not properly convert bytes into characters.
      * As of JDK&nbsp;1.1, the preferred way to do this is via the
@@ -299,7 +459,7 @@ public class ByteArrayOutputStream extends OutputStream {
      */
     @Deprecated
     public synchronized String toString(int hibyte) {
-        return new String(buf, hibyte, 0, count);
+        return internalToString(hibyte);
     }
 
     /**
@@ -309,6 +469,154 @@ public class ByteArrayOutputStream extends OutputStream {
      */
     @Override
     public void close() throws IOException {
+    }
+
+    /**
+     * Private implementation of {@code write(byte)}.
+     *
+     * @param   b   the byte to be written.
+     * @since 25
+     */
+    void internalWrite(int b) {
+        ensureCapacity(count + 1);
+        buf[count] = (byte) b;
+        count += 1;
+    }
+
+    /**
+     * Private implementation of {@code write(byte, int, int)}.
+     *
+     * @param   b     {@inheritDoc}
+     * @param   off   {@inheritDoc}
+     * @param   len   {@inheritDoc}
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @throws  IndexOutOfBoundsException if {@code off} is negative,
+     * {@code len} is negative, or {@code len} is greater than
+     * {@code b.length - off}
+     * @since 25
+     */
+    void internalWrite(byte[] b, int off, int len) {
+        Objects.checkFromIndexSize(off, len, b.length);
+        ensureCapacity(count + len);
+        System.arraycopy(b, off, buf, count, len);
+        count += len;
+    }
+
+    /**
+     * Private implementation of {@code writeBytes(byte[])}.
+     *
+     * @param   b     the data.
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @since 25
+     */
+    void internalWriteBytes(byte[] b) {
+        write(b, 0, b.length);
+    }
+
+    /**
+     * Private implementation of {@code writeTo(OutputStream)}.
+     *
+     * @param   out   the output stream to which to write the data.
+     * @throws  NullPointerException if {@code out} is {@code null}.
+     * @throws  IOException if an I/O error occurs.
+     * @since 25
+     */
+    void internalWriteTo(OutputStream out) throws IOException {
+        out.write(buf, 0, count);
+    }
+
+    /**
+     * Private implementation of {@code reset()}.
+     *
+     * @see     java.io.ByteArrayInputStream#count
+     * @since 25
+     */
+    void internalReset() {
+        count = 0;
+    }
+
+    /**
+     * Private implementation of {@code toByteArray()}.
+     *
+     * @return  the current contents of this output stream, as a byte array.
+     * @see     java.io.ByteArrayOutputStream#size()
+     * @since 25
+     */
+    byte[] internalToByteArray() {
+        return Arrays.copyOf(buf, count);
+    }
+
+    /**
+     * Private implementation of {@code size()}.
+     *
+     * @return  the value of the {@code count} field, which is the number
+     *          of valid bytes in this output stream.
+     * @see     java.io.ByteArrayOutputStream#count
+     * @since 25
+     */
+    int internalSize() {
+        return count;
+    }
+
+    /**
+     * Private implementation of {@code toString()}.
+     *
+     * @see Charset#defaultCharset()
+     * @return String decoded from the buffer's contents.
+     * @since 25
+     */
+    String internalToString() {
+        return new String(buf, 0, count);
+    }
+
+    /**
+     * Private implementation of {@code toString(String)}.
+     *
+     * @param  charsetName  the name of a supported
+     *         {@link Charset charset}
+     * @return String decoded from the buffer's contents.
+     * @throws UnsupportedEncodingException
+     *         If the named charset is not supported
+     * @since 25
+     */
+    String internalToString(String charsetName)
+        throws UnsupportedEncodingException
+    {
+        return new String(buf, 0, count, charsetName);
+    }
+
+    /**
+     * Private implementation of {@code toString(Charset).
+     *
+     * @param      charset  the {@linkplain Charset charset}
+     *             to be used to decode the {@code bytes}
+     * @return     String decoded from the buffer's contents.
+     * @since 25
+     */
+    String internalToString(Charset charset) {
+        return new String(buf, 0, count, charset);
+    }
+
+    /**
+     * Private implementation of {@code toString(int)}.
+     *
+     * @deprecated This method does not properly convert bytes into characters.
+     * As of JDK&nbsp;1.1, the preferred way to do this is via the
+     * {@link #toString(String charsetName)} or {@link #toString(Charset charset)}
+     * method, which takes an encoding-name or charset argument,
+     * or the {@code toString()} method, which uses the default charset.
+     *
+     * @param      hibyte    the high byte of each resulting Unicode character.
+     * @return     the current contents of the output stream, as a string.
+     * @see        java.io.ByteArrayOutputStream#size()
+     * @see        java.io.ByteArrayOutputStream#toString(String)
+     * @see        java.io.ByteArrayOutputStream#toString()
+     * @see        Charset#defaultCharset()
+     * @since 25
+     */
+    @Deprecated
+    String internalToString(int hibyte) {
+        return new String(buf, hibyte, 0, count);
     }
 
 }
