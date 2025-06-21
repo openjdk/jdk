@@ -58,6 +58,7 @@
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
+  f(mtNMT_MP,         "NMT Memory Pointers") /* internal used by NMT              */ \
   f(mtNone,           "Unknown")                                                     \
   //end
 

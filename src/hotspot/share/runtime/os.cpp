@@ -41,6 +41,7 @@
 #include "memory/universe.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocTracker.hpp"
+#include "nmt/memoryPointersHashtable.hpp"
 #include "nmt/memTracker.inline.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtPreInit.hpp"
@@ -661,7 +662,9 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return nullptr;
   }
 
+  MemoryPointersHashtable::record_alloc(mem_tag, outer_ptr);
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
+  static size_t _counter = 0;
 
   if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
@@ -723,7 +726,9 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     header->mark_block_as_dead();
 
     // the real realloc
+    MemoryPointersHashtable::record_free(header);
     void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
+    MemoryPointersHashtable::record_alloc(mem_tag, new_outer_ptr);
 
     if (new_outer_ptr == nullptr) {
       // realloc(3) failed and the block still exists.
@@ -751,7 +756,9 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   } else {
 
     // NMT disabled.
+    MemoryPointersHashtable::record_free(memblock);
     rc = permit_forbidden_function::realloc(memblock, size);
+    MemoryPointersHashtable::record_alloc(mem_tag, rc);
     if (rc == nullptr) {
       return nullptr;
     }
@@ -779,6 +786,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
+  MemoryPointersHashtable::record_free(old_outer_ptr);
   permit_forbidden_function::free(old_outer_ptr);
 }
 
