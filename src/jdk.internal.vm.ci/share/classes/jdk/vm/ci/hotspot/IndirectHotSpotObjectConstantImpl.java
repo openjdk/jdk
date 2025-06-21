@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -112,8 +111,7 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
     private void checkHandle() {
         if (objectHandle == 0L) {
             String message;
-            if (rawAudit instanceof Audit) {
-                Audit audit = (Audit) rawAudit;
+            if (rawAudit instanceof Audit audit) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 PrintStream ps = new PrintStream(baos);
                 ps.println("Foreign object reference " + audit.handle + " created in scope '" + audit.scope + "' is no longer valid. Origin: {");

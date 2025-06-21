@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ package jdk.vm.ci.meta;
 
 import jdk.vm.ci.meta.JavaMethodProfile.ProfiledMethod;
 
+import java.util.List;
+
 /**
  * This profile object represents the method profile at a specific BCI. The precision of the
  * supplied values may vary, but a runtime that provides this information should be aware that it
@@ -31,11 +33,15 @@ import jdk.vm.ci.meta.JavaMethodProfile.ProfiledMethod;
  */
 public final class JavaMethodProfile extends AbstractJavaProfile<ProfiledMethod, ResolvedJavaMethod> {
 
+    /**
+     * @param notRecordedProbability estimated probability of all types that could not be recorded due to profiling limitation
+     * @param pitems                 an array of profile items. This array is now owned by this object and should not be mutated by the caller.
+     */
     public JavaMethodProfile(double notRecordedProbability, ProfiledMethod[] pitems) {
-        super(notRecordedProbability, pitems);
+        super(notRecordedProbability, MetaUtil.listFromTrustedArray(pitems));
     }
 
-    public ProfiledMethod[] getMethods() {
+    public List<ProfiledMethod> getMethods() {
         return super.getItems();
     }
 

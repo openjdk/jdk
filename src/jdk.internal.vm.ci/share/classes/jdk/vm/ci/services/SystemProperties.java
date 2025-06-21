@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ final class SystemProperties implements Map<String, String> {
     @Override
     public Collection<String> values() {
         if (values == null) {
-            values = entries.values().stream().map(v -> v.getString(unsafe)).collect(Collectors.toUnmodifiableList());
+            values = entries.values().stream().map(v -> v.getString(unsafe)).toList();
         }
         return values;
     }

@@ -61,7 +61,7 @@ public interface RegisterConfig {
      * @param parameterTypes the types of the arguments of the call
      * @param valueKindFactory the factory to create custom {@link ValueKind ValueKinds}
      */
-    CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory);
+    CallingConvention getCallingConvention(Type type, JavaType returnType, List<? extends JavaType> parameterTypes, ValueKindFactory<?> valueKindFactory);
 
     /**
      * Gets the ordered set of registers that are can be used to pass parameters according to a

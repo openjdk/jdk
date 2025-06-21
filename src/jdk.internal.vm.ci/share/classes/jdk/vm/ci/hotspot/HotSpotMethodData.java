@@ -29,7 +29,6 @@ import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.util.Arrays;
-
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaMethodProfile;
@@ -467,7 +466,6 @@ final class HotSpotMethodData implements MetaspaceObject {
             outer: for (int i = 0; i < typeProfileWidth; i++) {
                 HotSpotResolvedObjectTypeImpl receiverKlass = data.readKlass(position, getTypeOffset(i));
                 if (receiverKlass != null) {
-                    HotSpotResolvedObjectTypeImpl klass = receiverKlass;
                     long count = data.readUnsignedInt(position, getTypeCountOffset(i));
                     /*
                      * Because of races in the profile collection machinery it's possible for a
@@ -475,13 +473,13 @@ final class HotSpotMethodData implements MetaspaceObject {
                      * rational.
                      */
                     for (int j = 0; j < entries; j++) {
-                        if (types[j].equals(klass)) {
+                        if (types[j].equals(receiverKlass)) {
                             totalCount += count;
                             counts[j] += count;
                             continue outer;
                         }
                     }
-                    types[entries] = klass;
+                    types[entries] = receiverKlass;
                     totalCount += count;
                     counts[entries] = count;
                     entries++;
@@ -822,7 +820,7 @@ final class HotSpotMethodData implements MetaspaceObject {
 
         @Override
         public StringBuilder appendTo(StringBuilder sb, HotSpotMethodData data, int pos) {
-            sb.append("unknown profile data with tag: " + tag);
+            sb.append("unknown profile data with tag: ").append(tag);
             return sb;
         }
     }

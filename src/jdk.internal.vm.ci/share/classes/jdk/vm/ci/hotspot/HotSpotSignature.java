@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class HotSpotSignature implements Signature {
 
     public HotSpotSignature(HotSpotJVMCIRuntime runtime, String signature) {
         this.runtime = runtime;
-        if (signature.length() == 0) {
+        if (signature.isEmpty()) {
             throw new IllegalArgumentException("Signature cannot be empty");
         }
         this.originalString = signature;
@@ -212,8 +212,7 @@ public class HotSpotSignature implements Signature {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof HotSpotSignature) {
-            HotSpotSignature other = (HotSpotSignature) obj;
+        if (obj instanceof HotSpotSignature other) {
             if (other.originalString.equals(originalString)) {
                 assert other.parameters.equals(parameters);
                 assert other.returnType.equals(returnType);

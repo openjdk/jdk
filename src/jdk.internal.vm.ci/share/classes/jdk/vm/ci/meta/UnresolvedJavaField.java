@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,9 @@ public final class UnresolvedJavaField implements JavaField {
         if (this == obj) {
             return true;
         }
-        if (obj == null || !(obj instanceof UnresolvedJavaField)) {
+        if (!(obj instanceof UnresolvedJavaField that)) {
             return false;
         }
-        UnresolvedJavaField that = (UnresolvedJavaField) obj;
         return this.holder.equals(that.holder) && this.name.equals(that.name) && this.type.equals(that.type);
     }
 

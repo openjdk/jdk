@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.CompilerToVM.listFromTrustedArray;
+
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.StackSlot;
@@ -32,6 +34,9 @@ import jdk.vm.ci.code.site.Site;
 import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A {@link CompiledCode} with additional HotSpot-specific information required for installing the
@@ -57,24 +62,24 @@ public class HotSpotCompiledCode implements CompiledCode {
     /**
      * A list of code annotations describing special sites in {@link #targetCode}.
      */
-    protected final Site[] sites;
+    protected final List<Site> sites;
 
     /**
      * A list of {@link Assumption} this code relies on.
      */
-    protected final Assumption[] assumptions;
+    protected final List<Assumption> assumptions;
 
     /**
      * The list of the methods whose bytecodes were used as input to the compilation. If
-     * {@code null}, then the compilation did not record method dependencies. Otherwise, the first
+     * empty, then the compilation did not record method dependencies. Otherwise, the first
      * element of this array is the root method of the compilation.
      */
-    protected final ResolvedJavaMethod[] methods;
+    protected final List<ResolvedJavaMethod> methods;
 
     /**
      * A list of comments that will be included in code dumps.
      */
-    protected final Comment[] comments;
+    protected final List<Comment> comments;
 
     /**
      * The data section containing serialized constants for the emitted machine code.
@@ -89,7 +94,7 @@ public class HotSpotCompiledCode implements CompiledCode {
     /**
      * A list of relocations in the {@link #dataSection}.
      */
-    protected final DataPatch[] dataSectionPatches;
+    protected final List<DataPatch> dataSectionPatches;
 
     /**
      * A flag determining whether this code is immutable and position independent.
@@ -117,35 +122,50 @@ public class HotSpotCompiledCode implements CompiledCode {
         }
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `sites`, `targetCode`, `comments`, `methods`, `dataSection`, `dataSectionPatches` and `assumptions`")
+    /**
+     * @param name                 the name of this compilation unit.
+     * @param targetCode           the buffer containing the emitted machine code. This array is now owned by this object and should not be mutated by the caller.
+     * @param targetCodeSize       the leading number of bytes in {@link #targetCode} containing the emitted machine code.
+     * @param sites                an array of code annotations describing special sites in {@link #targetCode}. This array is now owned by this object and should not be mutated by the caller.
+     * @param assumptions          an array of {@link Assumption} this code relies on. This array is now owned by this object and should not be mutated by the caller.
+     * @param methods              an array of the methods whose bytecodes were used as input to the compilation. This array is now owned by this object and should not be mutated by the caller.
+     * @param comments             an array of comments that will be included in code dumps. This array is now owned by this object and should not be mutated by the caller.
+     * @param dataSection          the data section containing serialized constants for the emitted machine code. This array is now owned by this object and should not be mutated by the caller.
+     * @param dataSectionAlignment the minimum alignment of the data section.
+     * @param dataSectionPatches   an array of relocations in the {@link #dataSection}. This array is now owned by this object and should not be mutated by the caller.
+     * @param isImmutablePIC       the flag determining whether this code is immutable and position independent.
+     * @param totalFrameSize       the total size of the stack frame of this compiled method.
+     * @param deoptRescueSlot      the deopt rescue slot. Must be non-null if there is a safepoint in the method.
+     */
     public HotSpotCompiledCode(String name,
-                    byte[] targetCode,
-                    int targetCodeSize,
-                    Site[] sites,
-                    Assumption[] assumptions,
-                    ResolvedJavaMethod[] methods,
-                    Comment[] comments,
-                    byte[] dataSection,
-                    int dataSectionAlignment,
-                    DataPatch[] dataSectionPatches,
-                    boolean isImmutablePIC,
-                    int totalFrameSize,
-                    StackSlot deoptRescueSlot) {
+                               byte[] targetCode,
+                               int targetCodeSize,
+                               Site[] sites,
+                               Assumption[] assumptions,
+                               ResolvedJavaMethod[] methods,
+                               Comment[] comments,
+                               byte[] dataSection,
+                               int dataSectionAlignment,
+                               DataPatch[] dataSectionPatches,
+                               boolean isImmutablePIC,
+                               int totalFrameSize,
+                               StackSlot deoptRescueSlot) {
         this.name = name;
         this.targetCode = targetCode;
         this.targetCodeSize = targetCodeSize;
-        this.sites = sites;
-        this.assumptions = assumptions;
-        this.methods = methods;
+        this.sites = sites == null ? List.of() : listFromTrustedArray(sites);
+        this.assumptions = assumptions == null ? List.of() : listFromTrustedArray(assumptions);
+        this.methods = methods == null ? List.of() : listFromTrustedArray(methods);
 
-        this.comments = comments;
+        this.comments = comments == null ? List.of() : listFromTrustedArray(comments);
         this.dataSection = dataSection;
         this.dataSectionAlignment = dataSectionAlignment;
-        this.dataSectionPatches = dataSectionPatches;
+        this.dataSectionPatches = dataSectionPatches == null ? List.of() : listFromTrustedArray(dataSectionPatches);
         this.isImmutablePIC = isImmutablePIC;
         this.totalFrameSize = totalFrameSize;
         this.deoptRescueSlot = deoptRescueSlot;
 
+        assert targetCode != null && dataSection != null;
         assert validateFrames();
     }
 
@@ -164,8 +184,7 @@ public class HotSpotCompiledCode implements CompiledCode {
      */
     private boolean validateFrames() {
         for (Site site : sites) {
-            if (site instanceof Infopoint) {
-                Infopoint info = (Infopoint) site;
+            if (site instanceof Infopoint info) {
                 if (info.debugInfo != null) {
                     BytecodeFrame frame = info.debugInfo.frame();
                     assert frame == null || frame.validateFormat();
@@ -187,5 +206,89 @@ public class HotSpotCompiledCode implements CompiledCode {
                 return field.getOffset();
             }
         });
+    }
+
+    /**
+     * Returns a copy of the compiled machine code.
+     */
+    public byte[] getTargetCode() {
+        return targetCode.clone();
+    }
+
+    /**
+     * Gets the size of the compiled machine code in bytes.
+     */
+    public int getTargetCodeSize() {
+        return targetCodeSize;
+    }
+
+    /**
+     * Returns the list of code annotations describing special sites in {@link #targetCode}.
+     */
+    public List<Site> getSites() {
+        return sites;
+    }
+
+    /**
+     * Returns list of {@link Assumption} this code relies on.
+     */
+    public List<Assumption> getAssumptions() {
+        return assumptions;
+    }
+
+    /**
+     * Returns the list of the methods whose bytecodes were used as input to the compilation
+     */
+    public List<ResolvedJavaMethod> getMethods() {
+        return methods;
+    }
+
+    /**
+     * Returns the list of comments that will be included in code dumps.
+     */
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    /**
+     * Returns a copy of the data section containing serialized constants for the emitted machine code.
+     */
+    public byte[] getDataSection() {
+        return dataSection.clone();
+    }
+
+    /**
+     * Gets the minimum alignment of the data section.
+     */
+    public int getDataSectionAlignment() {
+        return dataSectionAlignment;
+    }
+
+    /**
+     * Gets the list of relocations in the {@link #dataSection}.
+     */
+    public List<DataPatch> getDataSectionPatches() {
+        return dataSectionPatches;
+    }
+
+    /**
+     * Checks if this compiled code is immutable and position independent.
+     */
+    public boolean isImmutablePIC() {
+        return isImmutablePIC;
+    }
+
+    /**
+     * Gets the total size of the stack frame of this compiled method.
+     */
+    public int getTotalFrameSize() {
+        return totalFrameSize;
+    }
+
+    /**
+     * Gets the deoptimization rescue slot associated with this compiled code.
+     */
+    public StackSlot getDeoptRescueSlot() {
+        return deoptRescueSlot;
     }
 }

@@ -82,8 +82,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HotSpotResolvedJavaFieldImpl) {
-            HotSpotResolvedJavaFieldImpl that = (HotSpotResolvedJavaFieldImpl) obj;
+        if (obj instanceof HotSpotResolvedJavaFieldImpl that) {
             if (that.offset != this.offset || that.isStatic() != this.isStatic()) {
                 return false;
             } else if (this.holder.equals(that.holder)) {
@@ -138,9 +137,8 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         // Pull field into local variable to prevent a race causing
         // a ClassCastException below
         JavaType currentType = type;
-        if (currentType instanceof UnresolvedJavaType) {
+        if (currentType instanceof UnresolvedJavaType unresolvedType) {
             // Don't allow unresolved types to hang around forever
-            UnresolvedJavaType unresolvedType = (UnresolvedJavaType) currentType;
             JavaType resolved = HotSpotJVMCIRuntime.runtime().lookupType(unresolvedType.getName(), holder, false);
             if (resolved instanceof ResolvedJavaType) {
                 type = resolved;
@@ -236,7 +234,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         if (!hasAnnotations()) {
             return null;
         }
-        return getAnnotationData0(annotationType).get(0);
+        return getAnnotationData0(annotationType).getFirst();
     }
 
     @Override

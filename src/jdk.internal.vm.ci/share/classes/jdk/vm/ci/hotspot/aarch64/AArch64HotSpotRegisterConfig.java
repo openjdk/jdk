@@ -196,7 +196,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, ValueKindFactory<?> valueKindFactory) {
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, List<? extends JavaType> parameterTypes, ValueKindFactory<?> valueKindFactory) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         if (type == HotSpotCallingConventionType.NativeCall) {
             return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, hotspotType, valueKindFactory);
@@ -209,21 +209,12 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     @Override
     public List<Register> getCallingConventionRegisters(Type type, JavaKind kind) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
-        switch (kind) {
-            case Boolean:
-            case Byte:
-            case Short:
-            case Char:
-            case Int:
-            case Long:
-            case Object:
-                return hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
-            case Float:
-            case Double:
-                return simdParameterRegisters;
-            default:
-                throw JVMCIError.shouldNotReachHere();
-        }
+        return switch (kind) {
+            case Boolean, Byte, Short, Char, Int, Long, Object ->
+                    hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
+            case Float, Double -> simdParameterRegisters;
+            default -> throw JVMCIError.shouldNotReachHere();
+        };
     }
 
     private int parseStackArg(ValueKind<?> valueKind, AllocatableValue[] locations, int index, int currentStackOffset, HotSpotCallingConventionType type) {
@@ -247,16 +238,16 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         return currentStackOffset;
     }
 
-    private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type,
+    private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, List<? extends JavaType> parameterTypes, HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
-        AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
+        AllocatableValue[] locations = new AllocatableValue[parameterTypes.size()];
 
         int currentGeneral = 0;
         int currentSIMD = 0;
         int currentStackOffset = 0;
 
-        for (int i = 0; i < parameterTypes.length; i++) {
-            final JavaKind kind = parameterTypes[i].getJavaKind().getStackKind();
+        for (int i = 0; i < parameterTypes.size(); i++) {
+            final JavaKind kind = parameterTypes.get(i).getJavaKind().getStackKind();
 
             switch (kind) {
                 case Byte:
@@ -298,24 +289,11 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
 
     @Override
     public Register getReturnRegister(JavaKind kind) {
-        switch (kind) {
-            case Boolean:
-            case Byte:
-            case Char:
-            case Short:
-            case Int:
-            case Long:
-            case Object:
-                return r0;
-            case Float:
-            case Double:
-                return v0;
-            case Void:
-            case Illegal:
-                return null;
-            default:
-                throw new UnsupportedOperationException("no return register for type " + kind);
-        }
+        return switch (kind) {
+            case Boolean, Byte, Char, Short, Int, Long, Object -> r0;
+            case Float, Double -> v0;
+            case Void, Illegal -> null;
+        };
     }
 
     @Override

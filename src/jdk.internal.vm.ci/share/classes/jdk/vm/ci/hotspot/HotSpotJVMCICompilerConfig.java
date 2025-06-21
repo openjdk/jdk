@@ -32,7 +32,6 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
-import jdk.vm.ci.services.JVMCIPermission;
 import jdk.vm.ci.services.JVMCIServiceLocator;
 import jdk.vm.ci.services.Services;
 
@@ -99,8 +98,6 @@ final class HotSpotJVMCICompilerConfig {
      * Gets the selected system compiler factory.
      *
      * @return the selected system compiler factory
-     * @throws SecurityException if a security manager is present and it denies
-     *             {@link JVMCIPermission} for any {@link JVMCIServiceLocator} loaded by this method
      */
     static JVMCICompilerFactory getCompilerFactory(HotSpotJVMCIRuntime runtime) {
         if (compilerFactory == null) {

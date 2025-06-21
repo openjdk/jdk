@@ -25,10 +25,9 @@ package jdk.vm.ci.hotspot;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
-import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.services.Services;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Architecture;
+import jdk.vm.ci.common.JVMCIError;
 
 /**
  * Used to access native configuration details.
@@ -57,10 +56,10 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
      */
     static String getHostArchitectureName() {
         Architecture arch = Architecture.current();
-        switch (arch) {
-            case X64: return "amd64";
-            default:  return arch.name().toLowerCase();
+        if (arch == Architecture.X64) {
+            return "amd64";
         }
+        return arch.name().toLowerCase();
     }
 
     final boolean useDeferredInitBarriers = getFlag("ReduceInitialCardMarks", Boolean.class);

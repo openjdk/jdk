@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@ package jdk.vm.ci.code;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -248,14 +250,11 @@ public class CodeUtil {
             }
         }
         StringBuilder sb = new StringBuilder();
-        String nl = NEW_LINE;
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 int index = col + (row * cols);
                 if (index < cells.length) {
-                    for (int i = 0; i < lpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, lpad)));
                     Object cell = cells[index];
                     String s = String.valueOf(cell);
                     int w = s.length();
@@ -264,12 +263,10 @@ public class CodeUtil {
                         sb.append(' ');
                         w++;
                     }
-                    for (int i = 0; i < rpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, rpad)));
                 }
             }
-            sb.append(nl);
+            sb.append(NEW_LINE);
         }
         return sb.toString();
     }
@@ -435,6 +432,13 @@ public class CodeUtil {
         }
 
         RegisterConfig registerConfig = codeCache.getRegisterConfig();
-        return registerConfig.getCallingConvention(type, retType, argTypes, valueKindFactory);
+        return registerConfig.getCallingConvention(type, retType, listFromTrustedArray(argTypes), valueKindFactory);
+    }
+
+    /**
+     * Creates an immutable list from a trusted array that has no references retained by the caller.
+     */
+    static <T> List<T> listFromTrustedArray(Object[] array) {
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 }

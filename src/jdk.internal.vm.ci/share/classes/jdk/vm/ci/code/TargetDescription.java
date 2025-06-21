@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.vm.ci.code;
 import static jdk.vm.ci.meta.MetaUtil.identityHashCodeString;
 
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.services.Services;
 import jdk.internal.util.OperatingSystem;
 
 /**
@@ -101,18 +100,15 @@ public class TargetDescription {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof TargetDescription) {
-            TargetDescription that = (TargetDescription) obj;
+        if (obj instanceof TargetDescription that) {
             // @formatter:off
-            if (this.implicitNullCheckLimit == that.implicitNullCheckLimit &&
-                this.inlineObjects == that.inlineObjects &&
-                this.isMP == that.isMP &&
-                this.stackAlignment == that.stackAlignment &&
-                this.wordJavaKind.equals(that.wordJavaKind) &&
-                this.wordSize == that.wordSize &&
-                this.arch.equals(that.arch)) {
-                return true;
-            }
+            return this.implicitNullCheckLimit == that.implicitNullCheckLimit
+                && this.inlineObjects == that.inlineObjects
+                && this.isMP == that.isMP
+                && this.stackAlignment == that.stackAlignment
+                && this.wordJavaKind.equals(that.wordJavaKind)
+                && this.wordSize == that.wordSize
+                && this.arch.equals(that.arch);
             // @formatter:on
         }
         return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.code;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -40,21 +41,19 @@ public final class DebugInfo {
 
     private final BytecodePosition bytecodePosition;
     private ReferenceMap referenceMap;
-    private final VirtualObject[] virtualObjectMapping;
+    private final List<VirtualObject> virtualObjectMapping;
     private RegisterSaveLayout calleeSaveInfo;
 
     /**
      * Creates a new {@link DebugInfo} from the given values.
      *
-     * @param codePos the {@linkplain BytecodePosition code position} or {@linkplain BytecodeFrame
-     *            frame} info
-     * @param virtualObjectMapping the mapping of {@link VirtualObject}s to their real values. This
-     *            array is now owned by this object and must not be mutated by the caller.
+     * @param codePos              the {@linkplain BytecodePosition code position} or {@linkplain BytecodeFrame
+     *                             frame} info
+     * @param virtualObjectMapping the mapping of {@link VirtualObject}s to their real values.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `virtualObjectMapping`")
     public DebugInfo(BytecodePosition codePos, VirtualObject[] virtualObjectMapping) {
         this.bytecodePosition = codePos;
-        this.virtualObjectMapping = virtualObjectMapping;
+        this.virtualObjectMapping = virtualObjectMapping == null ? List.of() : List.of(virtualObjectMapping);
     }
 
     public DebugInfo(BytecodePosition codePos) {
@@ -91,8 +90,8 @@ public final class DebugInfo {
 
     /**
      * @return The code position (including all inlined methods) of this debug info. If this is a
-     *         {@link BytecodeFrame} instance, then it is also the deoptimization information for
-     *         each inlined frame.
+     * {@link BytecodeFrame} instance, then it is also the deoptimization information for
+     * each inlined frame.
      */
     public BytecodePosition getBytecodePosition() {
         return bytecodePosition;
@@ -102,7 +101,7 @@ public final class DebugInfo {
         return referenceMap;
     }
 
-    public VirtualObject[] getVirtualObjectMapping() {
+    public List<VirtualObject> getVirtualObjectMapping() {
         return virtualObjectMapping;
     }
 
@@ -132,11 +131,8 @@ public final class DebugInfo {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof DebugInfo) {
-            DebugInfo that = (DebugInfo) obj;
-            if (Objects.equals(this.bytecodePosition, that.bytecodePosition) && Objects.equals(this.calleeSaveInfo, that.calleeSaveInfo) && Objects.equals(this.referenceMap, that.referenceMap)) {
-                return true;
-            }
+        if (obj instanceof DebugInfo that) {
+            return Objects.equals(this.bytecodePosition, that.bytecodePosition) && Objects.equals(this.calleeSaveInfo, that.calleeSaveInfo) && Objects.equals(this.referenceMap, that.referenceMap);
         }
         return false;
     }
