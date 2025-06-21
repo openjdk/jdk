@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,17 @@
 
 package sun.security.pkcs12;
 
-import java.io.*;
-import java.security.*;
+import java.io.IOException;
+import java.security.AlgorithmParameters;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.PBMAC1ParameterSpec;
 
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.ParsingException;
+import sun.security.util.*;
+import sun.security.x509.AlgorithmId;
 
 
 /**
@@ -44,10 +47,15 @@ import sun.security.pkcs.ParsingException;
 class MacData {
 
     private final String digestAlgorithmName;
-    private AlgorithmParameters digestAlgorithmParams;
+    private final AlgorithmParameters digestAlgorithmParams;
     private final byte[] digest;
-    private final byte[] macSalt;
-    private final int iterations;
+    private byte[] macSalt;
+    private byte[] extraMacSalt;
+    private int iterations;
+    private int extraIterations;
+    private String kdfHmac;
+    private String Hmac;
+    private int keyLength;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded = null;
@@ -72,26 +80,54 @@ class MacData {
         AlgorithmId digestAlgorithmId = AlgorithmId.parse(digestInfo[0]);
         this.digestAlgorithmName = digestAlgorithmId.getName();
         this.digestAlgorithmParams = digestAlgorithmId.getParameters();
+
         // Get the digest.
         this.digest = digestInfo[1].getOctetString();
 
-        // Get the salt.
-        this.macSalt = macData[1].getOctetString();
+        if (digestInfo[0].tag != DerValue.tag_Sequence) {
+            throw new IOException("algid parse error, not a sequence");
+        }
+        if (digestAlgorithmName.equals("PBMAC1")) {
+            PBMAC1ParameterSpec pbmac1Spec;
 
-        // Iterations is optional. The default value is 1.
+            try {
+                pbmac1Spec =
+                        digestAlgorithmParams.getParameterSpec(
+                        PBMAC1ParameterSpec.class);
+            } catch (InvalidParameterSpecException ipse) {
+                throw new IOException(
+                        "Invalid PBMAC1 algorithm parameters");
+            }
+            iterations = pbmac1Spec.getIterationCount();
+            macSalt = pbmac1Spec.getSalt();
+            kdfHmac = pbmac1Spec.getkdfHmac();
+            Hmac = pbmac1Spec.getHmac();
+            keyLength = pbmac1Spec.getKeyLength();
+        }
+
+        // Get the salt.
+        extraMacSalt = macData[1].getOctetString();
+
+        // Iterations are optional. The default value is 1.
         if (macData.length > 2) {
-            this.iterations = macData[2].getInteger();
+            extraIterations = macData[2].getInteger();
         } else {
-            this.iterations = 1;
+            extraIterations = 1;
+        }
+        if (!digestAlgorithmName.equals("PBMAC1")) {
+            macSalt = extraMacSalt;
+            iterations = extraIterations;
         }
     }
 
-    MacData(String algName, byte[] digest, byte[] salt, int iterations)
+    MacData(String algName, byte[] digest, AlgorithmParameterSpec params,
+            byte[] extraSalt, int extraIterationCount)
         throws NoSuchAlgorithmException
     {
-        if (algName == null)
+        if (algName == null) {
            throw new NullPointerException("the algName parameter " +
                                                "must be non-null");
+        }
 
         AlgorithmId algid = AlgorithmId.get(algName);
         this.digestAlgorithmName = algid.getName();
@@ -107,13 +143,27 @@ class MacData {
             this.digest = digest.clone();
         }
 
-        this.macSalt = salt;
-        this.iterations = iterations;
+        if (params instanceof PBMAC1ParameterSpec p) {
+            macSalt = p.getSalt();
+            iterations = p.getIterationCount();
+            kdfHmac = p.getkdfHmac();
+            Hmac = p.getHmac();
+            keyLength = p.getKeyLength();
+            extraMacSalt = extraSalt;
+            extraIterations = extraIterationCount;
+        } else if (params instanceof PBEParameterSpec p) {
+            macSalt = p.getSalt();
+            iterations = p.getIterationCount();
+            kdfHmac = null;
+            Hmac = null;
+            keyLength = 0;
+        } else {
+            throw new IllegalArgumentException("unsupported parameter spec");
+        }
 
         // delay the generation of ASN.1 encoding until
         // getEncoded() is called
         this.encoded = null;
-
     }
 
     String getDigestAlgName() {
@@ -132,14 +182,90 @@ class MacData {
         return digest;
     }
 
+    String getkdfHmac() {
+        return kdfHmac;
+    }
+
+    String getHmac() {
+        return Hmac;
+    }
+
+    int getKeyLength() {
+        return keyLength;
+    }
+
+    byte[] getExtraSalt() {
+        return extraMacSalt;
+    }
+
+    int getExtraIterations() {
+        return extraIterations;
+    }
+
     /**
      * Returns the ASN.1 encoding of this object.
      * @return the ASN.1 encoding.
      * @exception IOException if error occurs when constructing its
      * ASN.1 encoding.
      */
-    public byte[] getEncoded() throws NoSuchAlgorithmException
+    public byte[] getEncoded() throws NoSuchAlgorithmException,
+            IOException
     {
+        if (digestAlgorithmName.equals("PBMAC1")) {
+            ObjectIdentifier pkcs5PBKDF2_OID =
+                    ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
+
+            DerOutputStream out = new DerOutputStream();
+            DerOutputStream tmp0 = new DerOutputStream();
+            DerOutputStream tmp1 = new DerOutputStream();
+            DerOutputStream tmp2 = new DerOutputStream();
+            DerOutputStream tmp3 = new DerOutputStream();
+            DerOutputStream tmp4 = new DerOutputStream();
+            DerOutputStream Hmac = new DerOutputStream();
+            DerOutputStream kdfHmac = new DerOutputStream();
+
+            // encode kdfHmac algorithm
+            kdfHmac.putOID(ObjectIdentifier.of(KnownOIDs
+                    .findMatch(this.kdfHmac)));
+            kdfHmac.putNull();
+
+            // encode Hmac algorithm
+            Hmac.putOID(ObjectIdentifier.of(KnownOIDs.findMatch(this.Hmac)));
+            Hmac.putNull();
+
+            DerOutputStream pBKDF2_params = new DerOutputStream();
+
+            pBKDF2_params.putOctetString(macSalt); // choice: 'specified OCTET STRING'
+
+            // encode iterations
+            pBKDF2_params.putInteger(iterations);
+
+            // encode derived key length
+            if (keyLength > 0) {
+                pBKDF2_params.putInteger(keyLength / 8); // derived key length (in octets)
+            }
+            pBKDF2_params.write(DerValue.tag_Sequence, kdfHmac);
+            tmp3.putOID(pkcs5PBKDF2_OID);
+            tmp3.write(DerValue.tag_Sequence, pBKDF2_params);
+            tmp4.write(DerValue.tag_Sequence, tmp3);
+            tmp4.write(DerValue.tag_Sequence, Hmac);
+
+            // PBMAC1
+            tmp1.putOID(ObjectIdentifier.of(KnownOIDs
+                    .findMatch(digestAlgorithmName)));
+
+            tmp1.write(DerValue.tag_Sequence, tmp4);
+            tmp2.write(DerValue.tag_Sequence, tmp1);
+            tmp2.putOctetString(digest);
+            tmp0.write(DerValue.tag_Sequence, tmp2);
+            tmp0.putOctetString(extraMacSalt);
+            tmp0.putInteger(extraIterations);
+            out.write(DerValue.tag_Sequence, tmp0);
+            encoded = out.toByteArray();
+
+            return encoded.clone();
+        }
+
         if (this.encoded != null)
             return this.encoded.clone();
 
