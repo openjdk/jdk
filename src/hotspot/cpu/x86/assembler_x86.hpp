@@ -2745,6 +2745,16 @@ private:
   void minpd(XMMRegister dst, XMMRegister src);
   void vminpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
 
+  // AVX10.2 floating point minmax instructions
+  void eminmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void eminmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void eminmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
+  void evminmaxpd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxpd(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
+
   // Maximum of packed integers
   void pmaxsb(XMMRegister dst, XMMRegister src);
   void vpmaxsb(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);

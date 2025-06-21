@@ -2024,7 +2024,7 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
       if (is_subword_type(bt) && !VM_Version::supports_avx512bw()) {
         return false; // Implementation limitation
       }
-      if (is_floating_point_type(bt)) {
+      if (is_floating_point_type(bt) && !VM_Version::supports_avx10_2()) {
         return false; // Implementation limitation
       }
       return true;
@@ -6348,8 +6348,24 @@ instruct vminmaxL_reg_evex(vec dst, vec src1, vec src2) %{
 %}
 
 // Float/Double vector Min/Max
+instruct minmaxFP_avx10_reg(vec dst, vec a, vec b) %{
+  predicate(VM_Version::supports_avx10_2() &&
+            is_floating_point_type(Matcher::vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
+  match(Set dst (MinV a b));
+  match(Set dst (MaxV a b));
+  format %{ "vector_minmaxFP  $dst, $a, $b" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vminmax_fp(opcode, elem_bt, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Float/Double vector Min/Max
 instruct minmaxFP_reg(legVec dst, legVec a, legVec b, legVec tmp, legVec atmp, legVec btmp) %{
-  predicate(Matcher::vector_length_in_bytes(n) <= 32 &&
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_length_in_bytes(n) <= 32 &&
             is_floating_point_type(Matcher::vector_element_basic_type(n)) && // T_FLOAT, T_DOUBLE
             UseAVX > 0);
   match(Set dst (MinV a b));
@@ -6371,7 +6387,7 @@ instruct minmaxFP_reg(legVec dst, legVec a, legVec b, legVec tmp, legVec atmp, l
 %}
 
 instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktmp) %{
-  predicate(Matcher::vector_length_in_bytes(n) == 64 &&
+  predicate(!VM_Version::supports_avx10_2() && Matcher::vector_length_in_bytes(n) == 64 &&
             is_floating_point_type(Matcher::vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
   match(Set dst (MinV a b));
   match(Set dst (MaxV a b));
@@ -10686,8 +10702,22 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
   ins_pipe(pipe_slow);
 %}
 
+instruct scalar_minmax_HF_avx10_reg(regF dst, regF src1, regF src2)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MaxHF src1 src2));
+  match(Set dst (MinHF src1 src2));
+  format %{ "scalar_min_max_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int function = this->ideal_Opcode() == Op_MinHF ? 0x4 : 0x5;
+    __ eminmaxsh($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, function);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xtmp1, regF xtmp2)
 %{
+  predicate(!VM_Version::supports_avx10_2());
   match(Set dst (MaxHF src1 src2));
   match(Set dst (MinHF src1 src2));
   effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
@@ -10787,8 +10817,23 @@ instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
   ins_pipe( pipe_slow );
 %}
 
+instruct vector_minmax_HF_avx10_reg(vec dst, vec src1, vec src2)
+%{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinVHF src1 src2));
+  match(Set dst (MaxVHF src1 src2));
+  format %{ "vector_min_max_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int function =  this->ideal_Opcode() == Op_MinVHF ? 0x4 : 0x5;
+    __ evminmaxph($dst$$XMMRegister, k0, $src1$$XMMRegister, $src2$$XMMRegister, true, function, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vector_minmax_HF_reg(vec dst, vec src1, vec src2, kReg ktmp, vec xtmp1, vec xtmp2)
 %{
+  predicate(!VM_Version::supports_avx10_2());
   match(Set dst (MinVHF src1 src2));
   match(Set dst (MaxVHF src1 src2));
   effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
