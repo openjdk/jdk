@@ -593,70 +593,74 @@ public class Config {
             DEBUG.println("Loading krb5 profile at " + file);
         }
 
-        // Create a new copy so that input is not modified when returned
-        dups = new HashSet<>(dups);
-
-        if (!dups.add(file)) {
-            throw new KrbException("Recursive include");
+        if (!file.isAbsolute()) {
+            throw new KrbException("Profile path not absolute");
         }
         if (allConfs.size() > MAX_INCLUDE_FILE) {
             throw new KrbException("Too many include files");
         }
-        if (allConfs.containsKey(file)) {
-            // Already parsed. This is allowed.
-            return;
-        }
-        if (!file.isAbsolute()) {
-            throw new KrbException("Profile path not absolute");
+
+        if (!dups.add(file)) {
+            throw new KrbException("Recursive include");
         }
 
-        List<String> lines = Files.readAllLines(file);
-        List<String> content = new ArrayList<>();
-
-        // Add content to map at the beginning to detect duplicates
-        allConfs.put(file, content);
-
-        boolean inSections = false;
-        for (String line: lines) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
-                continue;
+        try {
+            if (allConfs.containsKey(file)) {
+                // Already parsed. Including a file multiple times is allowed.
+                // Just make sure it cannot be recursive.
+                return;
             }
-            if (line.startsWith("includedir ")) {
-                Path dir = Paths.get(
-                        line.substring("includedir ".length()).trim());
-                try (Stream<Path> files = Files.list(dir)) {
-                    for (Path p: files.sorted().toList()) {
-                        if (Files.isDirectory(p)) continue;
-                        String name = p.getFileName().toString();
-                        if (name.matches("[a-zA-Z0-9_-]+") ||
-                                (!name.startsWith(".") &&
-                                        name.endsWith(".conf"))) {
-                            // if dir is absolute, so is p
-                            readConfigFileLines(p, dups);
-                            content.add("#include " + p);
-                        }
-                    }
+
+            List<String> lines = Files.readAllLines(file);
+            List<String> content = new ArrayList<>();
+
+            // Add content to map at the beginning to detect duplicates
+            allConfs.put(file, content);
+
+            boolean inSections = false;
+            for (String line : lines) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
+                    continue;
                 }
-            } else if (line.startsWith("include ")) {
-                Path p = Paths.get(line.substring("include ".length()).trim());
-                content.add("#include " + p);
-                readConfigFileLines(p, dups);
-            } else {
-                if (!inSections) {
-                    if (line.charAt(0) == '[') {
-                        inSections = true;
-                        content.add(line);
-                    } else {
-                        // Unsupported directives
-                        if (DEBUG != null) {
-                            DEBUG.println("Line not in any section: " + line);
+                if (line.startsWith("includedir ")) {
+                    Path dir = Paths.get(
+                            line.substring("includedir ".length()).trim());
+                    try (Stream<Path> files = Files.list(dir)) {
+                        for (Path p : files.sorted().toList()) {
+                            if (Files.isDirectory(p)) continue;
+                            String name = p.getFileName().toString();
+                            if (name.matches("[a-zA-Z0-9_-]+") ||
+                                    (!name.startsWith(".") &&
+                                            name.endsWith(".conf"))) {
+                                // if dir is absolute, so is p
+                                readConfigFileLines(p, dups);
+                                content.add("#include " + p);
+                            }
                         }
                     }
+                } else if (line.startsWith("include ")) {
+                    Path p = Paths.get(line.substring("include ".length()).trim());
+                    content.add("#include " + p);
+                    readConfigFileLines(p, dups);
                 } else {
-                    content.add(line);
+                    if (!inSections) {
+                        if (line.charAt(0) == '[') {
+                            inSections = true;
+                            content.add(line);
+                        } else {
+                            // Unsupported directives
+                            if (DEBUG != null) {
+                                DEBUG.println("Line not in any section: " + line);
+                            }
+                        }
+                    } else {
+                        content.add(line);
+                    }
                 }
             }
+        } finally {
+            dups.remove(file);
         }
     }
 

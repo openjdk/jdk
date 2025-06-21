@@ -68,5 +68,22 @@ public class DuplicatedIncludes {
                 include %1$s/sub
                 """, cwd));
         Asserts.assertThrows(KrbException.class, () -> Config.refresh());
+
+        // It's OK for a file to include another file that has already
+        // been included multiple times, as long as it's not on the stack.
+        // This proves it's necessary to place "dups.remove(file)" in a
+        // finally block in Config::readConfigFileLines. This case is
+        // not covered by IncludeRandom.java because of the structured
+        // include pattern (included always longer than includee) there.
+        Files.writeString(Path.of("krb5.conf"), String.format("""
+                include %1$s/sub
+                include %1$s/sub
+                include %1$s/sub2
+                """, cwd));
+        Files.writeString(Path.of("sub"), "");
+        Files.writeString(Path.of("sub2"), String.format("""
+                include %1$s/sub
+                """, cwd));
+        Config.refresh();
     }
 }
