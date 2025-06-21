@@ -97,6 +97,10 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * perform reads under read locks.  If a reader tries to acquire the
  * write lock it will never succeed.
  *
+ * <p>Note: If you do not rely on reentrancy, you may find that {@link
+ * StampedLock} offers better performance, as in: {@code ReadWriteLock
+ * lock = new StampedLock().asReadWriteLock()}.
+ *
  * <li><b>Lock downgrading</b>
  * <p>Reentrancy also allows downgrading from the write lock to a read lock,
  * by acquiring the write lock, then the read lock and then releasing the
