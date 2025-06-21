@@ -98,11 +98,12 @@ import java.util.function.Function;
  * with an (unchecked) exception or error, then all dependent stages
  * requiring its completion complete exceptionally as well, with a
  * {@link CompletionException} holding the exception as its
- * cause. This distinguishes exceptions in an action itself from those
- * it depends on. If they are to be handled in the same way, instead
- * catch {@link RuntimeException}.  If a stage is dependent
- * on <em>both</em> of two stages, and both complete exceptionally,
- * then the CompletionException may correspond to either one of these
+ * cause. This convention distinguishes exceptions in an action itself
+ * from those it depends on. If they are to be handled in the same
+ * way, instead catch {@link RuntimeException} (possibly inspecting
+ * the exception's {@code getCause()}).  If a stage is dependent on
+ * <em>both</em> of two stages, and both complete exceptionally, then
+ * the CompletionException may correspond to either one of these
  * exceptions.  If a stage is dependent on <em>either</em> of two
  * others, and only one of them completes exceptionally, no guarantees
  * are made about whether the dependent stage completes normally or
@@ -111,7 +112,10 @@ import java.util.function.Function;
  * completes exceptionally with that exception unless the source stage
  * also completed exceptionally, in which case the exceptional
  * completion from the source stage is given preference and propagated
- * to the dependent stage.
+ * to the dependent stage. Applications are encouraged to maintain
+ * these conventions, avoiding unnecessary nesting when rethrowing, as
+ * in {@code throw (ex instanceof CompletionException) ? ex : new
+ * CompletionException(ex)}.
  *
  * </ul>
  *
@@ -149,10 +153,11 @@ import java.util.function.Function;
  * interface by providing a common conversion type.
  *
  * <p>Memory consistency effects: Actions in a thread prior to the
- * submission of a computation producing a {@code CompletionStage}
- * <i>happen-before</i> that computation begins. And actions taken by
- * {@code CompletionStage x} <i>happen-before</i> actions of any
- * dependent stage subsequent to {@code x}'s completion.
+ * submission of a computation producing a {@code CompletionStage} <a
+ * href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
+ * that computation begins. And actions taken by {@code
+ * CompletionStage x} <i>happen-before</i> actions of any dependent
+ * stage subsequent to {@code x}'s completion.
  *
  * @param <T> the type of values the stage produces or consumes
  *
