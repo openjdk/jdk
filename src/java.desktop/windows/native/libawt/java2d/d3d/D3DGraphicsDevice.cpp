@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ JNIEXPORT jboolean JNICALL Java_sun_java2d_d3d_D3DGraphicsDevice_initD3D
 
     jboolean result = D3DInitializer::GetInstance().EnsureInited()
                       ? JNI_TRUE : JNI_FALSE;
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DGD_initD3D: result=%x", result);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DGD_initD3D: result=%x", result);
     return result;
 }
 
@@ -94,7 +94,7 @@ JNIEXPORT jstring JNICALL Java_sun_java2d_d3d_D3DGraphicsDevice_getDeviceIdNativ
     // in the buffer so we have to make sure it is null terminated
     pAdapterId[len-1] = (WCHAR)0;
 
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  id=%S", pAdapterId);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  id=%S", pAdapterId);
 
     jstring ret = JNU_NewStringPlatform(env, pAdapterId);
 
@@ -123,7 +123,7 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_getDeviceCapsNative
     adapter = pMgr->GetAdapterOrdinalForScreen(gdiScreen);
 
     if (FAILED(pMgr->GetD3DContext(adapter, &pCtx))) {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "D3DGD_getDeviceCapsNative: device %d disabled", adapter);
         return CAPS_EMPTY;
     }
@@ -318,17 +318,17 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_configDisplayModeNative
             return;
         }
     } else {
-        J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                       "D3DGD_configDisplayModeNative: unsupported depth: %d",
-                       bitDepth);
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "D3DGD_configDisplayModeNative: unsupported depth: %d",
+                      bitDepth);
         return;
     }
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  changing to dm: %dx%dx%d@%d",
-                newParams.BackBufferWidth, newParams.BackBufferHeight,
-                bitDepth, refreshRate);
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  selected backbuffer format: %d",
-                newParams.BackBufferFormat);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  changing to dm: %dx%dx%d@%d",
+               newParams.BackBufferWidth, newParams.BackBufferHeight,
+               bitDepth, refreshRate);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  selected backbuffer format: %d",
+               newParams.BackBufferFormat);
 
     res = pCtx->ConfigureContext(&newParams);
     if (SUCCEEDED(res)) {
@@ -370,9 +370,9 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_getCurrentDisplayModeNative
             case D3DFMT_R5G6B5:
             case D3DFMT_X1R5G5B5: bitDepth = 16; break;
         }
-        J2dTraceLn4(J2D_TRACE_VERBOSE,
-                    "  current dm: %dx%dx%d@%d",
-                    mode.Width, mode.Height, bitDepth, mode.RefreshRate);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  current dm: %dx%dx%d@%d",
+                   mode.Width, mode.Height, bitDepth, mode.RefreshRate);
         ret = CreateDisplayMode(env, mode.Width, mode.Height, bitDepth,
                                 mode.RefreshRate);
     }
@@ -418,8 +418,8 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_enumDisplayModesNative
                     case D3DFMT_R5G6B5:
                     case D3DFMT_X1R5G5B5: bitDepth = 16; break;
                 }
-                J2dTraceLn4(J2D_TRACE_VERBOSE, "  found dm: %dx%dx%d@%d",
-                            mode.Width, mode.Height, bitDepth,mode.RefreshRate);
+                J2dTraceLn(J2D_TRACE_VERBOSE, "  found dm: %dx%dx%d@%d",
+                           mode.Width, mode.Height, bitDepth,mode.RefreshRate);
                 addDisplayMode(env, arrayList, mode.Width, mode.Height,
                                bitDepth, mode.RefreshRate);
             }
@@ -457,7 +457,7 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_getAvailableAcceleratedMemoryNative
     RETURN_STATUS_IF_NULL(pd3dDevice = pCtx->Get3DDevice(), 0L);
 
     UINT mem = pd3dDevice->GetAvailableTextureMem();
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  available memory=%d", mem);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  available memory=%d", mem);
     return mem;
 }
 

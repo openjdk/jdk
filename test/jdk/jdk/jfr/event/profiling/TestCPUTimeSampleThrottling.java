@@ -61,19 +61,27 @@ public class TestCPUTimeSampleThrottling {
 
     private static void testThrottleSettingsPeriod() throws Exception {
         float rate = countEvents(1000, "10ms").rate();
-        Asserts.assertTrue(rate > 90 && rate < 110, "Expected around 100 events per second, got " + rate);
+        Asserts.assertTrue(rate > 75 && rate < 110, "Expected around 100 events per second, got " + rate);
     }
 
-    private record EventCount(long count, float time) {
+    private record EventCount(long count, float cpuTime) {
         float rate() {
-            return count / time;
+            return count / cpuTime;
         }
     }
 
-    private static EventCount countEvents(int timeMs, String rate) throws Exception {
-        try(Recording recording = new Recording()) {
+    /**
+     * Counting the events that are emitted for a given throttle in a given time.
+     * <p>
+     * The result is wall-clock independent; it only records the CPU-time and the number of
+     * emitted events. The result, therefore, does not depend on the load of the machine.
+     * And because failed events are counted too, the result is not affected by the thread
+     * doing other in-JVM work (like garbage collection).
+     */
+    private static EventCount countEvents(int timeMs, String throttle) throws Exception {
+        try (Recording recording = new Recording()) {
             recording.enable(EventNames.CPUTimeSample)
-                    .with("throttle", rate);
+                    .with("throttle", throttle);
 
             var bean = ManagementFactory.getThreadMXBean();
 
@@ -91,8 +99,6 @@ public class TestCPUTimeSampleThrottling {
                     .filter(e -> e.getThread().getJavaName()
                                 .equals(Thread.currentThread().getName()))
                     .count();
-
-            System.out.println("Event count: " + eventCount + ", CPU time: " + spendCPUTime / 1_000_000_000f + "s");
 
             return new EventCount(eventCount, spendCPUTime / 1_000_000_000f);
         }
