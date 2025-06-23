@@ -257,23 +257,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
      * Alternative to using {@link IdentityHashMap} which would require dealing with the
      * {@link IdentityHashMap#NULL_KEY} constant.
      */
-    static class IdentityBox {
-        Object obj;
-
-        IdentityBox(Object obj) {
-            this.obj = obj;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            IdentityBox that = (IdentityBox) other;
-            return that.obj == obj;
-        }
-
-        @Override
-        public int hashCode() {
-            return System.identityHashCode(obj);
-        }
+    record IdentityBox(Object obj) {
     }
 
     private HashMap<IdentityBox, Integer> objects;
@@ -628,7 +612,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             Object[] pool = new Object[objects.size()];
             for (Map.Entry<IdentityBox, Integer> e : objects.entrySet()) {
                 int id = e.getValue();
-                Object object = e.getKey().obj;
+                Object object = e.getKey().obj();
                 if (object == null) {
                     throw error("unexpected null in object pool at %d - map is %s", id, objects);
                 }
@@ -914,26 +898,26 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             switch (a) {
                 case NoFinalizableSubclass noFinalizableSubclass -> {
                     writeTag(NO_FINALIZABLE_SUBCLASS);
-                    writeObjectType("receiverType", noFinalizableSubclass.receiverType);
+                    writeObjectType("receiverType", noFinalizableSubclass.receiverType());
                 }
                 case ConcreteSubtype cs -> {
                     writeTag(CONCRETE_SUBTYPE);
-                    writeObjectType("context", cs.context);
-                    writeObjectType("subtype", cs.subtype);
+                    writeObjectType("context", cs.context());
+                    writeObjectType("subtype", cs.subtype());
                 }
                 case LeafType leafType -> {
                     writeTag(LEAF_TYPE);
-                    writeObjectType("context", leafType.context);
+                    writeObjectType("context", leafType.context());
                 }
                 case ConcreteMethod cm -> {
                     writeTag(CONCRETE_METHOD);
-                    writeObjectType("context", cm.context);
-                    writeMethod("impl", cm.impl);
+                    writeObjectType("context", cm.context());
+                    writeMethod("impl", cm.impl());
                 }
                 case CallSiteTargetValue cs -> {
                     writeTag(CALLSITE_TARGET_VALUE);
-                    writeJavaValue(cs.callSite, JavaKind.Object);
-                    writeJavaValue(cs.methodHandle, JavaKind.Object);
+                    writeJavaValue(cs.callSite(), JavaKind.Object);
+                    writeJavaValue(cs.methodHandle(), JavaKind.Object);
                 }
                 case null, default -> throw error("unexpected assumption %s", a);
             }
@@ -1029,7 +1013,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
     }
 
     private boolean isNarrowOop(Value oopValue) {
-        return oopValue.getPlatformKind() != runtime.getHostJVMCIBackend().getTarget().arch.getWordKind();
+        return oopValue.getPlatformKind() != runtime.getHostJVMCIBackend().target().arch().getWordKind();
     }
 
     private boolean isVector(Value value) {
@@ -1232,23 +1216,23 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
 
     private void writeReferenceMap(ReferenceMap map) {
         HotSpotReferenceMap hsMap = (HotSpotReferenceMap) map;
-        int length = hsMap.objects.length;
-        writeU2("maxRegisterSize", hsMap.maxRegisterSize);
-        int derivedBaseLength = hsMap.derivedBase.length;
-        int sizeInBytesLength = hsMap.sizeInBytes.length;
+        int length = hsMap.objects().length;
+        writeU2("maxRegisterSize", hsMap.maxRegisterSize());
+        int derivedBaseLength = hsMap.derivedBase().length;
+        int sizeInBytesLength = hsMap.sizeInBytes().length;
         if (derivedBaseLength != length || sizeInBytesLength != length) {
             throw error("arrays in reference map have different sizes: %d %d %d", length, derivedBaseLength, sizeInBytesLength);
         }
         writeU2("referenceMap:length", length);
         for (int i = 0; i < length; i++) {
-            Location derived = hsMap.derivedBase[i];
+            Location derived = hsMap.derivedBase()[i];
             writeBoolean("hasDerived", derived != null);
-            int size = hsMap.sizeInBytes[i];
+            int size = hsMap.sizeInBytes()[i];
             if (size % 4 != 0) {
                 throw error("invalid oop size in ReferenceMap: %d", size);
             }
             writeU2("sizeInBytes", size);
-            writeLocation(hsMap.objects[i]);
+            writeLocation(hsMap.objects()[i]);
             if (derived != null) {
                 writeLocation(derived);
             }
@@ -1256,15 +1240,15 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
     }
 
     private void writeLocation(Location loc) {
-        writeRegister(loc.reg);
-        writeU2("offset", loc.offset);
+        writeRegister(loc.reg());
+        writeU2("offset", loc.offset());
     }
 
     private void writeRegister(Register reg) {
         if (reg == null) {
             writeU2("register", NO_REGISTER);
         } else {
-            writeU2("register", reg.number);
+            writeU2("register", reg.number());
         }
     }
 }

@@ -40,19 +40,9 @@ import jdk.vm.ci.meta.SpeculationLog;
 /**
  * HotSpot implementation of {@link CodeCacheProvider}.
  */
-public class HotSpotCodeCacheProvider implements CodeCacheProvider {
-
-    protected final HotSpotJVMCIRuntime runtime;
-    private final HotSpotVMConfig config;
-    protected final TargetDescription target;
-    protected final RegisterConfig regConfig;
-
-    public HotSpotCodeCacheProvider(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {
-        this.runtime = runtime;
-        this.config = runtime.getConfig();
-        this.target = target;
-        this.regConfig = regConfig;
-    }
+public record HotSpotCodeCacheProvider(HotSpotJVMCIRuntime runtime,
+                                       TargetDescription   target,
+                                       RegisterConfig      regConfig) implements CodeCacheProvider {
 
     @Override
     public String getMarkName(Mark mark) {
@@ -77,7 +67,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
             HotSpotVMConfigStore store = runtime.getConfigStore();
             for (Map.Entry<String, VMField> e : store.getFields().entrySet()) {
                 VMField field = e.getValue();
-                if (field.isStatic() && field.value instanceof Long && ((Long) field.value) == address) {
+                if (field.isStatic() && field.value() instanceof Long && ((Long) field.value()) == address) {
                     return e.getValue() + ":0x" + Long.toHexString(address);
                 }
             }
@@ -92,7 +82,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
 
     @Override
     public int getMinimumOutgoingSize() {
-        return config.runtimeCallStackSize;
+        return runtime.getConfig().runtimeCallStackSize;
     }
 
     private InstalledCode logOrDump(InstalledCode installedCode, CompiledCode compiledCode) {
@@ -137,8 +127,8 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         }
 
         int result = runtime.getCompilerToVM().installCode(hsCompiledCode, resultInstalledCode, failedSpeculationsAddress, speculations);
-        if (result != config.codeInstallResultOk) {
-            String resultDesc = config.getCodeInstallResultDescription(result);
+        if (result != runtime.getConfig().codeInstallResultOk) {
+            String resultDesc = runtime.getConfig().getCodeInstallResultDescription(result);
             if (hsCompiledNmethod != null) {
                 String msg = hsCompiledNmethod.getInstallationFailureMessage();
                 if (msg != null) {
@@ -146,7 +136,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
                 } else {
                     msg = String.format("Code installation failed: %s", resultDesc);
                 }
-                throw new BailoutException(result >= config.codeInstallResultFirstPermanentBailout, msg);
+                throw new BailoutException(result >= runtime.getConfig().codeInstallResultFirstPermanentBailout, msg);
             } else {
                 throw new BailoutException("Error installing %s: %s", ((HotSpotCompiledCode) compiledCode).getName(), resultDesc);
             }

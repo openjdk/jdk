@@ -153,14 +153,14 @@ public class HotSpotCompiledCode implements CompiledCode {
         this.name = name;
         this.targetCode = targetCode;
         this.targetCodeSize = targetCodeSize;
-        this.sites = sites == null ? List.of() : listFromTrustedArray(sites);
-        this.assumptions = assumptions == null ? List.of() : listFromTrustedArray(assumptions);
-        this.methods = methods == null ? List.of() : listFromTrustedArray(methods);
+        this.sites = listFromTrustedArray(sites);
+        this.assumptions = listFromTrustedArray(assumptions);
+        this.methods = listFromTrustedArray(methods);
 
-        this.comments = comments == null ? List.of() : listFromTrustedArray(comments);
+        this.comments = listFromTrustedArray(comments);
         this.dataSection = dataSection;
         this.dataSectionAlignment = dataSectionAlignment;
-        this.dataSectionPatches = dataSectionPatches == null ? List.of() : listFromTrustedArray(dataSectionPatches);
+        this.dataSectionPatches = listFromTrustedArray(dataSectionPatches);
         this.isImmutablePIC = isImmutablePIC;
         this.totalFrameSize = totalFrameSize;
         this.deoptRescueSlot = deoptRescueSlot;

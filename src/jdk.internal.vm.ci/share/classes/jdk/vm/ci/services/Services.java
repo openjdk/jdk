@@ -210,7 +210,7 @@ public final class Services {
             String key = toJavaString(unsafe, unsafe.getLong(prop + keyOffset));
             long valueAddress = unsafe.getLong(prop + valueOffset);
             if (valueAddress != 0) {
-                props.put(key, new SystemProperties.Value(unsafe, valueAddress));
+                props.put(key, new SystemProperties.Value(valueAddress));
                 i++;
             }
         }

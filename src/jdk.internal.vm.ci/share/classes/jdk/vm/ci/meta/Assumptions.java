@@ -37,7 +37,7 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
      * be invalidated by subsequent execution (e.g., that a class has no subclasses implementing
      * {@link NoFinalizableSubclass Object.finalize()}).
      */
-    public abstract static class Assumption {
+    public interface Assumption {
     }
 
     /**
@@ -103,203 +103,51 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
     /**
      * An assumption that a given class has no subclasses implementing {@code Object#finalize()}).
      */
-    public static final class NoFinalizableSubclass extends Assumption {
-
-        public final ResolvedJavaType receiverType;
-
-        public NoFinalizableSubclass(ResolvedJavaType receiverType) {
-            this.receiverType = receiverType;
-        }
-
-        @Override
-        public int hashCode() {
-            return 31 + receiverType.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof NoFinalizableSubclass other) {
-                return other.receiverType.equals(receiverType);
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return "NoFinalizableSubclass[receiverType=" + receiverType.toJavaName() + "]";
-        }
-
+    public record NoFinalizableSubclass(ResolvedJavaType receiverType) implements Assumption {
     }
 
     /**
      * An assumption that a given abstract or interface type has one direct concrete subtype. There
      * is no requirement that the subtype is a leaf type.
+     *
+     * @param context type the assumption is made about.
+     * @param subtype assumed concrete sub-type of the context type.
      */
-    public static final class ConcreteSubtype extends Assumption {
-
-        /**
-         * Type the assumption is made about.
-         */
-        public final ResolvedJavaType context;
-
-        /**
-         * Assumed concrete sub-type of the context type.
-         */
-        public final ResolvedJavaType subtype;
-
-        public ConcreteSubtype(ResolvedJavaType context, ResolvedJavaType subtype) {
-            this.context = context;
-            this.subtype = subtype;
+    public record ConcreteSubtype(ResolvedJavaType context, ResolvedJavaType subtype) implements Assumption {
+        public ConcreteSubtype {
             assert context.isAbstract();
             assert subtype.isConcrete() || context.isInterface() : subtype.toString() + " : " + context.toString();
             assert !subtype.isArray() || subtype.getElementalType().isFinalFlagSet() : subtype.toString() + " : " + context.toString();
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + context.hashCode();
-            result = prime * result + subtype.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof ConcreteSubtype other) {
-                return other.context.equals(context) && other.subtype.equals(subtype);
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return "ConcreteSubtype[context=" + context.toJavaName() + ", subtype=" + subtype.toJavaName() + "]";
         }
     }
 
     /**
      * An assumption that a given type has no subtypes.
+     *
+     * @param context type the assumption is made about.
      */
-    public static final class LeafType extends Assumption {
-
-        /**
-         * Type the assumption is made about.
-         */
-        public final ResolvedJavaType context;
-
-        public LeafType(ResolvedJavaType context) {
+    public record LeafType(ResolvedJavaType context) implements Assumption {
+        public LeafType {
             assert !context.isLeaf() : "assumption isn't required for leaf types";
-            this.context = context;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + context.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof LeafType other) {
-                return other.context.equals(context);
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return "LeafSubtype[context=" + context.toJavaName() + "]";
         }
     }
 
     /**
      * An assumption that a given virtual method has a given unique implementation.
+     *
+     * @param method  a virtual (or interface) method whose unique implementation for the receiver type in {@link #context} is {@link #impl}.
+     * @param context receiver type
+     * @param impl    the unique implementation of {@link #method} for {@link #context}.
      */
-    public static final class ConcreteMethod extends Assumption {
-
-        /**
-         * A virtual (or interface) method whose unique implementation for the receiver type in
-         * {@link #context} is {@link #impl}.
-         */
-        public final ResolvedJavaMethod method;
-
-        /**
-         * A receiver type.
-         */
-        public final ResolvedJavaType context;
-
-        /**
-         * The unique implementation of {@link #method} for {@link #context}.
-         */
-        public final ResolvedJavaMethod impl;
-
-        public ConcreteMethod(ResolvedJavaMethod method, ResolvedJavaType context, ResolvedJavaMethod impl) {
-            this.method = method;
-            this.context = context;
-            this.impl = impl;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + method.hashCode();
-            result = prime * result + context.hashCode();
-            result = prime * result + impl.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof ConcreteMethod other) {
-                return other.method.equals(method) && other.context.equals(context) && other.impl.equals(impl);
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return "ConcreteMethod[method=" + method.format("%H.%n(%p)%r") + ", context=" + context.toJavaName() + ", impl=" + impl.format("%H.%n(%p)%r") + "]";
-        }
+    public record ConcreteMethod(ResolvedJavaMethod method,
+                                 ResolvedJavaType   context,
+                                 ResolvedJavaMethod impl) implements Assumption {
     }
 
     /**
      * An assumption that a given call site's method handle did not change.
      */
-    public static final class CallSiteTargetValue extends Assumption {
-
-        public final JavaConstant callSite;
-        public final JavaConstant methodHandle;
-
-        public CallSiteTargetValue(JavaConstant callSite, JavaConstant methodHandle) {
-            this.callSite = callSite;
-            this.methodHandle = methodHandle;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + callSite.hashCode();
-            result = prime * result + methodHandle.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof CallSiteTargetValue other) {
-                return callSite.equals(other.callSite) && methodHandle.equals(other.methodHandle);
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return "CallSiteTargetValue[callSite=" + callSite + ", methodHandle=" + methodHandle + "]";
-        }
+    public record CallSiteTargetValue(JavaConstant callSite, JavaConstant methodHandle) implements Assumption {
     }
 
     private final Set<Assumption> assumptions = new HashSet<>();
@@ -358,9 +206,9 @@ public final class Assumptions implements Iterable<Assumptions.Assumption> {
      * Records that {@code impl} is the only possible concrete target for a virtual call to
      * {@code method} with a receiver of type {@code context}.
      *
-     * @param method a method that is the target of a virtual call
+     * @param method  a method that is the target of a virtual call
      * @param context the receiver type of a call to {@code method}
-     * @param impl the concrete method that is the only possible target for the virtual call
+     * @param impl    the concrete method that is the only possible target for the virtual call
      */
     public void recordConcreteMethod(ResolvedJavaMethod method, ResolvedJavaType context, ResolvedJavaMethod impl) {
         record(new ConcreteMethod(method, context, impl));

@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.code;
 
+import static jdk.vm.ci.code.CodeUtil.listFromTrustedArray;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -53,7 +55,7 @@ public final class DebugInfo {
      */
     public DebugInfo(BytecodePosition codePos, VirtualObject[] virtualObjectMapping) {
         this.bytecodePosition = codePos;
-        this.virtualObjectMapping = virtualObjectMapping == null ? List.of() : List.of(virtualObjectMapping);
+        this.virtualObjectMapping = listFromTrustedArray(virtualObjectMapping);
     }
 
     public DebugInfo(BytecodePosition codePos) {

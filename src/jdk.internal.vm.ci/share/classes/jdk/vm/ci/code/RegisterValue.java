@@ -39,7 +39,7 @@ public final class RegisterValue extends AllocatableValue {
 
     @Override
     public String toString() {
-        return getRegister().name + getKindSuffix();
+        return getRegister().name() + getKindSuffix();
     }
 
     /**

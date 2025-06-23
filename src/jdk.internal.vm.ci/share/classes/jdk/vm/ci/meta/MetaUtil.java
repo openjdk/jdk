@@ -287,6 +287,9 @@ public class MetaUtil {
      * Creates an immutable list from a trusted array that has no references retained by the caller.
      */
     static <T> List<T> listFromTrustedArray(Object[] array) {
+        if (array == null) {
+            return List.of();
+        }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 }

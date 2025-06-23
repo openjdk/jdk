@@ -98,7 +98,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
-            if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
+            if (target.arch().canStoreValue(reg.registerCategory(), kind)) {
                 list.add(reg);
             }
         }
@@ -153,8 +153,8 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         return List.of(registers);
     }
 
-    public RISCV64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean linuxOs) {
-        this(target, initAllocatable(target.arch, useCompressedOops));
+    public RISCV64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops) {
+        this(target, initAllocatable(target.arch(), useCompressedOops));
         assert callerSaved.size() >= allocatable.size();
     }
 
@@ -250,7 +250,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
             if (locations[i] == null) {
                 ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
                 locations[i] = StackSlot.get(valueKind, currentStackOffset, !type.out);
-                currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize);
+                currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize());
             }
         }
 

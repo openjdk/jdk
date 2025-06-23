@@ -475,7 +475,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * Gets the kind of a word value on the {@linkplain #getHostJVMCIBackend() host} backend.
      */
     public static JavaKind getHostWordKind() {
-        return runtime().getHostJVMCIBackend().getCodeCache().getTarget().wordJavaKind;
+        return runtime().getHostJVMCIBackend().target().wordJavaKind();
     }
 
     protected final CompilerToVM compilerToVm;
@@ -720,7 +720,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     private JVMCIBackend registerBackend(JVMCIBackend backend) {
-        Class<? extends Architecture> arch = backend.getCodeCache().getTarget().arch.getClass();
+        Class<? extends Architecture> arch = backend.target().arch().getClass();
         JVMCIBackend oldValue = backends.put(arch, backend);
         assert oldValue == null : "cannot overwrite existing backend for architecture " + arch.getSimpleName();
         return backend;
@@ -808,13 +808,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return null;
     }
 
-    static class ErrorCreatingCompiler implements JVMCICompiler {
-        private final RuntimeException t;
-
-        ErrorCreatingCompiler(RuntimeException t) {
-            this.t = t;
-        }
-
+    record ErrorCreatingCompiler(RuntimeException t) implements JVMCICompiler {
         @Override
         public CompilationRequestResult compileMethod(CompilationRequest request) {
             throw t;

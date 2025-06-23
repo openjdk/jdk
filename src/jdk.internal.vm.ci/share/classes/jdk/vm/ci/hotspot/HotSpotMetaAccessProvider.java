@@ -278,7 +278,7 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
                 return 0;
             } else {
                 if (lookupJavaType.isArray()) {
-                    int length = runtime.getHostJVMCIBackend().getConstantReflection().readArrayLength(constant);
+                    int length = runtime.getHostJVMCIBackend().constantReflection().readArrayLength(constant);
                     ResolvedJavaType elementType = lookupJavaType.getComponentType();
                     JavaKind elementKind = elementType.getJavaKind();
                     final int headerSize = runtime.getArrayBaseOffset(elementKind);

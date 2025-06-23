@@ -31,56 +31,59 @@ import java.util.Set;
 /**
  * Represents an annotation where element values are represented with the types described
  * {@linkplain #get here}.
- *
+ * <p>
  * In contrast to the standard annotation API based on {@link Annotation}, use of
  * {@link AnnotationData} allows annotations to be queried without the JVMCI runtime having to
  * support dynamic loading of arbitrary {@link Annotation} classes. Such support is impossible in a
  * closed world, ahead-of-time compiled environment such as libgraal.
+ *
+ * @param type     the annotation interface of this annotation, represented as a {@link JavaType}
+ * @param elements the names and values of this annotation's element values. Each value's type
+ *                 must be one of the {@code AnnotationData} types described {@linkplain #get here}
+ *                 or it must be a {@link ErrorData} object whose {@code toString()} value describes
+ *                 the error raised while parsing the element. There is no distinction between a
+ *                 value explicitly present in the annotation and an element's default value.
  */
-public final class AnnotationData {
-
-    private final JavaType type;
-    private final Map<String, Object> elements;
+public record AnnotationData(JavaType type, Map<String, Object> elements) {
 
     private static final Set<Class<?>> ELEMENT_TYPES = Set.of(
-                    Boolean.class,
-                    Byte.class,
-                    Character.class,
-                    Short.class,
-                    Integer.class,
-                    Float.class,
-                    Long.class,
-                    Double.class,
-                    String.class,
-                    EnumData.class,
-                    AnnotationData.class);
+            Boolean.class,
+            Byte.class,
+            Character.class,
+            Short.class,
+            Integer.class,
+            Float.class,
+            Long.class,
+            Double.class,
+            String.class,
+            EnumData.class,
+            AnnotationData.class);
 
     /**
      * Creates an annotation.
      *
-     * @param type the annotation interface of this annotation, represented as a {@link JavaType}
+     * @param type     the annotation interface of this annotation, represented as a {@link JavaType}
      * @param elements the names and values of this annotation's element values. Each value's type
-     *            must be one of the {@code AnnotationData} types described {@linkplain #get here}
-     *            or it must be a {@link ErrorData} object whose {@code toString()} value describes
-     *            the error raised while parsing the element. There is no distinction between a
-     *            value explicitly present in the annotation and an element's default value.
+     *                 must be one of the {@code AnnotationData} types described {@linkplain #get here}
+     *                 or it must be a {@link ErrorData} object whose {@code toString()} value describes
+     *                 the error raised while parsing the element. There is no distinction between a
+     *                 value explicitly present in the annotation and an element's default value.
      * @throws IllegalArgumentException if the value of an entry in {@code elements} is not of an
-     *             accepted type
-     * @throws NullPointerException if any of the above parameters is null or any entry in
-     *             {@code elements} is null
+     *                                  accepted type
+     * @throws NullPointerException     if any of the above parameters is null or any entry in
+     *                                  {@code elements} is null
      */
     public AnnotationData(JavaType type, Map.Entry<String, Object>[] elements) {
-        this.type = Objects.requireNonNull(type);
+        this(Objects.requireNonNull(type), Map.ofEntries(elements));
         for (Map.Entry<String, Object> e : elements) {
             Object value = e.getValue();
             if (!(value instanceof ErrorData) &&
-                            !(value instanceof JavaType) &&
-                            !(value instanceof List) &&
-                            !ELEMENT_TYPES.contains(value.getClass())) {
+                    !(value instanceof JavaType) &&
+                    !(value instanceof List) &&
+                    !ELEMENT_TYPES.contains(value.getClass())) {
                 throw new IllegalArgumentException("illegal type for element " + e.getKey() + ": " + value.getClass().getName());
             }
         }
-        this.elements = Map.ofEntries(elements);
     }
 
     /**
@@ -139,22 +142,5 @@ public final class AnnotationData {
     @Override
     public String toString() {
         return "@" + type.getName() + "(" + elements + ")";
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof AnnotationData that) {
-            return this.type.equals(that.type) && this.elements.equals(that.elements);
-
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return type.hashCode() ^ elements.hashCode();
     }
 }

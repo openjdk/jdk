@@ -26,15 +26,7 @@ package jdk.vm.ci.code;
  * Represents a location where a value can be stored. This can be either a {@link Register} or a
  * stack slot.
  */
-public final class Location {
-
-    public final Register reg;
-    public final int offset;
-
-    private Location(Register reg, int offset) {
-        this.reg = reg;
-        this.offset = offset;
-    }
+public record Location(Register reg, int offset) {
 
     /**
      * Create a {@link Location} for a register.
@@ -46,7 +38,7 @@ public final class Location {
     /**
      * Create a {@link Location} for a vector subregister.
      *
-     * @param reg the {@link Register vector register}
+     * @param reg    the {@link Register vector register}
      * @param offset the offset in bytes into the vector register
      */
     public static Location subregister(Register reg, int offset) {
@@ -72,7 +64,7 @@ public final class Location {
     public String toString() {
         String regName;
         if (isRegister()) {
-            regName = reg.name + ":";
+            regName = reg.name() + ":";
         } else {
             regName = "stack:";
         }

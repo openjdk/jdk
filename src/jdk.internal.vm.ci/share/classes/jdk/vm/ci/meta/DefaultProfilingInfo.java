@@ -26,19 +26,13 @@ package jdk.vm.ci.meta;
  * An implementation of {@link ProfilingInfo} that can used in the absence of real profile
  * information.
  */
-public final class DefaultProfilingInfo implements ProfilingInfo {
+public record DefaultProfilingInfo(TriState exceptionSeen) implements ProfilingInfo {
 
     private static final ProfilingInfo[] NO_PROFILING_INFO = {
         new DefaultProfilingInfo(TriState.TRUE),
         new DefaultProfilingInfo(TriState.FALSE),
         new DefaultProfilingInfo(TriState.UNKNOWN)
     };
-
-    private final TriState exceptionSeen;
-
-    DefaultProfilingInfo(TriState exceptionSeen) {
-        this.exceptionSeen = exceptionSeen;
-    }
 
     @Override
     public int getCodeSize() {
@@ -92,11 +86,6 @@ public final class DefaultProfilingInfo implements ProfilingInfo {
     @Override
     public boolean isMature() {
         return false;
-    }
-
-    @Override
-    public String toString() {
-        return "DefaultProfilingInfo<" + this.toString(null, "; ") + ">";
     }
 
     @Override

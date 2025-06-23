@@ -50,16 +50,7 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
 
     final IndirectHotSpotObjectConstantImpl base;
 
-    private static class Audit {
-        final Object scope;
-        final long handle;
-        final Throwable origin;
-
-        Audit(Object scope, long handle, Throwable origin) {
-            this.scope = scope;
-            this.handle = handle;
-            this.origin = origin;
-        }
+    private record Audit(Object scope, long handle, Throwable origin) {
     }
 
     /**

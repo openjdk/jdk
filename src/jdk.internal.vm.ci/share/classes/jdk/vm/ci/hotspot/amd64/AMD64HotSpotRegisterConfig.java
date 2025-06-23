@@ -88,7 +88,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
-            if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
+            if (target.arch().canStoreValue(reg.registerCategory(), kind)) {
                 list.add(reg);
             }
         }
@@ -137,7 +137,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     public AMD64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean windowsOs) {
-        this(target, initAllocatable(target.arch, useCompressedOops), windowsOs);
+        this(target, initAllocatable(target.arch(), useCompressedOops), windowsOs);
         assert callerSaved.size() >= allocatable.size();
     }
 
@@ -167,7 +167,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         callerSaved = List.copyOf(callerSaveSet);
 
         allAllocatableAreCallerSaved = true;
-        attributesMap = RegisterAttributes.createMap(this, target.arch.getRegisters());
+        attributesMap = RegisterAttributes.createMap(this, target.arch().getRegisters());
     }
 
     @Override
@@ -227,7 +227,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
         int currentGeneral = 0;
         int currentXMM = 0;
-        int currentStackOffset = type == HotSpotCallingConventionType.NativeCall && needsNativeStackHomeSpace ? generalParameterRegisters.size() * target.wordSize : 0;
+        int currentStackOffset = type == HotSpotCallingConventionType.NativeCall && needsNativeStackHomeSpace ? generalParameterRegisters.size() * target.wordSize() : 0;
 
         for (int i = 0; i < parameterTypes.size(); i++) {
             final JavaKind kind = parameterTypes.get(i).getJavaKind().getStackKind();
@@ -259,7 +259,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
             if (locations[i] == null) {
                 ValueKind<?> valueKind = valueKindFactory.getValueKind(kind);
                 locations[i] = StackSlot.get(valueKind, currentStackOffset, !type.out);
-                currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize);
+                currentStackOffset += Math.max(valueKind.getPlatformKind().getSizeInBytes(), target.wordSize());
             }
         }
         assert !unified || currentXMM == 0 : "shouldn't be used in unified mode";

@@ -22,56 +22,18 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.util.Arrays;
-
 import jdk.vm.ci.code.Location;
 import jdk.vm.ci.code.ReferenceMap;
 
 /**
  * Describes where the object references are in machine state, compliant with what HotSpot expects.
+ *
+ * @param objects     This array is now owned by this object and must not be mutated by the caller.
+ * @param derivedBase This array is now owned by this object and must not be mutated by the caller.
+ * @param sizeInBytes This array is now owned by this object and must not be mutated by the caller.
  */
-public final class HotSpotReferenceMap extends ReferenceMap {
-
-    final Location[] objects;
-    final Location[] derivedBase;
-    final int[] sizeInBytes;
-    final int maxRegisterSize;
-
-    /**
-     * @param objects     This array is now owned by this object and must not be mutated by the caller.
-     * @param derivedBase This array is now owned by this object and must not be mutated by the
-     *                    caller.
-     * @param sizeInBytes This array is now owned by this object and must not be mutated by the
-     *                    caller.
-     */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `objects`, `derivedBase` and `sizeInBytes`")
-    public HotSpotReferenceMap(Location[] objects, Location[] derivedBase, int[] sizeInBytes, int maxRegisterSize) {
-        this.objects = objects;
-        this.derivedBase = derivedBase;
-        this.sizeInBytes = sizeInBytes;
-        this.maxRegisterSize = maxRegisterSize;
-    }
-
-    @Override
-    public int hashCode() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof HotSpotReferenceMap that) {
-            return sizeInBytes == that.sizeInBytes && maxRegisterSize == that.maxRegisterSize
-                    && Arrays.equals(objects, that.objects)
-                    && Arrays.equals(derivedBase, that.derivedBase);
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return Arrays.toString(objects);
-    }
+public record HotSpotReferenceMap(Location[] objects,
+                                  Location[] derivedBase,
+                                  int[]      sizeInBytes,
+                                  int        maxRegisterSize) implements ReferenceMap {
 }

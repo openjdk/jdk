@@ -1073,6 +1073,9 @@ final class CompilerToVM {
     native Object getFlagValue(String name);
 
     static <T> List<T> listFromTrustedArray(Object[] array) {
+        if (array == null) {
+            return List.of();
+        }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 

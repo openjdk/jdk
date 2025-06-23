@@ -55,6 +55,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
@@ -98,7 +99,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
-            if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
+            if (target.arch().canStoreValue(reg.registerCategory(), kind)) {
                 list.add(reg);
             }
         }
@@ -161,7 +162,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean canUsePlatformRegister) {
-        this(target, initAllocatable(target.arch, useCompressedOops, canUsePlatformRegister));
+        this(target, initAllocatable(target.arch(), useCompressedOops, canUsePlatformRegister));
         assert callerSaved.size() >= allocatable.size();
     }
 
@@ -220,7 +221,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     private int parseStackArg(ValueKind<?> valueKind, AllocatableValue[] locations, int index, int currentStackOffset, HotSpotCallingConventionType type) {
         int kindSize = valueKind.getPlatformKind().getSizeInBytes();
         locations[index] = StackSlot.get(valueKind, currentStackOffset, !type.out);
-        currentStackOffset += Math.max(kindSize, target.wordSize);
+        currentStackOffset += Math.max(kindSize, target.wordSize());
         return currentStackOffset;
     }
 
@@ -239,7 +240,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     private CallingConvention callingConvention(List<Register> generalParameterRegisters, JavaType returnType, List<? extends JavaType> parameterTypes, HotSpotCallingConventionType type,
-                    ValueKindFactory<?> valueKindFactory) {
+                                                ValueKindFactory<?> valueKindFactory) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.size()];
 
         int currentGeneral = 0;
@@ -274,7 +275,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
             }
 
             if (locations[i] == null) {
-                if (target.macOs && type == HotSpotCallingConventionType.NativeCall) {
+                if (OperatingSystem.isMacOS() && type == HotSpotCallingConventionType.NativeCall) {
                     currentStackOffset = parseDarwinNativeStackArg(valueKindFactory.getValueKind(kind), locations, i, currentStackOffset, type);
                 } else {
                     currentStackOffset = parseStackArg(valueKindFactory.getValueKind(kind), locations, i, currentStackOffset, type);

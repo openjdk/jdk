@@ -32,8 +32,14 @@ import java.util.List;
 /**
  * A calling convention describes the locations in which the arguments for a call are placed and the
  * location in which the return value is placed if the call is not void.
+ *
+ * @param stackSize         amount of stack space (in bytes) required for the stack-based arguments of the call
+ * @param returnLocation    the location for the return value or {@link Value#ILLEGAL} if a void call
+ * @param argumentLocations the ordered locations in which the arguments are placed
  */
-public class CallingConvention {
+public record CallingConvention(int                    stackSize,
+                                AllocatableValue       returnLocation,
+                                List<AllocatableValue> argumentLocations) {
 
     /**
      * Marker interface denoting the type of a call for which a calling convention is requested.
@@ -42,40 +48,25 @@ public class CallingConvention {
     }
 
     /**
-     * The amount of stack space (in bytes) required for the stack-based arguments of the call.
-     */
-    private final int stackSize;
-
-    private final AllocatableValue returnLocation;
-
-    /**
-     * The ordered locations in which the arguments are placed.
-     */
-    private final List<AllocatableValue> argumentLocations;
-
-    /**
      * Creates a description of the registers and stack locations used by a call.
      *
-     * @param stackSize amount of stack space (in bytes) required for the stack-based arguments of
-     *            the call
-     * @param returnLocation the location for the return value or {@link Value#ILLEGAL} if a void
-     *            call
-     * @param argumentLocations the ordered locations in which the arguments are placed
+     * @param stackSize         amount of stack space (in bytes) required for the stack-based arguments of the call
+     * @param returnLocation    the location for the return value or {@link Value#ILLEGAL} if a void call
+     * @param argumentLocations the ordered locations in which the arguments are placed. This array is now owned by this
+     *                          object and should not be mutated by the caller.
      */
     public CallingConvention(int stackSize, AllocatableValue returnLocation, AllocatableValue... argumentLocations) {
+        this(stackSize, returnLocation, CodeUtil.listFromTrustedArray(argumentLocations));
         assert argumentLocations != null;
         assert returnLocation != null;
-        this.argumentLocations = CodeUtil.listFromTrustedArray(argumentLocations);
-        this.stackSize = stackSize;
-        this.returnLocation = returnLocation;
         assert verify();
     }
 
-    /**
-     * Gets the location for the return value or {@link Value#ILLEGAL} if a void call.
-     */
-    public AllocatableValue getReturn() {
-        return returnLocation;
+    private boolean verify() {
+        for (Value location : argumentLocations) {
+            assert isStackSlot(location) || isAllocatableValue(location);
+        }
+        return true;
     }
 
     /**
@@ -86,24 +77,10 @@ public class CallingConvention {
     }
 
     /**
-     * Gets the amount of stack space (in bytes) required for the stack-based arguments of the call.
-     */
-    public int getStackSize() {
-        return stackSize;
-    }
-
-    /**
      * Gets the number of locations required for the arguments.
      */
     public int getArgumentCount() {
         return argumentLocations.size();
-    }
-
-    /**
-     * Gets the locations required for the arguments.
-     */
-    public List<AllocatableValue> getArguments() {
-        return argumentLocations;
     }
 
     @Override
@@ -120,12 +97,5 @@ public class CallingConvention {
         }
         sb.append("]");
         return sb.toString();
-    }
-
-    private boolean verify() {
-        for (Value location : argumentLocations) {
-            assert isStackSlot(location) || isAllocatableValue(location);
-        }
-        return true;
     }
 }

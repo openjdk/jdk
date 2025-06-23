@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,12 @@ import jdk.vm.ci.common.JVMCIError;
  */
 public class HotSpotVMConfigAccess {
 
+    private final HotSpotVMConfigStore store;
+
+    public HotSpotVMConfigAccess(HotSpotVMConfigStore store) {
+        this.store = store;
+    }
+
     /**
      * Gets the available configuration data.
      */
@@ -42,7 +48,7 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the address of a C++ symbol.
      *
-     * @param name name of C++ symbol
+     * @param name       name of C++ symbol
      * @param notPresent if non-null and the symbol is not present then this value is returned
      * @return the address of the symbol
      * @throws JVMCIError if the symbol is not present and {@code notPresent == null}
@@ -73,8 +79,8 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the value of a C++ constant.
      *
-     * @param name name of the constant (e.g., {@code "frame::arg_reg_save_area_bytes"})
-     * @param type the boxed type to which the constant value will be converted
+     * @param name       name of the constant (e.g., {@code "frame::arg_reg_save_area_bytes"})
+     * @param type       the boxed type to which the constant value will be converted
      * @param notPresent if non-null and the constant is not present then this value is returned
      * @return the constant value converted to {@code type}
      * @throws JVMCIError if the constant is not present and {@code notPresent == null}
@@ -105,10 +111,10 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the offset of a non-static C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param type the boxed type to which the offset value will be converted (must be
-     *            {@link Integer} or {@link Long})
-     * @param cppType if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
+     * @param name       fully qualified name of the field
+     * @param type       the boxed type to which the offset value will be converted (must be
+     *                   {@link Integer} or {@link Long})
+     * @param cppType    if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
      * @param notPresent if non-null and the field is not present then this value is returned
      * @return the offset in bytes of the requested field
      * @throws JVMCIError if the field is static or not present and {@code notPresent} is null
@@ -120,12 +126,12 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the offset of a non-static C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param type the boxed type to which the offset value will be converted (must be
-     *            {@link Integer} or {@link Long})
+     * @param name       fully qualified name of the field
+     * @param type       the boxed type to which the offset value will be converted (must be
+     *                   {@link Integer} or {@link Long})
      * @param notPresent if non-null and the field is not present then this value is returned
      * @param outCppType if non-null, the C++ type of the field (e.g., {@code "HeapWord*"}) is
-     *            returned in element 0 of this array
+     *                   returned in element 0 of this array
      * @return the offset in bytes of the requested field
      * @throws JVMCIError if the field is static or not present and {@code notPresent} is null
      */
@@ -136,9 +142,9 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the offset of a non-static C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param type the boxed type to which the offset value will be converted (must be
-     *            {@link Integer} or {@link Long})
+     * @param name    fully qualified name of the field
+     * @param type    the boxed type to which the offset value will be converted (must be
+     *                {@link Integer} or {@link Long})
      * @param cppType if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
      * @return the offset in bytes of the requested field
      * @throws JVMCIError if the field is static or not present
@@ -152,7 +158,7 @@ public class HotSpotVMConfigAccess {
      *
      * @param name fully qualified name of the field
      * @param type the boxed type to which the offset value will be converted (must be
-     *            {@link Integer} or {@link Long})
+     *             {@link Integer} or {@link Long})
      * @return the offset in bytes of the requested field
      * @throws JVMCIError if the field is static or not present
      */
@@ -166,20 +172,20 @@ public class HotSpotVMConfigAccess {
         if (entry == null) {
             return notPresent;
         }
-        if (entry.address != 0) {
+        if (entry.address() != 0) {
             throw new JVMCIError("cannot get offset of static field " + name);
         }
         if (outCppType != null) {
-            outCppType[0] = entry.type;
+            outCppType[0] = entry.type();
         }
-        return type.cast(convertValue(name, type, entry.offset, inCppType));
+        return type.cast(convertValue(name, type, entry.offset(), inCppType));
     }
 
     /**
      * Gets the address of a static C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param cppType if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
+     * @param name       fully qualified name of the field
+     * @param cppType    if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
      * @param notPresent if non-null and the field is not present then this value is returned
      * @return the address of the requested field
      * @throws JVMCIError if the field is not static or not present and {@code notPresent} is null
@@ -191,10 +197,10 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the address of a static C++ field.
      *
-     * @param name fully qualified name of the field
+     * @param name       fully qualified name of the field
      * @param notPresent if non-null and the field is not present then this value is returned
      * @param outCppType if non-null, the C++ type of the field (e.g., {@code "HeapWord*"}) is
-     *            returned in element 0 of this array
+     *                   returned in element 0 of this array
      * @return the address of the requested field
      * @throws JVMCIError if the field is not static or not present and {@code notPresent} is null
      */
@@ -205,7 +211,7 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the address of a static C++ field.
      *
-     * @param name fully qualified name of the field
+     * @param name    fully qualified name of the field
      * @param cppType if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
      * @return the address of the requested field
      * @throws JVMCIError if the field is not static or not present
@@ -219,21 +225,21 @@ public class HotSpotVMConfigAccess {
         if (entry == null) {
             return notPresent;
         }
-        if (entry.address == 0) {
+        if (entry.address() == 0) {
             throw new JVMCIError(name + " is not a static field");
         }
         if (outCppType != null) {
-            outCppType[0] = entry.type;
+            outCppType[0] = entry.type();
         }
-        return entry.address;
+        return entry.address();
     }
 
     /**
      * Gets the value of a static C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param type the boxed type to which the constant value will be converted
-     * @param cppType if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
+     * @param name       fully qualified name of the field
+     * @param type       the boxed type to which the constant value will be converted
+     * @param cppType    if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
      * @param notPresent if non-null and the field is not present then this value is returned
      * @return the value of the requested field
      * @throws JVMCIError if the field is not static or not present and {@code notPresent} is null
@@ -245,8 +251,8 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the value of a static C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param type the boxed type to which the constant value will be converted
+     * @param name    fully qualified name of the field
+     * @param type    the boxed type to which the constant value will be converted
      * @param cppType if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
      * @return the value of the requested field
      * @throws JVMCIError if the field is not static or not present
@@ -258,11 +264,11 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets the value of a static C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param type the boxed type to which the constant value will be converted
+     * @param name       fully qualified name of the field
+     * @param type       the boxed type to which the constant value will be converted
      * @param notPresent if non-null and the field is not present then this value is returned
      * @param outCppType if non-null, the C++ type of the field (e.g., {@code "HeapWord*"}) is
-     *            returned in element 0 of this array
+     *                   returned in element 0 of this array
      * @return the value of the requested field
      * @throws JVMCIError if the field is not static or not present and {@code notPresent} is null
      */
@@ -287,20 +293,20 @@ public class HotSpotVMConfigAccess {
         if (entry == null) {
             return notPresent;
         }
-        if (entry.value == null) {
+        if (entry.value() == null) {
             throw new JVMCIError(name + " is not a static field ");
         }
         if (outCppType != null) {
-            outCppType[0] = entry.type;
+            outCppType[0] = entry.type();
         }
-        return type.cast(convertValue(name, type, entry.value, inCppType));
+        return type.cast(convertValue(name, type, entry.value(), inCppType));
     }
 
     /**
      * Gets a C++ field.
      *
-     * @param name fully qualified name of the field
-     * @param cppType if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
+     * @param name     fully qualified name of the field
+     * @param cppType  if non-null, the expected C++ type of the field (e.g., {@code "HeapWord*"})
      * @param required specifies if the field must be present
      * @return the field
      * @throws JVMCIError if the field is not present and {@code required == true}
@@ -315,8 +321,8 @@ public class HotSpotVMConfigAccess {
         }
 
         // Make sure the native type is still the type we expect.
-        if (cppType != null && !cppType.equals(entry.type)) {
-            throw new JVMCIError("expected type " + cppType + " but VM field " + name + " is of type " + entry.type);
+        if (cppType != null && !cppType.equals(entry.type())) {
+            throw new JVMCIError("expected type " + cppType + " but VM field " + name + " is of type " + entry.type());
         }
         return entry;
     }
@@ -327,7 +333,7 @@ public class HotSpotVMConfigAccess {
      * @param name name of the flag (e.g., {@code "CompileTheWorldStartAt"})
      * @param type the boxed type to which the flag's value will be converted
      * @return the flag's value converted to {@code type} or {@code notPresent} if the flag is not
-     *         present
+     * present
      * @throws JVMCIError if the flag is not present
      */
     public <T> T getFlag(String name, Class<T> type) {
@@ -337,11 +343,11 @@ public class HotSpotVMConfigAccess {
     /**
      * Gets a VM flag value.
      *
-     * @param name name of the flag (e.g., {@code "CompileTheWorldStartAt"})
-     * @param type the boxed type to which the flag's value will be converted
+     * @param name       name of the flag (e.g., {@code "CompileTheWorldStartAt"})
+     * @param type       the boxed type to which the flag's value will be converted
      * @param notPresent if non-null and the flag is not present then this value is returned
      * @return the flag's value converted to {@code type} or {@code notPresent} if the flag is not
-     *         present
+     * present
      * @throws JVMCIError if the flag is not present and {@code notPresent == null}
      */
     public <T> T getFlag(String name, Class<T> type, T notPresent) {
@@ -360,15 +366,15 @@ public class HotSpotVMConfigAccess {
                 cppType = null;
             }
         } else {
-            value = entry.value;
-            cppType = entry.type;
+            value = entry.value();
+            cppType = entry.type();
         }
         return type.cast(convertValue(name, type, value, cppType));
     }
 
     private JVMCIError missingEntry(String category, String name, Set<String> keys) {
         throw new JVMCIError("expected VM %s not found in %s: %s%nAvailable values:%n    %s", category, store, name,
-                        keys.stream().sorted().collect(Collectors.joining(System.lineSeparator() + "    ")));
+                keys.stream().sorted().collect(Collectors.joining(System.lineSeparator() + "    ")));
     }
 
     private static <T> Object convertValue(String name, Class<T> toType, Object value, String cppType) throws JVMCIError {
@@ -399,11 +405,5 @@ public class HotSpotVMConfigAccess {
         }
 
         throw new JVMCIError("cannot convert " + name + " of type " + value.getClass().getSimpleName() + (cppType == null ? "" : " [" + cppType + "]") + " to " + toType.getSimpleName());
-    }
-
-    private final HotSpotVMConfigStore store;
-
-    public HotSpotVMConfigAccess(HotSpotVMConfigStore store) {
-        this.store = store;
     }
 }

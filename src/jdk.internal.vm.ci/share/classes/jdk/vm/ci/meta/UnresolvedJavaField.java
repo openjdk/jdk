@@ -24,34 +24,16 @@ package jdk.vm.ci.meta;
 
 /**
  * A implementation of {@link JavaField} for an unresolved field.
+ *
+ * @param cause the reason field resolution failed. Can be null.
  */
-public final class UnresolvedJavaField implements JavaField {
-
-    private final String name;
-    private final JavaType holder;
-    private final JavaType type;
-
-    /**
-     * The reason field resolution failed. Can be null.
-     */
-    private final Throwable cause;
-
-    public UnresolvedJavaField(JavaType holder, String name, JavaType type, Throwable cause) {
-        this.name = name;
-        this.type = type;
-        this.holder = holder;
-        this.cause = cause;
-    }
+public record UnresolvedJavaField(JavaType  holder,
+                                  String    name,
+                                  JavaType  type,
+                                  Throwable cause) implements JavaField {
 
     public UnresolvedJavaField(JavaType holder, String name, JavaType type) {
         this(holder, name, type, null);
-    }
-
-    /**
-     * Gets the exception, if any, representing the reason field resolution resulted in this object.
-     */
-    public Throwable getCause() {
-        return cause;
     }
 
     @Override
@@ -67,11 +49,6 @@ public final class UnresolvedJavaField implements JavaField {
     @Override
     public JavaType getDeclaringClass() {
         return holder;
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
     }
 
     @Override

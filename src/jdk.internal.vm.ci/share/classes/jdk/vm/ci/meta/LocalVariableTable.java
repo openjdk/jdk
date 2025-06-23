@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @jvms 4.7.13
  */
-public class LocalVariableTable {
+public final class LocalVariableTable {
 
     private final List<Local> locals;
 
@@ -54,7 +54,7 @@ public class LocalVariableTable {
     public Local getLocal(int slot, int bci) {
         Local result = null;
         for (Local local : locals) {
-            if (local.getSlot() == slot && local.getStartBCI() <= bci && local.getEndBCI() >= bci) {
+            if (local.slot() == slot && local.startBci() <= bci && local.endBci() >= bci) {
                 if (result == null) {
                     result = local;
                 } else {
@@ -78,10 +78,10 @@ public class LocalVariableTable {
     public List<Local> getLocalsAt(int bci) {
         List<Local> result = new ArrayList<>();
         for (Local l : locals) {
-            if (l.getStartBCI() <= bci && bci <= l.getEndBCI()) {
+            if (l.startBci() <= bci && bci <= l.endBci()) {
                 result.add(l);
             }
         }
-        return MetaUtil.listFromTrustedArray(result.toArray());
+        return List.copyOf(result);
     }
 }

@@ -27,6 +27,7 @@ import static jdk.vm.ci.common.InitTimer.timer;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
+import jdk.internal.util.OperatingSystem;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
@@ -64,7 +65,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     }
 
     private static RegisterConfig createRegisterConfig(RISCV64HotSpotVMConfig config, TargetDescription target) {
-        return new RISCV64HotSpotRegisterConfig(target, config.useCompressedOops, target.linuxOs);
+        return new RISCV64HotSpotRegisterConfig(target, config.useCompressedOops);
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {

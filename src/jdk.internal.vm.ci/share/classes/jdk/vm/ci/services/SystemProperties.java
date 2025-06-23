@@ -157,7 +157,7 @@ final class SystemProperties implements Map<String, String> {
         /**
          * Creates a value whose string representation will be lazily constructed from {@code cstring}.
          */
-        Value(Unsafe unsafe, long cstring) {
+        Value(long cstring) {
             this.cstring = cstring;
         }
 

@@ -102,7 +102,7 @@ public interface RegisterConfig {
      * necessary.
      */
     default PlatformKind getCalleeSaveRegisterStorageKind(Architecture arch, Register calleeSaveRegister) {
-        return arch.getLargestStorableKind(calleeSaveRegister.getRegisterCategory());
+        return arch.getLargestStorableKind(calleeSaveRegister.registerCategory());
     }
 
     /**

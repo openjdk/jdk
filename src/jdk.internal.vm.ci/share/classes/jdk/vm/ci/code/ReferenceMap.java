@@ -27,5 +27,5 @@ package jdk.vm.ci.code;
  * state (e.g., registers or stack locations). This is typically associated with an execution point
  * in compiled code.
  */
-public abstract class ReferenceMap {
+public interface ReferenceMap {
 }

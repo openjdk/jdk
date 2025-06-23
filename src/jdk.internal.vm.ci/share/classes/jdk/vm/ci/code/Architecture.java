@@ -85,9 +85,9 @@ public abstract class Architecture {
                     int returnAddressSize) {
         // registers is expected to mention all registers in order of their encoding.
         for (int i = 0; i < registers.size(); ++i) {
-            if (registers.get(i).number != i) {
+            if (registers.get(i).number() != i) {
                 Register reg = registers.get(i);
-                throw new JVMCIError("%s: %d != %d", reg, reg.number, i);
+                throw new JVMCIError("%s: %d != %d", reg, reg.number(), i);
             }
         }
         this.name = name;

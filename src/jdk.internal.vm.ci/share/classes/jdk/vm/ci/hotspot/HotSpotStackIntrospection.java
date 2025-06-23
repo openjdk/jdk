@@ -26,13 +26,7 @@ import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.code.stack.StackIntrospection;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-public class HotSpotStackIntrospection implements StackIntrospection {
-
-    protected final HotSpotJVMCIRuntime runtime;
-
-    public HotSpotStackIntrospection(HotSpotJVMCIRuntime runtime) {
-        this.runtime = runtime;
-    }
+public record HotSpotStackIntrospection(HotSpotJVMCIRuntime runtime) implements StackIntrospection {
 
     @Override
     public <T> T iterateFrames(ResolvedJavaMethod[] initialMethods, ResolvedJavaMethod[] matchingMethods, int initialSkip, InspectedFrameVisitor<T> visitor) {

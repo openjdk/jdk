@@ -24,45 +24,22 @@ package jdk.vm.ci.meta;
 
 /**
  * Implementation of {@link JavaType} for unresolved HotSpot classes.
+ *
+ * @param cause the reason type resolution failed. Can be null.
  */
-public final class UnresolvedJavaType implements JavaType {
-    private final String name;
+public record UnresolvedJavaType(String name, Throwable cause) implements JavaType {
 
-    /**
-     * The reason type resolution failed. Can be null.
-     */
-    private final Throwable cause;
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    private UnresolvedJavaType(String name, Throwable cause) {
-        this.name = name;
-        this.cause = cause;
+    public UnresolvedJavaType {
         assert name.length() == 1 && JavaKind.fromPrimitiveOrVoidTypeChar(name.charAt(0)) != null || name.charAt(0) == '[' || name.charAt(name.length() - 1) == ';' : name;
     }
 
-    /**
-     * Creates an unresolved type for a valid {@link JavaType#getName() type name}.
-     */
     public static UnresolvedJavaType create(String name) {
         return new UnresolvedJavaType(name, null);
     }
 
-    /**
-     * Creates an unresolved type for a valid {@link JavaType#getName() type name}.
-     */
-    public static UnresolvedJavaType create(String name, Throwable cause) {
-        return new UnresolvedJavaType(name, cause);
-    }
-
-    /**
-     * Gets the exception, if any, representing the reason type resolution resulted in this object.
-     */
-    public Throwable getCause() {
-        return cause;
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override

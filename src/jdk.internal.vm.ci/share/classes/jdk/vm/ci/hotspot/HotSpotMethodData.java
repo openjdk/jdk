@@ -215,13 +215,13 @@ final class HotSpotMethodData implements MetaspaceObject {
     }
 
     public int getDeoptimizationCount(DeoptimizationReason reason) {
-        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().getMetaAccess();
+        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().metaAccess();
         int reasonIndex = metaAccess.convertDeoptReason(reason);
         return UNSAFE.getByte(methodDataPointer + state.config.methodDataOopTrapHistoryOffset + reasonIndex) & 0xFF;
     }
 
     public int getOSRDeoptimizationCount(DeoptimizationReason reason) {
-        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().getMetaAccess();
+        HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().metaAccess();
         int reasonIndex = metaAccess.convertDeoptReason(reason);
         return UNSAFE.getByte(methodDataPointer + state.config.methodDataOopTrapHistoryOffset + state.config.deoptReasonOSROffset + reasonIndex) & 0xFF;
     }

@@ -90,13 +90,13 @@ public final class HotSpotVMConfigStore {
             // valid intrinsicID starts from 1
             VMIntrinsicMethod intrinsic = vmIntrinsics.get(intrinsicID - 1);
             // We speculate that vmIntrinsics are sorted by ID
-            if (intrinsic.id == intrinsicID) {
+            if (intrinsic.id() == intrinsicID) {
                 return intrinsic;
             }
         }
         // Assumption failed, fall back to iteration
         for (VMIntrinsicMethod intrinsic : vmIntrinsics) {
-            if (intrinsic.id == intrinsicID) {
+            if (intrinsic.id() == intrinsicID) {
                 return intrinsic;
             }
         }
@@ -149,7 +149,7 @@ public final class HotSpotVMConfigStore {
 
         try (InitTimer _ = timer("HotSpotVMConfigStore<init> fill maps")) {
             for (VMField vmField : vmFieldsInfo) {
-                vmFields.put(vmField.name, vmField);
+                vmFields.put(vmField.name(), vmField);
             }
 
             for (int i = 0; i < vmConstantsInfo.length / 2; i++) {
@@ -165,7 +165,7 @@ public final class HotSpotVMConfigStore {
             }
 
             for (VMFlag vmFlag : vmFlagsInfo) {
-                vmFlags.put(vmFlag.name, vmFlag);
+                vmFlags.put(vmFlag.name(), vmFlag);
             }
         }
     }
@@ -185,15 +185,15 @@ public final class HotSpotVMConfigStore {
         TreeMap<String, VMField> fields = new TreeMap<>(getFields());
         for (VMField field : fields.values()) {
             if (!field.isStatic()) {
-                printConfigLine(runtime, "[vmconfig:instance field] %s %s {offset=%d[0x%x]}%n", field.type, field.name, field.offset, field.offset);
+                printConfigLine(runtime, "[vmconfig:instance field] %s %s {offset=%d[0x%x]}%n", field.type(), field.name(), field.offset(), field.offset());
             } else {
-                String value = field.value == null ? "null" : field.value instanceof Boolean ? field.value.toString() : String.format("%d[0x%x]", field.value, field.value);
-                printConfigLine(runtime, "[vmconfig:static field] %s %s = %s {address=0x%x}%n", field.type, field.name, value, field.address);
+                String value = field.value() == null ? "null" : field.value() instanceof Boolean ? field.value().toString() : String.format("%d[0x%x]", field.value(), field.value());
+                printConfigLine(runtime, "[vmconfig:static field] %s %s = %s {address=0x%x}%n", field.type(), field.name(), value, field.address());
             }
         }
         TreeMap<String, VMFlag> flags = new TreeMap<>(getFlags());
         for (VMFlag flag : flags.values()) {
-            printConfigLine(runtime, "[vmconfig:flag] %s %s = %s%n", flag.type, flag.name, flag.value);
+            printConfigLine(runtime, "[vmconfig:flag] %s %s = %s%n", flag.type(), flag.name(), flag.value());
         }
         TreeMap<String, Long> addresses = new TreeMap<>(getAddresses());
         for (Map.Entry<String, Long> e : addresses.entrySet()) {
@@ -205,7 +205,7 @@ public final class HotSpotVMConfigStore {
         }
         for (VMIntrinsicMethod e : getIntrinsics()) {
             printConfigLine(runtime, "[vmconfig:intrinsic] %d = (available:%b c1Supported:%b c2Supported:%b) %s.%s %s%n",
-                            e.id, e.isAvailable, e.c1Supported, e.c2Supported, e.declaringClass, e.name, e.descriptor);
+                            e.id(), e.isAvailable(), e.c1Supported(), e.c2Supported(), e.declaringClass(), e.name(), e.descriptor());
         }
     }
 
