@@ -874,7 +874,7 @@ void PhaseConditionalPropagation::Analyzer::handle_ifproj() {
           if (iff->is_CountedLoopEnd()) {
             loop = iff->as_CountedLoopEnd()->loopnode();
           } else if (iff->is_OuterStripMinedLoopEnd()) {
-            loop = iff->as_OuterStripMinedLoopEnd()->inner_loop();
+            loop = iff->as_OuterStripMinedLoopEnd()->inner_counted_loop();
           }
           if (loop != nullptr && loop->incr() == cmp1) {
             return;

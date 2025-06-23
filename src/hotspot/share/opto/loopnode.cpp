@@ -2461,6 +2461,14 @@ Node *LoopNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return RegionNode::Ideal(phase, can_reshape);
 }
 
+const Type* LoopNode::Value(PhaseGVN* phase) const {
+  Node* entry = in(EntryControl);
+  if (entry != nullptr && phase->type(entry) == Type::TOP) {
+    return Type::TOP;
+  }
+  return RegionNode::Value(phase);
+}
+
 #ifdef ASSERT
 void LoopNode::verify_strip_mined(int expect_skeleton) const {
   const OuterStripMinedLoopNode* outer = nullptr;

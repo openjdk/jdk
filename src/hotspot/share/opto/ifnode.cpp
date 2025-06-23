@@ -661,7 +661,7 @@ const Type* IfNode::filtered_int_type(PhaseValues* phase, Node* val, Node* if_pr
       Node* iff1 = iff->in(1);
       if (iff->is_OuterStripMinedLoopEnd()) {
 #ifdef ASSERT
-        iff->as_OuterStripMinedLoopEnd()->inner_loop()->verify_strip_mined(1);
+        iff->as_OuterStripMinedLoopEnd()->inner_counted_loop()->verify_strip_mined(1);
 #endif
         assert(iff->in(0)->in(0)->in(0)->is_CountedLoopEnd(), "bad strip mined loop shape");
         // Exit condition of skeleton outer strip mined loop is exit condition of inner loop
@@ -696,6 +696,9 @@ const Type* IfNode::filtered_int_type(PhaseValues* phase, Node* val, Node* if_pr
                 lo = 0;
                 if (msk == BoolTest::lt) {
                   hi = hi - 1;
+                }
+                if (lo > hi) {
+                  return Type::TOP;
                 }
                 return TypeInteger::make(lo, hi, other_int_t->_widen, bt);
               }

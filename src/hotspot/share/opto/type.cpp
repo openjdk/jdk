@@ -791,6 +791,9 @@ const Type *Type::hashcons(void) {
   assert( eq(dual_dual), "xdual(xdual()) should be identity" );
   delete dual_dual;
 #endif
+  if (UseNewCode && Compile::current()->type_arena()->size_in_bytes() > 500000000) {
+    dump(); tty->cr();
+  }
   return this;                  // Return new Type
 }
 

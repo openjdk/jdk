@@ -59,6 +59,7 @@ struct small_cache;
 //------------------------------LoopNode---------------------------------------
 // Simple loop header.  Fall in path on left, loop-back path on right.
 class LoopNode : public RegionNode {
+private:
   // Size is bigger to hold the flags.  However, the flags do not change
   // the semantics so it does not appear in the hash & cmp functions.
   virtual uint size_of() const { return sizeof(*this); }
@@ -146,6 +147,8 @@ public:
   }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  const Type* Value(PhaseGVN* phase) const override;
+
   virtual int Opcode() const;
   bool can_be_counted_loop(PhaseValues* phase) const {
     return req() == 3 && in(0) != nullptr &&
@@ -620,12 +623,12 @@ public:
 
   bool is_expanded(PhaseGVN *phase) const;
 
-  OuterStripMinedLoopNode* outer_loop() const {
+  OuterStripMinedLoopNode* outer_counted_loop() const {
     return proj_out(true)->unique_ctrl_out()->as_OuterStripMinedLoop();
   }
 
-  CountedLoopNode* inner_loop() const {
-    return outer_loop()->inner_loop();
+  CountedLoopNode* inner_counted_loop() const {
+    return outer_counted_loop()->inner_counted_loop();
   }
 };
 
