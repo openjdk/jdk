@@ -199,7 +199,8 @@
           range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
-          "Enable parallel reference processing whenever possible")         \
+          "(Deprecated) Enable parallel reference processing "              \
+          "whenever possible")                                              \
                                                                             \
   product(bool, ParallelRefProcBalancingEnabled, true,                      \
           "Enable balancing of reference processing queues")                \
