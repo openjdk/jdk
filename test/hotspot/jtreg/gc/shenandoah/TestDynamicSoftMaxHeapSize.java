@@ -65,7 +65,7 @@ public class TestDynamicSoftMaxHeapSize {
             satbGCModeArgsNoDegeneratedGC.add(SoftMaxSetFlagOnlyTest.class.getName());
 
             ProcessBuilder satbPb = ProcessTools.createLimitedTestJavaProcessBuilder(satbGCModeArgsNoDegeneratedGC);
-            (new OutputAnalyzer(satbPb.start())).shouldHaveExitValue(0);
+            new OutputAnalyzer(satbPb.start()).shouldHaveExitValue(0);
         }
 
         // passive gc mode
@@ -79,39 +79,33 @@ public class TestDynamicSoftMaxHeapSize {
             passiveGCModeArgs.add(SoftMaxSetFlagOnlyTest.class.getName());
 
             ProcessBuilder passivePb = ProcessTools.createLimitedTestJavaProcessBuilder(passiveGCModeArgs);
-            (new OutputAnalyzer(passivePb.start())).shouldHaveExitValue(0);
+            new OutputAnalyzer(passivePb.start()).shouldHaveExitValue(0);
         }
 
-        // generational gc mode
-        List<String> genShenGCModeArgs = new ArrayList<>(COMMON_COMMANDS);
-        genShenGCModeArgs.add("-XX:ShenandoahGCMode=generational");
+        // generational gc mode. gen shen only works in pair with adaptive heuristic
+        List<String> genShenGCModeSetFlagOnlyArgs = new ArrayList<>(COMMON_COMMANDS);
+        genShenGCModeSetFlagOnlyArgs.add("-XX:ShenandoahGCMode=generational");
 
-        for (String heuristic : HEURISTICS) {
-            genShenGCModeArgs.add("-XX:ShenandoahGCHeuristics=" + heuristic);
-            genShenGCModeArgs.add(SoftMaxSetFlagOnlyTest.class.getName());
+        genShenGCModeSetFlagOnlyArgs.add(SoftMaxSetFlagOnlyTest.class.getName());
 
-            ProcessBuilder genShenPb = ProcessTools.createLimitedTestJavaProcessBuilder(genShenGCModeArgs);
-            (new OutputAnalyzer(genShenPb.start())).shouldHaveExitValue(0);
-        }
+        ProcessBuilder genShenPbSetFlagOnly = ProcessTools.createLimitedTestJavaProcessBuilder(genShenGCModeSetFlagOnlyArgs);
+        new OutputAnalyzer(genShenPbSetFlagOnly.start()).shouldHaveExitValue(0);
 
         // generational gc mode. Verify if it can detect soft max heap change when app is running
         int xMsHeapInByte = 16 * K * K;
         int xMxHeapInByte = 512 * K * K;
         int softMaxInByte = Utils.getRandomInstance().nextInt(xMsHeapInByte, xMxHeapInByte + 1);
 
-        List<String> generationalGCModeArgs = new ArrayList<>(COMMON_COMMANDS);
-        generationalGCModeArgs.add("-XX:ShenandoahGCMode=generational");
-        generationalGCModeArgs.add("-DsoftMaxCapacity=" + softMaxInByte);
+        List<String> genShenGCModeValidateFlagArgs = new ArrayList<>(COMMON_COMMANDS);
+        genShenGCModeValidateFlagArgs.add("-XX:ShenandoahGCMode=generational");
+        genShenGCModeValidateFlagArgs.add("-DsoftMaxCapacity=" + softMaxInByte);
 
-        for (String heuristic : HEURISTICS) {
-            generationalGCModeArgs.add("-XX:ShenandoahGCHeuristics=" + heuristic);
-            generationalGCModeArgs.add(SoftMaxWithExpectationTest.class.getName());
+        genShenGCModeValidateFlagArgs.add(SoftMaxWithExpectationTest.class.getName());
 
-            ProcessBuilder genShenPb = ProcessTools.createLimitedTestJavaProcessBuilder(generationalGCModeArgs);
-            OutputAnalyzer output = new OutputAnalyzer(genShenPb.start());
-            output.shouldHaveExitValue(0);
-            output.shouldContain("soft_max_capacity: " + softMaxInByte);
-        }
+        ProcessBuilder genShenPbValidateFlag = ProcessTools.createLimitedTestJavaProcessBuilder(genShenGCModeValidateFlagArgs);
+        OutputAnalyzer output = new OutputAnalyzer(genShenPbValidateFlag.start());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("soft_max_capacity: " + softMaxInByte);
     }
 
     public static class SoftMaxSetFlagOnlyTest {

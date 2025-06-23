@@ -71,7 +71,6 @@ protected:
   volatile size_t _used;
   volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
-  size_t _soft_max_capacity;
 
   ShenandoahHeuristics* _heuristics;
 
