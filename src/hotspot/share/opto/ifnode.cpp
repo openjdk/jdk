@@ -32,8 +32,8 @@
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates_enums.hpp"
-#include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
 
@@ -1088,14 +1088,11 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     if (failtype != nullptr) {
       const Type* type2 = filtered_int_type(igvn, n, fail, T_INT);
       if (type2 != nullptr) {
-        failtype = failtype->join(type2);
-        if (failtype->isa_int()) {
-          if (failtype->empty()) {
-            // previous if determines the result of this if so
-            // replace Bool with constant
-            igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
-            return true;
-          }
+        if (failtype->filter(type2) == Type::TOP) {
+          // previous if determines the result of this if so
+          // replace Bool with constant
+          igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
+          return true;
         }
       }
     }

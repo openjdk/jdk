@@ -572,7 +572,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a G1HeapRegion boundary.)
-  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = nullptr, double* expand_time_ms = nullptr);
+  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers);
   bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.
@@ -969,7 +969,7 @@ public:
   // Returns true if an incremental GC should be upgrade to a full gc. This
   // is done when there are no free regions and the heap can't be expanded.
   bool should_upgrade_to_full_gc() const {
-    return num_inactive_regions() == 0 && num_free_regions() == 0;
+    return num_available_regions() == 0;
   }
 
   // The number of inactive regions.
@@ -988,12 +988,11 @@ public:
   uint num_used_regions() const { return _hrm.num_used_regions(); }
 
   // The number of regions that can be allocated into.
-  uint num_available_regions() const { return _hrm.num_available_regions(); }
+  uint num_available_regions() const { return num_free_regions() + num_inactive_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
     return _hrm.get_auxiliary_data_memory_usage();
   }
-
 
 #ifdef ASSERT
   bool is_on_master_free_list(G1HeapRegion* hr) {

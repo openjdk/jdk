@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ void JNICALL classLoadHandler(
         jclass klass) {
     char className[MAX_STRING_LENGTH];
     int success = 1;
+    bool finish = false;
 
     if (!nsk_jvmti_aod_getClassName(jvmti, klass, className)) {
         nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_LOAD, 0, jvmti, jni);
@@ -65,7 +66,7 @@ void JNICALL classLoadHandler(
 
         if (eventsCounter == EXPECTED_EVENTS_NUMBER) {
             NSK_DISPLAY2("%s: all expected events were received (eventsCounter: %d)\n", agentName, eventsCounter);
-            nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_LOAD, success, jvmti, jni);
+            finish = true;
         }
 
         if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventsCounterMonitor))) {
@@ -75,8 +76,8 @@ void JNICALL classLoadHandler(
         success = 0;
     }
 
-    if (!success) {
-        nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_LOAD, 0, jvmti, jni);
+    if (finish || !success) {
+        nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_LOAD, success, jvmti, jni);
     }
 }
 
