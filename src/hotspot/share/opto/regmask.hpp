@@ -420,6 +420,7 @@ public:
   }
   RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
 
+  // Deep copying
   RegMask(const RegMask& rm, Arena* arena)
       : _rm_size(_RM_SIZE), _offset(rm._offset), _arena(arena) {
     copy(rm);
@@ -427,6 +428,7 @@ public:
 
   RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
 
+  // Deep copying
   RegMask& operator=(const RegMask& rm) {
     copy(rm);
     return *this;
