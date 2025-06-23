@@ -752,7 +752,7 @@ public class Log extends AbstractLog {
         nsuppressedwarns = 0;
         while (diagnosticHandler.prev != null)
             popDiagnosticHandler(diagnosticHandler);
-        aggregators.values().forEach(MandatoryWarningAggregator::clear);
+        aggregators.clear();
         suppressedDeferredMandatory.clear();
     }
 

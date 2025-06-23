@@ -245,8 +245,8 @@ public class Check {
                 warningKey = LintWarnings.HasBeenDeprecated(sym, sym.location());
             }
         }
-        Optional.ofNullable(warningKey)
-          .ifPresent(key -> log.mandatoryWarning(pos, key, DiagnosticFlag.AGGREGATE));
+        if (warningKey != null)
+            log.mandatoryWarning(pos, warningKey, DiagnosticFlag.AGGREGATE);
     }
 
     /** Log a preview warning.
