@@ -355,7 +355,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
                           ? caller : tclass;
             this.tclass = tclass;
             this.vclass = vclass;
-            this.offset = U.objectFieldOffset(field);
+            this.offset = U.objectFieldOffset(field); // throws IAE for static
         }
 
         /**

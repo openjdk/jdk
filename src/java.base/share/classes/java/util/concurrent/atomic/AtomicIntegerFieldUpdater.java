@@ -414,7 +414,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
                            !isSamePackage(tclass, caller))
                           ? caller : tclass;
             this.tclass = tclass;
-            this.offset = U.objectFieldOffset(field);
+            this.offset = U.objectFieldOffset(field); // throws IAE for static
         }
 
         /**
