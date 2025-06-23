@@ -126,10 +126,6 @@ public class JavaRuntimeURLConnection extends URLConnection {
 
     // Perform percent decoding of the resource name/path from the URL.
     private static String percentDecode(String path) throws MalformedURLException {
-        if (path.indexOf('%') == -1) {
-            // Nothing to decode (overwhelmingly common case).
-            return path;
-        }
         // Any additional special case decoding logic should go here.
         try {
             return ParseUtil.decode(path);
