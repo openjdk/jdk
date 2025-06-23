@@ -75,9 +75,16 @@ class RegMask {
 
   static const unsigned int _WordBitMask = BitsPerWord - 1U;
   static const unsigned int _LogWordBits = LogBitsPerWord;
+
+  // RM_SIZE, but in number of machine words
   static const unsigned int _RM_SIZE     = LP64_ONLY(RM_SIZE >> 1) NOT_LP64(RM_SIZE);
+
+  // RM_SIZE_MIN, but in number of machine words
   static const unsigned int _RM_SIZE_MIN =
       LP64_ONLY(((RM_SIZE_MIN + 1) & ~1) >> 1) NOT_LP64(RM_SIZE_MIN);
+
+  // The last index (in machine words) of the (static) array of register mask
+  // bits
   static const unsigned int _RM_MAX      = _RM_SIZE - 1U;
 
   // Compute a best-effort (statically known) upper bound for register mask
@@ -90,6 +97,8 @@ class RegMask {
         BoxLockNode_SLOT_LIMIT +            // Slots for locks
         64                                  // Padding, reserved words, etc.
         ) + 31) >> 5; // Number of bits -> number of 32-bit words
+
+  // RM_SIZE_MAX, but in number of machine words
   static const unsigned int _RM_SIZE_MAX =
       LP64_ONLY(((RM_SIZE_MAX + 1) & ~1) >> 1) NOT_LP64(RM_SIZE_MAX);
 
@@ -97,7 +106,7 @@ class RegMask {
   STATIC_ASSERT(RM_SIZE <= RM_SIZE_MAX);
 
   // Ensure that register masks cannot grow beyond the point at which
-  // OptoRegPair can no longer index the whole mask.
+  // OptoRegPair can no longer index the whole mask
   STATIC_ASSERT(OptoRegPair::can_fit((RM_SIZE_MAX << 5) - 1));
 
   union {
@@ -105,7 +114,11 @@ class RegMask {
     // the machine registers and usually all parameters that need to be passed
     // on the stack (stack registers) up to some interesting limit. On Intel,
     // the limit is something like 90+ parameters.
+
+    // Viewed as an array of 32-bit words
     int       _RM_I[RM_SIZE];
+
+    // Viewed as an array of machine words
     uintptr_t _RM_UP[_RM_SIZE];
   };
 
@@ -147,7 +160,7 @@ class RegMask {
   bool _read_only = false;
 #endif
 
-  // Current total register mask size in words
+  // Current total register mask size in machine words
   unsigned int _rm_size;
 
   // We support offsetting register masks to present different views of the
@@ -802,9 +815,12 @@ private:
                     OptoReg::Name last) const;
 
 public:
+
+  // Used to publically expose _RM_SIZE for testing purposes.
   unsigned int static basic_rm_size() {
     return _RM_SIZE;
   }
+
   unsigned int static rm_size_max_bits() {
     return _RM_SIZE_MAX * BitsPerWord;
   }
