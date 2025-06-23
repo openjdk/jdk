@@ -82,7 +82,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
      * Finds and caches the resource node associated with this URL and marks the
      * connection as "connected".
      */
-    private synchronized Node getResourceNode() throws IOException {
+    private synchronized Node connectResourceNode() throws IOException {
         if (resourceNode == null) {
             if (module.isEmpty() || path == null) {
                 throw new IOException("cannot connect to jrt:/" + module);
@@ -99,12 +99,12 @@ public class JavaRuntimeURLConnection extends URLConnection {
 
     @Override
     public void connect() throws IOException {
-        getResourceNode();
+        connectResourceNode();
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return new ByteArrayInputStream(READER.getResource(getResourceNode()));
+        return new ByteArrayInputStream(READER.getResource(connectResourceNode()));
     }
 
     @Override
@@ -112,7 +112,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
         // Note: UncheckedIOException is thrown by the Node subclass in
         // ExplodedImage (this not obvious, so worth calling out).
         try {
-            return getResourceNode().size();
+            return connectResourceNode().size();
         } catch (IOException | UncheckedIOException ioe) {
             return -1L;
         }
