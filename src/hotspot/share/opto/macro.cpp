@@ -2464,7 +2464,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       }
     }
   }
-  #ifndef PRODUCT
+#ifndef PRODUCT
   if (PrintOptoStatistics) {
     int membar_after = count_MemBar(C);
     Atomic::add(&PhaseMacroExpand::_memory_barriers_removed_counter, membar_before - membar_after);

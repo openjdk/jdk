@@ -2532,7 +2532,7 @@ void Compile::Optimize() {
     TracePhase tp(_t_macroExpand);
     print_method(PHASE_BEFORE_MACRO_EXPANSION, 3);
     PhaseMacroExpand  mex(igvn);
-    // Do not allow new macro nodes once we started to expand
+    // Do not allow new macro nodes once we start to eliminate and expand
     C->reset_allow_macro_nodes();
     // Last attempt to eliminate macro nodes before expand
     mex.eliminate_macro_nodes();
