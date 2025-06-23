@@ -1803,10 +1803,7 @@ PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, 
   assert(nstack.is_empty(), "non empty stack as argument");
   assert(_rpo_list.size() == 0, "non empty list as argument");
   phase->rpo(phase->C->root(), nstack, _visited, _rpo_list);
-  // We have to pay a one time overhead to construct this data structure but, it only benefits large graphs
-  if (_rpo_list.size() > 500) {
-    _dominator_tree = new DominatorTree(_rpo_list, _phase);
-  }
+  _dominator_tree = new DominatorTree(_rpo_list, _phase);
   // Remove control nodes at which no type update is possible
   int shift = 0;
   for (uint i = 0; i < _rpo_list.size(); ++i) {

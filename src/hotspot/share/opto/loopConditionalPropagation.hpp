@@ -556,9 +556,6 @@ public:
 #endif
 
   bool is_dominator(Node* dominator, Node* m) const {
-    if (_dominator_tree == nullptr) {
-      return _phase->is_dominator(dominator, m);
-    }
     assert(_phase->is_dominator(dominator, m) == (dominator == m || _dominator_tree->is_dominator(dominator, m)), "");
     return (dominator == m || _dominator_tree->is_dominator(dominator, m));
   }
