@@ -80,6 +80,7 @@ class JavaThread;
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class EventVirtualThreadPinned;
+class ThreadWXEnable;
 
 class JavaThread: public Thread {
   friend class VMStructs;
@@ -168,7 +169,7 @@ class JavaThread: public Thread {
   // attached thread cases where this field can have a temporary value.
   int64_t _monitor_owner_id;
 
- public:
+public:
   void set_monitor_owner_id(int64_t id) {
     ThreadIdentifier::verify_id(id);
     _monitor_owner_id = id;
@@ -1263,6 +1264,10 @@ public:
   // This is only for use by JVMTI RawMonitorWait. It emulates the actions of
   // the Java code in Object::wait which are not present in RawMonitorWait.
   bool get_and_clear_interrupted();
+
+public:
+  ThreadWXEnable* _cur_wx_enable;
+  WXMode* _cur_wx_mode;
 
 private:
   LockStack _lock_stack;

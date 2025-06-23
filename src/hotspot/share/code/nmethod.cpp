@@ -2398,7 +2398,7 @@ public:
 };
 
 bool nmethod::is_unloading() {
-  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+  //MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);

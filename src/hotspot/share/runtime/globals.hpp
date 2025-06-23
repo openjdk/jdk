@@ -2009,6 +2009,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
           "Use an extra lock during Thread start and exit to alleviate"     \
           "contention on Threads_lock.")                                    \
+                                                                            \
+  develop_pd(bool, TraceWXHealing,                                          \
+          "track occurrences of W^X mode healing")                          \
+
 
 // end of RUNTIME_FLAGS
 

@@ -272,7 +272,7 @@ class Patcher : public RelocActions {
 
 public:
   Patcher(address insn_addr) : RelocActions(insn_addr) {
-    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+    //MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   }
 
   virtual int unconditionalBranch(address insn_addr, address &target) {

@@ -518,8 +518,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _last_freeze_fail_result(freeze_ok),
 #endif
 
+  _cur_wx_enable(nullptr),
+  _cur_wx_mode(0),
+
   _lock_stack(this),
-  _om_cache(this) {
+  _om_cache(this)  {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI

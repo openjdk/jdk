@@ -211,6 +211,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // If we got a SIGBUS because we tried to write into the code
     // cache, try enabling WXWrite mode.
     if (sig == SIGBUS && pc != info->si_addr && CodeCache::contains(info->si_addr)) {
+      if (thread->_cur_wx_mode) {
+        if (TraceWXHealing) {
+          fprintf(stderr, "Healing pointer at %p to WXWrite\n", thread->_cur_wx_mode);
+        }
+        *(thread->_cur_wx_mode) = WXWrite;
+      }
       return thread->wx_enable_write();
     }
 #endif

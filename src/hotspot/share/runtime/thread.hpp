@@ -617,6 +617,9 @@ protected:
   void assert_wx_state(WXMode expected) {
     assert(_wx_state == expected, "wrong state");
   }
+  WXMode get_wx_state() {
+    return _wx_state;
+  }
 #endif // __APPLE__ && AARCH64
 
  private:

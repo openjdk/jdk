@@ -33,16 +33,46 @@
 #include "runtime/thread.inline.hpp"
 
 class ThreadWXEnable  {
-  Thread* _thread;
+  Thread *_thread;
   WXMode _old_mode;
+  WXMode *_this_wx_mode;
+  ThreadWXEnable *_prev;
 public:
+  ThreadWXEnable(WXMode* new_mode, Thread* thread) :
+    _thread(thread), _this_wx_mode(new_mode) {
+    JavaThread *javaThread
+      = _thread && _thread->is_Java_thread()
+                ? JavaThread::cast(_thread) : nullptr;
+    _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
+    _old_mode = _thread ? _thread->enable_wx(*new_mode) : WXWrite;
+    if (javaThread) {
+      javaThread->_cur_wx_enable = this;
+      javaThread->_cur_wx_mode = new_mode;
+    }
+  }
   ThreadWXEnable(WXMode new_mode, Thread* thread) :
-    _thread(thread),
-    _old_mode(_thread ? _thread->enable_wx(new_mode) : WXWrite)
-  { }
+    _thread(thread), _this_wx_mode(nullptr) {
+    JavaThread *javaThread
+      = _thread && _thread->is_Java_thread()
+        ? JavaThread::cast(_thread) : nullptr;
+    _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
+    _old_mode = _thread ? _thread->enable_wx(new_mode) : WXWrite;
+    if (javaThread) {
+      javaThread->_cur_wx_enable = this;
+      javaThread->_cur_wx_mode = nullptr;
+    }
+  }
+
   ~ThreadWXEnable() {
     if (_thread) {
       _thread->enable_wx(_old_mode);
+      JavaThread *javaThread
+        = _thread && _thread->is_Java_thread()
+          ? JavaThread::cast(_thread) : nullptr;
+      if (javaThread) {
+        javaThread->_cur_wx_enable = _prev;
+        javaThread->_cur_wx_mode = _prev ? _prev->_this_wx_mode : nullptr;
+      }
     }
   }
 };
