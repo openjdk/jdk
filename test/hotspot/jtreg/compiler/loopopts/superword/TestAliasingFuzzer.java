@@ -1049,7 +1049,14 @@ public class TestAliasingFuzzer {
                     case Aliasing.CONTAINER_DIFFERENT,
                          Aliasing.CONTAINER_SAME_ALIASING_NEVER,
                          Aliasing.CONTAINER_UNKNOWN_ALIASING_NEVER ->
+                        (containerKind == ContainerKind.MEMORY_SEGMENT_AT_INDEX
+                         ?  """
+                            // Due to cases like JDK-8360204, there can be issues with RCE leading
+                            // cases where we remove predicates and then unroll again and then
+                            // end up multiversioning. These cases seem relatively rare but prevent
+                            // us from asserting that there is never multiversioning in these cases.
                             """
+                         :  """
                             // Aliasing check should never fail at runtime, so the predicate
                             // should never fail, and we do not have to use multiversioning.
                             @IR(counts = {".*multiversion.*", "= 0"},
@@ -1057,7 +1064,7 @@ public class TestAliasingFuzzer {
                                 applyIf = {"UseAutoVectorizationPredicate", "true"},
                                 applyIfPlatform = {"64-bit", "true"},
                                 applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-                            """;
+                            """);
                     case Aliasing.CONTAINER_SAME_ALIASING_UNKNOWN,
                          Aliasing.CONTAINER_UNKNOWN_ALIASING_UNKNOWN ->
                             """
