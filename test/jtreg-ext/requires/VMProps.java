@@ -119,7 +119,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cpu.features", this::cpuFeatures);
         map.put("vm.pageSize", this::vmPageSize);
         map.put("vm.rtm.cpu", this::vmRTMCPU);
-        map.put("vm.rtm.compiler", this::vmRTMCompiler);
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
@@ -415,22 +414,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmHasDTrace() {
         return "" + WB.isDTraceIncluded();
-    }
-
-    /**
-     * @return "true" if compiler in use supports RTM and "false" otherwise.
-     * Note: Lightweight locking does not support RTM (for now).
-     */
-    protected String vmRTMCompiler() {
-        boolean isRTMCompiler = false;
-        boolean lightweightLocking = true; // Lightweight locking is currently the only locking mode.
-
-        if (Compiler.isC2Enabled() &&
-            (Platform.isX86() || Platform.isX64() || Platform.isPPC()) &&
-            lightweightLocking == false) {
-            isRTMCompiler = true;
-        }
-        return "" + isRTMCompiler;
     }
 
     /**

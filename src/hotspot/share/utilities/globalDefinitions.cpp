@@ -56,7 +56,7 @@ int LogMinObjAlignmentInBytes  = -1;
 // Oop encoding heap max
 uint64_t OopEncodingHeapMax = 0;
 
-int LockingMode = LM_LIGHTWEIGHT;
+const int LockingMode = LM_LIGHTWEIGHT;
 
 // Something to help porters sleep at night
 

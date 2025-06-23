@@ -39,7 +39,6 @@ import jtreg.SkippedException;
 
 public class TestLockStackCapacity {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
-    static final boolean flagHeavyMonitors = WB.getBooleanVMFlag("VerifyHeavyMonitors");
 
     static class SynchronizedObject {
         static final SynchronizedObject OUTER = new SynchronizedObject();
@@ -94,10 +93,6 @@ public class TestLockStackCapacity {
     }
 
     public static void main(String... args) throws Exception {
-        if (flagHeavyMonitors) {
-            throw new SkippedException("Test only valid for lightweight locking");
-        }
-
         if (!WB.supportsRecursiveLightweightLocking()) {
             throw new SkippedException("Test only valid if lightweight locking supports recursion");
         }

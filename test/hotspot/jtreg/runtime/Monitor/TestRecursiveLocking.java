@@ -122,7 +122,6 @@ import jtreg.SkippedException;
 
 public class TestRecursiveLocking {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
-    static final boolean flagHeavyMonitors = WB.getBooleanVMFlag("VerifyHeavyMonitors");
     static final int constLockStackCapacity = WB.getLockStackCapacity();
     static final int def_mode = 2;
     static final int def_n_secs = 30;
@@ -143,25 +142,19 @@ public class TestRecursiveLocking {
             // We haven't reached the stack lock capacity (recursion
             // level), so we shouldn't be inflated here. Except for
             // monitor mode, which is always inflated.
-            if (!flagHeavyMonitors) {
-                assertNotInflated();
-            }
+            assertNotInflated();
             if (depth == 1) {
                 return;
             } else {
                 runInner(depth - 1, outer);
             }
-            if (!flagHeavyMonitors) {
-                assertNotInflated();
-            }
+            assertNotInflated();
         }
 
         synchronized void runOuter(int depth, SynchronizedObject inner) {
             counter++;
 
-            if (!flagHeavyMonitors) {
-                assertNotInflated();
-            }
+            assertNotInflated();
             if (depth == 1) {
                 inner.runInner(constLockStackCapacity, this);
             } else {
@@ -184,16 +177,11 @@ public class TestRecursiveLocking {
             synchronized (OUTER) {
                 OUTER.counter++;
 
-                if (!flagHeavyMonitors) {
-                    OUTER.assertNotInflated();
-                }
+                OUTER.assertNotInflated();
                 INNER.assertNotInflated();
                 OUTER.runOuter(constLockStackCapacity - 1, INNER);
-
                 OUTER.assertInflated();
-                if (!flagHeavyMonitors) {
-                    INNER.assertNotInflated();
-                }
+                INNER.assertNotInflated();
             }
 
             // Verify that the nested monitors have been properly released:
@@ -207,24 +195,22 @@ public class TestRecursiveLocking {
         synchronized void runA(int depth, SynchronizedObject B) {
             counter++;
 
-            if (!flagHeavyMonitors) {
-                // First time we lock A, A is the only one on the lock
-                // stack.
-                if (counter == 1) {
-                    assertNotInflated();
-                } else {
-                    // Second time we want to lock A, the lock stack
-                    // looks like this [A, B]. Lightweight locking
-                    // doesn't allow interleaving ([A, B, A]), instead
-                    // it inflates A and removes it from the lock
-                    // stack. Which leaves us with only [B] on the
-                    // lock stack. After more recursions it will grow
-                    // to [B, B ... B].
-                    assertInflated();
-                }
-            } else if (flagHeavyMonitors) {
+
+            // First time we lock A, A is the only one on the lock
+            // stack.
+            if (counter == 1) {
+                assertNotInflated();
+            } else {
+                // Second time we want to lock A, the lock stack
+                // looks like this [A, B]. Lightweight locking
+                // doesn't allow interleaving ([A, B, A]), instead
+                // it inflates A and removes it from the lock
+                // stack. Which leaves us with only [B] on the
+                // lock stack. After more recursions it will grow
+                // to [B, B ... B].
                 assertInflated();
             }
+
 
             // Call runB() at the same depth as runA's depth:
             B.runB(depth, this);
@@ -233,16 +219,13 @@ public class TestRecursiveLocking {
         synchronized void runB(int depth, SynchronizedObject A) {
             counter++;
 
-            if (!flagHeavyMonitors) {
-                // Legacy tolerates endless recursions. While testing
-                // lightweight we don't go deeper than the size of the
-                // lock stack, which in this test case will be filled
-                // with a number of B-elements. See comment in runA()
-                // above for more info.
-                assertNotInflated();
-            } else {
-                assertInflated();
-            }
+
+            // Legacy tolerates endless recursions. While testing
+            // lightweight we don't go deeper than the size of the
+            // lock stack, which in this test case will be filled
+            // with a number of B-elements. See comment in runA()
+            // above for more info.
+            assertNotInflated();
 
             if (depth == 1) {
                 // Reached LockStackCapacity in depth so we're done.
@@ -273,9 +256,8 @@ public class TestRecursiveLocking {
             // Here A can be either inflated or not because A is not
             // locked anymore and subject to deflation.
 
-            if (!flagHeavyMonitors) {
-                B.assertNotInflated();
-            }
+            B.assertNotInflated();
+
         }
 
         void assertNotInflated() {
@@ -339,7 +321,6 @@ public class TestRecursiveLocking {
             }
         }
 
-        System.out.println("INFO: VerifyHeavyMonitors=" + flagHeavyMonitors);
         System.out.println("INFO: LockStackCapacity=" + constLockStackCapacity);
         System.out.println("INFO: n_secs=" + n_secs);
         System.out.println("INFO: mode=" + mode);
