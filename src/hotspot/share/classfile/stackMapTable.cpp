@@ -384,7 +384,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
   } else if (frame_type <= APPEND_FRAME_END) {
     // append_frame
     assert(frame_type >= APPEND_FRAME_START && frame_type <= APPEND_FRAME_END, "should be");
-    int appends = frame_type - SAME_FRAME_EXTENDED;
+    int appends = frame_type - APPEND_FRAME_START + 1;
     int real_length = _prev_frame->locals_size();
     int new_length = real_length + appends*2;
     locals = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, VerificationType, new_length);
