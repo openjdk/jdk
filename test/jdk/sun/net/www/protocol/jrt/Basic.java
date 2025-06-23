@@ -58,6 +58,7 @@ public class Basic {
                 {"jrt:/modules/java.base/java/lang", false},
                 {"jrt:/packages/java.lang", false},
                 // Invalid (incomplete/corrupt) URIs.
+                {"jrt:/", false},
                 {"jrt:/java.base", false},
                 {"jrt:/java.base/", false},
                 // Cannot escape anything in the module name.

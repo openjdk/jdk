@@ -28,6 +28,7 @@ package sun.net.www.protocol.jrt;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -56,8 +57,8 @@ public class JavaRuntimeURLConnection extends URLConnection {
     // The resource name permits UTF-8 percent encoding of non-ASCII characters.
     private final String path;
 
-    // The resource node (when connected).
-    private volatile Node resourceNode;
+    // The resource node (non-null when connected).
+    private Node resourceNode;
 
     JavaRuntimeURLConnection(URL url) throws IOException {
         super(url);
@@ -83,7 +84,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
      */
     private synchronized Node getResourceNode() throws IOException {
         if (resourceNode == null) {
-            if (path == null) {
+            if (module.isEmpty() || path == null) {
                 throw new IOException("cannot connect to jrt:/" + module);
             }
             Node node = READER.findNode("/modules/" + module + "/" + path);
@@ -108,9 +109,11 @@ public class JavaRuntimeURLConnection extends URLConnection {
 
     @Override
     public long getContentLengthLong() {
+        // Note: UncheckedIOException is thrown by the Node subclass in
+        // ExplodedImage (this not obvious, so worth calling out).
         try {
             return getResourceNode().size();
-        } catch (IOException ioe) {
+        } catch (IOException | UncheckedIOException ioe) {
             return -1L;
         }
     }
@@ -127,6 +130,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
             // Nothing to decode (overwhelmingly common case).
             return path;
         }
+        // Any additional special case decoding logic should go here.
         try {
             return ParseUtil.decode(path);
         } catch (IllegalArgumentException e) {
