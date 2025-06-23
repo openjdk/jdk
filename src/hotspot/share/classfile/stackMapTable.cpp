@@ -381,7 +381,7 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
     }
     _first = false;
     return frame;
-  } else if (frame_type < SAME_FRAME_EXTENDED + 4) {
+  } else if (frame_type <= APPEND_FRAME_END) {
     // append_frame
     assert(frame_type >= APPEND_FRAME_START && frame_type <= APPEND_FRAME_END, "should be");
     int appends = frame_type - SAME_FRAME_EXTENDED;
