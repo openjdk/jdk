@@ -46,6 +46,8 @@ CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
 TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
 ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
 
+# The `-utf8` option is used even for US English, as some names
+# may contain non-ASCII characters, such as “Türkiye”.
 $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
     $(wildcard $(CLDR_DATA_DIR)/main/en*.xml) \
     $(wildcard $(CLDR_DATA_DIR)/supplemental/*.xml) \
@@ -61,7 +63,8 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -basemodule \
 	    -year $(COPYRIGHT_YEAR) \
 	    -zntempfile $(ZONENAME_TEMPLATE) \
-	    -tzdatadir $(TZ_DATA_DIR))
+	    -tzdatadir $(TZ_DATA_DIR) \
+	    -utf8)
 	$(TOUCH) $@
 
 TARGETS += $(CLDR_GEN_DONE)

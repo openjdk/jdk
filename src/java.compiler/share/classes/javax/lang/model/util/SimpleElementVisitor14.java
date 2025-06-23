@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleElementVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_25)
+@SupportedSourceVersion(RELEASE_26)
 public class SimpleElementVisitor14<R, P> extends SimpleElementVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

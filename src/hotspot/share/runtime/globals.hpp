@@ -1094,9 +1094,13 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, CollectIndexSetStatistics, false,                           \
           "Collect information about IndexSets")                            \
                                                                             \
+  /* This value is later shifted left by up to LogBytesPerLong bits       */\
+  /* (to convert from element count to size in bytes), so we must ensure  */\
+  /* it does not overflow during the shift.                               */\
   develop(int, FastAllocateSizeLimit, 128*K,                                \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
+          range(0, (1 << (BitsPerInt - LogBytesPerLong - 1)) - 1)           \
                                                                             \
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \
@@ -1501,7 +1505,7 @@ const int ObjectAlignmentInBytes = 8;
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
   /* code cache parameters                                    */            \
-  product_pd(uintx, CodeCacheSegmentSize, EXPERIMENTAL,                     \
+  product_pd(size_t, CodeCacheSegmentSize, EXPERIMENTAL,                    \
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \
@@ -1516,38 +1520,38 @@ const int ObjectAlignmentInBytes = 8;
           range(1, 128)                                                     \
           constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
-  product_pd(uintx, InitialCodeCacheSize,                                   \
+  product_pd(size_t, InitialCodeCacheSize,                                  \
           "Initial code cache size (in bytes)")                             \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
-  develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
+  develop_pd(size_t, CodeCacheMinimumUseSpace,                              \
           "Minimum code cache size (in bytes) required to start VM.")       \
-          range(0, max_uintx)                                               \
+          range(0, SIZE_MAX)                                                \
                                                                             \
   product(bool, SegmentedCodeCache, false,                                  \
           "Use a segmented code cache")                                     \
                                                                             \
-  product_pd(uintx, ReservedCodeCacheSize,                                  \
+  product_pd(size_t, ReservedCodeCacheSize,                                 \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
-  product_pd(uintx, NonProfiledCodeHeapSize,                                \
+  product_pd(size_t, NonProfiledCodeHeapSize,                               \
           "Size of code heap with non-profiled methods (in bytes)")         \
-          range(0, max_uintx)                                               \
+          range(0, SIZE_MAX)                                                \
                                                                             \
-  product_pd(uintx, ProfiledCodeHeapSize,                                   \
+  product_pd(size_t, ProfiledCodeHeapSize,                                  \
           "Size of code heap with profiled methods (in bytes)")             \
-          range(0, max_uintx)                                               \
+          range(0, SIZE_MAX)                                                \
                                                                             \
-  product_pd(uintx, NonNMethodCodeHeapSize,                                 \
+  product_pd(size_t, NonNMethodCodeHeapSize,                                \
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
-  product_pd(uintx, CodeCacheExpansionSize,                                 \
+  product_pd(size_t, CodeCacheExpansionSize,                                \
           "Code cache expansion size (in bytes)")                           \
-          range(32*K, max_uintx)                                            \
+          range(32*K, SIZE_MAX)                                             \
                                                                             \
-  product_pd(uintx, CodeCacheMinBlockLength, DIAGNOSTIC,                    \
+  product_pd(size_t, CodeCacheMinBlockLength, DIAGNOSTIC,                   \
           "Minimum number of segments in a code cache block")               \
           range(1, 100)                                                     \
                                                                             \
@@ -2005,6 +2009,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
           "Use an extra lock during Thread start and exit to alleviate"     \
           "contention on Threads_lock.")                                    \
+                                                                            \
+  develop(uint, BinarySearchThreshold, 16,                                  \
+          "Minimal number of elements in a sorted collection to prefer"     \
+          "binary search over simple linear search." )                      \
 
 // end of RUNTIME_FLAGS
 

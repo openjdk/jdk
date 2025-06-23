@@ -21,11 +21,11 @@
  * questions.
  */
 
-#include "opto/vtransform.hpp"
-#include "opto/vectorization.hpp"
-#include "opto/vectornode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/vectorization.hpp"
+#include "opto/vectornode.hpp"
+#include "opto/vtransform.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
