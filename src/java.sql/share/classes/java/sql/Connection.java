@@ -1596,8 +1596,8 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ShardingKeyBuilder
      */
     default boolean setShardingKeyIfValid(ShardingKey shardingKey,
-                                          ShardingKey superShardingKey,
-                                          int timeout) throws SQLException {
+            ShardingKey superShardingKey, int timeout)
+            throws SQLException {
         throw new SQLFeatureNotSupportedException("setShardingKeyIfValid not implemented");
     }
 
@@ -1631,7 +1631,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ShardingKeyBuilder
      */
     default boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout)
-        throws SQLException {
+            throws SQLException {
         throw new SQLFeatureNotSupportedException("setShardingKeyIfValid not implemented");
     }
 
@@ -1657,7 +1657,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ShardingKeyBuilder
      */
     default void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey)
-        throws SQLException {
+            throws SQLException {
         throw new SQLFeatureNotSupportedException("setShardingKey not implemented");
     }
 
@@ -1679,7 +1679,8 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ShardingKey
      * @see ShardingKeyBuilder
      */
-    default void setShardingKey(ShardingKey shardingKey) throws SQLException {
+    default void setShardingKey(ShardingKey shardingKey)
+            throws SQLException {
         throw new SQLFeatureNotSupportedException("setShardingKey not implemented");
     }
 
