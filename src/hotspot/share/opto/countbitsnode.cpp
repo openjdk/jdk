@@ -46,7 +46,7 @@ const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
     n -= x >> 31;
     return TypeInt::make(n);
   }
-  return TypeInt::INT;
+  return TypeInt::make(0, sizeof(jint) * BitsPerByte, Type::WidenMax);
 }
 
 //------------------------------Value------------------------------------------
@@ -69,7 +69,7 @@ const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
     n -= x >> 31;
     return TypeInt::make(n);
   }
-  return TypeInt::INT;
+  return TypeInt::make(0, sizeof(jlong) * BitsPerByte, Type::WidenMax);
 }
 
 //------------------------------Value------------------------------------------
@@ -91,7 +91,7 @@ const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
     y = i <<  1; if (y != 0) { n = n -  1; }
     return TypeInt::make(n);
   }
-  return TypeInt::INT;
+  return TypeInt::make(0, sizeof(jint) * BitsPerByte, Type::WidenMax);
 }
 
 //------------------------------Value------------------------------------------
@@ -114,5 +114,5 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
     y = x <<  1; if (y != 0) { n = n -  1; }
     return TypeInt::make(n);
   }
-  return TypeInt::INT;
+  return TypeInt::make(0, sizeof(jlong) * BitsPerByte, Type::WidenMax);
 }
