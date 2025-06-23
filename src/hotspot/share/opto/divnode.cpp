@@ -1517,18 +1517,16 @@ const Type* UModLNode::Value(PhaseGVN* phase) const {
 }
 
 Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
+  Node* super = CallLeafPureNode::Ideal(phase, can_reshape);
+  if (super != nullptr) {
+    return super;
   }
-  if (is_dead()) { // dead node
+
+  if (!can_reshape) {
     return nullptr;
   }
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
-
-  if (is_unused()) {
-    return make_tuple_of_input_state_and_top_return_values(igvn->C);
-  }
 
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(dividend());
@@ -1571,18 +1569,16 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
+  Node* super = CallLeafPureNode::Ideal(phase, can_reshape);
+  if (super != nullptr) {
+    return super;
   }
-  if (is_dead()) { // dead node
+
+  if (!can_reshape) {
     return nullptr;
   }
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
-
-  if (is_unused()) {
-    return make_tuple_of_input_state_and_top_return_values(igvn->C);
-  }
 
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(dividend());

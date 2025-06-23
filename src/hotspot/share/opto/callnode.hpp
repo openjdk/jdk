@@ -913,6 +913,17 @@ public:
 #endif
 };
 
+/* A pure function call, they are assumed not to be safepoints, not to read or write memory,
+ * have no exception... They just take parameters, return a value without side effect. It is
+ * always correct to create some, or remove them, if the result is not used.
+ *
+ * They still have control input to allow easy lowering into other kind of calls that require
+ * a control, but this is more a technical than a moral constraint.
+ *
+ * Pure calls must have only control and data input and output: I/O, Memory and so on must be top.
+ * Nevertheless, pure calls can typically be expensive math operations so care must be taken
+ * when letting the node float.
+ */
 class CallLeafPureNode : public CallLeafNode {
 protected:
   bool is_unused() const;

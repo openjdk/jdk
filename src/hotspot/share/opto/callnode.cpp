@@ -1315,7 +1315,7 @@ bool CallLeafPureNode::is_dead() const {
  * We use this to delete a pure function that is not used: by replacing the call with
  * such a tuple, we let output Proj's idealization pick the corresponding input of the
  * pure call, so jumping over it, and effectively, removing the call from the graph.
- * This avoids doing the graph surgery manually, but leave that to IGVN
+ * This avoids doing the graph surgery manually, but leaves that to IGVN
  * that is specialized for doing that right. We need also tuple components for output
  * values of the function to respect the return arity, and in case there is a projection
  * that would pick an output (which shouldn't happen at the moment).
@@ -1339,11 +1339,15 @@ TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(con
 }
 
 Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (is_dead()) { // dead node
+  if (is_dead()) {
     return nullptr;
   }
 
+  // We need to wait until IGVN because during parsing, usages might still be missing
+  // and we would remove the call immediately.
   if (can_reshape && is_unused()) {
+    // The result is not used. We remove the call by replacing it with a tuple, that
+    // is later disintegrated by the projections.
     return make_tuple_of_input_state_and_top_return_values(phase->C);
   }
 
