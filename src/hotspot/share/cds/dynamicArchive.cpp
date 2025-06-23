@@ -382,11 +382,11 @@ void DynamicArchiveBuilder::gather_array_klasses() {
   log_debug(aot)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
 }
 
-class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
+class VM_PopulateDynamicDumpSharedSpace: public VM_Heap_Sync_Operation {
   DynamicArchiveBuilder _builder;
 public:
   VM_PopulateDynamicDumpSharedSpace(const char* archive_name)
-  : VM_GC_Sync_Operation(), _builder(archive_name) {}
+  : VM_Heap_Sync_Operation(), _builder(archive_name) {}
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
