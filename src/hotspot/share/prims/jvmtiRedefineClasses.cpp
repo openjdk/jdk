@@ -659,10 +659,11 @@ u2 VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& s
 // Append a bootstrap specifier into the merge_cp operands that is semantically equal
 // to the scratch_cp operands bootstrap specifier passed by the old_bs_i index.
 // Recursively append new merge_cp entries referenced by the new bootstrap specifier.
-void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, int old_bs_i,
+void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, const int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
-  u2 old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
+  BSMAttributeEntry* old_bsme = scratch_cp->bsm_attribute_entry(old_bs_i);
+  u2 old_ref_i = old_bsme->bootstrap_method_index();
   u2 new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
                                                merge_cp_length_p);
   if (new_ref_i != old_ref_i) {
@@ -676,14 +677,14 @@ void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, in
   // However, the operand_offset_at(0) was set in the extend_operands() call.
   int new_base = (new_bs_i == 0) ? (*merge_cp_p)->operand_offset_at(0)
                                  : (*merge_cp_p)->operand_next_offset_at(new_bs_i - 1);
-  u2 argc      = scratch_cp->operand_argument_count_at(old_bs_i);
+  u2 argc      = old_bsme->argument_count();
 
   ConstantPool::operand_offset_at_put(merge_ops, _operands_cur_length, new_base);
   merge_ops->at_put(new_base++, new_ref_i);
   merge_ops->at_put(new_base++, argc);
 
   for (int i = 0; i < argc; i++) {
-    u2 old_arg_ref_i = scratch_cp->operand_argument_index_at(old_bs_i, i);
+    u2 old_arg_ref_i = old_bsme->argument_index(i);
     u2 new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
                                                      merge_cp_length_p);
     merge_ops->at_put(new_base++, new_arg_ref_i);
@@ -3550,6 +3551,13 @@ void VM_RedefineClasses::set_new_constant_pool(
     Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, scratch_class->class_loader_data(), CHECK);
     scratch_class->set_fieldinfo_stream(new_fis);
     MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_stream);
+
+    Array<u1>* old_table = scratch_class->fieldinfo_search_table();
+    Array<u1>* search_table = FieldInfoStream::create_search_table(scratch_class->constants(), new_fis, scratch_class->class_loader_data(), CHECK);
+    scratch_class->set_fieldinfo_search_table(search_table);
+    MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_table);
+
+    DEBUG_ONLY(FieldInfoStream::validate_search_table(scratch_class->constants(), new_fis, search_table));
   }
 
   // Update constant pool indices in the inner classes info to use

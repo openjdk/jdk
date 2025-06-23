@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,8 +263,8 @@ MTLTR_SetLCDContrast(MTLContext *mtlc,
     jfloat clr[4];
     jint col = cPaint.color;
 
-    J2dTraceLn2(J2D_TRACE_INFO, "primary color %x, contrast %d", col, contrast);
-    J2dTraceLn2(J2D_TRACE_INFO, "gamma %f, invgamma %f", gamma, invgamma);
+    J2dTraceLn(J2D_TRACE_INFO, "primary color %x, contrast %d", col, contrast);
+    J2dTraceLn(J2D_TRACE_INFO, "gamma %f, invgamma %f", gamma, invgamma);
 
     clr[0] = ((col >> 16) & 0xFF)/255.0f;
     clr[1] = ((col >> 8) & 0xFF)/255.0f;
@@ -439,8 +439,8 @@ MTLTR_DrawLCDGlyphViaCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     tx2 = cell->tx2;
     ty2 = cell->ty2;
 
-    J2dTraceLn4(J2D_TRACE_INFO, "tx1 = %f, ty1 = %f, tx2 = %f, ty2 = %f", tx1, ty1, tx2, ty2);
-    J2dTraceLn2(J2D_TRACE_INFO, "width = %d height = %d", dstOps->width, dstOps->height);
+    J2dTraceLn(J2D_TRACE_INFO, "tx1 = %f, ty1 = %f, tx2 = %f, ty2 = %f", tx1, ty1, tx2, ty2);
+    J2dTraceLn(J2D_TRACE_INFO, "width = %d height = %d", dstOps->width, dstOps->height);
 
     LCD_ADD_TRIANGLES(tx1, ty1, tx2, ty2, x, y, x+w, y+h);
 
@@ -490,7 +490,9 @@ MTLTR_DrawGrayscaleGlyphNoCache(MTLContext *mtlc,
         for (sx = 0; sx < w; sx += tw, x += tw) {
             sw = ((sx + tw) > w) ? (w - sx) : tw;
 
-            J2dTraceLn7(J2D_TRACE_INFO, "sx = %d sy = %d x = %d y = %d sw = %d sh = %d w = %d", sx, sy, x, y, sw, sh, w);
+            J2dTraceLn(J2D_TRACE_INFO,
+                       "sx = %d sy = %d x = %d y = %d sw = %d sh = %d w = %d",
+                       sx, sy, x, y, sw, sh, w);
             MTLVertexCache_AddMaskQuad(mtlc,
                                        sx, sy, x, y, sw, sh,
                                        w, ginfo->image,
@@ -514,8 +516,10 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     jint h = ginfo->height;
     id<MTLTexture> blitTexture = nil;
 
-    J2dTraceLn2(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache x %d, y%d", x, y);
-    J2dTraceLn3(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache rowBytesOffset=%d, rgbOrder=%d, contrast=%d", rowBytesOffset, rgbOrder, contrast);
+    J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache x %d, y%d", x, y);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLTR_DrawLCDGlyphNoCache rowBytesOffset=%d, rgbOrder=%d, contrast=%d",
+               rowBytesOffset, rgbOrder, contrast);
 
 
     id<MTLRenderCommandEncoder> encoder = nil;
@@ -578,7 +582,9 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     tx2 = 1.0f;
     ty2 = 1.0f;
 
-    J2dTraceLn2(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache : dstOps->width = %d, dstOps->height = %d", dstOps->width, dstOps->height);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLTR_DrawLCDGlyphNoCache : dstOps->width = %d, dstOps->height = %d",
+               dstOps->width, dstOps->height);
 
     LCD_ADD_TRIANGLES(tx1, ty1, tx2, ty2, x, y, x+w, y+h);
 
@@ -673,7 +679,7 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
     }
 
     glyphMode = MODE_NOT_INITED;
-    J2dTraceLn1(J2D_TRACE_INFO, "totalGlyphs = %d", totalGlyphs);
+    J2dTraceLn(J2D_TRACE_INFO, "totalGlyphs = %d", totalGlyphs);
     jboolean flushBeforeLCD = JNI_FALSE;
 
     for (glyphCounter = 0; glyphCounter < totalGlyphs; glyphCounter++) {
@@ -711,8 +717,8 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
             continue;
         }
 
-        J2dTraceLn2(J2D_TRACE_INFO, "Glyph width = %d height = %d", ginfo->width, ginfo->height);
-        J2dTraceLn1(J2D_TRACE_INFO, "rowBytes = %d", ginfo->rowBytes);
+        J2dTraceLn(J2D_TRACE_INFO, "Glyph width = %d height = %d", ginfo->width, ginfo->height);
+        J2dTraceLn(J2D_TRACE_INFO, "rowBytes = %d", ginfo->rowBytes);
         if (ginfo->rowBytes == ginfo->width) {
             // grayscale or monochrome glyph data
             if (ginfo->width <= MTLTR_CACHE_CELL_WIDTH &&

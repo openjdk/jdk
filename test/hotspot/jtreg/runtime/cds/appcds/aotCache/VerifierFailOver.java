@@ -26,8 +26,6 @@
  * @test
  * @summary Sanity test for AOTCache
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build VerifierFailOver_Helper
  * @build VerifierFailOver
