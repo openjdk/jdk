@@ -3325,7 +3325,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
       assert(stackmap_p + 2 <= stackmap_end,
         "no room for offset_delta");
       stackmap_p += 2;
-      u1 len = frame_type - StackMapReader::SAME_FRAME_EXTENDED;
+      u1 len = frame_type - StackMapReader::APPEND_FRAME_START + 1;
       for (u1 i = 0; i < len; i++) {
         rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
           calc_number_of_entries, frame_type);
