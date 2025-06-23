@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,29 @@
  * questions.
  */
 
+import java.awt.HeadlessException;
+
 /*
- * @test
- * @bug 8207355
- * @compile TestLinearScanOrder.jasm
- * @run main/othervm -Xcomp -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:CompileCommand=compileonly,compiler.c1.TestLinearScanOrder::test
- *                   compiler.c1.TestLinearScanOrderMain
+ * @test 8358526
+ * @summary Verify behaviour of no-args HeadlessException and getMessage
+ * @run main/othervm -Djava.awt.headless=true HeadlessExceptionTest
+ * @run main/othervm HeadlessExceptionTest
  */
 
-package compiler.c1;
+public class HeadlessExceptionTest {
 
-// WARNING: This test will not fail but time out in C1's ComputeLinearScanOrder phase
-public class TestLinearScanOrderMain {
-    public static void main(String[] args) {
-        if (TestLinearScanOrder.test() != 42) {
-            throw new RuntimeException("Test failed");
+    public static void main (String[] args) {
+        String nullmsg = new HeadlessException().getMessage();
+        String emptymsg = new HeadlessException("").getMessage();
+        System.out.println("nullmsg=" + nullmsg);
+        System.out.println("emptymsg=" + emptymsg);
+        if (nullmsg != null) {
+            if ("".equals(nullmsg)) {
+                throw new RuntimeException("empty message instead of null");
+            }
+            if (!nullmsg.equals(emptymsg)) {
+                throw new RuntimeException("non-null messages differ");
+            }
         }
     }
 }
