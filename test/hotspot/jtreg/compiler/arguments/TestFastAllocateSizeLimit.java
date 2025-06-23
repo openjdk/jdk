@@ -45,6 +45,7 @@ public class TestFastAllocateSizeLimit {
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
+            // range defined in globals.hpp is [0, (1 << (BitsPerInt - LogBytesPerLong - 1)) - 1]
             int sizeLimit = RANDOM.nextInt(1 << 28);
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:FastAllocateSizeLimit=" +
                 sizeLimit, "-Xcomp", "compiler.arguments.TestFastAllocateSizeLimit", "run");
