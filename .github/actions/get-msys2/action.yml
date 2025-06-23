@@ -30,7 +30,7 @@ runs:
   using: composite
   steps:
     - name: 'Install MSYS2'
-      uses: msys2/setup-msys2@v2.22.0
+      uses: msys2/setup-msys2@v2.25.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
@@ -42,3 +42,10 @@ runs:
         # Prepend msys2/msys64/usr/bin to the PATH
         echo "$env:RUNNER_TOOL_CACHE/msys2/msys64/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
+
+    # Remove the default config.site file provided by MSYS2 to ensure config.guess accurately detects the host system.  
+    - name: 'Remove default config.site'
+      run: |
+        echo "Removing default config.site"
+        rm -f /etc/config.site
+      shell: env /usr/bin/bash --login -eo pipefail {0}
