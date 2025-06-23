@@ -69,7 +69,8 @@ import sun.security.x509.X500Name;
  */
 
 /*
- * This class tests against the certificate's expiration, key usage and issuers.
+ * This class tests against the certificate's expiration, key usage, key type
+ * and issuers.
  */
 
 public class CertChecking {
@@ -156,34 +157,51 @@ public class CertChecking {
         // --- Issuer match test cases ---
 
         // Check CA issuer match
-        issuerTestCase(enabled, kmAlg, "RSA",
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "RSA",
                 new Principal[]{new X500Principal(CA_ISSUER_STRING)}, true);
 
         // Check CA issuer match with non-X500 principal
-        issuerTestCase(enabled, kmAlg, "RSA",
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "RSA",
                 new Principal[]{new UserPrincipal(CA_ISSUER_STRING)}, true);
 
         // Non-convertable principal should match all
-        issuerTestCase(enabled, kmAlg, "RSA",
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "RSA",
                 new Principal[]{new InvalidPrincipal()}, true);
 
         // Empty issuer array should match all
-        issuerTestCase(enabled, kmAlg, "RSA", new Principal[]{}, true);
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "RSA",
+                new Principal[]{}, true);
 
         // Null issuer array should match all
-        issuerTestCase(enabled, kmAlg, "RSA", null, true);
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "RSA", null, true);
 
         // Issuer that is not in the chain should not match.
-        issuerTestCase(enabled, kmAlg, "RSA",
-                new Principal[]{new X500Principal(UNKNOWN_ISSUER_STRING)}, false);
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "RSA",
+                new Principal[]{new X500Principal(UNKNOWN_ISSUER_STRING)},
+                false);
 
-        // --- Alias not found for given KeyType test cases ---
+        // --- Key Type match test cases ---
 
-        // Null KeyType
-        aliasNotFoundTestCase(kmAlg, "RSA", null);
+        // Exact key type match.
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "EC", "EC", null, true);
 
-        // Wrong KeyType
-        aliasNotFoundTestCase(kmAlg, "RSA", "EC");
+        // Key type with a signature algorithm match.
+        issuerAndKeyTypeTestCase(
+                enabled, kmAlg, "EC", "EC_" + CA_KEY_TYPE, null, true);
+
+        // Null KeyType should not match.
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", null, null, false);
+
+        // Wrong KeyType should not match.
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "EC", null, false);
+
+        // Wrong signature algorithm should not match.
+        issuerAndKeyTypeTestCase(enabled, kmAlg, "RSA", "RSA_EC", null, false);
+
+        // Correct signature algorithm but incorrect key algorithm
+        // should not match.
+        issuerAndKeyTypeTestCase(
+                enabled, kmAlg, "RSA", "EC_" + CA_KEY_TYPE, null, false);
     }
 
     private static void usageTestCase(String enabled, String kmAlg,
@@ -260,23 +278,24 @@ public class CertChecking {
         }
     }
 
-    private static void issuerTestCase(String enabled, String kmAlg,
-            String keyAlg, Principal[] issuers, boolean found) throws Exception {
+    private static void issuerAndKeyTypeTestCase(String enabled, String kmAlg,
+            String keyAlg, String keyType, Principal[] issuers, boolean found)
+            throws Exception {
 
         X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
                 kmAlg, keyAlg, NONE_KEY_USAGES);
 
         List<String> chosenAliases = new ArrayList<>(4);
 
-        chosenAliases.add(km.chooseServerAlias(keyAlg, issuers, null));
-        chosenAliases.add(km.chooseEngineServerAlias(keyAlg, issuers, null));
+        chosenAliases.add(km.chooseServerAlias(keyType, issuers, null));
+        chosenAliases.add(km.chooseEngineServerAlias(keyType, issuers, null));
         chosenAliases.add(
-                km.chooseClientAlias(new String[]{keyAlg}, issuers, null));
+                km.chooseClientAlias(new String[]{keyType}, issuers, null));
         chosenAliases.add(km.chooseEngineClientAlias(
-                new String[]{keyAlg}, issuers, null));
+                new String[]{keyType}, issuers, null));
 
-        String[] allServerAliases = km.getServerAliases(keyAlg, issuers);
-        String[] allClientAliases = km.getClientAliases(keyAlg, issuers);
+        String[] allServerAliases = km.getServerAliases(keyType, issuers);
+        String[] allClientAliases = km.getClientAliases(keyType, issuers);
 
         if (found) {
             if ("false".equals(enabled) && kmAlg.equals("SunX509")) {
@@ -288,10 +307,14 @@ public class CertChecking {
                         normalizeAlias(allServerAliases[0]));
                 assertEquals(USAGE_MISMATCH_ALIAS,
                         normalizeAlias(allClientAliases[0]));
-                assertEquals(PREFERRED_ALIAS, normalizeAlias(allServerAliases[1]));
-                assertEquals(PREFERRED_ALIAS, normalizeAlias(allClientAliases[1]));
-                assertEquals(EXPIRED_ALIAS, normalizeAlias(allServerAliases[2]));
-                assertEquals(EXPIRED_ALIAS, normalizeAlias(allClientAliases[2]));
+                assertEquals(PREFERRED_ALIAS,
+                        normalizeAlias(allServerAliases[1]));
+                assertEquals(PREFERRED_ALIAS,
+                        normalizeAlias(allClientAliases[1]));
+                assertEquals(EXPIRED_ALIAS,
+                        normalizeAlias(allServerAliases[2]));
+                assertEquals(EXPIRED_ALIAS,
+                        normalizeAlias(allClientAliases[2]));
             } else {
                 chosenAliases.forEach(a ->
                         assertEquals(PREFERRED_ALIAS, normalizeAlias(a)));
@@ -309,21 +332,6 @@ public class CertChecking {
             assertNull(allServerAliases);
             assertNull(allClientAliases);
         }
-    }
-
-    private static void aliasNotFoundTestCase(
-            String kmAlg, String keyAlg, String keyType) throws Exception {
-
-        X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
-                kmAlg, keyAlg, DEFAULT_KEY_USAGES);
-
-        assertNull(km.chooseServerAlias(keyType, null, null));
-        assertNull(km.chooseEngineServerAlias(keyType, null, null));
-        assertNull(km.chooseClientAlias(new String[]{keyType}, null, null));
-        assertNull(
-                km.chooseEngineClientAlias(new String[]{keyType}, null, null));
-        assertNull(km.getServerAliases(keyType, null));
-        assertNull(km.getClientAliases(keyType, null));
     }
 
     // PKIX KeyManager adds a cache prefix to an alias.

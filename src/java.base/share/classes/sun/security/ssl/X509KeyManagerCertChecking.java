@@ -254,6 +254,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         return true;
     }
 
+    // Certificate check.
     private CheckResult certificateCheck(
             CheckType checkType, X509Certificate cert, Date date,
             List<SNIServerName> serverNames, String idAlgorithm) {
@@ -306,8 +307,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             return (bit < keyUsage.length) && keyUsage[bit];
         }
 
-        // Check if this certificate is appropriate for this type of use
-        // first check extensions, if they match, check expiration.
+        // Check if this certificate is appropriate for this type of use.
+        // First check extensions, if they match then check expiration.
         // NOTE: `conformsToAlgorithmConstraints` call above also does some
         // basic keyUsage checks.
         CheckResult check(X509Certificate cert, Date date,
@@ -442,9 +443,9 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         }
     }
 
-    // A candidate match
-    // identifies the entry by builder and alias
-    // and includes the result of the certificate check
+    // A candidate match.
+    // Identifies the entry by key store index and alias
+    // and includes the result of the certificate check.
     protected static class EntryStatus implements Comparable<EntryStatus> {
 
         final int keyStoreIndex;
@@ -522,11 +523,12 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                         issuer.getSigAlgName().toUpperCase(Locale.ENGLISH);
                 String pattern =
                         "WITH" + sigKeyAlgorithm.toUpperCase(Locale.ENGLISH);
-                return sigAlgName.contains(pattern);
+                return sigAlgName.endsWith(pattern);
             }
         }
     }
 
+    // Make a list of key types.
     protected static List<KeyType> getKeyTypes(String... keyTypes) {
         if ((keyTypes == null) ||
                 (keyTypes.length == 0) || (keyTypes[0] == null)) {
@@ -539,7 +541,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         return list;
     }
 
-    // Make a Set out of the array.
+    // Make a set out of the array.
     protected static Set<X500Principal> getIssuerSet(Principal[] issuers) {
 
         if (issuers != null && issuers.length != 0) {
