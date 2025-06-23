@@ -844,7 +844,10 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ResultSet
      * @since 1.4
      */
-    PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+    PreparedStatement prepareStatement(String sql,
+                                       int resultSetType,
+                                       int resultSetConcurrency,
+                                       int resultSetHoldability)
         throws SQLException;
 
     /**
@@ -883,7 +886,10 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ResultSet
      * @since 1.4
      */
-    CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+    CallableStatement prepareCall(String sql,
+                                  int resultSetType,
+                                  int resultSetConcurrency,
+                                  int resultSetHoldability)
         throws SQLException;
 
 
@@ -1621,7 +1627,8 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ShardingKey
      * @see ShardingKeyBuilder
      */
-    default boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout) throws SQLException {
+    default boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout)
+        throws SQLException {
         throw new SQLFeatureNotSupportedException("setShardingKeyIfValid not implemented");
     }
 
@@ -1646,7 +1653,8 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @see ShardingKey
      * @see ShardingKeyBuilder
      */
-    default void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey) throws SQLException {
+    default void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey)
+        throws SQLException {
         throw new SQLFeatureNotSupportedException("setShardingKey not implemented");
     }
 
