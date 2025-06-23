@@ -32,7 +32,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
 
-import jdk.internal.vm.annotation.MethodHandleArchived;
+import jdk.internal.vm.annotation.AotInitializable;
 
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
@@ -45,7 +45,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  * {@link MethodHandle}.  A {@linkplain DirectMethodHandleDescImpl} corresponds to
  * a {@code Constant_MethodHandle_info} entry in the constant pool of a classfile.
  */
-@MethodHandleArchived
+@AotInitializable
 public final class DirectMethodHandleDescImpl implements DirectMethodHandleDesc {
 
     private final Kind kind;

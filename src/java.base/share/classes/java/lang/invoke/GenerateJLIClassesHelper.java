@@ -25,7 +25,7 @@
 
 package java.lang.invoke;
 
-import jdk.internal.vm.annotation.MethodHandleArchived;
+import jdk.internal.vm.annotation.AotInitializable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.Annotation;
@@ -70,7 +70,7 @@ class GenerateJLIClassesHelper {
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";
-    static final Annotation METHOD_HANDLE_ARCHIVED_ANNOTATION = Annotation.of(MethodHandleArchived.class.describeConstable().orElseThrow());
+    static final Annotation METHOD_HANDLE_ARCHIVED_ANNOTATION = Annotation.of(AotInitializable.class.describeConstable().orElseThrow());
 
     static class HolderClassBuilder {
 

@@ -47,7 +47,7 @@ import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.loader.BootLoader;
-import jdk.internal.vm.annotation.MethodHandleArchived;
+import jdk.internal.vm.annotation.AotInitializable;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeName;
 import sun.invoke.util.Wrapper;
@@ -65,14 +65,14 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * @param <K> key which identifies individual specializations.
  * @param <S> species data type.
  */
-@MethodHandleArchived
+@AotInitializable
 /*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
 
     private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
     private static final ClassDesc CD_BoundMethodHandle = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
     private static final RuntimeVisibleAnnotationsAttribute METHOD_HANDLE_ARCHIVED_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
-            Annotation.of(ConstantUtils.referenceClassDesc(MethodHandleArchived.class))
+            Annotation.of(ConstantUtils.referenceClassDesc(AotInitializable.class))
     );
     private static final RuntimeVisibleAnnotationsAttribute STABLE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
             Annotation.of(ConstantUtils.referenceClassDesc(Stable.class))
@@ -238,7 +238,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * it would appear that a shorter species could serve as a supertype of a
      * longer one which extends it.
      */
-    @MethodHandleArchived
+    @AotInitializable
     abstract class SpeciesData {
         // Bootstrapping requires circular relations Class -> SpeciesData -> Class
         // Therefore, we need non-final links in the chain.  Use @Stable fields.
@@ -475,7 +475,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * Code generation support for instances.
      * Subclasses can modify the behavior.
      */
-    @MethodHandleArchived
+    @AotInitializable
     class Factory {
         /**
          * Constructs a factory.

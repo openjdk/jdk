@@ -31,7 +31,7 @@
 class InstanceKlass;
 
 class AOTClassInitializer : AllStatic {
-  static bool is_method_handle_archived(InstanceKlass* ik);
+  static bool has_aot_initialization(InstanceKlass* ik);
 
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in

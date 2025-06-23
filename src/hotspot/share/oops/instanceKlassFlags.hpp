@@ -54,7 +54,7 @@ class InstanceKlassFlags {
     flag(has_localvariable_table            , 1 << 11) /* has localvariable information */ \
     flag(has_miranda_methods                , 1 << 12) /* True if this class has miranda methods in it's vtable */ \
     flag(has_final_method                   , 1 << 13) /* True if klass has final method */ \
-    flag(is_method_handle_archived          , 1 << 14) /* True if klass is subject to archive in CDS MH dump */ \
+    flag(has_aot_initialization             , 1 << 14) /* True if klass requires AOT initialization in assembly phase for its fields */ \
     flag(is_runtime_setup_required          , 1 << 15) /* True if klass needs to call runtimeSetup when loaded from archive */ \
     /* end of list */
 

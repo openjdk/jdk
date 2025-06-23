@@ -36,9 +36,9 @@
 
 DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
-// Tell if ik has a name that matches one of the given specs.
-bool AOTClassInitializer::is_method_handle_archived(InstanceKlass* ik) {
-  if (ik->is_method_handle_archived()) {
+// Tell if ik is marked as AOT initialized via an annotation.
+bool AOTClassInitializer::has_aot_initialization(InstanceKlass* ik) {
+  if (ik->has_aot_initialization()) {
     // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
     //   - all super classes must be included
     //   - all super interfaces that have <clinit> must be included.
@@ -248,7 +248,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     // environment dependencies (on system properties, etc).
     // MethodHandleStatics is an example of a class that must NOT get the aot-init treatment,
     // because of its strong reliance on (a) final fields which are (b) environmentally determined.
-    if (is_method_handle_archived(ik)) {
+    if (has_aot_initialization(ik)) {
       return true;
     }
   }

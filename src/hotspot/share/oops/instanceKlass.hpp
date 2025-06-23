@@ -761,8 +761,8 @@ public:
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
-  bool is_method_handle_archived() const { return _misc_flags.is_method_handle_archived(); }
-  void set_is_method_handle_archived()   { _misc_flags.set_is_method_handle_archived(true); }
+  bool has_aot_initialization() const { return _misc_flags.has_aot_initialization(); }
+  void set_has_aot_initialization()   { _misc_flags.set_has_aot_initialization(true); }
 
   // If this class has been aot-initialized, do we need to call its runtimeSetup()
   // method during the production run?

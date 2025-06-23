@@ -35,7 +35,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.annotation.MethodHandleArchived;
+import jdk.internal.vm.annotation.AotInitializable;
 import jdk.internal.vm.annotation.RuntimeSetupRequired;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.empty.Empty;
@@ -75,7 +75,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * Trusted implementation code for MethodHandle.
  * @author jrose
  */
-@MethodHandleArchived
+@AotInitializable
 @RuntimeSetupRequired
 /*non-public*/
 abstract class MethodHandleImpl {
@@ -163,7 +163,7 @@ abstract class MethodHandleImpl {
         return newInternalError("should not reach here (unmatched ArrayAccess: " + a + ")");
     }
 
-    @MethodHandleArchived
+    @AotInitializable
     static final class ArrayAccessor {
         /// Support for array element and length access
         static final int GETTER_INDEX = 0, SETTER_INDEX = 1, LENGTH_INDEX = 2, INDEX_LIMIT = 3;
@@ -459,7 +459,7 @@ abstract class MethodHandleImpl {
         return new AsVarargsCollector(target, arrayType);
     }
 
-    @MethodHandleArchived
+    @AotInitializable
     static final class AsVarargsCollector extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
@@ -682,7 +682,7 @@ abstract class MethodHandleImpl {
                                    DONT_INLINE_THRESHOLD);
     }
 
-    @MethodHandleArchived
+    @AotInitializable
     private static final class Makers {
         /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
         static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
@@ -718,7 +718,7 @@ abstract class MethodHandleImpl {
      * Behavior in counting and non-counting states is determined by lambda forms produced by
      * countingFormProducer & nonCountingFormProducer respectively.
      */
-    @MethodHandleArchived
+    @AotInitializable
     static final class CountingWrapper extends DelegatingMethodHandle {
         private final MethodHandle target;
         private int count;
@@ -1044,7 +1044,7 @@ abstract class MethodHandleImpl {
 
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
-    @MethodHandleArchived
+    @AotInitializable
     private static class BindCaller {
 
         private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
@@ -1153,7 +1153,7 @@ abstract class MethodHandleImpl {
             return BindCaller.CV_makeInjectedInvoker.get(caller).reflectInvoker();
         }
 
-        @MethodHandleArchived
+        @AotInitializable
         private static final class InjectedInvokerHolder {
             private final Class<?> invokerClass;
             // lazily resolved and cached DMH(s) of invoke_V methods
@@ -1296,7 +1296,7 @@ abstract class MethodHandleImpl {
     }
 
     /** This subclass allows a wrapped method handle to be re-associated with an arbitrary member name. */
-    @MethodHandleArchived
+    @AotInitializable
     static final class WrappedMember extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final MemberName member;
@@ -1360,7 +1360,7 @@ abstract class MethodHandleImpl {
 
     /** Mark arbitrary method handle as intrinsic.
      * InvokerBytecodeGenerator uses this info to produce more efficient bytecode shape. */
-    @MethodHandleArchived
+    @AotInitializable
     static final class IntrinsicMethodHandle extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Intrinsic intrinsicName;
@@ -1791,7 +1791,7 @@ abstract class MethodHandleImpl {
         return lform.editor().noteLoopLocalTypesForm(BOXED_ARGS, localVarTypes);
     }
 
-    @MethodHandleArchived
+    @AotInitializable
     static class LoopClauses {
         @Stable final MethodHandle[][] clauses;
         LoopClauses(MethodHandle[][] clauses) {
@@ -2119,7 +2119,7 @@ abstract class MethodHandleImpl {
     }
 
     // use a wrapper because we need this array to be @Stable
-    @MethodHandleArchived
+    @AotInitializable
     static class CasesHolder {
         @Stable
         final MethodHandle[] cases;
@@ -2149,7 +2149,7 @@ abstract class MethodHandleImpl {
         return mh;
     }
 
-    @MethodHandleArchived
+    @AotInitializable
     private static class TableSwitchCacheKey {
         private static final Map<TableSwitchCacheKey, LambdaForm> CACHE = new ConcurrentHashMap<>();
 

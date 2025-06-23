@@ -40,5 +40,5 @@ import java.lang.annotation.Target;
 /// @since 26
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface MethodHandleArchived {
+public @interface AotInitializable {
 }
