@@ -33,9 +33,11 @@
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 yield 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 sb
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 sb
  */
 
 package compiler.onSpinWait;
@@ -56,7 +58,6 @@ public class TestOnSpinWaitAArch64 {
         command.add("-showversion");
         command.add("-XX:-BackgroundCompilation");
         command.add("-XX:+UnlockDiagnosticVMOptions");
-        command.add("-XX:+PrintAssembly");
         if (compiler.equals("c2")) {
             command.add("-XX:-TieredCompilation");
         } else if (compiler.equals("c1")) {
@@ -69,13 +70,17 @@ public class TestOnSpinWaitAArch64 {
         command.add("-XX:OnSpinWaitInst=" + spinWaitInst);
         command.add("-XX:OnSpinWaitInstCount=" + spinWaitInstCount);
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
+        command.add("-XX:CompileCommand=print," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(command);
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
-        analyzer.shouldHaveExitValue(0);
+        if (analyzer.getExitValue() != 0 && "sb".equals(spinWaitInst) && analyzer.contains("CPU does not support SB")) {
+            System.out.println("Skipping the test. The current CPU does not support SB instruction.");
+            return;
+        }
 
         System.out.println(analyzer.getOutput());
 
@@ -89,6 +94,8 @@ public class TestOnSpinWaitAArch64 {
           return "df3f 03d5";
       } else if ("yield".equals(spinWaitInst)) {
           return "3f20 03d5";
+      } else if ("sb".equals(spinWaitInst)) {
+          return "ff30 03d5";
       } else {
           throw new RuntimeException("Unknown spin wait instruction: " + spinWaitInst);
       }
