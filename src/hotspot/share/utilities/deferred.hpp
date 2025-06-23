@@ -56,11 +56,24 @@ public:
     return &_t;
   }
 
+  const T* get() const {
+    assert(_initialized, "must be initialized before access");
+    return &_t;
+  }
+
   T& operator*() {
     return *get();
   }
 
+  const T& operator*() const {
+    return *get();
+  }
+
   T* operator->() {
+    return get();
+  }
+
+  const T* operator->() const {
     return get();
   }
 
