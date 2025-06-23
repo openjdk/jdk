@@ -60,7 +60,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
+    private static final String LINE_SEP = System.lineSeparator();
     public static final boolean isOn;
+
 
     static {
         String p = System.getProperty("javax.net.debug");
@@ -188,9 +190,8 @@ public final class SSLLogger {
                 logger.log(level, msg);
             } else {
                 try {
-                    String formatted =
-                            SSLSimpleFormatter.formatParameters(params);
-                    logger.log(level, msg, formatted);
+                    logger.log(level, () -> msg + ":" + LINE_SEP +
+                            SSLSimpleFormatter.formatParameters(params));
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
@@ -299,15 +300,6 @@ public final class SSLLogger {
                             """,
                 Locale.ENGLISH);
 
-        //
-        // private static MessageFormat certExtFormat = new MessageFormat(
-        //         "{0} [{1}] '{'\n" +
-        //         "  critical: {2}\n" +
-        //         "  value: {3}\n" +
-        //         "'}'",
-        //         Locale.ENGLISH);
-        //
-
         private static final MessageFormat messageFormatNoParas =
             new MessageFormat(
                     """
@@ -325,7 +317,7 @@ public final class SSLLogger {
 
         private static final MessageFormat messageCompactFormatNoParas =
             new MessageFormat(
-                "{0}|{1}|{2}|{3}|{4}|{5}|{6}\n",
+                "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
                 Locale.ENGLISH);
 
         private static final MessageFormat messageFormatWithParas =
@@ -423,7 +415,7 @@ public final class SSLLogger {
                 if (isFirst) {
                     isFirst = false;
                 } else {
-                    builder.append(",\n");
+                    builder.append("," + LINE_SEP);
                 }
 
                 if (parameter instanceof Throwable) {
@@ -504,10 +496,10 @@ public final class SSLLogger {
                         if (isFirst) {
                             isFirst = false;
                         } else {
-                            extBuilder.append(",\n");
+                            extBuilder.append("," + LINE_SEP);
                         }
-                        extBuilder.append("{\n" +
-                            Utilities.indent(certExt.toString()) + "\n}");
+                        extBuilder.append("{" + LINE_SEP +
+                            Utilities.indent(certExt.toString()) + LINE_SEP +"}");
                     }
                     Object[] certFields = {
                         x509.getVersion(),
@@ -578,7 +570,7 @@ public final class SSLLogger {
                 //          "string c"
                 //        ]
                 StringBuilder builder = new StringBuilder(512);
-                builder.append("\"" + key + "\": [\n");
+                builder.append("\"" + key + "\": [" + LINE_SEP);
                 int len = strings.length;
                 for (int i = 0; i < len; i++) {
                     String string = strings[i];
@@ -586,7 +578,7 @@ public final class SSLLogger {
                     if (i != len - 1) {
                         builder.append(",");
                     }
-                    builder.append("\n");
+                    builder.append(LINE_SEP);
                 }
                 builder.append("      ]");
 

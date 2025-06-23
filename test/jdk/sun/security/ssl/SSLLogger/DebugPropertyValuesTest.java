@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8350582
+ * @bug 8350582 8343395
  * @library /test/lib /javax/net/ssl/templates
  * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
@@ -81,7 +81,12 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 List.of("properties\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:",
                         "certpath\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:"));
         debugMessages.put("javax.net.debug.logger",
-                List.of("FINE: adding as trusted certificates",
+                List.of("FINE: adding as trusted certificates:"
+                            + System.lineSeparator() +
+                            "  \"certificate\" : \\{" + System.lineSeparator(),
+                        "FINE: Produced ClientHello handshake message:" +
+                            System.lineSeparator() +
+                            "\"ClientHello\": \\{" + System.lineSeparator(),
                         "FINE: WRITE: TLSv1.3 application_data"));
     }
 
