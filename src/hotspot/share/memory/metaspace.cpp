@@ -1041,13 +1041,18 @@ bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }
 
-#ifdef ASSERT
 bool Metaspace::metadata_is_live(const Metadata* md) {
+#ifndef ASSERT
+  return contains(md);
+#else
   return md->metadata_token_is_valid() && contains(md); // flesh out later
+#endif
 }
 
 bool Metaspace::klass_is_live(const Klass* k, bool must_have_narrow_klass_id) {
+#ifndef ASSERT
+  return contains(k);
+#else
   return ((const Metadata*)k)->metadata_token_is_valid_klass() && contains(k); // flesh out later
+#endif
 }
-
-#endif // ASSERT
