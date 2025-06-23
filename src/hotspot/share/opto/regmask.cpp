@@ -242,7 +242,7 @@ OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
   }
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (rm_up(i)) {                // Found some bits
+    if (rm_up(i) != 0) {                // Found some bits
       // Convert to bit number, return hi bit in pair
       return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
                            find_lowest_bit(rm_up(i)) + (size - 1));
@@ -317,7 +317,7 @@ bool RegMask::is_aligned_sets(const unsigned int size) const {
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
     uintptr_t bits = rm_up(i);
-    while (bits) {              // Check bits for pairing
+    while (bits != 0) {              // Check bits for pairing
       uintptr_t bit = uintptr_t(1) << find_lowest_bit(bits);
       // Low bit is not odd means its mis-aligned.
       if ((bit & low_bits_mask) == 0) {

@@ -450,7 +450,7 @@ public:
   bool is_Empty() const {
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      if (rm_up(i)) {
+      if (rm_up(i) != 0) {
         return false;
       }
     }
@@ -462,7 +462,7 @@ public:
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
       uintptr_t bits = rm_up(i);
-      if (bits) {
+      if (bits != 0) {
         return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
                              find_lowest_bit(bits));
       }
@@ -478,7 +478,7 @@ public:
     unsigned i = _hwm + 1;
     while (i > _lwm) {
       uintptr_t bits = rm_up(--i);
-      if (bits) {
+      if (bits != 0) {
         return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
                              find_highest_bit(bits));
       }
@@ -511,7 +511,7 @@ public:
     }
     uintptr_t tmp = 0;
     for (unsigned int i = _lwm; i <= _hwm; i++) {
-      if (rm_up(i)) {
+      if (rm_up(i) != 0) {
         return false;
       }
     }
@@ -564,7 +564,7 @@ public:
     unsigned hwm = MIN2(_hwm, rm._hwm);
     unsigned lwm = MAX2(_lwm, rm._lwm);
     for (unsigned i = lwm; i <= hwm; i++) {
-      if (rm_up(i) & rm.rm_up(i)) {
+      if ((rm_up(i) & rm.rm_up(i)) != 0) {
         return true;
       }
     }
@@ -579,7 +579,7 @@ public:
     // We are all_stack and rm _hwm is bigger than us
     if (is_AllStack() && rm._hwm >= _rm_size) {
       for (unsigned i = MAX2(rm._lwm, _rm_size); i <= rm._hwm; i++) {
-        if (rm.rm_up(i)) {
+        if (rm.rm_up(i) != 0) {
           return true;
         }
       }
@@ -588,7 +588,7 @@ public:
     // rm is all_stack and our _hwm is bigger than rm
     if (rm.is_AllStack() && _hwm >= rm._rm_size) {
       for (unsigned i = MAX2(_lwm, rm._rm_size); i <= _hwm; i++) {
-        if (rm_up(i)) {
+        if (rm_up(i) != 0) {
           return true;
         }
       }
