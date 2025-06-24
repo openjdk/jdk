@@ -1021,11 +1021,12 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
 }
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers) {
+  assert(expand_bytes > 0, "precondition");
+
   size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
   uint num_regions_to_expand = (uint)(aligned_expand_bytes / G1HeapRegion::GrainBytes);
-  assert(num_regions_to_expand > 0, "Must expand by at least one region");
 
   log_debug(gc, ergo, heap)("Heap resize. Requested expansion amount: %zuB aligned expansion amount: %zuB (%u regions)",
                             expand_bytes, aligned_expand_bytes, num_regions_to_expand);
@@ -1035,11 +1036,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
     return false;
   }
 
-
-
   uint expanded_by = _hrm.expand_by(num_regions_to_expand, pretouch_workers);
-
-  assert(expanded_by > 0, "must have failed during commit.");
 
   size_t actual_expand_bytes = expanded_by * G1HeapRegion::GrainBytes;
   assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");

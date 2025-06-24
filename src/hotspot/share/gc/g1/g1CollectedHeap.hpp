@@ -473,6 +473,8 @@ private:
   void retire_gc_alloc_region(G1HeapRegion* alloc_region,
                               size_t allocated_bytes, G1HeapRegionAttr dest);
 
+  void resize_heap(size_t resize_bytes, bool should_expand);
+
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
@@ -560,7 +562,6 @@ public:
 
   void resize_heap_after_young_collection(size_t allocation_word_size);
   void resize_heap_after_full_collection(size_t allocation_word_size);
-  void resize_heap(size_t resize_bytes, bool should_expand);
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
