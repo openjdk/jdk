@@ -40,6 +40,7 @@
 #include "code/vmreg.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
+#include "jfr/recorder/service/jfrRecorderThread.hpp"
 #include "gc/shared/stringdedup/stringDedupThread.hpp"
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -1027,6 +1028,7 @@
         declare_type(TrainingReplayThread, JavaThread)                    \
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
+        declare_type(JfrRecorderThread, JavaThread)                       \
         DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
           declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
