@@ -389,6 +389,7 @@ AOTCodeCache::~AOTCodeCache() {
     _store_buffer = nullptr;
   }
   if (_table != nullptr) {
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     delete _table;
     _table = nullptr;
   }
@@ -819,6 +820,9 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   // we need to take a lock to prevent race between compiler threads generating AOT code
   // and the main thread generating adapter
   MutexLocker ml(Compile_lock);
+  if (!is_on()) {
+    return false; // AOT code cache was already dumped and closed.
+  }
   if (!cache->align_write()) {
     return false;
   }
@@ -1530,6 +1534,7 @@ void AOTCodeCache::load_strings() {
 
 int AOTCodeCache::store_strings() {
   if (_C_strings_used > 0) {
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     uint offset = _write_position;
     uint length = 0;
     uint* lengths = (uint *)reserve_bytes(sizeof(uint) * _C_strings_used);
@@ -1555,15 +1560,17 @@ int AOTCodeCache::store_strings() {
 
 const char* AOTCodeCache::add_C_string(const char* str) {
   if (is_on_for_dump() && str != nullptr) {
-    return _cache->_table->add_C_string(str);
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
+    AOTCodeAddressTable* table = addr_table();
+    if (table != nullptr) {
+      return table->add_C_string(str);
+    }
   }
   return str;
 }
 
 const char* AOTCodeAddressTable::add_C_string(const char* str) {
   if (_extrs_complete) {
-    LogStreamHandle(Trace, aot, codecache, stringtable) log; // ctor outside lock
-    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     // Check previous strings address
     for (int i = 0; i < _C_strings_count; i++) {
       if (_C_strings_in[i] == str) {
@@ -1580,9 +1587,7 @@ const char* AOTCodeAddressTable::add_C_string(const char* str) {
       _C_strings_in[_C_strings_count] = str;
       const char* dup = os::strdup(str);
       _C_strings[_C_strings_count++] = dup;
-      if (log.is_enabled()) {
-        log.print_cr("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
-      }
+      log_trace(aot, codecache, stringtable)("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
       return dup;
     } else {
       assert(false, "Number of C strings >= MAX_STR_COUNT");

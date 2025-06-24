@@ -90,13 +90,15 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
     = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
 
 #ifdef ASSERT
-  NativeGeneralJump* jump = nativeGeneralJump_at(method_holder->next_instruction_address());
+  NativeJump* jump = MacroAssembler::codestub_branch_needs_far_jump()
+                         ? nativeGeneralJump_at(method_holder->next_instruction_address())
+                         : nativeJump_at(method_holder->next_instruction_address());
   verify_mt_safe(callee, entry, method_holder, jump);
 #endif
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());
-  NativeGeneralJump::insert_unconditional(method_holder->next_instruction_address(), entry);
+  MacroAssembler::pd_patch_instruction(method_holder->next_instruction_address(), entry);
   ICache::invalidate_range(stub, to_interp_stub_size());
   // Update jump to call.
   set_destination_mt_safe(stub);
