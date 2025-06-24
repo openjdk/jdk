@@ -699,6 +699,7 @@ private:
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
+  HeapWord* allocate_memory_for_mutator(ShenandoahAllocRequest& request);
   HeapWord* mem_allocate(size_t size, bool* what) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,

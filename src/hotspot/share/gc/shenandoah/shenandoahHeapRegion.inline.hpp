@@ -117,17 +117,48 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
   for (;;) {
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
-      HeapWord* new_top = obj + size;
-      if (Atomic::cmpxchg(&_top, obj, new_top) == obj) {
+      if (try_allocate(obj, size)) {
         adjust_alloc_metadata(req.type(), size);
-        assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
-        assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
         return obj;
       }
     } else {
       return nullptr;
     }
   }
+}
+
+HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size) {
+  assert(req.type() == _tlab_allocs || req.type() == _gclab_allocs, "Only allow tlab or gclab");
+  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
+  assert(this->is_regular(), "must be a regular region");
+  size_t adjusted_size = req.size();
+  for (;;) {
+    HeapWord* obj = top();
+    size_t free_words = align_down(byte_size(obj, end()) >> LogHeapWordSize, MinObjAlignment);
+    if (adjusted_size > free_words) {
+      adjusted_size = free_words;
+    }
+    if (adjusted_size >= req.min_size()) {
+      if (try_allocate(obj, adjusted_size)) {
+        actual_size = adjusted_size;
+        adjust_alloc_metadata(req.type(), adjusted_size);
+        return obj;
+      }
+    } else {
+      log_trace(gc, free)("Failed to shrink TLAB or GCLAB request (%zu) in region %zu to %zu"
+                          " because min_size() is %zu", req.size(), index(), adjusted_size, req.min_size());
+    }
+  }
+}
+
+bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size) {
+  HeapWord* new_top = obj + size;
+  if (Atomic::cmpxchg(&_top, obj, new_top) == obj) {
+    assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
+    assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
+    return true;
+  }
+  return false;
 }
 
 inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t size) {

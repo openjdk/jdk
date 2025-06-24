@@ -315,6 +315,7 @@ class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
+  ShenandoahHeapRegion** _directly_allocatable_regions = nullptr;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -410,6 +411,11 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
+  ShenandoahHeapRegion* allocate_new_shared_region(ShenandoahHeapRegion** shared_region, ShenandoahHeapRegion* original_shared_region);
+
+  template<typename Iter>
+  ShenandoahHeapRegion* try_allocate_new_shared_region(ShenandoahHeapRegion** shared_region, ShenandoahHeapRegion* original_shared_region, Iter iterator);
+
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
 
@@ -483,6 +489,9 @@ public:
   inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  template<bool IS_TLAB>
+  HeapWord* cas_allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
 
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.

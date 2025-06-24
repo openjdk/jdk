@@ -751,6 +751,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _alloc_bias_weight(0)
 {
   clear_internal();
+  _directly_allocatable_regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, 13, mtGC);
 }
 
 void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region) {
@@ -2077,6 +2078,73 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
     }
   } else {
     return allocate_single(req, in_new_region);
+  }
+}
+
+template<bool IS_TLAB>
+HeapWord* ShenandoahFreeSet::cas_allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
+  shenandoah_assert_not_heaplocked();
+  assert(req.is_mutator_alloc(), "Must be mutator allocation");
+  assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
+
+  int seed = os::current_process_id();
+  idx_t idx = seed % 13;
+  HeapWord* obj = nullptr;
+  size_t actual_size = req.size();
+  int attempts = 0;
+  for (;;) {
+    attempts ++;
+    ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
+    if (r != nullptr) {
+      if (IS_TLAB) {
+        obj = r->allocate_lab_atomic(req, actual_size);
+      } else {
+        obj = r->allocate_atomic(req.size(), req);
+      }
+      if (obj != nullptr) {
+        assert(actual_size > 0, "Must be");
+        req.set_actual_size(actual_size);
+        if (pointer_delta(r->bottom(), obj) == actual_size) {
+          // Set to true if it is the first object/tlab allocated in the region.
+          in_new_region = true;
+        }
+        return obj;
+      }
+    }
+    idx = (idx + seed) % 13;
+  }
+}
+
+ShenandoahHeapRegion* ShenandoahFreeSet::allocate_new_shared_region(
+  ShenandoahHeapRegion** shared_region,
+  ShenandoahHeapRegion* original_shared_region) {
+  assert(Thread::current()->is_Java_thread(), "Must be mutator");
+  {
+    ShenandoahHeapLocker locker(_heap->lock());
+    if (_partitions.is_empty(ShenandoahFreeSetPartitionId::Mutator)) {
+      return Atomic::load_acquire(shared_region);
+    } else {
+      if (_partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::Mutator)) {
+        ShenandoahLeftRightIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
+        try_allocate_new_shared_region(shared_region, original_shared_region, iterator);
+      } else {
+        ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
+        try_allocate_new_shared_region(shared_region, original_shared_region, iterator);
+      }
+    }
+  }
+}
+
+template<typename Iter>
+ShenandoahHeapRegion* ShenandoahFreeSet::try_allocate_new_shared_region(ShenandoahHeapRegion** shared_region, ShenandoahHeapRegion* original_shared_region, Iter iterator) {
+  for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
+    ShenandoahHeapRegion* r = _heap->get_region(idx);
+    if (r->is_trash()) {
+      if (_heap->is_concurrent_weak_root_in_progress()) continue;
+      r->try_recycle_under_lock();
+    }
+    if (r->is_empty()) {
+    }
   }
 }
 

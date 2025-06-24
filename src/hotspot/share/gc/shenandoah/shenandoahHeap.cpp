@@ -1062,6 +1062,10 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   return result;
 }
 
+HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& req) {
+  assert(req.is_mutator_alloc(), "Sanity");
+}
+
 inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_count) const {
   return shenandoah_policy()->full_gc_count() == original_full_gc_count
       && !shenandoah_policy()->is_at_shutdown();
