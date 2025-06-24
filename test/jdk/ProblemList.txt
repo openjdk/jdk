@@ -838,3 +838,5 @@ java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
 # jdk_since_checks
 
 tools/sincechecker/modules/java.base/JavaBaseCheckSince.java 8358627 generic-all
+tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 8354921 generic-all
+
