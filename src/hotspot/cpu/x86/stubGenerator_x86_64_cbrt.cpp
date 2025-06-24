@@ -46,7 +46,7 @@
 //
 /******************************************************************************/
 
-ATTRIBUTE_ALIGNED(4) static const juint _ABS_MASK[] =
+ATTRIBUTE_ALIGNED(16) static const juint _ABS_MASK[] =
 {
     4294967295, 2147483647
 };
