@@ -31,6 +31,6 @@
 namespace metaspace {
 
 // Pre C++17, we need to define static constexpr members
-constexpr uint64_t Zapper::zap_pattern;
+constexpr uintptr_t Zapper::zap_pattern;
 
 } // namespace metaspace
