@@ -471,6 +471,82 @@ class nmethod : public CodeBlob {
   void oops_do_set_strong_done(nmethod* old_head);
 
 public:
+  // If you change anything in this enum please patch
+  // vmStructs_jvmci.cpp accordingly.
+  enum class InvalidationReason : s1 {
+    NOT_INVALIDATED = -1,
+    C1_CODEPATCH,
+    C1_DEOPTIMIZE,
+    C1_DEOPTIMIZE_FOR_PATCHING,
+    C1_PREDICATE_FAILED_TRAP,
+    CI_REPLAY,
+    UNLOADING,
+    UNLOADING_COLD,
+    JVMCI_INVALIDATE,
+    JVMCI_MATERIALIZE_VIRTUAL_OBJECT,
+    JVMCI_REPLACED_WITH_NEW_CODE,
+    JVMCI_REPROFILE,
+    MARKED_FOR_DEOPTIMIZATION,
+    MISSING_EXCEPTION_HANDLER,
+    NOT_USED,
+    OSR_INVALIDATION_BACK_BRANCH,
+    OSR_INVALIDATION_FOR_COMPILING_WITH_C1,
+    OSR_INVALIDATION_OF_LOWER_LEVEL,
+    SET_NATIVE_FUNCTION,
+    UNCOMMON_TRAP,
+    WHITEBOX_DEOPTIMIZATION,
+    ZOMBIE,
+    INVALIDATION_REASONS_COUNT
+  };
+
+
+  static const char* invalidation_reason_to_string(InvalidationReason invalidation_reason) {
+    switch (invalidation_reason) {
+      case InvalidationReason::C1_CODEPATCH:
+        return "C1 code patch";
+      case InvalidationReason::C1_DEOPTIMIZE:
+        return "C1 deoptimized";
+      case InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING:
+        return "C1 deoptimize for patching";
+      case InvalidationReason::C1_PREDICATE_FAILED_TRAP:
+        return "C1 predicate failed trap";
+      case InvalidationReason::CI_REPLAY:
+        return "CI replay";
+      case InvalidationReason::JVMCI_INVALIDATE:
+        return "JVMCI invalidate";
+      case InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT:
+        return "JVMCI materialize virtual object";
+      case InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE:
+        return "JVMCI replaced with new code";
+      case InvalidationReason::JVMCI_REPROFILE:
+        return "JVMCI reprofile";
+      case InvalidationReason::MARKED_FOR_DEOPTIMIZATION:
+        return "marked for deoptimization";
+      case InvalidationReason::MISSING_EXCEPTION_HANDLER:
+        return "missing exception handler";
+      case InvalidationReason::NOT_USED:
+        return "not used";
+      case InvalidationReason::OSR_INVALIDATION_BACK_BRANCH:
+        return "OSR invalidation back branch";
+      case InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1:
+        return "OSR invalidation for compiling with C1";
+      case InvalidationReason::OSR_INVALIDATION_OF_LOWER_LEVEL:
+        return "OSR invalidation of lower level";
+      case InvalidationReason::SET_NATIVE_FUNCTION:
+        return "set native function";
+      case InvalidationReason::UNCOMMON_TRAP:
+        return "uncommon trap";
+      case InvalidationReason::WHITEBOX_DEOPTIMIZATION:
+        return "whitebox deoptimization";
+      case InvalidationReason::ZOMBIE:
+        return "zombie";
+      default: {
+        assert(false, "Unhandled reason");
+        return "Unknown";
+      }
+    }
+  }
+
   // create nmethod with entry_bci
   static nmethod* new_nmethod(const methodHandle& method,
                               int compile_id,
@@ -633,8 +709,8 @@ public:
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant(const char* reason);
-  bool  make_not_used()    { return make_not_entrant("not used"); }
+  bool  make_not_entrant(InvalidationReason invalidation_reason);
+  bool  make_not_used() { return make_not_entrant(InvalidationReason::NOT_USED); }
 
   bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
   bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
@@ -947,7 +1023,7 @@ public:
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
-  void log_state_change(const char* reason) const;
+  void log_state_change(InvalidationReason invalidation_reason) const;
 
   // Prints block-level comments, including nmethod specific block labels:
   void print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels=true) const;
