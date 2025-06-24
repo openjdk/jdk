@@ -46,9 +46,6 @@
 import jdk.test.lib.Platform;
 import java.lang.AssertionError;
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import java.lang.management.ManagementFactory;
-
 /*
  *     The test exercises the JVMTI function: StopThread(jthread).
  *     The test creates a new virtual or platform thread.
