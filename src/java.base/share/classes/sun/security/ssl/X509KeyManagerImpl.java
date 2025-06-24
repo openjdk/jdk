@@ -240,9 +240,10 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             return SSLAlgorithmConstraints.forQUIC(engine, true);
         }
         // QUIC TLS version is mandated to be always TLSv1.3
-        if (!ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
+        final ProtocolVersion pv = ProtocolVersion.nameOf(session.getProtocol());
+        if (pv == null || !ProtocolVersion.useTLS13PlusSpec(pv.id, false)) {
             throw new IllegalStateException("unexpected protocol version "
-                    + session.getProtocol() + " in handshake session");
+                    + pv + " in handshake session");
         }
         String[] peerSupportedSignAlgs = null;
         if (session instanceof ExtendedSSLSession extSession) {
