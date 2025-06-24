@@ -155,7 +155,7 @@ JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) 
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(size_t value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize (%zu) must be "
