@@ -32,7 +32,7 @@ import jdk.jfr.Recording;
 * @requires vm.hasJFR
 * @modules java.base/jdk.internal.misc jdk.jfr/jdk.jfr.internal.tracing
 * @library /test/lib
-* @run main/othervm -XX:StartFlightRecording jdk.jfr.event.tracing.TestLazyPlatformTracer 
+* @run main/othervm -XX:StartFlightRecording jdk.jfr.event.tracing.TestLazyPlatformTracer
 */
 public class TestLazyPlatformTracer {
 
