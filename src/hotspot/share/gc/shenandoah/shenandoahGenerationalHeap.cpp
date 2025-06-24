@@ -183,6 +183,29 @@ void ShenandoahGenerationalHeap::stop() {
   regulator_thread()->stop();
 }
 
+bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
+  if (is_idle()) {
+    return false;
+  }
+
+  if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
+    // We are marking young, this object is in young, and it is below the TAMS
+    return true;
+  }
+
+  if (is_in_old(obj)) {
+    // Card marking barriers are required for objects in the old generation
+    return true;
+  }
+
+  if (has_forwarded_objects()) {
+    // Object may have pointers that need to be updated
+    return true;
+  }
+
+  return false;
+}
+
 void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {
   ShenandoahRegionIterator regions;
   ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, false /* only promote regions */);
