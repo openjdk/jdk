@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,8 +319,8 @@ AccelGlyphCache_AddCellInfo(GlyphInfo *glyph, CacheCellInfo *cellInfo)
 {
     // assert (glyph != NULL && cellInfo != NULL)
     J2dTraceLn(J2D_TRACE_INFO, "AccelGlyphCache_AddCellInfo");
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  glyph 0x%x: adding cell 0x%x to the list",
-                glyph, cellInfo);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  glyph 0x%x: adding cell 0x%x to the list",
+               glyph, cellInfo);
 
     cellInfo->glyphInfo = glyph;
     cellInfo->nextGCI = glyph->cellInfo;
@@ -340,8 +340,8 @@ AccelGlyphCache_RemoveCellInfo(GlyphInfo *glyph, CacheCellInfo *cellInfo)
     J2dTraceLn(J2D_TRACE_INFO, "AccelGlyphCache_RemoveCellInfo");
     do {
         if (currCellInfo == cellInfo) {
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
-                        "  glyph 0x%x: removing cell 0x%x from glyph's list",
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  glyph 0x%x: removing cell 0x%x from glyph's list",
                         glyph, currCellInfo);
             if (prevInfo == NULL) { // it's the head, chop-chop
                 glyph->cellInfo = currCellInfo->nextGCI;
@@ -355,9 +355,9 @@ AccelGlyphCache_RemoveCellInfo(GlyphInfo *glyph, CacheCellInfo *cellInfo)
         prevInfo = currCellInfo;
         currCellInfo = currCellInfo->nextGCI;
     } while (currCellInfo != NULL);
-    J2dTraceLn2(J2D_TRACE_WARNING, "AccelGlyphCache_RemoveCellInfo: "\
-                "no cell 0x%x in glyph 0x%x's cell list",
-                cellInfo, glyph);
+    J2dTraceLn(J2D_TRACE_WARNING, "AccelGlyphCache_RemoveCellInfo: "\
+               "no cell 0x%x in glyph 0x%x's cell list",
+               cellInfo, glyph);
 }
 
 /**
@@ -400,16 +400,16 @@ AccelGlyphCache_GetCellInfoForCache(GlyphInfo *glyph, GlyphCacheInfo *cache)
         CacheCellInfo *cellInfo = glyph->cellInfo;
         do {
             if (cellInfo->cacheInfo == cache) {
-                J2dTraceLn3(J2D_TRACE_VERBOSE2,
-                            "  glyph 0x%x: found cell 0x%x for cache 0x%x",
-                            glyph, cellInfo, cache);
+                J2dTraceLn(J2D_TRACE_VERBOSE2,
+                           "  glyph 0x%x: found cell 0x%x for cache 0x%x",
+                           glyph, cellInfo, cache);
                 return cellInfo;
             }
             cellInfo = cellInfo->nextGCI;
         } while (cellInfo != NULL);
     }
-    J2dTraceLn2(J2D_TRACE_VERBOSE2, "  glyph 0x%x: no cell for cache 0x%x",
-                glyph, cache);
+    J2dTraceLn(J2D_TRACE_VERBOSE2, "  glyph 0x%x: no cell for cache 0x%x",
+               glyph, cache);
     return NULL;
 }
 

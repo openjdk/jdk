@@ -51,6 +51,10 @@ class name java/io/ProxyingConsole
 -method name readln descriptor (Ljava/lang/String;)Ljava/lang/String;
 -method name readln descriptor ()Ljava/lang/String;
 
+class name java/io/Reader
+method name readAllLines descriptor ()Ljava/util/List; thrownTypes java/io/IOException flags 1 signature ()Ljava/util/List<Ljava/lang/String;>;
+method name readAllAsString descriptor ()Ljava/lang/String; thrownTypes java/io/IOException flags 1
+
 class name java/io/SerializablePermission
 header extends java/security/BasicPermission flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="25")
 
@@ -118,6 +122,7 @@ method name <init> descriptor (J)V flags 1 deprecated true runtimeAnnotations @L
 method name <init> descriptor (Ljava/lang/String;)V thrownTypes java/lang/NumberFormatException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 
 class name java/lang/Math
+-method name cbrt descriptor (D)D
 -method name max descriptor (JJ)J
 -method name min descriptor (JJ)J
 method name max descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
@@ -129,6 +134,7 @@ method name powExact descriptor (II)I flags 9
 method name unsignedPowExact descriptor (II)I flags 9
 method name powExact descriptor (JI)J flags 9
 method name unsignedPowExact descriptor (JI)J flags 9
+method name cbrt descriptor (D)D flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 
 class name java/lang/Package
 header extends java/lang/NamedPackage implements java/lang/reflect/AnnotatedElement flags 31
@@ -144,6 +150,20 @@ innerclass innerClass java/lang/Runtime$Version outerClass java/lang/Runtime inn
 
 class name java/lang/RuntimePermission
 header extends java/security/BasicPermission flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="25")
+
+class name java/lang/ScopedValue
+header extends java/lang/Object nestMembers java/lang/ScopedValue$CallableOp,java/lang/ScopedValue$Carrier flags 31 signature <T:Ljava/lang/Object;>Ljava/lang/Object;
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
+
+class name java/lang/ScopedValue$CallableOp
+header extends java/lang/Object nestHost java/lang/ScopedValue flags 601 signature <T:Ljava/lang/Object;X:Ljava/lang/Throwable;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
+
+class name java/lang/ScopedValue$Carrier
+header extends java/lang/Object nestHost java/lang/ScopedValue flags 31
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+innerclass innerClass java/lang/ScopedValue$CallableOp outerClass java/lang/ScopedValue innerClassName CallableOp flags 609
 
 class name java/lang/Short
 -method name <init> descriptor (S)V
@@ -426,6 +446,12 @@ header extends java/lang/Object flags 31
 class name java/nio/file/LinkPermission
 header extends java/security/BasicPermission flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="25")
 
+class name java/security/AsymmetricKey
+header extends java/lang/Object implements java/security/Key,java/security/DEREncodable flags 601
+
+class name java/security/DEREncodable
+header extends java/lang/Object sealed true permittedSubclasses java/security/AsymmetricKey,java/security/KeyPair,java/security/spec/PKCS8EncodedKeySpec,java/security/spec/X509EncodedKeySpec,javax/crypto/EncryptedPrivateKeyInfo,java/security/cert/X509Certificate,java/security/cert/X509CRL,java/security/PEMRecord flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+
 class name java/security/DrbgParameters
 header extends java/lang/Object nestMembers java/security/DrbgParameters$Reseed,java/security/DrbgParameters$NextBytes,java/security/DrbgParameters$Instantiation,java/security/DrbgParameters$Capability flags 31
 innerclass innerClass java/security/DrbgParameters$Instantiation outerClass java/security/DrbgParameters innerClassName Instantiation flags 19
@@ -433,11 +459,62 @@ innerclass innerClass java/security/DrbgParameters$Capability outerClass java/se
 innerclass innerClass java/security/DrbgParameters$NextBytes outerClass java/security/DrbgParameters innerClassName NextBytes flags 19
 innerclass innerClass java/security/DrbgParameters$Reseed outerClass java/security/DrbgParameters innerClassName Reseed flags 19
 
+class name java/security/KeyPair
+header extends java/lang/Object implements java/io/Serializable,java/security/DEREncodable flags 31
+
+class name java/security/PEMDecoder
+header extends java/lang/Object flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+innerclass innerClass java/util/Base64$Decoder outerClass java/util/Base64 innerClassName Decoder flags 9
+method name of descriptor ()Ljava/security/PEMDecoder; flags 9
+method name decode descriptor (Ljava/lang/String;)Ljava/security/DEREncodable; flags 1
+method name decode descriptor (Ljava/io/InputStream;)Ljava/security/DEREncodable; thrownTypes java/io/IOException flags 1
+method name decode descriptor (Ljava/lang/String;Ljava/lang/Class;)Ljava/security/DEREncodable; flags 1 signature <S::Ljava/security/DEREncodable;>(Ljava/lang/String;Ljava/lang/Class<TS;>;)TS;
+method name decode descriptor (Ljava/io/InputStream;Ljava/lang/Class;)Ljava/security/DEREncodable; thrownTypes java/io/IOException flags 1 signature <S::Ljava/security/DEREncodable;>(Ljava/io/InputStream;Ljava/lang/Class<TS;>;)TS;
+method name withFactory descriptor (Ljava/security/Provider;)Ljava/security/PEMDecoder; flags 1
+method name withDecryption descriptor ([C)Ljava/security/PEMDecoder; flags 1
+
+class name java/security/PEMEncoder
+header extends java/lang/Object flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name of descriptor ()Ljava/security/PEMEncoder; flags 9
+method name encodeToString descriptor (Ljava/security/DEREncodable;)Ljava/lang/String; flags 1
+method name encode descriptor (Ljava/security/DEREncodable;)[B flags 1
+method name withEncryption descriptor ([C)Ljava/security/PEMEncoder; flags 1
+
+class name java/security/PEMRecord
+header extends java/lang/Record implements java/security/DEREncodable record true flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+recordcomponent name type descriptor Ljava/lang/String;
+recordcomponent name pem descriptor Ljava/lang/String;
+recordcomponent name leadingData descriptor [B
+innerclass innerClass java/util/Base64$Decoder outerClass java/util/Base64 innerClassName Decoder flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;[B)V flags 1 methodParameters 0:type,0:pem,0:leadingData
+method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;)V flags 1
+method name getEncoded descriptor ()[B flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name hashCode descriptor ()I flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name type descriptor ()Ljava/lang/String; flags 1
+method name pem descriptor ()Ljava/lang/String; flags 1
+method name leadingData descriptor ()[B flags 1
+
 class name java/security/SecurityPermission
 header extends java/security/BasicPermission flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="25")
 
 class name java/security/UnresolvedPermission
 header extends java/security/Permission implements java/io/Serializable flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="25")
+
+class name java/security/cert/X509CRL
+header extends java/security/cert/CRL implements java/security/cert/X509Extension,java/security/DEREncodable flags 421
+
+class name java/security/cert/X509Certificate
+header extends java/security/cert/Certificate implements java/security/cert/X509Extension,java/security/DEREncodable flags 421
+
+class name java/security/spec/PKCS8EncodedKeySpec
+header extends java/security/spec/EncodedKeySpec implements java/security/DEREncodable flags 21
+
+class name java/security/spec/X509EncodedKeySpec
+header extends java/security/spec/EncodedKeySpec implements java/security/DEREncodable flags 21
 
 class name java/time/ZoneOffset
 header extends java/time/ZoneId implements java/time/temporal/TemporalAccessor,java/time/temporal/TemporalAdjuster,java/lang/Comparable,java/io/Serializable flags 31 signature Ljava/time/ZoneId;Ljava/time/temporal/TemporalAccessor;Ljava/time/temporal/TemporalAdjuster;Ljava/lang/Comparable<Ljava/time/ZoneOffset;>;Ljava/io/Serializable; runtimeAnnotations @Ljdk/internal/ValueBased;
@@ -641,6 +718,14 @@ class name java/util/zip/Inflater
 header extends java/lang/Object implements java/lang/AutoCloseable flags 21
 method name close descriptor ()V flags 1
 
+class name javax/crypto/EncryptedPrivateKeyInfo
+header extends java/lang/Object implements java/security/DEREncodable flags 21
+method name encryptKey descriptor (Ljava/security/PrivateKey;[CLjava/lang/String;Ljava/security/spec/AlgorithmParameterSpec;Ljava/security/Provider;)Ljavax/crypto/EncryptedPrivateKeyInfo; flags 9 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+method name encryptKey descriptor (Ljava/security/PrivateKey;[C)Ljavax/crypto/EncryptedPrivateKeyInfo; flags 9 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+method name encryptKey descriptor (Ljava/security/PrivateKey;Ljava/security/Key;Ljava/lang/String;Ljava/security/spec/AlgorithmParameterSpec;Ljava/security/Provider;Ljava/security/SecureRandom;)Ljavax/crypto/EncryptedPrivateKeyInfo; flags 9 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+method name getKey descriptor ([C)Ljava/security/PrivateKey; thrownTypes java/security/GeneralSecurityException flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+method name getKey descriptor (Ljava/security/Key;Ljava/security/Provider;)Ljava/security/PrivateKey; thrownTypes java/security/GeneralSecurityException flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
+
 class name javax/crypto/KDF
 header extends java/lang/Object flags 31
 innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
@@ -677,6 +762,10 @@ header extends java/lang/Object implements javax/crypto/spec/HKDFParameterSpec n
 innerclass innerClass javax/crypto/spec/HKDFParameterSpec$ExtractThenExpand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName ExtractThenExpand flags 19
 innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Extract outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Extract flags 19
 innerclass innerClass javax/crypto/spec/HKDFParameterSpec$Expand outerClass javax/crypto/spec/HKDFParameterSpec innerClassName Expand flags 19
+
+class name javax/net/ssl/ExtendedSSLSession
+method name exportKeyingMaterialKey descriptor (Ljava/lang/String;Ljava/lang/String;[BI)Ljavax/crypto/SecretKey; thrownTypes javax/net/ssl/SSLKeyException flags 1
+method name exportKeyingMaterialData descriptor (Ljava/lang/String;[BI)[B thrownTypes javax/net/ssl/SSLKeyException flags 1
 
 class name javax/net/ssl/SSLPermission
 header extends java/security/BasicPermission flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="25")
