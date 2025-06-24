@@ -578,6 +578,10 @@ public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkFlushOperation;
   }
+
+  virtual bool is_gc_operation() const {
+    return true;
+  }
 };
 
 bool ZMark::flush() {
