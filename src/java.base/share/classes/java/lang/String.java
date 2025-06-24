@@ -609,8 +609,7 @@ public final class String
                 utf16 = Arrays.copyOf(utf16, dp << 1);
             }
             return new String(utf16, UTF16);
-        }
-        else { // !COMPACT_STRINGS
+        } else { // !COMPACT_STRINGS
             byte[] dst = StringUTF16.newBytesFor(length);
             int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
             if (dp != length) {
