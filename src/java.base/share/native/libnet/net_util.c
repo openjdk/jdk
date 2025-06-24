@@ -74,7 +74,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     s = (*env)->NewStringUTF(env, "java.net.preferIPv4Stack");
     CHECK_NULL_RETURN(s, JNI_VERSION_1_2);
     preferIPv4Stack = (*env)->CallStaticBooleanMethod(env, iCls, mid, s);
-
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_VERSION_1_2);
     /*
      * Since we have initialized and loaded the socket library we will
      * check now whether we have IPv6 on this platform and if the
