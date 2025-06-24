@@ -25,15 +25,15 @@
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/compile.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
 
