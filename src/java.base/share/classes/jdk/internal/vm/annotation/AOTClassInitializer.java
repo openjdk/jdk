@@ -30,9 +30,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/// Indicates a class or interface is part of the method handle infrastructure
-/// for AOT archives.  The exact list of classes can be verified with
-/// CDSHeapVerifier.  See `aotConstantPoolResolver.cpp` for more details.
+/// Indicates a class or interface that should have its static initializer
+/// (`<clinit>`) executed whenever it is referenced in an AOT cache.
+///
+/// In AOT assembly run, an object graph from metaspace to heap objects is
+/// constructed.  When an object is in the heap, its class must be initialized.
+/// However, class initialization may have dependencies on other classes in the
+/// initializer that won't be initialized because they do not have live objects.
+/// For example, `MethodHandles.IMPL_NAMES` is copied to
+/// `DirectMethodHandle.IMPL_NAMES`, but there is no object relationship from
+/// DMH to MHs, therefore we need to mark MethodHandles as AOTCI so it is
+/// consistently initialized when it is ever referenced.
 ///
 /// This annotation is only recognized on privileged code and is ignored
 /// elsewhere.
@@ -40,5 +48,5 @@ import java.lang.annotation.Target;
 /// @since 26
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface AotInitializable {
+public @interface AOTClassInitializer {
 }

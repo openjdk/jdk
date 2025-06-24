@@ -29,7 +29,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.MethodHandles;
 
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for the class
  * constant corresponding to a primitive type (e.g., {@code int.class}).
  */
-@AotInitializable
+@AOTClassInitializer
 public final class PrimitiveClassDescImpl
         extends DynamicConstantDesc<Class<?>> implements ClassDesc {
 

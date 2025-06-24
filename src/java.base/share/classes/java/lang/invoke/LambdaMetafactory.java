@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.lang.reflect.Array;
 import java.util.Objects;
 
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 
 /**
  * <p>Methods to facilitate the creation of simple "function objects" that
@@ -249,7 +249,7 @@ import jdk.internal.vm.annotation.AotInitializable;
  *
  * @since 1.8
  */
-@AotInitializable
+@AOTClassInitializer
 public final class LambdaMetafactory {
 
     private LambdaMetafactory() {}

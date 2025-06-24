@@ -25,7 +25,7 @@
 
 package java.lang.invoke;
 
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.Annotation;
@@ -70,7 +70,7 @@ class GenerateJLIClassesHelper {
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";
-    static final Annotation METHOD_HANDLE_ARCHIVED_ANNOTATION = Annotation.of(AotInitializable.class.describeConstable().orElseThrow());
+    static final Annotation AOT_INITIALIZER_ANNOTATION = Annotation.of(AOTClassInitializer.class.describeConstable().orElseThrow());
 
     static class HolderClassBuilder {
 
@@ -566,7 +566,7 @@ class GenerateJLIClassesHelper {
         return ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
             clb.withFlags(ACC_PRIVATE | ACC_FINAL | ACC_SUPER)
                .withSuperclass(InvokerBytecodeGenerator.INVOKER_SUPER_DESC)
-               .with(RuntimeVisibleAnnotationsAttribute.of(METHOD_HANDLE_ARCHIVED_ANNOTATION))
+               .with(RuntimeVisibleAnnotationsAttribute.of(AOT_INITIALIZER_ANNOTATION))
                .with(SourceFileAttribute.of(className.substring(className.lastIndexOf('/') + 1)));
             for (int i = 0; i < forms.length; i++) {
                 new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType()).addMethod(clb, false);

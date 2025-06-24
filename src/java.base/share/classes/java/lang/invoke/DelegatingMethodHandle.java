@@ -27,7 +27,7 @@ package java.lang.invoke;
 
 import java.util.Arrays;
 
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
@@ -39,7 +39,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * The delegating MH itself can hold extra "intentions" beyond the simple behavior.
  * @author jrose
  */
-@AotInitializable
+@AOTClassInitializer
 /*non-public*/
 abstract sealed class DelegatingMethodHandle extends MethodHandle
     permits MethodHandleImpl.AsVarargsCollector,
@@ -197,6 +197,6 @@ abstract sealed class DelegatingMethodHandle extends MethodHandle
     }
 
     /* Placeholder class for DelegatingMethodHandles generated ahead of time */
-    @AotInitializable
+    @AOTClassInitializer
     final class Holder {}
 }

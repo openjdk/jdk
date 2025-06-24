@@ -32,8 +32,8 @@ import java.lang.annotation.Target;
 
 /// Indicates a class or interface requires run-time setup when loaded from AOT
 /// archives.  They must declare a `runtimeSetup` method to be called by the VM,
-/// and this method must be called by the static initializer too.  See
-/// `aotClassInitializer.cpp` for more details.
+/// and this method must be called by the static initializer too.  See the AOT
+/// design document for more details.
 ///
 /// This annotation is only recognized on privileged code and is ignored
 /// elsewhere.

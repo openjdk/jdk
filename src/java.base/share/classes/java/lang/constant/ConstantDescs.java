@@ -28,7 +28,7 @@ import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 
 import java.lang.Enum.EnumDesc;
 import java.lang.invoke.CallSite;
@@ -57,7 +57,7 @@ import static java.lang.constant.DirectMethodHandleDesc.Kind.STATIC;
  *
  * @since 12
  */
-@AotInitializable
+@AOTClassInitializer
 public final class ConstantDescs {
     // No instances
     private ConstantDescs() { }

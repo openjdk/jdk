@@ -25,7 +25,7 @@
  */
 package jdk.internal.constant;
 
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.constant.ClassDesc;
@@ -51,7 +51,7 @@ import static jdk.internal.constant.ConstantUtils.EMPTY_CLASSDESC;
  * {@link MethodType}.  A {@linkplain MethodTypeDescImpl} corresponds to a
  * {@code Constant_MethodType_info} entry in the constant pool of a classfile.
  */
-@AotInitializable
+@AOTClassInitializer
 public final class MethodTypeDescImpl implements MethodTypeDesc {
     private final ClassDesc returnType;
     private final @Stable ClassDesc[] argTypes;

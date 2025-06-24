@@ -64,7 +64,7 @@ bool AOTClassInitializer::has_aot_initialization(InstanceKlass* ik) {
 
     if (log_is_enabled(Info, aot, init)) {
       ResourceMark rm;
-      log_info(aot, init)("Found @MethodHandleArchived class %s", ik->external_name());
+      log_info(aot, init)("Found @AOTClassInitializer class %s", ik->external_name());
     }
 
     return true;
@@ -239,7 +239,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   }
 
   if (CDSConfig::is_dumping_method_handles()) {
-    // The list of @MethodHandleArchived was created with the help of CDSHeapVerifier.
+    // The list of @AOTClassInitializer was created with the help of CDSHeapVerifier.
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
     // at runtime, we need to make sure Invokers$Holder is also aot-inited.

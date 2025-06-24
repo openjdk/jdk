@@ -35,7 +35,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.ReferenceKey;
 import jdk.internal.util.ReferencedKeyMap;
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -117,7 +117,7 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * @since 9
  */
-@AotInitializable
+@AOTClassInitializer
 public final class StringConcatFactory {
     private static final int HIGH_ARITY_THRESHOLD;
     private static final int CACHE_THRESHOLD;

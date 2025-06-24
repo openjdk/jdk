@@ -30,7 +30,7 @@ import jdk.internal.loader.ClassLoaders;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.AotInitializable;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
@@ -443,7 +443,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-@AotInitializable
+@AOTClassInitializer
 public abstract sealed class MethodHandle implements Constable
     permits NativeMethodHandle, DirectMethodHandle,
             DelegatingMethodHandle, BoundMethodHandle {
