@@ -58,7 +58,7 @@ public class ReaderReadAllLines {
     @Benchmark
     public List<String> readAllLines() throws IOException {
         List<String> lines;
-        try (Reader reader = new CharArrayReader(chars);) {
+        try (Reader reader = new CharArrayReader(chars)) {
             lines = reader.readAllLines();
         }
         return lines;

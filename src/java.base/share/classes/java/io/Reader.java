@@ -450,7 +450,7 @@ public abstract class Reader implements Readable, Closeable {
      */
     public List<String> readAllLines() throws IOException {
         List<String> lines = new ArrayList<>();
-        StringBuilder sb = new StringBuilder(82);
+        StringBuilder sb = new StringBuilder(0);
 
         char[] cb = new char[TRANSFER_BUFFER_SIZE];
         boolean skipLF = false;
@@ -471,7 +471,7 @@ public abstract class Reader implements Readable, Closeable {
                     boolean isCR = (cb[term] == '\r');
                     if (isCR || !(skipLF && term == pos)) {
                         // line terminator is a CR or an LF just after a CR
-                        if (sb.length() == 0) {
+                        if (sb.isEmpty()) {
                             // avoid the StringBuilder if possible
                             lines.add(new String(cb, pos, term - pos));
                         } else {
@@ -491,7 +491,7 @@ public abstract class Reader implements Readable, Closeable {
         }
 
         // add a string if EOS terminates the last line
-        if (sb.length() > 0)
+        if (!sb.isEmpty())
             lines.add(sb.toString());
 
         return Collections.unmodifiableList(lines);
