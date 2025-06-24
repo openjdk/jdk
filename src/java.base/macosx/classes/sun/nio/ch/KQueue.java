@@ -26,14 +26,15 @@
 package sun.nio.ch;
 
 import jdk.internal.ffi.generated.errno.errno_h;
-import jdk.internal.ffi.generated.timespec.timespec;
 import jdk.internal.ffi.generated.kqueue.kevent;
 import jdk.internal.ffi.generated.kqueue.kqueue_h;
+import jdk.internal.ffi.generated.timespec.timespec;
+import jdk.internal.ffi.generated.ErrnoUtils;
 import jdk.internal.ffi.util.FFMUtils;
-import jdk.internal.foreign.*;
+import jdk.internal.foreign.BufferStack;
 
-import java.io.*;
-import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 
 import static java.lang.foreign.MemorySegment.NULL;
 
@@ -149,7 +150,8 @@ final class KQueue {
                 if (result == -errno_h.EINTR()) {
                     return IOStatus.INTERRUPTED;
                 } else {
-                    throw new IOException("kqueue_poll failed");
+                    throw ErrnoUtils.IOExceptionWithLastError(-result,
+                            "kqueue_poll failed.", arena);
                 }
             }
         } catch (Throwable e) {

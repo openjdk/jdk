@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,20 @@
 
 package jdk.internal.ffi.generated.kqueue;
 
-import jdk.internal.ffi.generated.BindingUtils;
 import jdk.internal.ffi.util.FFMUtils;
 
-import java.lang.foreign.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.Arena;
 import java.util.function.Consumer;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.OfLong;
+import static java.lang.foreign.ValueLayout.OfShort;
+import static java.lang.foreign.ValueLayout.OfInt;
 
 /**
  * {@snippet lang=c :
@@ -56,12 +62,12 @@ public class kevent {
     }
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
-            FFMUtils.align(BindingUtils.C_LONG, 4).withName("ident"),
-            BindingUtils.C_SHORT.withName("filter"),
-            BindingUtils.C_SHORT.withName("flags"),
-            BindingUtils.C_INT.withName("fflags"),
-            FFMUtils.align(BindingUtils.C_LONG, 4).withName("data"),
-            FFMUtils.align(BindingUtils.C_POINTER, 4).withName("udata")
+            FFMUtils.align(FFMUtils.C_LONG, 4).withName("ident"),
+            FFMUtils.C_SHORT.withName("filter"),
+            FFMUtils.C_SHORT.withName("flags"),
+            FFMUtils.C_INT.withName("fflags"),
+            FFMUtils.align(FFMUtils.C_LONG, 4).withName("data"),
+            FFMUtils.align(FFMUtils.C_POINTER, 4).withName("udata")
     ).withName("kevent");
 
     /**

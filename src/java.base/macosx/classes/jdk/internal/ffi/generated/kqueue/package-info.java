@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 /**
- * Defines native structures for socket APIs.
+ * Defines native structures for Kqueue socket APIs.
  * Generated with the following jextract command:
  * {@snippet lang = "Shell Script":
  *
@@ -45,14 +45,11 @@
  *    --include-struct kevent \
  *    --include-struct klist \
  *    $HEADER_NAME
- *  $HEADER_NAME
  * }
  *
  * After generation of native bindings, the layouts for the C builtin layouts and other
  * variables/methods not specific to a component area are moved to the {@code BindingUtils} class
  * for future reusability.
- * If the {@code BindingUtils} class already exists, any usage of the components mentioned above is
- * replaced with matching replacement from the {@code BindingUtils} where possible.
  *
  */
 

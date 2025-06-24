@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +26,28 @@
 
 package jdk.internal.ffi.generated;
 
-import java.lang.foreign.*;
+import jdk.internal.ffi.generated.errno.errno_h;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import java.io.IOException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
 
-@SuppressWarnings("restricted")
-public final class BindingUtils {
-    private BindingUtils() {
+// Errno utility for macosx platform
+public final class ErrnoUtils {
+    private ErrnoUtils() {
     }
-    public static final ValueLayout.OfBoolean C_BOOL = ValueLayout.JAVA_BOOLEAN;
-    public static final ValueLayout.OfByte C_CHAR = ValueLayout.JAVA_BYTE;
-    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT;
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
-    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG;
-    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT;
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
-    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE));
-    public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
+
+    private static final long ERRNO_STRING_HOLDER_ARRAY_SIZE = 256L;
+
+    public static IOException IOExceptionWithLastError(int errno, String message, Arena arena) {
+        MemorySegment buf = arena.allocate(ERRNO_STRING_HOLDER_ARRAY_SIZE);
+        if (errno_h.strerror_r(errno, buf, ERRNO_STRING_HOLDER_ARRAY_SIZE) == 0) {
+            String errnoMsg = buf.getString(0, StandardCharsets.UTF_8);
+            return new IOException(message + " " + errnoMsg);
+        } else {
+            // failed to convert errno to string - output errno value
+            return new IOException(message + " Errno: " + errno);
+        }
+    }
 }

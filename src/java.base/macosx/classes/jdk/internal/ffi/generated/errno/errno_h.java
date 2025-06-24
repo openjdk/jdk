@@ -27,7 +27,6 @@
 
 package jdk.internal.ffi.generated.errno;
 
-import jdk.internal.ffi.generated.BindingUtils;
 import jdk.internal.ffi.util.FFMUtils;
 
 import java.lang.invoke.*;
@@ -52,10 +51,10 @@ public class errno_h {
 
     private static class strerror_r {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-                BindingUtils.C_INT,
-                BindingUtils.C_INT,
-                BindingUtils.C_POINTER,
-                BindingUtils.C_LONG
+                FFMUtils.C_INT,
+                FFMUtils.C_INT,
+                FFMUtils.C_POINTER,
+                FFMUtils.C_LONG
         );
 
         public static final MemorySegment ADDR = FFMUtils.findOrThrow("strerror_r");

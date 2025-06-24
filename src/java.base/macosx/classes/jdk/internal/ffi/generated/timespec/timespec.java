@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 package jdk.internal.ffi.generated.timespec;
 
-import jdk.internal.ffi.generated.BindingUtils;
+import jdk.internal.ffi.util.*;
 
 import java.lang.foreign.*;
 import java.util.function.Consumer;
@@ -51,8 +51,8 @@ public class timespec {
     }
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
-            BindingUtils.C_LONG.withName("tv_sec"),
-            BindingUtils.C_LONG.withName("tv_nsec")
+            FFMUtils.C_LONG.withName("tv_sec"),
+            FFMUtils.C_LONG.withName("tv_nsec")
     ).withName("timespec");
 
     /**
