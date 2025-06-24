@@ -38,10 +38,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Stream;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DebugOptions {
@@ -51,38 +51,38 @@ public class DebugOptions {
             "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
     static final String EXPECTED_PROP_KEYSTORE_REGEX =
             "properties\\[.*\\|main|" + DATE_REGEX +
-                    ".*\\Rkeystore\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
+            ".*\\Rkeystore\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
     static final String EXPECTED_ALL_REGEX =
             "properties\\[.*\\|main.*\\|" + DATE_REGEX +
-                    ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|"
-                    + DATE_REGEX + ".*\\]:";
+            ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|"
+            + DATE_REGEX + ".*\\]:";
 
-    private static final Stream<String[]> patternMatches = Stream.of(
-                // test for thread and timestamp info
+    private static final List<String[]> patternMatches = List.of(
+            // test for thread and timestamp info
             new String[]{"properties",
-                        EXPECTED_PROP_REGEX,
-                        "properties:"},
-                // test for thread and timestamp info
-                new String[]{"properties+thread",
-                        EXPECTED_PROP_REGEX,
-                        "properties:"},
-                // flip the arguments of previous test
-        new String[]{"properties+thread+timestamp",
-                        EXPECTED_PROP_REGEX,
-                        "properties:"},
-                // regular keystore,properties component string
-        new String[]{"keystore,properties",
-                        EXPECTED_PROP_KEYSTORE_REGEX,
-                        "properties:"},
-                // turn on all
-        new String[]{"all",
-                        EXPECTED_ALL_REGEX,
-                        "properties:"},
-                // expect thread and timestamp info
-        new String[]{"all+thread",
-                        EXPECTED_ALL_REGEX,
-                        "properties:"}
-        );
+                    EXPECTED_PROP_REGEX,
+                    "properties:"},
+            // test for thread and timestamp info
+            new String[]{"properties+thread",
+                    EXPECTED_PROP_REGEX,
+                    "properties:"},
+            // flip the arguments of previous test
+            new String[]{"properties+thread+timestamp",
+                    EXPECTED_PROP_REGEX,
+                    "properties:"},
+            // regular keystore,properties component string
+            new String[]{"keystore,properties",
+                    EXPECTED_PROP_KEYSTORE_REGEX,
+                    "properties:"},
+            // turn on all
+            new String[]{"all",
+                    EXPECTED_ALL_REGEX,
+                    "properties:"},
+            // expect thread and timestamp info
+            new String[]{"all+thread",
+                    EXPECTED_ALL_REGEX,
+                    "properties:"}
+    );
 
     /**
      * This will execute the test logic without any param manipulation
@@ -97,11 +97,9 @@ public class DebugOptions {
                               String expected,
                               String notExpected) throws Exception {
 
-        System.out.printf("Executing: {%s%s%s}%n",
+        System.out.printf("Executing: {%s%s DebugOptions}%n",
                 paramName,
-                paramVal,
-                "DebugOptions");
-
+                paramVal);
 
         final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                 paramName + paramVal,
@@ -126,10 +124,9 @@ public class DebugOptions {
                                        String notExpected) throws Exception {
 
         final String formattedParam = makeFirstAndLastLetterUppercase(paramVal);
-        System.out.printf("Executing: {%s%s%s}%n",
+        System.out.printf("Executing: {%s%s DebugOptions}%n",
                 paramName,
-                formattedParam,
-                "DebugOptions");
+                formattedParam);
 
         final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                 paramName + formattedParam,
@@ -140,16 +137,44 @@ public class DebugOptions {
     }
 
     /**
-     * This method will change the input string to have the first
-     * and last letters uppercase
+     * This will execute the test logic, but first change the param
+     * to be uppercase
+     *
+     * @param paramName   name of the parameter e.g. -Djava.security.debug=
+     * @param paramVal    value of the parameter
+     * @param expected    expected output
+     * @param notExpected not expected output
+     */
+    public void testUpperCaseParameter(String paramName,
+                                       String paramVal,
+                                       String expected,
+                                       String notExpected) throws Exception {
+
+        final String formattedParam = paramVal.toUpperCase();
+        System.out.printf("Executing: {%s%s DebugOptions}%n",
+                paramName,
+                formattedParam);
+
+        final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
+                paramName + formattedParam,
+                "DebugOptions");
+        outputAnalyzer.shouldHaveExitValue(0)
+                .shouldMatch(expected)
+                .shouldNotMatch(notExpected);
+    }
+
+    /**
+     * This method will change the input string to have all letters uppercase
      * <p>
      * e.g.:
-     * hello -> HellO
+     * hello -> HELLO
      *
-     * @param paramString string to change
+     * @param paramString string to change. Must not be null or empty
      * @return resulting string
      */
     private String makeFirstAndLastLetterUppercase(final String paramString) {
+        Assertions.assertTrue(paramString != null && !paramString.isEmpty());
+
         final int length = paramString.length();
         final String firstLetter = paramString.substring(0, 1);
         final String lastLetter = paramString.substring((length - 1),
@@ -162,10 +187,10 @@ public class DebugOptions {
 
     /**
      * This test will run all options in parallel with all param names
-     * in both mixed and lowercase
+     * in lowercase
      */
     @Test
-    public void debugOptionsTest() throws Exception {
+    public void debugOptionsLowerCaseTest() throws Exception {
 
         try (final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
             final List<Callable<Void>> testsCallables = new ArrayList<>();
@@ -180,15 +205,6 @@ public class DebugOptions {
                     return null;
                 });
                 testsCallables.add(() -> {
-                    testMixedCaseParameter(
-                            "-Djava.security.debug=",
-                            params[0],
-                            params[1],
-                            params[2]);
-                    return null;
-                });
-
-                testsCallables.add(() -> {
                     testParameter(
                             "-Djava.security.auth.debug=",
                             params[0],
@@ -196,6 +212,37 @@ public class DebugOptions {
                             params[2]);
                     return null;
                 });
+
+                System.out.println("Option added to all lowercase tests " + Arrays.toString(params));
+            });
+
+            System.out.println("Starting all the threads");
+            final List<Future<Void>> res = executorService.invokeAll(testsCallables);
+            for (final Future<Void> future : res) {
+                future.get();
+            }
+        }
+    }
+
+    /**
+     * This test will run all options in parallel with all param names
+     * in mixed case
+     */
+    @Test
+    public void debugOptionsMixedCaseTest() throws Exception {
+
+        try (final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            final List<Callable<Void>> testsCallables = new ArrayList<>();
+
+            patternMatches.forEach(params -> {
+                testsCallables.add(() -> {
+                    testMixedCaseParameter(
+                            "-Djava.security.debug=",
+                            params[0],
+                            params[1],
+                            params[2]);
+                    return null;
+                });
                 testsCallables.add(() -> {
                     testMixedCaseParameter(
                             "-Djava.security.auth.debug=",
@@ -205,7 +252,46 @@ public class DebugOptions {
                     return null;
                 });
 
-                System.out.println("option added to all tests " + Arrays.toString(params));
+                System.out.println("Option added to all mixed case tests " + Arrays.toString(params));
+            });
+
+            System.out.println("Starting all the threads");
+            final List<Future<Void>> res = executorService.invokeAll(testsCallables);
+            for (final Future<Void> future : res) {
+                future.get();
+            }
+        }
+    }
+
+    /**
+     * This test will run all options in parallel with all param names
+     * in uppercase
+     */
+    @Test
+    public void debugOptionsUpperCaseTest() throws Exception {
+
+        try (final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            final List<Callable<Void>> testsCallables = new ArrayList<>();
+
+            patternMatches.forEach(params -> {
+                testsCallables.add(() -> {
+                    testUpperCaseParameter(
+                            "-Djava.security.debug=",
+                            params[0],
+                            params[1],
+                            params[2]);
+                    return null;
+                });
+                testsCallables.add(() -> {
+                    testUpperCaseParameter(
+                            "-Djava.security.auth.debug=",
+                            params[0],
+                            params[1],
+                            params[2]);
+                    return null;
+                });
+
+                System.out.println("Option added to all upper case tests " + Arrays.toString(params));
             });
 
             System.out.println("Starting all the threads");
