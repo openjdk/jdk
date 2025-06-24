@@ -57,7 +57,7 @@ class ThreadSnapshot {
     static ThreadSnapshot of(Thread thread) {
         ThreadSnapshot snapshot = create(thread);
         if (snapshot == null) {
-            throw new UnsupportedOperationException();
+            return null; // Terminated
         }
         if (snapshot.stackTrace == null) {
             snapshot.stackTrace = EMPTY_STACK;

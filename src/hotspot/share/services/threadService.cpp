@@ -1473,6 +1473,9 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
     }
   } else {
     java_thread = java_lang_Thread::thread(thread_h());
+    if (java_thread == nullptr) {
+        return nullptr; // Terminated
+    }
   }
 
   // Handshake with target

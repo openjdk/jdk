@@ -179,6 +179,9 @@ public class ThreadDumper {
 
     private static void dumpThread(Thread thread, TextWriter writer) {
         ThreadSnapshot snapshot = ThreadSnapshot.of(thread);
+        if (snapshot == null) {
+            return; // Terminated
+        }
         Instant now = Instant.now();
         Thread.State state = snapshot.threadState();
         writer.println("#" + thread.threadId() + " \"" + snapshot.threadName()
