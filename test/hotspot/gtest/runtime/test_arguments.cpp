@@ -21,9 +21,9 @@
  * questions.
  */
 
+#include "jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -47,8 +47,8 @@ public:
 
   static bool parse_argument(const char* name, const char* value) {
     char buf[1024];
-    int ret = os::snprintf(buf, sizeof(buf), "%s=%s", name, value);
-    if ((ret > 0) && ((size_t)ret < sizeof(buf))) {
+    int ret = jio_snprintf(buf, sizeof(buf), "%s=%s", name, value);
+    if (ret > 0) {
       return Arguments::parse_argument(buf, JVMFlagOrigin::COMMAND_LINE);
     } else {
       return false;
@@ -58,9 +58,8 @@ public:
 
 TEST_F(ArgumentsTest, atojulong) {
   char ullong_max[32];
-  int ret = os::snprintf(ullong_max, sizeof(ullong_max), "%llu", ULLONG_MAX);
-  ASSERT_LT(0, ret);
-  ASSERT_LT(ret, (int)sizeof(ullong_max));
+  int ret = jio_snprintf(ullong_max, sizeof(ullong_max), "%llu", ULLONG_MAX);
+  ASSERT_NE(-1, ret);
 
   julong value;
   const char* invalid_strings[] = {
@@ -174,7 +173,7 @@ static intx calc_expected(julong small_xss_input) {
 
 static char buff[100];
 static char* to_string(julong value) {
-  os::snprintf(buff, sizeof(buff), JULONG_FORMAT, value);
+  jio_snprintf(buff, sizeof(buff), JULONG_FORMAT, value);
   return buff;
 }
 
