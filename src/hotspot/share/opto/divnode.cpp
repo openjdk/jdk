@@ -28,13 +28,13 @@
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/machnode.hpp"
-#include "opto/movenode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "opto/runtime.hpp"
 
 // Portions of code courtesy of Clifford Click
 

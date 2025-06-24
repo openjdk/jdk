@@ -23,12 +23,12 @@
 
 #include "memory/allocation.inline.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
-#include "opto/convertnode.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //------------------------------VectorNode--------------------------------------
 
