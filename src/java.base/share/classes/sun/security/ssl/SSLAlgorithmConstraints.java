@@ -155,17 +155,17 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * to the platform configured constraints.
      *
      * @param engine QuicTLSEngine used to determine the constraints
-     * @param applyCertPathAlgConstraints whether or not to apply the
-     *                                   certpath algorithm constraints too
+     * @param withDefaultCertPathConstraints whether or not to apply the
+     *                                       default certpath algorithm constraints too
      * @return a AlgorithmConstraints instance
      * @throws NullPointerException if {@code engine} is null
      */
     static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
-                                        boolean applyCertPathAlgConstraints) {
+                                        boolean withDefaultCertPathConstraints) {
         Objects.requireNonNull(engine, "QuicTLSEngine");
         final AlgorithmConstraints userSpecifiedConstraints =
                 getUserSpecifiedConstraints(engine);
-        return wrap(userSpecifiedConstraints, applyCertPathAlgConstraints);
+        return wrap(userSpecifiedConstraints, withDefaultCertPathConstraints);
     }
 
     /**
@@ -178,21 +178,21 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      *
      * @param engine QuicTLSEngine used to determine the constraints
      * @param supportedAlgorithms the algorithms that are supported. can be null.
-     * @param applyCertPathAlgConstraints whether or not to apply the certpath
-     *                                   algorithm constraints too
+     * @param withDefaultCertPathConstraints whether or not to apply the default certpath
+     *                                       algorithm constraints too
      * @return a AlgorithmConstraints instance
      * @throws NullPointerException if {@code engine} is null
      */
     static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
                                         String[] supportedAlgorithms,
-                                        boolean applyCertPathAlgConstraints) {
+                                        boolean withDefaultCertPathConstraints) {
         Objects.requireNonNull(engine, "QuicTLSEngine");
         final AlgorithmConstraints userSpecifiedConstraints =
                 getUserSpecifiedConstraints(engine);
         return new SSLAlgorithmConstraints(
                 nullIfDefault(userSpecifiedConstraints),
                 new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
-                applyCertPathAlgConstraints);
+                withDefaultCertPathConstraints);
     }
 
     private static AlgorithmConstraints nullIfDefault(
