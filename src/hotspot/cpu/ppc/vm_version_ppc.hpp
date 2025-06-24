@@ -69,9 +69,9 @@ public:
 
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support
-  static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
-  static bool has_darn()    { return (_features & darn_m) != 0; }
-  static bool has_brw()     { return (_features & brw_m) != 0; }
+  static bool has_mfdscr() { return (_features & mfdscr_m) != 0; } // Power8, but may be unavailable (QEMU)
+  static bool has_darn()   { return (_features & darn_m) != 0; }
+  static bool has_brw()    { return (_features & brw_m) != 0; }
 
   // Assembler testing
   static void allow_all();
