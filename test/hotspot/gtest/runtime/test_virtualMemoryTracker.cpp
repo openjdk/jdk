@@ -90,6 +90,12 @@ static void check_inner(const ReservedMemoryRegion& rmr, R* regions, size_t regi
 class VirtualMemoryTrackerTest {
 public:
   static void test_add_committed_region_adjacent() {
+    RegionsTree* rtree;
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      rtree = VirtualMemoryTracker::Instance::tree();
+      rtree->tree().remove_all();
+    }
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
@@ -105,7 +111,6 @@ public:
 
     // Fetch the added RMR for the space
     ReservedMemoryRegion rmr = VirtualMemoryTracker::Instance::tree()->find_reserved_region(addr);
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
 
     ASSERT_EQ(rmr.size(), size);
     ASSERT_EQ(rmr.base(), addr);
@@ -167,12 +172,17 @@ public:
   }
 
   static void test_add_committed_region_adjacent_overlapping() {
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    rtree->tree().remove_all();
+    RegionsTree* rtree;
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      rtree = VirtualMemoryTracker::Instance::tree();
+      rtree->tree().remove_all();
+    }
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     MemTracker::NmtVirtualMemoryLocker nvml;
+
 
     address addr = (address)rs.base();
 
@@ -255,11 +265,14 @@ public:
   }
 
   static void test_add_committed_region_overlapping() {
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    rtree->tree().remove_all();
+    RegionsTree* rtree;
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      rtree = VirtualMemoryTracker::Instance::tree();
+      rtree->tree().remove_all();
+    }
 
     size_t size  = 0x01000000;
-
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     MemTracker::NmtVirtualMemoryLocker nvml;
 
@@ -432,8 +445,12 @@ public:
   }
 
   static void test_remove_uncommitted_region() {
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    rtree->tree().remove_all();
+    RegionsTree* rtree;
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      rtree = VirtualMemoryTracker::Instance::tree();
+      rtree->tree().remove_all();
+    }
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
