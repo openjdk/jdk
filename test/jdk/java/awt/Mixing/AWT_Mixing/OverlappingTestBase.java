@@ -80,6 +80,8 @@ import test.java.awt.regtesthelpers.Util;
  * @author Sergey Grinev
  */
 public abstract class OverlappingTestBase {
+    protected final int FRAME_WIDTH = 300;
+    protected final int FRAME_HEIGHT = 200;
     // working variables
     private static volatile boolean wasHWClicked = false;
     private static volatile boolean passed = true;
@@ -163,13 +165,12 @@ public abstract class OverlappingTestBase {
 
     public void getVerifyColor() {
         try {
-            final int size = 200;
             final Point[] p = new Point[1];
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run(){
                     JFrame frame = new JFrame("set back");
                     frame.getContentPane().setBackground(AWT_BACKGROUND_COLOR);
-                    frame.setSize(size, size);
+                    frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
                     frame.setUndecorated(true);
                     frame.setVisible(true);
                     frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -179,7 +180,8 @@ public abstract class OverlappingTestBase {
             Robot robot = new Robot();
             robot.waitForIdle();
             Thread.sleep(ROBOT_DELAY);
-            AWT_VERIFY_COLOR = robot.getPixelColor(p[0].x+size/2, p[0].y+size/2);
+            AWT_VERIFY_COLOR = robot.getPixelColor(p[0].x+FRAME_WIDTH/2,
+                    p[0].y+FRAME_HEIGHT/2);
             System.out.println("Color will be compared with " + AWT_VERIFY_COLOR + " instead of " + AWT_BACKGROUND_COLOR);
         } catch (Exception e) {
             System.err.println("Cannot get verify color: "+e.getMessage());
