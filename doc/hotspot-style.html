@@ -87,6 +87,7 @@ id="toc-local-function-objects">Local Function Objects</a></li>
 <li><a href="#inheriting-constructors"
 id="toc-inheriting-constructors">Inheriting constructors</a></li>
 <li><a href="#attributes" id="toc-attributes">Attributes</a></li>
+<li><a href="#noexcept" id="toc-noexcept">noexcept</a></li>
 <li><a href="#additional-permitted-features"
 id="toc-additional-permitted-features">Additional Permitted
 Features</a></li>
@@ -1140,6 +1141,58 @@ function name and the parameter list.</li>
 <code>memory_order_consume</code>.</li>
 <li><code>[[deprecated]]</code> - Not relevant in HotSpot code.</li>
 </ul>
+<h3 id="noexcept">noexcept</h3>
+<p>Use of <code>noexcept</code> exception specifications (<a
+href="http://wg21.link/n3050">n3050</a>) are permitted with restrictions
+described below.</p>
+<ul>
+<li>Only the argument-less form of <code>noexcept</code> exception
+specifications are permitted.</li>
+<li>Allocation functions that may return <code>nullptr</code> to
+indicate allocation failure must be declared <code>noexcept</code>.</li>
+<li>All other uses of <code>noexcept</code> exception specifications are
+forbidden.</li>
+<li><code>noexcept</code> expressions are forbidden.</li>
+<li>Dynamic exception specifications are forbidden.</li>
+</ul>
+<p>HotSpot is built with exceptions disabled, e.g. compile with
+<code>-fno-exceptions</code> (gcc, clang) or no <code>/EH</code> option
+(MSVC++). So why do we need to consider <code>noexcept</code> at all?
+It's because <code>noexcept</code> exception specifications serve two
+distinct purposes.</p>
+<p>The first is to allow the compiler to avoid generating code or data
+in support of exceptions being thrown by a function. But this is
+unnecessary, because exceptions are disabled.</p>
+<p>The second is to allow the compiler and library code to choose
+different algorithms, depending on whether some function may throw
+exceptions. This is only relevant to a certain set of functions.</p>
+<ul>
+<li><p>Some allocation functions (<code>operator new</code> and
+<code>operator new[]</code>) return <code>nullptr</code> to indicate
+allocation failure. If a <code>new</code> expression calls such an
+allocation function, it must check for and handle that possibility.
+Declaring such a function <code>noexcept</code> informs the compiler
+that <code>nullptr</code> is a possible result. If an allocation
+function is not declared <code>noexcept</code> then the compiler may
+elide that checking and handling for a <code>new</code> expression
+calling that function.</p></li>
+<li><p>Certain Standard Library facilities (notably containers) provide
+different guarantees for some operations (and may choose different
+algorithms to implement those operations), depending on whether certain
+functions (constructors, copy/move operations, swap) are nothrow or not.
+They detect this using type traits that test whether a function is
+declared <code>noexcept</code>. This can have a significant performance
+impact if, for example, copying is chosen over a potentially throwing
+move. But this isn't relevant, since HotSpot forbids the use of most
+Standard Library facilities.</p></li>
+</ul>
+<p>HotSpot code can assume no exceptions will ever be thrown, even from
+functions not declared <code>noexcept</code>. So HotSpot code doesn't
+ever need to check, either with conditional exception specifications or
+with <code>noexcept</code> expressions.</p>
+<p>Dynamic exception specifications were deprecated in C++11. C++17
+removed all but <code>throw()</code>, with that remaining a deprecated
+equivalent to <code>noexcept</code>.</p>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
