@@ -1384,10 +1384,6 @@ public:
   void adc(Register dst, Register src1, Register src2, Register carry);
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2, Register carry);
-  void multiply_32_x_32_loop(Register x, Register xstart, Register x_xstart,
-                             Register y, Register y_idx, Register z,
-                             Register carry, Register product,
-                             Register idx, Register kdx);
   void multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
                              Register y, Register y_idx, Register z,
                              Register carry, Register product,
