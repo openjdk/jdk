@@ -171,7 +171,7 @@ public class Log extends AbstractLog {
                   lint.isEnabled(category) :                            // then emit if the category is enabled
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
                     !lint.isSuppressed(category) :                      // ...suppression happens via @SuppressWarnings
-                    !options.isDisabled(Option.XLINT, category);        // ...suppression happens via -Xlint:-category
+                    !options.isLintDisabled(category);                  // ...suppression happens via -Xlint:-category
                 if (!emit)
                     return;
             }
