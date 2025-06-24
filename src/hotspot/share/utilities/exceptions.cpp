@@ -150,16 +150,14 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   ResourceMark rm(thread);
   assert(h_exception() != nullptr, "exception should not be null");
 
-  if (log_is_enabled(Info, exceptions)) {
-    // tracing (do this up front - so it works during boot strapping)
-    // Note, the print_value_string() argument is not called unless logging is enabled!
-    log_info(exceptions)("Exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
-                         "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
-                         MAX_LEN, h_exception->print_value_string(),
-                         message ? ": " : "",
-                         MAX_LEN, message ? message : "",
-                         p2i(h_exception()), file, line, p2i(thread));
-  }
+  // tracing (do this up front - so it works during boot strapping)
+  // Note, the print_value_string() argument is not called unless logging is enabled!
+  log_info(exceptions)("Exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
+                       "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
+                       MAX_LEN, h_exception->print_value_string(),
+                       message ? ": " : "",
+                       MAX_LEN, message ? message : "",
+                       p2i(h_exception()), file, line, p2i(thread));
   if (log_is_enabled(Info, exceptions, stacktrace)) {
     log_exception_stacktrace(h_exception);
   }
@@ -633,40 +631,8 @@ void Exceptions::log_exception(Handle exception, const char* message) {
 // and Exceptions::_throw()).
 void Exceptions::log_exception_stacktrace(Handle exception, methodHandle method, int bci) {
   if (!method->is_native() && (Bytecodes::Code) *method->bcp_from(bci) == Bytecodes::_athrow) {
-    // TODO: it would be nice to filter out exceptions re-thrown by finally blocks (which include
-    // try-with-resource statements):
-    //
-    // try {
-    //     nullObject.toString(); // throws NPE
-    // } finally {
-    //     do_something();
-    // }
-    //
-    // The finally block is compiled like this:
-    //
-    //   8: astore_1            // the exception thrown in the try block
-    //   9: invokestatic #23    // Method: do_something()V
-    //  12: aload_1
-    //  13: athrow              // re-throw exception
-    // Exception table:
-    //  from    to  target type
-    //   0     3     8   any
-    //
-    // However, we need to distinguish with finally blocks whose last statement is a throw:
-    //
-    // try {
-    //     nullObject.toString(); // throws NPE
-    // } finally {
-    //     throw new RuntimeException("");
-    // }
-    //
-    // To do this, we need to check that:
-    //    - bci is the last bytecode of an exception handler
-    //    - the previous bytecode is an aload_1
-    //    - the catch type is "any" (#0).
-    //
-    // But, the "end of exception handler" is not defined in the classfile, so we need to use
-    // abstract interpretation to find out. Let's do that later ...
+    // TODO: try to find a way to avoid repeated stacktraces when an exception gets re-thrown
+    // by a finally block
     log_exception_stacktrace(exception);
   }
 }
