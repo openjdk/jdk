@@ -132,7 +132,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
 
@@ -140,7 +140,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      VirtualMemoryTracker::remove_released_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_released_region((address)addr, size);
     }
   }
 
@@ -148,7 +148,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_uncommitted_region((address)addr, size);
     }
   }
 
@@ -158,8 +158,8 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, mem_tag);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -169,7 +169,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -217,7 +217,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
+      VirtualMemoryTracker::Instance::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
 
@@ -230,7 +230,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::set_reserved_region_type((address)addr, size, mem_tag);
+      VirtualMemoryTracker::Instance::set_reserved_region_tag((address)addr, size, mem_tag);
     }
   }
 
