@@ -173,71 +173,66 @@ public class Options {
 
     /**
      * Determine if a specific {@link LintCategory} is enabled via a custom
-     * option flag of the form {@code -Flag}, {@code -Flag:all}, or {@code -Flag:key}.
+     * option flag of the form {@code -Xlint}, {@code -Xlint:all}, or {@code -Xlint:key}.
      *
      * <p>
      * Note: It's possible the category was also disabled; this method does not check that.
      *
-     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
      * @param lc the {@link LintCategory} in question
      * @return true if {@code lc} has been enabled
      */
-    public boolean isEnabled(Option option, LintCategory lc) {
-        Option custom = option.getCustom();
-        return isExplicitlyEnabled(option, lc) || isSet(custom) || isSet(custom, Option.LINT_CUSTOM_ALL);
+    public boolean isLintEnabled(LintCategory lc) {
+        return isLintExplicitlyEnabled(lc) ||
+            isSet(Option.XLINT_CUSTOM) ||
+            isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL);
     }
 
     /**
      * Determine if a specific {@link LintCategory} is disabled via a custom
-     * option flag of the form {@code -Flag:none} or {@code -Flag:-key}.
+     * option flag of the form {@code -Xlint:none} or {@code -Xlint:-key}.
      *
      * <p>
      * Note: It's possible the category was also enabled; this method does not check that.
      *
-     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
      * @param lc the {@link LintCategory} in question
      * @return true if {@code lc} has been disabled
      */
-    public boolean isDisabled(Option option, LintCategory lc) {
-        return isExplicitlyDisabled(option, lc) || isSet(option.getCustom(), Option.LINT_CUSTOM_NONE);
+    public boolean isLintDisabled(LintCategory lc) {
+        return isLintExplicitlyDisabled(lc) || isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE);
     }
 
     /**
      * Determine if a specific {@link LintCategory} is explicitly enabled via a custom
-     * option flag of the form {@code -Flag:key}.
+     * option flag of the form {@code -Xlint:key}.
      *
      * <p>
-     * Note: This does not check for option flags of the form {@code -Flag} or {@code -Flag:all}.
+     * Note: This does not check for option flags of the form {@code -Xlint} or {@code -Xlint:all}.
      *
      * <p>
      * Note: It's possible the category was also disabled; this method does not check that.
      *
-     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
      * @param lc the {@link LintCategory} in question
      * @return true if {@code lc} has been explicitly enabled
      */
-    public boolean isExplicitlyEnabled(Option option, LintCategory lc) {
-        Option customOption = option.getCustom();
-        return lc.optionList.stream().anyMatch(alias -> isSet(customOption, alias));
+    public boolean isLintExplicitlyEnabled(LintCategory lc) {
+        return lc.optionList.stream().anyMatch(alias -> isSet(Option.XLINT_CUSTOM, alias));
     }
 
     /**
      * Determine if a specific {@link LintCategory} is explicitly disabled via a custom
-     * option flag of the form {@code -Flag:-key}.
+     * option flag of the form {@code -Xlint:-key}.
      *
      * <p>
-     * Note: This does not check for an option flag of the form {@code -Flag:none}.
+     * Note: This does not check for an option flag of the form {@code -Xlint:none}.
      *
      * <p>
      * Note: It's possible the category was also enabled; this method does not check that.
      *
-     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
      * @param lc the {@link LintCategory} in question
      * @return true if {@code lc} has been explicitly disabled
      */
-    public boolean isExplicitlyDisabled(Option option, LintCategory lc) {
-        Option customOption = option.getCustom();
-        return lc.optionList.stream().anyMatch(alias -> isSet(customOption, "-" + alias));
+    public boolean isLintExplicitlyDisabled(LintCategory lc) {
+        return lc.optionList.stream().anyMatch(alias -> isSet(Option.XLINT_CUSTOM, "-" + alias));
     }
 
     public void put(String name, String value) {
