@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,6 @@
  */
 
 public class MAAThreadStart {
-
-    static {
-        try {
-            System.loadLibrary("MAAThreadStart");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load MAAThreadStart library");
-            System.err.println("java.library.path: "
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
-    }
 
     native static int check();
 
