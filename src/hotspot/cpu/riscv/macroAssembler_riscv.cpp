@@ -1268,12 +1268,19 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 // ----------- cmove, compare float -----------
+//
+// For CmpF/D + CMoveI/L, ordered ones are quite straight and simple,
+// so, just list behaviour of unordered ones as follow.
+//
+// Set dst (CMoveI (Binary cop (CmpF/D op1 op2)) (Binary dst src))
+// (If one or both inputs to the compare are NaN, then)
+//    1. (op1 lt op2) => true  => CMove: dst = src
+//    2. (op1 le op2) => true  => CMove: dst = src
+//    3. (op1 gt op2) => false => CMove: dst = dst
+//    4. (op1 ge op2) => false => CMove: dst = dst
+//    5. (op1 eq op2) => false => CMove: dst = dst
+//    6. (op1 ne op2) => true  => CMove: dst = src
 
-// Move src to dst only if cmp1 == cmp2,
-// otherwise leave dst unchanged, including the case where one of them is NaN.
-// Clarification:
-//   java code      :  cmp1 != cmp2 ? dst : src
-//   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1289,7 +1296,7 @@ void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 != cmp2, including the case of NaN
-    // not jump (i.e. move src to dst) if cmp1 == cmp2
+    // fallthrough (i.e. move src to dst) if cmp1 == cmp2
     float_bne(cmp1, cmp2, no_set);
   } else {
     double_bne(cmp1, cmp2, no_set);
@@ -1298,11 +1305,6 @@ void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// Keep dst unchanged only if cmp1 == cmp2,
-// otherwise move src to dst, including the case where one of them is NaN.
-// Clarification:
-//   java code      :  cmp1 == cmp2 ? dst : src
-//   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1318,7 +1320,7 @@ void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 == cmp2
-    // not jump (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
+    // fallthrough (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
     float_beq(cmp1, cmp2, no_set);
   } else {
     double_beq(cmp1, cmp2, no_set);
@@ -1327,14 +1329,6 @@ void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification
-//   scenario 1:
-//     java code      :  cmp2 < cmp1 ? dst : src
-//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
-//   scenario 2:
-//     java code      :  cmp1 > cmp2 ? dst : src
-//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1350,7 +1344,7 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 > cmp2
-    // not jump (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
     float_bgt(cmp1, cmp2, no_set);
   } else {
     double_bgt(cmp1, cmp2, no_set);
@@ -1359,14 +1353,30 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification
-//   scenario 1:
-//     java code      :  cmp2 <= cmp1 ? dst : src
-//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
-//   scenario 2:
-//     java code      :  cmp1 >= cmp2 ? dst : src
-//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      fle_s(t0, cmp2, cmp1);
+    } else {
+      fle_d(t0, cmp2, cmp1);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 < cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 >= cmp2
+    float_blt(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_blt(cmp1, cmp2, no_set, false, true);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
 void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1382,10 +1392,34 @@ void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Regi
   Label no_set;
   if (is_single) {
     // jump if cmp1 >= cmp2
-    // not jump (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
     float_bge(cmp1, cmp2, no_set);
   } else {
     double_bge(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      flt_s(t0, cmp2, cmp1);
+    } else {
+      flt_d(t0, cmp2, cmp1);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 <= cmp2 or either is NaN
+    // fallthrough (i.e. move src to dst) if cmp1 > cmp2
+    float_ble(cmp1, cmp2, no_set, false, true);
+  } else {
+    double_ble(cmp1, cmp2, no_set, false, true);
   }
   mv(dst, src);
   bind(no_set);
@@ -3739,16 +3773,13 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   bind(L_failure);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
-  ld(t0, Address(xthread, JavaThread::polling_word_offset()));
-  if (acquire) {
-    membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp_reg) {
+  ld(tmp_reg, Address(xthread, JavaThread::polling_word_offset()));
   if (at_return) {
-    bgtu(in_nmethod ? sp : fp, t0, slow_path, /* is_far */ true);
+    bgtu(in_nmethod ? sp : fp, tmp_reg, slow_path, /* is_far */ true);
   } else {
-    test_bit(t0, t0, exact_log2(SafepointMechanism::poll_bit()));
-    bnez(t0, slow_path, true /* is_far */);
+    test_bit(tmp_reg, tmp_reg, exact_log2(SafepointMechanism::poll_bit()));
+    bnez(tmp_reg, slow_path, /* is_far */ true);
   }
 }
 
@@ -3798,7 +3829,7 @@ void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register o
 
 void MacroAssembler::load_reserved(Register dst,
                                    Register addr,
-                                   enum operand_size size,
+                                   Assembler::operand_size size,
                                    Assembler::Aqrl acquire) {
   switch (size) {
     case int64:
@@ -3819,15 +3850,15 @@ void MacroAssembler::load_reserved(Register dst,
 void MacroAssembler::store_conditional(Register dst,
                                        Register new_val,
                                        Register addr,
-                                       enum operand_size size,
+                                       Assembler::operand_size size,
                                        Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      sc_d(dst, new_val, addr, release);
+      sc_d(dst, addr, new_val, release);
       break;
     case int32:
     case uint32:
-      sc_w(dst, new_val, addr, release);
+      sc_w(dst, addr, new_val, release);
       break;
     default:
       ShouldNotReachHere();
@@ -3836,7 +3867,7 @@ void MacroAssembler::store_conditional(Register dst,
 
 
 void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
-                                                 enum operand_size size,
+                                                 Assembler::operand_size size,
                                                  Register shift, Register mask, Register aligned_addr) {
   assert(size == int8 || size == int16, "unsupported operand size");
 
@@ -3866,10 +3897,11 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
-                                          enum operand_size size,
+                                          Assembler::operand_size size,
                                           Assembler::Aqrl acquire, Assembler::Aqrl release,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3902,13 +3934,13 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     notr(scratch1, mask);
     bind(retry);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, retry);
   }
 
@@ -3940,10 +3972,11 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 // failed.
 void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Register new_val,
-                                               enum operand_size size,
+                                               Assembler::operand_size size,
                                                Assembler::Aqrl acquire, Assembler::Aqrl release,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3974,13 +4007,13 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   } else {
     notr(scratch1, mask);
 
-    lr_w(result, aligned_addr, acquire);
+    load_reserved(result, aligned_addr, operand_size::int32, acquire);
     andr(scratch0, result, mask);
     bne(scratch0, expected, fail);
 
     andr(scratch0, result, scratch1); // scratch1 is ~mask
     orr(scratch0, scratch0, new_val);
-    sc_w(scratch0, scratch0, aligned_addr, release);
+    store_conditional(scratch0, scratch0, aligned_addr, operand_size::int32, release);
     bnez(scratch0, fail);
   }
 
@@ -3997,10 +4030,10 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 
 void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Register new_val,
-                             enum operand_size size,
+                             Assembler::operand_size size,
                              Assembler::Aqrl acquire, Assembler::Aqrl release,
                              Register result, bool result_as_bool) {
-  assert(size != int8 && size != int16, "unsupported operand size");
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4058,10 +4091,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 
 void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
                                   Register new_val,
-                                  enum operand_size size,
+                                  Assembler::operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-
+  assert((UseZacas && UseZabha) || (size != int8 && size != int16), "unsupported operand size");
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -4134,7 +4167,7 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 #undef ATOMIC_XCHGU
 
 void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
-                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+                                Assembler::operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
       amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
@@ -4145,6 +4178,12 @@ void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
     case uint32:
       amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       zext(prev, prev, 32);
+      break;
+    case int16:
+      amocas_h(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
+      break;
+    case int8:
+      amocas_b(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     default:
       ShouldNotReachHere();

@@ -480,16 +480,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     public static final BigDecimal TEN =
         ZERO_THROUGH_TEN[10];
 
-    /**
-     * The value 0.1, with a scale of 1.
-     */
-    private static final BigDecimal ONE_TENTH = valueOf(1L, 1);
-
-    /**
-     * The value 0.5, with a scale of 1.
-     */
-    private static final BigDecimal ONE_HALF = valueOf(5L, 1);
-
     // Constructors
 
     /**
@@ -1382,10 +1372,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * by the {@link Double#toString(double)} method.
      *
      * @apiNote This is generally the preferred way to convert a
-     * {@code double} (or {@code float}) into a {@code BigDecimal}, as
+     * {@code double} into a {@code BigDecimal}, as
      * the value returned is equal to that resulting from constructing
      * a {@code BigDecimal} from the result of using {@link
      * Double#toString(double)}.
+     * <p>
+     * While a {@code float} argument {@code v} can be passed to this method,
+     * the result often contains many more trailing digits than the precision
+     * of a {@code float}.
+     * Consider using {@code new BigDecimal(Float.toString(v))} instead.
      *
      * @param  val {@code double} to convert to a {@code BigDecimal}.
      * @return a {@code BigDecimal} whose value is equal to or approximately
@@ -4146,9 +4141,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             int highInt = (int)intCompact / 100;
             int highIntSize = DecimalDigits.stringSize(highInt);
             byte[] buf = new byte[highIntSize + 3];
-            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(highInt, highIntSize, buf);
             buf[highIntSize] = '.';
-            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
+            DecimalDigits.uncheckedPutPairLatin1(buf, highIntSize + 1, lowInt);
             try {
                 return JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException cce) {

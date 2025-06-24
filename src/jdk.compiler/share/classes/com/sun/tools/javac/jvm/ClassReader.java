@@ -1556,6 +1556,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.restrictedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == MTH);
                 sym.flags_field |= RESTRICTED;
+            } else if (proxy.type.tsym.flatName() == syms.requiresIdentityInternalType.tsym.flatName()) {
+                Assert.check(sym.kind == VAR);
+                sym.flags_field |= REQUIRES_IDENTITY;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1572,6 +1575,9 @@ public class ClassReader {
                 }  else if (proxy.type.tsym == syms.restrictedType.tsym) {
                     Assert.check(sym.kind == MTH);
                     sym.flags_field |= RESTRICTED;
+                }  else if (proxy.type.tsym == syms.requiresIdentityType.tsym) {
+                    Assert.check(sym.kind == VAR);
+                    sym.flags_field |= REQUIRES_IDENTITY;
                 }
                 proxies.append(proxy);
             }
@@ -2809,9 +2815,8 @@ public class ClassReader {
             params.append(param);
             if (parameterAnnotations != null) {
                 ParameterAnnotations annotations = parameterAnnotations[annotationIndex];
-                if (annotations != null && annotations.proxies != null
-                        && !annotations.proxies.isEmpty()) {
-                    annotate.normal(new AnnotationCompleter(param, annotations.proxies));
+                if (annotations != null && annotations.proxies != null) {
+                    attachAnnotations(param, annotations.proxies);
                 }
             }
             nameIndexLvt += Code.width(t);

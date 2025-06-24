@@ -446,7 +446,7 @@ void ConstantPool::remove_unshareable_info() {
   if (CDSConfig::is_dumping_final_static_archive()) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
     InstanceKlass* src_holder = src_cp->pool_holder();
-    if (src_holder->is_shared_unregistered_class()) {
+    if (src_holder->defined_by_other_loaders()) {
       // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
       // is already saved during the training run.
       precond(!src_holder->is_loaded());
@@ -484,15 +484,14 @@ static const char* get_type(Klass* k) {
     type = "prim";
   } else {
     InstanceKlass* src_ik = InstanceKlass::cast(src_k);
-    oop loader = src_ik->class_loader();
-    if (loader == nullptr) {
-      type = "boot";
-    } else if (loader == SystemDictionary::java_platform_loader()) {
-      type = "plat";
-    } else if (loader == SystemDictionary::java_system_loader()) {
-      type = "app";
+    if (src_ik->defined_by_boot_loader()) {
+      return "boot";
+    } else if (src_ik->defined_by_platform_loader()) {
+      return "plat";
+    } else if (src_ik->defined_by_app_loader()) {
+      return "app";
     } else {
-      type = "unreg";
+      return "unreg";
     }
   }
 
@@ -1938,18 +1937,20 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
 bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  int k1 = operand_bootstrap_method_ref_index_at(idx1);
-  int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
+  BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
+  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
+  int k1 = e1->bootstrap_method_index();
+  int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
   }
-  int argc = operand_argument_count_at(idx1);
-  if (argc == cp2->operand_argument_count_at(idx2)) {
+  int argc = e1->argument_count();
+  if (argc == e2->argument_count()) {
     for (int j = 0; j < argc; j++) {
-      k1 = operand_argument_index_at(idx1, j);
-      k2 = cp2->operand_argument_index_at(idx2, j);
+      k1 = e1->argument_index(j);
+      k2 = e2->argument_index(j);
       match = compare_entry_to(k1, cp2, k2);
       if (!match) {
         return false;
