@@ -43,17 +43,30 @@ public class TestAccessibleTextBoundaryValue {
         if (at != null) {
             String text = tf.getText();
             int textLength = text.length();
-            String result = at.getBeforeIndex(AccessibleText.CHARACTER, textLength);
 
             System.out.println("Text: \"" + text + "\"");
             System.out.println("Text Length: " + textLength);
+
             System.out.println("Call: getBeforeIndex(CHARACTER, " + textLength + ")");
-            System.out.println("Expected result: '6'");
-            System.out.println("Actual result: '" + result + "'");
-            if (!"6".equals(result)) {
-                throw new RuntimeException("The actual result does not match " +
-                                           "the expected result.");
-            }
+            String result = at.getBeforeIndex(AccessibleText.CHARACTER, textLength);
+            verifyResult("6", result);
+
+            System.out.println("Call: getBeforeIndex(WORD, " + textLength + ")");
+            result = at.getBeforeIndex(AccessibleText.WORD, textLength);
+            verifyResult("Test6", result);
+
+            System.out.println("Call: getBeforeIndex(SENTENCE, " + textLength + ")");
+            result = at.getBeforeIndex(AccessibleText.SENTENCE, textLength);
+            verifyResult("Test4 Test5. ", result);
+        }
+    }
+
+    private static void verifyResult(String expected, String actual) {
+        System.out.println("Expected result: " + expected);
+        System.out.println("Actual result: " + actual);
+        if (!expected.equals(actual)) {
+            throw new RuntimeException("The actual result does not match " +
+                    "the expected result.");
         }
     }
 }
