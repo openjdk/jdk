@@ -1028,7 +1028,7 @@ public final class Collections {
      *  - Singleton Collections
      *
      * There are a large number of collection implementations in this file, and
-     * for the sake of brevity, the following style rules are applied here:
+     * for the sake of brevity, the code generally follows these style rules:
      *
      * 1. Single-line methods are often written with the implementation on the same
      * line as the declaration. Sometimes the braces for a group of such methods
@@ -1037,19 +1037,22 @@ public final class Collections {
      * 2. The wrapper collections change the semantics of the collection interfaces,
      * sometimes in fundamental ways. Thus they shouldn't inherit any default methods
      * provided by the collection interfaces, as they might not support the right semantics.
-     * Put another way, the wrapper collections must override all default methods. (However,
+     * Thus, the wrapper collections generally must override all default methods. (However,
      * it's permitted for a subclass of a wrapper to inherit methods from a wrapper
-     * superclass.) Strictly speaking not every default method need be overridden. However,
-     * given the history of bugs introduced by inheritance of default methods, we have
-     * adopted the simpler, blanket rule of avoiding inheriting any default methods. This
-     * rule is enforced by the test test/jdk/java/util/Collections/Wrappers.java .
+     * superclass.) Strictly speaking not every default method needs to be be overridden.
+     * However, there is a history of bugs caused by inheriting default methods, and the
+     * rules for when a default method must be overridden are subtle and error-prone. Thus
+     * we've adopted the simpler, blanket rule of avoiding inheritance of all default methods.
+     * This rule is enforced by the test test/jdk/java/util/Collections/Wrappers.java .
      *
      * 3. Given the large number of overrides that must be present in many implementations,
      * the @Override annotation is generally not used. For the most part any methods that
-     * aren't declared as proper overrides will be detected through testing.
-     *
-     * (The @Override annotation still occurs in several places in this file. They'll be
+     * are intended to override but are declared improperly will be detected through testing.
+     * (The @Override annotation still occurs in several places in this file. These will be
      * removed over time.)
+     *
+     * 4. Blank lines are included somewhat inconsistently between methods in each wrapper
+     * implementation, but they are often omitted in order to save vertical space.
      */
 
     // Unmodifiable Wrappers

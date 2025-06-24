@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /**
  * @test
  * @run testng Wrappers
- * @summary Ensure Collections wrapping classes provide non-default implementations
+ * @summary Ensures that Collections wrapper classes do not inherit default
+ *          method implementations.
  */
 
 import java.lang.reflect.Method;
@@ -32,17 +33,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
+import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
-import java.util.Queue;
-import java.util.SequencedCollection;
-import java.util.SequencedSet;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.Locale;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -54,20 +48,15 @@ import static org.testng.Assert.assertTrue;
 
 @Test(groups = "unit")
 public class Wrappers {
-    static Object[][] collections;
-    static int total = 0;
+    static int inheritedCount = 0;
 
     @AfterClass
-    public void printTotal() {
-        System.out.println(">>>> Total inherited default methods = " + total);
+    public void printCount() {
+        System.out.println(">>>> Total inherited default methods = " + inheritedCount);
     }
 
     @DataProvider(name="collections")
     public static Object[][] collectionCases() {
-        if (collections != null) {
-            return collections;
-        }
-
         List<Object[]> cases = new ArrayList<>();
         LinkedList<Integer> seedList = new LinkedList<>();
         ArrayList<Integer> seedRandomAccess = new ArrayList<>();
@@ -81,6 +70,7 @@ public class Wrappers {
             seedMap.put(i, i);
         }
 
+        // Unmodifiable collections
         cases.add(new Object[] { Collections.unmodifiableCollection(seedList) });
         cases.add(new Object[] { Collections.unmodifiableSequencedCollection(seedList) });
         cases.add(new Object[] { Collections.unmodifiableList(seedList) });
@@ -90,8 +80,8 @@ public class Wrappers {
         cases.add(new Object[] { Collections.unmodifiableSortedSet(seedSet) });
         cases.add(new Object[] { Collections.unmodifiableNavigableSet(seedSet) });
 
-        // As sets from map also need to be unmodifiable, thus a wrapping
-        // layer exist and should not have default methods
+        // Map views also need to be unmodifiable, thus a wrapping
+        // layer exists and should not inherit default methods
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).entrySet() });
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).values() });
@@ -120,7 +110,7 @@ public class Wrappers {
         cases.add(new Object[] { Collections.unmodifiableNavigableMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.unmodifiableNavigableMap(seedMap).values() });
 
-        // Synchronized
+        // Synchronized collections
         cases.add(new Object[] { Collections.synchronizedCollection(seedList) });
         cases.add(new Object[] { Collections.synchronizedList(seedList) });
         cases.add(new Object[] { Collections.synchronizedList(seedRandomAccess) });
@@ -128,8 +118,8 @@ public class Wrappers {
         cases.add(new Object[] { Collections.synchronizedSortedSet(seedSet) });
         cases.add(new Object[] { Collections.synchronizedNavigableSet(seedSet) });
 
-        // As sets from map also need to be synchronized on the map, thus a
-        // wrapping layer exist and should not have default methods
+        // Map views also need to be synchronized on the map, thus a
+        // wrapping layer exists and should not inherit default methods
         cases.add(new Object[] { Collections.synchronizedMap(seedMap).entrySet() });
         cases.add(new Object[] { Collections.synchronizedMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.synchronizedMap(seedMap).values() });
@@ -140,7 +130,7 @@ public class Wrappers {
         cases.add(new Object[] { Collections.synchronizedNavigableMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.synchronizedNavigableMap(seedMap).values() });
 
-        // Checked
+        // Checked collections
         cases.add(new Object[] { Collections.checkedCollection(seedList, Integer.class) });
         cases.add(new Object[] { Collections.checkedList(seedList, Integer.class) });
         cases.add(new Object[] { Collections.checkedList(seedRandomAccess, Integer.class) });
@@ -152,65 +142,29 @@ public class Wrappers {
         // asLifoQueue is another wrapper
         cases.add(new Object[] { Collections.asLifoQueue(seedList) });
 
-        collections = cases.toArray(new Object[0][]);
-        return collections;
+        return cases.toArray(new Object[0][]);
     }
-
-    static Method[] defaultMethods;
-
-    static final List<Class<?>> interfaces = List.of(
-        Iterable.class,
-        Collection.class,
-        SequencedCollection.class,
-        List.class,
-        Set.class,
-        SequencedSet.class,
-        SortedSet.class,
-        NavigableSet.class,
-        Queue.class,
-        Deque.class);
-
-    static final Map<Class<?>, List<Method>> defaultMethodMap = new HashMap<>();
-
-    static {
-        for (var intf : interfaces) {
-            List<Method> list = new ArrayList<>();
-            Method[] methods = intf.getMethods();
-            for (Method m: methods) {
-                if (m.isDefault()) {
-                    list.add(m);
-                }
-            }
-            defaultMethodMap.put(intf, list);
-        }
-    }
-
-//    @Test(dataProvider = "collections")
-//    public static void testAllDefaultMethodsOverridden(Collection c) throws NoSuchMethodException {
-//        Class cls = c.getClass();
-//        var notOverridden = new ArrayList<Method>();
-//        for (var entry : defaultMethodMap.entrySet()) {
-//            if (entry.getKey().isInstance(c)) {
-//                for (Method m : entry.getValue()) {
-//                    Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
-//                    if (m2.isDefault()) {
-//                        notOverridden.add(m);
-//                    }
-//                }
-//            }
-//        }
-//        total += notOverridden.size();
-//        assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
-//    }
 
     @Test(dataProvider = "collections")
-    public static void testNoDefaultMethodsInherited(Collection c) {
+    public static void testNoDefaultMethodsInherited(Collection<?> c) {
         List<Method> inherited = Arrays.stream(c.getClass().getMethods())
                                        .filter(Method::isDefault)
                                        .toList();
-        total += inherited.size();
-        assertTrue(inherited.isEmpty(),
-                   c.getClass().getName() + " inherited default method " + inherited);
+        inheritedCount += inherited.size();
+        assertTrue(inherited.isEmpty(), generateReport(c, inherited));
+    }
+
+    static String generateReport(Collection<?> c, List<Method> inherited) {
+        if (inherited.isEmpty()) {
+            return "";
+        }
+
+        var f = new Formatter();
+        f.format("%s inherits the following:%n", c.getClass().getName());
+        for (int i = 0; i < inherited.size(); i++) {
+            f.format("  %d. %s%n", i+1, inherited.get(i));
+        }
+        return f.toString();
     }
 }
 
