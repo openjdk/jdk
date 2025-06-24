@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.c2.gvn;
 
 import compiler.lib.ir_framework.*;
 
@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Tests that count bits nodes are handled correctly.
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.TestCountBitsRange
+ * @run driver compiler.c2.gvn.TestCountBitsRange
  */
 public class TestCountBitsRange {
     public static void main(String[] args) {
