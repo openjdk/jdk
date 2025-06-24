@@ -46,6 +46,7 @@ import sun.security.util.Debug;
 import sun.security.x509.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static sun.security.ssl.Utilities.LINE_SEP;
 
 /**
  * Implementation of SSL logger.
@@ -60,7 +61,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
-    private static final String LINE_SEP = System.lineSeparator();
     public static final boolean isOn;
 
 

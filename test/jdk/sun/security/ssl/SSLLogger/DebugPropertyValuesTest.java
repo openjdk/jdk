@@ -83,10 +83,10 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("javax.net.debug.logger",
                 List.of("FINE: adding as trusted certificates:"
                             + System.lineSeparator() +
-                            "  \"certificate\" : \\{" + System.lineSeparator(),
+                            "  \"certificate\" : \\{",
                         "FINE: Produced ClientHello handshake message:" +
                             System.lineSeparator() +
-                            "\"ClientHello\": \\{" + System.lineSeparator(),
+                            "\"ClientHello\": \\{",
                         "FINE: WRITE: TLSv1.3 application_data"));
     }
 
