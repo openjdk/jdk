@@ -34,7 +34,7 @@ import java.lang.management.ThreadMXBean;
  * @test
  * @bug 8318757
  * @summary Test concurrent monitor deflation by MonitorDeflationThread and thread dumping
- * @library /test/lib /
+ * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedAsyncDeflationInterval=2000 -XX:+WhiteBoxAPI ConcurrentDeflation

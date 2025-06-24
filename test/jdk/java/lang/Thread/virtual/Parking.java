@@ -62,7 +62,6 @@ import java.util.concurrent.locks.LockSupport;
 import jdk.test.lib.thread.VThreadRunner;
 import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
