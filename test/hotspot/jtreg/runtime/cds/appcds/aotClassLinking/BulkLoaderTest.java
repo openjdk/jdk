@@ -29,8 +29,6 @@
 /*
  * @test id=static
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
@@ -45,8 +43,6 @@
 /*
  * @test id=dynamic
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
@@ -61,8 +57,6 @@
 /*
  * @test id=aot
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build jdk.test.whitebox.WhiteBox InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build BulkLoaderTest SimpleCusty
@@ -78,6 +72,7 @@ import java.io.File;
 import java.lang.StackWalker.StackFrame;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -110,6 +105,7 @@ public class BulkLoaderTest {
 
         // Run without archived FMG -- fail to load
         {
+            final String archiveType = (args[0].equals("AOT")) ? "AOT cache" : "shared archive file";
             String extraVmArgs[] = {
                 "-Xlog:cds",
                 "-Djdk.module.showModuleResolution=true"
@@ -117,7 +113,7 @@ public class BulkLoaderTest {
             t.setCheckExitValue(false);
             OutputAnalyzer out = t.productionRun(extraVmArgs);
             out.shouldHaveExitValue(1);
-            out.shouldContain("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+            out.shouldContain(archiveType + " has aot-linked classes. It cannot be used when archived full module graph is not used.");
             t.setCheckExitValue(true);
         }
     }
@@ -136,7 +132,7 @@ public class BulkLoaderTest {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds,cds+aot+load,cds+class=debug",
+                "-Xlog:cds,aot+load,cds+class=debug,aot+class=debug",
                 "-XX:+AOTClassLinking",
             };
         }
@@ -157,7 +153,7 @@ public class BulkLoaderTest {
 
             if (isDumping(runMode)) {
                 // Check that we are archiving classes for custom class loaders.
-                out.shouldMatch("cds,class.* SimpleCusty");
+                out.shouldMatch(",class.* SimpleCusty");
             }
         }
     }
@@ -317,12 +313,15 @@ class BulkLoaderTestApp {
         }
     }
 
+    static ArrayList<ClassLoader> savedLoaders = new ArrayList<>();
+
     static Object initFromCustomLoader() throws Exception {
         String path = "cust.jar";
         URL url = new File(path).toURI().toURL();
         URL[] urls = new URL[] {url};
         URLClassLoader urlClassLoader =
             new URLClassLoader("MyLoader", urls, null);
+        savedLoaders.add(urlClassLoader);
         Class c = Class.forName("SimpleCusty", true, urlClassLoader);
         return c.newInstance();
     }

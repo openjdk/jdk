@@ -26,8 +26,6 @@
  * @test Do not cache classes that are loaded from a fake location.
  * @bug 8352001
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build FakeCodeLocation
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar FakeCodeLocationApp
@@ -73,7 +71,9 @@ public class FakeCodeLocation {
         @Override
         public String[] vmArgs(RunMode runMode) {
             String[] args = new String[] {
+                "-Xlog:aot",
                 "-Xlog:cds",
+                "-Xlog:aot+class=debug",
                 "-Xlog:cds+class=debug",
                 "-Xlog:class+load",
             };
@@ -94,9 +94,9 @@ public class FakeCodeLocation {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isDumping(runMode)) {
-                out.shouldMatch("cds,class.* FakeCodeLocationApp");
-                out.shouldNotMatch("cds,class.* ClassNotInJar1");
-                out.shouldNotMatch("cds,class.* ClassNotInJar2");
+                out.shouldMatch(",class.* FakeCodeLocationApp");
+                out.shouldNotMatch(",class.* ClassNotInJar1");
+                out.shouldNotMatch(",class.* ClassNotInJar2");
             }
 
             if (runMode.isProductionRun()) {

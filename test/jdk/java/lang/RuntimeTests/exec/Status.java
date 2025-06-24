@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @bug 4763362
  * @summary Ensure that Process.waitFor returns the correct status code
  *          even for very short-running subprocesses
+ * @requires (os.family == "linux")
  */
 
 
@@ -35,10 +36,6 @@ public class Status {
     public static void main(String args[])
         throws Exception
     {
-        if (!System.getProperty("os.name").equals("Linux")) {
-            System.out.println("Only for Linux");
-            return;
-        }
         UnixCommands.ensureCommandsAvailable("false");
 
         final String falseCmd = UnixCommands.findCommand("false");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,17 @@
 
 import jdk.internal.util.ArraysSupport;
 
+import java.util.Arrays;
+
 /**
  * @test
- * @bug 8149330 8218227
+ * @bug 8149330 8218227 8351443
  * @summary Capacity should not get close to Integer.MAX_VALUE unless
  *          necessary
  * @modules java.base/jdk.internal.util
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 8G)
- * @run main/othervm -Xms6G -Xmx6G -XX:+CompactStrings HugeCapacity true
- * @run main/othervm -Xms6G -Xmx6G -XX:-CompactStrings HugeCapacity false
+ * @run main/othervm -Xms8G -Xmx8G -XX:-CompactStrings -Xlog:gc HugeCapacity false
+ * @run main/othervm -Xms8G -Xmx8G -XX:+CompactStrings -Xlog:gc HugeCapacity true
  */
 
 public class HugeCapacity {
@@ -47,6 +49,7 @@ public class HugeCapacity {
         testUtf16();
         testHugeInitialString();
         testHugeInitialCharSequence();
+        testHugePlus(isCompact);
         if (failures > 0) {
             throw new RuntimeException(failures + " tests failed");
         }
@@ -107,5 +110,24 @@ public class HugeCapacity {
             throw new UnsupportedOperationException();
         }
         public String toString() { return ""; }
+    }
+
+    // Test creating and appending the max size string for -XX:+CompactStrings and -XX:-CompactStrings
+    private static void testHugePlus(boolean isCompact) {
+        int repeatCount = (isCompact) ? Integer.MAX_VALUE / 2 - 1 : Integer.MAX_VALUE / 4 - 1;
+        char[] chars = new char[repeatCount];
+        char[] aChar = {'A', '\uff21'};
+        for (char ch : aChar) {
+            try {
+                int size = (ch > 0xff) ? repeatCount / 2 : repeatCount;
+                Arrays.fill(chars, 0, size, ch);
+                StringBuilder b = new StringBuilder(0);
+                b.append(chars, 0, size);
+                b.append(chars, 0, size);
+            } catch (Throwable unexpected) {
+                unexpected.printStackTrace();
+                failures++;
+            }
+        }
     }
 }

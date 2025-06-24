@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -716,7 +716,7 @@ public final class StackMapGenerator {
             case TAG_METHOD_TYPE ->
                 currentFrame.pushStack(Type.METHOD_TYPE);
             case TAG_DYNAMIC ->
-                currentFrame.pushStack(cp.entryByIndex(index, ConstantDynamicEntry.class).asSymbol().constantType());
+                currentFrame.pushStack(cp.entryByIndex(index, ConstantDynamicEntry.class).typeSymbol());
             default ->
                 throw generatorError("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
         }

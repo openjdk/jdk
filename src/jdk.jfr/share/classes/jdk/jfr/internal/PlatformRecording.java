@@ -172,7 +172,7 @@ public final class PlatformRecording implements AutoCloseable {
                 dumpStopped(dest);
                 Logger.log(LogTag.JFR, LogLevel.INFO, "Wrote recording \"" + getName() + "\" (" + getId() + ") to " + dest.getRealPathText());
                 notifyIfStateChanged(newState, oldState);
-                boolean reportOnExit = recorder.isInShutDown() && !reports.isEmpty();
+                boolean reportOnExit = PlatformRecorder.isInShutDown() && !reports.isEmpty();
                 if (!reportOnExit) {
                     close(); // remove if copied out, unless we are in shutdown and there are reports to report.
                 }

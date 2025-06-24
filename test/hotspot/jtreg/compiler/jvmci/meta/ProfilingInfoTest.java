@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @requires vm.compMode != "Xcomp"
  * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel > 1
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler -Xbootclasspath/a:. compiler.jvmci.meta.ProfilingInfoTest
  */
@@ -47,6 +48,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
+import jdk.vm.ci.hotspot.HotSpotProfilingInfo;
 import jdk.vm.ci.meta.JavaTypeProfile;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ProfilingInfo;
@@ -203,6 +205,15 @@ public class ProfilingInfoTest {
         resetProfile(testSnippet);
         typeProfile = info.getTypeProfile(bci);
         Assert.assertNull(typeProfile);
+
+        // Basic test that the counters are non-negative
+        HotSpotProfilingInfo hsInfo = (HotSpotProfilingInfo) info;
+        int count = hsInfo.getDecompileCount();
+        Assert.assertTrue("count = " + count, count >= 0);
+        count = hsInfo.getOverflowRecompileCount();
+        Assert.assertTrue("count = " + count, count >= 0);
+        count = hsInfo.getOverflowTrapCount();
+        Assert.assertTrue("count = " + count, count >= 0);
     }
 
     public ProfilingInfoTest() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,8 +634,8 @@ public abstract class Charset
      * upon the locale and charset of the underlying operating system.
      *
      * @return  A charset object for the default charset
-     * @see <a href="../../lang/System.html#file.encoding">file.encoding</a>
-     * @see <a href="../../lang/System.html#native.encoding">native.encoding</a>
+     * @see System##file.encoding file.encoding
+     * @see System##native.encoding native.encoding
      *
      * @since 1.5
      */

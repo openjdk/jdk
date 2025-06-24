@@ -117,7 +117,7 @@ public class XBaseWindow {
 
     // internal lock for synchronizing state changes and paint calls, initialized in preInit.
     // the order with other locks: AWTLock -> stateLock
-    static class StateLock { }
+    static final class StateLock { }
     protected StateLock state_lock;
 
     /**
@@ -1235,6 +1235,7 @@ public class XBaseWindow {
         }
         return (XWindowPeer)bw;
     }
+    @Override
     public String toString() {
         return super.toString() + "(" + Long.toString(getWindow(), 16) + ")";
     }

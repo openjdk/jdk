@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,15 +78,16 @@ public abstract class SocketImpl implements SocketOptions {
     public SocketImpl() { }
 
     /**
-     * Creates either a stream or a datagram socket.
+     * Creates a stream socket.
      *
      * @apiNote
-     * The {@link Socket} constructors to create a datagram socket
-     * are deprecated for removal. This method will be re-specified
-     * in a future release to not support creating datagram sockets.
+     * The {@code stream} parameter provided a way in early JDK releases
+     * to create a {@link Socket} that used a datagram socket.
+     * The Socket API no longer provides a way to do this, so the
+     * {@code create} method will always be called with a {@code stream}
+     * value of {@code true}.
      *
-     * @param      stream   if {@code true}, create a stream socket;
-     *                      otherwise, create a datagram socket.
+     * @param      stream   must be {@code true}.
      * @throws     IOException  if an I/O error occurs while creating the
      *               socket.
      */

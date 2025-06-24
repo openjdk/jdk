@@ -37,19 +37,6 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_processed_classes = nullptr;
-
-void AOTConstantPoolResolver::initialize() {
-  assert(_processed_classes == nullptr, "must be");
-  _processed_classes = new (mtClass)ClassesTable();
-}
-
-void AOTConstantPoolResolver::dispose() {
-  assert(_processed_classes != nullptr, "must be");
-  delete _processed_classes;
-  _processed_classes = nullptr;
-}
-
 // Returns true if we CAN PROVE that cp_index will always resolve to
 // the same information at both dump time and run time. This is a
 // necessary (but not sufficient) condition for pre-resolving cp_index
@@ -144,17 +131,11 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   }
 }
 
-void AOTConstantPoolResolver::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
+void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TRAPS) {
   if (!ik->is_linked()) {
+    // The cp->resolved_referenced() array is not ready yet, so we can't call resolve_string().
     return;
   }
-  bool first_time;
-  _processed_classes->put_if_absent(ik, &first_time);
-  if (!first_time) {
-    // We have already resolved the constants in class, so no need to do it again.
-    return;
-  }
-
   constantPoolHandle cp(THREAD, ik->constants());
   for (int cp_index = 1; cp_index < cp->length(); cp_index++) { // Index 0 is unused
     switch (cp->tag_at(cp_index).value()) {
@@ -223,7 +204,7 @@ void AOTConstantPoolResolver::preresolve_class_cp_entries(JavaThread* current, I
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION; // just ignore
       } else {
-        log_trace(cds, resolve)("Resolved class  [%3d] %s -> %s", cp_index, ik->external_name(),
+        log_trace(aot, resolve)("Resolved class  [%3d] %s -> %s", cp_index, ik->external_name(),
                                 resolved_klass->external_name());
       }
     }
@@ -311,12 +292,12 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     ShouldNotReachHere();
   }
 
-  if (log_is_enabled(Trace, cds, resolve)) {
+  if (log_is_enabled(Trace, aot, resolve)) {
     ResourceMark rm(THREAD);
     bool resolved = cp->is_resolved(raw_index, bc);
     Symbol* name = cp->name_ref_at(raw_index, bc);
     Symbol* signature = cp->signature_ref_at(raw_index, bc);
-    log_trace(cds, resolve)("%s %s [%3d] %s -> %s.%s:%s",
+    log_trace(aot, resolve)("%s %s [%3d] %s -> %s.%s:%s",
                             (resolved ? "Resolved" : "Failed to resolve"),
                             Bytecodes::name(bc), cp_index, ik->external_name(),
                             resolved_klass->external_name(),
@@ -345,9 +326,9 @@ void AOTConstantPoolResolver::preresolve_indy_cp_entries(JavaThread* current, In
           CLEAR_PENDING_EXCEPTION; // just ignore
         }
       }
-      if (log_is_enabled(Trace, cds, resolve)) {
+      if (log_is_enabled(Trace, aot, resolve)) {
         ResourceMark rm(THREAD);
-        log_trace(cds, resolve)("%s indy   [%3d] %s",
+        log_trace(aot, resolve)("%s indy   [%3d] %s",
                                 rie->is_resolved() ? "Resolved" : "Failed to resolve",
                                 cp_index, ik->external_name());
       }
@@ -369,9 +350,9 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
       }
 
       if (SystemDictionaryShared::should_be_excluded(k)) {
-        if (log_is_enabled(Warning, cds, resolve)) {
+        if (log_is_enabled(Warning, aot, resolve)) {
           ResourceMark rm;
-          log_warning(cds, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
+          log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
         }
         return false;
       }
@@ -402,41 +383,41 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
   // as <clinit> can have side effects ==> exclude such cases.
   InstanceKlass* intf = InstanceKlass::cast(k);
   bool exclude = intf->interface_needs_clinit_execution_as_super();
-  if (log_is_enabled(Debug, cds, resolve)) {
+  if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
-    log_debug(cds, resolve)("%s aot-resolve Lambda proxy of interface type %s",
+    log_debug(aot, resolve)("%s aot-resolve Lambda proxy of interface type %s",
                             exclude ? "Cannot" : "Can", k->external_name());
   }
   return !exclude;
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mt_index = cp->operand_argument_index_at(bsms_attribute_index, arg_i);
+  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
     return false;
   }
 
   Symbol* sig = cp->method_type_signature_at(mt_index);
-  if (log_is_enabled(Debug, cds, resolve)) {
+  if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
-    log_debug(cds, resolve)("Checking MethodType for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
+    log_debug(aot, resolve)("Checking MethodType for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
 
   return check_methodtype_signature(cp, sig);
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mh_index = cp->operand_argument_index_at(bsms_attribute_index, arg_i);
+  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
     return false;
   }
 
   Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
-  if (log_is_enabled(Debug, cds, resolve)) {
+  if (log_is_enabled(Debug, aot, resolve)) {
     ResourceMark rm;
-    log_debug(cds, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
+    log_debug(aot, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
   return check_methodtype_signature(cp, sig);
 }
@@ -471,9 +452,9 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
                              "[Ljava/lang/Object;"
                             ")Ljava/lang/invoke/CallSite;")) {
     Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
-    if (log_is_enabled(Debug, cds, resolve)) {
+    if (log_is_enabled(Debug, aot, resolve)) {
       ResourceMark rm;
-      log_debug(cds, resolve)("Checking StringConcatFactory callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
+      log_debug(aot, resolve)("Checking StringConcatFactory callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
     }
 
     Klass* k;
@@ -523,9 +504,9 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
      *                                {@code interfaceMethodType}.
      */
     Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
-    if (log_is_enabled(Debug, cds, resolve)) {
+    if (log_is_enabled(Debug, aot, resolve)) {
       ResourceMark rm;
-      log_debug(cds, resolve)("Checking indy callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
+      log_debug(aot, resolve)("Checking lambda callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
     }
 
     if (!check_lambda_metafactory_signature(cp, factory_type_sig)) {
@@ -533,7 +514,7 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     }
 
     int bsms_attribute_index = cp->bootstrap_methods_attribute_index(cp_index);
-    int arg_count = cp->operand_argument_count_at(bsms_attribute_index);
+    int arg_count = cp->bsm_attribute_entry(bsms_attribute_index)->argument_count();
     if (arg_count != 3) {
       // Malformed class?
       return false;

@@ -1160,7 +1160,7 @@ void Universe::print_on(outputStream* st) {
   GCMutexLocker hl(Heap_lock); // Heap_lock might be locked by caller thread.
   st->print_cr("Heap");
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   heap()->print_heap_on(st);
   MetaspaceUtils::print_on(st);
 }

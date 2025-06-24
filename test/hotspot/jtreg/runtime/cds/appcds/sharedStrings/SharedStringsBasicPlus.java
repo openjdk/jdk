@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class SharedStringsBasicPlus {
         SharedStringsUtils.buildJarAndWhiteBox("HelloStringPlus");
 
         SharedStringsUtils.dumpWithWhiteBox( TestCommon.list("HelloStringPlus"),
-            "SharedStringsBasic.txt", "-Xlog:cds,cds+hashtables");
+            "SharedStringsBasic.txt", "-Xlog:cds,aot+hashtables");
 
         SharedStringsUtils.runWithArchiveAndWhiteBox("HelloStringPlus");
     }

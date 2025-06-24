@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.UserPrincipal;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -239,7 +239,7 @@ class UnixFileAttributes
     @Override
     public Set<PosixFilePermission> permissions() {
         int bits = (st_mode & UnixConstants.S_IAMB);
-        HashSet<PosixFilePermission> perms = new HashSet<>();
+        EnumSet<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
 
         if ((bits & UnixConstants.S_IRUSR) > 0)
             perms.add(PosixFilePermission.OWNER_READ);

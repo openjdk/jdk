@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public final class EdDSAPrivateKeyImpl
 
         DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
-            this.key = val.toByteArray();
+            privKeyMaterial = val.toByteArray();
         } finally {
             val.clear();
         }
@@ -71,7 +71,7 @@ public final class EdDSAPrivateKeyImpl
         paramSpec = new NamedParameterSpec(params.getName());
 
         try {
-            DerInputStream derStream = new DerInputStream(key);
+            DerInputStream derStream = new DerInputStream(privKeyMaterial);
             h = derStream.getOctetString();
         } catch (IOException ex) {
             throw new InvalidKeyException(ex);
@@ -81,8 +81,8 @@ public final class EdDSAPrivateKeyImpl
 
     void checkLength(EdDSAParameters params) throws InvalidKeyException {
 
-        if (params.getKeyLength() != this.h.length) {
-            throw new InvalidKeyException("key length is " + this.h.length +
+        if (params.getKeyLength() != h.length) {
+            throw new InvalidKeyException("key length is " + h.length +
                 ", key length must be " + params.getKeyLength());
         }
     }

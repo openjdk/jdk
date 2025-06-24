@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import static com.sun.tools.javac.main.Option.*;
 
@@ -168,6 +169,58 @@ public class Options {
      */
     public boolean isUnset(Option option, String value) {
         return !isSet(option, value);
+    }
+
+    /**
+     * Check whether the given lint category is explicitly enabled or disabled.
+     *
+     * <p>
+     * If the category is neither enabled nor disabled, return the given default value.
+     *
+     * @param option the plain (non-custom) option
+     * @param lc the {@link LintCategory} in question
+     * @param defaultValue presumed default value
+     * @return true if {@code lc} would be included
+     */
+    public boolean isSet(Option option, LintCategory lc, boolean defaultValue) {
+        Option customOption = option.getCustom();
+        if (lc.optionList.stream().anyMatch(alias -> isSet(customOption, alias))) {
+            return true;
+        }
+        if (lc.optionList.stream().anyMatch(alias -> isSet(customOption, "-" + alias))) {
+            return false;
+        }
+        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
+            return true;
+        }
+        if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
+            return false;
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} was explicitly enabled via a custom option flag
+     * of the form {@code -Flag:all} or {@code -Flag:key}.
+     *
+     * @param option the option
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been explicitly enabled
+     */
+    public boolean isExplicitlyEnabled(Option option, LintCategory lc) {
+        return isSet(option, lc, false);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} was explicitly disabled via a custom option flag
+     * of the form {@code -Flag:none} or {@code -Flag:-key}.
+     *
+     * @param option the option
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been explicitly disabled
+     */
+    public boolean isExplicitlyDisabled(Option option, LintCategory lc) {
+        return !isSet(option, lc, true);
     }
 
     public void put(String name, String value) {

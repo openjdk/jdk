@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,7 +524,7 @@ public abstract class Snippet {
 
         /**
          * The snippet is inactive because it does not yet exist.
-         * Used only in {@link SnippetEvent#previousStatus} for new
+         * Used only in {@link SnippetEvent#previousStatus()} for new
          * snippets.
          * {@link jdk.jshell.JShell#status(jdk.jshell.Snippet) JShell.status(Snippet)}
          * will never return this {@code Status}.

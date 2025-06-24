@@ -34,7 +34,7 @@ import sun.util.logging.PlatformLogger;
 /**
  * Small utility class to manage FontConfig.
  */
-public class FontConfigManager {
+public final class FontConfigManager {
 
     static boolean fontConfigFailed = false;
 
@@ -47,14 +47,14 @@ public class FontConfigManager {
 
     /* These next three classes are just data structures.
      */
-    public static class FontConfigFont {
+    public static final class FontConfigFont {
         public String familyName;        // eg Bitstream Vera Sans
         public String styleStr;          // eg Bold
         public String fullName;          // eg Bitstream Vera Sans Bold
         public String fontFile;          // eg /usr/X11/lib/fonts/foo.ttf
     }
 
-    public static class FcCompFont {
+    public static final class FcCompFont {
         public String fcName;            // eg sans
         public String fcFamily;          // eg sans
         public String jdkName;           // eg sansserif
@@ -65,7 +65,7 @@ public class FontConfigManager {
         public CompositeFont compFont;   // null if not yet created/known.
     }
 
-    public static class FontConfigInfo {
+    public static final class FontConfigInfo {
         public int fcVersion;
         public String[] cacheDirs = new String[4];
     }

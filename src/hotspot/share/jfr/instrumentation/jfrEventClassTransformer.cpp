@@ -24,41 +24,35 @@
 
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/verificationType.hpp"
 #include "interpreter/bytecodes.hpp"
-#include "jvm.h"
+#include "jfr/instrumentation/jfrClassTransformer.hpp"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/support/jfrAnnotationElementIterator.hpp"
+#include "jfr/support/jfrAnnotationIterator.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
-#include "jfr/utilities/jfrBigEndian.hpp"
 #include "jfr/writers/jfrBigEndianWriter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
-#include "oops/constMethod.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
-#include "prims/jvmtiRedefineClasses.hpp"
-#include "prims/jvmtiThreadState.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/os.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 static const u2 number_of_new_methods = 5;
@@ -166,217 +160,22 @@ static u1 boolean_method_code_attribute[] = {
   0x0, // attributes_count
 };
 
-/*
-  Annotation layout.
-
-  enum {  // initial annotation layout
-    atype_off = 0,      // utf8 such as 'Ljava/lang/annotation/Retention;'
-    count_off = 2,      // u2   such as 1 (one value)
-    member_off = 4,     // utf8 such as 'value'
-    tag_off = 6,        // u1   such as 'c' (type) or 'e' (enum)
-    e_tag_val = 'e',
-    e_type_off = 7,   // utf8 such as 'Ljava/lang/annotation/RetentionPolicy;'
-    e_con_off = 9,    // utf8 payload, such as 'SOURCE', 'CLASS', 'RUNTIME'
-    e_size = 11,     // end of 'e' annotation
-    c_tag_val = 'c',    // payload is type
-    c_con_off = 7,    // utf8 payload, such as 'I'
-    c_size = 9,       // end of 'c' annotation
-    s_tag_val = 's',    // payload is String
-    s_con_off = 7,    // utf8 payload, such as 'Ljava/lang/String;'
-    s_size = 9,
-    min_size = 6        // smallest possible size (zero members)
-  };
-*/
-
-static int skip_annotation_value(const address, int, int); // fwd decl
-
-// Skip an annotation.  Return >=limit if there is any problem.
-static int next_annotation_index(const address buffer, int limit, int index) {
-  assert(buffer != nullptr, "invariant");
-  index += 2;  // skip atype
-  if ((index += 2) >= limit) {
-    return limit;
-  }
-  int nof_members = JfrBigEndian::read<int, u2>(buffer + index - 2);
-  while (--nof_members >= 0 && index < limit) {
-    index += 2; // skip member
-    index = skip_annotation_value(buffer, limit, index);
-  }
-  return index;
+static JfrAnnotationElementIterator elements_iterator(const InstanceKlass* ik, const JfrAnnotationIterator& it) {
+  const address buffer = it.buffer();
+  int current = it.current();
+  int next = it.next();
+  assert(current < next, "invariant");
+  return JfrAnnotationElementIterator(ik, buffer + current, next - current);
 }
-
-// Skip an annotation value.  Return >=limit if there is any problem.
-static int skip_annotation_value(const address buffer, int limit, int index) {
-  assert(buffer != nullptr, "invariant");
-  // value := switch (tag:u1) {
-  //   case B, C, I, S, Z, D, F, J, c: con:u2;
-  //   case e: e_class:u2 e_name:u2;
-  //   case s: s_con:u2;
-  //   case [: do(nval:u2) {value};
-  //   case @: annotation;
-  //   case s: s_con:u2;
-  // }
-  if ((index += 1) >= limit) {
-    return limit;
-  }
-  const u1 tag = buffer[index - 1];
-  switch (tag) {
-    case 'B':
-    case 'C':
-    case 'I':
-    case 'S':
-    case 'Z':
-    case 'D':
-    case 'F':
-    case 'J':
-    case 'c':
-    case 's':
-      index += 2;  // skip con or s_con
-      break;
-    case 'e':
-      index += 4;  // skip e_class, e_name
-      break;
-    case '[':
-      {
-        if ((index += 2) >= limit) {
-          return limit;
-        }
-        int nof_values = JfrBigEndian::read<int, u2>(buffer + index - 2);
-        while (--nof_values >= 0 && index < limit) {
-          index = skip_annotation_value(buffer, limit, index);
-        }
-      }
-      break;
-    case '@':
-      index = next_annotation_index(buffer, limit, index);
-      break;
-    default:
-      return limit;  //  bad tag byte
-  }
-  return index;
-}
-
-static constexpr const int number_of_elements_offset = 2;
-static constexpr const int element_name_offset = number_of_elements_offset + 2;
-static constexpr const int element_name_size = 2;
-static constexpr const int value_type_relative_offset = 2;
-static constexpr const int value_relative_offset = value_type_relative_offset + 1;
-
-// see JVMS - 4.7.16. The RuntimeVisibleAnnotations Attribute
-
-class AnnotationElementIterator : public StackObj {
- private:
-  const InstanceKlass* _ik;
-  const address _buffer;
-  const int _limit; // length of annotation
-  mutable int _current; // element
-  mutable int _next; // element
-
-  int value_index() const {
-    return JfrBigEndian::read<int, u2>(_buffer + _current + value_relative_offset);
-  }
-
- public:
-  AnnotationElementIterator(const InstanceKlass* ik, address buffer, int limit) : _ik(ik),
-                                                                                  _buffer(buffer),
-                                                                                  _limit(limit),
-                                                                                  _current(element_name_offset),
-                                                                                  _next(element_name_offset) {
-    assert(_buffer != nullptr, "invariant");
-    assert(_next == element_name_offset, "invariant");
-    assert(_current == element_name_offset, "invariant");
-  }
-
-  bool has_next() const {
-    return _next < _limit;
-  }
-
-  void move_to_next() const {
-    assert(has_next(), "invariant");
-    _current = _next;
-    if (_next < _limit) {
-      _next = skip_annotation_value(_buffer, _limit, _next + element_name_size);
-    }
-    assert(_next <= _limit, "invariant");
-    assert(_current <= _limit, "invariant");
-  }
-
-  int number_of_elements() const {
-    return JfrBigEndian::read<int, u2>(_buffer + number_of_elements_offset);
-  }
-
-  const Symbol* name() const {
-    assert(_current < _next, "invariant");
-    return _ik->constants()->symbol_at(JfrBigEndian::read<int, u2>(_buffer + _current));
-  }
-
-  char value_type() const {
-    return JfrBigEndian::read<char, u1>(_buffer + _current + value_type_relative_offset);
-  }
-
-  jint read_int() const {
-    return _ik->constants()->int_at(value_index());
-  }
-
-  bool read_bool() const {
-    return read_int() != 0;
-  }
-};
-
-class AnnotationIterator : public StackObj {
- private:
-  const InstanceKlass* _ik;
-  // ensure _limit field is declared before _buffer
-  int _limit; // length of annotations array
-  const address _buffer;
-  mutable int _current; // annotation
-  mutable int _next; // annotation
-
- public:
-  AnnotationIterator(const InstanceKlass* ik, AnnotationArray* ar) : _ik(ik),
-                                                                     _limit(ar != nullptr ? ar->length() : 0),
-                                                                     _buffer(_limit > 2 ? ar->adr_at(2) : nullptr),
-                                                                     _current(0),
-                                                                     _next(0) {
-    if (_limit >= 2) {
-      _limit -= 2; // subtract sizeof(u2) number of annotations field
-    }
-  }
-  bool has_next() const {
-    return _next < _limit;
-  }
-
-  void move_to_next() const {
-    assert(has_next(), "invariant");
-    _current = _next;
-    if (_next < _limit) {
-      _next = next_annotation_index(_buffer, _limit, _next);
-    }
-    assert(_next <= _limit, "invariant");
-    assert(_current <= _limit, "invariant");
-  }
-
-  const AnnotationElementIterator elements() const {
-    assert(_current < _next, "invariant");
-    return AnnotationElementIterator(_ik, _buffer + _current, _next - _current);
-  }
-
-  const Symbol* type() const {
-    assert(_buffer != nullptr, "invariant");
-    assert(_current < _limit, "invariant");
-    return _ik->constants()->symbol_at(JfrBigEndian::read<int, u2>(_buffer + _current));
-  }
-};
 
 static const char value_name[] = "value";
-static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
+static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type, bool default_value, bool& value) {
   assert(annotation_type != nullptr, "invariant");
   AnnotationArray* class_annotations = ik->class_annotations();
   if (class_annotations == nullptr) {
     return false;
   }
-
-  const AnnotationIterator annotation_iterator(ik, class_annotations);
+  const JfrAnnotationIterator annotation_iterator(ik, class_annotations);
   while (annotation_iterator.has_next()) {
     annotation_iterator.move_to_next();
     if (annotation_iterator.type() == annotation_type) {
@@ -384,7 +183,13 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
       static const Symbol* value_symbol =
         SymbolTable::probe(value_name, sizeof value_name - 1);
       assert(value_symbol != nullptr, "invariant");
-      const AnnotationElementIterator element_iterator = annotation_iterator.elements();
+      JfrAnnotationElementIterator element_iterator = elements_iterator(ik, annotation_iterator);
+      if (!element_iterator.has_next()) {
+        // Default values are not stored in the annotation element, so if the
+        // element-value pair is empty, return the default value.
+        value = default_value;
+        return true;
+      }
       while (element_iterator.has_next()) {
         element_iterator.move_to_next();
         if (value_symbol == element_iterator.name()) {
@@ -402,15 +207,15 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
 // Evaluate to the value of the first found Symbol* annotation type.
 // Searching moves upwards in the klass hierarchy in order to support
 // inherited annotations in addition to the ability to override.
-static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
+static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_type, bool default_value, bool& value) {
   assert(ik != nullptr, "invariant");
   assert(annotation_type != nullptr, "invariant");
   assert(JdkJfrEvent::is_a(ik), "invariant");
-  if (has_annotation(ik, annotation_type, value)) {
+  if (has_annotation(ik, annotation_type, default_value, value)) {
     return true;
   }
   InstanceKlass* const super = InstanceKlass::cast(ik->super());
-  return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, value) : false;
+  return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, default_value, value) : false;
 }
 
 static const char jdk_jfr_module_name[] = "jdk.jfr";
@@ -469,7 +274,7 @@ static bool should_register_klass(const InstanceKlass* ik, bool& untypedEventHan
   }
   assert(registered_symbol != nullptr, "invariant");
   bool value = false; // to be set by annotation_value
-  untypedEventHandler = !(annotation_value(ik, registered_symbol, value) || java_base_can_read_jdk_jfr());
+  untypedEventHandler = !(annotation_value(ik, registered_symbol, true, value) || java_base_can_read_jdk_jfr());
   return value;
 }
 
@@ -1549,57 +1354,6 @@ static ClassFileStream* retransform_bytes(const Klass* existing_klass, const Cla
   return new ClassFileStream(new_bytes, size_of_new_bytes, nullptr);
 }
 
-// On initial class load.
-static void cache_class_file_data(InstanceKlass* new_ik, const ClassFileStream* new_stream, const JavaThread* thread) {
-  assert(new_ik != nullptr, "invariant");
-  assert(new_stream != nullptr, "invariant");
-  assert(thread != nullptr, "invariant");
-  assert(!thread->has_pending_exception(), "invariant");
-  if (!JfrOptionSet::allow_retransforms()) {
-    return;
-  }
-  const jint stream_len = new_stream->length();
-  JvmtiCachedClassFileData* p =
-    (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_NULL(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
-  if (p == nullptr) {
-    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for %zu bytes failed in JfrEventClassTransformer::cache_class_file_data",
-      static_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));
-    return;
-  }
-  p->length = stream_len;
-  memcpy(p->data, new_stream->buffer(), stream_len);
-  new_ik->set_cached_class_file(p);
-}
-
-// On redefine / retransform, in case an agent modified the class, the original bytes are cached onto the scratch klass.
-static void transfer_cached_class_file_data(InstanceKlass* ik, InstanceKlass* new_ik, const ClassFileParser& parser, JavaThread* thread) {
-  assert(ik != nullptr, "invariant");
-  assert(new_ik != nullptr, "invariant");
-  JvmtiCachedClassFileData* const p = ik->get_cached_class_file();
-  if (p != nullptr) {
-    new_ik->set_cached_class_file(p);
-    ik->set_cached_class_file(nullptr);
-    return;
-  }
-  // No cached classfile indicates that no agent modified the klass.
-  // This means that the parser is holding the original bytes. Hence, we cache it onto the scratch klass.
-  const ClassFileStream* const stream = parser.clone_stream();
-  cache_class_file_data(new_ik, stream, thread);
-}
-
-static void rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlass* new_ik, ClassFileParser& parser, const JavaThread* thread) {
-  assert(ik != nullptr, "invariant");
-  assert(new_ik != nullptr, "invariant");
-  assert(thread != nullptr, "invariant");
-  assert(IS_EVENT_OR_HOST_KLASS(new_ik), "invariant");
-  assert(TRACE_ID(ik) == TRACE_ID(new_ik), "invariant");
-  assert(!thread->has_pending_exception(), "invariant");
-  // Assign original InstanceKlass* back onto "its" parser object for proper destruction.
-  parser.set_klass_to_deallocate(ik);
-  // Finally rewrite the original pointer to the newly created InstanceKlass.
-  ik = new_ik;
-}
-
 // If code size is 1, it is 0xb1, i.e. the return instruction.
 static inline bool is_commit_method_instrumented(const Method* m) {
   assert(m != nullptr, "invariant");
@@ -1652,92 +1406,11 @@ static void bless_commit_method(const InstanceKlass* new_ik) {
   bless_instance_commit_method(methods);
 }
 
-static void copy_traceid(const InstanceKlass* ik, const InstanceKlass* new_ik) {
-  assert(ik != nullptr, "invariant");
-  assert(new_ik != nullptr, "invariant");
-  new_ik->set_trace_id(ik->trace_id());
-  assert(TRACE_ID(ik) == TRACE_ID(new_ik), "invariant");
-}
-
-static const Klass* klass_being_redefined(const InstanceKlass* ik, JvmtiThreadState* state) {
-  assert(ik != nullptr, "invariant");
-  assert(state != nullptr, "invariant");
-  const GrowableArray<Klass*>* const redef_klasses = state->get_classes_being_redefined();
-  if (redef_klasses == nullptr || redef_klasses->is_empty()) {
-    return nullptr;
-  }
-  for (int i = 0; i < redef_klasses->length(); ++i) {
-    const Klass* const existing_klass = redef_klasses->at(i);
-    assert(existing_klass != nullptr, "invariant");
-    if (ik->name() == existing_klass->name() && ik->class_loader_data() == existing_klass->class_loader_data()) {
-      // 'ik' is a scratch klass. Return the klass being redefined.
-      return existing_klass;
-    }
-  }
-  return nullptr;
-}
-
-// Redefining / retransforming?
-static const Klass* find_existing_klass(const InstanceKlass* ik, JavaThread* thread) {
-  assert(ik != nullptr, "invariant");
-  assert(thread != nullptr, "invariant");
-  JvmtiThreadState* const state = thread->jvmti_thread_state();
-  return state != nullptr ? klass_being_redefined(ik, state) : nullptr;
-}
-
-static InstanceKlass* create_new_instance_klass(InstanceKlass* ik, ClassFileStream* stream, TRAPS) {
-  assert(stream != nullptr, "invariant");
-  ResourceMark rm(THREAD);
-  ClassLoaderData* const cld = ik->class_loader_data();
-  Handle pd(THREAD, ik->protection_domain());
-  Symbol* const class_name = ik->name();
-  const char* const klass_name = class_name != nullptr ? class_name->as_C_string() : "";
-  ClassLoadInfo cl_info(pd);
-  ClassFileParser new_parser(stream,
-                             class_name,
-                             cld,
-                             &cl_info,
-                             ClassFileParser::INTERNAL, // internal visibility
-                             THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    log_pending_exception(PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    return nullptr;
-  }
-  const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
-  InstanceKlass* const new_ik = new_parser.create_instance_klass(false, *cl_inst_info, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    log_pending_exception(PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    return nullptr;
-  }
-  assert(new_ik != nullptr, "invariant");
-  assert(new_ik->name() != nullptr, "invariant");
-  assert(strncmp(ik->name()->as_C_string(), new_ik->name()->as_C_string(), strlen(ik->name()->as_C_string())) == 0, "invariant");
-  return new_ik;
-}
-
-static InstanceKlass* create_instance_klass(InstanceKlass*& ik, ClassFileStream* stream, bool is_initial_load, JavaThread* thread) {
-  if (stream == nullptr) {
-    if (is_initial_load) {
-      log_error(jfr, system)("JfrEventClassTransformer: unable to create ClassFileStream for %s", ik->external_name());
-    }
-    return nullptr;
-  }
-  InstanceKlass* const new_ik = create_new_instance_klass(ik, stream, thread);
-  if (new_ik == nullptr) {
-    if (is_initial_load) {
-      log_error(jfr, system)("JfrEventClassTransformer: unable to create InstanceKlass for %s", ik->external_name());
-    }
-  }
-  return new_ik;
-}
-
 static void transform(InstanceKlass*& ik, ClassFileParser& parser, JavaThread* thread) {
   assert(IS_EVENT_OR_HOST_KLASS(ik), "invariant");
   bool is_instrumented = false;
   ClassFileStream* stream = nullptr;
-  const Klass* const existing_klass = find_existing_klass(ik, thread);
+  const Klass* const existing_klass = JfrClassTransformer::find_existing_klass(ik, thread);
   if (existing_klass != nullptr) {
     // There is already a klass defined, implying we are redefining / retransforming.
     stream = retransform_bytes(existing_klass, parser, is_instrumented, thread);
@@ -1745,20 +1418,20 @@ static void transform(InstanceKlass*& ik, ClassFileParser& parser, JavaThread* t
     // No existing klass, implying this is the initial load.
     stream = JdkJfrEvent::is(ik) ? schema_extend_event_klass_bytes(ik, parser, thread) : schema_extend_event_subklass_bytes(ik, parser, is_instrumented, thread);
   }
-  InstanceKlass* const new_ik = create_instance_klass(ik, stream, existing_klass == nullptr, thread);
+  InstanceKlass* const new_ik = JfrClassTransformer::create_instance_klass(ik, stream, existing_klass == nullptr, thread);
   if (new_ik == nullptr) {
     return;
   }
   if (existing_klass != nullptr) {
-    transfer_cached_class_file_data(ik, new_ik, parser, thread);
+    JfrClassTransformer::transfer_cached_class_file_data(ik, new_ik, parser, thread);
   } else {
-    cache_class_file_data(new_ik, stream, thread);
+    JfrClassTransformer::cache_class_file_data(new_ik, stream, thread);
   }
   if (is_instrumented && JdkJfrEvent::is_subklass(new_ik)) {
     bless_commit_method(new_ik);
   }
-  copy_traceid(ik, new_ik);
-  rewrite_klass_pointer(ik, new_ik, parser, thread);
+  JfrClassTransformer::copy_traceid(ik, new_ik);
+  JfrClassTransformer::rewrite_klass_pointer(ik, new_ik, parser, thread);
 }
 
 // Target for the JFR_ON_KLASS_CREATION hook.

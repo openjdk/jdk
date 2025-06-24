@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,6 @@ class JfrJavaArguments : public StackObj {
   Symbol* signature() const;
   void set_signature(const char* signature);
   void set_signature(const Symbol* signature);
-
-  int array_length() const;
-  void set_array_length(int length);
 
   JavaValue* result() const;
 
@@ -117,7 +114,6 @@ class JfrJavaArguments : public StackObj {
   const Klass* _klass;
   const Symbol* _name;
   const Symbol* _signature;
-  int _array_length;
 
   int java_call_arg_slots() const;
   void copy(JavaCallArguments& args, TRAPS);

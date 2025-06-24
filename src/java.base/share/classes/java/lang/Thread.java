@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,7 +235,7 @@ public class Thread implements Runnable {
     private volatile ClassLoader contextClassLoader;
 
     // Additional fields for platform threads.
-    // All fields, except task, are accessed directly by the VM.
+    // All fields, except task and terminatingThreadLocals, are accessed directly by the VM.
     private static class FieldHolder {
         final ThreadGroup group;
         final Runnable task;
@@ -243,6 +243,9 @@ public class Thread implements Runnable {
         volatile int priority;
         volatile boolean daemon;
         volatile int threadStatus;
+
+        // This map is maintained by the ThreadLocal class
+        ThreadLocal.ThreadLocalMap terminatingThreadLocals;
 
         FieldHolder(ThreadGroup group,
                     Runnable task,
@@ -259,17 +262,41 @@ public class Thread implements Runnable {
     }
     private final FieldHolder holder;
 
+    ThreadLocal.ThreadLocalMap terminatingThreadLocals() {
+        return holder.terminatingThreadLocals;
+    }
+
+    void setTerminatingThreadLocals(ThreadLocal.ThreadLocalMap map) {
+        holder.terminatingThreadLocals = map;
+    }
+
     /*
      * ThreadLocal values pertaining to this thread. This map is maintained
      * by the ThreadLocal class.
      */
-    ThreadLocal.ThreadLocalMap threadLocals;
+    private ThreadLocal.ThreadLocalMap threadLocals;
+
+    ThreadLocal.ThreadLocalMap threadLocals() {
+        return threadLocals;
+    }
+
+    void setThreadLocals(ThreadLocal.ThreadLocalMap map) {
+        threadLocals = map;
+    }
 
     /*
      * InheritableThreadLocal values pertaining to this thread. This map is
      * maintained by the InheritableThreadLocal class.
      */
-    ThreadLocal.ThreadLocalMap inheritableThreadLocals;
+    private ThreadLocal.ThreadLocalMap inheritableThreadLocals;
+
+    ThreadLocal.ThreadLocalMap inheritableThreadLocals() {
+        return inheritableThreadLocals;
+    }
+
+    void setInheritableThreadLocals(ThreadLocal.ThreadLocalMap map) {
+        inheritableThreadLocals = map;
+    }
 
     /*
      * Scoped value bindings are maintained by the ScopedValue class.
@@ -1409,7 +1436,7 @@ public class Thread implements Runnable {
 
             // start thread
             boolean started = false;
-            container.onStart(this);  // may throw
+            container.add(this);  // may throw
             try {
                 // scoped values may be inherited
                 inheritScopedValueBindings(container);
@@ -1418,7 +1445,7 @@ public class Thread implements Runnable {
                 started = true;
             } finally {
                 if (!started) {
-                    container.onExit(this);
+                    container.remove(this);
                 }
             }
         }
@@ -1487,12 +1514,12 @@ public class Thread implements Runnable {
             // notify container that thread is exiting
             ThreadContainer container = threadContainer();
             if (container != null) {
-                container.onExit(this);
+                container.remove(this);
             }
         }
 
         try {
-            if (threadLocals != null && TerminatingThreadLocal.REGISTRY.isPresent()) {
+            if (terminatingThreadLocals() != null) {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {

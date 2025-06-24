@@ -2139,7 +2139,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   Register  value       = Z_R12;
 
   // Remember the senderSP so we can pop the interpreter arguments off of the stack.
-  // In addition, frame manager expects initial_caller_sp in Z_R10.
+  // In addition, template interpreter expects initial_caller_sp in Z_R10.
   __ z_lgr(sender_SP, Z_SP);
 
   // This should always fit in 14 bit immediate.

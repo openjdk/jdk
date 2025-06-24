@@ -1589,6 +1589,11 @@ public final class String
      * @return {@code true} if {@link #length()} is {@code 0}, otherwise
      * {@code false}
      *
+     * @apiNote
+     * To determine whether a string contains only
+     * {@linkplain Character#isWhitespace(int) white space}, use
+     * {@link #isBlank() isBlank}.
+     *
      * @since 1.6
      */
     @Override
@@ -1739,35 +1744,14 @@ public final class String
     }
 
     /**
-     * Copies characters from this string into the destination character
-     * array.
-     * <p>
-     * The first character to be copied is at index {@code srcBegin};
-     * the last character to be copied is at index {@code srcEnd-1}
-     * (thus the total number of characters to be copied is
-     * {@code srcEnd-srcBegin}). The characters are copied into the
-     * subarray of {@code dst} starting at index {@code dstBegin}
-     * and ending at index:
-     * <blockquote><pre>
-     *     dstBegin + (srcEnd-srcBegin) - 1
-     * </pre></blockquote>
-     *
-     * @param      srcBegin   index of the first character in the string
-     *                        to copy.
-     * @param      srcEnd     index after the last character in the string
-     *                        to copy.
-     * @param      dst        the destination array.
-     * @param      dstBegin   the start offset in the destination array.
-     * @throws    IndexOutOfBoundsException If any of the following
-     *            is true:
-     *            <ul><li>{@code srcBegin} is negative.
-     *            <li>{@code srcBegin} is greater than {@code srcEnd}
-     *            <li>{@code srcEnd} is greater than the length of this
-     *                string
-     *            <li>{@code dstBegin} is negative
-     *            <li>{@code dstBegin+(srcEnd-srcBegin)} is larger than
-     *                {@code dst.length}</ul>
+     * {@inheritDoc CharSequence}
+     * @param srcBegin {@inheritDoc CharSequence}
+     * @param srcEnd   {@inheritDoc CharSequence}
+     * @param dst      {@inheritDoc CharSequence}
+     * @param dstBegin {@inheritDoc CharSequence}
+     * @throws    IndexOutOfBoundsException {@inheritDoc CharSequence}
      */
+    @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
@@ -3848,9 +3832,13 @@ public final class String
      * begins with the character at index <i>k</i> and ends with the
      * character at index <i>m</i>-that is, the result of
      * {@code this.substring(k, m + 1)}.
-     * <p>
-     * This method may be used to trim space (as defined above) from
-     * the beginning and end of a string.
+     *
+     * @apiNote
+     * This method removes leading and trailing space characters and ASCII control
+     * characters from the string. To remove characters using a Unicode-based definition of
+     * {@linkplain Character#isWhitespace(int) white space}, use {@link #strip() strip},
+     * {@link #stripIndent() stripIndent}, {@link #stripLeading() stripLeading}, or
+     * {@link #stripTrailing() stripTrailing}.
      *
      * @return  a string whose value is this string, with all leading
      *          and trailing space removed, or this string if it
@@ -3955,13 +3943,9 @@ public final class String
     }
 
     /**
-     * Returns {@code true} if the string is empty or contains only
-     * {@linkplain Character#isWhitespace(int) white space} codepoints,
-     * otherwise {@code false}.
-     *
-     * @return {@code true} if the string is empty or contains only
-     *         {@linkplain Character#isWhitespace(int) white space} codepoints,
-     *         otherwise {@code false}
+     * {@return {@code true} if the string is {@linkplain #isEmpty empty} or contains
+     * only {@linkplain Character#isWhitespace(int) white space} codepoints,
+     * otherwise {@code false}}
      *
      * @see Character#isWhitespace(int)
      *

@@ -59,6 +59,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         super(params);
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         Frame target = (Frame)(this.target);
@@ -111,6 +112,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         return decorations;
     }
 
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
         setupState(true);
@@ -137,6 +139,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         setExtendedState(state);
     }
 
+    @Override
     public void setMenuBar(MenuBar mb) {
         // state_lock should always be the second after awt_lock
         XToolkit.awtLock();
@@ -170,6 +173,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         return menubarPeer;
     }
 
+    @Override
     int getMenuBarHeight() {
         if (menubarPeer != null) {
             return menubarPeer.getDesiredHeight();
@@ -178,6 +182,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         }
     }
 
+    @Override
     void updateChildrenSizes() {
         super.updateChildrenSizes();
         int height = getMenuBarHeight();
@@ -238,6 +243,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         );
     }
 
+    @Override
     public void setMaximizedBounds(Rectangle b) {
         if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
             insLog.fine("Setting maximized bounds to " + b);
@@ -267,12 +273,14 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         }
     }
 
+    @Override
     public int getState() {
         synchronized(getStateLock()) {
             return state;
         }
     }
 
+    @Override
     public void setState(int newState) {
         synchronized(getStateLock()) {
             if (!isShowing()) {
@@ -336,6 +344,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         super.toFront();
     }
 
+    @Override
     public void handlePropertyNotify(XEvent xev) {
         super.handlePropertyNotify(xev);
         XPropertyEvent ev = xev.get_xproperty();
@@ -389,6 +398,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
 
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
+    @Override
     public void handleStateChange(int oldState, int newState) {
         super.handleStateChange(oldState, newState);
         for (ToplevelStateListener topLevelListenerTmp : toplevelStateListeners) {
@@ -396,6 +406,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         }
     }
 
+    @Override
     public void setVisible(boolean vis) {
         if (vis) {
             setupState(false);
@@ -426,6 +437,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         }
     }
 
+    @Override
     public void dispose() {
         if (menubarPeer != null) {
             menubarPeer.dispose();
@@ -433,6 +445,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         super.dispose();
     }
 
+    @Override
     boolean isMaximized() {
         return (state & (Frame.MAXIMIZED_VERT  | Frame.MAXIMIZED_HORIZ)) != 0;
     }
@@ -481,6 +494,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
      * of Component (and thus it has no "print" method which gets called by
      * default).
      */
+    @Override
     public void print(Graphics g) {
         super.print(g);
 
@@ -703,14 +717,17 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         }
     }
 
+    @Override
     public void setBoundsPrivate(int x, int y, int width, int height) {
         setBounds(x, y, width, height, SET_BOUNDS);
     }
 
+    @Override
     public Rectangle getBoundsPrivate() {
         return getBounds();
     }
 
+    @Override
     public void emulateActivation(boolean doActivate) {
         if (doActivate) {
             handleWindowFocusIn(0);

@@ -53,7 +53,8 @@ import sun.security.ssl.SSLSocketImpl;
 
 import sun.util.logging.PlatformLogger;
 import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
-
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class provides HTTPS client URL support, building on the standard
@@ -559,8 +560,10 @@ final class HttpsClient extends HttpClient
         serverSocket.close();
         session.invalidate();
 
-        throw new IOException("HTTPS hostname wrong:  should be <"
-                              + url.getHost() + ">");
+        throw new IOException(formatMsg("Wrong HTTPS hostname%s",
+                                        filterNonSocketInfo(url.getHost())
+                                            .prefixWith(": should be <")
+                                            .suffixWith(">")));
     }
 
     @Override

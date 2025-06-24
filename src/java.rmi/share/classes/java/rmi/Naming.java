@@ -28,6 +28,8 @@ import java.rmi.registry.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * The <code>Naming</code> class provides methods for storing and obtaining
@@ -221,6 +223,11 @@ public final class Naming {
         return LocateRegistry.getRegistry(parsed.host, parsed.port);
     }
 
+    private static MalformedURLException newMalformedURLException(String prefix, String msg) {
+        return new MalformedURLException(
+            prefix + formatMsg(filterNonSocketInfo(msg).prefixWith(": ")));
+    }
+
     /**
      * Dissect Naming URL strings to obtain referenced host, port and
      * object name.
@@ -240,8 +247,8 @@ public final class Naming {
              * '//:<port>' forms will result in a URI syntax exception
              * Convert the authority to a localhost:<port> form
              */
-            MalformedURLException mue = new MalformedURLException(
-                "invalid URL String: " + str);
+            MalformedURLException mue = newMalformedURLException(
+                "invalid URL String", str);
             mue.initCause(ex);
             int indexSchemeEnd = str.indexOf(':');
             int indexAuthorityBegin = str.indexOf("//:");
@@ -272,22 +279,22 @@ public final class Naming {
     {
         URI uri = new URI(str);
         if (uri.isOpaque()) {
-            throw new MalformedURLException(
-                "not a hierarchical URL: " + str);
+            throw newMalformedURLException(
+                "not a hierarchical URL", str);
         }
         if (uri.getFragment() != null) {
-            throw new MalformedURLException(
-                "invalid character, '#', in URL name: " + str);
+            throw newMalformedURLException(
+                "invalid character, '#', in URL name", str);
         } else if (uri.getQuery() != null) {
-            throw new MalformedURLException(
-                "invalid character, '?', in URL name: " + str);
+            throw newMalformedURLException(
+                "invalid character, '?', in URL name", str);
         } else if (uri.getUserInfo() != null) {
-            throw new MalformedURLException(
-                "invalid character, '@', in URL host: " + str);
+            throw newMalformedURLException(
+                "invalid character, '@', in URL host", str);
         }
         String scheme = uri.getScheme();
         if (scheme != null && !scheme.equals("rmi")) {
-            throw new MalformedURLException("invalid URL scheme: " + str);
+            throw newMalformedURLException("invalid URL scheme", str);
         }
 
         String name = uri.getPath();

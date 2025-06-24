@@ -66,7 +66,7 @@ import jdk.internal.joptsimple.internal.Messages;
 /**
  * Converts values to {@link java.net.InetAddress} using {@link InetAddress#getByName(String) getByName}.
  *
- * @author <a href="mailto:r@ymund.de">Raymund F\u00FCl\u00F6p</a>
+ * @author <a href="mailto:r@ymund.de">Raymund Fülöp</a>
  */
 public class InetAddressConverter implements ValueConverter<InetAddress> {
     public InetAddress convert( String value ) {

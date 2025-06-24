@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ class JfrTraceIdLoadBarrier : AllStatic {
   friend class JfrIntrinsicSupport;
   friend class JfrStackTrace;
   friend class JfrThreadSampler;
+  friend class JfrTraceTagging;
  private:
   static bool initialize();
   static void clear();
@@ -83,16 +84,17 @@ class JfrTraceIdLoadBarrier : AllStatic {
  public:
   static traceid load(const ClassLoaderData* cld);
   static traceid load(const Klass* klass);
+  static traceid load_previous_epoch(const Klass* klass);
   static traceid load(const Klass* klass, const Method* method);
   static traceid load(const Method* method);
   static traceid load(const ModuleEntry* module);
   static traceid load(const PackageEntry* package);
   static traceid load_leakp(const Klass* klass); // leak profiler
   static traceid load_leakp(const Klass* klass, const Method* method); // leak profiler
-  static traceid load_leakp_previuos_epoch(const Klass* klass, const Method* method); // leak profiler
-  static void do_klasses(void f(Klass*), bool previous_epoch = false);
+  static traceid load_leakp_previous_epoch(const Klass* klass, const Method* method); // leak profiler
   static traceid load_no_enqueue(const Klass* klass, const Method* method);
   static traceid load_no_enqueue(const Method* method);
+  static void do_klasses(void f(Klass*), bool previous_epoch = false);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_HPP

@@ -2020,7 +2020,7 @@ public final class ModuleDescriptor
 
         /**
          * Provides a service with one or more implementations. The package for
-         * each {@link Provides#providers provider} (or provider factory) is
+         * each {@link Provides#providers() provider} (or provider factory) is
          * added to the module if not already added.
          *
          * @param  p

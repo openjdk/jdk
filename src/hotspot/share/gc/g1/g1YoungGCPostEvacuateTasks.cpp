@@ -881,10 +881,10 @@ public:
     }
     FREE_C_HEAP_ARRAY(FreeCSetStats, _worker_stats);
 
+    _g1h->clear_collection_set();
+
     G1GCPhaseTimes* p = _g1h->phase_times();
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
-
-    _g1h->clear_collection_set();
   }
 
   double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->region_length(); }

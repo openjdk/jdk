@@ -178,6 +178,10 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_oop_arraycopy;
   }
 
+  void generate_preuniverse_stubs() {
+    StubRoutines::_fence_entry               = ShouldNotCallThisStub();
+  }
+
   void generate_initial_stubs() {
     // entry points that exist in all platforms Note: This is code
     // that could be shared among different platforms - however the
@@ -194,7 +198,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_cmpxchg_entry      = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_long_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_add_entry          = ShouldNotCallThisStub();
-    StubRoutines::_fence_entry               = ShouldNotCallThisStub();
   }
 
   void generate_continuation_stubs() {
@@ -214,6 +217,9 @@ class StubGenerator: public StubCodeGenerator {
  public:
   StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
+    case preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
     case initial_id:
       generate_initial_stubs();
       break;

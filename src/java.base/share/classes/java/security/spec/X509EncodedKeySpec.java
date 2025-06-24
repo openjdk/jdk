@@ -25,6 +25,8 @@
 
 package java.security.spec;
 
+import java.security.DEREncodable;
+
 /**
  * This class represents the ASN.1 encoding of a public key,
  * encoded according to the ASN.1 type {@code SubjectPublicKeyInfo}.
@@ -49,8 +51,8 @@ package java.security.spec;
  * @since 1.2
  */
 
-public class X509EncodedKeySpec extends EncodedKeySpec {
-
+public non-sealed class X509EncodedKeySpec extends EncodedKeySpec implements
+    DEREncodable {
     /**
      * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
      *

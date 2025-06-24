@@ -1444,7 +1444,7 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
                           ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_checkcast, result, object, klass,
                                            tmp1, tmp2, tmp3, fast_check, info_for_exception, info_for_patch, stub);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1454,7 +1454,7 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
 
 void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, nullptr, info_for_patch, nullptr);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1466,7 +1466,7 @@ void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Op
 void LIR_List::store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
                            CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_store_check, object, array, tmp1, tmp2, tmp3, info_for_exception);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);

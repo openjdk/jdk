@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1895,6 +1895,44 @@ public abstract sealed class $Type$Buffer
     // -- Other char stuff --
 
 #if[char]
+
+    /**
+     * Absolute bulk <i>get</i> method.
+     *
+     * <p> This method transfers {@code srcEnd-srcBegin} characters from this
+     * buffer into the given array, starting at index {@code srcBegin} in this
+     * buffer and at offset {@code dstBegin} in the array. The position of this
+     * buffer is unchanged.
+     *
+     * @param  srcBegin
+     *         The index in this buffer from which the first character will be
+     *         read; must be non-negative and less than {@code limit()}
+     *
+     * @param  srcEnd
+     *         The index in this buffer directly before the last character to
+     *         read; must be non-negative and less or equal than {@code limit()}
+     *         and must be greater or equal than {@code srcBegin}
+     *
+     * @param  dst
+     *         The destination array
+     *
+     * @param  dstBegin
+     *         The offset within the array of the first character to be
+     *         written; must be non-negative and less than {@code dst.length}
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the preconditions on the {@code srcBegin}, {@code srcEnd},
+     *          and {@code dstBegin} parameters do not hold
+     *
+     * @implSpec This method is equivalent to
+     *           {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
+     *
+     * @since 25
+     */
+    @Override
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        get(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
 
     /**
      * Returns a string containing the characters in this buffer.

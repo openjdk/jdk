@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6921885
  * @run main/othervm SiblingIOEHandle
  * @summary inherit IOE handles and MS CreateProcess limitations (kb315939)
+ * @requires (os.family == "windows")
  */
 
 import java.io.BufferedReader;
@@ -58,10 +59,6 @@ public class SiblingIOEHandle {
     }
 
     public static void main(String[] args) {
-        if (!System.getProperty("os.name").startsWith("Windows")) {
-            return;
-        }
-
         APP app = (args.length > 0) ? APP.valueOf(args[0]) : APP.A;
         switch (app) {
             case A:

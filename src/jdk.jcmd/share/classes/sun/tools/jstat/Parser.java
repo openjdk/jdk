@@ -223,6 +223,13 @@ public class Parser {
     }
 
     /**
+     * determine if the given word is the timestamp key word
+     */
+    private boolean isTimestamp(String word) {
+        return word.equals("jstat.timestamp");
+    }
+
+    /**
      * determine if the give work is a reserved key word
      */
     private boolean isInfixOperator(char op) {
@@ -297,7 +304,7 @@ public class Parser {
     }
 
     /**
-     *  Primary -> Literal | Identifier | '(' Expression ')'
+     *  Primary -> Literal | Timestamp | Identifier | '(' Expression ')'
      */
     private Expression primary() throws ParserException, IOException {
         Expression e = null;
@@ -315,7 +322,7 @@ public class Parser {
                                           "Reserved Word: " + lookahead.sval);
             }
             matchID();
-            e = new Identifier(s);
+            e = isTimestamp(s) ? new Timestamp() : new Identifier(s);
             log(pdebug, "Parsed: ID -> " + s);
             break;
         case StreamTokenizer.TT_NUMBER:

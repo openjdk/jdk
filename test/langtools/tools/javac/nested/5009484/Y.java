@@ -2,7 +2,7 @@
  * @test    /nodynamiccopyright/
  * @bug     5009484
  * @summary Compiler fails to resolve appropriate type for outer member
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile/fail/ref=Y.out -XDrawDiagnostics  Y.java
  */
 

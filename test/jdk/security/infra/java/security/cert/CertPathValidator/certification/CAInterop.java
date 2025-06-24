@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,6 +557,36 @@
  * @run main/othervm/manual -Djava.security.debug=certpath CAInterop ssltlsrootrsa2022 CRL
  */
 
+/*
+ * @test id=sectigotlsrootr46
+ * @bug 8359170
+ * @summary Interoperability tests with Sectigo Public Server Authentication
+ * Root R46
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * sectigotlsrootr46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop sectigotlsrootr46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * sectigotlsrootr46 CRL
+ */
+
+/*
+ * @test id=sectigotlsroote46
+ * @bug 8359170
+ * @summary Interoperability tests with Sectigo Public Server Authentication
+ * Root E46
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * sectigotlsroote46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop sectigotlsroote46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * sectigotlsroote46 CRL
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs.
  * These tests are marked as manual as they depend on external infrastructure and may fail
@@ -635,20 +665,20 @@ public class CAInterop {
                     "https://revoked.sfig2.catest.starfieldtech.com");
 
             case "globalsigneccrootcar4" ->
-                    new CATestURLs("https://good.gsr4.demo.pki.goog",
-                    "https://revoked.gsr4.demo.pki.goog");
+                    new CATestURLs("https://good.gsr4.demosite.pki.goog",
+                    "https://revoked.gsr4.demosite.pki.goog");
             case "gtsrootcar1" ->
-                    new CATestURLs("https://good.gtsr1.demo.pki.goog",
-                    "https://revoked.gtsr1.demo.pki.goog");
+                    new CATestURLs("https://good.gtsr1.demosite.pki.goog",
+                    "https://revoked.gtsr1.demosite.pki.goog");
             case "gtsrootcar2" ->
-                    new CATestURLs("https://good.gtsr2.demo.pki.goog",
-                    "https://revoked.gtsr2.demo.pki.goog");
+                    new CATestURLs("https://good.gtsr2.demosite.pki.goog",
+                    "https://revoked.gtsr2.demosite.pki.goog");
             case "gtsrootecccar3" ->
-                    new CATestURLs("https://good.gtsr3.demo.pki.goog",
-                    "https://revoked.gtsr3.demo.pki.goog");
+                    new CATestURLs("https://good.gtsr3.demosite.pki.goog",
+                    "https://revoked.gtsr3.demosite.pki.goog");
             case "gtsrootecccar4" ->
-                    new CATestURLs("https://good.gtsr4.demo.pki.goog",
-                    "https://revoked.gtsr4.demo.pki.goog");
+                    new CATestURLs("https://good.gtsr4.demosite.pki.goog",
+                    "https://revoked.gtsr4.demosite.pki.goog");
 
             case "microsoftecc2017" ->
                     new CATestURLs("https://acteccroot2017.pki.microsoft.com",
@@ -741,6 +771,13 @@ public class CAInterop {
             case "ssltlsrootrsa2022" ->
                     new CATestURLs("https://test-root-2022-rsa.ssl.com",
                             "https://revoked-root-2022-rsa.ssl.com");
+
+            case "sectigotlsrootr46" ->
+                    new CATestURLs("https://sectigopublicserverauthenticationrootr46-ev.sectigo.com",
+                            "https://sectigopublicserverauthenticationrootr46-ev.sectigo.com:444");
+            case "sectigotlsroote46" ->
+                    new CATestURLs("https://sectigopublicserverauthenticationroote46-ev.sectigo.com",
+                            "https://sectigopublicserverauthenticationroote46-ev.sectigo.com:444");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };

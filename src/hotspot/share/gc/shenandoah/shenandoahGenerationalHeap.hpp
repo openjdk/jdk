@@ -128,6 +128,8 @@ public:
 
   void stop() override;
 
+  bool requires_barriers(stackChunkOop obj) const override;
+
   // Used for logging the result of a region transfer outside the heap lock
   struct TransferResult {
     bool success;

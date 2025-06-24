@@ -948,6 +948,9 @@ public final class LauncherHelper {
 
         if (!isStaticMain) {
             String className = mainMethod.getDeclaringClass().getName();
+            if (Modifier.isAbstract(mainClass.getModifiers())) {
+                abort(null, "java.launcher.cls.error8", className);
+            }
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
                 abort(null, "java.launcher.cls.error7", className);
             }

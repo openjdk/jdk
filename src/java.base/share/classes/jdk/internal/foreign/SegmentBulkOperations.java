@@ -53,7 +53,7 @@ public final class SegmentBulkOperations {
 
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
-    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", Architecture.isAARCH64() ? 18 : 5);
+    private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 

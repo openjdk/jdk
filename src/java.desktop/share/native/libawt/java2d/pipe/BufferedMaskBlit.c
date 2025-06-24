@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,9 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
     unsigned char *bbuf;
     jint *pBuf;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "BufferedMaskBlit_enqueueTile: bpos=%d",
-                bpos);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "BufferedMaskBlit_enqueueTile: bpos=%d",
+               bpos);
 
     if (srcOps == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -139,15 +139,15 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
             srcScanStride -= width * srcPixelStride;
             h = height;
 
-            J2dTraceLn4(J2D_TRACE_VERBOSE,
-                        "  sx=%d sy=%d w=%d h=%d",
-                        srcInfo.bounds.x1, srcInfo.bounds.y1, width, height);
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
-                        "  maskoff=%d maskscan=%d",
-                        maskoff, maskscan);
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
-                        "  pixstride=%d scanstride=%d",
-                        srcPixelStride, srcScanStride);
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  sx=%d sy=%d w=%d h=%d",
+                       srcInfo.bounds.x1, srcInfo.bounds.y1, width, height);
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  maskoff=%d maskscan=%d",
+                       maskoff, maskscan);
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  pixstride=%d scanstride=%d",
+                       srcPixelStride, srcScanStride);
 
             // enqueue parameters
             pBuf[0] = sun_java2d_pipe_BufferedOpCodes_MASK_BLIT;

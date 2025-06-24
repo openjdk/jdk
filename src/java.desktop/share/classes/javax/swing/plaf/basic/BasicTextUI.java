@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,6 +647,22 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 TransferHandler.getCopyAction());
         map.put(TransferHandler.getPasteAction().getValue(Action.NAME),
                 TransferHandler.getPasteAction());
+
+        if (getComponent() instanceof JPasswordField) {
+            // Edit the action map for Password Field.  This map provides
+            // same actions for double mouse click and
+            // and for triple mouse click (see bugs 4231444, 8354646).
+
+            if (map.get(DefaultEditorKit.selectWordAction) != null) {
+                map.remove(DefaultEditorKit.selectWordAction);
+
+                Action a = map.get(DefaultEditorKit.selectLineAction);
+                if (a != null) {
+                    map.put(DefaultEditorKit.selectWordAction, a);
+                }
+            }
+        }
+
         return map;
     }
 

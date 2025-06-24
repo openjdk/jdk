@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 
 /**
@@ -81,7 +82,7 @@ private:
   void phase2_calculate_target_addresses(ShenandoahHeapRegionSet** worker_slices);
   void phase3_update_references();
   void phase4_compact_objects(ShenandoahHeapRegionSet** worker_slices);
-  void phase5_epilog();
+  ShenandoahGenerationalHeap::TransferResult phase5_epilog();
 
   void distribute_slices(ShenandoahHeapRegionSet** worker_slices);
   void calculate_target_humongous_objects();

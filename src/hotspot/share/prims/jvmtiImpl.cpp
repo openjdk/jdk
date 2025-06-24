@@ -658,7 +658,7 @@ vframe *VM_GetOrSetLocal::get_vframe() {
 
 javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
   vframe* vf = get_vframe();
-  if (!(_self || _thread->is_carrier_thread_suspended())) {
+  if (!_self && !_thread->is_suspended() && !_thread->is_carrier_thread_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return nullptr;
   }

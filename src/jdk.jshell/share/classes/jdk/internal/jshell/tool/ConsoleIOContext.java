@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -159,10 +160,15 @@ class ConsoleIOContext extends IOContext {
             boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
                                         !OSUtils.IS_LINUX &&
                                         !OSUtils.IS_OSX;
-            terminal = TerminalBuilder.builder().exec(allowExecTerminal).inputStreamWrapper(in -> {
-                input.setInputStream(in);
-                return nonBlockingInput;
-            }).nativeSignals(false).build();
+            terminal = TerminalBuilder.builder()
+                                      .exec(allowExecTerminal)
+                                      .inputStreamWrapper(in -> {
+                                          input.setInputStream(in);
+                                          return nonBlockingInput;
+                                      })
+                                      .nativeSignals(false)
+                                      .encoding(System.getProperty("stdin.encoding"))
+                                      .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
@@ -968,6 +974,9 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
+    private static final Charset stdinCharset =
+            Charset.forName(System.getProperty("stdin.encoding"),
+                            Charset.defaultCharset());
     private String pendingLine;
     private int pendingLinePointer;
     private byte[] pendingBytes;
@@ -977,7 +986,20 @@ class ConsoleIOContext extends IOContext {
     public synchronized int readUserInput() throws IOException {
         if (pendingBytes == null || pendingBytes.length <= pendingBytesPointer) {
             char userChar = readUserInputChar();
-            pendingBytes = String.valueOf(userChar).getBytes();
+            StringBuilder dataToConvert = new StringBuilder();
+            dataToConvert.append(userChar);
+            if (Character.isHighSurrogate(userChar)) {
+                //surrogates cannot be converted independently,
+                //read the low surrogate and append it to dataToConvert:
+                char lowSurrogate = readUserInputChar();
+                if (Character.isLowSurrogate(lowSurrogate)) {
+                    dataToConvert.append(lowSurrogate);
+                } else {
+                    //if not the low surrogate, rollback the reading of the character:
+                    pendingLinePointer--;
+                }
+            }
+            pendingBytes = dataToConvert.toString().getBytes(stdinCharset);
             pendingBytesPointer = 0;
         }
         return pendingBytes[pendingBytesPointer++];

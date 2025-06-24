@@ -27,6 +27,7 @@
 #define SHARE_NMT_VMATREE_HPP
 
 #include "nmt/memTag.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -40,10 +41,12 @@
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
   friend class NMTVMATreeTest;
+  friend class VMTWithVMATreeTest;
   // A position in memory.
 public:
   using position = size_t;
   using size = size_t;
+  using SIndex = NativeCallStackStorage::StackIndex;
 
   class PositionComparator {
   public:
@@ -55,27 +58,29 @@ public:
     }
   };
 
-  enum class StateType : uint8_t { Reserved, Committed, Released, LAST };
+  // Bit fields view: bit 0 for Reserved, bit 1 for Committed.
+  // Setting a region as Committed preserves the Reserved state.
+  enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, st_number_of_states = 4 };
 
 private:
-  static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
+  static const char* statetype_strings[static_cast<uint8_t>(StateType::st_number_of_states)];
 
 public:
   NONCOPYABLE(VMATree);
 
   static const char* statetype_to_string(StateType type) {
-    assert(type != StateType::LAST, "must be");
+    assert(type < StateType::st_number_of_states, "must be");
     return statetype_strings[static_cast<uint8_t>(type)];
   }
 
   // Each point has some stack and a tag associated with it.
   struct RegionData {
-    const NativeCallStackStorage::StackIndex stack_idx;
+    const SIndex stack_idx;
     const MemTag mem_tag;
 
     RegionData() : stack_idx(), mem_tag(mtNone) {}
 
-    RegionData(NativeCallStackStorage::StackIndex stack_idx, MemTag mem_tag)
+    RegionData(SIndex stack_idx, MemTag mem_tag)
     : stack_idx(stack_idx), mem_tag(mem_tag) {}
 
     static bool equals(const RegionData& a, const RegionData& b) {
@@ -91,15 +96,27 @@ private:
   private:
     // Store the type and mem_tag as two bytes
     uint8_t type_tag[2];
-    NativeCallStackStorage::StackIndex sidx;
+    NativeCallStackStorage::StackIndex _reserved_stack;
+    NativeCallStackStorage::StackIndex _committed_stack;
 
   public:
-    IntervalState() : type_tag{0,0}, sidx() {}
+    IntervalState() : type_tag{0,0}, _reserved_stack(NativeCallStackStorage::invalid), _committed_stack(NativeCallStackStorage::invalid) {}
+    IntervalState(const StateType type,
+                  const MemTag mt,
+                  const NativeCallStackStorage::StackIndex res_stack,
+                  const NativeCallStackStorage::StackIndex com_stack) {
+      assert(!(type == StateType::Released) || mt == mtNone, "Released state-type must have memory tag mtNone");
+      type_tag[0] = static_cast<uint8_t>(type);
+      type_tag[1] = static_cast<uint8_t>(mt);
+      _reserved_stack = res_stack;
+      _committed_stack = com_stack;
+    }
     IntervalState(const StateType type, const RegionData data) {
       assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released state-type must have memory tag mtNone");
       type_tag[0] = static_cast<uint8_t>(type);
       type_tag[1] = static_cast<uint8_t>(data.mem_tag);
-      sidx = data.stack_idx;
+      _reserved_stack = data.stack_idx;
+      _committed_stack = NativeCallStackStorage::invalid;
     }
 
     StateType type() const {
@@ -110,16 +127,50 @@ private:
       return static_cast<MemTag>(type_tag[1]);
     }
 
-    RegionData regiondata() const {
-      return RegionData{sidx, mem_tag()};
+    RegionData reserved_regiondata() const {
+      return RegionData{_reserved_stack, mem_tag()};
+    }
+    RegionData committed_regiondata() const {
+      return RegionData{_committed_stack, mem_tag()};
     }
 
     void set_tag(MemTag tag) {
       type_tag[1] = static_cast<uint8_t>(tag);
     }
 
-    NativeCallStackStorage::StackIndex stack() const {
-     return sidx;
+    NativeCallStackStorage::StackIndex reserved_stack() const {
+      return _reserved_stack;
+    }
+
+    NativeCallStackStorage::StackIndex committed_stack() const {
+      return _committed_stack;
+    }
+
+    void set_reserve_stack(NativeCallStackStorage::StackIndex idx) {
+      _reserved_stack = idx;
+    }
+
+    void set_commit_stack(NativeCallStackStorage::StackIndex idx) {
+      _committed_stack = idx;
+    }
+
+    bool has_reserved_stack() {
+      return _reserved_stack != NativeCallStackStorage::invalid;
+    }
+
+    bool has_committed_stack() {
+      return _committed_stack != NativeCallStackStorage::invalid;
+    }
+
+    void set_type(StateType t) {
+      type_tag[0] = static_cast<uint8_t>(t);
+    }
+
+    bool equals(const IntervalState& other) const {
+      return mem_tag()          == other.mem_tag()          &&
+             type()             == other.type()             &&
+             reserved_stack()   == other.reserved_stack()   &&
+             committed_stack()  == other.committed_stack();
     }
   };
 
@@ -130,8 +181,14 @@ private:
     IntervalState out;
 
     bool is_noop() {
+      if (in.type() == StateType::Released &&
+          in.type() == out.type() &&
+          in.mem_tag() == out.mem_tag()) {
+        return true;
+      }
       return in.type() == out.type() &&
-             RegionData::equals(in.regiondata(), out.regiondata());
+             RegionData::equals(in.reserved_regiondata(), out.reserved_regiondata()) &&
+             RegionData::equals(in.committed_regiondata(), out.committed_regiondata());
     }
   };
 
@@ -193,8 +250,44 @@ public:
 #endif
   };
 
+  enum Operation {Release, Reserve, Commit, Uncommit};
+  struct RequestInfo {
+    position A, B;
+    StateType _op;
+    MemTag tag;
+    SIndex callstack;
+    bool use_tag_inplace;
+    Operation op() const {
+      return
+            _op == StateType::Reserved && !use_tag_inplace  ? Operation::Reserve  :
+            _op == StateType::Committed                     ? Operation::Commit   :
+            _op == StateType::Reserved &&  use_tag_inplace  ? Operation::Uncommit :
+             Operation::Release;
+    }
+
+    int op_to_index() const {
+      return
+            _op == StateType::Reserved && !use_tag_inplace  ? 1 :
+            _op == StateType::Committed                     ? 2 :
+            _op == StateType::Reserved &&  use_tag_inplace  ? 3 :
+             0;
+    }
+  };
+
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
+  StateType get_new_state(const StateType existinting_state, const RequestInfo& req) const;
+  MemTag get_new_tag(const MemTag existinting_tag, const RequestInfo& req) const;
+  SIndex get_new_reserve_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
+  SIndex get_new_commit_callstack(const SIndex existinting_stack, const StateType ex, const RequestInfo& req) const;
+  void compute_summary_diff(const SingleDiff::delta region_size, const MemTag t1, const StateType& ex, const RequestInfo& req, const MemTag new_tag, SummaryDiff& diff) const;
+  void update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff);
+  int state_to_index(const StateType st) const {
+    return
+      st == StateType::Released ? 0 :
+      st == StateType::Reserved ? 1 :
+      st == StateType::Committed ? 2 : -1;
+  }
 
  public:
   SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
@@ -215,12 +308,8 @@ public:
     return register_mapping(from, from + size, StateType::Reserved, metadata, true);
   }
 
-  SummaryDiff release_mapping(position from, size size) {
-    return register_mapping(from, from + size, StateType::Released, VMATree::empty_regiondata);
-  }
-
-  VMATreap& tree() {
-    return _tree;
+  SummaryDiff release_mapping(position from, position sz) {
+    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
   }
 
 public:
@@ -232,7 +321,10 @@ public:
 #ifdef ASSERT
   void print_on(outputStream* out);
 #endif
-
+  template<typename F>
+  void visit_range_in_order(const position& from, const position& to, F f) {
+    _tree.visit_range_in_order(from, to, f);
+  }
+  VMATreap& tree() { return _tree; }
 };
-
 #endif

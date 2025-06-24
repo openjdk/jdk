@@ -50,6 +50,8 @@
 #include <process.h>
 #pragma warning(pop)
 
+#include <sysinfoapi.h>
+
 typedef unsigned __int32 juint;
 typedef unsigned __int64 julong;
 
@@ -215,10 +217,10 @@ static PdhLookupPerfNameByIndexFunc PdhLookupPerfNameByIndex_i;
  */
 typedef struct {
     HQUERY      query;
-    uint64_t    lastUpdate; // Last time query was updated (ticks)
+    uint64_t    lastUpdate; // Last time query was updated (millis)
 } UpdateQueryS, *UpdateQueryP;
 
-// Min time between query updates (ticks)
+// Min time between query updates (millis)
 static const int MIN_UPDATE_INTERVAL = 500;
 
 /*
@@ -991,7 +993,7 @@ bindPdhFunctionPointers(HMODULE h) {
  */
 static int
 getPerformanceData(UpdateQueryP query, HCOUNTER c, PDH_FMT_COUNTERVALUE* value, DWORD format) {
-    clock_t now = clock();
+    uint64_t now = GetTickCount64();
 
     /*
      * Need to limit how often we update the query

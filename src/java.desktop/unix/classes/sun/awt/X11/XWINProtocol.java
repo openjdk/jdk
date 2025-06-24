@@ -29,7 +29,7 @@ package sun.awt.X11;
 import java.awt.*;
 import sun.util.logging.PlatformLogger;
 
-class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
+final class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
     static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWINProtocol");
 
 /* Gnome WM spec  */
@@ -37,10 +37,12 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
     XAtom XA_WIN_PROTOCOLS = XAtom.get("_WIN_PROTOCOLS");
     XAtom XA_WIN_STATE = XAtom.get("_WIN_STATE");
 
+    @Override
     public boolean supportsState(int state) {
         return doStateProtocol();   // TODO - check for Frame constants
     }
 
+    @Override
     public void setState(XWindowPeer window, int state) {
         if (window.isShowing()) {
             /*
@@ -121,6 +123,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
         }
     }
 
+    @Override
     public int getState(XWindowPeer window) {
         long win_state = XA_WIN_STATE.getCard32Property(window);
         int java_state = Frame.NORMAL;
@@ -133,10 +136,12 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
         return java_state;
     }
 
+    @Override
     public boolean isStateChange(XPropertyEvent e) {
         return doStateProtocol() && e.get_atom() == XA_WIN_STATE.getAtom();
     }
 
+    @Override
     public void unshadeKludge(XWindowPeer window) {
         long win_state = XA_WIN_STATE.getCard32Property(window);
         if ((win_state & WIN_STATE_SHADED) == 0) {
@@ -146,10 +151,12 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
         XA_WIN_STATE.setCard32Property(window, win_state);
     }
 
+    @Override
     public boolean supportsLayer(int layer) {
         return ((layer == LAYER_ALWAYS_ON_TOP) || (layer == LAYER_NORMAL)) && doLayerProtocol();
     }
 
+    @Override
     public void setLayer(XWindowPeer window, int layer) {
         if (window.isShowing()) {
             XClientMessageEvent req = new XClientMessageEvent();

@@ -34,6 +34,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 8263670
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires (os.family != "windows") & (os.family != "mac")
  * @library /test/lib
  * @run driver PmapOnDebugdTest

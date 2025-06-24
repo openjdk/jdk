@@ -26,6 +26,7 @@
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
  *      7171415 6339649 6933879 8037396 8272072 8051627 8297687 8353013
  * @author Mark Reinhold
+ * @run main/othervm Test
  */
 
 import java.io.ByteArrayInputStream;

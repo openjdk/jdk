@@ -25,7 +25,7 @@
  * @test
  * @bug     6289436
  * @summary com.sun.tools.javac.util.List.from(A[]) shouldn't be deprecated
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../..
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile ../../util/list/FromArray.java

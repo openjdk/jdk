@@ -25,7 +25,7 @@
  * @test
  * @bug     6227936
  * @summary Wrong type of inherited method using specialized type parameter
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T6227936.java
  */
 

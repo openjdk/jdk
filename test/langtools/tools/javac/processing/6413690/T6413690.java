@@ -25,7 +25,7 @@
  * @test
  * @bug     6413690 6380018
  * @summary JavacProcessingEnvironment does not enter trees from preceding rounds
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler

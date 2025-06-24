@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.util.Arrays;
+
 import static sun.nio.cs.CharsetMapping.*;
 
 public class SingleByte
@@ -217,7 +217,7 @@ public class SingleByte
             int len = Math.min(dl - dp, sl - sp);
 
             if (isASCIICompatible) {
-                int n = JLA.encodeASCII(sa, sp, da, dp, len);
+                int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, len);
                 sp += n;
                 dp += n;
                 len -= n;

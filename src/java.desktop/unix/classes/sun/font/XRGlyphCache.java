@@ -37,7 +37,7 @@ import sun.java2d.xr.*;
  * @author Clemens Eisserer
  */
 
-public class XRGlyphCache implements GlyphDisposedListener {
+public final class XRGlyphCache implements GlyphDisposedListener {
     XRBackend con;
     XRCompositeManager maskBuffer;
     HashMap<MutableInteger, XRGlyphCacheEntry> cacheMap = new HashMap<MutableInteger, XRGlyphCacheEntry>(256);
@@ -66,6 +66,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
         StrikeCache.addGlyphDisposedListener(this);
     }
 
+    @Override
     public void glyphDisposed(ArrayList<Long> glyphPtrList) {
         try {
             SunToolkit.awtLock();

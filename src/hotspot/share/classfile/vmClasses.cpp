@@ -81,7 +81,7 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive() && !JvmtiExport::should_post_class_prepare()) {
     InstanceKlass* k = *klassp;
-    assert(k->is_shared_boot_class(), "must be");
+    assert(k->defined_by_boot_loader(), "must be");
 
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     resolve_shared_class(k, loader_data, Handle(), CHECK_false);

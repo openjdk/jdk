@@ -216,12 +216,8 @@ class Compilation: public StackObj {
   const char* bailout_msg() const                { return _bailout_msg; }
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  static uint desired_max_code_buffer_size() {
-    return (uint)NMethodSizeLimit;  // default 64K
-  }
-  static uint desired_max_constant_size() {
-    return desired_max_code_buffer_size() / 10;
-  }
+  const static uint desired_max_code_buffer_size = 64*K * wordSize;
+  const static uint desired_max_constant_size = desired_max_code_buffer_size / 10;
 
   static bool setup_code_buffer(CodeBuffer* cb, int call_stub_estimate);
 

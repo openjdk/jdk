@@ -55,7 +55,10 @@ size_t ShenandoahGlobalGeneration::soft_max_capacity() const {
 }
 
 size_t ShenandoahGlobalGeneration::available() const {
-  return ShenandoahHeap::heap()->free_set()->available();
+  // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
+  // at what is available to the mutator when reporting how much memory is available.
+  size_t available = this->ShenandoahGeneration::available();
+  return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 
 size_t ShenandoahGlobalGeneration::soft_available() const {

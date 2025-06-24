@@ -30,7 +30,6 @@
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;

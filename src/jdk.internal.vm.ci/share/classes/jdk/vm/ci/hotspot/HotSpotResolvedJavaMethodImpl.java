@@ -489,7 +489,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             // case of a deoptimization.
             info = DefaultProfilingInfo.get(TriState.FALSE);
         } else {
-            info = new HotSpotProfilingInfo(methodData, this, includeNormal, includeOSR);
+            info = new HotSpotProfilingInfoImpl(methodData, this, includeNormal, includeOSR);
         }
         return info;
     }
@@ -571,6 +571,19 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         // Copied from java.lang.Method.isDefault()
         int mask = Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC;
         return ((getModifiers() & mask) == Modifier.PUBLIC) && getDeclaringClass().isInterface();
+    }
+
+    /*
+     * Currently in hotspot a method can either be a "normal" or an "overpass"
+     * method. Overpass methods are instance methods which are created when
+     * otherwise a valid candidate for method resolution would not be found.
+     */
+    @Override
+    public boolean isDeclared() {
+        if (isConstructor() || isClassInitializer()) {
+            return false;
+        }
+        return (getConstMethodFlags() & config().constMethodFlagsIsOverpass) == 0;
     }
 
     @Override

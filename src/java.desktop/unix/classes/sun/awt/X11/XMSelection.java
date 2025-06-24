@@ -34,7 +34,7 @@ package sun.awt.X11;
 import java.util.*;
 import sun.util.logging.PlatformLogger;
 
-public class  XMSelection {
+public final class  XMSelection {
 
     /*
      * A method for a subsystem to express its interest in a certain

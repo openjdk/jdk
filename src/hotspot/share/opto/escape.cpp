@@ -29,18 +29,18 @@
 #include "libadt/vectset.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "opto/c2compiler.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
-#include "opto/macro.hpp"
 #include "opto/locknode.hpp"
-#include "opto/phaseX.hpp"
+#include "opto/macro.hpp"
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
-#include "opto/castnode.hpp"
+#include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/macros.hpp"
 
@@ -2260,14 +2260,10 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
             }
             PointsToNode* src_ptn = ptnode_adr(src->_idx);
             assert(src_ptn != nullptr, "should be registered");
-            if (arg_ptn != src_ptn) {
-              // Special arraycopy edge:
-              // A destination object's field can't have the source object
-              // as base since objects escape states are not related.
-              // Only escape state of destination object's fields affects
-              // escape state of fields in source object.
-              add_arraycopy(call, es, src_ptn, arg_ptn);
-            }
+            // Special arraycopy edge:
+            // Only escape state of destination object's fields affects
+            // escape state of fields in source object.
+            add_arraycopy(call, es, src_ptn, arg_ptn);
           }
         }
       }

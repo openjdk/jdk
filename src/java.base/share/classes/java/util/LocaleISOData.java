@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,47 @@
 
 package java.util;
 
+import java.util.function.Supplier;
+
+// Methods and suppliers for producing ISO 639/3166 resources used by Locale.
 class LocaleISOData {
+
+    static final Supplier<String[]> ISO_639 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String[] get() {
+                    return getISO2Table(isoLanguageTable);
+                }
+            });
+
+    static final Supplier<String[]> ISO_3166_1_ALPHA2 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String[] get() {
+                    return getISO2Table(isoCountryTable);
+                }
+            });
+
+    static final Supplier<Set<String>> ISO_3166_1_ALPHA3 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public Set<String> get() {
+                    return computeISO3166_1Alpha3Countries();
+                }
+            });
+
+    static final Supplier<Set<String>> ISO_3166_3 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public Set<String> get() {
+                    return Set.of(ISO3166_3);
+                }
+            });
+
     /**
      * The 2- and 3-letter ISO 639 language codes.
      */
-    static final String isoLanguageTable =
+    private static final String isoLanguageTable =
           "aa" + "aar"  // Afar
         + "ab" + "abk"  // Abkhazian
         + "ae" + "ave"  // Avestan
@@ -145,7 +181,7 @@ class LocaleISOData {
         + "mt" + "mlt"  // Maltese
         + "my" + "mya"  // Burmese
         + "na" + "nau"  // Nauru
-        + "nb" + "nob"  // Norwegian Bokm\u00e5l
+        + "nb" + "nob"  // Norwegian Bokmål
         + "nd" + "nde"  // North Ndebele
         + "ne" + "nep"  // Nepali
         + "ng" + "ndo"  // Ndonga
@@ -209,7 +245,7 @@ class LocaleISOData {
         + "uz" + "uzb"  // Uzbek
         + "ve" + "ven"  // Venda
         + "vi" + "vie"  // Vietnamese
-        + "vo" + "vol"  // Volap\u00fck
+        + "vo" + "vol"  // Volapük
         + "wa" + "wln"  // Walloon
         + "wo" + "wol"  // Wolof
         + "xh" + "xho"  // Xhosa
@@ -223,7 +259,7 @@ class LocaleISOData {
     /**
      * The 2- and 3-letter ISO 3166 country codes.
      */
-    static final String isoCountryTable =
+    private static final String isoCountryTable =
           "AD" + "AND"  // Andorra, Principality of
         + "AE" + "ARE"  // United Arab Emirates
         + "AF" + "AFG"  // Afghanistan
@@ -239,7 +275,7 @@ class LocaleISOData {
         + "AT" + "AUT"  // Austria, Republic of
         + "AU" + "AUS"  // Australia, Commonwealth of
         + "AW" + "ABW"  // Aruba
-        + "AX" + "ALA"  // \u00c5land Islands
+        + "AX" + "ALA"  // Åland Islands
         + "AZ" + "AZE"  // Azerbaijan, Republic of
         + "BA" + "BIH"  // Bosnia and Herzegovina
         + "BB" + "BRB"  // Barbados
@@ -250,7 +286,7 @@ class LocaleISOData {
         + "BH" + "BHR"  // Bahrain, Kingdom of
         + "BI" + "BDI"  // Burundi, Republic of
         + "BJ" + "BEN"  // Benin, People's Republic of
-        + "BL" + "BLM"  // Saint Barth\u00e9lemy
+        + "BL" + "BLM"  // Saint Barthélemy
         + "BM" + "BMU"  // Bermuda
         + "BN" + "BRN"  // Brunei Darussalam
         + "BO" + "BOL"  // Bolivia, Plurinational State of
@@ -278,7 +314,7 @@ class LocaleISOData {
 //      + "CS" + "SCG"  // Serbia and Montenegro
         + "CU" + "CUB"  // Cuba, Republic of
         + "CV" + "CPV"  // Cape Verde, Republic of
-        + "CW" + "CUW"  // Cura\u00e7ao
+        + "CW" + "CUW"  // Curaçao
         + "CX" + "CXR"  // Christmas Island
         + "CY" + "CYP"  // Cyprus, Republic of
         + "CZ" + "CZE"  // Czech Republic
@@ -480,18 +516,60 @@ class LocaleISOData {
     /**
      * Array to hold country codes for ISO3166-3.
      */
-    static final String[] ISO3166_3 = {
+    private static final String[] ISO3166_3 = {
         "AIDJ", "ANHH", "BQAQ", "BUMM", "BYAA", "CSHH", "CSXX", "CTKI", "DDDE",
         "DYBJ", "FQHH", "FXFR", "GEHH", "HVBF", "JTUM", "MIUM", "NHVU", "NQAQ",
         "NTHH", "PCHH", "PUUM", "PZPA", "RHZW", "SKIN", "SUHH", "TPTL", "VDVN",
         "WKUM", "YDYE", "YUCS", "ZRCD"
     };
 
+    static String getISO3LangCode(String language) {
+        return getISO3Code(language, isoLanguageTable);
+    }
+
+    static String getISO3CtryCode(String country) {
+        return getISO3Code(country, isoCountryTable);
+    }
+
+    private static String getISO3Code(String iso2Code, String table) {
+        int codeLength = iso2Code.length();
+        if (codeLength == 0) {
+            return "";
+        }
+
+        int tableLength = table.length();
+        int index = tableLength;
+        if (codeLength == 2) {
+            char c1 = iso2Code.charAt(0);
+            char c2 = iso2Code.charAt(1);
+            for (index = 0; index < tableLength; index += 5) {
+                if (table.charAt(index) == c1
+                        && table.charAt(index + 1) == c2) {
+                    break;
+                }
+            }
+        }
+        return index < tableLength ? table.substring(index + 2, index + 5) : null;
+    }
+
+    /**
+     * This method computes an array of alpha-2 codes from either ISO639 or
+     * ISO3166.
+     */
+    private static String[] getISO2Table(String table) {
+        int len = table.length() / 5;
+        String[] isoTable = new String[len];
+        for (int i = 0, j = 0; i < len; i++, j += 5) {
+            isoTable[i] = table.substring(j, j + 2);
+        }
+        return isoTable;
+    }
+
     /**
      * This method computes a set of ISO3166-1 alpha-3 country codes from
      * existing isoCountryTable.
      */
-    static Set<String> computeISO3166_1Alpha3Countries() {
+    private static Set<String> computeISO3166_1Alpha3Countries() {
         int tableLength = isoCountryTable.length();
         String[] isoTable = new String[tableLength / 5];
         for (int i = 0, index = 0; index < tableLength; i++, index += 5) {
@@ -500,6 +578,5 @@ class LocaleISOData {
         return Set.of(isoTable);
     }
 
-    private LocaleISOData() {
-    }
+    private LocaleISOData() {}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
  */
 
 /*
@@ -79,11 +76,11 @@
 
 package sun.text.resources;
 
-import sun.util.resources.ParallelListResourceBundle;
+import sun.util.resources.OpenListResourceBundle;
 
-public class FormatData extends ParallelListResourceBundle {
+public class FormatData extends OpenListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides OpenListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -119,6 +116,109 @@ public class FormatData extends ParallelListResourceBundle {
             "Reiwa",
         };
 
+        // Moved from JavaTimeSupplementary
+        final String[] sharedQuarterNames = {
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+        };
+
+        final String[] sharedQuarterNarrows = {
+            "1",
+            "2",
+            "3",
+            "4",
+        };
+
+        final String[] sharedDatePatterns = {
+            "GGGG y MMMM d, EEEE",
+            "GGGG y MMMM d",
+            "GGGG y MMM d",
+            "G y-MM-dd",
+        };
+
+        final String[] sharedDayAbbrs = {
+            "Sun",
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+        };
+
+        final String[] sharedDayNarrows = {
+            "S",
+            "M",
+            "T",
+            "W",
+            "T",
+            "F",
+            "S",
+        };
+
+        final String[] sharedEras = {
+            "",
+            "AH",
+        };
+
+        final String[] sharedMonthNarrows = {
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "",
+        };
+
+        final String[] sharedTimePatterns = {
+            "HH:mm:ss zzzz",
+            "HH:mm:ss z",
+            "HH:mm:ss",
+            "HH:mm",
+        };
+
+        final String[] sharedAmPmMarkers = {
+            "AM",
+            "PM",
+        };
+
+        final String[] sharedJavaTimeDatePatterns = {
+            "G y MMMM d, EEEE",
+            "G y MMMM d",
+            "G y MMM d",
+            "GGGGG y-MM-dd",
+        };
+
+        final String[] sharedShortEras = {
+            "Before R.O.C.",
+            "R.O.C.",
+        };
+
+        final String[] sharedMonthAbbrs = {
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+            "",
+        };
+
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -138,39 +238,9 @@ public class FormatData extends ParallelListResourceBundle {
                 }
             },
             { "MonthAbbreviations",
-                new String[] {
-                    "Jan", // abb january
-                    "Feb", // abb february
-                    "Mar", // abb march
-                    "Apr", // abb april
-                    "May", // abb may
-                    "Jun", // abb june
-                    "Jul", // abb july
-                    "Aug", // abb august
-                    "Sep", // abb september
-                    "Oct", // abb october
-                    "Nov", // abb november
-                    "Dec", // abb december
-                    "" // abb month 13 if applicable
-                }
-            },
+                sharedMonthAbbrs },
             { "MonthNarrows",
-                new String[] {
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "10",
-                    "11",
-                    "12",
-                    "",
-                }
-            },
+                sharedMonthNarrows },
             { "DayNames",
                 new String[] {
                     "Sunday", // Sunday
@@ -183,33 +253,11 @@ public class FormatData extends ParallelListResourceBundle {
                 }
             },
             { "DayAbbreviations",
-                new String[] {
-                    "Sun", // abb Sunday
-                    "Mon", // abb Monday
-                    "Tue", // abb Tuesday
-                    "Wed", // abb Wednesday
-                    "Thu", // abb Thursday
-                    "Fri", // abb Friday
-                    "Sat" // abb Saturday
-                }
-            },
+                sharedDayAbbrs },
             { "DayNarrows",
-                new String[] {
-                    "S",
-                    "M",
-                    "T",
-                    "W",
-                    "T",
-                    "F",
-                    "S",
-                }
-            },
+                sharedDayNarrows },
             { "AmPmMarkers",
-                new String[] {
-                    "AM", // am marker
-                    "PM" // pm marker
-                }
-            },
+                sharedAmPmMarkers },
             { "narrow.AmPmMarkers",
                 new String[] {
                     "a", // am marker
@@ -227,22 +275,17 @@ public class FormatData extends ParallelListResourceBundle {
                 }
             },
             { "buddhist.Eras",
-              buddhistEras
-            },
+                buddhistEras },
             { "buddhist.short.Eras",
-              buddhistEras
-            },
+                buddhistEras },
             { "buddhist.narrow.Eras",
-              buddhistEras
-            },
+                buddhistEras },
             { "japanese.Eras",
                 japaneseEras },
             { "japanese.short.Eras",
-                japaneseEraAbbrs
-            },
+                japaneseEraAbbrs },
             { "japanese.narrow.Eras",
-                japaneseEraAbbrs
-            },
+                japaneseEraAbbrs },
             { "japanese.FirstYear",
                 new String[] { // Japanese imperial calendar year name
                     // empty in English
@@ -898,6 +941,164 @@ public class FormatData extends ParallelListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
+
+            // Moved from JavaTimeSupplementary
+            { "QuarterAbbreviations",
+                sharedQuarterNames },
+            { "QuarterNames",
+                sharedQuarterNames },
+            { "QuarterNarrows",
+                sharedQuarterNarrows },
+            { "field.dayperiod",
+                "Dayperiod" },
+            { "field.era",
+                "Era" },
+            { "field.hour",
+                "Hour" },
+            { "field.minute",
+                "Minute" },
+            { "field.month",
+                "Month" },
+            { "field.second",
+                "Second" },
+            { "field.week",
+                "Week" },
+            { "field.weekday",
+                "Day of the Week" },
+            { "field.year",
+                "Year" },
+            { "field.zone",
+                "Zone" },
+            { "islamic.DatePatterns",
+                sharedDatePatterns },
+            { "islamic.DayAbbreviations",
+                sharedDayAbbrs },
+            { "islamic.DayNames",
+                sharedDayAbbrs },
+            { "islamic.DayNarrows",
+                sharedDayNarrows },
+            { "islamic.Eras",
+                sharedEras },
+            { "islamic.MonthAbbreviations",
+                new String[] {
+                    "Muh.",
+                    "Saf.",
+                    "Rab. I",
+                    "Rab. II",
+                    "Jum. I",
+                    "Jum. II",
+                    "Raj.",
+                    "Sha.",
+                    "Ram.",
+                    "Shaw.",
+                    "Dhuʻl-Q.",
+                    "Dhuʻl-H.",
+                    "",
+                }
+            },
+            { "islamic.MonthNames",
+                new String[] {
+                    "Muharram",
+                    "Safar",
+                    "Rabiʻ I",
+                    "Rabiʻ II",
+                    "Jumada I",
+                    "Jumada II",
+                    "Rajab",
+                    "Shaʻban",
+                    "Ramadan",
+                    "Shawwal",
+                    "Dhuʻl-Qiʻdah",
+                    "Dhuʻl-Hijjah",
+                    "",
+                }
+            },
+            { "islamic.MonthNarrows",
+                sharedMonthNarrows },
+            { "islamic.QuarterNames",
+                sharedQuarterNames },
+            { "islamic.QuarterNarrows",
+                sharedQuarterNarrows },
+            { "islamic.TimePatterns",
+                sharedTimePatterns },
+            { "islamic.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "islamic.long.Eras",
+                sharedEras },
+            { "islamic.narrow.Eras",
+                sharedEras },
+            { "islamic.short.Eras",
+                sharedEras },
+            { "java.time.buddhist.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.buddhist.long.Eras",
+                new String[] {
+                    "BC",
+                    "BE",
+                }
+            },
+            { "java.time.buddhist.short.Eras",
+                buddhistEras },
+            { "java.time.islamic.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.japanese.DatePatterns",
+                new String[] {
+                    "G y MMMM d (EEEE)",
+                    "G y MMMM d",
+                    "G y MMM d",
+                    "GGGGGy.MM.dd",
+                }
+            },
+            { "java.time.japanese.long.Eras",
+                japaneseEras },
+            { "java.time.japanese.short.Eras",
+                japaneseEras },
+            { "java.time.long.Eras",
+                new String[] {
+                    "BCE",
+                    "CE",
+                }
+            },
+            { "java.time.roc.DatePatterns",
+                sharedJavaTimeDatePatterns },
+            { "java.time.short.Eras",
+                julianEras },
+            { "roc.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "roc.DatePatterns",
+                sharedDatePatterns },
+            { "roc.DayNames",
+                sharedDayAbbrs },
+            { "roc.DayNarrows",
+                sharedDayNarrows },
+            { "roc.Eras",
+                sharedShortEras },
+            { "roc.MonthAbbreviations",
+                sharedMonthAbbrs },
+            { "roc.MonthNames",
+                sharedMonthAbbrs },
+            { "roc.MonthNarrows",
+                sharedMonthNarrows },
+            { "roc.QuarterNames",
+                sharedQuarterNames },
+            { "roc.QuarterNarrows",
+                sharedQuarterNarrows },
+            { "roc.TimePatterns",
+                sharedTimePatterns },
+            { "roc.abbreviated.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "roc.long.Eras",
+                sharedShortEras },
+            { "roc.narrow.AmPmMarkers",
+                sharedAmPmMarkers },
+            { "roc.narrow.Eras",
+                sharedShortEras },
+            { "roc.short.Eras",
+                sharedShortEras },
+            { "timezone.gmtFormat",
+                "GMT{0}" },
+            { "timezone.hourFormat",
+                "+HH:mm;-HH:mm" },
         };
     }
 }

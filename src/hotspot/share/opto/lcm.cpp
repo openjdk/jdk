@@ -31,9 +31,9 @@
 #include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
 #include "opto/machnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/chaitin.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
@@ -74,6 +74,36 @@ static bool needs_explicit_null_check_for_read(Node *val) {
   }
 
   return true;
+}
+
+void PhaseCFG::move_node_and_its_projections_to_block(Node* n, Block* b) {
+  assert(!is_CFG(n), "cannot move CFG node");
+  Block* old = get_block_for_node(n);
+  old->find_remove(n);
+  b->add_inst(n);
+  map_node_to_block(n, b);
+  // Check for Mach projections that also need to be moved.
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* out = n->fast_out(i);
+    if (!out->is_MachProj()) {
+      continue;
+    }
+    assert(!n->is_MachProj(), "nested projections are not allowed");
+    move_node_and_its_projections_to_block(out, b);
+  }
+}
+
+void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
+  assert(!is_CFG(n), "cannot move CFG node");
+  Block* current = get_block_for_node(n);
+  if (current->dominates(b)) {
+    return; // n is already placed above b, do nothing.
+  }
+  // We only expect nodes without further inputs, like MachTemp or load Base.
+  assert(n->req() == 0 || (n->req() == 1 && n->in(0) == (Node*)C->root()),
+         "need for recursive hoisting not expected");
+  assert(b->dominates(current), "precondition: can only move n to b if b dominates n");
+  move_node_and_its_projections_to_block(n, b);
 }
 
 //------------------------------implicit_null_check----------------------------
@@ -160,12 +190,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *m = val->out(i);
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
-    if (mach->barrier_data() != 0) {
+    if (mach->barrier_data() != 0 &&
+        !mach->is_late_expanded_null_check_candidate()) {
       // Using memory accesses with barriers to perform implicit null checks is
-      // not supported. These operations might expand into multiple assembly
-      // instructions during code emission, including new memory accesses (e.g.
-      // in G1's pre-barrier), which would invalidate the implicit null
-      // exception table.
+      // only supported if these are explicit marked as emitting a candidate
+      // memory access instruction at their initial address. If not marked as
+      // such, barrier-tagged operations might expand into one or several memory
+      // access instructions located at arbitrary offsets from the initial
+      // address, which would invalidate the implicit null exception table.
       continue;
     }
     was_store = false;
@@ -321,6 +353,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // Ignore DecodeN val which could be hoisted to where needed.
         if( is_decoden ) continue;
       }
+      if (mach->in(j)->is_MachTemp()) {
+        assert(mach->in(j)->outcnt() == 1, "MachTemp nodes should not be shared");
+        // Ignore MachTemp inputs, they can be safely hoisted with the candidate.
+        // MachTemp nodes have no inputs themselves and are only used to reserve
+        // a scratch register for the implementation of the node (e.g. in
+        // late-expanded GC barriers).
+        continue;
+      }
       // Block of memory-op input
       Block *inb = get_block_for_node(mach->in(j));
       Block *b = block;          // Start from nul check
@@ -388,38 +428,24 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       // Hoist it up to the end of the test block together with its inputs if they exist.
       for (uint i = 2; i < val->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
-        Node *temp = val->in(i);
-        Block *tempb = get_block_for_node(temp);
-        if (!tempb->dominates(block)) {
-          assert(block->dominates(tempb), "sanity check: temp node placement");
-          // We only expect nodes without further inputs, like MachTemp or load Base.
-          assert(temp->req() == 0 || (temp->req() == 1 && temp->in(0) == (Node*)C->root()),
-                 "need for recursive hoisting not expected");
-          tempb->find_remove(temp);
-          block->add_inst(temp);
-          map_node_to_block(temp, block);
-        }
+        // Inputs of val may already be early enough, but if not move them together with val.
+        ensure_node_is_at_block_or_above(val->in(i), block);
       }
-      valb->find_remove(val);
-      block->add_inst(val);
-      map_node_to_block(val, block);
-      // DecodeN on x86 may kill flags. Check for flag-killing projections
-      // that also need to be hoisted.
-      for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
-        Node* n = val->fast_out(j);
-        if( n->is_MachProj() ) {
-          get_block_for_node(n)->find_remove(n);
-          block->add_inst(n);
-          map_node_to_block(n, block);
-        }
-      }
+      move_node_and_its_projections_to_block(val, block);
     }
   }
+
+  // Move any MachTemp inputs to the end of the test block.
+  for (uint i = 0; i < best->req(); i++) {
+    Node* n = best->in(i);
+    if (n == nullptr || !n->is_MachTemp()) {
+      continue;
+    }
+    ensure_node_is_at_block_or_above(n, block);
+  }
+
   // Hoist the memory candidate up to the end of the test block.
-  Block *old_block = get_block_for_node(best);
-  old_block->find_remove(best);
-  block->add_inst(best);
-  map_node_to_block(best, block);
+  move_node_and_its_projections_to_block(best, block);
 
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: null or dominating control.
@@ -427,17 +453,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   if (ctrl != nullptr && get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
-  }
-
-  // Check for flag-killing projections that also need to be hoisted
-  // Should be DU safe because no edge updates.
-  for (DUIterator_Fast jmax, j = best->fast_outs(jmax); j < jmax; j++) {
-    Node* n = best->fast_out(j);
-    if( n->is_MachProj() ) {
-      get_block_for_node(n)->find_remove(n);
-      block->add_inst(n);
-      map_node_to_block(n, block);
-    }
   }
 
   // proj==Op_True --> ne test; proj==Op_False --> eq test.
@@ -491,7 +506,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       if (n->needs_anti_dependence_check() &&
           n->in(LoadNode::Memory) == best->in(StoreNode::Memory)) {
         // Found anti-dependent load
-        insert_anti_dependences(block, n);
+        raise_above_anti_dependences(block, n);
         if (C->failing()) {
           return;
         }
@@ -795,13 +810,19 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
 }
 
 //------------------------------set_next_call----------------------------------
-void PhaseCFG::set_next_call(Block* block, Node* n, VectorSet& next_call) {
-  if( next_call.test_set(n->_idx) ) return;
-  for( uint i=0; i<n->len(); i++ ) {
-    Node *m = n->in(i);
-    if( !m ) continue;  // must see all nodes in block that precede call
-    if (get_block_for_node(m) == block) {
-      set_next_call(block, m, next_call);
+void PhaseCFG::set_next_call(const Block* block, Node* init, VectorSet& next_call) const {
+  Node_List worklist;
+  worklist.push(init);
+
+  while (worklist.size() > 0) {
+    Node* n = worklist.pop();
+    if (next_call.test_set(n->_idx)) continue;
+    for (uint i = 0; i < n->len(); i++) {
+      Node* m = n->in(i);
+      if (m == nullptr) continue;  // must see all nodes in block that precede call
+      if (get_block_for_node(m) == block) {
+        worklist.push(m);
+      }
     }
   }
 }
@@ -1363,7 +1384,7 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
       sb->insert_node(clone, 1);
       map_node_to_block(clone, sb);
       if (clone->needs_anti_dependence_check()) {
-        insert_anti_dependences(sb, clone);
+        raise_above_anti_dependences(sb, clone);
         if (C->failing()) {
           return;
         }

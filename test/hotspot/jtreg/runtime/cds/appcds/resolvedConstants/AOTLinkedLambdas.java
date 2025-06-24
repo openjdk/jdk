@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
  * @bug 8340836
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
  * @build AOTLinkedLambdas
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -62,7 +60,8 @@ public class AOTLinkedLambdas {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-XX:+AOTClassLinking",
-                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:aot+resolve=trace",
+                       "-Xlog:aot+class=debug",
                        "-Xlog:cds+class=debug",
                        "-cp", appJar);
 

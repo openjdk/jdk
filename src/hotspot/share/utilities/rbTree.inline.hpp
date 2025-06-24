@@ -550,19 +550,19 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType*
   new_node->_parent = old_node->_parent;
 
   if (new_node->is_left_child()) {
-    assert(cmp((const NodeType*)new_node, (const NodeType*)new_node->_parent), "new node not < parent");
+    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->parent())), "new node not < parent");
   } else if (new_node->is_right_child()) {
-    assert(cmp((const NodeType*)new_node->_parent, (const NodeType*)new_node->_right), "new node not > parent");
+    assert(cmp(static_cast<const NodeType*>(new_node->parent()), static_cast<const NodeType*>(new_node)), "new node not > parent");
   }
 
   new_node->_left = old_node->_left;
   new_node->_right = old_node->_right;
   if (new_node->_left != nullptr) {
-    assert(cmp((const NodeType*)new_node->_left, (const NodeType*)new_node), "left child not < new node");
+    assert(cmp(static_cast<const NodeType*>(new_node->_left), static_cast<const NodeType*>(new_node)), "left child not < new node");
     new_node->_left->set_parent(new_node);
   }
   if (new_node->_right != nullptr) {
-    assert(cmp((const NodeType*)new_node, (const NodeType*)new_node->_right), "right child not > new node");
+    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->_right)), "right child not > new node");
     new_node->_right->set_parent(new_node);
   }
 
@@ -606,6 +606,7 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
 template <typename K, typename NodeType, typename COMPARATOR>
 template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) const {
+  assert_key_leq(from, to);
   if (_root == nullptr) {
     return;
   }
@@ -614,13 +615,6 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
   Cursor cursor_end = cursor(to);
   const NodeType* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
   const NodeType* end = next(cursor_end).node();
-
-  if (start != nullptr) {
-    assert_leq(from, start);
-    assert_geq(to, start);
-  } else {
-    assert(end == nullptr, "end node found but not start node");
-  }
 
   while (start != end) {
     f(start);

@@ -164,6 +164,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code fallthrough}          <td>falling through from one case of a {@code switch} statement to
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
+ * <tr><th scope="row">{@code identity}             <td>use of a value-based class where an identity class is expected
  * <tr><th scope="row">{@code incubating}           <td>use of incubating modules
  * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
@@ -186,7 +187,11 @@ import javax.tools.StandardLocation;
  *                                                      and interfaces
  * <tr><th scope="row">{@code static}               <td>accessing a static member using an instance
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
- * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
+ * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes;
+ *                                                      this key is a deprecated alias for {@code identity}, which has
+ *                                                      the same uses and effects. Users are encouraged to use the
+ *                                                      {@code identity} category for all future and existing uses of
+ *                                                      {@code synchronization}
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
  * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks

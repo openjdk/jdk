@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,22 +77,20 @@ final class ChangeCipherSpec {
                 try {
                     writeAuthenticator = Authenticator.valueOf(
                             hc.negotiatedProtocol, ncs.macAlg,
-                            tkd.getTrafficKey(hc.sslConfig.isClientMode ?
+                            tkd.deriveKey(hc.sslConfig.isClientMode ?
                                     "clientMacKey" : "serverMacKey"));
                 } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                     // unlikely
                     throw new SSLException("Algorithm missing:  ", e);
                 }
             }
-
-            SecretKey writeKey =
-                    tkd.getTrafficKey(hc.sslConfig.isClientMode ?
-                                    "clientWriteKey" : "serverWriteKey");
-            SecretKey writeIv =
-                    tkd.getTrafficKey(hc.sslConfig.isClientMode ?
-                                    "clientWriteIv" : "serverWriteIv");
+            SecretKey writeKey = tkd.deriveKey(hc.sslConfig.isClientMode ?
+                    "clientWriteKey" : "serverWriteKey");
+            byte[] writeIv = tkd.deriveData(hc.sslConfig.isClientMode ?
+                    "clientWriteIv" : "serverWriteIv");
             IvParameterSpec iv = (writeIv == null) ? null :
-                    new IvParameterSpec(writeIv.getEncoded());
+                    new IvParameterSpec(writeIv);
+
             SSLWriteCipher writeCipher;
             try {
                 writeCipher = ncs.bulkCipher.createWriteCipher(
@@ -173,7 +171,7 @@ final class ChangeCipherSpec {
                     try {
                         readAuthenticator = Authenticator.valueOf(
                                 hc.negotiatedProtocol, ncs.macAlg,
-                                tkd.getTrafficKey(hc.sslConfig.isClientMode ?
+                                tkd.deriveKey(hc.sslConfig.isClientMode ?
                                         "serverMacKey" : "clientMacKey"));
                     } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                         // unlikely
@@ -181,14 +179,12 @@ final class ChangeCipherSpec {
                     }
                 }
 
-                SecretKey readKey =
-                        tkd.getTrafficKey(hc.sslConfig.isClientMode ?
-                                        "serverWriteKey" : "clientWriteKey");
-                SecretKey readIv =
-                        tkd.getTrafficKey(hc.sslConfig.isClientMode ?
-                                        "serverWriteIv" : "clientWriteIv");
+                SecretKey readKey = tkd.deriveKey(hc.sslConfig.isClientMode ?
+                        "serverWriteKey" : "clientWriteKey");
+                byte[] readIv = tkd.deriveData(hc.sslConfig.isClientMode ?
+                        "serverWriteIv" : "clientWriteIv");
                 IvParameterSpec iv = (readIv == null) ? null :
-                        new IvParameterSpec(readIv.getEncoded());
+                        new IvParameterSpec(readIv);
                 SSLReadCipher readCipher;
                 try {
                     readCipher = ncs.bulkCipher.createReadCipher(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,7 @@ final class P11Signature extends SignatureSpi {
         }
         switch (type) {
             case T_UPDATE -> {
-                if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
+                if (!(byteBuffer instanceof DirectBuffer)) {
                     // cannot do better than default impl
                     super.engineUpdate(byteBuffer);
                     return;
@@ -587,7 +587,7 @@ final class P11Signature extends SignatureSpi {
                 int ofs = byteBuffer.position();
                 NIO_ACCESS.acquireSession(byteBuffer);
                 try {
-                    long addr = dByteBuffer.address();
+                    long addr = NIO_ACCESS.getBufferAddress(byteBuffer);
                     if (mode == M_SIGN) {
                         token.p11.C_SignUpdate
                                 (session.id(), addr + ofs, null, 0, len);

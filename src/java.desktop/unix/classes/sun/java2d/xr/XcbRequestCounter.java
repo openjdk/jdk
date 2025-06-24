@@ -31,7 +31,7 @@ package sun.java2d.xr;
  * @author Clemens Eisserer
  */
 
-public class XcbRequestCounter {
+public final class XcbRequestCounter {
     private static final long MAX_UINT = 4294967295L;
 
     long value;

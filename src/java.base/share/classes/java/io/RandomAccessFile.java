@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,21 +367,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private int traceRead0() throws IOException {
         int result = 0;
         long bytesRead = 0;
-        boolean endOfFile = false;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             result = read0();
             if (result < 0) {
-                endOfFile = true;
+                bytesRead = -1;
             } else {
                 bytesRead = 1;
             }
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
-                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return result;
     }
@@ -404,19 +399,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private int traceReadBytes0(byte b[], int off, int len) throws IOException {
         int bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             bytesRead = readBytes0(b, off, len);
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
     }
@@ -582,16 +569,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private void traceImplWrite(int b) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             implWrite(b);
             bytesWritten = 1;
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
@@ -624,16 +607,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private void traceImplWriteBytes(byte b[], int off, int len) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             implWriteBytes(b, off, len);
             bytesWritten = len;
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 

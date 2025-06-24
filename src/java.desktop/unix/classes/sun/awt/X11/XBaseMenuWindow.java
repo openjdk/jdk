@@ -153,6 +153,7 @@ public abstract class XBaseMenuWindow extends XWindow {
             this.items = new XMenuItemPeer[0];
         }
 
+        @Override
         public Object clone() {
             try {
                 return super.clone();
@@ -227,6 +228,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Overrides XBaseWindow.instantPreInit
      */
+    @Override
     void instantPreInit(XCreateWindowParams params) {
         super.instantPreInit(params);
         items = new ArrayList<>();
@@ -894,6 +896,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Filters X events
      */
+     @Override
      protected boolean isEventDisabled(XEvent e) {
         switch (e.get_type()) {
           case XConstants.Expose :
@@ -913,6 +916,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     /**
      * Invokes disposal procedure on eventHandlerThread
      */
+    @Override
     public void dispose() {
         setDisposed(true);
 
@@ -943,6 +947,7 @@ public abstract class XBaseMenuWindow extends XWindow {
      * XBaseMenuWindow has no corresponding component
      * so events cannot be processed using standard means
      */
+    @Override
     void postEvent(final AWTEvent event) {
         InvocationEvent ev = new InvocationEvent(event.getSource(), new Runnable() {
             public void run() {
@@ -969,6 +974,7 @@ public abstract class XBaseMenuWindow extends XWindow {
      * Save location of pointer for further use
      * then invoke superclass
      */
+    @Override
     public boolean grabInput() {
         int rootX;
         int rootY;

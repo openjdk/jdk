@@ -496,7 +496,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   // reference processing currently works in G1.
   ref_processor_stw()->start_discovery(false /* always_clear */);
 
-  _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
+  _evac_failure_regions.pre_collection(_g1h->max_num_regions());
 
   _g1h->gc_prologue(false);
 

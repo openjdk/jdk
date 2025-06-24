@@ -43,6 +43,7 @@ import javax.xml.XMLConstants;
 import javax.xml.validation.Schema;
 import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -64,7 +65,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 @SuppressWarnings("deprecation")
 public class SAXParserImpl extends javax.xml.parsers.SAXParser
@@ -412,7 +413,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
              * it is null.
              */
             if (fSecurityManager == null) {
-                fSecurityManager = new XMLSecurityManager(true);
+                fSecurityManager = JdkXmlConfig.getInstance(false).getXMLSecurityManager(false);
             }
             try {
                 super.setProperty(SECURITY_MANAGER, fSecurityManager);
@@ -423,7 +424,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
             }
 
             if (fSecurityPropertyMgr == null) {
-                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+                fSecurityPropertyMgr = JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false);
             }
             try {
                 super.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);

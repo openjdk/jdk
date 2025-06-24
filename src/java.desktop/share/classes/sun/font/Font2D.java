@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,6 +533,14 @@ public abstract class Font2D {
 
     public int charToVariationGlyph(int wchar, int variationSelector) {
         return getMapper().charToVariationGlyph(wchar, variationSelector);
+    }
+
+    public int charToGlyphRaw(int wchar) {
+        return getMapper().charToGlyphRaw(wchar);
+    }
+
+    public int charToVariationGlyphRaw(int wchar, int variationSelector) {
+        return getMapper().charToVariationGlyphRaw(wchar, variationSelector);
     }
 
     public int getMissingGlyphCode() {

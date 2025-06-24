@@ -44,10 +44,11 @@ public abstract class X11CustomCursor extends CustomCursor {
         super(cursor, hotSpot, name);
     }
 
+    @Override
     protected void createNativeCursor(Image im, int[] pixels, int width, int height,
                                       int xHotSpot, int yHotSpot) {
 
-        class CCount implements Comparable<CCount> {
+        final class CCount implements Comparable<CCount> {
             int color;
             int count;
 
@@ -56,6 +57,7 @@ public abstract class X11CustomCursor extends CustomCursor {
                 count = ct;
             }
 
+            @Override
             public int compareTo(CCount cc) {
                 return cc.count - count;
             }

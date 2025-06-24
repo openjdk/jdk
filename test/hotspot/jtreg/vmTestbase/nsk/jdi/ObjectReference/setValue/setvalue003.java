@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,34 +142,29 @@ public class setvalue003 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
-            log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee's thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-        thrRef.suspend();
-        while(!thrRef.isSuspended()) {
-            num++;
-            if (num > ATTEMPTS) {
-                log.complain("TEST FAILED: Unable to suspend debuggee's thread");
+        try {
+            ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
+
+            thrRef = debuggee.threadByFieldName(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: Method Debugee.threadByFieldName() returned null for debuggee's thread "
+                             + DEBUGGEE_THRNAME);
                 tot_res = Consts.TEST_FAILED;
                 return quitDebuggee();
             }
-            log.display("Waiting for debuggee's thread suspension ...");
-            try {
+            thrRef.suspend();
+            while (!thrRef.isSuspended()) {
+                num++;
+                if (num > ATTEMPTS) {
+                    log.complain("TEST FAILED: Unable to suspend debuggee's thread");
+                    tot_res = Consts.TEST_FAILED;
+                    return quitDebuggee();
+                }
+                log.display("Waiting for debuggee's thread suspension ...");
                 Thread.sleep(1000);
-            } catch(InterruptedException ie) {
-                ie.printStackTrace();
-                log.complain("TEST FAILED: caught: " + ie);
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
-            }
         }
 
 // Check the tested assertion
-        try {
             objRef = findObjRef(DEBUGGEE_LOCALVAR);
             rType = objRef.referenceType();
 

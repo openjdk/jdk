@@ -44,7 +44,7 @@ import jdk.internal.ref.Cleaner;
  * @sealedGraph
  */
 
-public abstract sealed class Reference<T>
+public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     permits PhantomReference, SoftReference, WeakReference, FinalReference {
 
     /* The state of a Reference object is characterized by two attributes.  It
@@ -306,11 +306,11 @@ public abstract sealed class Reference<T>
         handler.start();
     }
 
-    // Called from JVM when loading an AOT cache
     static {
         runtimeSetup();
     }
 
+    // Also called from JVM when loading an AOT cache
     private static void runtimeSetup() {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {

@@ -25,7 +25,7 @@
  * @test
  * @bug     6440528
  * @summary javac deposits package-info.class in bogus directory
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler/com.sun.tools.javac.file

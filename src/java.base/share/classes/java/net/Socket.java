@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,27 +378,22 @@ public class Socket implements java.io.Closeable {
      * In other words, it is equivalent to specifying an address of the
      * loopback interface. </p>
      * <p>
-     * If the stream argument is {@code true}, this creates a
-     * stream socket. If the stream argument is {@code false}, it
-     * creates a datagram socket.
-     * <p>
      * If the application has specified a {@linkplain SocketImplFactory client
      * socket implementation factory}, that factory's
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
-     * <p>
-     * If a UDP socket is used, TCP/IP related socket options will not apply.
      *
      * @param      host     the host name, or {@code null} for the loopback address.
      * @param      port     the port number.
-     * @param      stream   a {@code boolean} indicating whether this is
-     *                      a stream socket or a datagram socket.
+     * @param      stream   must be true, false is not allowed.
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     IllegalArgumentException if the port parameter is outside
-     *             the specified range of valid port values, which is between
-     *             0 and 65535, inclusive.
-     * @deprecated Use {@link DatagramSocket} instead for UDP transport.
+     * @throws     IllegalArgumentException if the stream parameter is {@code false}
+     *             or if the port parameter is outside the specified range of valid
+     *             port values, which is between 0 and 65535, inclusive.
+     * @deprecated The {@code stream} parameter provided a way in early JDK releases
+     *             to create a {@code Socket} that used a datagram socket. This feature
+     *             no longer exists. Instead use {@link DatagramSocket} for datagram sockets.
      */
     @Deprecated(forRemoval = true, since = "1.1")
     @SuppressWarnings("this-escape")
@@ -412,28 +407,23 @@ public class Socket implements java.io.Closeable {
      * Creates a socket and connects it to the specified port number at
      * the specified IP address.
      * <p>
-     * If the stream argument is {@code true}, this creates a
-     * stream socket. If the stream argument is {@code false}, it
-     * creates a datagram socket.
-     * <p>
      * If the application has specified a {@linkplain SocketImplFactory client
      * socket implementation factory}, that factory's
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
-     * <p>
-     * If UDP socket is used, TCP/IP related socket options will not apply.
      *
      * @param      host     the IP address.
      * @param      port      the port number.
-     * @param      stream    if {@code true}, create a stream socket;
-     *                       otherwise, create a datagram socket.
+     * @param      stream    must be true, false is not allowed.
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     IllegalArgumentException if the port parameter is outside
-     *             the specified range of valid port values, which is between
-     *             0 and 65535, inclusive.
+     * @throws     IllegalArgumentException if the stream parameter is {@code false}
+     *             or if the port parameter is outside the specified range of valid
+     *             port values, which is between 0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
-     * @deprecated Use {@link DatagramSocket} instead for UDP transport.
+     * @deprecated The {@code stream} parameter provided a way in early JDK releases
+     *             to create a {@code Socket} that used a datagram socket. This feature
+     *             no longer exists. Instead use {@link DatagramSocket} for datagram sockets.
      */
     @Deprecated(forRemoval = true, since = "1.1")
     @SuppressWarnings("this-escape")
@@ -454,6 +444,10 @@ public class Socket implements java.io.Closeable {
         throws IOException
     {
         Objects.requireNonNull(address);
+        if (!stream) {
+            throw new IllegalArgumentException(
+                    "Socket constructor does not support creation of datagram sockets");
+        }
         assert address instanceof InetSocketAddress;
 
         // create the SocketImpl and the underlying socket
@@ -627,6 +621,13 @@ public class Socket implements java.io.Closeable {
      *        {@code SocketException} with the interrupt status set.
      * </ol>
      *
+     * @apiNote Establishing a TCP/IP connection is subject to connect timeout settings
+     * in the operating system. The typical operating system timeout is in the range of tens of
+     * seconds to minutes. If the operating system timeout expires before the
+     * {@code timeout} specified to this method then an {@code IOException} is thrown.
+     * The {@code timeout} specified to this method is typically a timeout value that is
+     * shorter than the operating system timeout.
+     *
      * @param   endpoint the {@code SocketAddress}
      * @param   timeout  the timeout value to be used in milliseconds.
      * @throws  IOException if an error occurs during the connection, the socket
@@ -685,7 +686,7 @@ public class Socket implements java.io.Closeable {
      *          SocketAddress subclass not supported by this socket
      *
      * @since   1.4
-     * @see #isBound
+     * @see #isBound()
      */
     public void bind(SocketAddress bindpoint) throws IOException {
         int s = state;
@@ -971,10 +972,7 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketReadEvent.timestamp();
             int nbytes = implRead(b, off, len);
-            long duration = SocketReadEvent.timestamp() - start;
-            if (SocketReadEvent.shouldCommit(duration)) {
-                SocketReadEvent.emit(start, duration, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
-            }
+            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
             return nbytes;
         }
 
@@ -1087,10 +1085,7 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketWriteEvent.timestamp();
             implWrite(b, off, len);
-            long duration = SocketWriteEvent.timestamp() - start;
-            if (SocketWriteEvent.shouldCommit(duration)) {
-                SocketWriteEvent.emit(start, duration, len, parent.getRemoteSocketAddress());
-            }
+            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
         }
 
         private void implWrite(byte[] b, int off, int len) throws IOException {
@@ -1618,7 +1613,7 @@ public class Socket implements java.io.Closeable {
      * as well.
      *
      * @throws     IOException  if an I/O error occurs when closing this socket.
-     * @see #isClosed
+     * @see #isClosed()
      */
     public void close() throws IOException {
         synchronized (socketLock) {
@@ -1648,7 +1643,7 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#shutdownOutput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isInputShutdown
+     * @see #isInputShutdown()
      */
     public void shutdownInput() throws IOException {
         int s = state;
@@ -1678,7 +1673,7 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#shutdownInput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isOutputShutdown
+     * @see #isOutputShutdown()
      */
     public void shutdownOutput() throws IOException {
         int s = state;

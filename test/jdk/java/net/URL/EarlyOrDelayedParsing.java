@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -57,6 +61,19 @@ public class EarlyOrDelayedParsing {
     {
         String value = System.getProperty("jdk.net.url.delayParsing", "false");
         EARLY_PARSING = !value.isEmpty() && !Boolean.parseBoolean(value);
+        if (!EARLY_PARSING) {
+            // we will open the connection in that case.
+            // make sure no proxy is selected
+            ProxySelector.setDefault(new ProxySelector() {
+                @Override
+                public List<Proxy> select(URI uri) {
+                    return List.of(Proxy.NO_PROXY);
+                }
+                @Override
+                public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+                }
+            });
+        }
     }
 
     // Some characters that when included at the wrong place

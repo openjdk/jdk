@@ -36,6 +36,9 @@ import java.util.regex.Pattern;
  * @summary Test of diagnostic command System.map
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "windows" | os.family == "mac")
+ * @comment ASAN changes the memory map dump slightly, but the test has rather strict requirements
+ * @requires !vm.asan
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management

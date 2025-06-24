@@ -4655,6 +4655,7 @@ static void convertF2I_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register,
   __ subptr(rsp, 8);
   __ movdbl(Address(rsp), src);
   __ call(RuntimeAddress(target));
+  // APX REX2 encoding for pop(dst) increases the stub size by 1 byte.
   __ pop(dst);
   __ jmp(stub.continuation());
 #undef __
@@ -4687,7 +4688,9 @@ void C2_MacroAssembler::convertF2I(BasicType dst_bt, BasicType src_bt, Register 
     }
   }
 
-  auto stub = C2CodeStub::make<Register, XMMRegister, address>(dst, src, slowpath_target, 23, convertF2I_slowpath);
+  // Using the APX extended general purpose registers increases the instruction encoding size by 1 byte.
+  int max_size = 23 + (UseAPX ? 1 : 0);
+  auto stub = C2CodeStub::make<Register, XMMRegister, address>(dst, src, slowpath_target, max_size, convertF2I_slowpath);
   jcc(Assembler::equal, stub->entry());
   bind(stub->continuation());
 }
@@ -5731,7 +5734,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   // in a permute table row contains either a valid permute index or a -1 (default)
   // value, this can potentially be used as a blending mask after
   // compressing/expanding the source vector lanes.
-  vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
+  vblendvps(dst, dst, xtmp, permv, vec_enc, true, permv);
 }
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,

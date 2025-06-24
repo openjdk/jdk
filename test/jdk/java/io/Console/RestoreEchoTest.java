@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -72,7 +71,7 @@ public class RestoreEchoTest {
                 "-classpath", testClasses,
                 "RestoreEchoTest");
         output.reportDiagnosticSummary();
-        assertEquals(0, output.getExitValue());
+        output.shouldHaveExitValue(0);
     }
 
     public static void main(String... args) throws Throwable {

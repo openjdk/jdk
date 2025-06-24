@@ -187,7 +187,9 @@ public class GenClassPoolJar {
         StandardJavaFileManager sjfm = compiler.getStandardFileManager(null, null, null);
         Iterable<? extends JavaFileObject> fileObjects = sjfm.getJavaFileObjects(files);
         JavaCompiler.CompilationTask task = compiler.getTask(null, null, null, optionList, null, fileObjects);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         sjfm.close();
     }
 

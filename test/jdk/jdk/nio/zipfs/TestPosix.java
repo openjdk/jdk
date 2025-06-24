@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2024, SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.spi.ToolProvider;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -50,8 +52,11 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -96,6 +101,8 @@ public class TestPosix {
     // FS open options
     private static final Map<String, Object> ENV_DEFAULT = Collections.<String, Object>emptyMap();
     private static final Map<String, Object> ENV_POSIX = Map.of("enablePosixFileAttributes", true);
+    private static final Map<String, Object> ENV_READ_ONLY = Map.of("accessMode", "readOnly");
+    private static final Map<String, Object> ENV_POSIX_READ_ONLY = Map.of("enablePosixFileAttributes", true, "accessMode", "readOnly");
 
     // misc
     private static final CopyOption[] COPY_ATTRIBUTES = {StandardCopyOption.COPY_ATTRIBUTES};
@@ -398,6 +405,37 @@ public class TestPosix {
         doCheckEntries(path, expected);
     }
 
+    private void checkReadOnlyFileSystem(FileSystem fs) throws IOException {
+        assertTrue(fs.isReadOnly(), "File system should be read-only");
+        Path root = fs.getPath("/");
+
+        // Rather than calling something like "addOwnerRead(root)", we walk all
+        // files to ensure that all operations fail, not some arbitrary first one.
+        Set<PosixFilePermission> badPerms = Set.of(OTHERS_EXECUTE, OTHERS_WRITE);
+        FileTime anyTime = FileTime.from(Instant.now());
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.forEach(p -> {
+                assertFalse(Files.isWritable(p), "File should not be writable: " + p);
+                assertSame(fs, p.getFileSystem());
+                assertThrows(
+                        AccessDeniedException.class,
+                        () -> fs.provider().checkAccess(p, AccessMode.WRITE));
+                assertThrows(
+                        ReadOnlyFileSystemException.class,
+                        () -> fs.provider().setAttribute(p, "zip:permissions", badPerms));
+
+                // These fail because there is not corresponding File for a zip path (they will
+                // currently fail for read-write ZIP file systems too, but we sanity-check here).
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Files.setLastModifiedTime(p, anyTime));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Files.setAttribute(p, "zip:permissions", badPerms));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Files.setPosixFilePermissions(p, badPerms));
+            });
+        }
+    }
+
     private boolean throwsUOE(Executor e) throws IOException {
         try {
             e.doIt();
@@ -441,6 +479,25 @@ public class TestPosix {
     }
 
     /**
+     * As {@code testDefault()} but with {@code "accessMode"="readOnly"}.
+     */
+    @Test
+    public void testDefaultReadOnly() throws IOException {
+        // create zip file using zipfs with default option
+        createTestZipFile(ZIP_FILE, ENV_DEFAULT).close();
+        // check entries on zipfs with read-only options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_READ_ONLY)) {
+            checkEntries(zip, checkExpects.permsInZip);
+            checkReadOnlyFileSystem(zip);
+        }
+        // check entries on zipfs with posix and read-only options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX_READ_ONLY)) {
+            checkEntries(zip, checkExpects.permsPosix);
+            checkReadOnlyFileSystem(zip);
+        }
+    }
+
+    /**
      * This tests whether the entries in a zip file created w/
      * Posix support are correct.
      *
@@ -457,6 +514,25 @@ public class TestPosix {
         // check entries on zipfs with posix options
         try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX)) {
             checkEntries(zip, checkExpects.permsPosix);
+        }
+    }
+
+    /**
+     * As {@code testPosix()} but with {@code "accessMode"="readOnly"}.
+     */
+    @Test
+    public void testPosixReadOnly() throws IOException {
+        // create zip file using zipfs with posix option
+        createTestZipFile(ZIP_FILE, ENV_POSIX).close();
+        // check entries on zipfs with read-only options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_READ_ONLY)) {
+            checkEntries(zip, checkExpects.permsInZip);
+            checkReadOnlyFileSystem(zip);
+        }
+        // check entries on zipfs with posix and read-only options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX_READ_ONLY)) {
+            checkEntries(zip, checkExpects.permsPosix);
+            checkReadOnlyFileSystem(zip);
         }
     }
 

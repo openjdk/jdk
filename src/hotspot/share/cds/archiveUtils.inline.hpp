@@ -27,6 +27,7 @@
 
 #include "cds/archiveUtils.hpp"
 
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -46,7 +47,7 @@ inline bool SharedDataRelocator::do_bit(size_t offset) {
   assert(new_ptr != nullptr, "don't point to the bottom of the archive"); // See ArchivePtrMarker::mark_pointer().
   assert(_valid_new_base <= new_ptr && new_ptr < _valid_new_end, "must be");
 
-  DEBUG_ONLY(log_trace(cds, reloc)("Patch2: @%8d [" PTR_FORMAT "] " PTR_FORMAT " -> " PTR_FORMAT,
+  DEBUG_ONLY(aot_log_trace(aot, reloc)("Patch2: @%8d [" PTR_FORMAT "] " PTR_FORMAT " -> " PTR_FORMAT,
                                    (int)offset, p2i(p), p2i(old_ptr), p2i(new_ptr)));
   *p = new_ptr;
   return true; // keep iterating

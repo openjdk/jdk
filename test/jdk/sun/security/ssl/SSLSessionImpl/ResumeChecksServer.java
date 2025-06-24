@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8206929
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
+ * @modules java.base/sun.security.x509
  * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
@@ -48,6 +49,7 @@ import java.io.*;
 import java.security.*;
 import java.net.*;
 import java.util.*;
+import sun.security.x509.X509CertImpl;
 
 public class ResumeChecksServer extends SSLContextTemplate {
 
@@ -57,7 +59,8 @@ public class ResumeChecksServer extends SSLContextTemplate {
         VERSION_2_TO_3,
         VERSION_3_TO_2,
         CIPHER_SUITE,
-        SIGNATURE_SCHEME
+        SIGNATURE_SCHEME,
+        LOCAL_CERTS
     }
 
     public static void main(String[] args) throws Exception {
@@ -71,6 +74,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
     }
 
     private void run() throws Exception {
+        SSLSession firstSession;
         SSLSession secondSession = null;
 
         SSLContext sslContext = createServerSSLContext();
@@ -81,7 +85,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         Client client = startClient(ssock.getLocalPort());
 
         try {
-            connect(client, ssock, testMode, false);
+            firstSession = connect(client, ssock, testMode, null);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -89,7 +93,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         long secondStartTime = System.currentTimeMillis();
         Thread.sleep(10);
         try {
-            secondSession = connect(client, ssock, testMode, true);
+            secondSession = connect(client, ssock, testMode, firstSession);
         } catch (SSLHandshakeException ex) {
             // this is expected
         } catch (Exception ex) {
@@ -105,6 +109,14 @@ public class ResumeChecksServer extends SSLContextTemplate {
             if (secondSession.getCreationTime() > secondStartTime) {
                 throw new RuntimeException("Session was not reused");
             }
+
+            // Fail if session's certificates are not restored correctly.
+            if (!java.util.Arrays.equals(
+                    firstSession.getLocalCertificates(),
+                    secondSession.getLocalCertificates())) {
+                throw new RuntimeException("Certificates do not match");
+            }
+
             break;
         case CLIENT_AUTH:
             // throws an exception if the client is not authenticated
@@ -114,6 +126,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         case VERSION_3_TO_2:
         case CIPHER_SUITE:
         case SIGNATURE_SCHEME:
+        case LOCAL_CERTS:
             // fail if a new session is not created
             if (secondSession.getCreationTime() <= secondStartTime) {
                 throw new RuntimeException("Existing session was used");
@@ -153,7 +166,9 @@ public class ResumeChecksServer extends SSLContextTemplate {
     }
 
     private static SSLSession connect(Client client, SSLServerSocket ssock,
-        TestMode mode, boolean second) throws Exception {
+            TestMode mode, SSLSession firstSession) throws Exception {
+
+        boolean second = firstSession != null;
 
         try {
             client.signal();
@@ -200,9 +215,22 @@ public class ResumeChecksServer extends SSLContextTemplate {
                 AlgorithmConstraints constraints =
                     params.getAlgorithmConstraints();
                 if (second) {
-                    params.setAlgorithmConstraints(new NoSig("ecdsa"));
+                    params.setAlgorithmConstraints(
+                            new NoSig("ecdsa_secp384r1_sha384"));
                 } else {
-                    params.setAlgorithmConstraints(new NoSig("rsa"));
+                    params.setAlgorithmConstraints(
+                            new NoSig("ecdsa_secp521r1_sha512"));
+                }
+                break;
+            case LOCAL_CERTS:
+                if (second) {
+                    // Add first session's certificate signature
+                    // algorithm to constraints so local certificates
+                    // can't be restored from the session ticket.
+                    params.setAlgorithmConstraints(
+                            new NoSig(X509CertImpl.toImpl((X509CertImpl)
+                                            firstSession.getLocalCertificates()[0])
+                                    .getSigAlgName()));
                 }
                 break;
             default:

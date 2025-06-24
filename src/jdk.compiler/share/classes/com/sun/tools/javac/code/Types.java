@@ -5085,16 +5085,12 @@ public class Types {
      *  @param targetType       Target type
      */
     public boolean isUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
-        if (isSameType(selectorType, targetType)) {
-            return true;
-        }
-
-        return (selectorType.isPrimitive() && targetType.isPrimitive()) &&
-                ((selectorType.hasTag(BYTE) && !targetType.hasTag(CHAR)) ||
-                 (selectorType.hasTag(SHORT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))) ||
-                 (selectorType.hasTag(CHAR)  && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag())))  ||
-                 (selectorType.hasTag(INT)   && (targetType.hasTag(DOUBLE) || targetType.hasTag(LONG))) ||
-                 (selectorType.hasTag(FLOAT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))));
+        return isSameType(selectorType, targetType) ||
+                (selectorType.isPrimitive() && targetType.isPrimitive()) &&
+                ((selectorType.getTag().isStrictSubRangeOf(targetType.getTag())) &&
+                        !((selectorType.hasTag(BYTE) && targetType.hasTag(CHAR)) ||
+                          (selectorType.hasTag(INT)  && targetType.hasTag(FLOAT)) ||
+                          (selectorType.hasTag(LONG) && (targetType.hasTag(DOUBLE) || targetType.hasTag(FLOAT)))));
     }
     // </editor-fold>
 

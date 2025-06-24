@@ -79,6 +79,11 @@ Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         assert(false, "Unrecognized comparison for Conv2B: %s", NodeClassNames[in(1)->Opcode()]);
       }
 
+      // Skip the transformation if input is unexpected.
+      if (cmp == nullptr) {
+        return nullptr;
+      }
+
       // Replace Conv2B with the cmove
       Node* bol = phase->transform(new BoolNode(cmp, BoolTest::eq));
       return new CMoveINode(bol, phase->intcon(1), phase->intcon(0), TypeInt::BOOL);

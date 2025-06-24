@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @bug 8217845
  * @summary Test clhsdb command line history support
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbHistory
  */

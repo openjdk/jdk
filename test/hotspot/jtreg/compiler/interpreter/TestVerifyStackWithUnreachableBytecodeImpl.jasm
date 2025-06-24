@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+package compiler/interpreter;
+
+// We need a class file format version < 50:0 so we do not need to specify a
+// stack map for the unreachable bytecodes, which are the reason this test
+// relies on a JASM implementation.
+super class TestVerifyStackWithUnreachableBytecodeImpl version 49:0
+{
+    public Method "<init>":"()V"
+        stack  1 locals  1
+    {
+           aload_0;
+           invokespecial     Method java/lang/Object."<init>":"()V";
+           return;
+    }
+    public static Method testAreturn:"()Ljava/lang/Object;"
+        stack 1 locals 0
+    {
+        // If A not loaded -> trap for TestVerifyStackWithUnreachableBytecodeA unloaded
+        // If a loaded, but TestVerifyStackWithUnreachableBytecodeB not -> assume TestVerifyStackWithUnreachableBytecodeA.val null, else trap.
+        //   -> "null_assert_or_unreached0"
+        getstatic    Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
+        areturn;
+
+        // some unreachable instruction after return
+        iconst_0;
+    }
+    public static Method testReturn:"()V"
+        stack  1 locals  0
+    {
+        getstatic   Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
+        return;
+        // unreachable
+        iconst_0;
+    }
+    public static Method testGoto:"()V"
+        stack  1 locals  0
+    {
+        getstatic   Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
+        goto There;
+        // unreachable
+        iconst_0;
+    There:
+        return;
+    }
+    public static Method testGotow:"()V"
+        stack  1 locals  0
+    {
+        getstatic   Field compiler/interpreter/TestVerifyStackWithUnreachableBytecodeA.val:"Lcompiler/interpreter/TestVerifyStackWithUnreachableBytecodeB;";
+        goto_w There;
+        // unreachable
+        iconst_0;
+    There:
+        return;
+    }
+}

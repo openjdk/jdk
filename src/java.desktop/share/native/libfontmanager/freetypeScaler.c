@@ -532,7 +532,6 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
 
     if (context == NULL) {
         free(context);
-        invalidateJavaScaler(env, scaler, NULL);
         return (jlong) 0;
     }
     (*env)->GetDoubleArrayRegion(env, matrix, 0, 4, dmat);

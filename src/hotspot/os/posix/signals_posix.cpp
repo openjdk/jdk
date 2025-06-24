@@ -1505,6 +1505,14 @@ bool PosixSignals::is_sig_ignored(int sig) {
   }
 }
 
+void* PosixSignals::get_signal_handler_for_signal(int sig) {
+  struct sigaction oact;
+  if (sigaction(sig, (struct sigaction*)nullptr, &oact) == -1) {
+    return nullptr;
+  }
+  return get_signal_handler(&oact);
+}
+
 static void signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 

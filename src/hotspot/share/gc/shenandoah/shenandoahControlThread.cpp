@@ -42,7 +42,7 @@
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
-  _requested_gc_cause(GCCause::_no_cause_specified),
+  _requested_gc_cause(GCCause::_no_gc),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle) {
   set_name("Shenandoah Control Thread");
   create_and_start();

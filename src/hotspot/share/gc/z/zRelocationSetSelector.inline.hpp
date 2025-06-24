@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,10 @@
 #include "gc/z/zRelocationSetSelector.hpp"
 
 #include "gc/z/zArray.inline.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageAge.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 inline size_t ZRelocationSetSelectorGroupStats::npages_candidates() const {
   return _npages_candidates;
@@ -58,30 +61,60 @@ inline bool ZRelocationSetSelectorStats::has_relocatable_pages() const {
 }
 
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::small(ZPageAge age) const {
-  return _small[static_cast<uint>(age)];
+  return _small[untype(age)];
 }
 
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::medium(ZPageAge age) const {
-  return _medium[static_cast<uint>(age)];
+  return _medium[untype(age)];
 }
 
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::large(ZPageAge age) const {
-  return _large[static_cast<uint>(age)];
+  return _large[untype(age)];
+}
+
+inline bool ZRelocationSetSelectorGroup::pre_filter_page(const ZPage* page, size_t live_bytes) const {
+  if (page->is_small()) {
+    // Small pages are always the same size, so we can simply compare the
+    // garbage pre-calculated _page_fragmentation_limit.
+    assert(page->size() == ZPageSizeSmall, "Unexpected small page size %zu", page->size());
+
+    const size_t garbage = ZPageSizeSmall - live_bytes;
+
+    return garbage > _page_fragmentation_limit;
+  }
+
+  if (page->is_medium()) {
+    // Medium pages may have different sizes, so we can recalculate the page
+    // fragmentation limit for a specific page by multiplying pre-calculated
+    // _page_fragmentation_limit (calculated using the max page size) by the
+    // fraction the specific page size is of the max page size.
+    // Because the page sizes are always a power of two we can rewrite this
+    // using log2 and bit-shift.
+    const size_t size = page->size();
+    const int shift = ZPageSizeMediumMaxShift - log2i_exact(size);
+    const size_t page_fragmentation_limit = _page_fragmentation_limit >> shift;
+
+    const size_t garbage = size - live_bytes;
+
+    return garbage > page_fragmentation_limit;
+  }
+
+  // Large pages are never relocated
+  return false;
 }
 
 inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
-  const size_t size = page->size();
   const size_t live = page->live_bytes();
-  const size_t garbage = size - live;
 
   // Pre-filter out pages that are guaranteed to not be selected
-  if (!page->is_large() && garbage > _page_fragmentation_limit) {
+  if (pre_filter_page(page, live)) {
     _live_pages.append(page);
   } else if (page->is_young()) {
     _not_selected_pages.append(page);
   }
 
-  const uint age = static_cast<uint>(page->age());
+  const size_t size = page->size();
+  const uint age = untype(page->age());
   _stats[age]._npages_candidates++;
   _stats[age]._total += size;
   _stats[age]._live += live;
@@ -90,7 +123,7 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
 inline void ZRelocationSetSelectorGroup::register_empty_page(ZPage* page) {
   const size_t size = page->size();
 
-  const uint age = static_cast<uint>(page->age());
+  const uint age = untype(page->age());
   _stats[age]._npages_candidates++;
   _stats[age]._total += size;
   _stats[age]._empty += size;
@@ -109,7 +142,7 @@ inline size_t ZRelocationSetSelectorGroup::forwarding_entries() const {
 }
 
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorGroup::stats(ZPageAge age) const {
-  return _stats[static_cast<uint>(age)];
+  return _stats[untype(age)];
 }
 
 inline void ZRelocationSetSelector::register_live_page(ZPage* page) {
@@ -156,8 +189,7 @@ inline void ZRelocationSetSelector::clear_empty_pages() {
 
 inline size_t ZRelocationSetSelector::total() const {
   size_t sum = 0;
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
     sum += _small.stats(age).total() + _medium.stats(age).total() + _large.stats(age).total();
   }
   return sum;
@@ -165,8 +197,7 @@ inline size_t ZRelocationSetSelector::total() const {
 
 inline size_t ZRelocationSetSelector::empty() const {
   size_t sum = 0;
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
     sum += _small.stats(age).empty() + _medium.stats(age).empty() + _large.stats(age).empty();
   }
   return sum;
@@ -174,8 +205,7 @@ inline size_t ZRelocationSetSelector::empty() const {
 
 inline size_t ZRelocationSetSelector::relocate() const {
   size_t sum = 0;
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
     sum += _small.stats(age).relocate() + _medium.stats(age).relocate() + _large.stats(age).relocate();
   }
   return sum;

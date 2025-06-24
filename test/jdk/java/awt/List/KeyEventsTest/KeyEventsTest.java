@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.EventQueue;
-import java.awt.KeyboardFocusManager;
 import java.awt.Frame;
+import java.awt.KeyboardFocusManager;
 import java.awt.List;
 import java.awt.Panel;
 import java.awt.Point;
@@ -51,7 +50,7 @@ import jdk.test.lib.Platform;
  * @run main KeyEventsTest
  */
 public class KeyEventsTest {
-    TestState currentState;
+    private volatile TestState currentState;
     final Object LOCK = new Object();
     final int ACTION_TIMEOUT = 500;
 
@@ -66,16 +65,14 @@ public class KeyEventsTest {
         r = new Robot();
         KeyEventsTest app = new KeyEventsTest();
         try {
-            EventQueue.invokeAndWait(app::initAndShowGui);
+            app.initAndShowGui();
             r.waitForIdle();
             r.delay(500);
             app.doTest();
         } finally {
-            EventQueue.invokeAndWait(() -> {
-                if (app.keyFrame != null) {
-                    app.keyFrame.dispose();
-                }
-            });
+            if (app.keyFrame != null) {
+                app.keyFrame.dispose();
+            }
         }
     }
 
@@ -184,52 +181,51 @@ public class KeyEventsTest {
                 throw new RuntimeException("Test failed - list isn't focus owner.");
             }
 
-            EventQueue.invokeAndWait(() -> {
-                list.deselect(0);
-                list.deselect(1);
-                list.deselect(2);
-                list.deselect(3);
-                list.deselect(4);
-                list.deselect(5);
-                list.deselect(6);
-                list.deselect(7);
-                list.deselect(8);
+            list.deselect(0);
+            list.deselect(1);
+            list.deselect(2);
+            list.deselect(3);
+            list.deselect(4);
+            list.deselect(5);
+            list.deselect(6);
+            list.deselect(7);
+            list.deselect(8);
 
-                int selectIndex = 0;
-                int visibleIndex = 0;
+            int selectIndex = 0;
+            int visibleIndex = 0;
 
-                if (currentState.getScrollMoved()) {
-                    if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
-                            currentState.getKeyID() == KeyEvent.VK_HOME) {
-                        selectIndex = 8;
-                        visibleIndex = 8;
-                    } else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
-                            currentState.getKeyID() == KeyEvent.VK_END) {
-                        selectIndex = 0;
-                        visibleIndex = 0;
-                    }
-                } else {
-                    if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
-                            currentState.getKeyID() == KeyEvent.VK_HOME) {
-                        if (currentState.getSelectedMoved()) {
-                            selectIndex = 1;
-                        } else {
-                            selectIndex = 0;
-                        }
-                        visibleIndex = 0;
-                    } else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
-                            currentState.getKeyID() == KeyEvent.VK_END) {
-                        if (currentState.getSelectedMoved()) {
-                            selectIndex = 7;
-                        } else {
-                            selectIndex = 8;
-                        }
-                        visibleIndex = 8;
-                    }
+            if (currentState.getScrollMoved()) {
+                if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
+                        currentState.getKeyID() == KeyEvent.VK_HOME) {
+                    selectIndex = 8;
+                    visibleIndex = 8;
+                } else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
+                        currentState.getKeyID() == KeyEvent.VK_END) {
+                    selectIndex = 0;
+                    visibleIndex = 0;
                 }
-                list.select(selectIndex);
-                list.makeVisible(visibleIndex);
-            });
+            } else {
+                if (currentState.getKeyID() == KeyEvent.VK_PAGE_UP ||
+                        currentState.getKeyID() == KeyEvent.VK_HOME) {
+                    if (currentState.getSelectedMoved()) {
+                        selectIndex = 1;
+                    } else {
+                        selectIndex = 0;
+                    }
+                    visibleIndex = 0;
+                } else if (currentState.getKeyID() == KeyEvent.VK_PAGE_DOWN ||
+                        currentState.getKeyID() == KeyEvent.VK_END) {
+                    if (currentState.getSelectedMoved()) {
+                        selectIndex = 7;
+                    } else {
+                        selectIndex = 8;
+                    }
+                    visibleIndex = 8;
+                }
+            }
+            list.select(selectIndex);
+            list.makeVisible(visibleIndex);
+
 
             r.delay(10);
             r.waitForIdle();
@@ -309,7 +305,7 @@ class TestState {
     private final boolean scrollMoved;
     private final int keyID;
     private final boolean template;
-    private boolean action;
+    private volatile boolean action;
 
     public TestState(boolean multiple, boolean selectedMoved, boolean scrollMoved, int keyID, boolean template){
         this.multiple = multiple;

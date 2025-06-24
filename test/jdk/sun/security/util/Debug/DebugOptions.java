@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8051959
+ * @bug 8051959 8350689
  * @summary Option to print extra information in java.security.debug output
  * @library /test/lib
  * @run junit DebugOptions
@@ -43,75 +43,41 @@ import jdk.test.lib.process.ProcessTools;
 public class DebugOptions {
 
     static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
+    static final String EXPECTED_PROP_REGEX =
+            "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
+    static final String EXPECTED_PROP_KEYSTORE_REGEX =
+            "properties\\[.*\\|main|" + DATE_REGEX +
+                    ".*\\Rkeystore\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
+    static final String EXPECTED_ALL_REGEX =
+            "properties\\[.*\\|main.*\\|" + DATE_REGEX +
+                    ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|"
+                    + DATE_REGEX + ".*\\]:";
 
     private static Stream<Arguments> patternMatches() {
         return Stream.of(
-                // no extra info present
+                // test for thread and timestamp info
                 Arguments.of("properties",
-                        "properties: Initial",
-                        "properties\\["),
-                // thread info only
+                        EXPECTED_PROP_REGEX,
+                        "properties:"),
+                // test for thread and timestamp info
                 Arguments.of("properties+thread",
-                        "properties\\[.*\\|main\\|.*java.*]:",
-                        "properties\\[" + DATE_REGEX),
-                // timestamp info only
-                Arguments.of("properties+timestamp",
-                        "properties\\[" + DATE_REGEX + ".*\\]",
-                        "\\|main\\]:"),
-                // both thread and timestamp
-                Arguments.of("properties+timestamp+thread",
-                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
+                        EXPECTED_PROP_REGEX,
                         "properties:"),
                 // flip the arguments of previous test
                 Arguments.of("properties+thread+timestamp",
-                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
+                        EXPECTED_PROP_REGEX,
                         "properties:"),
-                // comma not valid separator, ignore extra info printing request
-                Arguments.of("properties,thread,timestamp",
-                        "properties:",
-                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:"),
-                // no extra info for keystore debug prints
-                Arguments.of("properties+thread+timestamp,keystore",
-                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
-                        "keystore\\["),
-                // flip arguments around in last test - same outcome expected
-                Arguments.of("keystore,properties+thread+timestamp",
-                        "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
-                        "keystore\\["),
-                // turn on thread info for both keystore and properties components
-                Arguments.of("keystore+thread,properties+thread",
-                        "properties\\[.*\\|main|.*\\Rkeystore\\[.*\\|main|.*\\]:",
-                        "\\|" + DATE_REGEX + ".*\\]:"),
-                // same as above with erroneous comma at end of string. same output expected
-                Arguments.of("keystore+thread,properties+thread,",
-                        "properties\\[.*\\|main|.*\\Rkeystore\\[.*\\|main|.*\\]:",
-                        "\\|" + DATE_REGEX + ".*\\]:"),
-                // turn on thread info for properties and timestamp for keystore
-                Arguments.of("keystore+timestamp,properties+thread",
-                        "properties\\[.*\\|main|.*\\Rkeystore\\[" + DATE_REGEX + ".*\\]:",
-                        "properties\\[.*\\|" + DATE_REGEX + ".*\\]:"),
-                // turn on thread info for all components
+                // regular keystore,properties component string
+                Arguments.of("keystore,properties",
+                        EXPECTED_PROP_KEYSTORE_REGEX,
+                        "properties:"),
+                // turn on all
+                Arguments.of("all",
+                        EXPECTED_ALL_REGEX,
+                        "properties:"),
+                // expect thread and timestamp info
                 Arguments.of("all+thread",
-                        "properties\\[.*\\|main.*((.*\\R)*)keystore\\[.*\\|main.*java.*\\]:",
-                        "properties\\[" + DATE_REGEX + ".*\\]:"),
-                // turn on thread info and timestamp for all components
-                Arguments.of("all+thread+timestamp",
-                        "properties\\[.*\\|main.*\\|" + DATE_REGEX +
-                                ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|" + DATE_REGEX + ".*\\]:",
-                        "properties:"),
-                // all decorator option should override other component options
-                Arguments.of("all+thread+timestamp,properties",
-                        "properties\\[.*\\|main.*\\|" + DATE_REGEX +
-                                ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|" + DATE_REGEX + ".*\\]:",
-                        "properties:"),
-                // thread details should only be printed for properties option
-                Arguments.of("properties+thread,all",
-                        "properties\\[.*\\|main\\|.*\\]:",
-                        "keystore\\[.*\\|main\\|.*\\]:"),
-                // thread details should be printed for all statements
-                Arguments.of("properties,all+thread",
-                        "properties\\[.*\\|main.*java" +
-                                ".*\\]((.*\\R)*)keystore\\[.*\\|main.*java.*\\]:",
+                        EXPECTED_ALL_REGEX,
                         "properties:")
         );
     }

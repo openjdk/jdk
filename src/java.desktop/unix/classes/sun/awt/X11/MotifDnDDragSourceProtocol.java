@@ -40,7 +40,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-class MotifDnDDragSourceProtocol extends XDragSourceProtocol
+final class MotifDnDDragSourceProtocol extends XDragSourceProtocol
     implements XEventDispatcher {
 
     private static final Unsafe unsafe = XlibWrapper.unsafe;
@@ -61,10 +61,12 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         return new MotifDnDDragSourceProtocol(listener);
     }
 
+    @Override
     public String getProtocolName() {
         return XDragAndDropProtocols.MotifDnD;
     }
 
+    @Override
     protected void initializeDragImpl(int actions, Transferable contents,
                                       Map<Long, DataFlavor> formatMap, long[] formats)
       throws InvalidDnDOperationException,
@@ -95,6 +97,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
      *
      * @return true if the event was successfully processed.
      */
+    @Override
     public boolean processClientMessage(XClientMessageEvent xclient) {
         if (xclient.get_message_type() !=
             MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom()) {
@@ -173,6 +176,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         return true;
     }
 
+    @Override
     public TargetWindowInfo getTargetWindowInfo(long window) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -232,6 +236,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         }
     }
 
+    @Override
     public void sendEnterMessage(long[] formats,
                                  int sourceAction, int sourceActions, long time) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
@@ -273,6 +278,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         }
     }
 
+    @Override
     public void sendMoveMessage(int xRoot, int yRoot,
                                 int sourceAction, int sourceActions, long time) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
@@ -311,6 +317,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         }
     }
 
+    @Override
     public void sendLeaveMessage(long time) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
         assert getTargetWindow() != 0;
@@ -342,6 +349,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         }
     }
 
+    @Override
     protected void sendDropMessage(int xRoot, int yRoot,
                                    int sourceAction, int sourceActions,
                                    long time) {
@@ -388,17 +396,20 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
         }
     }
 
+    @Override
     public boolean processProxyModeEvent(XClientMessageEvent xclient,
                                          long sourceWindow) {
         // Motif DnD for XEmbed is not implemented.
         return false;
     }
 
+    @Override
     public void cleanupTargetInfo() {
         super.cleanupTargetInfo();
         targetEnterServerTime = XConstants.CurrentTime;
     }
 
+    @Override
     public void dispatchEvent(XEvent ev) {
         switch (ev.get_type()) {
         case XConstants.SelectionRequest:

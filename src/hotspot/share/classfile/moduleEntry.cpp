@@ -427,9 +427,9 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   // For verify_archived_module_entries()
   DEBUG_ONLY(_num_inited_module_entries++);
 
-  if (log_is_enabled(Info, cds, module)) {
+  if (log_is_enabled(Info, aot, module)) {
     ResourceMark rm;
-    LogStream ls(Log(cds, module)::info());
+    LogStream ls(Log(aot, module)::info());
     ls.print("Stored in archive: ");
     archived_entry->print(&ls);
   }
@@ -535,9 +535,9 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
   assert(java_lang_Module::loader(module_handle()) == loader_data->class_loader(),
          "must be set in dump time");
 
-  if (log_is_enabled(Info, cds, module)) {
+  if (log_is_enabled(Info, aot, module)) {
     ResourceMark rm;
-    LogStream ls(Log(cds, module)::info());
+    LogStream ls(Log(aot, module)::info());
     ls.print("Restored from archive: ");
     print(&ls);
   }

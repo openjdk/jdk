@@ -37,6 +37,7 @@ import jtreg.SkippedException;
  * @bug 8265505
  * @summary Test clhsdb command which should be run on debugd server
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @library /test/lib
  * @run driver RunCommandOnServerTest

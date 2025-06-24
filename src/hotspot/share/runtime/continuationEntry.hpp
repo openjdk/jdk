@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,11 @@ class ContinuationEntry {
   friend class JVMCIVMStructs;
   ContinuationEntryPD _pd;
 #ifdef ASSERT
-private:
+ private:
   static const int COOKIE_VALUE = 0x1234;
   int cookie;
 
-public:
+ public:
   static int cookie_value() { return COOKIE_VALUE; }
   static ByteSize cookie_offset() { return byte_offset_of(ContinuationEntry, cookie); }
 
@@ -55,7 +55,7 @@ public:
   }
 #endif
 
-public:
+ public:
   static int _return_pc_offset; // friend gen_continuation_enter
   static int _thaw_call_pc_offset;
   static int _cleanup_offset;
@@ -63,14 +63,14 @@ public:
   static void set_enter_code(nmethod* nm, int interpreted_entry_offset);
   static bool is_interpreted_call(address call_address);
 
-private:
+ private:
   static address _return_pc;
   static address _thaw_call_pc;
   static address _cleanup_pc;
   static nmethod* _enter_special;
   static int _interpreted_entry_offset;
 
-private:
+ private:
   ContinuationEntry* _parent;
   oopDesc* _cont;
   oopDesc* _chunk;
@@ -86,7 +86,7 @@ private:
 #endif
   uint32_t _pin_count;
 
-public:
+ public:
   static ByteSize parent_offset()   { return byte_offset_of(ContinuationEntry, _parent); }
   static ByteSize cont_offset()     { return byte_offset_of(ContinuationEntry, _cont); }
   static ByteSize chunk_offset()    { return byte_offset_of(ContinuationEntry, _chunk); }
@@ -96,7 +96,10 @@ public:
   static ByteSize parent_cont_fastpath_offset()      { return byte_offset_of(ContinuationEntry, _parent_cont_fastpath); }
   static ByteSize parent_held_monitor_count_offset() { return byte_offset_of(ContinuationEntry, _parent_held_monitor_count); }
 
-public:
+  static address return_pc() { return _return_pc; }
+  static address return_pc_address() { return (address)&_return_pc; }
+
+ public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
   ContinuationEntry* parent() const { return _parent; }

@@ -22,340 +22,49 @@
  *
  */
 
-#include "classfile/javaThreadStatus.hpp"
-#include "jfr/jfrEvents.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/periodic/sampling/jfrCallTrace.hpp"
-#include "jfr/periodic/sampling/jfrThreadSampler.hpp"
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.inline.hpp"
+#include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
-#include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/periodic/sampling/jfrSampleMonitor.hpp"
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "jfrfiles/jfrEventClasses.hpp"
+#include "jfr/utilities/jfrTryLock.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/stackWatermark.hpp"
 #include "runtime/suspendedThreadTask.hpp"
-#include "runtime/threadCrashProtection.hpp"
-#include "runtime/threadSMR.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
-enum JfrSampleType {
-  NO_SAMPLE = 0,
-  JAVA_SAMPLE = 1,
-  NATIVE_SAMPLE = 2
-};
-
-static bool thread_state_in_java(JavaThread* thread) {
-  assert(thread != nullptr, "invariant");
-  switch(thread->thread_state()) {
-    case _thread_new:
-    case _thread_uninitialized:
-    case _thread_new_trans:
-    case _thread_in_vm_trans:
-    case _thread_blocked_trans:
-    case _thread_in_native_trans:
-    case _thread_blocked:
-    case _thread_in_vm:
-    case _thread_in_native:
-    case _thread_in_Java_trans:
-      break;
-    case _thread_in_Java:
-      return true;
-    default:
-      ShouldNotReachHere();
-      break;
-  }
-  return false;
-}
-
-static bool thread_state_in_native(JavaThread* thread) {
-  assert(thread != nullptr, "invariant");
-  switch(thread->thread_state()) {
-    case _thread_new:
-    case _thread_uninitialized:
-    case _thread_new_trans:
-    case _thread_blocked_trans:
-    case _thread_blocked:
-    case _thread_in_vm:
-    case _thread_in_vm_trans:
-    case _thread_in_Java_trans:
-    case _thread_in_Java:
-    case _thread_in_native_trans:
-      break;
-    case _thread_in_native:
-      return true;
-    default:
-      ShouldNotReachHere();
-      break;
-  }
-  return false;
-}
-
-class JfrThreadSampleClosure {
- public:
-  JfrThreadSampleClosure(EventExecutionSample* events, EventNativeMethodSample* events_native);
-  ~JfrThreadSampleClosure() {}
-  EventExecutionSample* next_event() { return &_events[_added_java++]; }
-  EventNativeMethodSample* next_event_native() { return &_events_native[_added_native++]; }
-  void commit_events(JfrSampleType type);
-  bool do_sample_thread(JavaThread* thread, JfrStackFrame* frames, u4 max_frames, JfrSampleType type);
-  uint java_entries() { return _added_java; }
-  uint native_entries() { return _added_native; }
-
- private:
-  bool sample_thread_in_java(JavaThread* thread, JfrStackFrame* frames, u4 max_frames);
-  bool sample_thread_in_native(JavaThread* thread, JfrStackFrame* frames, u4 max_frames);
-  EventExecutionSample* _events;
-  EventNativeMethodSample* _events_native;
-  Thread* _self;
-  uint _added_java;
-  uint _added_native;
-};
-
-class OSThreadSampler : public SuspendedThreadTask {
- public:
-  OSThreadSampler(JavaThread* thread,
-                  JfrThreadSampleClosure& closure,
-                  JfrStackFrame *frames,
-                  u4 max_frames) : SuspendedThreadTask((Thread*)thread),
-    _success(false),
-    _thread_oop(thread->threadObj()),
-    _stacktrace(frames, max_frames),
-    _closure(closure),
-    _suspend_time() {}
-
-  void take_sample();
-  void do_task(const SuspendedThreadTaskContext& context);
-  void protected_task(const SuspendedThreadTaskContext& context);
-  bool success() const { return _success; }
-  const JfrStackTrace& stacktrace() const { return _stacktrace; }
-
- private:
-  bool _success;
-  oop _thread_oop;
-  JfrStackTrace _stacktrace;
-  JfrThreadSampleClosure& _closure;
-  JfrTicks _suspend_time;
-};
-
-class OSThreadSamplerCallback : public CrashProtectionCallback {
- public:
-  OSThreadSamplerCallback(OSThreadSampler& sampler, const SuspendedThreadTaskContext &context) :
-    _sampler(sampler), _context(context) {
-  }
-  virtual void call() {
-    _sampler.protected_task(_context);
-  }
- private:
-  OSThreadSampler& _sampler;
-  const SuspendedThreadTaskContext& _context;
-};
-
-void OSThreadSampler::do_task(const SuspendedThreadTaskContext& context) {
-#ifndef ASSERT
-  guarantee(JfrOptionSet::sample_protection(), "Sample Protection should be on in product builds");
-#endif
-  assert(_suspend_time.value() == 0, "already timestamped!");
-  _suspend_time = JfrTicks::now();
-
-  if (JfrOptionSet::sample_protection()) {
-    OSThreadSamplerCallback cb(*this, context);
-    ThreadCrashProtection crash_protection;
-    if (!crash_protection.call(cb)) {
-      log_error(jfr)("Thread method sampler crashed");
-    }
-  } else {
-    protected_task(context);
-  }
-}
-
-/*
-* From this method and down the call tree we attempt to protect against crashes
-* using a signal handler / __try block. Don't take locks, rely on destructors or
-* leave memory (in case of signal / exception) in an inconsistent state. */
-void OSThreadSampler::protected_task(const SuspendedThreadTaskContext& context) {
-  JavaThread* const jt = JavaThread::cast(context.thread());
-  // Skip sample if we signaled a thread that moved to other state
-  if (!thread_state_in_java(jt)) {
-    return;
-  }
-  JfrGetCallTrace trace(true, jt);
-  frame topframe;
-  if (trace.get_topframe(context.ucontext(), topframe)) {
-    if (_stacktrace.record_async(jt, topframe)) {
-      /* If we managed to get a topframe and a stacktrace, create an event
-      * and put it into our array. We can't call Jfr::_stacktraces.add()
-      * here since it would allocate memory using malloc. Doing so while
-      * the stopped thread is inside malloc would deadlock. */
-      _success = true;
-      EventExecutionSample *ev = _closure.next_event();
-      ev->set_starttime(_suspend_time);
-      ev->set_endtime(_suspend_time); // fake to not take an end time
-      ev->set_sampledThread(JfrThreadLocal::thread_id(jt));
-      ev->set_state(static_cast<u8>(JavaThreadStatus::RUNNABLE));
-    }
-  }
-}
-
-void OSThreadSampler::take_sample() {
-  run();
-}
-
-class JfrNativeSamplerCallback : public CrashProtectionCallback {
- public:
-  JfrNativeSamplerCallback(JfrThreadSampleClosure& closure, JavaThread* jt, JfrStackFrame* frames, u4 max_frames) :
-    _closure(closure), _jt(jt), _thread_oop(jt->threadObj()), _stacktrace(frames, max_frames), _success(false) {
-  }
-  virtual void call();
-  bool success() { return _success; }
-  JfrStackTrace& stacktrace() { return _stacktrace; }
-
- private:
-  JfrThreadSampleClosure& _closure;
-  JavaThread* _jt;
-  oop _thread_oop;
-  JfrStackTrace _stacktrace;
-  bool _success;
-};
-
-static void write_native_event(JfrThreadSampleClosure& closure, JavaThread* jt, oop thread_oop) {
-  EventNativeMethodSample *ev = closure.next_event_native();
-  ev->set_starttime(JfrTicks::now());
-  ev->set_sampledThread(JfrThreadLocal::thread_id(jt));
-  ev->set_state(static_cast<u8>(JavaThreadStatus::RUNNABLE));
-}
-
-void JfrNativeSamplerCallback::call() {
-  // When a thread is only attach it will be native without a last java frame
-  if (!_jt->has_last_Java_frame()) {
-    return;
-  }
-
-  frame topframe = _jt->last_frame();
-  frame first_java_frame;
-  Method* method = nullptr;
-  JfrGetCallTrace gct(false, _jt);
-  if (!gct.find_top_frame(topframe, &method, first_java_frame)) {
-    return;
-  }
-  if (method == nullptr) {
-    return;
-  }
-  topframe = first_java_frame;
-  _success = _stacktrace.record_async(_jt, topframe);
-  if (_success) {
-    write_native_event(_closure, _jt, _thread_oop);
-  }
-}
-
-bool JfrThreadSampleClosure::sample_thread_in_java(JavaThread* thread, JfrStackFrame* frames, u4 max_frames) {
-  // Process the oops in the thread head before calling into code that wants to
-  // stack walk over Loom continuations. The stack walking code will otherwise
-  // skip frames in stack chunks on the Java heap.
-  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
-
-  OSThreadSampler sampler(thread, *this, frames, max_frames);
-  sampler.take_sample();
-  /* We don't want to allocate any memory using malloc/etc while the thread
-  * is stopped, so everything is stored in stack allocated memory until this
-  * point where the thread has been resumed again, if the sampling was a success
-  * we need to store the stacktrace in the stacktrace repository and update
-  * the event with the id that was returned. */
-  if (!sampler.success()) {
-    return false;
-  }
-  EventExecutionSample *event = &_events[_added_java - 1];
-  traceid id = JfrStackTraceRepository::add(sampler.stacktrace());
-  assert(id != 0, "Stacktrace id should not be 0");
-  event->set_stackTrace(id);
-  return true;
-}
-
-bool JfrThreadSampleClosure::sample_thread_in_native(JavaThread* thread, JfrStackFrame* frames, u4 max_frames) {
-  // Process the oops in the thread head before calling into code that wants to
-  // stack walk over Loom continuations. The stack walking code will otherwise
-  // skip frames in stack chunks on the Java heap.
-  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
-
-  JfrNativeSamplerCallback cb(*this, thread, frames, max_frames);
-  if (JfrOptionSet::sample_protection()) {
-    ThreadCrashProtection crash_protection;
-    if (!crash_protection.call(cb)) {
-      log_error(jfr)("Thread method sampler crashed for native");
-    }
-  } else {
-    cb.call();
-  }
-  if (!cb.success()) {
-    return false;
-  }
-  EventNativeMethodSample *event = &_events_native[_added_native - 1];
-  traceid id = JfrStackTraceRepository::add(cb.stacktrace());
-  assert(id != 0, "Stacktrace id should not be 0");
-  event->set_stackTrace(id);
-  return true;
-}
-
-static const uint MAX_NR_OF_JAVA_SAMPLES = 5;
-static const uint MAX_NR_OF_NATIVE_SAMPLES = 1;
-
-void JfrThreadSampleClosure::commit_events(JfrSampleType type) {
-  if (JAVA_SAMPLE == type) {
-    assert(_added_java > 0 && _added_java <= MAX_NR_OF_JAVA_SAMPLES, "invariant");
-    if (EventExecutionSample::is_enabled()) {
-      for (uint i = 0; i < _added_java; ++i) {
-        _events[i].commit();
-      }
-    }
-  } else {
-    assert(NATIVE_SAMPLE == type, "invariant");
-    assert(_added_native > 0 && _added_native <= MAX_NR_OF_NATIVE_SAMPLES, "invariant");
-    if (EventNativeMethodSample::is_enabled()) {
-      for (uint i = 0; i < _added_native; ++i) {
-        _events_native[i].commit();
-      }
-    }
-  }
-}
-
-JfrThreadSampleClosure::JfrThreadSampleClosure(EventExecutionSample* events, EventNativeMethodSample* events_native) :
-  _events(events),
-  _events_native(events_native),
-  _self(Thread::current()),
-  _added_java(0),
-  _added_native(0) {
-}
-
-class JfrThreadSampler : public NonJavaThread {
-  friend class JfrThreadSampling;
+// The JfrSamplerThread suspends, if necessary, JavaThreads for sampling.
+// It creates a sample description of the top Java frame, called a Jfr Sample Request.
+// The request is installed into a thread-local queue associated with the sampled thread.
+// Before resuming the sampled thread, its thread-local poll page is armed.
+// This mechanism lets the sampled thread discover and process the installed
+// sample request at its next safepoint poll instruction.
+class JfrSamplerThread : public NonJavaThread {
+  friend class JfrThreadSampler;
  private:
   Semaphore _sample;
-  Thread* _sampler_thread;
-  JfrStackFrame* const _frames;
   JavaThread* _last_thread_java;
   JavaThread* _last_thread_native;
   int64_t _java_period_millis;
   int64_t _native_period_millis;
-  const size_t _min_size; // for enqueue buffer monitoring
   int _cur_index;
   const u4 _max_frames;
   volatile bool _disenrolled;
 
-  const JfrBuffer* get_enqueue_buffer();
-  const JfrBuffer* renew_if_full(const JfrBuffer* enqueue_buffer);
-
   JavaThread* next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current);
-  void task_stacktrace(JfrSampleType type, JavaThread** last_thread);
-  JfrThreadSampler(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames);
-  ~JfrThreadSampler();
+  void task_stacktrace(JfrSampleRequestType type, JavaThread** last_thread);
+  JfrSamplerThread(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames);
 
   void start_thread();
 
@@ -363,68 +72,27 @@ class JfrThreadSampler : public NonJavaThread {
   void disenroll();
   void set_java_period(int64_t period_millis);
   void set_native_period(int64_t period_millis);
+  bool sample_java_thread(JavaThread* jt);
+  bool sample_native_thread(JavaThread* jt);
+
  protected:
-  virtual void post_run();
- public:
-  virtual const char* name() const { return "JFR Thread Sampler"; }
-  virtual const char* type_name() const { return "JfrThreadSampler"; }
-  bool is_JfrSampler_thread() const { return true; }
   void run();
-  static Monitor* transition_block() { return JfrThreadSampler_lock; }
-  static void on_javathread_suspend(JavaThread* thread);
-  int64_t get_java_period() const { return Atomic::load(&_java_period_millis); };
-  int64_t get_native_period() const { return Atomic::load(&_native_period_millis); };
+  virtual void post_run();
+
+ public:
+  virtual const char* name() const { return "JFR Sampler Thread"; }
+  virtual const char* type_name() const { return "JfrSamplerThread"; }
+  bool is_JfrSampler_thread() const { return true; }
+  int64_t java_period() const { return Atomic::load(&_java_period_millis); };
+  int64_t native_period() const { return Atomic::load(&_native_period_millis); };
 };
 
-static void clear_transition_block(JavaThread* jt) {
-  assert(Threads_lock->owned_by_self(), "Holding the thread table lock.");
-  jt->clear_trace_flag();
-  JfrThreadLocal* const tl = jt->jfr_thread_local();
-  MutexLocker ml(JfrThreadSampler::transition_block(), Mutex::_no_safepoint_check_flag);
-  if (tl->is_trace_block()) {
-    JfrThreadSampler::transition_block()->notify();
-  }
-}
-
-static bool is_excluded(JavaThread* thread) {
-  assert(thread != nullptr, "invariant");
-  return thread->is_hidden_from_external_view() || thread->in_deopt_handler() || thread->jfr_thread_local()->is_excluded();
-}
-
-bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame* frames, u4 max_frames, JfrSampleType type) {
-  assert(Threads_lock->owned_by_self(), "Holding the thread table lock.");
-  if (is_excluded(thread)) {
-    return false;
-  }
-
-  bool ret = false;
-  thread->set_trace_flag();  // Provides StoreLoad, needed to keep read of thread state from floating up.
-  if (UseSystemMemoryBarrier) {
-    SystemMemoryBarrier::emit();
-  }
-  if (JAVA_SAMPLE == type) {
-    if (thread_state_in_java(thread)) {
-      ret = sample_thread_in_java(thread, frames, max_frames);
-    }
-  } else {
-    assert(NATIVE_SAMPLE == type, "invariant");
-    if (thread_state_in_native(thread)) {
-      ret = sample_thread_in_native(thread, frames, max_frames);
-    }
-  }
-  clear_transition_block(thread);
-  return ret;
-}
-
-JfrThreadSampler::JfrThreadSampler(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames) :
+JfrSamplerThread::JfrSamplerThread(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames) :
   _sample(),
-  _sampler_thread(nullptr),
-  _frames(JfrCHeapObj::new_array<JfrStackFrame>(max_frames)),
   _last_thread_java(nullptr),
   _last_thread_native(nullptr),
   _java_period_millis(java_period_millis),
   _native_period_millis(native_period_millis),
-  _min_size(max_frames * 2 * wordSize), // each frame tags at most 2 words, min size is a full stacktrace
   _cur_index(-1),
   _max_frames(max_frames),
   _disenrolled(true) {
@@ -432,54 +100,12 @@ JfrThreadSampler::JfrThreadSampler(int64_t java_period_millis, int64_t native_pe
   assert(_native_period_millis >= 0, "invariant");
 }
 
-JfrThreadSampler::~JfrThreadSampler() {
-  JfrCHeapObj::free(_frames, sizeof(JfrStackFrame) * _max_frames);
+void JfrSamplerThread::post_run() {
+  this->NonJavaThread::post_run();
+  delete this;
 }
 
-void JfrThreadSampler::set_java_period(int64_t period_millis) {
-  assert(period_millis >= 0, "invariant");
-  Atomic::store(&_java_period_millis, period_millis);
-}
-
-void JfrThreadSampler::set_native_period(int64_t period_millis) {
-  assert(period_millis >= 0, "invariant");
-  Atomic::store(&_native_period_millis, period_millis);
-}
-
-static inline bool is_released(JavaThread* jt) {
-  return !jt->is_trace_suspend();
-}
-
-void JfrThreadSampler::on_javathread_suspend(JavaThread* thread) {
-  if (is_released(thread)) {
-    return;
-  }
-  JfrThreadLocal* const tl = thread->jfr_thread_local();
-  MonitorLocker ml(transition_block(), Mutex::_no_safepoint_check_flag);
-  tl->set_trace_block();
-  while (!is_released(thread)) {
-    ml.wait();
-  }
-  tl->clear_trace_block();
-}
-
-JavaThread* JfrThreadSampler::next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current) {
-  assert(t_list != nullptr, "invariant");
-  assert(Threads_lock->owned_by_self(), "Holding the thread table lock.");
-  assert(_cur_index >= -1 && (uint)_cur_index + 1 <= t_list->length(), "invariant");
-  assert((current == nullptr && -1 == _cur_index) || (t_list->find_index_of_JavaThread(current) == _cur_index), "invariant");
-  if ((uint)_cur_index + 1 == t_list->length()) {
-    // wrap
-    _cur_index = 0;
-  } else {
-    _cur_index++;
-  }
-  assert(_cur_index >= 0 && (uint)_cur_index < t_list->length(), "invariant");
-  JavaThread* const next = t_list->thread_at(_cur_index);
-  return next != first_sampled ? next : nullptr;
-}
-
-void JfrThreadSampler::start_thread() {
+void JfrSamplerThread::start_thread() {
   if (os::create_thread(this, os::os_thread)) {
     os::start_thread(this);
   } else {
@@ -487,7 +113,7 @@ void JfrThreadSampler::start_thread() {
   }
 }
 
-void JfrThreadSampler::enroll() {
+void JfrSamplerThread::enroll() {
   if (_disenrolled) {
     log_trace(jfr)("Enrolling thread sampler");
     _sample.signal();
@@ -495,7 +121,7 @@ void JfrThreadSampler::enroll() {
   }
 }
 
-void JfrThreadSampler::disenroll() {
+void JfrSamplerThread::disenroll() {
   if (!_disenrolled) {
     _sample.wait();
     _disenrolled = true;
@@ -503,14 +129,23 @@ void JfrThreadSampler::disenroll() {
   }
 }
 
-static int64_t get_monotonic_ms() {
+// Currently we only need to serialize a single thread state
+// _thread_in_Java for the SafepointLatency event.
+class VMThreadStateSerializer : public JfrSerializer {
+ public:
+  void serialize(JfrCheckpointWriter& writer) {
+    writer.write_count(1);
+    writer.write_key(_thread_in_Java);
+    writer.write("_thread_in_Java");
+  }
+};
+
+static inline int64_t get_monotonic_ms() {
   return os::javaTimeNanos() / 1000000;
 }
 
-void JfrThreadSampler::run() {
-  assert(_sampler_thread == nullptr, "invariant");
-
-  _sampler_thread = this;
+void JfrSamplerThread::run() {
+  JfrSerializer::register_serializer(TYPE_VMTHREADSTATE, true, new VMThreadStateSerializer());
 
   int64_t last_java_ms = get_monotonic_ms();
   int64_t last_native_ms = last_java_ms;
@@ -523,9 +158,9 @@ void JfrThreadSampler::run() {
     }
     _sample.signal();
 
-    int64_t java_period_millis = get_java_period();
+    int64_t java_period_millis = java_period();
     java_period_millis = java_period_millis == 0 ? max_jlong : MAX2<int64_t>(java_period_millis, 1);
-    int64_t native_period_millis = get_native_period();
+    int64_t native_period_millis = native_period();
     native_period_millis = native_period_millis == 0 ? max_jlong : MAX2<int64_t>(native_period_millis, 1);
 
     // If both periods are max_jlong, it implies the sampler is in the process of
@@ -567,110 +202,221 @@ void JfrThreadSampler::run() {
   }
 }
 
-void JfrThreadSampler::post_run() {
-  this->NonJavaThread::post_run();
-  delete this;
+JavaThread* JfrSamplerThread::next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current) {
+  assert(t_list != nullptr, "invariant");
+  assert(_cur_index >= -1 && (uint)_cur_index + 1 <= t_list->length(), "invariant");
+  assert((current == nullptr && -1 == _cur_index) || (t_list->find_index_of_JavaThread(current) == _cur_index), "invariant");
+  if ((uint)_cur_index + 1 == t_list->length()) {
+    // wrap
+    _cur_index = 0;
+  } else {
+    _cur_index++;
+  }
+  assert(_cur_index >= 0 && (uint)_cur_index < t_list->length(), "invariant");
+  JavaThread* const next = t_list->thread_at(_cur_index);
+  return next != first_sampled ? next : nullptr;
 }
 
-const JfrBuffer* JfrThreadSampler::get_enqueue_buffer() {
-  const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(this);
-  return buffer != nullptr ? renew_if_full(buffer) : JfrTraceIdLoadBarrier::renew_sampler_enqueue_buffer(this);
+static inline bool is_excluded(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  return jt->is_Compiler_thread() || jt->is_hidden_from_external_view() || jt->is_JfrRecorder_thread() || jt->jfr_thread_local()->is_excluded();
 }
 
-const JfrBuffer* JfrThreadSampler::renew_if_full(const JfrBuffer* enqueue_buffer) {
-  assert(enqueue_buffer != nullptr, "invariant");
-  return enqueue_buffer->free_size() < _min_size ? JfrTraceIdLoadBarrier::renew_sampler_enqueue_buffer(this) : enqueue_buffer;
-}
+static const uint MAX_NR_OF_JAVA_SAMPLES = 5;
+static const uint MAX_NR_OF_NATIVE_SAMPLES = 1;
 
-void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thread) {
-  ResourceMark rm;
-  EventExecutionSample samples[MAX_NR_OF_JAVA_SAMPLES];
-  EventNativeMethodSample samples_native[MAX_NR_OF_NATIVE_SAMPLES];
-  JfrThreadSampleClosure sample_task(samples, samples_native);
-
+void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** last_thread) {
   const uint sample_limit = JAVA_SAMPLE == type ? MAX_NR_OF_JAVA_SAMPLES : MAX_NR_OF_NATIVE_SAMPLES;
   uint num_samples = 0;
   JavaThread* start = nullptr;
-  {
-    elapsedTimer sample_time;
-    sample_time.start();
-    {
-      MutexLocker tlock(Threads_lock);
-      ThreadsListHandle tlh;
-      // Resolve a sample session relative start position index into the thread list array.
-      // In cases where the last sampled thread is null or not-null but stale, find_index() returns -1.
-      _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
-      JavaThread* current = _cur_index != -1 ? *last_thread : nullptr;
+  elapsedTimer sample_time;
+  sample_time.start();
+  ThreadsListHandle tlh;
+  // Resolve a sample session relative start position index into the thread list array.
+  // In cases where the last sampled thread is null or not-null but stale, find_index() returns -1.
+  _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
+  JavaThread* current = _cur_index != -1 ? *last_thread : nullptr;
 
-      // Explicitly monitor the available space of the thread-local buffer used by the load barrier
-      // for enqueuing klasses as part of tagging methods. We do this because if space becomes sparse,
-      // we cannot rely on the implicit allocation of a new buffer as part of the regular tag mechanism.
-      // If the free list is empty, a malloc could result, and the problem with that is that the thread
-      // we have suspended could be the holder of the malloc lock. Instead, the buffer is pre-emptively
-      // renewed before thread suspension.
-      const JfrBuffer* enqueue_buffer = get_enqueue_buffer();
-      assert(enqueue_buffer != nullptr, "invariant");
-
-      while (num_samples < sample_limit) {
-        current = next_thread(tlh.list(), start, current);
-        if (current == nullptr) {
-          break;
-        }
-        if (start == nullptr) {
-          start = current;  // remember the thread where we started to attempt sampling
-        }
-        if (current->is_Compiler_thread()) {
-          continue;
-        }
-        assert(enqueue_buffer->free_size() >= _min_size, "invariant");
-        if (sample_task.do_sample_thread(current, _frames, _max_frames, type)) {
-          num_samples++;
-        }
-        enqueue_buffer = renew_if_full(enqueue_buffer);
-      }
-      *last_thread = current;  // remember the thread we last attempted to sample
+  while (num_samples < sample_limit) {
+    current = next_thread(tlh.list(), start, current);
+    if (current == nullptr) {
+      break;
     }
-    sample_time.stop();
-    log_trace(jfr)("JFR thread sampling done in %3.7f secs with %d java %d native samples",
-                   sample_time.seconds(), sample_task.java_entries(), sample_task.native_entries());
+    if (is_excluded(current)) {
+      continue;
+    }
+    if (start == nullptr) {
+      start = current; // remember the thread where we started to attempt sampling
+    }
+    bool success;
+    if (JAVA_SAMPLE == type) {
+      success = sample_java_thread(current);
+    } else {
+      assert(type == NATIVE_SAMPLE, "invariant");
+      success = sample_native_thread(current);
+    }
+    if (success) {
+      num_samples++;
+    }
+    if (SafepointSynchronize::is_at_safepoint()) {
+      // For _thread_in_native, we cannot get the Threads_lock.
+      // For _thread_in_Java, well, there are none.
+      break;
+    }
   }
-  if (num_samples > 0) {
-    sample_task.commit_events(type);
-  }
+
+  *last_thread = current; // remember the thread we last attempted to sample
+  sample_time.stop();
+  log_trace(jfr)("JFR thread sampling done in %3.7f secs with %d java %d native samples",
+    sample_time.seconds(), type == JAVA_SAMPLE ? num_samples : 0, type == NATIVE_SAMPLE ? num_samples : 0);
 }
 
-static JfrThreadSampling* _instance = nullptr;
+// Platform-specific thread suspension and CPU context retrieval.
+class OSThreadSampler : public SuspendedThreadTask {
+ private:
+  JfrSampleResult _result;
+ public:
+  OSThreadSampler(JavaThread* jt) : SuspendedThreadTask(jt),
+                                    _result(THREAD_SUSPENSION_ERROR) {}
+  void request_sample() { run(); }
+  JfrSampleResult result() const { return _result; }
 
-JfrThreadSampling& JfrThreadSampling::instance() {
+  void do_task(const SuspendedThreadTaskContext& context) {
+    JavaThread* const jt = JavaThread::cast(context.thread());
+    assert(jt != nullptr, "invariant");
+    if (jt->thread_state() == _thread_in_Java) {
+      JfrThreadLocal* const tl = jt->jfr_thread_local();
+      if (tl->sample_state() == NO_SAMPLE) {
+        _result = JfrSampleRequestBuilder::build_java_sample_request(context.ucontext(), tl, jt);
+      }
+    }
+  }
+};
+
+// Sampling a thread in state _thread_in_Java
+// involves a platform-specific thread suspend and CPU context retrieval.
+bool JfrSamplerThread::sample_java_thread(JavaThread* jt) {
+  if (jt->thread_state() != _thread_in_Java) {
+    return false;
+  }
+
+  OSThreadSampler sampler(jt);
+  sampler.request_sample();
+
+  if (sampler.result() != SAMPLE_JAVA) {
+    // Wrong thread state or suspension error.
+    return false;
+  }
+
+  // If we get to do it before the sampled thread, we install
+  // the new Jfr Sample Request into the thread-local queue
+  // associated with the sampled thread. This makes the just
+  // sampled thread eligible for yet another sample.
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  JfrMutexTryLock lock(tl->sample_monitor());
+  if (lock.acquired() && tl->sample_state() == JAVA_SAMPLE) {
+    tl->enqueue_request();
+    assert(tl->sample_state() == NO_SAMPLE, "invariant");
+  }
+  return true;
+}
+
+static JfrSamplerThread* _sampler_thread = nullptr;
+
+// We can sample a JavaThread running in state _thread_in_native
+// without thread suspension and CPU context retrieval,
+// if we carefully order the loads of the thread state.
+bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
+  if (jt->thread_state() != _thread_in_native) {
+    return false;
+  }
+
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+
+  if (tl->sample_state() != NO_SAMPLE) {
+    return false;
+  }
+
+  tl->set_sample_state(NATIVE_SAMPLE);
+
+  SafepointMechanism::arm_local_poll_release(jt);
+
+  // Take the Threads_lock for two purposes:
+  // 1) Avoid sampling through a safepoint which could result
+  //    in touching oops in case of virtual threads.
+  // 2) Prevent JFR from issuing an epoch rotation while the sampler thread
+  //    is actively processing a thread in native, as both threads are now
+  //    outside the safepoint protocol.
+
+  // OrderAccess::fence() as part of acquiring the lock prevents loads from floating up.
+  JfrMutexTryLock threads_lock(Threads_lock);
+
+  if (!threads_lock.acquired() || !jt->has_last_Java_frame()) {
+    // Remove the native sample request and release the potentially waiting thread.
+    JfrSampleMonitor jsm(tl);
+    return false;
+  }
+
+  if (jt->thread_state() != _thread_in_native) {
+    assert_lock_strong(Threads_lock);
+    JfrSampleMonitor jsm(tl);
+    if (jsm.is_waiting()) {
+      // The thread has already returned from native,
+      // now in _thread_in_vm and is waiting to be sampled.
+      // Convert the native sample request into a java sample request
+      // and let the thread process the ljf on its own.
+      jsm.install_java_sample_request();
+    }
+    return false;
+  }
+
+  return JfrThreadSampling::process_native_sample_request(tl, jt, _sampler_thread);
+}
+
+void JfrSamplerThread::set_java_period(int64_t period_millis) {
+  assert(period_millis >= 0, "invariant");
+  Atomic::store(&_java_period_millis, period_millis);
+}
+
+void JfrSamplerThread::set_native_period(int64_t period_millis) {
+  assert(period_millis >= 0, "invariant");
+  Atomic::store(&_native_period_millis, period_millis);
+}
+
+// JfrThreadSampler;
+static JfrThreadSampler* _instance = nullptr;
+
+JfrThreadSampler& JfrThreadSampler::instance() {
   return *_instance;
 }
 
-JfrThreadSampling* JfrThreadSampling::create() {
+JfrThreadSampler::JfrThreadSampler() {}
+
+JfrThreadSampler::~JfrThreadSampler() {
+  if (_sampler_thread != nullptr) {
+    _sampler_thread->disenroll();
+  }
+}
+
+JfrThreadSampler* JfrThreadSampler::create() {
   assert(_instance == nullptr, "invariant");
-  _instance = new JfrThreadSampling();
+  _instance = new JfrThreadSampler();
   return _instance;
 }
 
-void JfrThreadSampling::destroy() {
+void JfrThreadSampler::destroy() {
   if (_instance != nullptr) {
     delete _instance;
     _instance = nullptr;
   }
 }
 
-JfrThreadSampling::JfrThreadSampling() : _sampler(nullptr) {}
-
-JfrThreadSampling::~JfrThreadSampling() {
-  if (_sampler != nullptr) {
-    _sampler->disenroll();
-  }
-}
-
 #ifdef ASSERT
-static void assert_periods(const JfrThreadSampler* sampler, int64_t java_period_millis, int64_t native_period_millis) {
-  assert(sampler != nullptr, "invariant");
-  assert(sampler->get_java_period() == java_period_millis, "invariant");
-  assert(sampler->get_native_period() == native_period_millis, "invariant");
+static void assert_periods(const JfrSamplerThread* sampler_thread, int64_t java_period_millis, int64_t native_period_millis) {
+  assert(sampler_thread != nullptr, "invariant");
+  assert(sampler_thread->java_period() == java_period_millis, "invariant");
+  assert(sampler_thread->native_period() == native_period_millis, "invariant");
 }
 #endif
 
@@ -678,66 +424,62 @@ static void log(int64_t java_period_millis, int64_t native_period_millis) {
   log_trace(jfr)("Updated thread sampler for java: " INT64_FORMAT "  ms, native " INT64_FORMAT " ms", java_period_millis, native_period_millis);
 }
 
-void JfrThreadSampling::create_sampler(int64_t java_period_millis, int64_t native_period_millis) {
-  assert(_sampler == nullptr, "invariant");
+void JfrThreadSampler::create_sampler(int64_t java_period_millis, int64_t native_period_millis) {
+  assert(_sampler_thread == nullptr, "invariant");
   log_trace(jfr)("Creating thread sampler for java:" INT64_FORMAT " ms, native " INT64_FORMAT " ms", java_period_millis, native_period_millis);
-  _sampler = new JfrThreadSampler(java_period_millis, native_period_millis, JfrOptionSet::stackdepth());
-  _sampler->start_thread();
-  _sampler->enroll();
+  _sampler_thread = new JfrSamplerThread(java_period_millis, native_period_millis, JfrOptionSet::stackdepth());
+  _sampler_thread->start_thread();
+  _sampler_thread->enroll();
 }
 
-void JfrThreadSampling::update_run_state(int64_t java_period_millis, int64_t native_period_millis) {
+void JfrThreadSampler::update_run_state(int64_t java_period_millis, int64_t native_period_millis) {
   if (java_period_millis > 0 || native_period_millis > 0) {
-    if (_sampler == nullptr) {
+    if (_sampler_thread == nullptr) {
       create_sampler(java_period_millis, native_period_millis);
     } else {
-      _sampler->enroll();
+      _sampler_thread->enroll();
     }
-    DEBUG_ONLY(assert_periods(_sampler, java_period_millis, native_period_millis);)
+    DEBUG_ONLY(assert_periods(_sampler_thread, java_period_millis, native_period_millis);)
     log(java_period_millis, native_period_millis);
     return;
   }
-  if (_sampler != nullptr) {
-    DEBUG_ONLY(assert_periods(_sampler, java_period_millis, native_period_millis);)
-    _sampler->disenroll();
+  if (_sampler_thread != nullptr) {
+    DEBUG_ONLY(assert_periods(_sampler_thread, java_period_millis, native_period_millis);)
+    _sampler_thread->disenroll();
   }
 }
 
-void JfrThreadSampling::set_sampling_period(bool is_java_period, int64_t period_millis) {
+void JfrThreadSampler::set_period(bool is_java_period, int64_t period_millis) {
   int64_t java_period_millis = 0;
   int64_t native_period_millis = 0;
   if (is_java_period) {
     java_period_millis = period_millis;
-    if (_sampler != nullptr) {
-      _sampler->set_java_period(java_period_millis);
-      native_period_millis = _sampler->get_native_period();
+    if (_sampler_thread != nullptr) {
+      _sampler_thread->set_java_period(java_period_millis);
+      native_period_millis = _sampler_thread->native_period();
     }
   } else {
     native_period_millis = period_millis;
-    if (_sampler != nullptr) {
-      _sampler->set_native_period(native_period_millis);
-      java_period_millis = _sampler->get_java_period();
+    if (_sampler_thread != nullptr) {
+      _sampler_thread->set_native_period(native_period_millis);
+      java_period_millis = _sampler_thread->java_period();
     }
   }
   update_run_state(java_period_millis, native_period_millis);
 }
 
-void JfrThreadSampling::set_java_sample_period(int64_t period_millis) {
+void JfrThreadSampler::set_java_sample_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");
   if (_instance == nullptr && 0 == period_millis) {
     return;
   }
-  instance().set_sampling_period(true, period_millis);
+  instance().set_period(true, period_millis);
 }
 
-void JfrThreadSampling::set_native_sample_period(int64_t period_millis) {
+void JfrThreadSampler::set_native_sample_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");
   if (_instance == nullptr && 0 == period_millis) {
     return;
   }
-  instance().set_sampling_period(false, period_millis);
-}
-
-void JfrThreadSampling::on_javathread_suspend(JavaThread* thread) {
-  JfrThreadSampler::on_javathread_suspend(thread);
+  instance().set_period(false, period_millis);
 }

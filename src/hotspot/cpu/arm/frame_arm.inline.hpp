@@ -27,8 +27,57 @@
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 // Inline functions for ARM frames:
+
+#if INCLUDE_JFR
+
+// Static helper routines
+
+inline address frame::interpreter_bcp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::interpreter_frame_bcp_offset]);
+}
+
+inline address frame::interpreter_return_address(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<address>(fp[frame::return_addr_offset]);
+}
+
+inline intptr_t* frame::interpreter_sender_sp(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::interpreter_frame_sender_sp_offset]);
+}
+
+inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp) {
+  assert(fp != nullptr, "invariant");
+  assert(sp != nullptr, "invariant");
+  return sp <= fp + frame::interpreter_frame_initial_sp_offset;
+}
+
+inline intptr_t* frame::sender_sp(intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return fp + frame::sender_sp_offset;
+}
+
+inline intptr_t* frame::link(const intptr_t* fp) {
+  assert(fp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(fp[frame::link_offset]);
+}
+
+inline address frame::return_address(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<address>(sp[-1]);
+}
+
+inline intptr_t* frame::fp(const intptr_t* sp) {
+  assert(sp != nullptr, "invariant");
+  return reinterpret_cast<intptr_t*>(sp[-2]);
+}
+
+#endif // INCLUDE_JFR
+
 
 // Constructors:
 
@@ -54,21 +103,30 @@ inline void frame::init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, add
   _fp = fp;
   _pc = pc;
   assert(pc != nullptr, "no pc?");
+  _on_heap = false;
+  _oop_map = nullptr;
   _cb = CodeCache::find_blob(pc);
-  adjust_unextended_sp();
   DEBUG_ONLY(_frame_index = -1;)
+
+  setup(pc);
+}
+
+inline void frame::setup(address pc) {
+  adjust_unextended_sp();
 
   address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
-    assert(_cb->as_nmethod()->insts_contains_inclusive(_pc),
-           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
     _deopt_state = is_deoptimized;
+    assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
+           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
-    _deopt_state = not_deoptimized;
+    if (_cb == SharedRuntime::deopt_blob()) {
+      _deopt_state = is_deoptimized;
+    } else {
+      _deopt_state = not_deoptimized;
+    }
   }
-  _on_heap = false;
-  _oop_map = nullptr;
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
@@ -85,6 +143,22 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   init(sp, sp, fp, pc);
 }
 
+inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, bool allow_cb_null) {
+  intptr_t a = intptr_t(sp);
+  intptr_t b = intptr_t(fp);
+  _sp = sp;
+  _unextended_sp = unextended_sp;
+  _fp = fp;
+  _pc = pc;
+  assert(pc != nullptr, "no pc?");
+  _cb = cb;
+  _oop_map = nullptr;
+  assert(_cb != nullptr || allow_cb_null, "pc: " INTPTR_FORMAT, p2i(pc));
+  _on_heap = false;
+  DEBUG_ONLY(_frame_index = -1;)
+
+  setup(pc);
+}
 
 // Accessors
 

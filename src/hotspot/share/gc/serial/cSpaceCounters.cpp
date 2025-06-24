@@ -28,8 +28,7 @@
 
 CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
                                ContiguousSpace* s, GenerationCounters* gc)
-  : _last_used_in_bytes(0), _space(s)
-{
+    : _space(s) {
   if (UsePerfData) {
     EXCEPTION_MARK;
     ResourceMark rm;
@@ -57,7 +56,7 @@ CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
 
     cname = PerfDataManager::counter_name(_name_space, "used");
     _used = PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
-                                             new UsedHelper(this),
+                                             _space->used(),
                                              CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "initCapacity");
@@ -75,26 +74,10 @@ void CSpaceCounters::update_capacity() {
 }
 
 void CSpaceCounters::update_used() {
-  size_t new_used = _space->used();
-  Atomic::store(&_last_used_in_bytes, new_used);
-  _used->set_value(new_used);
+  _used->set_value(_space->used());
 }
 
 void CSpaceCounters::update_all() {
   update_used();
   update_capacity();
-}
-
-jlong CSpaceCounters::UsedHelper::take_sample(){
-  // Sampling may occur during GC, possibly while GC is updating the space.
-  // The space can be in an inconsistent state during such an update.  We
-  // don't want to block sampling for the duration of a GC.  Instead, skip
-  // sampling in that case, using the last recorded value.
-  assert(!Heap_lock->owned_by_self(), "precondition");
-  if (Heap_lock->try_lock()) {
-    size_t new_used = _counters->_space->used();
-    Atomic::store(&_counters->_last_used_in_bytes, new_used);
-    Heap_lock->unlock();
-  }
-  return Atomic::load(&_counters->_last_used_in_bytes);
 }

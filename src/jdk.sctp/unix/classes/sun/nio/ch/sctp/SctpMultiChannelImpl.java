@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.nio.ch.sctp;
 
 import java.net.InetAddress;
@@ -561,7 +562,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             throws IOException {
         NIO_ACCESS.acquireSession(bb);
         try {
-            int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem);
+            int n = receive0(fd, resultContainer, NIO_ACCESS.getBufferAddress(bb) + pos, rem);
             if (n > 0)
                 bb.position(pos + n);
             return n;
@@ -870,7 +871,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
         NIO_ACCESS.acquireSession(bb);
         try {
-            int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+            int written = send0(fd, NIO_ACCESS.getBufferAddress(bb) + pos, rem, addr,
                     port, assocId, streamNumber, unordered, ppid);
             if (written > 0)
                 bb.position(pos + written);

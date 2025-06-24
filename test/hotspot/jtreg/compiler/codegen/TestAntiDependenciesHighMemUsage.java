@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8333258
- * @summary C2: high memory usage in PhaseCFG::insert_anti_dependences()
+ * @summary C2: high memory usage in PhaseCFG::raise_above_anti_dependences()
  * @run main/othervm -XX:CompileOnly=TestAntiDependenciesHighMemUsage::test1 -Xcomp TestAntiDependenciesHighMemUsage
  */
 

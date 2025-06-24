@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @bug 8262520
  * @summary Test clhsdb connect, detach, reattach commands
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @library /test/lib
  * @run driver ClhsdbAttachToDebugServer

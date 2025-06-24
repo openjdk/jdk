@@ -2170,15 +2170,13 @@ void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRe
       cmov_cmp_fp_le(op1, op2, dst, src, is_single);
       break;
     case BoolTest::ge:
-      assert(false, "Should go to BoolTest::le case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_ge(op1, op2, dst, src, is_single);
       break;
     case BoolTest::lt:
       cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
       break;
     case BoolTest::gt:
-      assert(false, "Should go to BoolTest::lt case");
-      ShouldNotReachHere();
+      cmov_cmp_fp_gt(op1, op2, dst, src, is_single);
       break;
     default:
       assert(false, "unsupported compare condition");

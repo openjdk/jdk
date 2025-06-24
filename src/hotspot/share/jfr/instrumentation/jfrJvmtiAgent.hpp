@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ class JfrJvmtiAgent : public JfrCHeapObj {
   static void destroy() NOT_JVMTI_RETURN;
  public:
   static void retransform_classes(JNIEnv* env, jobjectArray classes, TRAPS) NOT_JVMTI_RETURN;
+  static void retransform_classes(JNIEnv* env, jclass* classes, jint classes_count, TRAPS) NOT_JVMTI_RETURN;
 };
 
 #endif // SHARE_JFR_INSTRUMENTATION_JFRJVMTIAGENT_HPP

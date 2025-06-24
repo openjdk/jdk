@@ -44,6 +44,10 @@ void PhaseVector::optimize_vector_boxes() {
 
   C->igvn_worklist()->ensure_empty(); // should be done with igvn
 
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
+  }
+
   expand_vunbox_nodes();
   scalarize_vbox_nodes();
 
@@ -311,7 +315,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
                                            VectorSet &visited) {
   // JDK-8304948 shows an example that there may be a cycle in the graph.
   if (visited.test_set(vbox->_idx)) {
-    assert(vbox->is_Phi(), "should be phi");
+    assert(vbox->is_Phi() || vbox->is_CheckCastPP(), "either phi or expanded");
     return vbox; // already visited
   }
 
@@ -362,7 +366,7 @@ Node* PhaseVector::expand_vbox_node_helper(Node* vbox,
     return C->initial_gvn()->transform(vbox);
   }
 
-  assert(!vbox->is_Phi(), "should be expanded");
+  assert(vbox->is_CheckCastPP(), "should be expanded");
   // TODO: assert that expanded vbox is initialized with the same value (vect).
   return vbox; // already expanded
 }

@@ -51,7 +51,11 @@ void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
 
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
   StringLogMessage lm;
-  lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
+  if (task == nullptr) {
+    lm.print("Id not known, task was 0;  COMPILE SKIPPED: %s", reason);
+  } else {
+    lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
+  }
   if (retry_message != nullptr) {
     lm.append(" (%s)", retry_message);
   }

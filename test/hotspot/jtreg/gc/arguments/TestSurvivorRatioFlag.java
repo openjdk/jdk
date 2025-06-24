@@ -154,7 +154,7 @@ public class TestSurvivorRatioFlag {
             long youngGenSize = edenUsage.getMax() + 2 * survivorUsage.getMax();
             // for Paralle GC Min/InitialSurvivorRatio = SurvivorRatio + 2
             long expectedSize = HeapRegionUsageTool.alignDown(youngGenSize / (expectedRatio + 2),
-                    wb.psHeapGenerationAlignment());
+                    wb.getHeapSpaceAlignment());
 
             if (expectedSize != survivorUsage.getCommitted()) {
                 throw new RuntimeException("Expected survivor size is: " + expectedSize

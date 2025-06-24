@@ -1685,8 +1685,8 @@ class Http2Connection  {
     private List<ByteBuffer> encodeHeaders(OutgoingHeaders<Stream<?>> oh, Stream<?> stream) {
         oh.streamid(stream.streamid);
         if (Log.headers()) {
-            StringBuilder sb = new StringBuilder("HEADERS FRAME (stream=");
-            sb.append(stream.streamid).append(")\n");
+            StringBuilder sb = new StringBuilder("HEADERS FRAME (streamid=%s):\n".formatted(stream.streamid));
+            sb.append("  %s %s\n".formatted(stream.request.method(), stream.request.uri()));
             Log.dumpHeaders(sb, "    ", oh.getAttachment().getRequestPseudoHeaders());
             Log.dumpHeaders(sb, "    ", oh.getSystemHeaders());
             Log.dumpHeaders(sb, "    ", oh.getUserHeaders());

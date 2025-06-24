@@ -85,7 +85,7 @@ final class DelayScheduler extends Thread {
      * termination checks as well as to suppress reactivation after
      * terminating.
      *
-     * We avoid the need for auxilliary data structures by embedding
+     * We avoid the need for auxiliary data structures by embedding
      * pending queue links, heap indices, and pool references inside
      * ScheduledForkJoinTasks. (We use the same structure for both
      * Runnable and Callable versions, since including an extra field

@@ -65,7 +65,8 @@ public class StableMethodHandleBenchmark {
 
     private static final MethodHandle FINAL_MH = identityHandle();
     private static final StableValue<MethodHandle> STABLE_MH;
-    private static MethodHandle mh = identityHandle();
+
+    private static /* intentionally not final */ MethodHandle mh = identityHandle();
     private static final Dcl<MethodHandle> DCL = new Dcl<>(StableMethodHandleBenchmark::identityHandle);
     private static final AtomicReference<MethodHandle> ATOMIC_REFERENCE = new AtomicReference<>(identityHandle());
     private static final Map<String, MethodHandle> MAP = new ConcurrentHashMap<>();
@@ -110,14 +111,6 @@ public class StableMethodHandleBenchmark {
     @Benchmark
     public int stableMh() throws Throwable {
         return (int) STABLE_MH.orElseThrow().invokeExact(1);
-    }
-
-    Object cp() {
-        CodeBuilder cob = null;
-        ConstantPoolBuilder cp = ConstantPoolBuilder.of();
-        cob.ldc(cp.constantDynamicEntry(cp.bsmEntry(cp.methodHandleEntry(BSM_CLASS_DATA), List.of()),
-                cp.nameAndTypeEntry(DEFAULT_NAME, CD_MethodHandle)));
-        return null;
     }
 
     static MethodHandle identityHandle() {

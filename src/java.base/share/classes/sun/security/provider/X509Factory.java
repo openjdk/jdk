@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.provider;
 
 import java.io.*;
 
+import java.security.PEMRecord;
 import java.security.cert.*;
 import java.util.*;
 
@@ -36,6 +37,7 @@ import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.DerValue;
+import sun.security.util.Pem;
 import sun.security.x509.X509CRLImpl;
 import sun.security.x509.X509CertImpl;
 
@@ -556,115 +558,17 @@ public class X509Factory extends CertificateFactorySpi {
             readBERInternal(is, bout, c);
             return bout.toByteArray();
         } else {
-            // Read BASE64 encoded data, might skip info at the beginning
-            ByteArrayOutputStream data = new ByteArrayOutputStream();
-
-            // Step 1: Read until header is found
-            int hyphen = (c=='-') ? 1: 0;   // count of consequent hyphens
-            int last = (c=='-') ? -1: c;    // the char before hyphen
-            while (true) {
-                int next = is.read();
-                if (next == -1) {
-                    // We accept useless data after the last block,
-                    // say, empty lines.
+            try {
+                PEMRecord rec;
+                try {
+                    rec = Pem.readPEM(is, (c == '-' ? true : false));
+                } catch (EOFException e) {
                     return null;
                 }
-                if (next == '-') {
-                    hyphen++;
-                } else {
-                    hyphen = 0;
-                    last = next;
-                }
-                if (hyphen == 5 && (last == -1 || last == '\r' || last == '\n')) {
-                    break;
-                }
-            }
-
-            // Step 2: Read the rest of header, determine the line end
-            int end;
-            StringBuilder header = new StringBuilder("-----");
-            while (true) {
-                int next = is.read();
-                if (next == -1) {
-                    throw new IOException("Incomplete data");
-                }
-                if (next == '\n') {
-                    end = '\n';
-                    break;
-                }
-                if (next == '\r') {
-                    next = is.read();
-                    if (next == -1) {
-                        throw new IOException("Incomplete data");
-                    }
-                    if (next == '\n') {
-                        end = '\n';
-                    } else {
-                        end = '\r';
-                        // Skip all white space chars
-                        if (next != 9 && next != 10 && next != 13 && next != 32) {
-                            data.write(next);
-                        }
-                    }
-                    break;
-                }
-                header.append((char)next);
-            }
-
-            // Step 3: Read the data
-            while (true) {
-                int next = is.read();
-                if (next == -1) {
-                    throw new IOException("Incomplete data");
-                }
-                if (next != '-') {
-                    // Skip all white space chars
-                    if (next != 9 && next != 10 && next != 13 && next != 32) {
-                        data.write(next);
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            // Step 4: Consume the footer
-            StringBuilder footer = new StringBuilder("-");
-            while (true) {
-                int next = is.read();
-                // Add next == '\n' for maximum safety, in case endline
-                // is not consistent.
-                if (next == -1 || next == end || next == '\n') {
-                    break;
-                }
-                if (next != '\r') footer.append((char)next);
-            }
-
-            checkHeaderFooter(header.toString().stripTrailing(),
-                    footer.toString().stripTrailing());
-
-            try {
-                return Base64.getDecoder().decode(data.toByteArray());
+                return Base64.getDecoder().decode(rec.content());
             } catch (IllegalArgumentException e) {
                 throw new IOException(e);
             }
-        }
-    }
-
-    private static void checkHeaderFooter(String header,
-            String footer) throws IOException {
-        if (header.length() < 16 || !header.startsWith("-----BEGIN ") ||
-                !header.endsWith("-----")) {
-            throw new IOException("Illegal header: " + header);
-        }
-        if (footer.length() < 14 || !footer.startsWith("-----END ") ||
-                !footer.endsWith("-----")) {
-            throw new IOException("Illegal footer: " + footer);
-        }
-        String headerType = header.substring(11, header.length()-5);
-        String footerType = footer.substring(9, footer.length()-5);
-        if (!headerType.equals(footerType)) {
-            throw new IOException("Header and footer do not match: " +
-                    header + " " + footer);
         }
     }
 

@@ -40,6 +40,7 @@ inline oop WeakHandle::peek() const {
 }
 
 inline void WeakHandle::replace(oop with_obj) {
+  assert(!is_empty(), "Must not use replace on empty handle");
   NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, with_obj);
 }
 

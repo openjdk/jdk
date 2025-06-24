@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
 import java.util.Map;
-
+import jdk.internal.util.OperatingSystem;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
@@ -49,29 +49,22 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
         Map<String, String> renaming = Map.of("3DNOW_PREFETCH", "AMD_3DNOW_PREFETCH");
-        assert config.useSSE >= 2 : "minimum config for x64";
-        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, renaming);
-        features.add(AMD64.CPUFeature.SSE);
-        features.add(AMD64.CPUFeature.SSE2);
+        long featuresBitMapAddress = config.vmVersionFeatures + config.vmFeaturesFeaturesOffset;
+        EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class,
+                                                                                  constants,
+                                                                                  featuresBitMapAddress,
+                                                                                  config.vmFeaturesFeaturesSize,
+                                                                                  renaming);
+        assert features.contains(AMD64.CPUFeature.SSE) : "minimum config for x64";
+        assert features.contains(AMD64.CPUFeature.SSE2) : "minimum config for x64";
         return features;
-    }
-
-    private static EnumSet<AMD64.Flag> computeFlags(AMD64HotSpotVMConfig config) {
-        EnumSet<AMD64.Flag> flags = EnumSet.noneOf(AMD64.Flag.class);
-        if (config.useCountLeadingZerosInstruction) {
-            flags.add(AMD64.Flag.UseCountLeadingZerosInstruction);
-        }
-        if (config.useCountTrailingZerosInstruction) {
-            flags.add(AMD64.Flag.UseCountTrailingZerosInstruction);
-        }
-        return flags;
     }
 
     private static TargetDescription createTarget(AMD64HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = true;
-        Architecture arch = new AMD64(computeFeatures(config), computeFlags(config));
+        Architecture arch = new AMD64(computeFeatures(config));
         return new TargetDescription(arch, true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
     }
 
@@ -80,7 +73,7 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     }
 
     private static RegisterConfig createRegisterConfig(AMD64HotSpotVMConfig config, TargetDescription target) {
-        return new AMD64HotSpotRegisterConfig(target, config.useCompressedOops, config.windowsOs);
+        return new AMD64HotSpotRegisterConfig(target, config.useCompressedOops, OperatingSystem.isWindows());
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {
@@ -102,7 +95,6 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     }
 
     @Override
-    @SuppressWarnings("try")
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntime runtime, JVMCIBackend host) {
         assert host == null;
         AMD64HotSpotVMConfig config = new AMD64HotSpotVMConfig(runtime.getConfigStore());
@@ -113,24 +105,24 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         ConstantReflectionProvider constantReflection;
         HotSpotMetaAccessProvider metaAccess;
         StackIntrospection stackIntrospection;
-        try (InitTimer t = timer("create providers")) {
-            try (InitTimer rt = timer("create MetaAccess provider")) {
+        try (InitTimer _ = timer("create providers")) {
+            try (InitTimer _ = timer("create MetaAccess provider")) {
                 metaAccess = createMetaAccess(runtime);
             }
-            try (InitTimer rt = timer("create RegisterConfig")) {
+            try (InitTimer _ = timer("create RegisterConfig")) {
                 regConfig = createRegisterConfig(config, target);
             }
-            try (InitTimer rt = timer("create CodeCache provider")) {
+            try (InitTimer _ = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);
             }
-            try (InitTimer rt = timer("create ConstantReflection provider")) {
+            try (InitTimer _ = timer("create ConstantReflection provider")) {
                 constantReflection = createConstantReflection(runtime);
             }
-            try (InitTimer rt = timer("create StackIntrospection provider")) {
+            try (InitTimer _ = timer("create StackIntrospection provider")) {
                 stackIntrospection = new HotSpotStackIntrospection(runtime);
             }
         }
-        try (InitTimer rt = timer("instantiate backend")) {
+        try (InitTimer _ = timer("instantiate backend")) {
             return createBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
         }
     }

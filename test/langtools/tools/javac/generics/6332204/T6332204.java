@@ -25,7 +25,7 @@
  * @test
  * @bug     6332204
  * @summary com.sun.tools.javac.code.Types.lub() throws NPE
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T6332204.java
  */
 

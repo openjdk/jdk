@@ -26,8 +26,6 @@
  * @test Make sure loader constraints are passed from AOT preimage to final image.
  * @bug 8348426
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build AOTLoaderConstraintsTest BootClass
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot.jar BootClass

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,6 +348,18 @@ class UnixNativeDispatcher {
     private static native void fchmod0(int fd, int mode) throws UnixException;
 
     /**
+     * fchmodat(int fd, const char *path, mode_t mode, int flag)
+     */
+    static void fchmodat(int fd, UnixPath path, int mode, int flag)
+        throws UnixException {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            fchmodat0(fd, buffer.address(), mode, flag);
+        }
+    }
+    private static native void fchmodat0(int fd, long pathAddress, int mode, int flag)
+        throws UnixException;
+
+    /**
      * futimens(int fildes, const struct timespec times[2])
      */
     static void futimens(int fd, long times0, long times1) throws UnixException {
@@ -557,6 +569,14 @@ class UnixNativeDispatcher {
     static boolean xattrSupported() {
         return (capabilities & SUPPORTS_XATTR) != 0;
     }
+
+    /**
+     * Supports fchmodat with AT_SYMLINK_NOFOLLOW flag
+     */
+    static boolean fchmodatNoFollowSupported() {
+        return fchmodatNoFollowSupported0();
+    }
+    private static native boolean fchmodatNoFollowSupported0();
 
     private static native int init();
     static {

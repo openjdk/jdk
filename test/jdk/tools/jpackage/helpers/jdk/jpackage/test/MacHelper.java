@@ -178,7 +178,7 @@ public final class MacHelper {
     private static int installDmg(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("sudo", "cp", "-r")
+            Executor.of("sudo", "cp", "-R")
                     .addArgument(dmgImage)
                     .addArgument(getInstallationDirectory(cmd).getParent())
                     .execute(0);
@@ -205,7 +205,7 @@ public final class MacHelper {
         }
 
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("cp", "-r")
+            Executor.of("cp", "-R")
             .addArgument(dmgImage)
             .addArgument(unpackDir)
             .execute();

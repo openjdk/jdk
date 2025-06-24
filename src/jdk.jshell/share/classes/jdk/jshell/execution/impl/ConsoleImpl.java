@@ -64,7 +64,7 @@ public class ConsoleImpl {
         private static RemoteConsole console;
 
         @Override
-        public JdkConsole console(boolean isTTY, Charset charset) {
+        public JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset) {
             synchronized (ConsoleProviderImpl.class) {
                 if (remoteOutput != null && remoteInput != null) {
                     return console = new RemoteConsole(remoteOutput, remoteInput);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -599,7 +599,7 @@ loop:   while (true) {
         if (ascii == utflen) {
             String str;
             if (trusted) {
-                str = JLA.newStringNoRepl(bytearr, StandardCharsets.ISO_8859_1);
+                str = JLA.uncheckedNewStringNoRepl(bytearr, StandardCharsets.ISO_8859_1);
             } else {
                 str = new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,11 @@ BOOL DWMIsCompositionEnabled() {
         HRESULT res = DwmAPI::DwmIsCompositionEnabled(&bEnabled);
         if (SUCCEEDED(res)) {
             bRes = bEnabled;
-            J2dTraceLn1(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
+            J2dTraceLn(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
         } else {
-            J2dTraceLn1(J2D_TRACE_ERROR,
-                    "IsDWMCompositionEnabled: error %x when detecting"\
-                    "if composition is enabled", res);
+            J2dTraceLn(J2D_TRACE_ERROR,
+                       "IsDWMCompositionEnabled: error %x when detecting"\
+                       "if composition is enabled", res);
         }
     } catch (const DllUtil::Exception &) {
         J2dTraceLn(J2D_TRACE_ERROR,

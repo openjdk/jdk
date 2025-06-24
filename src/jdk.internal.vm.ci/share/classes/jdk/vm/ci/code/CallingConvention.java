@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 
+import java.util.List;
+
 /**
  * A calling convention describes the locations in which the arguments for a call are placed and the
  * location in which the return value is placed if the call is not void.
@@ -49,7 +51,7 @@ public class CallingConvention {
     /**
      * The ordered locations in which the arguments are placed.
      */
-    private final AllocatableValue[] argumentLocations;
+    private final List<AllocatableValue> argumentLocations;
 
     /**
      * Creates a description of the registers and stack locations used by a call.
@@ -63,7 +65,7 @@ public class CallingConvention {
     public CallingConvention(int stackSize, AllocatableValue returnLocation, AllocatableValue... argumentLocations) {
         assert argumentLocations != null;
         assert returnLocation != null;
-        this.argumentLocations = argumentLocations;
+        this.argumentLocations = List.of(argumentLocations);
         this.stackSize = stackSize;
         this.returnLocation = returnLocation;
         assert verify();
@@ -80,7 +82,7 @@ public class CallingConvention {
      * Gets the location for the {@code index}'th argument.
      */
     public AllocatableValue getArgument(int index) {
-        return argumentLocations[index];
+        return argumentLocations.get(index);
     }
 
     /**
@@ -94,18 +96,14 @@ public class CallingConvention {
      * Gets the number of locations required for the arguments.
      */
     public int getArgumentCount() {
-        return argumentLocations.length;
+        return argumentLocations.size();
     }
 
     /**
      * Gets the locations required for the arguments.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "FB false positive")
-    public AllocatableValue[] getArguments() {
-        if (argumentLocations.length == 0) {
-            return argumentLocations;
-        }
-        return argumentLocations.clone();
+    public List<AllocatableValue> getArguments() {
+        return argumentLocations;
     }
 
     @Override
@@ -125,8 +123,8 @@ public class CallingConvention {
     }
 
     private boolean verify() {
-        for (int i = 0; i < argumentLocations.length; i++) {
-            Value location = argumentLocations[i];
+        for (int i = 0; i < argumentLocations.size(); i++) {
+            Value location = argumentLocations.get(i);
             assert isStackSlot(location) || isAllocatableValue(location);
         }
         return true;

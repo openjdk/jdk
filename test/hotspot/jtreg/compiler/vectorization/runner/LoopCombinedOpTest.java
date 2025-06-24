@@ -67,10 +67,10 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     @Override
     protected String[] testVMFlags(String[] args) {
         return switch (args[0]) {
-            case "nCOH_nAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"};
-            case "nCOH_yAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"};
-            case "yCOH_nAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"};
-            case "yCOH_yAV" -> new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"};
+            case "nCOH_nAV" -> new String[]{"-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "nCOH_yAV" -> new String[]{"-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"};
+            case "yCOH_nAV" -> new String[]{"-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "yCOH_yAV" -> new String[]{"-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"};
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
     }

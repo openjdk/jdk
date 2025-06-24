@@ -64,7 +64,7 @@ public class ArchiveRelocationTest {
         String maybeRelocation = "-XX:ArchiveRelocationMode=0";
         String alwaysRelocation = "-XX:ArchiveRelocationMode=1";
         String runRelocArg  = run_reloc  ? alwaysRelocation : maybeRelocation;
-        String logArg = "-Xlog:cds=debug,cds+reloc=debug,cds+heap";
+        String logArg = "-Xlog:cds=debug,cds+reloc=debug,aot+heap";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String nmtArg = "-XX:NativeMemoryTracking=detail";
 

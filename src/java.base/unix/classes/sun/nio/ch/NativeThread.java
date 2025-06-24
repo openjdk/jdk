@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,17 @@ public class NativeThread {
     static boolean isVirtualThread(long tid) {
         return (tid == VIRTUAL_THREAD_ID);
     }
+
+    /**
+     * Return true if the operating system supports pending signals. If a signal is sent
+     * to a thread but cannot be delivered immediately then it will be delivered when the
+     * thread is in the appropriate state.
+     */
+    static boolean supportPendingSignals() {
+        return supportPendingSignals0();
+    }
+
+    private static native boolean supportPendingSignals0();
 
     // Returns an opaque token representing the native thread underlying the
     // invoking Java thread.  On systems that do not require signalling, this

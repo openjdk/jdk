@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@
 @property (readwrite, assign) int leftInset;
 @property (readwrite, assign) CVDisplayLinkRef displayLink;
 @property (readwrite, atomic) int displayLinkCount;
+@property (readwrite, atomic) int displayLinkFailCount;
 
 - (id) initWithJavaLayer:(jobject)layer;
 

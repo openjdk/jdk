@@ -42,7 +42,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-class XDnDDragSourceProtocol extends XDragSourceProtocol {
+final class XDnDDragSourceProtocol extends XDragSourceProtocol {
     private static final PlatformLogger logger =
         PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDragSourceProtocol");
 
@@ -61,6 +61,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         return new XDnDDragSourceProtocol(listener);
     }
 
+    @Override
     public String getProtocolName() {
         return XDragAndDropProtocols.XDnD;
     }
@@ -70,6 +71,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
      *
      * @return true if the initialized successfully.
      */
+    @Override
     protected void initializeDragImpl(int actions, Transferable contents,
                                       Map<Long, DataFlavor> formatMap, long[] formats)
       throws InvalidDnDOperationException,
@@ -179,6 +181,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         return true;
     }
 
+    @Override
     public boolean processClientMessage(XClientMessageEvent xclient) {
         if (xclient.get_message_type() == XDnDConstants.XA_XdndStatus.getAtom()) {
             return processXdndStatus(xclient);
@@ -189,6 +192,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         }
     }
 
+    @Override
     public TargetWindowInfo getTargetWindowInfo(long window) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -276,6 +280,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         return null;
     }
 
+    @Override
     public void sendEnterMessage(long[] formats,
                                  int sourceAction, int sourceActions, long time) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
@@ -305,6 +310,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         }
     }
 
+    @Override
     public void sendMoveMessage(int xRoot, int yRoot,
                                 int sourceAction, int sourceActions, long time) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
@@ -330,6 +336,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         }
     }
 
+    @Override
     public void sendLeaveMessage(long time) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
         assert getTargetWindow() != 0;
@@ -354,6 +361,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         }
     }
 
+    @Override
     public void sendDropMessage(int xRoot, int yRoot,
                                 int sourceAction, int sourceActions,
                                 long time) {
@@ -380,6 +388,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         }
     }
 
+    @Override
     public boolean processProxyModeEvent(XClientMessageEvent xclient,
                                          long sourceWindow) {
         if (xclient.get_message_type() == XDnDConstants.XA_XdndStatus.getAtom() ||

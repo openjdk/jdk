@@ -58,6 +58,8 @@
 # include <stdio.h>
 # include <intrin.h>
 
+#define REG_BCP X22
+
 void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
 }
@@ -95,6 +97,22 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
   return frame(sp, fp, epc);
+}
+
+#ifdef ASSERT
+static bool is_interpreter(const CONTEXT* uc) {
+  assert(uc != nullptr, "invariant");
+  address pc = reinterpret_cast<address>(uc->Pc);
+  assert(pc != nullptr, "invariant");
+  return Interpreter::contains(pc);
+}
+#endif
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  CONTEXT* uc = (CONTEXT*)ucVoid;
+  assert(is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
 }
 
 bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,

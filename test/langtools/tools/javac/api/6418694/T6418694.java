@@ -25,7 +25,7 @@
  * @test
  * @bug     6418694
  * @summary JSR 199: JavaFileManager.hasLocation(Location)
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

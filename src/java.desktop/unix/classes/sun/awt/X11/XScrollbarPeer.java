@@ -32,7 +32,7 @@ import java.awt.peer.*;
 import sun.awt.OSInfo;
 import sun.util.logging.PlatformLogger;
 
-class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbarClient {
+final class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbarClient {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XScrollbarPeer");
 
     private static final int DEFAULT_LENGTH = 50;
@@ -45,6 +45,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
         DEFAULT_WIDTH_LINUX = XToolkit.getUIDefaults().getInt("ScrollBar.defaultWidth");
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void preInit(XCreateWindowParams params) {
         super.preInit(params);
@@ -87,6 +88,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
     /**
      * Compute the minimum size for the scrollbar.
      */
+    @Override
     public Dimension getMinimumSize() {
         Scrollbar sb = (Scrollbar)target;
         return (sb.getOrientation() == Scrollbar.VERTICAL)
@@ -104,6 +106,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
         // paint the whole scrollbar
     }
 
+    @Override
     public void repaintScrollbarRequest(XScrollbar sb) {
      repaint();
     }
@@ -111,6 +114,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
     /**
      * The value has changed.
      */
+    @Override
     public void notifyValue(XScrollbar obj, int type, int value, boolean isAdjusting) {
         Scrollbar sb = (Scrollbar)target;
         sb.setValue(value);
@@ -128,6 +132,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
      * MouseEvent.MOUSE_EXITED
      * MouseEvent.MOUSE_DRAGGED
      */
+    @Override
     @SuppressWarnings("deprecation")
     public void handleJavaMouseEvent( MouseEvent mouseEvent ) {
         super.handleJavaMouseEvent(mouseEvent);
@@ -158,6 +163,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
         }
     }
 
+    @Override
     public void handleJavaKeyEvent(KeyEvent event) {
         super.handleJavaKeyEvent(event);
         if (log.isLoggable(PlatformLogger.Level.FINER)) {
@@ -206,20 +212,24 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
         repaint();
     }
 
+    @Override
     public void setValues(int value, int visible, int minimum, int maximum) {
 
         tsb.setValues(value, visible, minimum, maximum);
         repaint();
     }
 
+    @Override
     public void setLineIncrement(int l) {
         tsb.setUnitIncrement(l);
     }
 
+    @Override
     public void setPageIncrement(int p) {
         tsb.setBlockIncrement(p);
     }
 
+    @Override
     public void layout() {
         super.layout();
         tsb.setSize(width, height);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1258,7 +1258,7 @@ public final class StringConcatFactory {
 
             // 1 argument use built-in method
             if (args.parameterCount() == 1) {
-                Object concat1 = JLA.stringConcat1(constants);
+                Object concat1 = JLA.uncheckedStringConcat1(constants);
                 var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
                 return handle.bindTo(concat1);
             }

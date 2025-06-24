@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.*;
 
 /**
  * This class provides launching of <code>jdb</code> and debuggee in local
- * or remote mode according to test command line options.
+ * mode according to test command line options.
  */
 
 public class Launcher extends DebugeeBinder {
@@ -94,7 +94,7 @@ public class Launcher extends DebugeeBinder {
     }
 
     /**
-     * Defines mode (local or remote) and type of connector (default, launching,
+     * Defines mode (local) and type of connector (default, launching,
      * raw launching, attaching or listening) according to options
      * parsed by <code>JdbArgumentHandler</code>. And then launches <code>jdb</code>
      * and debuggee in defined mode.

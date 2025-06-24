@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ private:
 
 public:
   // Initialize data that depends on the heap size being known.
-  void initialize(uint max_reserved_regions);
+  void initialize(uint max_num_regions);
 
   G1RemSet(G1CollectedHeap* g1h, G1CardTable* ct);
   ~G1RemSet();

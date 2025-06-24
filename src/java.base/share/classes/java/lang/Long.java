@@ -157,10 +157,10 @@ public final class Long extends Number
             }
 
             while (i <= -radix) {
-                buf[charPos--] = (byte)Integer.digits[(int)(-(i % radix))];
+                buf[charPos--] = Integer.digits[(int)(-(i % radix))];
                 i = i / radix;
             }
-            buf[charPos] = (byte)Integer.digits[(int)(-i)];
+            buf[charPos] = Integer.digits[(int)(-i)];
 
             if (negative) {
                 buf[--charPos] = '-';
@@ -422,7 +422,7 @@ public final class Long extends Number
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = (byte)Integer.digits[((int) val) & mask];
+            buf[--charPos] = Integer.digits[((int) val) & mask];
             val >>>= shift;
         } while (charPos > offset);
     }
@@ -462,11 +462,11 @@ public final class Long extends Number
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            DecimalDigits.getCharsLatin1(i, size, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
-            DecimalDigits.getCharsUTF16(i, size, buf);
+            DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
     }

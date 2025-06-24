@@ -405,10 +405,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       JCOV_FILTERS="$with_jcov_filters"
     fi
   fi
+
+  UTIL_ARG_WITH(NAME: jcov-modules, TYPE: string,
+      DEFAULT: [], RESULT: JCOV_MODULES_COMMMA_SEPARATED,
+      DESC: [which modules to include in jcov (comma-separated)],
+      OPTIONAL: true)
+
+  # Replace ","  with " ".
+  JCOV_MODULES=${JCOV_MODULES_COMMMA_SEPARATED//,/ }
   AC_SUBST(JCOV_ENABLED)
   AC_SUBST(JCOV_HOME)
   AC_SUBST(JCOV_INPUT_JDK)
   AC_SUBST(JCOV_FILTERS)
+  AC_SUBST(JCOV_MODULES)
 ])
 
 ################################################################################

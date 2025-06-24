@@ -384,6 +384,12 @@ public class Annotate {
                     && types.isSameType(c.type, syms.restrictedType)) {
                 toAnnotate.flags_field |= Flags.RESTRICTED;
             }
+
+            if (!c.type.isErroneous()
+                    && toAnnotate.kind == VAR
+                    && types.isSameType(c.type, syms.requiresIdentityType)) {
+                toAnnotate.flags_field |= Flags.REQUIRES_IDENTITY;
+            }
         }
 
         List<T> buf = List.nil();

@@ -86,9 +86,10 @@ import jdk.internal.misc.Unsafe;
  * #isHeldExclusively} reports whether synchronization is exclusively
  * held with respect to the current thread, method {@link #release}
  * invoked with the current {@link #getState} value fully releases
- * this object, and {@link #acquire}, given this saved state value,
- * eventually restores this object to its previous acquired state.  No
- * {@code AbstractQueuedSynchronizer} method otherwise creates such a
+ * this object, and the underlying version of {@link #acquire(int)},
+ * given this saved state value, eventually restores this object to
+ * its previous acquired state.
+ * No {@code AbstractQueuedSynchronizer} method otherwise creates such a
  * condition, so if this constraint cannot be met, do not use it.  The
  * behavior of {@link ConditionObject} depends of course on the
  * semantics of its synchronizer implementation.
@@ -1682,8 +1683,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * </ol>
          */
         public final void awaitUninterruptibly() {
@@ -1725,8 +1726,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled or interrupted.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
@@ -1777,8 +1778,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
@@ -1821,8 +1822,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * <li>If timed out while blocked in step 4, return false, else true.
          * </ol>
@@ -1864,8 +1865,8 @@ public abstract class AbstractQueuedSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(int)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * <li>If timed out while blocked in step 4, return false, else true.
          * </ol>

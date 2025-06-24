@@ -34,7 +34,7 @@ import javax.tools.*;
 
 public class SOEDeeplyNestedBlocksTest {
 
-    static final int NESTING_DEPTH = 1000;
+    static final int NESTING_DEPTH = 500;
 
     public static void main(String... args) {
         var lines = new ArrayList<String>();
@@ -48,7 +48,9 @@ public class SOEDeeplyNestedBlocksTest {
         var source = SimpleJavaFileObject.forSource(URI.create("mem://Test.java"), String.join("\n", lines));
         var compiler = ToolProvider.getSystemJavaCompiler();
         var task = compiler.getTask(null, null, noErrors, null, null, List.of(source));
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
     }
 
     static DiagnosticListener<? super JavaFileObject> noErrors = d -> {

@@ -601,7 +601,7 @@ public class SourceLauncherTest extends TestRunner {
     public void testNoMain(Path base) throws IOException {
         tb.writeJavaFiles(base, "class NoMain { }");
         testError(base.resolve("NoMain.java"), "",
-                "error: can't find main(String[]) method in class: NoMain");
+                "error: can't find main(String[]) or main() method in class: NoMain");
     }
 
     @Test
@@ -609,7 +609,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base,
                 "class BadParams { public static void main(int n) { } }");
         testError(base.resolve("BadParams.java"), "",
-                "error: can't find main(String[]) method in class: BadParams");
+                "error: can't find main(String[]) or main() method in class: BadParams");
     }
 
     @Test
@@ -617,7 +617,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base,
                 "class NotVoid { public static int main(String... args) { return 0; } }");
         testError(base.resolve("NotVoid.java"), "",
-                "error: can't find main(String[]) method in class: NotVoid");
+                "error: can't find main(String[]) or main() method in class: NotVoid");
     }
 
     @Test
@@ -773,6 +773,82 @@ public class SourceLauncherTest extends TestRunner {
                 out.write(newBytes);
             }
         }
+
+    @Test
+    public void testAbstractClassInstanceMain(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public abstract class AbstractMain {
+                              void main(String[] args) {}
+                          }
+                          """);
+        testError(base.resolve("AbstractMain.java"), "",
+                "error: abstract class: AbstractMain can not be instantiated");
+    }
+
+    @Test
+    public void testWrongMainPrivate(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainPrivate {
+                              private static void main(String[] args) {}
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainPrivate.java"),
+                    "correct\n");
+    }
+
+    @Test
+    public void testWrongMainPrivateInstance(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainPrivate {
+                              private void main(String[] args) {}
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainPrivate.java"),
+                    "correct\n");
+    }
+
+    @Test
+    public void testWrongMainReturnType(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainReturnType {
+                              public static int main(String[] args) {
+                                  return -1;
+                              }
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainReturnType.java"),
+                    "correct\n");
+    }
+
+    @Test
+    public void testWrongMainReturnTypeInstance(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainReturnType {
+                              public int main(String[] args) {
+                                  return -1;
+                              }
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainReturnType.java"),
+                    "correct\n");
+    }
 
     Result run(Path file, List<String> runtimeArgs, List<String> appArgs) {
         List<String> args = new ArrayList<>();

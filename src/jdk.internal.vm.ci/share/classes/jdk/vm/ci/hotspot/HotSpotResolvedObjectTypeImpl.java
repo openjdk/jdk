@@ -1068,6 +1068,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
+    public List<ResolvedJavaMethod> getAllMethods(boolean forceLink) {
+        if (forceLink) {
+            link();
+        }
+        return List.of(runtime().compilerToVm.getAllMethods(this));
+    }
+
+    @Override
     public ResolvedJavaMethod getClassInitializer() {
         if (!isArray()) {
             return compilerToVM().getClassInitializer(this);

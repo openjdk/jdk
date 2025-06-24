@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@ package jdk.vm.ci.riscv64;
 
 import java.nio.ByteOrder;
 import java.util.EnumSet;
+import java.util.List;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CPUFeatureName;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 
@@ -77,7 +77,7 @@ public class RISCV64 extends Architecture {
     public static final Register x31 = new Register(31, 31, "x31", CPU);
 
     // @formatter:off
-    public static final RegisterArray cpuRegisters = new RegisterArray(
+    public static final List<Register> cpuRegisters = List.of(
         x0,  x1,  x2,  x3,  x4,  x5,  x6,  x7,
         x8,  x9,  x10, x11, x12, x13, x14, x15,
         x16, x17, x18, x19, x20, x21, x22, x23,
@@ -122,7 +122,7 @@ public class RISCV64 extends Architecture {
     public static final Register f31 = new Register(63, 31, "f31", FP);
 
     // @formatter:off
-    public static final RegisterArray fpRegisters = new RegisterArray(
+    public static final List<Register> fpRegisters = List.of(
         f0,  f1,  f2,  f3,  f4,  f5,  f6,  f7,
         f8,  f9,  f10, f11, f12, f13, f14, f15,
         f16, f17, f18, f19, f20, f21, f22, f23,
@@ -131,7 +131,7 @@ public class RISCV64 extends Architecture {
     // @formatter:on
 
     // @formatter:off
-    public static final RegisterArray allRegisters = new RegisterArray(
+    public static final List<Register> allRegisters = List.of(
         x0,  x1,  x2,  x3,  x4,  x5,  x6,  x7,
         x8,  x9,  x10, x11, x12, x13, x14, x15,
         x16, x17, x18, x19, x20, x21, x22, x23,
@@ -160,34 +160,14 @@ public class RISCV64 extends Architecture {
 
     private final EnumSet<CPUFeature> features;
 
-    /**
-     * Set of flags to control code emission.
-     */
-    public enum Flag {
-        UseConservativeFence,
-        AvoidUnalignedAccesses,
-        TraceTraps,
-        UseRVV,
-        UseRVC,
-        UseZba,
-        UseZbb
-    }
-
-    private final EnumSet<Flag> flags;
-
-    public RISCV64(EnumSet<CPUFeature> features, EnumSet<Flag> flags) {
+    public RISCV64(EnumSet<CPUFeature> features) {
         super("riscv64", RISCV64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, true, allRegisters, 0, 0, 8);
         this.features = features;
-        this.flags = flags;
     }
 
     @Override
     public EnumSet<CPUFeature> getFeatures() {
         return features;
-    }
-
-    public EnumSet<Flag> getFlags() {
-        return flags;
     }
 
     @Override

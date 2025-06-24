@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,11 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class popframes007t {
+    static Thread mainThread = null;
+    static OtherThr auxThr = null;
+
     private Log log;
     private IOPipe pipe;
-    private OtherThr auxThr;
     volatile boolean leaveMethod = false;
 
     public static void main(String args[]) {
@@ -52,7 +54,8 @@ public class popframes007t {
         log = argHandler.createDebugeeLog();
         pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(popframes007.DEBUGGEE_THRDS[0]);
+        mainThread = Thread.currentThread();
+        mainThread.setName(popframes007.DEBUGGEE_MAIN_THREAD_NAME);
         startThread();
 
         // Now the debuggee is ready for testing
@@ -93,7 +96,7 @@ public class popframes007t {
         Object readyObj = new Object();
 
         auxThr = new OtherThr(readyObj,
-            popframes007.DEBUGGEE_THRDS[1], this);
+            popframes007.DEBUGGEE_AUX_THREAD_NAME, this);
         auxThr.setDaemon(true);
 
         log.display("Debuggee: starting thread \""

@@ -247,7 +247,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
       root_segment_at_put(seg_oop, i, roots->at(root_index++));
     }
 
-    log_info(cds, heap)("archived obj root segment [%d] = %zu bytes, obj = " PTR_FORMAT,
+    log_info(aot, heap)("archived obj root segment [%d] = %zu bytes, obj = " PTR_FORMAT,
                         size_elems, size_bytes, p2i(seg_oop));
   }
 
@@ -293,7 +293,7 @@ int ArchiveHeapWriter::compare_objs_by_oop_fields(HeapObjOrder* a, HeapObjOrder*
 }
 
 void ArchiveHeapWriter::sort_source_objs() {
-  log_info(cds)("sorting heap objects");
+  log_info(aot)("sorting heap objects");
   int len = _source_objs->length();
   _source_objs_order = new GrowableArrayCHeap<HeapObjOrder, mtClassShared>(len);
 
@@ -303,9 +303,9 @@ void ArchiveHeapWriter::sort_source_objs() {
     HeapObjOrder os = {i, rank};
     _source_objs_order->append(os);
   }
-  log_info(cds)("computed ranks");
+  log_info(aot)("computed ranks");
   _source_objs_order->sort(compare_objs_by_oop_fields);
-  log_info(cds)("sorting heap objects done");
+  log_info(aot)("sorting heap objects done");
 }
 
 void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
@@ -330,7 +330,7 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
     }
   }
 
-  log_info(cds)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
+  log_info(aot)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
                 _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
 }
 
@@ -396,7 +396,7 @@ void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
     ensure_buffer_space(filler_end);
 
     int array_length = filler_array_length(fill_bytes);
-    log_info(cds, heap)("Inserting filler obj array of %d elements (%zu bytes total) @ buffer offset %zu",
+    log_info(aot, heap)("Inserting filler obj array of %d elements (%zu bytes total) @ buffer offset %zu",
                         array_length, fill_bytes, _buffer_used);
     HeapWord* filler = init_filler_array_at_buffer_top(array_length, fill_bytes);
     _buffer_used = filler_end;
@@ -474,7 +474,7 @@ void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
   if (UseCompressedOops) {
     if (UseG1GC) {
       address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
-      log_info(cds, heap)("Heap end = %p", heap_end);
+      log_info(aot, heap)("Heap end = %p", heap_end);
       _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
       _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
       assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
@@ -636,7 +636,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
   // The whole heap is covered by total_bits, but there are only non-zero bits within [start ... end).
   size_t start = bitmap->find_first_set_bit(0);
   size_t end = bitmap->size();
-  log_info(cds)("%s = %7zu ... %7zu (%3zu%% ... %3zu%% = %3zu%%)", which,
+  log_info(aot)("%s = %7zu ... %7zu (%3zu%% ... %3zu%% = %3zu%%)", which,
                 start, end,
                 start * 100 / total_bits,
                 end * 100 / total_bits,
@@ -763,7 +763,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
   }
 
   heap_info->ptrmap()->resize(max_idx + 1);
-  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region (%zu bits)",
+  log_info(aot, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region (%zu bits)",
                       num_non_null_ptrs, size_t(heap_info->ptrmap()->size()));
 }
 

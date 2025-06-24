@@ -32,6 +32,7 @@
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Stream;
 import javax.tools.*;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
@@ -175,14 +176,7 @@ public class CheckResourceKeys {
             //check lint description keys:
             if (s.startsWith("opt.Xlint.desc.")) {
                 String option = s.substring(15);
-                boolean found = false;
-
-                for (LintCategory lc : LintCategory.values()) {
-                    if (option.equals(lc.option))
-                        found = true;
-                }
-
-                if (found)
+                if (LintCategory.options().contains(option))
                     continue;
             }
 

@@ -115,11 +115,12 @@ public abstract class X11SurfaceDataProxy extends SurfaceDataProxy
      * Proxy for opaque source images.
      * This proxy can accelerate unscaled Src copies.
      */
-    public static class Opaque extends X11SurfaceDataProxy {
+    public static final class Opaque extends X11SurfaceDataProxy {
         public Opaque(X11GraphicsConfig x11gc) {
             super(x11gc);
         }
 
+        @Override
         public int getTransparency() {
             return Transparency.OPAQUE;
         }
@@ -141,11 +142,12 @@ public abstract class X11SurfaceDataProxy extends SurfaceDataProxy
      * This proxy can accelerate unscaled Src copies or
      * unscaled SrcOver copies that use an opaque bgColor.
      */
-    public static class Bitmask extends X11SurfaceDataProxy {
+    public static final class Bitmask extends X11SurfaceDataProxy {
         public Bitmask(X11GraphicsConfig x11gc) {
             super(x11gc);
         }
 
+        @Override
         public int getTransparency() {
             return Transparency.BITMASK;
         }

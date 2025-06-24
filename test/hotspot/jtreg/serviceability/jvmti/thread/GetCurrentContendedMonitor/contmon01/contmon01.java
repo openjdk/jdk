@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,9 +154,9 @@ class contmon01Task implements Runnable {
         System.out.println("check #2 done");
 
         System.out.println("notifying main thread");
+        System.out.println("thread is going to loop while <flag> is true ...");
         contmon01.startingBarrier = false;
 
-        System.out.println("thread is going to loop while <flag> is true ...");
         int i = 0;
         int n = 1000;
         while (flag) {

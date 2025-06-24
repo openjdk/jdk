@@ -30,7 +30,7 @@ import java.awt.Toolkit;
 import sun.awt.AWTAccessor;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class XEmbedChildProxy extends Component {
+public final class XEmbedChildProxy extends Component {
     long handle;
     XEmbeddingContainer container;
     public XEmbedChildProxy(XEmbeddingContainer container, long handle) {
@@ -38,6 +38,7 @@ public class XEmbedChildProxy extends Component {
         this.container = container;
     }
 
+    @Override
     public void addNotify() {
         synchronized(getTreeLock()) {
             if (AWTAccessor.getComponentAccessor().getPeer(this) == null) {

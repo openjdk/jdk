@@ -80,6 +80,7 @@
 #define REG_SP REG_RSP
 #define REG_PC REG_RIP
 #define REG_FP REG_RBP
+#define REG_BCP REG_R13
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
 #else
@@ -155,6 +156,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   intptr_t* fp = os::Linux::ucontext_get_fp(uc);
   intptr_t* sp = os::Linux::ucontext_get_sp(uc);
   return frame(sp + 1, fp, (address)*sp);
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->uc_mcontext.gregs[REG_BCP]);
 }
 
 // By default, gcc always save frame pointer (%ebp/%rbp) on stack. It may get

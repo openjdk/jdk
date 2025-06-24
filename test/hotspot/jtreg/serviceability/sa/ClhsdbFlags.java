@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @bug 8217845
  * @summary Test clhsdb flags command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver ClhsdbFlags
  */

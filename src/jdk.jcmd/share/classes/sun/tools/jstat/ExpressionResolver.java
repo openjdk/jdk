@@ -87,7 +87,7 @@ public class ExpressionResolver implements ExpressionEvaluator {
             return id;
         }
 
-        if (e instanceof Literal) {
+        if (e instanceof Literal || e instanceof Timestamp) {
             return e;
         }
 

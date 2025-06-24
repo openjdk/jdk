@@ -97,7 +97,7 @@ public class OverridableResourceTest {
     public void testDefault(Path dstPath, boolean dstFileOverwrite,
             @TempDir Path tempFolder) throws IOException {
         final String[] content = saveResource(
-                new OverridableResource(DEFAULT_NAME), tempFolder.resolve(
+                new OverridableResource(DEFAULT_NAME, ResourceLocator.class), tempFolder.resolve(
                         dstPath), dstFileOverwrite);
 
         try (var resource = ResourceLocator.class.getResourceAsStream(DEFAULT_NAME);
@@ -117,7 +117,7 @@ public class OverridableResourceTest {
                     "Substitution map should contain only a single entry");
         }
 
-        OverridableResource resource = new OverridableResource(DEFAULT_NAME);
+        OverridableResource resource = new OverridableResource(DEFAULT_NAME, ResourceLocator.class);
 
         var linesBeforeSubstitution = List.of(saveResource(resource, tempFolder.resolve(dstPath), dstFileOverwrite));
 
@@ -170,7 +170,7 @@ public class OverridableResourceTest {
         Files.write(customFile, expectedResourceData);
 
         final var actualResourceData = saveResource(buildResourceWriter(
-                new OverridableResource(defaultName.value)
+                new OverridableResource(defaultName.value, ResourceLocator.class)
                         .setPublicName(customFile.getFileName())
                         .setResourceDir(customFile.getParent())
                 ).dstFileOverwrite(dstFileOverwrite).expectedSource(ResourceDir),
@@ -199,7 +199,7 @@ public class OverridableResourceTest {
                 "Bar", "Bar", "Goodbye", "JJ");
 
         final var actualResourceData = saveResource(buildResourceWriter(
-                new OverridableResource(defaultName.value)
+                new OverridableResource(defaultName.value, ResourceLocator.class)
                         .setSubstitutionData(substitutionData)
                         .setPublicName(customFile.getFileName())
                         .setResourceDir(customFile.getParent())
@@ -221,7 +221,7 @@ public class OverridableResourceTest {
         final Path outputDir = tempFolder.resolve("output");
 
         var resourceWriter = buildResourceWriter(
-                new OverridableResource(null).setResourceDir(customFile.getParent()));
+                new OverridableResource().setResourceDir(customFile.getParent()));
 
         if (namesMatch) {
             final var actualResourceData = resourceWriter
@@ -244,7 +244,7 @@ public class OverridableResourceTest {
 
         final Map<String, String> substitutionData = new HashMap<>(Map.of("Hello", "Goodbye"));
 
-        var resource = new OverridableResource(null)
+        var resource = new OverridableResource()
                 .setSubstitutionData(substitutionData)
                 .setPublicName(customFile.getFileName())
                 .setResourceDir(customFile.getParent());
@@ -265,7 +265,7 @@ public class OverridableResourceTest {
 
     @Test
     public void testNoDefault(@TempDir Path tempFolder) throws IOException {
-        var resourceWriter = buildResourceWriter(new OverridableResource(null)).expectedSource(null);
+        var resourceWriter = buildResourceWriter(new OverridableResource()).expectedSource(null);
         assertEquals(null, resourceWriter.saveInDir(tempFolder));
 
         var dstDir = tempFolder.resolve("foo");
@@ -275,7 +275,7 @@ public class OverridableResourceTest {
 
     enum ResourceName {
         DEFAULT_NAME(OverridableResourceTest.DEFAULT_NAME),
-        NULL_NAME(null);
+        NO_NAME("");
 
         ResourceName(String value) {
             this.value = value;

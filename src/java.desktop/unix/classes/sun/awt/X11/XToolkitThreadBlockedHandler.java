@@ -39,15 +39,19 @@ final class XToolkitThreadBlockedHandler implements
     static ToolkitThreadBlockedHandler getToolkitThreadBlockedHandler() {
         return priveleged_lock;
     }
+    @Override
     public void lock() {
         XToolkit.awtLock();
     }
+    @Override
     public void unlock() {
         XToolkit.awtUnlock();
     }
+    @Override
     public void enter() {
         tk.run(XToolkit.SECONDARY_LOOP);
     }
+    @Override
     public void exit() {
         XlibWrapper.ExitSecondaryLoop();
     }

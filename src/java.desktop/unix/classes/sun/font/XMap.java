@@ -30,7 +30,7 @@ import java.nio.charset.*;
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 
-class XMap {
+final class XMap {
 
     private static HashMap<String, XMap> xMappers = new HashMap<>();
 

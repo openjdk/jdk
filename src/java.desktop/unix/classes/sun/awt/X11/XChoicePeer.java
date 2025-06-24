@@ -144,6 +144,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         super(target);
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         Choice target = (Choice)this.target;
@@ -164,6 +165,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
                                 SCROLLBAR_WIDTH);
     }
 
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
         Choice target = (Choice)this.target;
@@ -181,11 +183,13 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         updateMotifColors(getPeerBackground());
     }
 
+    @Override
     public boolean isFocusable() { return true; }
 
     // 6399679. check if super.setBounds() actually changes the size of the
     // component and then compare current Choice size with a new one. If
     // they differ then hide dropdown menu
+    @Override
     public void setBounds(int x, int y, int width, int height, int op) {
         int oldX = this.x;
         int oldY = this.y;
@@ -197,6 +201,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         }
     }
 
+    @Override
     public void focusGained(FocusEvent e) {
         // TODO: only need to paint the focus bit
         super.focusGained(e);
@@ -208,6 +213,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
      * if setEnabled(false) invoked we should close opened choice in
      * order to prevent keyboard/mouse lock.
      */
+    @Override
     public void setEnabled(boolean value) {
         super.setEnabled(value);
         helper.updateColors(getGUIcolors());
@@ -216,12 +222,14 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         }
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         // TODO: only need to paint the focus bit?
         super.focusLost(e);
         repaint();
     }
 
+    @Override
     void ungrabInputImpl() {
         if (unfurled) {
             unfurled = false;
@@ -233,6 +241,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         super.ungrabInputImpl();
     }
 
+    @Override
     void handleJavaKeyEvent(KeyEvent e) {
         if (e.getID() == KeyEvent.KEY_PRESSED) {
             keyPressed(e);
@@ -345,8 +354,10 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         }
     }
 
+    @Override
     public boolean handlesWheelScrolling() { return true; }
 
+    @Override
     void handleJavaMouseWheelEvent(MouseWheelEvent e) {
         if (unfurled && helper.isVSBVisible()) {
             if (ListHelper.doWheelScroll(helper.getVSB(), null, e)) {
@@ -355,6 +366,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         }
     }
 
+    @Override
     void handleJavaMouseEvent(MouseEvent e) {
         super.handleJavaMouseEvent(e);
         int i = e.getID();
@@ -528,6 +540,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     }
 
     // Stolen from TinyChoicePeer
+    @Override
     @SuppressWarnings("deprecation")
     public Dimension getMinimumSize() {
         // TODO: move this impl into ListHelper?
@@ -544,6 +557,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     /*
      * Layout the...
      */
+    @Override
     public void layout() {
         /*
           Dimension size = target.getSize();
@@ -631,17 +645,20 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
      * ChoicePeer methods stolen from TinyChoicePeer
      */
 
+    @Override
     public void select(int index) {
         helper.select(index);
         helper.setFocusedIndex(index);
         repaint();
     }
 
+    @Override
     public void add(String item, int index) {
         helper.add(item, index);
         repaint();
     }
 
+    @Override
     public void remove(int index) {
         boolean selected = (index == helper.getSelectedIndex());
         boolean visibled = (index >= helper.firstDisplayedIndex() && index <= helper.lastDisplayedIndex());
@@ -694,6 +711,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         }
     }
 
+    @Override
     public void removeAll() {
         helper.removeAll();
         helper.select(-1);
@@ -707,16 +725,19 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         repaint();
     }
 
+    @Override
     public void setFont(Font font) {
         super.setFont(font);
         helper.setFont(this.font);
     }
 
+    @Override
     public void setForeground(Color c) {
         super.setForeground(c);
         helper.updateColors(getGUIcolors());
     }
 
+    @Override
     public void setBackground(Color c) {
         super.setBackground(c);
         unfurledChoice.setBackground(c);
@@ -750,6 +771,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
      * In this case we should hide pop-down menu.
      */
     //calls from XWindowPeer. Could accept X-styled state events
+    @Override
     public void stateChangedICCCM(int oldState, int newState) {
         if (unfurled && oldState != newState){
                 hidePopdownMenu();
@@ -757,6 +779,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     }
 
     //calls from XFramePeer. Could accept Frame's states.
+    @Override
     public void stateChangedJava(int oldState, int newState) {
         if (unfurled && oldState != newState){
             hidePopdownMenu();
@@ -790,6 +813,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         }
 
         // Override so we can do our own create()
+        @Override
         public void preInit(XCreateWindowParams params) {
             // A parent of this window is the target, at this point: wrong.
             // Remove parent window; in the following preInit() call we'll calculate as a default
@@ -856,6 +880,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
             return new Rectangle(x, y, width, height);
         }
 
+        @Override
         public void toFront() {
             // see 6240074 for more information
             if (choiceListener != null)
@@ -1035,11 +1060,15 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
          * Overridden from XWindow() because we don't want to send
          * ComponentEvents
          */
+        @Override
         public void handleConfigureNotifyEvent(XEvent xev) {}
+        @Override
         public void handleMapNotifyEvent(XEvent xev) {}
+        @Override
         public void handleUnmapNotifyEvent(XEvent xev) {}
     } //UnfurledChoice
 
+    @Override
     public void dispose() {
         if (unfurledChoice != null) {
             unfurledChoice.destroy();
@@ -1057,6 +1086,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
      * To be compatible with Motif we should handle all KeyEvents in
      * Choice if it is opened. KeyEvents should be sent into Java if Choice is not opened.
      */
+    @Override
     boolean prePostEvent(final AWTEvent e) {
         if (unfurled){
             // fix for 6253211: PIT: MouseWheel events not triggered for Choice drop down in XAWT

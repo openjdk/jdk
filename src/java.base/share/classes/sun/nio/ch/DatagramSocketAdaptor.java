@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,10 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.MembershipKey;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static jdk.internal.util.Exceptions.formatMsg;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 /**
  * A multicast datagram socket based on a datagram channel.
@@ -370,44 +371,19 @@ public class DatagramSocketAdaptor
 
     // -- java.net.MulticastSocket --
 
-    // used to coordinate changing TTL with the deprecated send method
-    private final ReentrantLock sendLock = new ReentrantLock();
-
     // cached outgoing interface (for use by setInterface/getInterface)
     private final Object outgoingInterfaceLock = new Object();
     private NetworkInterface outgoingNetworkInterface;
     private InetAddress outgoingInetAddress;
 
     @Override
-    @SuppressWarnings("removal")
-    public void setTTL(byte ttl) throws IOException {
-        setTimeToLive(Byte.toUnsignedInt(ttl));
-    }
-
-    @Override
     public void setTimeToLive(int ttl) throws IOException {
-        sendLock.lock();
-        try {
-            setIntOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
-        } finally {
-            sendLock.unlock();
-        }
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    public byte getTTL() throws IOException {
-        return (byte) getTimeToLive();
+        setIntOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
     }
 
     @Override
     public int getTimeToLive() throws IOException {
-        sendLock.lock();
-        try {
-            return getIntOption(StandardSocketOptions.IP_MULTICAST_TTL);
-        } finally {
-            sendLock.unlock();
-        }
+        return getIntOption(StandardSocketOptions.IP_MULTICAST_TTL);
     }
 
     @Override
@@ -490,7 +466,8 @@ public class DatagramSocketAdaptor
         NetworkInterface ni = NetworkInterface.getByInetAddress(inf);
         if (ni == null) {
             String address = inf.getHostAddress();
-            throw new SocketException("No network interface with address " + address);
+            throw new SocketException(formatMsg("No network interface found with address %s",
+                                                filterNonSocketInfo(address)));
         }
         synchronized (outgoingInterfaceLock) {
             // set interface and update cached values
@@ -553,23 +530,6 @@ public class DatagramSocketAdaptor
     public boolean getLoopbackMode() throws SocketException {
         boolean enabled = getBooleanOption(StandardSocketOptions.IP_MULTICAST_LOOP);
         return !enabled;
-    }
-
-    @Override
-    @SuppressWarnings("removal")
-    public void send(DatagramPacket p, byte ttl) throws IOException {
-        sendLock.lock();
-        try {
-            int oldValue = getTimeToLive();
-            try {
-                setTTL(ttl);
-                send(p);
-            } finally {
-                setTimeToLive(oldValue);
-            }
-        } finally {
-            sendLock.unlock();
-        }
     }
 
     /**

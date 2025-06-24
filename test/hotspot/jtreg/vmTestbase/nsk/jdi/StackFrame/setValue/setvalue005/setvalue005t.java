@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class setvalue005t {
+    static Thread mainThread = null;
+
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
     }
@@ -46,7 +48,8 @@ public class setvalue005t {
         Log log = argHandler.createDebugeeLog();
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(setvalue005.DEBUGGEE_THRDNAME);
+        mainThread = Thread.currentThread();
+        mainThread.setName(setvalue005.DEBUGGEE_THRDNAME);
 
         // dummy local var used by debugger for stack frame searching
         int setvalue005tFindMe = 0;

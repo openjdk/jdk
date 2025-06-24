@@ -26,6 +26,7 @@
  * @bug 8324066
  * @summary Test the clhsdb 'jstack -l' command for printing concurrent lock information
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbJstackWithConcurrentLock
  */

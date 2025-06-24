@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -678,6 +678,7 @@ typedef struct GtkApi {
     GVariant *(*g_variant_new_boolean)(gboolean value);
     GVariant *(*g_variant_new_uint32)(guint32 value);
 
+    gchar *(*g_variant_print)(GVariant* value, gboolean type_annotate);
 
     void (*g_variant_get)(GVariant *value,
                                     const gchar *format_string,
@@ -733,6 +734,8 @@ typedef struct GtkApi {
     void *(*g_string_printf)(GString *string,
                              const gchar *format,
                              ...);
+
+    gchar* (*g_strconcat)(const gchar* string1, ...);
 
     gboolean (*g_uuid_string_is_valid)(const gchar *str);
 

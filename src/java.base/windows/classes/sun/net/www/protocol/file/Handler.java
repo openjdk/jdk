@@ -88,6 +88,7 @@ public class Handler extends URLStreamHandler {
         /*
          * Now attempt an ftp connection.
          */
+        FileURLConnection.requireFtpFallbackEnabled();
         URLConnection uc;
         URL newurl;
 

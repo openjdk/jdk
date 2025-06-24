@@ -51,8 +51,11 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
 
     private static final Path LOG_FILE = Path.of("logging.conf");
     private static final HashMap<String, List<String>> debugMessages = new HashMap<>();
+    private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
 
     static {
+
+
         debugMessages.put("handshake",
                 List.of("Produced ClientHello handshake message",
                         "supported_versions"));
@@ -74,10 +77,10 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("help",
                 List.of("print the help messages",
                         "debugging can be widened with:"));
-        debugMessages.put("javax.net.debug",
-                List.of("properties: Initial security property:",
-                        "certpath: Cert path validation succeeded"));
-        debugMessages.put("logger",
+        debugMessages.put("java.security.debug",
+                List.of("properties\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:",
+                        "certpath\\[.*\\|main\\|.*" + DATE_REGEX + ".*\\]:"));
+        debugMessages.put("javax.net.debug.logger",
                 List.of("FINE: adding as trusted certificates",
                         "FINE: WRITE: TLSv1.3 application_data"));
     }
@@ -151,14 +154,15 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 // add in javax.net.debug sanity test
                 Arguments.of(List.of("-Djavax.net.debug=ssl:trustmanager",
                                 "-Djava.security.debug=all"),
-                        List.of("handshake", "javax.net.debug", "keymanager",
+                        List.of("handshake", "java.security.debug", "keymanager",
                                 "record", "session", "ssl", "sslctx",
                                 "trustmanager", "verbose")),
                 // empty invokes System.Logger use
                 Arguments.of(List.of("-Djavax.net.debug",
                         "-Djava.util.logging.config.file=" + LOG_FILE),
-                        List.of("handshake", "keymanager", "logger", "packet",
-                                "plaintext", "record", "session", "ssl",
+                        List.of("handshake", "javax.net.debug.logger",
+                                "keymanager", "packet",  "plaintext",
+                                "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose"))
         );
     }

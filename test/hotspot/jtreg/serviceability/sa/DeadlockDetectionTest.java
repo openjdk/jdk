@@ -25,6 +25,7 @@
  * @test
  * @summary Test deadlock detection
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management

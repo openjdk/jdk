@@ -25,10 +25,10 @@
 
 package java.lang;
 
-/** The CharacterData class encapsulates the large tables found in
+/** The CharacterDataUndefined class encapsulates the large tables found in
     Java.lang.Character. */
 
-class CharacterDataUndefined extends CharacterData {
+final class CharacterDataUndefined extends CharacterData {
 
     int getProperties(int ch) {
         return 0;

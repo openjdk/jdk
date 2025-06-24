@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public @interface Threshold {
      * <p>
      * Example values are {@code "0 ns"}, {@code "10 ms"}, and {@code "1 s"}.
      *
-     * @return the threshold, default {@code "0 ns"}, not {@code null}
+     * @return the threshold, default {@code "0 ns"}
      */
     String value() default "0 ns";
 }

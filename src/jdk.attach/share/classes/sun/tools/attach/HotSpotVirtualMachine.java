@@ -63,9 +63,8 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     static {
         String s = VM.getSavedProperty("jdk.attach.allowAttachSelf");
         ALLOW_ATTACH_SELF = "".equals(s) || Boolean.parseBoolean(s);
-        // For now the default is false.
         String s2 = VM.getSavedProperty("jdk.attach.allowStreamingOutput");
-        ALLOW_STREAMING_OUTPUT = "".equals(s2) || Boolean.parseBoolean(s2);
+        ALLOW_STREAMING_OUTPUT = !("false".equals(s2));
     }
 
     private final boolean selfAttach;
