@@ -44,6 +44,7 @@
 
     BOOL fHandlesDocumentTypes;
     BOOL fHandlesURLTypes;
+    BOOL fOpenURLHandlerInstalled;
 }
 
 @property (nonatomic, retain) NSMenuItem *fPreferencesMenu;

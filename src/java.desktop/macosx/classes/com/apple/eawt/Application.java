@@ -75,6 +75,7 @@ import sun.lwawt.macosx.CPlatformWindow;
  */
 public class Application {
     private static native void nativeInitializeApplicationDelegate();
+    private static native void nativeInstallOpenURLEventHandler();
 
     static Application sApplication = null;
 
@@ -211,6 +212,7 @@ public class Application {
      * @since Java for Mac OS X 10.5 Update 8
      */
     public void setOpenURIHandler(final OpenURIHandler openURIHandler) {
+        nativeInstallOpenURLEventHandler();
         eventHandler.openURIDispatcher.setHandler(openURIHandler);
     }
 
