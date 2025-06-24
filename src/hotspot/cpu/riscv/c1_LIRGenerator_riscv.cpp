@@ -772,7 +772,7 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   ciArrayKlass* expected_type = nullptr;
   arraycopy_helper(x, &flags, &expected_type);
   if (x->check_flag(Instruction::OmitChecksFlag)) {
-    flags = 0;
+    flags = AvoidUnalignedAccesses ? (flags & LIR_OpArrayCopy::unaligned) : 0;
   }
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp,
