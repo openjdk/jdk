@@ -90,7 +90,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         // report error
         int enh = getEnhancedExceptionsAllowed(env);
         if (enh == ENH_INIT_ERROR && (*env)->ExceptionCheck(env)) {
-            return NULL;
+            goto cleanupAndReturn;
         }
         const char *hmsg = (enh == ENH_ENABLED) ? hostname : "";
         NET_ThrowByNameWithLastError( env, "java/net/UnknownHostException", hmsg);
