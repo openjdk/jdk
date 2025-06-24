@@ -50,7 +50,7 @@ const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeInt* ti = t->isa_int();
-  if (ti) {
+  if (ti != nullptr) {
     if (ti->is_con()) {
       return TypeInt::make(count_leading_zeros_int(ti->get_con()));
     }
@@ -66,7 +66,7 @@ const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeLong* tl = t->isa_long();
-  if (tl) {
+  if (tl != nullptr) {
     if (tl->is_con()) {
       return TypeInt::make(count_leading_zeros_long(tl->get_con()));
     }
@@ -82,7 +82,7 @@ const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeInt* ti = t->isa_int();
-  if (ti) {
+  if (ti != nullptr) {
     if (ti->is_con()) {
       return TypeInt::make(count_trailing_zeros_int(ti->get_con()));
     }
@@ -98,7 +98,7 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeLong* tl = t->isa_long();
-  if (tl) {
+  if (tl != nullptr) {
     if (tl->is_con()) {
       return TypeInt::make(count_trailing_zeros_long(tl->get_con()));
     }
