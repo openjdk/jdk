@@ -39,103 +39,105 @@ static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved);
 
 JNIEXPORT
 jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-   return Agent_Initialize(jvm, options, reserved);
+  return Agent_Initialize(jvm, options, reserved);
 }
 
 JNIEXPORT
 jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
+  return Agent_Initialize(jvm, options, reserved);
 }
 
 JNIEXPORT
 jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
-    return JNI_VERSION_9;
+  return JNI_VERSION_9;
 }
 
 void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
-    jvmtiError err;
-    jvmtiPhase phase;
+  jvmtiError err;
+  jvmtiPhase phase;
 
-    RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
-    err = jvmti->GetPhase(&phase);
-    check_jvmti_status(jni, err, "GetPhase");
+  err = jvmti->GetPhase(&phase);
+  check_jvmti_status(jni, err, "GetPhase");
 
-    if (phase == JVMTI_PHASE_START) {
-        thread_start_events_vm_start++;
-        LOG(">>>    ThreadStart event: phase: %s\n", TranslatePhase(phase));
-    }
-    agent_locker.notify(); // notify VM_INIT thread
+  if (phase == JVMTI_PHASE_START) {
+    thread_start_events_vm_start++;
+    LOG(">>>    ThreadStart event: phase: %s\n", TranslatePhase(phase));
+  }
+  agent_locker.notify(); // notify VM_INIT thread
 }
 
 
 void JNICALL VMInit(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr) {
-    RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
-    if (thread_start_events_vm_start == 0) {
-        // wait for at least one thread to start in early VM_START phase
-        agent_locker.wait(200);
-    }
+  LOG(">>>    VMInit event\n");
+  if (thread_start_events_vm_start == 0) {
+    // wait for at least one thread to start in early VM_START phase
+    LOG(">>>    VMInit event: waiting for any ThreadStart event\n");
+    agent_locker.wait(200);
+  }
 }
 
 static
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jint res, size;
-    jvmtiCapabilities caps;
-    jvmtiEventCallbacks callbacks;
-    jvmtiError err;
+  jint res, size;
+  jvmtiCapabilities caps;
+  jvmtiEventCallbacks callbacks;
+  jvmtiError err;
 
-    res = jvm->GetEnv((void **)(&jvmti), JVMTI_VERSION_9);
-    if (res != JNI_OK || jvmti == NULL) {
-        LOG("    Error: wrong result of a valid call to GetEnv!\n");
-        return JNI_ERR;
-    }
+  res = jvm->GetEnv((void **)(&jvmti), JVMTI_VERSION_9);
+  if (res != JNI_OK || jvmti == NULL) {
+    LOG("    Error: wrong result of a valid call to GetEnv!\n");
+      return JNI_ERR;
+  }
 
-    LOG("Enabling following capability: can_generate_early_vmstart\n");
-    memset(&caps, 0, sizeof(caps));
-    caps.can_generate_early_vmstart = 1;
+  LOG("Enabling following capability: can_generate_early_vmstart\n");
+  memset(&caps, 0, sizeof(caps));
+  caps.can_generate_early_vmstart = 1;
 
-    err = jvmti->AddCapabilities(&caps);
-    check_jvmti_error(jvmti->AddCapabilities(&caps), "AddCapabilities");
+  err = jvmti->AddCapabilities(&caps);
+  check_jvmti_error(jvmti->AddCapabilities(&caps), "AddCapabilities");
 
-    size = (jint)sizeof(callbacks);
-    memset(&callbacks, 0, sizeof(callbacks));
-    callbacks.VMInit = VMInit;
-    callbacks.ThreadStart = ThreadStart;
+  size = (jint)sizeof(callbacks);
+  memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.VMInit = VMInit;
+  callbacks.ThreadStart = ThreadStart;
 
-    err = jvmti->SetEventCallbacks(&callbacks, size);
-    check_jvmti_error(jvmti->AddCapabilities(&caps), "SetEventCallbacks");
+  err = jvmti->SetEventCallbacks(&callbacks, size);
+  check_jvmti_error(jvmti->AddCapabilities(&caps), "SetEventCallbacks");
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
-    check_jvmti_error(jvmti->AddCapabilities(&caps), "SetEventNotificationMode for VM_START");
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+  check_jvmti_error(jvmti->AddCapabilities(&caps), "SetEventNotificationMode for VM_INIT");
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
-    check_jvmti_error(jvmti->AddCapabilities(&caps), "SetEventNotificationMode for THREAD_START");
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+  check_jvmti_error(jvmti->AddCapabilities(&caps), "SetEventNotificationMode for THREAD_START");
 
-    agent_lock = create_raw_monitor(jvmti, "agent_lock");
-    return JNI_OK;
+  agent_lock = create_raw_monitor(jvmti, "agent_lock");
+  return JNI_OK;
 }
 
 JNIEXPORT jint JNICALL
 Java_MAAThreadStart_check(JNIEnv *jni, jclass cls) {
-    jobject loader = NULL;
+  jobject loader = NULL;
 
-    RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
+  RawMonitorLocker agent_locker(jvmti, jni, agent_lock);
 
-    if (jvmti == NULL) {
-        fatal(jni, "JVMTI client was not properly loaded!\n");
-        return FAILED;
-    }
+  if (jvmti == NULL) {
+    fatal(jni, "JVMTI client was not properly loaded!\n");
+    return FAILED;
+  }
 
-    /*
-     * Expecting that ThreadStart events are sent during VM Start phase when
-     * can_generate_early_vmstart capability is enabled.
-     */
-    if (thread_start_events_vm_start == 0) {
-        fatal(jni, "Didn't get ThreadStart events in VM early start phase!\n");
-        return FAILED;
-    }
-    return PASSED;
+  /*
+   * Expecting that ThreadStart events are sent during VM Start phase when
+   * can_generate_early_vmstart capability is enabled.
+   */
+  if (thread_start_events_vm_start == 0) {
+    fatal(jni, "Didn't get ThreadStart events in VM early start phase!\n");
+      return FAILED;
+  }
+  return PASSED;
 }
 
 } // extern "C"
