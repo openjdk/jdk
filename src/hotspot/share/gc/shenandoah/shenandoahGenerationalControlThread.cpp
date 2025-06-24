@@ -653,11 +653,7 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
 }
 
 void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
-  if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-    // GC should already be cancelled. Here we are just notifying the control thread to
-    // wake up and handle the cancellation request, so we don't need to set _requested_gc_cause.
-    notify_cancellation(cause);
-  } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
+  if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
 }

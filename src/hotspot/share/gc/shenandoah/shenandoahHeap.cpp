@@ -1312,13 +1312,13 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   }
 
   assert(!r->is_humongous(), "never evacuate humongous objects");
+  assert(r->is_young(), "Only expect evacuations from young in this mode");
   return try_evacuate_object(p, thread, r, YOUNG_GENERATION);
 }
 
 oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
                                                ShenandoahAffiliation target_gen) {
   assert(target_gen == YOUNG_GENERATION, "Only expect evacuations to young in this mode");
-  assert(from_region->is_young(), "Only expect evacuations from young in this mode");
   bool alloc_from_lab = true;
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);

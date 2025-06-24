@@ -207,13 +207,18 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 
   ShenandoahHeapRegion* r = heap_region_containing(p);
   assert(!r->is_humongous(), "never evacuate humongous objects");
+  if (_has_self_forwarded_objects && r->has_evacuation_failures()) {
+    // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
+    // rather have them concentrate on regions that still have a chance of being completely evacuated.
+    return ShenandoahForwarding::try_forward_to_self(p);
+  }
 
   ShenandoahAffiliation target_gen = r->affiliation();
   // gc_generation() can change asynchronously and should not be used here.
   assert(active_generation() != nullptr, "Error");
   if (active_generation()->is_young() && target_gen == YOUNG_GENERATION) {
     markWord mark = p->mark();
-    if (mark.is_marked()) {
+    if (mark.is_forwarded()) {
       // Already forwarded.
       return ShenandoahBarrierSet::resolve_forwarded(p);
     }
@@ -221,6 +226,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
+      assert(!UseObjectMonitorTable, "Do not expect displaced mark words when using the object monitor table");
     } else if (r->age() + mark.age() >= age_census()->tenuring_threshold()) {
       oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
       if (result != nullptr) {
@@ -235,7 +241,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 // try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
 // to OLD_GENERATION.
 oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
-                                        ShenandoahAffiliation target_gen) {
+                                                    ShenandoahAffiliation target_gen) {
   bool alloc_from_lab = true;
   bool has_plab = false;
   HeapWord* copy = nullptr;
@@ -312,7 +318,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   if (copy == nullptr) {
     if (target_gen == OLD_GENERATION) {
       if (from_region->is_young()) {
-        // Signal that promotion failed. Will evacuate this old object somewhere in young gen.
+        // Signal that promotion failed. We will retry to evacuate this old object somewhere in young gen.
         old_generation()->handle_failed_promotion(thread, size);
         return nullptr;
       } else {
@@ -322,11 +328,16 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       }
     }
 
-    control_thread()->handle_alloc_failure_evac(size);
+    // Do not notify control thread - we aren't going to cancel this GC and we aren't
+    // going to enter the out-of-memory protocol. Instead, we will forward this object
+    // to itself and try to carry on with the evacuation.
+    // control_thread()->handle_alloc_failure_evac(size);
+    // oom_evac_handler()->handle_out_of_memory_during_evacuation();
 
-    oom_evac_handler()->handle_out_of_memory_during_evacuation();
-
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    from_region->set_has_evacuation_failures(true);
+    _has_self_forwarded_objects = true;
+    log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), from_region->index());
+    return ShenandoahForwarding::try_forward_to_self(p);
   }
 
   // Copy the object:
