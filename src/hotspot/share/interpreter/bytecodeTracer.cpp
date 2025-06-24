@@ -177,16 +177,17 @@ class BytecodePrinter {
 
 #ifndef PRODUCT
 // We need a global instance to keep track of the method being printed so we can report that
-// the method has changed. If this method is redefined and removed, that's ok because the method passed in won't match, and
-// this will print that one.
-static Method* _current_method = nullptr;
+// the method has changed. If this method is redefined and removed, that's ok because the method passed
+// in won't match, and this will print the method passed in again. Racing threads changing this global
+// will result in reprinting the method passed in again.
+static Method* _method_currently_being_printed = nullptr;
 
 void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
-    BytecodePrinter printer(_current_method);
+    BytecodePrinter printer(Atomic::load_acquire(&_method_currently_being_printed));
     printer.trace(method, bcp, tos, tos2, st);
-    // Save current method to detect when method printing changes.
-    Atomic::release_store(&_current_method, method());
+    // Save method currently being printed to detect when method printing changes.
+    Atomic::release_store(&_method_currently_being_printed, method());
   }
 }
 #endif
