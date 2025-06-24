@@ -49,7 +49,13 @@ public class ConcurrentDeflation {
     public static void main(String[] args) throws Exception {
         Thread threadDumper = new Thread(() -> dumpThreads());
         threadDumper.start();
-        Thread monitorCreator = new Thread(() -> createMonitors());
+        Thread monitorCreator = new Thread(() -> {
+            try {
+                createMonitors();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
         monitorCreator.start();
 
         threadDumper.join();
@@ -70,14 +76,14 @@ public class ConcurrentDeflation {
         System.out.println("Dumped all thread info " + dumpCount + " times");
     }
 
-    static private void createMonitors() {
+    static private void createMonitors() throws InterruptedException {
         int index = 0;
         long startTime = System.nanoTime();
         while (System.nanoTime() - startTime < TOTAL_RUN_TIME_NS) {
             index = index++ % 1000;
             monitors[index] = new Object();
             synchronized (monitors[index]) {
-                WB.forceInflateMonitorLockedObject(monitors[index]);
+                monitors[index].wait(1);
                 monitorCount++;
             }
         }
