@@ -2453,7 +2453,7 @@ void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src,
   // vtmp2 = {4 3 2 1 0 -1 -2 -3}
   sve_index(vtmp2, H, rscratch1, 1);
   // vtmp1 = 0000 0000 0000 8888 5555 0000 0000 0000
-  sve_tbl(vtmp1, H, vtmp1, vtmp2);
+  sve_tbl(vtmp1, H, vtmp1, 1, vtmp2);
 
   // Combine the compressed high(after shifted) with the compressed low.
   // dst = 0000 0000 0000 8888 5555 4444 2222 1111
@@ -2510,7 +2510,7 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   // vtmp2 = {4 3 2 1 0 -1 -2 -3}
   sve_index(vtmp2, B, rscratch2, 1);
   // vtmp1 = 00 00 00 88 55 00 00 00
-  sve_tbl(vtmp1, B, vtmp1, vtmp2);
+  sve_tbl(vtmp1, B, vtmp1, 1, vtmp2);
   // Combine the compressed high(after shifted) with the compressed low.
   // dst = 00 00 00 88 55 44 22 11
   sve_orr(dst, dst, vtmp1);
@@ -2858,7 +2858,7 @@ void C2_MacroAssembler::select_from_two_vectors_HS_Neon(FloatRegister dst, Float
                                                         FloatRegister src2, FloatRegister index,
                                                         FloatRegister tmp1, BasicType bt, bool isQ) {
 
-  assert_different_registers(dst, src1, src2, tmp1);
+  assert_different_registers(dst, src1, src2, index, tmp1);
   assert(bt == T_SHORT || bt == T_INT || bt == T_FLOAT, "unsupported basic type");
 
   SIMD_Arrangement size1 = isQ ? T16B : T8B;
@@ -2877,38 +2877,41 @@ void C2_MacroAssembler::select_from_two_vectors_HS_Neon(FloatRegister dst, Float
   // offsets - dst = [0x0504, 0x0b0a, 0x0302, 0x0100]
   // Use these offsets in the "tbl" instruction to select chunks of 2B.
 
-  switch (bt) {
-    case T_SHORT:
-      mov(tmp1, size1, 0x02);
-      mulv(dst, size2, index, tmp1);
-      mov(tmp1, size2, 0x0100);
-      addv(dst, size1, dst, tmp1); // "dst" now contains the processed index elements
-                                   // to select a set of 2B
-      break;
-    case T_INT:
-    case T_FLOAT:
-      // Similarly, for int/float the index values for the "tbl" instruction are computed to
-      // select chunks of 4B for every int/float element
-      mov(tmp1, size1, 0x04);
-      mulv(dst, size2, index, tmp1);
-      mov(tmp1, size2, 0x03020100);
-      addv(dst, size1, dst, tmp1); // "dst" now contains the processed index elements
-                                   // to select a set of 4B
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+  // The cases that can reach this method are -
+  // UseSVE == 0, vector length = 8, 16
+  // UseSVE == 1, vector length = 8, 16
+  // UseSVE == 2, vector length = 8
+  //
+  // Generate Neon tbl when UseSVE == 0 or UseSVE == 1 with vector length of 16B
 
-  if (isQ) {
-    // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
-    tbl(dst, size1, src1, 2, dst);
-  } else {  // vector length == 8
-    // We need to fit both the source vectors (src1, src2) in a 128-bit register as the
-    // Neon "tbl" instruction supports only looking up 16B vectors. We then use the Neon "tbl"
-    // instruction with one vector lookup
+  bool useNeon = (UseSVE == 0) || (UseSVE == 1 && isQ);
+
+  if (useNeon) {
+    int elemSize = (bt == T_SHORT) ? 2 : 4;
+    uint64_t tblOffset = (bt == T_SHORT) ? 0x0100u : 0x03020100u;
+
+    mov(tmp1, size1, elemSize);
+    mulv(dst, size2, index, tmp1);
+    mov(tmp1, size2, tblOffset);
+    addv(dst, size1, dst, tmp1); // "dst" now contains the processed index elements
+                                 // to select a set of 2B/4B
+
+    if (isQ) {
+      // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
+      tbl(dst, size1, src1, 2, dst);
+    } else {  // vector length == 8
+      // We need to fit both the source vectors (src1, src2) in a 128-bit register because the
+      // Neon "tbl" instruction supports only looking up 16B vectors. We then use the Neon "tbl"
+      // instruction with one vector lookup
+      ins(tmp1, D, src1, 0, 0);
+      ins(tmp1, D, src2, 1, 0);
+      tbl(dst, size1, tmp1, 1, dst);
+    }
+    // Generate tbl one vector lookup (SVE1) when UseSVE >= 1 and vector length == 8
+  } else if (UseSVE >= 1 && !isQ) {
     ins(tmp1, D, src1, 0, 0);
     ins(tmp1, D, src2, 1, 0);
-    tbl(dst, size1, tmp1, 1, dst);
+    sve_tbl(dst, elemType_to_regVariant(bt), tmp1, 1, index);
   }
 }
 
@@ -2925,6 +2928,6 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
   } else {
     assert(UseSVE == 2, "must be sve2");
     SIMD_RegVariant size = elemType_to_regVariant(bt);
-    sve_tbl(dst, size, src1, src2, index);
+    sve_tbl(dst, size, src1, 2, index);
   }
 }

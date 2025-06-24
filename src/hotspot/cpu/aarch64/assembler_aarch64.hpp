@@ -4227,12 +4227,16 @@ public:
     sf(imm1, 9, 5), rf(Zd, 0);
   }
 
-  // SVE programmable table lookup/permute using vector of element indices
-  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) {
+  // SVE/SVE2 Programmable table lookup in one or two vector table (zeroing)
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, unsigned registers, FloatRegister Zm) {
     starti;
     assert(T != Q, "invalid size");
+    // Only supports one or two vector lookup. One vector lookup was introduced in SVE1
+    // and two vector lookup in SVE2
+    assert(0 < registers && registers <= 2, "invalid number of registers");
+    int op1 = (registers == 1) ? 0b10 : 0b01;
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b1, 21), rf(Zm, 16);
-    f(0b001100, 15, 10), rf(Zn, 5), rf(Zd, 0);
+    f(0b001, 15, 13), f(op1, 12, 11), f(0b0, 10), rf(Zn, 5), rf(Zd, 0);
   }
 
   // Shuffle active elements of vector to the right and fill with zero
@@ -4292,16 +4296,6 @@ public:
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
-  }
-
-  // SVE2 programmable table lookup in two vector table
-  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1,
-               FloatRegister Zn2, FloatRegister Zm) {
-    starti;
-    assert(T != Q, "invalid size");
-    assert(Zn1->successor() == Zn2, "invalid order of registers");
-    f(0b00000101, 31, 24), f(T, 23, 22), f(0b1, 21), rf(Zm, 16);
-    f(0b001010, 15, 10), rf(Zn1, 5), rf(Zd, 0);
   }
 
   // Stack overflow checking
