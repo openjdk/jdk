@@ -489,7 +489,6 @@ void MutableNUMASpace::set_top(HeapWord* value) {
   for (int i = 0; i < lgrp_spaces()->length();) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
-    HeapWord *top = MAX2(align_down(s->top(), page_size()), s->bottom());
 
     if (s->contains(value)) {
       // Check if setting the chunk's top to a given value would create a hole less than
