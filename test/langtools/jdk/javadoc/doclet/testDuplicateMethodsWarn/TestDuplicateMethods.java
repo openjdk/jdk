@@ -184,6 +184,17 @@ public class TestDuplicateMethods extends JavadocTester {
                 <h3 id="methods-inherited-from-class-sb.I">Methods inherited from interface&nbsp;<a href="I.html#method-summary" title="interface in sb">I</a></h3>
                 <code><a href="I.html#testI()" title="testI()">testI</a></code></div>
                 """);
+
+        checkOutput("sb/U.html", true,
+                """
+                <h3>testI</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">testI</span>()</div>
+                <div class="block">Inherited JavaDoc for method in class P.</div>
+                <dl class="notes">
+                <dt>Specified by:</dt>
+                <dd><code><a href="I.html#testI()">testI</a></code>&nbsp;in interface&nbsp;<code><a href="I.html" title="interface in sb">I</a></code></dd>
+                </dl>""");
     }
 
     @Test
@@ -198,5 +209,13 @@ public class TestDuplicateMethods extends JavadocTester {
                 <div class="inherited-list">
                 <h3 id="methods-inherited-from-class-hm.J">Methods inherited from interface&nbsp;<a href="J.html#method-summary" title="interface in hm">J</a></h3>
                 <code><a href="J.html#testJ()" title="testJ()">testJ</a></code></div>""");
+
+        checkOutput("hm/V.html", true,
+                """
+                <h3>V</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">V</span>()</div>
+                </div>
+                """);
     }
 }
