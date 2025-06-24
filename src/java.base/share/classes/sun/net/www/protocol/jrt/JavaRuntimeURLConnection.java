@@ -109,11 +109,9 @@ public class JavaRuntimeURLConnection extends URLConnection {
 
     @Override
     public long getContentLengthLong() {
-        // Note: UncheckedIOException is thrown by the Node subclass in
-        // ExplodedImage (this not obvious, so worth calling out).
         try {
             return connectResourceNode().size();
-        } catch (IOException | UncheckedIOException ioe) {
+        } catch (IOException ioe) {
             return -1L;
         }
     }
