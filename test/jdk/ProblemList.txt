@@ -592,8 +592,6 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 
 java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
 
-java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc64
-
 ############################################################################
 
 # jdk_nio
@@ -840,3 +838,5 @@ java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
 # jdk_since_checks
 
 tools/sincechecker/modules/java.base/JavaBaseCheckSince.java 8358627 generic-all
+tools/sincechecker/modules/jdk.management.jfr/JdkManagementJfrCheckSince.java 8354921 generic-all
+

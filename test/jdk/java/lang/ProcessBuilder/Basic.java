@@ -696,7 +696,7 @@ public class Basic {
         public static String path() { return path; }
         private static final String path = path0();
         private static String path0(){
-            if (!Platform.isBusybox("/bin/true")) {
+            if (!Files.isSymbolicLink(Paths.get("/bin/true"))) {
                 return "/bin/true";
             } else {
                 File trueExe = new File("true");
@@ -711,7 +711,7 @@ public class Basic {
         public static String path() { return path; }
         private static final String path = path0();
         private static String path0(){
-            if (!Platform.isBusybox("/bin/false")) {
+            if (!Files.isSymbolicLink(Paths.get("/bin/false"))) {
                 return "/bin/false";
             } else {
                 File falseExe = new File("false");
