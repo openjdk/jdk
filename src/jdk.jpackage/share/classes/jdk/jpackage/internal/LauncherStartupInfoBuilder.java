@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.LauncherJarStartupInfo;
 import jdk.jpackage.internal.model.LauncherJarStartupInfoMixin;
@@ -37,8 +38,11 @@ import jdk.jpackage.internal.model.LauncherStartupInfo;
 final class LauncherStartupInfoBuilder {
 
     LauncherStartupInfo create() {
-        return decorator.apply(new Stub(qualifiedClassName, javaOptions,
-                defaultParameters, classPath));
+        return decorator.apply(new Stub(
+                qualifiedClassName,
+                Optional.ofNullable(javaOptions).orElseGet(List::of),
+                Optional.ofNullable(defaultParameters).orElseGet(List::of),
+                classPath));
     }
 
     LauncherStartupInfoBuilder launcherData(LauncherData launcherData) {

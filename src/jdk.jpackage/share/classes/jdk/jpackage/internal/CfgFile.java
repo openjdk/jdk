@@ -30,7 +30,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -47,10 +47,14 @@ final class CfgFile {
     CfgFile(Application app, Launcher launcher) {
         startupInfo = launcher.startupInfo().orElseThrow();
         outputFileName = launcher.executableName() + ".cfg";
-        version = app.version();
+        version = Objects.requireNonNull(app.version());
     }
 
     void create(ApplicationLayout appLayout) throws IOException {
+        Objects.requireNonNull(appLayout);
+
+        Objects.requireNonNull(startupInfo.qualifiedClassName());
+
         List<Map.Entry<String, Object>> content = new ArrayList<>();
 
         final var refs = new Referencies(appLayout);
@@ -58,7 +62,7 @@ final class CfgFile {
         content.add(Map.entry("[Application]", SECTION_TAG));
 
         if (startupInfo instanceof LauncherModularStartupInfo modularStartupInfo) {
-            content.add(Map.entry("app.mainmodule", modularStartupInfo.moduleName()
+            content.add(Map.entry("app.mainmodule", Objects.requireNonNull(modularStartupInfo.moduleName())
                     + "/" + startupInfo.qualifiedClassName()));
         } else if (startupInfo instanceof LauncherJarStartupInfo jarStartupInfo) {
             Path mainJarPath = refs.appDirectory().resolve(jarStartupInfo.jarPath());
@@ -67,16 +71,13 @@ final class CfgFile {
                 content.add(Map.entry("app.mainjar", mainJarPath));
             } else {
                 content.add(Map.entry("app.classpath", mainJarPath));
-            }
-
-            if (!jarStartupInfo.isJarWithMainClass()) {
                 content.add(Map.entry("app.mainclass", startupInfo.qualifiedClassName()));
             }
         } else {
             throw new UnsupportedOperationException();
         }
 
-        for (var value : Optional.ofNullable(startupInfo.classPath()).orElseGet(List::of)) {
+        for (var value : startupInfo.classPath()) {
             content.add(Map.entry("app.classpath",
                     refs.appDirectory().resolve(value).toString()));
         }
@@ -88,7 +89,7 @@ final class CfgFile {
                 "java-options", "-Djpackage.app-version=" + version));
 
         // add user supplied java options if there are any
-        for (var value : Optional.ofNullable(startupInfo.javaOptions()).orElseGet(List::of)) {
+        for (var value : startupInfo.javaOptions()) {
             content.add(Map.entry("java-options", value));
         }
 
@@ -98,7 +99,7 @@ final class CfgFile {
             content.add(Map.entry("java-options", refs.appModsDirectory()));
         }
 
-        var arguments = Optional.ofNullable(startupInfo.defaultParameters()).orElseGet(List::of);
+        var arguments = startupInfo.defaultParameters();
         if (!arguments.isEmpty()) {
             content.add(Map.entry("[ArgOptions]", SECTION_TAG));
             for (var value : arguments) {
