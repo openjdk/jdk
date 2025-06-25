@@ -603,20 +603,21 @@ public class HPKE extends CipherSpi {
                     secret_x_builder.addIKM(psk);
                 }
                 secret_x_builder.addSalt(shared_secret);
+                var secret_x = kdf.deriveKey("Generic", secret_x_builder.extractOnly());
 
                 // A new KDF object must be created because secret_x_builder
                 // might contain provider-specific keys which the previous
                 // KDF (provider already chosen) cannot handle.
                 kdf = KDF.getInstance(kdfAlg);
                 var exporter_secret = kdf.deriveKey("Generic", DHKEM.labeledExpand(
-                        secret_x_builder, suite_id, EXP, key_schedule_context, kdfNh));
+                        secret_x, suite_id, EXP, key_schedule_context, kdfNh));
 
                 if (hasEncrypt()) {
                     // ChaCha20-Poly1305 does not care about algorithm name
-                    var key = kdf.deriveKey("AES", DHKEM.labeledExpand(secret_x_builder,
+                    var key = kdf.deriveKey("AES", DHKEM.labeledExpand(secret_x,
                             suite_id, KEY, key_schedule_context, aead.Nk));
                     // deriveData must be called because we need to increment nonce
-                    var base_nonce = kdf.deriveData(DHKEM.labeledExpand(secret_x_builder,
+                    var base_nonce = kdf.deriveData(DHKEM.labeledExpand(secret_x,
                             suite_id, BASE_NONCE, key_schedule_context, aead.Nn));
                     return new Context(key, base_nonce, exporter_secret);
                 } else {
