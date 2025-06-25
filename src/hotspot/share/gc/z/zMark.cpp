@@ -773,7 +773,7 @@ public:
         ZNMethod::nmethod_patch_barriers(nm);
       }
 
-      _bs_nm->set_guard_value(nm, (int)untype(new_disarm_value_ptr));
+      _bs_nm->guard_with(nm, (int)untype(new_disarm_value_ptr));
 
       if (complete_disarm) {
         log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
