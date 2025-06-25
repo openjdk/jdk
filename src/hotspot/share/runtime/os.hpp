@@ -341,7 +341,7 @@ class os: AllStatic {
   static bool used_memory(size_t& value);
   static bool free_memory(size_t& value);
 
-  static jlong total_swap_space();
+  static bool total_swap_space(size_t& value);
   static jlong free_swap_space();
 
   static julong physical_memory();

@@ -273,12 +273,13 @@ bool os::Aix::available_memory(size_t& value) {
   }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
-    return -1;
+    return false;
   }
-  return (jlong)(memory_info.pgsp_total * 4 * K);
+  value = static_cast<size_t>(memory_info.pgsp_total * 4 * K);
+  return true;
 }
 
 jlong os::free_swap_space() {

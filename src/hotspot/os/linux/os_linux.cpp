@@ -279,25 +279,30 @@ bool os::Linux::free_memory(size_t& value) {
     return true;
   }
 
-  sysinfo(&si);
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return false;
+  }
   free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
   value = static_cast<size_t>(free_mem);
   return true;
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
   if (OSContainer::is_containerized()) {
     if (OSContainer::memory_limit_in_bytes() > 0) {
-      return (jlong)(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+      value = static_cast<size_t>(OSContainer::memory_and_swap_limit_in_bytes() - OSContainer::memory_limit_in_bytes());
+      return true;
     }
   }
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    return false;
   }
-  return  (jlong)(si.totalswap * si.mem_unit);
+  value = static_cast<size_t>(si.totalswap * si.mem_unit);
+  return true;
 }
 
 static jlong host_free_swap() {
@@ -312,7 +317,9 @@ static jlong host_free_swap() {
 jlong os::free_swap_space() {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
-  jlong host_free_swap_val = MIN2(os::total_swap_space(), host_free_swap());
+  size_t total_swap_space = 0;
+  os::total_swap_space(total_swap_space);
+  jlong host_free_swap_val = MIN2(static_cast<jlong>(total_swap_space), host_free_swap());
   assert(host_free_swap_val >= 0, "sysinfo failed?");
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();

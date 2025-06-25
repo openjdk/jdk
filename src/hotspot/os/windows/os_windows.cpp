@@ -870,11 +870,16 @@ bool os::win32::available_memory(size_t& value) {
   }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullTotalPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res) {
+    value = static_cast<size_t>(ms.ullTotalPageFile);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 jlong os::free_swap_space() {

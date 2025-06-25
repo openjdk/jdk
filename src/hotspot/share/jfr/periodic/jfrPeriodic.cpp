@@ -538,7 +538,9 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
 
 TRACE_REQUEST_FUNC(SwapSpace) {
   EventSwapSpace event;
-  event.set_totalSize(os::total_swap_space());
+  size_t total_swap_space = 0;
+  os::total_swap_space(total_swap_space);
+  event.set_totalSize(static_cast<s8>(total_swap_space));
   event.set_freeSize(os::free_swap_space());
   event.commit();
 }

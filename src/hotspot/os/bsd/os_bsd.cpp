@@ -180,16 +180,17 @@ void os::Bsd::print_uptime_info(outputStream* st) {
   }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(size_t& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
-    return -1;
+    return false;
   }
-  return (jlong)vmusage.xsu_total;
+  value = static_cast<size_t>(vmusage.xsu_total);
+  return true;
 #else
-  return -1;
+  return false;
 #endif
 }
 
