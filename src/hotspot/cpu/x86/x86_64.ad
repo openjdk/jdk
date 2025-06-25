@@ -4522,7 +4522,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRe
   ins_pipe( pipe_slow );
 %}
 
-// max = java.lang.Math.max(float a, float b)
+// max = java.lang.Math.min(float a, float b)
 instruct minF_avx10_reg(regF dst, regF a, regF b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinF a b));
@@ -4558,7 +4558,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
   ins_pipe( pipe_slow );
 %}
 
-// max = java.lang.Math.max(double a, double b)
+// max = java.lang.Math.min(double a, double b)
 instruct minD_avx10_reg(regD dst, regD a, regD b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinD a b));
