@@ -338,7 +338,7 @@ class os: AllStatic {
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
   static bool available_memory(size_t& value);
-  static julong used_memory();
+  static bool used_memory(size_t& value);
   static bool free_memory(size_t& value);
 
   static jlong total_swap_space();

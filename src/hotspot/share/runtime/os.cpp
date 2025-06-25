@@ -2202,18 +2202,22 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
-julong os::used_memory() {
+bool os::used_memory(size_t& value) {
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
     jlong mem_usage = OSContainer::memory_usage_in_bytes();
     if (mem_usage > 0) {
-      return mem_usage;
+      value = static_cast<size_t>(mem_usage);
+      return true;
+    } else {
+      return false;
     }
   }
 #endif
   size_t avail_mem = 0;
   os::available_memory(avail_mem);
-  return os::physical_memory() - static_cast<julong>(avail_mem);
+  value = os::physical_memory() - static_cast<julong>(avail_mem);
+  return true;
 }
 
 
