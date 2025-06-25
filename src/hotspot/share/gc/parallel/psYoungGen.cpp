@@ -47,7 +47,7 @@ PSYoungGen::PSYoungGen(ReservedSpace rs, size_t initial_size, size_t min_size, s
   _from_counters(nullptr),
   _to_counters(nullptr)
 {
-  initialize(rs, initial_size, GenAlignment);
+  initialize(rs, initial_size, SpaceAlignment);
 }
 
 void PSYoungGen::initialize_virtual_space(ReservedSpace rs,
@@ -746,7 +746,7 @@ size_t PSYoungGen::available_to_live() {
   }
 
   size_t delta_in_bytes = unused_committed + delta_in_survivor;
-  delta_in_bytes = align_down(delta_in_bytes, GenAlignment);
+  delta_in_bytes = align_down(delta_in_bytes, SpaceAlignment);
   return delta_in_bytes;
 }
 
