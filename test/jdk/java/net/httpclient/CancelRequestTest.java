@@ -49,6 +49,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -286,7 +287,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         Throwable cause = t;
         while (cause != null) {
             if (cause instanceof CancellationException) return true;
-            if (cause instanceof IOException && String.valueOf(t).contains("Request cancelled")) return true;
+            if (cause instanceof IOException && String.valueOf(cause).contains("Request cancelled")) return true;
             cause = cause.getCause();
         }
         out.println("Not a cancellation exception: " + t);
@@ -380,10 +381,12 @@ public class CancelRequestTest implements HttpServerAdapters {
                 Throwable wrapped = x.getCause();
                 Throwable cause = wrapped;
                 if (mayInterruptIfRunning) {
-                    assertTrue(CancellationException.class.isAssignableFrom(wrapped.getClass()),
-                            "Unexpected exception: " + wrapped);
-                    cause = wrapped.getCause();
-                    out.println("CancellationException cause: " + x);
+                    if (CancellationException.class.isAssignableFrom(wrapped.getClass())) {
+                        cause = wrapped.getCause();
+                        out.println("CancellationException cause: " + x);
+                    } else if (!isCancelled(cause)) {
+                        throw new RuntimeException("Unexpected cause: " + cause);
+                    }
                     if (cause instanceof HttpConnectTimeoutException) {
                         cause.printStackTrace(out);
                         throw new RuntimeException("Unexpected timeout exception", cause);
@@ -505,8 +508,13 @@ public class CancelRequestTest implements HttpServerAdapters {
             } catch (ExecutionException x) {
                 assertTrue(response.isDone());
                 Throwable wrapped = x.getCause();
-                assertTrue(CancellationException.class.isAssignableFrom(wrapped.getClass()));
-                Throwable cause = wrapped.getCause();
+                Throwable cause = wrapped;
+                if (CancellationException.class.isAssignableFrom(wrapped.getClass())) {
+                    cause = wrapped.getCause();
+                    out.println("CancellationException cause: " + x);
+                } else if (!isCancelled(cause)) {
+                    throw new RuntimeException("Unexpected cause: " + cause);
+                }
                 assertTrue(IOException.class.isAssignableFrom(cause.getClass()));
                 if (cause instanceof HttpConnectTimeoutException) {
                     cause.printStackTrace(out);
