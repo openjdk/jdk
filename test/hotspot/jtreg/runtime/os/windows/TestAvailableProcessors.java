@@ -65,17 +65,17 @@ public class TestAvailableProcessors {
 
         List<String> command = new ArrayList<>();
 
-        File systemRoot =
-            System.getenv("SystemRoot") != null ? new File(System.getenv("SystemRoot")) :
-            System.getenv("WINDIR")     != null ? new File(System.getenv ("WINDIR")) :
-            null;
+        String systemRoot = System.getenv("SystemRoot");
         if (systemRoot == null) {
-            throw new RuntimeException("SystemRoot or WINDIR environment variable is not set.");
+            systemRoot = System.getenv("WINDIR");
+            if (systemRoot == null) {
+                throw new RuntimeException("SystemRoot or WINDIR environment variable is not set.");
+            }
         }
-        String systemDirW = new File(systemRoot, "System32").getPath();
+        String system32 = Path.of(systemRoot, "System32").toString();
 
-        // Force language to English before running systeminfo to get the OS version
-        command.addAll(List.of("cmd.exe", "/c", "set", "PATH=%PATH%;" + systemDirW + ";" + systemDirW + "\\wbem", "&&"));
+        // It switches the active code page to cp437, the default code page for US english.
+        command.addAll(List.of("cmd.exe", "/c", "set", "PATH=%PATH%;" + system32 + ";" + system32 + "\\wbem", "&&"));
         command.addAll(List.of("chcp", "437", ">nul", "2>&1", "&&"));
         command.add(systeminfoPath);
 
