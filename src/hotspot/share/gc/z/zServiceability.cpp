@@ -53,8 +53,8 @@ static ZMemoryUsageInfo compute_memory_usage_info() {
 // Class to expose perf counters used by jstat.
 class ZServiceabilityCounters : public CHeapObj<mtGC> {
 private:
-  GenerationCounters _generation_young_counters;
-  GenerationCounters _generation_old_counters;
+  GenerationCounters  _generation_young_counters;
+  GenerationCounters  _generation_old_counters;
   HSpaceCounters      _space_young_counters;
   HSpaceCounters      _space_old_counters;
   CollectorCounters   _minor_collection_counters;
