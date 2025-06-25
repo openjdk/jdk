@@ -133,14 +133,15 @@ public class H3QuicTLSConnection {
                     SSLHandshakeException.class,
                     Optional.of("protocol is disabled or cipher suites are inappropriate"));
 
-            // set TLS_CHACHA_POLY1305_SHA256 cipher suite
+            // set TLS_AES_128_CCM_8_SHA256 cipher suite
             // which is not supported by the (default) SunJSSE provider
+            // and forbidden in QUIC in general
             success &= expectFailure(
                     "---\nTest #5: SSL parameters with "
-                            + "TLS_CHACHA_POLY1305_SHA256 cipher suite, "
+                            + "TLS_AES_128_CCM_8_SHA256 cipher suite, "
                             + "expect IllegalArgumentException: Unsupported CipherSuite",
                     () -> connect(uriString, new SSLParameters(
-                            new String[]{"TLS_CHACHA_POLY1305_SHA256"},
+                            new String[]{"TLS_AES_128_CCM_8_SHA256"},
                             new String[]{"TLSv1.3"})),
                     IllegalArgumentException.class,
                     Optional.of("Unsupported CipherSuite"));
