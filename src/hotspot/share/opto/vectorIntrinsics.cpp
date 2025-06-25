@@ -1205,14 +1205,15 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 
 //
 //  <C,
-//   V extends Vector<E>,
+//   V extends Vector<?>,
 //   W extends Vector<Integer>,
-//   M extends VectorMask<E>,_
+//   S extends VectorSpecies<E>,
+//   M extends VectorMask<E>,
 //   E>
 //   V loadWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass, int length,
 //                 Class<? extends Vector<Integer>> vectorIndexClass, int indexLength,
 //                 Object base, long offset,
-//                 W indexVector1, W index_vector2, W index_vector3, W index_vector4,
+//                 W indexVector1, W indexVector2, W indexVector3, W indexVector4,
 //                 M m, C container, int index, int[] indexMap, int indexM, S s,
 //                 LoadVectorOperationWithMap<C, V, S, M> defaultImpl)
 //
@@ -1221,12 +1222,12 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 //   W extends Vector<Integer>,
 //   M extends VectorMask<E>,
 //   E>
-//  void storeWithMap(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType,
-//                    int length, Class<? extends Vector<Integer>> vectorIndexClass,
-//                    int indexLength, Object base, long offset, // Unsafe addressing
-//                    W index_vector, V v, M m,
-//                    C container, int index, int[] indexMap, int indexM, // Arguments for default implementation
-//                    StoreVectorOperationWithMap<C, V, M, E> defaultImpl)
+//   void storeWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass, int length,
+//                     Class<? extends Vector<Integer>> vectorIndexClass, int indexLength,
+//                     Object base, long offset, // Unsafe addressing
+//                     W indexVector, V v, M m,
+//                     C container, int index, int[] indexMap, int indexM, // Arguments for default implementation
+//                     StoreVectorOperationWithMap<C, V, M> defaultImpl)
 //
 bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeInstPtr* vector_klass     = gvn().type(argument(0))->isa_instptr();
@@ -1323,6 +1324,9 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     addr = make_unsafe_address(base, offset, elem_bt, true);
   } else {
     assert(!is_scatter, "Only supports gather operation for subword types now");
+    uint header = arrayOopDesc::base_offset_in_bytes(elem_bt);
+    assert(offset->is_Con() && offset->bottom_type()->is_long()->get_con() == header,
+           "offset must be the array base offset");
     Node* index = argument(15);
     addr = array_element_address(base, index, elem_bt);
   }

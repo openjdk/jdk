@@ -559,7 +559,7 @@ public class VectorSupport {
                       int length,
                       Class<? extends Vector<Integer>> vectorIndexClass,
                       int indexLength, Object base, long offset,
-                      W index_vector,
+                      W indexVector,
                       V v, M m, C container, int index, int[] indexMap, int indexM,
                       StoreVectorOperationWithMap<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
