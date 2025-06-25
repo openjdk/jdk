@@ -197,7 +197,7 @@ public class Threads {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
             " (expected type JavaThread, CompilerThread, MonitorDeflationThread, AttachListenerThread," +
             " DeoptimizeObjectsALotThread, StringDedupThread, NotificationThread, ServiceThread," +
-            "JfrRecorderThread, or JvmtiAgentThread)", e);
+            " JfrRecorderThread, or JvmtiAgentThread)", e);
         }
     }
 
