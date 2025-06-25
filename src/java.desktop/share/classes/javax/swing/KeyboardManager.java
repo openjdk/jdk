@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,9 +118,6 @@ class KeyboardManager {
                v.addElement(c);
                keyMap.put(k, v);
            }
-         } else {
-             System.out.println("Unexpected condition in registerKeyStroke");
-             Thread.dumpStack();
          }
 
          componentKeyStrokeMap.put(new ComponentKeyStrokePair(c,k), topContainer);
@@ -208,11 +205,6 @@ class KeyboardManager {
     @SuppressWarnings("deprecation")
     public boolean fireKeyboardAction(KeyEvent e, boolean pressed, Container topAncestor) {
 
-         if (e.isConsumed()) {
-              System.out.println("Acquired pre-used event!");
-              Thread.dumpStack();
-         }
-
          // There may be two keystrokes associated with a low-level key event;
          // in this case a keystroke made of an extended key code has a priority.
          KeyStroke ks;
@@ -266,10 +258,6 @@ class KeyboardManager {
                              return true;
                      }
                  }
-             } else  {
-                 System.out.println( "Unexpected condition in fireKeyboardAction " + tmp);
-                 // This means that tmp wasn't null, a JComponent, or a Vector.  What is it?
-                 Thread.dumpStack();
              }
          }
 
