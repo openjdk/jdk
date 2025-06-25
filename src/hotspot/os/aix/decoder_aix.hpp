@@ -48,4 +48,3 @@ class AIXDecoder: public AbstractDecoder {
 };
 
 #endif // OS_AIX_DECODER_AIX_HPP
-
