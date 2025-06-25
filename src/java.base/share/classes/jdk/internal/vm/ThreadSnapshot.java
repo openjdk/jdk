@@ -59,7 +59,7 @@ class ThreadSnapshot {
     static ThreadSnapshot of(Thread thread) {
         ThreadSnapshot snapshot = create(thread);
         if (snapshot == null) {
-            return null; // Terminated
+            return null; // thread terminated
         }
         if (snapshot.stackTrace == null) {
             snapshot.stackTrace = EMPTY_STACK;
