@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994 8360416
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -33,7 +33,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994 8360416
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -43,7 +43,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994 8360416
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
@@ -53,7 +53,7 @@
 
 /*
  * @test
- * @bug 4348369 8076069 8294994 8360416
+ * @bug 4348369 8076069 8294994 8360400
  * @summary keytool i18n compliant
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
