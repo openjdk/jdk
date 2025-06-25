@@ -94,7 +94,7 @@ public class JLink20000Packages {
 
         var compiledClasses = InMemoryJavaCompiler.compile(sources);
 
-        // TODO: make it a jar file
+        // Create a jar file
         Files.createDirectories(src);
         Path jarPath = src.resolve("bug8321413x.jar");
         JarUtils.createJarFromClasses(jarPath, compiledClasses);
