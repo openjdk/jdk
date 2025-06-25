@@ -22,6 +22,11 @@
  */
 
 import java.io.InputStream;
+import java.lang.constant.ClassDesc;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.util.Map;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassDefinition;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
@@ -36,6 +41,7 @@ import static jdk.test.lib.Asserts.assertTrue;
  *
  * See sample test in test/testlibrary_tests/RedefineClassTest.java
  */
+
 public class RedefineClassHelper {
 
     public static Instrumentation instrumentation;
@@ -72,44 +78,6 @@ public class RedefineClassHelper {
         }
     }
 
-    private static int getStringIndex(String needle, byte[] buf) {
-        return getStringIndex(needle, buf, 0);
-    }
-
-    private static int getStringIndex(String needle, byte[] buf, int offset) {
-        outer:
-        for (int i = offset; i < buf.length - offset - needle.length(); i++) {
-            for (int j = 0; j < needle.length(); j++) {
-                if (buf[i + j] != (byte)needle.charAt(j)) continue outer;
-            }
-            return i;
-        }
-        return 0;
-    }
-
-    private static void replaceString(byte[] buf, String name, int index) {
-        for (int i = index; i < index + name.length(); i++) {
-            buf[i] = (byte)name.charAt(i - index);
-        }
-    }
-
-    /*
-     * Replace class name in bytecodes to the class we're trying to redefine, so that both
-     * old and new classes can be compiled with jtreg for the test.
-     *
-     * @param byteBuffer buffer of old class bytes.
-     * @param oldClassName old class name.
-     * @param newClassName new class name to replace with old class name.
-     */
-    public static byte[] replaceAllStrings(byte[] byteBuffer, String oldClassName, String newClassName) throws Exception {
-        assertTrue(oldClassName.length() == newClassName.length(), "must have same length");
-        int index = -1;
-        while ((index = getStringIndex(oldClassName, byteBuffer, index + 1)) != 0) {
-            replaceString(byteBuffer, newClassName, index);
-        }
-        return byteBuffer;
-    }
-
     /*
      * Replace class name in bytecodes to the class we're trying to redefine, so that both
      * old and new classes can be compiled with jtreg for the test.
@@ -120,7 +88,16 @@ public class RedefineClassHelper {
      */
     public static byte[] replaceAllStrings(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
         byte[] buf = getBytecodes(loader, oldClassName);
-        return replaceAllStrings(buf, oldClassName, newClassName);
+
+        ClassModel classModel = ClassFile.of().parse(buf);
+        ClassDesc newClassDesc = ClassDesc.of(newClassName);
+        byte[] newBytes = ClassFile.of().build(newClassDesc,
+            classBuilder -> {
+                for (ClassElement ce : classModel) {
+                    classBuilder.with(ce);
+                }
+            });
+        return newBytes;
     }
 
     /**
