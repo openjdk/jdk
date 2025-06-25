@@ -480,13 +480,13 @@ public abstract class Reader implements Readable, Closeable {
                             sb.setLength(0);
                         }
                     }
+                    pos = term + 1;
                     skipLF = isCR;
                 } else { // no line terminator
                     sb.append(cb, pos, n - pos);
+                    pos = n;
                     skipLF = false;
                 }
-
-                pos = term + 1;
             }
         }
 
