@@ -423,7 +423,7 @@ public class JImageGenerator {
             // This is expect FIRST jmods THEN jars, if you change this, some tests could fail
             String jmods = toPath(this.jmods);
             String jars = toPath(this.jars);
-            return linkableRuntime ? jars : jmods + File.pathSeparator + jars;
+            return (linkableRuntime || jmods.isEmpty()) ? jars : jmods + File.pathSeparator + jars;
         }
 
         private String toPath(List<Path> paths) {
@@ -654,7 +654,7 @@ public class JImageGenerator {
             // This is expect FIRST jmods THEN jars, if you change this, some tests could fail
             String jmods = toPath(this.jmods);
             String jars = toPath(this.jars);
-            return jmods + File.pathSeparator + jars;
+            return jmods.isEmpty() ? jars : jmods + File.pathSeparator + jars;
         }
 
         private String toPath(List<Path> paths) {

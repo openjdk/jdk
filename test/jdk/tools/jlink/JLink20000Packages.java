@@ -21,12 +21,16 @@
  * questions.
  */
 
+import java.io.*;
+import java.util.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.StringJoiner;
 import java.util.spi.ToolProvider;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.util.JarUtils;
 
 import tests.JImageGenerator;
 
@@ -36,7 +40,7 @@ import tests.JImageGenerator;
  *          pagination is in place, the limitation is on the constant pool size, not number
  *          of packages.
  * @bug 8321413
- * @library ../lib
+ * @library ../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
@@ -63,32 +67,22 @@ public class JLink20000Packages {
     public static void main(String[] args) throws Exception {
         Path src = Paths.get("bug8321413");
         Path imageDir = src.resolve("out-jlink");
-        Path mainModulePath = src.resolve("bug8321413x");
 
         StringJoiner mainModuleInfoContent = new StringJoiner(";\n  exports ", "module bug8321413x {\n  exports ", ";\n}");
+        Map<String, String> sources = new LinkedHashMap<>();
 
         for (int i = 0; i < 20000; i++) {
             String packageName = "p" + i;
             String className = "C" + i;
 
-            Path packagePath = Files.createDirectories(mainModulePath.resolve(packageName));
-
             StringBuilder classContent = new StringBuilder("package ");
             classContent.append(packageName).append(";\n");
             classContent.append("class ").append(className).append(" {}\n");
-            Files.writeString(packagePath.resolve(className + ".java"), classContent.toString());
-
+            sources.put(className, classContent.toString());
             mainModuleInfoContent.add(packageName);
         }
-
-        // create module reading the generated modules
-        Path mainModuleInfo = mainModulePath.resolve("module-info.java");
-        Files.writeString(mainModuleInfo, mainModuleInfoContent.toString());
-
-        Path mainClassDir = mainModulePath.resolve("testpackage");
-        Files.createDirectories(mainClassDir);
-
-        Files.writeString(mainClassDir.resolve("JLink20000PackagesTest.java"), """
+        sources.put("module-info", mainModuleInfoContent.toString());
+        sources.put("JLink20000PackagesTest", """
                 package testpackage;
 
                 public class JLink20000PackagesTest {
@@ -98,16 +92,16 @@ public class JLink20000Packages {
                 }
                 """);
 
-        String out = src.resolve("out").toString();
-        javac(new String[]{
-                "-d", out,
-                "--module-source-path", src.toString(),
-                "--module", "bug8321413x"
-        });
+        var compiledClasses = InMemoryJavaCompiler.compile(sources);
+
+        // TODO: make it a jar file
+        Files.createDirectories(src);
+        Path jarPath = src.resolve("bug8321413x.jar");
+        JarUtils.createJarFromClasses(jarPath, compiledClasses);
 
         JImageGenerator.getJLinkTask()
-                .modulePath(out)
                 .output(imageDir)
+                .addJars(jarPath)
                 .addMods("bug8321413x")
                 .call()
                 .assertSuccess();
