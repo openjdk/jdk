@@ -40,15 +40,18 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
@@ -77,6 +80,10 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
     static volatile String http3OnlyURIString, https2URIString, http3AltSvcURIString, http3DirectURIString;
 
     static void initialize(boolean samePort) throws Exception {
+        initialize(samePort, Http2EchoHandler::new);
+    }
+
+    static void initialize(boolean samePort, Supplier<Http2Handler> handlers) throws Exception {
         System.out.println("\nConfiguring for advertised AltSvc on "
                 + (samePort ? "same port" : "ephemeral port"));
         try {
@@ -96,8 +103,8 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 System.out.println("Attempting to enable advertised HTTP/3 service on different port");
                 https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
             }
-            https2AltSvcServer.addHandler(new Http2EchoHandler(), "/" + CLASS_NAME + "/https2/");
-            https2AltSvcServer.addHandler(new Http2EchoHandler(), "/" + CLASS_NAME + "/h2h3/");
+            https2AltSvcServer.addHandler(handlers.get(), "/" + CLASS_NAME + "/https2/");
+            https2AltSvcServer.addHandler(handlers.get(), "/" + CLASS_NAME + "/h2h3/");
             https2Port = https2AltSvcServer.getAddress().getPort();
             altsvcPort = https2AltSvcServer.getH3AltService()
                     .map(Http3TestServer::getAddress).stream()
@@ -116,8 +123,8 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 System.out.println("Can't create HTTP/3 server on same port: " + ex);
                 http3OnlyServer = new Http3TestServer(sslContext, 0);
             }
-            http3OnlyServer.addHandler("/" + CLASS_NAME + "/http3/", new Http2EchoHandler());
-            http3OnlyServer.addHandler("/" + CLASS_NAME + "/h2h3/", new Http2EchoHandler());
+            http3OnlyServer.addHandler("/" + CLASS_NAME + "/http3/", handlers.get());
+            http3OnlyServer.addHandler("/" + CLASS_NAME + "/h2h3/", handlers.get());
             http3OnlyServer.start();
             http3Port = http3OnlyServer.getQuicServer().getAddress().getPort();
 

@@ -32,6 +32,7 @@ import jdk.internal.net.http.AltServicesRegistry.AltService;
 import jdk.internal.net.http.Http3ClientImpl.ConnectionRecovery;
 import jdk.internal.net.http.Http3ClientImpl.PendingConnection;
 import jdk.internal.net.http.Http3ClientImpl.StreamLimitReached;
+import jdk.internal.net.http.common.Log;
 
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
@@ -75,11 +76,22 @@ class Http3PendingConnections {
                 .orElse(null);
         var advertised = (altSvc != null && altSvc.wasAdvertised())
                 || discovery == ALT_SVC;
+        var sameOrigin = (altSvc != null && altSvc.originHasSameAuthority());
+
+        ConnectionRecovery recovered = null;
         if (advertised) {
-            return pendingAdvertised.remove(connectionKey);
-        } else {
-            return pendingUnadvertised.remove(connectionKey);
+            recovered = pendingAdvertised.remove(connectionKey);
         }
+        if (discovery == ALT_SVC || recovered != null) return recovered;
+        recovered = pendingUnadvertised.get(connectionKey);
+        if (recovered instanceof PendingConnection pending) {
+            if (pending.exchange() == origExchange) {
+                pendingUnadvertised.remove(connectionKey, recovered);
+                return pending;
+            }
+        }
+        if (!sameOrigin && advertised) return null;
+        return pendingUnadvertised.remove(connectionKey);
     }
 
     // Lookup a ConnectionRecovery for the given request with the
@@ -97,7 +109,9 @@ class Http3PendingConnections {
         // if HTTP_3_ONLY look first in pendingUnadvertised
         var unadvertised = pendingUnadvertised.get(key);
         if (discovery == HTTP_3_URI_ONLY && unadvertised != null) {
-            return unadvertised;
+            if (unadvertised instanceof PendingConnection) {
+                return unadvertised;
+            }
         }
 
         // then look in advertised
@@ -110,10 +124,18 @@ class Http3PendingConnections {
         }
 
         // if HTTP_3_ONLY, nothing found, stop here
-        assert discovery != HTTP_3_URI_ONLY || unadvertised == null;
-        if (discovery == HTTP_3_URI_ONLY) return null;
+        assert discovery != HTTP_3_URI_ONLY || !(unadvertised instanceof PendingConnection);
+        if (discovery == HTTP_3_URI_ONLY) {
+            if (advertised != null && Log.http3()) {
+                Log.logHttp3("{0} cannot be used for {1}: return null", advertised, request);
+            }
+            assert !(unadvertised instanceof PendingConnection);
+            return unadvertised;
+        }
 
         // if ANY return advertised if found, otherwise unadvertised
+        if (advertised instanceof PendingConnection) return advertised;
+        if (unadvertised instanceof PendingConnection) return unadvertised;
         if (advertised != null) return advertised;
         return unadvertised;
     }
@@ -121,27 +143,52 @@ class Http3PendingConnections {
     // Adds a pending connection for the given request with the given
     // key and altSvc.
     // Should be called while holding Http3ClientImpl.lock
-    PendingConnection addPending(String key, HttpRequestImpl request, AltService altSvc) {
+    PendingConnection addPending(String key, HttpRequestImpl request, AltService altSvc, Exchange<?> exchange) {
         var discovery = request.http3Discovery();
         var advertised = altSvc != null && altSvc.wasAdvertised();
         var sameOrigin = altSvc == null || altSvc.originHasSameAuthority();
         // if advertised and same origin, we don't use pendingUnadvertised
         // but pendingAdvertised even if discovery is HTTP_3_URI_ONLY
+        // if we have an advertised altSvc with not same origin, we still
+        // want to attempt HTTP_3_URI_ONLY at origin, as an unadvertised
+        // connection. If advertised & same origin, we can use the advertised
+        // service instead and use pendingAdvertised, even for HTTP_3_URI_ONLY
         if (discovery == HTTP_3_URI_ONLY && (!advertised || !sameOrigin)) {
-            PendingConnection pendingConnection = new PendingConnection(null);
-            pendingUnadvertised.put(key, pendingConnection);
+            PendingConnection pendingConnection = new PendingConnection(null, exchange);
+            var previous = pendingUnadvertised.put(key, pendingConnection);
+            if (previous instanceof PendingConnection prev) {
+                String msg = "previous unadvertised pending connection found!"
+                        + " (originally created for %s #%s) while adding pending connection for %s"
+                        .formatted(prev.exchange().request, prev.exchange().multi.id, exchange.multi.id);
+                if (Log.errors()) Log.logError(msg);
+                assert false : msg;
+            }
             return pendingConnection;
         }
         assert discovery != HTTP_3_URI_ONLY || advertised && sameOrigin;
         if (advertised) {
-            PendingConnection pendingConnection = new PendingConnection(altSvc);
-            pendingAdvertised.put(key, pendingConnection);
+            PendingConnection pendingConnection = new PendingConnection(altSvc, exchange);
+            var previous = pendingAdvertised.put(key, pendingConnection);
+            if (previous instanceof PendingConnection prev) {
+                String msg = "previous pending advertised connection found!"
+                        + " (originally created for %s #%s) while adding pending connection for %s"
+                        .formatted(prev.exchange().request, prev.exchange().multi.id, exchange.multi.id);
+                if (Log.errors()) Log.logError(msg);
+                assert false : msg;
+            }
             return pendingConnection;
         }
         if (discovery == ANY) {
             assert !advertised;
-            PendingConnection pendingConnection = new PendingConnection(null);
-            pendingUnadvertised.put(key, pendingConnection);
+            PendingConnection pendingConnection = new PendingConnection(null, exchange);
+            var previous = pendingUnadvertised.put(key, pendingConnection);
+            if (previous instanceof PendingConnection prev) {
+                String msg = ("previous unadvertised pending connection found for ANY!" +
+                        " (originally created for %s #%s) while adding pending connection for %s")
+                        .formatted(prev.exchange().request, prev.exchange().multi.id, exchange.multi.id);
+                if (Log.errors()) Log.logError(msg);
+                assert false : msg;
+            }
             return pendingConnection;
         }
         // last case - if we reach here we're ALT_SVC but couldn't

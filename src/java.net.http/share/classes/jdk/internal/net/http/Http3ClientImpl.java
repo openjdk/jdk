@@ -166,14 +166,15 @@ public final class Http3ClientImpl implements AutoCloseable {
     // Indicates that recovery of a connection has been initiated.
     // Waiters will be put in wait until the handshake is completed
     // and the connection is inserted in the pool
-    record PendingConnection(AltService altSvc, ConcurrentLinkedQueue<Waiter> waiters)
+    record PendingConnection(AltService altSvc, Exchange<?> exchange, ConcurrentLinkedQueue<Waiter> waiters)
             implements ConnectionRecovery {
-        PendingConnection(AltService altSvc, ConcurrentLinkedQueue<Waiter> waiters) {
+        PendingConnection(AltService altSvc, Exchange<?> exchange, ConcurrentLinkedQueue<Waiter> waiters) {
             this.altSvc = altSvc;
             this.waiters = Objects.requireNonNull(waiters);
+            this.exchange = exchange;
         }
-        PendingConnection(AltService altSvc) {
-            this(altSvc, new ConcurrentLinkedQueue<>());
+        PendingConnection(AltService altSvc, Exchange<?> exchange) {
+            this(altSvc, exchange, new ConcurrentLinkedQueue<>());
         }
     }
 
@@ -232,7 +233,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                         // alt-service that was the reason for this H3 connection to be created (and pooled)
                         // is no longer valid. We set a state on the connection to disallow any new streams
                         // and be auto-closed when all current streams are done
-                        pooled.setFinalStream();
+                        pooled.setFinalStreamAndCloseIfIdle();
                         return null;
                     }
                 }
@@ -251,30 +252,78 @@ public final class Http3ClientImpl implements AutoCloseable {
         return null;
     }
 
+    private static String label(Http3Connection conn) {
+        return Optional.ofNullable(conn)
+                .map(Http3Connection::connection)
+                .map(HttpQuicConnection::label)
+                .orElse("null");
+    }
+
+    private static String describe(HttpRequestImpl request, long id) {
+        return String.format("%s #%s", request, id);
+    }
+
+    private static String describe(Exchange<?> exchange) {
+        if (exchange == null) return "null";
+        return describe(exchange.request, exchange.multi.id);
+    }
+
+    private static String describePendingExchange(String prefix, PendingConnection pending) {
+        return String.format("%s %s", prefix, describe(pending.exchange));
+    }
+
+    private static String describeAltSvc(PendingConnection pendingConnection) {
+        return Optional.ofNullable(pendingConnection)
+                .map(PendingConnection::altSvc)
+                .map(AltService::toString)
+                .map(s -> "altsvc: " + s)
+                .orElse("no altSvc");
+    }
+
     // Called after a recovered connection has been put back in the pool
     // (or when recovery has failed), or when a new connection handshake
     // has completed.
     // Waiters, if any, will be notified.
     private void connectionCompleted(String connectionKey, Exchange<?> origExchange, Http3Connection conn, Throwable error) {
+        try {
+            if (Log.http3()) {
+                Log.logHttp3("Checking waiters on completed connection {0} to {1} created for {2}",
+                        label(conn), connectionKey, describe(origExchange));
+            }
+            connectionCompleted0(connectionKey, origExchange, conn, error);
+        } catch (Throwable t) {
+            if (Log.http3() || Log.errors()) {
+                Log.logError(t);
+            }
+            throw t;
+        }
+    }
+
+    private void connectionCompleted0(String connectionKey, Exchange<?> origExchange, Http3Connection conn, Throwable error) {
         lock.lock();
         // There should be a connection in the pool at this point,
         // so we can remove the PendingConnection from the reconnections list;
-        PendingConnection pendingConnection;
+        PendingConnection pendingConnection = null;
         try {
             var recovery = reconnections.removeCompleted(connectionKey, origExchange, conn);
             if (recovery instanceof PendingConnection pending) {
                 pendingConnection = pending;
-            } else {
-                return;
             }
         } finally {
             lock.unlock();
+        }
+        if (pendingConnection == null) {
+            if (Log.http3()) {
+                Log.logHttp3("No waiters to complete for " + label(conn));
+            }
+            return;
         }
 
         int waitersCount = pendingConnection.waiters.size();
         if (waitersCount != 0 && Log.http3()) {
             Log.logHttp3("Completing " + waitersCount
-                    + " waiters on recreated connection " + conn);
+                    + " waiters on recreated connection " + label(conn)
+                    + describePendingExchange(" - originally created for", pendingConnection));
         }
 
         // now for each waiter we're going to try to complete it.
@@ -305,10 +354,10 @@ public final class Http3ClientImpl implements AutoCloseable {
                         if (pooled != null && !pooled.isFinalStream() && !waiter.cf.isDone()) {
                             if (Log.http3()) {
                                 Log.logHttp3("Completing pending waiter for: " + waiter.request + " #"
-                                        + waiter.exchange.multi.id + " with " + pooled.dbgTag());
+                                        + waiter.exchange.multi.id + " with " + label(pooled));
                             } else if (debug.on()) {
                                 debug.log("Completing waiter for: " + waiter.request
-                                        + " #" + waiter.exchange.multi.id + " with pooled conn " + conn);
+                                        + " #" + waiter.exchange.multi.id + " with pooled conn " + label(pooled));
                             }
                             completedWaiters++;
                             waiter.cf.complete(pooled);
@@ -316,14 +365,21 @@ public final class Http3ClientImpl implements AutoCloseable {
                             // we call getConnectionFor: it should put waiter in the
                             // new waiting list, or attempt to open a connection again
                             if (conn != null) {
-                                if (debug.on()) {
+                                if (Log.http3()) {
+                                    Log.logHttp3("Not enough streams on recreated connection for: " + waiter.request + " #"
+                                            + waiter.exchange.multi.id + " with " + label(conn));
+                                } else if (debug.on()) {
                                     debug.log("Not enough streams on recreated connection for: " + waiter.request
-                                            + " #" + waiter.exchange.multi.id + ": retrying on new connection");
+                                            + " #" + waiter.exchange.multi.id + " with " + label(conn)
+                                            + ": retrying on new connection");
                                 }
                                 retriedWaiters++;
                                 getConnectionFor(request, exchange, waiter);
                             } else {
-                                if (debug.on()) {
+                                if (Log.http3()) {
+                                    Log.logHttp3("No HTTP/3 connection for:: " + waiter.request + " #"
+                                            + waiter.exchange.multi.id + ": will downgrade or fail");
+                                } else if (debug.on()) {
                                     debug.log("No HTTP/3 connection for: " + waiter.request
                                             + " #" + waiter.exchange.multi.id + ": will downgrade or fail");
                                 }
@@ -351,17 +407,22 @@ public final class Http3ClientImpl implements AutoCloseable {
                 }
             }
         } finally {
-            if (conn != null) {
-                if (Log.http3()) {
+            if (Log.http3()) {
+                String pendingInfo;
+                if (pendingConnection != null) {
+                    pendingInfo = describePendingExchange(" - originally created for", pendingConnection);
+                } else pendingInfo = "";
+
+                if (conn != null) {
                     Log.logHttp3(("Connection creation completed for requests to %s: " +
-                            "waiters[%s](completed:%s, retried:%s, errors:%s)")
-                            .formatted(connectionKey, waitersCount, completedWaiters, retriedWaiters, errorWaiters));
-                }
-            } else {
-                if (Log.http3()) {
+                            "waiters[%s](completed:%s, retried:%s, errors:%s)%s")
+                            .formatted(connectionKey, waitersCount, completedWaiters,
+                                       retriedWaiters, errorWaiters, pendingInfo));
+                } else {
                     Log.logHttp3(("No HTTP/3 connection created for requests to %s, will fail or downgrade: " +
-                            "waiters[%s](completed:%s, retried:%s, errors:%s)")
-                            .formatted(connectionKey, waitersCount, completedWaiters, retriedWaiters, errorWaiters));
+                            "waiters[%s](completed:%s, retried:%s, errors:%s)%s")
+                            .formatted(connectionKey, waitersCount, completedWaiters,
+                                       retriedWaiters, errorWaiters, pendingInfo));
                 }
             }
         }
@@ -378,10 +439,10 @@ public final class Http3ClientImpl implements AutoCloseable {
         // and recovery was initiated on behalf of the next waiter.
         if (Log.http3()) {
             Log.logHttp3("Completing waiter for: " + pendingWaiter.request + " #"
-                    + pendingWaiter.exchange.multi.id + " with (conn: " + r + " error: " + t +")");
+                    + pendingWaiter.exchange.multi.id + " with (conn: " + label(r) + " error: " + t +")");
         } else if (debug.on()) {
             debug.log("Completing pending waiter for " + pendingWaiter.request + " #"
-                    + pendingWaiter.exchange.multi.id + " with (conn: " + r + " error: " + t +")");
+                    + pendingWaiter.exchange.multi.id + " with (conn: " + label(r) + " error: " + t +")");
         }
         pendingWaiter.complete(r, t);
     }
@@ -401,7 +462,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 if (Log.http3()) {
                     if (r != null && t == null) {
                         Log.logHttp3("Connection recreated for " + request + " #"
-                                + exchange.multi.id + " on " + r.quicConnectionTag());
+                                + exchange.multi.id + " on " + label(r));
                     } else if (t != null) {
                         Log.logHttp3("Connection creation failed for " + request + " #"
                                 + exchange.multi.id + ": " + t);
@@ -429,6 +490,15 @@ public final class Http3ClientImpl implements AutoCloseable {
                                                         Exchange<?> exchange,
                                                         Waiter pendingWaiter) {
         assert request != null;
+        if (Log.http3()) {
+            if (pendingWaiter != null) {
+                Log.logHttp3("getConnectionFor pendingWaiter {0}",
+                         describe(pendingWaiter.request, pendingWaiter.exchange.multi.id));
+            } else {
+                Log.logHttp3("getConnectionFor exchange {0}",
+                        describe(request, exchange.multi.id));
+            }
+        }
         try {
             Http3Connection pooled = findPooledConnectionFor(request, exchange);
             if (pooled != null) {
@@ -463,8 +533,14 @@ public final class Http3ClientImpl implements AutoCloseable {
                     key = connectionKey(request);
 
                     var recovery = reconnections.lookupFor(key, request);
+                    if (debug.on()) debug.log("lookup found %s for %s", recovery, request);
                     if (recovery instanceof PendingConnection pending) {
                         // Recovery already initiated. Add waiter to the list!
+                        if (debug.on()) {
+                            debug.log("PendingConnection (%s) found for %s",
+                                    describePendingExchange("originally created for", pending),
+                                    describe(request, exchange.multi.id));
+                        }
                         pendingConnection = pending;
                         waiter = pendingWaiter == null
                                 ? Waiter.of(request, exchange)
@@ -492,7 +568,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                             // initiate recovery
                             var altSvc = lookupAltSvc(request).orElse(null);
                             // maybe null if ALT_SVC && altSvc == null
-                            pendingConnection = reconnections.addPending(key, request, altSvc);
+                            pendingConnection = reconnections.addPending(key, request, altSvc, exchange);
                         } else if (pendingWaiter != null) {
                             if (Log.http3()) {
                                 Log.logHttp3("Completing pending waiter for: " + request + " #"
@@ -510,12 +586,27 @@ public final class Http3ClientImpl implements AutoCloseable {
                 } finally {
                     lock.unlock();
                     if (waiter != null && waiter != pendingWaiter && Log.http3()) {
-                        Log.logHttp3("Waiting for connection for: " + request + " #"
-                                + exchange.multi.id);
+                        var altSvc = describeAltSvc(pendingConnection);
+                        var orig = Optional.of(pendingConnection)
+                                        .map(PendingConnection::exchange)
+                                        .map(e -> " created for #" + e.multi.id)
+                                        .orElse("");
+                        Log.logHttp3("Waiting for connection for: " + describe(request, exchange.multi.id)
+                                + " " + altSvc + orig);
+                    } else if (pendingWaiter != null && Log.http3()) {
+                        var altSvc = describeAltSvc(pendingConnection);
+                        Log.logHttp3("Creating connection for: " + describe(request, exchange.multi.id)
+                                + " " + altSvc);
                     } else if (debug.on() && waiter != null) {
-                        debug.log("Waiting for connection for: " + request + " #"
-                                + exchange.multi.id + (waiter == pendingWaiter ? " (still pending)" : ""));
+                        debug.log("Waiting for connection for: " + describe(request, exchange.multi.id)
+                                + (waiter == pendingWaiter ? " (still pending)" : ""));
                     }
+                }
+
+                if (Log.http3()) {
+                    Log.logHttp3("Creating connection for Exchange {0}", describe(exchange));
+                } else if (debug.on()) {
+                    debug.log("Creating connection for Exchange %s", describe(exchange));
                 }
 
                 CompletableFuture<Http3Connection> h3Cf = Http3Connection
@@ -533,14 +624,28 @@ public final class Http3ClientImpl implements AutoCloseable {
                 }
                 h3Cf = h3Cf.thenApply(conn -> {
                         if (conn != null) {
-                            return offerConnection(conn);
+                            if (debug.on()) {
+                                debug.log("Offering connection %s created for %s",
+                                        label(conn), exchange.multi.id);
+                            }
+                            var offered = offerConnection(conn);
+                            if (debug.on()) {
+                                debug.log("Connection offered %s created for %s",
+                                        label(conn), exchange.multi.id);
+                            }
+                            // if we return null here, we will downgrade
+                            // but if we return `conn` we will open a new connection.
+                            return offered == null ? conn : offered;
                         } else {
+                            if (debug.on()) {
+                                debug.log("No connection for exchange #" + exchange.multi.id);
+                            }
                             return null;
                         }
                 });
                 if (pendingConnection != null) {
                     // need to wake up waiters after successful handshake and recovery
-                    h3Cf.whenComplete((r, t) -> connectionCompleted(key, exchange, r, t));
+                    h3Cf = h3Cf.whenComplete((r, t) -> connectionCompleted(key, exchange, r, t));
                 }
                 return h3Cf;
             } else {
@@ -553,6 +658,10 @@ public final class Http3ClientImpl implements AutoCloseable {
                 return MinimalFuture.completedFuture(null);
             }
         } catch (Throwable t) {
+            if (Log.http3() || Log.errors()) {
+                Log.logError("Failed to get connection for {0}: {1}",
+                        describe(exchange), t);
+            }
             return MinimalFuture.failedFuture(t);
         }
     }
@@ -583,12 +692,23 @@ public final class Http3ClientImpl implements AutoCloseable {
             }
             Http3Connection c1 = connections.putIfAbsent(key, c);
             if (c1 != null) {
+                // there was a connection in the pool
                 if (!c1.isFinalStream() || c.isFinalStream()) {
-                    c.setFinalStream();
+                    if (!c.isFinalStream()) {
+                        c.allowOnlyOneStream();
+                        return c;
+                    } else if (c1.isFinalStream()) {
+                        return c;
+                    }
                     if (debug.on())
                         debug.log("existing entry %s in connection pool for %s", c1, key);
-
-                    return c;
+                    // c1 will remain in the pool and we will use c for the given
+                    // request.
+                    if (Log.http3()) {
+                        Log.logHttp3("Existing connection {0} for {1} found in the pool", label(c1), c1.key());
+                        Log.logHttp3("New connection {0} marked final and not offered to the pool", label(c));
+                    }
+                    return c1;
                 }
                 connections.put(key, c);
             }

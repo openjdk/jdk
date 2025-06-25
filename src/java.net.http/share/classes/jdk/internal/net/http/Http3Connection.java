@@ -131,6 +131,7 @@ public final class Http3Connection implements AutoCloseable {
     // value of true implies no more streams will be initiated on this connection,
     // and the connection will be closed once the in-progress streams complete.
     private volatile boolean finalStream;
+    private volatile boolean allowOnlyOneStream;
     // set to true if we decide to open a new connection
     // due to stream limit reached
     private volatile boolean streamLimitReached;
@@ -280,6 +281,10 @@ public final class Http3Connection implements AutoCloseable {
         var debug = h3client.debug();
         var where = "Http3Connection.createAsync";
         if (!(connection instanceof HttpQuicConnection httpQuicConnection)) {
+            if (Log.http3()) {
+                Log.logHttp3("{0}: Connection for {1} #{2} is not an HttpQuicConnection: {3}",
+                        where, request, exchange.multi.id, connection);
+            }
             if (debug.on())
                 debug.log("%s: Connection is not an HttpQuicConnection: %s", where, connection);
             if (request.isHttp3Only(exchange.version())) {
@@ -292,6 +297,10 @@ public final class Http3Connection implements AutoCloseable {
         }
         if (debug.on()) {
             debug.log("%s: Got HttpQuicConnection: %s", where, connection);
+        }
+        if (Log.http3()) {
+            Log.logHttp3("{0}: Got HttpQuicConnection for {1} #{2} is: {3}",
+                    where, request, exchange.multi.id, connection.label());
         }
 
         // Expose the underlying connection to the exchange's aborter so it can
@@ -362,6 +371,29 @@ public final class Http3Connection implements AutoCloseable {
         this.finalStream = true;
     }
 
+    void setFinalStreamAndCloseIfIdle() {
+        boolean closeNow;
+        lock();
+        try {
+            setFinalStream();
+            closeNow = finalStreamClosed();
+        } finally {
+            unlock();
+        }
+        if (closeNow) close();
+    }
+
+    void allowOnlyOneStream() {
+        lock();
+        try {
+            if (isFinalStream()) return;
+            this.allowOnlyOneStream = true;
+            this.finalStream = true;
+        } finally {
+            unlock();
+        }
+    }
+
     boolean isOpen() {
         return closedState == 0 && quicConnection.isOpen();
     }
@@ -379,7 +411,9 @@ public final class Http3Connection implements AutoCloseable {
     private boolean reserveStream() {
         lock();
         try {
-            if (finalStream) {
+            boolean allowStream0 = this.allowOnlyOneStream;
+            this.allowOnlyOneStream = false;
+            if (finalStream && !allowStream0) {
                 return false;
             }
             reservedStreamCount.incrementAndGet();
@@ -1376,6 +1410,9 @@ public final class Http3Connection implements AutoCloseable {
                     " from peer");
         }
         handlePeerUnprocessedStreams(quicStreamId);
+        if (finalStreamClosed()) {
+            close(Http3Error.H3_NO_ERROR, "GOAWAY received");
+        }
     }
 
     private void handlePeerUnprocessedStreams(final long leastUnprocessedStreamId) {
