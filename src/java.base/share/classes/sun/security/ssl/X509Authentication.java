@@ -240,11 +240,6 @@ enum X509Authentication implements SSLAuthentication {
                                 : chc.peerSupportedAuthorities.clone(),
                         null);
             }
-        } else {
-            clientAlias = km.chooseClientAlias(keyTypes,
-                    chc.peerSupportedAuthorities == null ? null :
-                            chc.peerSupportedAuthorities.clone(),
-                    null);
         }
 
         if (clientAlias == null) {
@@ -339,11 +334,6 @@ enum X509Authentication implements SSLAuthentication {
                                     : shc.peerSupportedAuthorities.clone(),
                             null);
                 }
-            } else {
-                serverAlias = km.chooseServerAlias(keyType,
-                        shc.peerSupportedAuthorities == null ? null :
-                                shc.peerSupportedAuthorities.clone(),
-                        null);
             }
 
             if (serverAlias == null) {
