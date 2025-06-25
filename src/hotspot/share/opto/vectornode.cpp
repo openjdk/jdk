@@ -2197,6 +2197,10 @@ bool VectorMaskCmpNode::predicate_can_be_negated() {
 //    => (VectorMaskCmp src1 src2 ncond)
 // (XorVMask (VectorMaskCmp src1 src2 cond) (MaskAll m1))
 //    => (VectorMaskCmp src1 src2 ncond)
+// (XorV (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (Replicate -1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+// (XorVMask (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (MaskAll m1))
+//    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
 // cond can be eq, ne, le, ge, lt, gt, ule, uge, ult and ugt.
 // ncond is the negative comparison of cond.
 //
@@ -2217,35 +2221,34 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   }
 
   // XorV/XorVMask is commutative, swap VectorMaskCmp/VectorMaskCast to in1.
-  if (in2->Opcode() == Op_VectorMaskCmp ||
-      (in2->Opcode() == Op_VectorMaskCast && in2->in(1)->Opcode() == Op_VectorMaskCmp)) {
+  if (VectorNode::is_all_ones_vector(in1)) {
     swap(in1, in2);
   }
 
-  const TypeVect* vector_mask_cast_vt = nullptr;
-  // in1 should be single used, otherwise the optimization may be unprofitable.
-  if (in1->Opcode() == Op_VectorMaskCast && in1->outcnt() == 1 && in1->in(1)->Opcode() == Op_VectorMaskCmp) {
-    vector_mask_cast_vt = in1->as_Vector()->vect_type();
+  bool with_vector_mask_cast = false;
+  // VectorMaskCast and VectorMaskCmp should only have a single use,
+  // otherwise the optimization may be unprofitable.
+  if (in1->Opcode() == Op_VectorMaskCast) {
+    if (in1->outcnt() != 1) {
+      return nullptr;
+    }
+    with_vector_mask_cast = true;
     in1 = in1->in(1);
   }
-
   if (in1->Opcode() != Op_VectorMaskCmp ||
-      in1->outcnt() > 1 ||
-      !((VectorMaskCmpNode*) in1)->predicate_can_be_negated() ||
+      in1->outcnt() != 1 ||
+      !(in1->as_VectorMaskCmp())->predicate_can_be_negated() ||
       !VectorNode::is_all_ones_vector(in2)) {
     return nullptr;
   }
 
-  BoolTest::mask neg_cond = BoolTest::negate_mask(((VectorMaskCmpNode*) in1)->get_predicate());
+  BoolTest::mask neg_cond = BoolTest::negate_mask((in1->as_VectorMaskCmp())->get_predicate());
   ConINode* predicate_node = phase->intcon(neg_cond);
   const TypeVect* vt = in1->as_Vector()->vect_type();
-  Node* res = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2),
-                                      predicate_node, vt);
-  if (vector_mask_cast_vt != nullptr) {
-    // We optimized out a VectorMaskCast, and in order to ensure type
-    // correctness, we need to regenerate one. VectorMaskCast will be encoded as
-    // a no-op (identity function) for types with the same size.
-    res = new VectorMaskCastNode(phase->transform(res), vector_mask_cast_vt);
+  Node* res = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2), predicate_node, vt);
+  if (with_vector_mask_cast) {
+    // We optimized out a VectorMaskCast, regenerate one to ensure type correctness.
+    res = new VectorMaskCastNode(phase->transform(res), vect_type());
   }
   return res;
 }

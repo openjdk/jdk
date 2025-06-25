@@ -1217,11 +1217,7 @@ bool Node::has_special_unique_user() const {
     // See IfNode::fold_compares
     return true;
   } else if (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) {
-    // Condition for removing an unnecessary not() following a compare(...)
-    // operation. The predecessor of n (this XorV or XorVMask) may also be used
-    // by a useless VectorBox node which will later be eliminated by
-    // RemoveUseless. Return true to ensure that subgraph transformations are
-    // performed on n.
+    // Condition for XorVMask(VectorMaskCmp(x,y,cond), MaskAll(true)) ==> VectorMaskCmp(x,y,ncond)
     return true;
   } else {
     return false;
