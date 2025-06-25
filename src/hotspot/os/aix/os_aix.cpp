@@ -291,8 +291,10 @@ bool os::free_swap_space(size_t& value) {
   return true;
 }
 
-julong os::physical_memory() {
-  return Aix::physical_memory();
+bool os::physical_memory(size_t& value) {
+  julong phys_mem = Aix::physical_memory();
+  value = static_cast<size_t>(phys_mem);
+  return true;
 }
 
 size_t os::rss() { return (size_t)0; }

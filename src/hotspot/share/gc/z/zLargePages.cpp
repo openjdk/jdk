@@ -30,8 +30,9 @@ bool ZLargePages::_os_enforced_transparent_mode;
 
 void ZLargePages::initialize() {
   pd_initialize();
-
-  log_info_p(gc, init)("Memory: " JULONG_FORMAT "M", os::physical_memory() / M);
+  size_t phys_mem = 0;
+  os::physical_memory(phys_mem);
+  log_info_p(gc, init)("Memory: %zuM", phys_mem / M);
   log_info_p(gc, init)("Large Page Support: %s", to_string());
 }
 

@@ -975,7 +975,12 @@ static jlong get_long_attribute(jmmLongAttribute att) {
     return ClassLoadingService::class_method_data_size();
 
   case JMM_OS_MEM_TOTAL_PHYSICAL_BYTES:
-    return os::physical_memory();
+    {
+      size_t phys_mem = 0;
+      os::physical_memory(phys_mem);
+      return phys_mem;
+    }
+    
 
   default:
     return -1;

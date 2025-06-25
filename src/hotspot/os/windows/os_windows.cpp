@@ -894,8 +894,10 @@ bool os::free_swap_space(size_t& value) {
   }
 }
 
-julong os::physical_memory() {
-  return win32::physical_memory();
+bool os::physical_memory(size_t& value) {
+  julong phys_mem = win32::physical_memory();
+  value = static_cast<size_t>(phys_mem);
+  return true;
 }
 
 size_t os::rss() {

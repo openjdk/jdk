@@ -208,8 +208,10 @@ bool os::free_swap_space(size_t& value) {
 #endif
 }
 
-julong os::physical_memory() {
-  return Bsd::physical_memory();
+bool os::physical_memory(size_t& value) {
+  julong phys_mem = Bsd::physical_memory();
+  value = static_cast<size_t>(phys_mem);
+  return true;
 }
 
 size_t os::rss() {
@@ -1470,9 +1472,10 @@ void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
   st->print(" %zuk page", os::vm_page_size()>>10);
-
-  st->print(", physical " UINT64_FORMAT "k",
-            os::physical_memory() >> 10);
+  size_t phys_mem = 0;
+  os::physical_memory(phys_mem);
+  st->print(", physical %zuk",
+            phys_mem >> 10);
   size_t avail_mem = 0;
   os::available_memory(avail_mem);
   st->print("(%zuk free)",
