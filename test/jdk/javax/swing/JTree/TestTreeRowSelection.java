@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @requires (os.family == "mac")
- * @bug 8008222
+ * @bug 8360462
  * @summary Verifies ctrl+shift+down slects next row in AquaL&F
  * @run main TestTreeRowSelection
  */
