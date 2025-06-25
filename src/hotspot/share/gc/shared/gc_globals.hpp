@@ -203,7 +203,7 @@
           "whenever possible")                                              \
                                                                             \
   product(bool, ParallelRefProcBalancingEnabled, true,                      \
-          "Enable balancing of reference processing queues")                \
+          "(Deprecated) Enable balancing of reference processing queues")   \
                                                                             \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
                "Ergonomically start one thread for this amount of "         \
