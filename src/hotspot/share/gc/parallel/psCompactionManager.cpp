@@ -58,7 +58,7 @@ PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
                                            ReferenceProcessor* ref_processor,
                                            uint parallel_gc_threads)
-  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads),
+  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads, ObjArrayMarkingStride),
    _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();

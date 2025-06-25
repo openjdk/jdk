@@ -53,6 +53,7 @@ import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -71,7 +72,7 @@ import org.w3c.dom.ls.LSResourceResolver;
  *
  * @author Elena Litani, IBM
  * @author Neeraj Bajaj, Sun Microsystems.
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public class DOMConfigurationImpl extends ParserConfigurationSettings
     implements XMLParserConfiguration, DOMConfiguration {
@@ -414,10 +415,10 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         fValidationManager = createValidationManager();
         setProperty(VALIDATION_MANAGER, fValidationManager);
 
-        setProperty(SECURITY_MANAGER, new XMLSecurityManager(true));
+        setProperty(SECURITY_MANAGER, JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
 
         setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER,
-                new XMLSecurityPropertyManager());
+                JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false));
 
         // add message formatters
         if (fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN) == null) {

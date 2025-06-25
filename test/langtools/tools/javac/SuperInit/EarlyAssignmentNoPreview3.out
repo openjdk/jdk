@@ -1,2 +1,2 @@
-EarlyAssignmentNoPreview3.java:12:39: compiler.err.preview.feature.disabled: (compiler.misc.feature.flexible.constructors)
+EarlyAssignmentNoPreview3.java:12:39: compiler.err.feature.not.supported.in.source: (compiler.misc.feature.flexible.constructors), 24, 25
 1 error

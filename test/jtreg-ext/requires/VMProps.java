@@ -124,6 +124,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
+        map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
@@ -137,6 +138,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("container.support", this::containerSupport);
         map.put("systemd.support", this::systemdSupport);
         map.put("vm.musl", this::isMusl);
+        map.put("vm.asan", this::isAsanEnabled);
+        map.put("vm.ubsan", this::isUbsanEnabled);
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
@@ -473,6 +476,20 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * @return true if this VM can support the AOT Code Caching
+     */
+    protected String vmCDSSupportsAOTCodeCaching() {
+      if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
+          !"zero".equals(vmFlavor()) &&
+          "false".equals(vmJvmciEnabled()) &&
+          (Platform.isX64() || Platform.isAArch64())) {
+        return "true";
+      } else {
+        return "false";
+      }
+    }
+
+    /**
      * @return true if the VM options specified via the "test.cds.runtime.options"
      * property is compatible with writing Java heap objects into the CDS archive
      */
@@ -711,6 +728,15 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String isMusl() {
         return Boolean.toString(WB.getLibcName().contains("musl"));
+    }
+
+    // Sanitizer support
+    protected String isAsanEnabled() {
+        return "" + WB.isAsanEnabled();
+    }
+
+    protected String isUbsanEnabled() {
+        return "" + WB.isUbsanEnabled();
     }
 
     private String implementor() {
