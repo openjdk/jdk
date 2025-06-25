@@ -2817,6 +2817,17 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         packetType, packetNumber, datagram.remaining());
             }
         }
+
+        // upon successful sending of the datagram, notify that the packet was sent
+        // we call packetSent just before sending the packet here, to make sure
+        // that the PendingAcknowledgement will be present in the queue before
+        // we receive the ACK frame from the server. Not doing this would create
+        // a race where the peer might be able to send the ack, and we might process
+        // it, before the PendingAcknowledgement is added.
+        final QuicPacket packet = protectionRecord.packet();
+        final PacketSpace packetSpace = packetSpace(packet.numberSpace());
+        packetSpace.packetSent(packet, retransmittedPacketNumber, packetNumber);
+
         // if we are sending a packet containing a CONNECTION_CLOSE frame, then we
         // also switch/remove the current connection instance in the endpoint.
         if (pktContainsConnClose) {
@@ -2841,10 +2852,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         } else {
             pushDatagram(peerAddress(), datagram);
         }
-        // upon successful sending of the datagram, notify that the packet was sent
-        final QuicPacket packet = protectionRecord.packet();
-        final PacketSpace packetSpace = packetSpace(packet.numberSpace());
-        packetSpace.packetSent(packet, retransmittedPacketNumber, packetNumber);
         // RFC-9000, section 10.1: An endpoint also restarts its idle timer when sending
         // an ack-eliciting packet ...
         if (packet.isAckEliciting()) {
