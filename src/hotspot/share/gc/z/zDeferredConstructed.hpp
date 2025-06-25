@@ -27,63 +27,31 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-#include <type_traits>
-
 template<typename T>
 class ZDeferredConstructed {
   union {
     T _t;
   };
 
-  DEBUG_ONLY(bool _initialized);
+  DEBUG_ONLY(bool _initialized;)
 
 public:
   NONCOPYABLE(ZDeferredConstructed);
 
-  ZDeferredConstructed()
-    DEBUG_ONLY(: _initialized(false)) {
-    // Do not construct value immediately. Value is constructed at a later point
-    // in time using initialize().
-  }
+  ZDeferredConstructed();
+  ~ZDeferredConstructed();
 
-  ~ZDeferredConstructed() {
-    assert(_initialized, "must be initialized before being destructed");
-    _t.~T();
-  }
+  T* get();
+  const T* get() const;
 
-  T* get() {
-    assert(_initialized, "must be initialized before access");
-    return &_t;
-  }
+  T& operator*();
+  const T& operator*() const;
 
-  const T* get() const {
-    assert(_initialized, "must be initialized before access");
-    return &_t;
-  }
-
-  T& operator*() {
-    return *get();
-  }
-
-  const T& operator*() const {
-    return *get();
-  }
-
-  T* operator->() {
-    return get();
-  }
-
-  const T* operator->() const {
-    return get();
-  }
+  T* operator->();
+  const T* operator->() const;
 
   template<typename... Ts>
-  void initialize(Ts&&... args) {
-    assert(!_initialized, "Double initialization forbidden");
-    DEBUG_ONLY(_initialized = true);
-    using NCVP = std::add_pointer_t<std::remove_cv_t<T>>;
-    ::new (const_cast<NCVP>(get())) T(args...);
-  }
+  void initialize(Ts&&... args);
 };
 
 #endif // SHARE_GC_Z_ZDEFERREDCONSTRUCTED_HPP
