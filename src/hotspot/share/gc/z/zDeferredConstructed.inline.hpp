@@ -76,10 +76,10 @@ inline const T* ZDeferredConstructed<T>::operator->() const {
 }
 
 template <typename T>
-template<typename... Ts>
+template <typename... Ts>
 inline void ZDeferredConstructed<T>::initialize(Ts&&... args) {
   assert(!_initialized, "Double initialization forbidden");
-  DEBUG_ONLY(_initialized = true;);
+  DEBUG_ONLY(_initialized = true;)
   using NCVP = std::add_pointer_t<std::remove_cv_t<T>>;
   ::new (const_cast<NCVP>(get())) T(args...);
 }

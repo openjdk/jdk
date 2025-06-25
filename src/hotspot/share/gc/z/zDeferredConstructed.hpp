@@ -27,7 +27,7 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-template<typename T>
+template <typename T>
 class ZDeferredConstructed {
   union {
     T _t;
@@ -50,7 +50,7 @@ public:
   T* operator->();
   const T* operator->() const;
 
-  template<typename... Ts>
+  template <typename... Ts>
   void initialize(Ts&&... args);
 };
 
