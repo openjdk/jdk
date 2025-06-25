@@ -2548,6 +2548,8 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   // For shorts and chars, check an additional set of nodes.
   if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
     switch (opc) {
+    case Op_ExtractS:
+    case Op_ExtractC:
     case Op_ReverseBytesS:
     case Op_ReverseBytesUS:
       return true;
@@ -2579,6 +2581,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_MinI:
   case Op_MaxI:
   case Op_CMoveI:
+  case Op_Conv2B:
   case Op_RotateRight:
   case Op_RotateLeft:
   case Op_PopCountI:
@@ -2586,6 +2589,15 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
   case Op_CountTrailingZerosI:
+  case Op_IsInfiniteF:
+  case Op_IsInfiniteD:
+  case Op_AddReductionVI:
+  case Op_MulReductionVI:
+  case Op_AndReductionV:
+  case Op_OrReductionV:
+  case Op_XorReductionV:
+  case Op_MaxReductionV:
+  case Op_MinReductionV:
     return false;
   default:
     // If this assert is hit, that means that we need to determine if the node can be safely truncated,
