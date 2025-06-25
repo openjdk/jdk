@@ -541,7 +541,9 @@ TRACE_REQUEST_FUNC(SwapSpace) {
   size_t total_swap_space = 0;
   os::total_swap_space(total_swap_space);
   event.set_totalSize(static_cast<s8>(total_swap_space));
-  event.set_freeSize(os::free_swap_space());
+  size_t free_swap_space = 0;
+  os::free_swap_space(free_swap_space);
+  event.set_freeSize(static_cast<s8>(free_swap_space));
   event.commit();
 }
 

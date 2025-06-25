@@ -882,11 +882,16 @@ bool os::total_swap_space(size_t& value) {
   }
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(size_t& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullAvailPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res) {
+    value = static_cast<size_t>(ms.ullAvailPageFile);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 julong os::physical_memory() {

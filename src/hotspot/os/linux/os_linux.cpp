@@ -314,7 +314,7 @@ static jlong host_free_swap() {
   return (jlong)(si.freeswap * si.mem_unit);
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(size_t& value) {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
   size_t total_swap_space = 0;
@@ -327,7 +327,8 @@ jlong os::free_swap_space() {
     if (mem_swap_limit >= 0 && mem_limit >= 0) {
       jlong delta_limit = mem_swap_limit - mem_limit;
       if (delta_limit <= 0) {
-        return 0;
+        value = 0;
+        return true;
       }
       jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
       jlong mem_usage = OSContainer::memory_usage_in_bytes();
@@ -335,7 +336,8 @@ jlong os::free_swap_space() {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          return free_swap >= 0 ? free_swap : 0;
+          value = free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
+          return true;
         }
       }
     }
@@ -344,7 +346,8 @@ jlong os::free_swap_space() {
                             " container_mem_limit=" JLONG_FORMAT " returning host value: " JLONG_FORMAT,
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
-  return host_free_swap_val;
+  value = static_cast<size_t>(host_free_swap_val);
+  return true;
 }
 
 julong os::physical_memory() {
