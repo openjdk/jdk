@@ -1544,7 +1544,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   CodeBuffer src(this);
   CodeBuffer dst(nm_copy);
   while (iter.next()) {
-    iter.reloc()->fix_relocation_after_move(&src, &dst);
+    iter.reloc()->fix_relocation_after_move(&src, &dst, true);
   }
 
   nm_copy->clear_inline_caches();
@@ -1603,7 +1603,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 bool nmethod::is_relocatable() {
 #if INCLUDE_JVMCI
   if (jvmci_nmethod_data() != nullptr && jvmci_nmethod_data()->has_mirror()) {
-      return false;
+    return false;
   }
 #endif
 
@@ -1633,6 +1633,25 @@ bool nmethod::is_relocatable() {
       return false;
     }
   }
+
+#ifdef AARCH64
+  // Ensure all call instructions that might require trampolines include them.
+  // In debug builds, HotSpot intentionally reduces the maximum branch range
+  // to stress-test trampoline generation. This constraint may not be honored
+  // by JVMCI, so we explicitly verify compliance here before relocation.
+  RelocIterator iter(this);
+  while (iter.next()) {
+    if (iter.reloc()->is_call()) {
+      CallRelocation* call_reloc = (CallRelocation*) iter.reloc();
+      if (NativeCall::is_call_at(call_reloc->addr())) {
+        NativeCall* call = nativeCall_at(call_reloc->addr());
+        if (!MacroAssembler::is_always_within_branch_range(Address(call->destination())) && call->get_trampoline() == nullptr) {
+          return false;
+        }
+      }
+    }
+  }
+#endif
 
   return true;
 }

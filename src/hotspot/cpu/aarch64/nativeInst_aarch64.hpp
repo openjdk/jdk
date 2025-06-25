@@ -214,7 +214,7 @@ public:
   //
   // Used in the runtime linkage of calls; see class CompiledIC.
   // (Cf. 4506997 and 4479829, where threads witnessed garbage displacements.)
-  void set_destination_mt_safe(address dest, bool update_trampoline=true);
+  void set_destination_mt_safe(address dest);
 
   address get_trampoline();
 #if INCLUDE_JVMCI

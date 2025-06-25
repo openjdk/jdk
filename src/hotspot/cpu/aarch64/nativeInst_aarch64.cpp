@@ -76,7 +76,7 @@ address NativeCall::destination() const {
 // call instruction at all times.
 //
 // Used in the runtime linkage of calls; see class CompiledIC.
-void NativeCall::set_destination_mt_safe(address dest, bool update_trampoline) {
+void NativeCall::set_destination_mt_safe(address dest) {
   assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
@@ -87,7 +87,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool update_trampoline) {
 
   // Patch the constant in the call's trampoline stub.
   address trampoline_stub_addr = get_trampoline();
-  if (trampoline_stub_addr != nullptr && update_trampoline) {
+  if (trampoline_stub_addr != nullptr && dest != trampoline_stub_addr) {
     assert (! is_NativeCallTrampolineStub_at(dest), "chained trampolines");
     nativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(dest);
   }
