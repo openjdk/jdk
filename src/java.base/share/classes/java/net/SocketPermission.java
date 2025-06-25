@@ -794,7 +794,7 @@ public final class SocketPermission extends Permission
      * Checks if this socket permission object "implies" the
      * specified permission.
      * <P>
-     * More specifically, this method first ensures that all of the following
+     * More specifically, this method first ensures that all the following
      * are true (and returns false if any of them are not):
      * <ul>
      * <li> <i>p</i> is an instanceof SocketPermission,
@@ -842,13 +842,13 @@ public final class SocketPermission extends Permission
      * <P>
      * Check, in the following order:
      * <ul>
-     * <li> Checks that "p" is an instanceof a SocketPermission
-     * <li> Checks that "p"'s actions are a proper subset of the
+     * <li> Checks that <i>p</i> is an instanceof a SocketPermission
+     * <li> Checks that <i>p</i>'s actions are a proper subset of the
      * current object's actions.
-     * <li> Checks that "p"'s port range is included in this port range
+     * <li> Checks that <i>p</i>'s port range is included in this port range
      * <li> If this object was initialized with an IP address, checks that
-     *      one of "p"'s IP addresses is equal to this object's IP address.
-     * <li> If either object is a wildcard domain (i.e., "*.example.com"),
+     *      one of <i>p</i>'s IP addresses is equal to this object's IP address.
+     * <li> If either object is a wildcard domain (such as *.example.com),
      *      attempt to match based on the wildcard.
      * <li> If this object was not initialized with an IP address, attempt
      *      to find a match based on the IP addresses in both objects.
@@ -913,7 +913,7 @@ public final class SocketPermission extends Permission
 
             // check and see if we have any wildcards...
             if (this.wildcard || that.wildcard) {
-                // if they are both wildcards, return true iff
+                // if they are both wildcards, return true if
                 // that's cname ends with this cname (i.e., *.example.com
                 // implies *.foo.example.com)
                 if (this.wildcard && that.wildcard)
@@ -923,12 +923,12 @@ public final class SocketPermission extends Permission
                 if (that.wildcard)
                     return false;
 
-                // this is a wildcard, lets see if that's cname ends with
-                // it...
-                if (that.cname == null) {
-                    that.getCanonName();
+                // if "that" was initialized with an IP address
+                // return false
+                if (that.init_with_ip) {
+                    return false;
                 }
-                return (that.cname.endsWith(this.cname));
+                return (that.hostname.endsWith(this.cname));
             }
 
             // compare IP addresses
