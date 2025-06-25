@@ -531,7 +531,8 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
   u8 totalPhysicalMemory = os::physical_memory();
   EventPhysicalMemory event;
   event.set_totalSize(totalPhysicalMemory);
-  event.set_usedSize(totalPhysicalMemory - os::available_memory());
+  size_t avail_mem = 0;
+  event.set_usedSize(totalPhysicalMemory - os::available_memory(avail_mem));
   event.commit();
 }
 

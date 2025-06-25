@@ -2515,7 +2515,8 @@ WB_END
 
 // Available memory of the host machine (container-aware)
 WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
-  return os::available_memory();
+  size_t avail_mem = 0;
+  return os::available_memory(avail_mem);
 WB_END
 
 // Physical swap of the host machine (including containers), Linux only.

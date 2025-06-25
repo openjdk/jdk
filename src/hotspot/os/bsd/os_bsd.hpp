@@ -45,8 +45,8 @@ class os::Bsd {
   static julong _physical_memory;
   static pthread_t _main_thread;
 
-  static julong available_memory();
-  static julong free_memory();
+  static bool available_memory(size_t& value);
+  static bool free_memory(size_t& value);
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 

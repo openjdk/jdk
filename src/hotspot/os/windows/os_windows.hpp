@@ -102,8 +102,8 @@ class os::win32 {
   static int processor_level() {
     return _processor_level;
   }
-  static julong available_memory();
-  static julong free_memory();
+  static bool available_memory(size_t& value);
+  static bool free_memory(size_t& value);
   static julong physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory

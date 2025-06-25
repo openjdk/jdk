@@ -133,18 +133,18 @@ static volatile int processor_id_next = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // utility functions
 
-julong os::available_memory() {
-  return Bsd::available_memory();
+bool os::available_memory(size_t& value) {
+  return Bsd::available_memory(value);
 }
 
-julong os::free_memory() {
-  return Bsd::available_memory();
+bool os::free_memory(size_t& value) {
+  return Bsd::available_memory(value);
 }
 
 // Available here means free. Note that this number is of no much use. As an estimate
 // for future memory pressure it is far too conservative, since MacOS will use a lot
 // of unused memory for caches, and return it willingly in case of needs.
-julong os::Bsd::available_memory() {
+bool os::Bsd::available_memory(size_t& value) {
   uint64_t available = physical_memory() >> 2;
 #ifdef __APPLE__
   mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
@@ -156,9 +156,12 @@ julong os::Bsd::available_memory() {
   if (kerr == KERN_SUCCESS) {
     // free_count is just a lowerbound, other page categories can be freed too and make memory available
     available = (vmstat.free_count + vmstat.inactive_count + vmstat.purgeable_count) * os::vm_page_size();
+  } else {
+    return false;
   }
 #endif
-  return available;
+  value = static_cast<size_t>(available);
+  return true;
 }
 
 // for more info see :
@@ -1468,8 +1471,10 @@ void os::print_memory_info(outputStream* st) {
 
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
-  st->print("(" UINT64_FORMAT "k free)",
-            os::available_memory() >> 10);
+  size_t avail_mem = 0;
+  os::available_memory(avail_mem);
+  st->print("(%zuk free)",
+            avail_mem >> 10);
 
   if((sysctlbyname("vm.swapusage", &swap_usage, &size, nullptr, 0) == 0) || (errno == ENOMEM)) {
     if (size >= offset_of(xsw_usage, xsu_used)) {

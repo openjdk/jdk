@@ -254,20 +254,22 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
-julong os::free_memory() {
-  return Aix::available_memory();
+bool os::free_memory(size_t& value) {
+  return Aix::available_memory(value);
 }
 
-julong os::available_memory() {
-  return Aix::available_memory();
+bool os::available_memory(size_t& value) {
+  return Aix::available_memory(value);
 }
 
-julong os::Aix::available_memory() {
+bool os::Aix::available_memory(size_t& value) {
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    return mi.real_free;
+    value = static_cast<size_t>(mi.real_free);
+    return true;
   } else {
-    return ULONG_MAX;
+    value = static_cast<size_t>(ULONG_MAX);
+    return false;
   }
 }
 

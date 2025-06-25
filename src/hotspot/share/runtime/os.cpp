@@ -2211,7 +2211,9 @@ julong os::used_memory() {
     }
   }
 #endif
-  return os::physical_memory() - os::available_memory();
+  size_t avail_mem = 0;
+  os::available_memory(avail_mem);
+  return os::physical_memory() - static_cast<julong>(avail_mem);
 }
 
 

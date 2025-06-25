@@ -337,9 +337,9 @@ class os: AllStatic {
   // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
-  static julong available_memory();
+  static bool available_memory(size_t& value);
   static julong used_memory();
-  static julong free_memory();
+  static bool free_memory(size_t& value);
 
   static jlong total_swap_space();
   static jlong free_swap_space();
