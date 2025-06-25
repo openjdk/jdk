@@ -1215,10 +1215,14 @@ final class CertificateMessage {
                             certs.clone(),
                             authType,
                             socket);
-                    } else {
-                        tm.checkClientTrusted(
-                                certs.clone(),
-                                authType);
+                    } else if (shc.conContext.transport
+                            instanceof QuicTLSEngineImpl qtlse) {
+                        if (tm instanceof X509TrustManagerImpl tmImpl) {
+                            tmImpl.checkClientTrusted(certs.clone(), authType, qtlse);
+                        } else {
+                            throw new CertificateException(
+                                    "QUIC only supports SunJSSE trust managers");
+                        }
                     }
                 } else {
                     // Unlikely to happen, because we have wrapped the old

@@ -146,6 +146,16 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         checkTrusted(chain, authType, engine, false);
     }
 
+    public void checkClientTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        checkTrusted(chain, authType, quicTLSEngine, true);
+    }
+
+    void checkServerTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        checkTrusted(chain, authType, quicTLSEngine, false);
+    }
+
     private Validator checkTrustedInit(X509Certificate[] chain,
             String authType, boolean checkClientTrusted) {
         if (chain == null || chain.length == 0) {
@@ -250,41 +260,53 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         }
     }
 
-    void checkServerTrusted(X509Certificate[] chain, String authType,
-            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
-        final SSLSession handshakeSession = quicTLSEngine.getHandshakeSession();
-        if (handshakeSession == null) {
-            throw new CertificateException("No handshake session");
-        }
-        final SSLParameters sslParameters = quicTLSEngine.getSSLParameters();
-        if (sslParameters == null) {
-            throw new CertificateException("No SSLParameters");
-        }
-        final List<byte[]> responseList;
-        final AlgorithmConstraints constraints;
-        // determine the AlgorithmConstraints and the OCSP responses
-        // to be applied when validating the certificate chain
-        if (handshakeSession instanceof ExtendedSSLSession extSession) {
-            final String[] localSupportedSignAlgs =
-                    extSession.getLocalSupportedSignatureAlgorithms();
-            constraints = SSLAlgorithmConstraints.forQUIC(
-                    quicTLSEngine, localSupportedSignAlgs, false);
+    private void checkTrusted(X509Certificate[] chain,
+            String authType, QuicTLSEngineImpl quicTLSEngine,
+            boolean checkClientTrusted) throws CertificateException {
+        Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
+
+        final X509Certificate[] trustedChain;
+        if (quicTLSEngine != null) {
+            final SSLSession session = quicTLSEngine.getHandshakeSession();
+            if (session == null) {
+                throw new CertificateException("No handshake session");
+            }
+
+            // create the algorithm constraints
+            final AlgorithmConstraints constraints;
+            if (session instanceof ExtendedSSLSession extSession) {
+                final String[] localSupportedSignAlgs =
+                        extSession.getLocalSupportedSignatureAlgorithms();
+                constraints = SSLAlgorithmConstraints.forQUIC(
+                        quicTLSEngine, localSupportedSignAlgs, false);
+            } else {
+                constraints = SSLAlgorithmConstraints.forQUIC(quicTLSEngine,
+                        false);
+            }
+            final List<byte[]> responseList;
             // grab any stapled OCSP responses for use in validation
-            responseList = extSession.getStatusResponses();
+            if (!checkClientTrusted &&
+                    session instanceof ExtendedSSLSession extSession) {
+                responseList = extSession.getStatusResponses();
+            } else {
+                responseList = Collections.emptyList();
+            }
+            // do the certificate chain validation
+            trustedChain = v.validate(chain, null, responseList,
+                    constraints, checkClientTrusted ? null : authType);
+
+            // check endpoint identity
+            String identityAlg = quicTLSEngine.getSSLParameters().
+                    getEndpointIdentificationAlgorithm();
+            if (identityAlg != null && !identityAlg.isEmpty()) {
+                checkIdentity(session, trustedChain,
+                        identityAlg, checkClientTrusted);
+            }
         } else {
-            constraints = SSLAlgorithmConstraints.forQUIC(quicTLSEngine, false);
-            responseList = Collections.emptyList();
+            trustedChain = v.validate(chain, null, Collections.emptyList(),
+                    null, checkClientTrusted ? null : authType);
         }
-        final Validator v = checkTrustedInit(chain, authType, false);
-        // do the certificate chain validation
-        final X509Certificate[] trustedChain = v.validate(chain, null,
-                responseList, constraints, authType);
-        // check endpoint identity
-        String identityAlg =
-                sslParameters.getEndpointIdentificationAlgorithm();
-        if (identityAlg != null && !identityAlg.isEmpty()) {
-            checkIdentity(handshakeSession, trustedChain, identityAlg, false);
-        }
+
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
             SSLLogger.fine("Found trusted certificate",
                     trustedChain[trustedChain.length - 1]);
