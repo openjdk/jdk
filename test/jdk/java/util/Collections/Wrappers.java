@@ -56,11 +56,10 @@ public class Wrappers {
     }
 
     static void addSequencedMapViews(List<Object[]> cases, SequencedMap<?, ?> seqMap) {
-        // TODO move into loop to include three views of reversed map
-        cases.add(new Object[] { seqMap.entrySet() });
-        cases.add(new Object[] { seqMap.keySet() });
-        cases.add(new Object[] { seqMap.values() });
         for (var map : List.of(seqMap, seqMap.reversed())) {
+            cases.add(new Object[] { map.entrySet() });
+            cases.add(new Object[] { map.keySet() });
+            cases.add(new Object[] { map.values() });
             cases.add(new Object[] { map.sequencedEntrySet() });
             cases.add(new Object[] { map.sequencedKeySet() });
             cases.add(new Object[] { map.sequencedValues() });
