@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class TestBufferStack extends NativeTestHelper {
 
     private static final long POOL_SIZE = 64;
-    private static final long SMALL_ALLOC_SIZE = 8;
+    private static final long SMALL_ALLOC_SIZE = JAVA_LONG.byteSize();
 
     @Test
     void invariants() {
@@ -264,6 +264,14 @@ final class TestBufferStack extends NativeTestHelper {
         try (var arena = stack.pushFrame(SMALL_ALLOC_SIZE, 1)) {
             var segment = arena.allocate(SMALL_ALLOC_SIZE);
             assertThrows(IndexOutOfBoundsException.class, () -> segment.get(JAVA_BYTE, SMALL_ALLOC_SIZE));
+        }
+    }
+
+    @Test
+    void noInit() {
+        BufferStack stack = newBufferStack();
+        try (var arena = stack.pushFrame(SMALL_ALLOC_SIZE, 1)) {
+            assertDoesNotThrow(() -> arena.allocateFrom(JAVA_INT, 1));
         }
     }
 

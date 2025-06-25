@@ -120,13 +120,13 @@ typedef ZValue<ZPerNUMAStorage, ZPartition> ZPerNUMAZPartition;
   declare_constant(ZPageType::small)                                                                 \
   declare_constant(ZPageType::medium)                                                                \
   declare_constant(ZPageType::large)                                                                 \
+  declare_constant(ZPageSizeSmallShift)                                                              \
+  declare_constant(ZPageSizeMediumMaxShift)                                                          \
   declare_constant(ZObjectAlignmentMediumShift)                                                      \
   declare_constant(ZObjectAlignmentLargeShift)
 
 #define VM_LONG_CONSTANTS_Z(declare_constant)                                                        \
   declare_constant(ZGranuleSizeShift)                                                                \
-  declare_constant(ZPageSizeSmallShift)                                                              \
-  declare_constant(ZPageSizeMediumShift)                                                             \
   declare_constant(ZAddressOffsetShift)                                                              \
   declare_constant(ZAddressOffsetBits)                                                               \
   declare_constant(ZAddressOffsetMask)                                                               \

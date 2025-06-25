@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
@@ -102,17 +103,17 @@ public class RichDiagnosticFormatter extends
     /* map for keeping track of a where clause associated to a given type */
     WhereClauses whereClauses;
 
-    private void enter() {
-        if (nameSimplifier != null || whereClauses != null) {
-            throw new IllegalStateException();
+    private String enter(Supplier<String> r) {
+        ClassNameSimplifier nameSimplifier = this.nameSimplifier;
+        WhereClauses whereClauses = this.whereClauses;
+        try {
+            this.nameSimplifier = new ClassNameSimplifier();
+            this.whereClauses = new WhereClauses();
+            return r.get();
+        } finally {
+            this.nameSimplifier = nameSimplifier;
+            this.whereClauses = whereClauses;
         }
-        nameSimplifier = new ClassNameSimplifier();
-        whereClauses = new WhereClauses();
-    }
-
-    private void exit() {
-        nameSimplifier = null;
-        whereClauses = null;
     }
 
     /** Get the DiagnosticFormatter instance for this context. */
@@ -136,8 +137,7 @@ public class RichDiagnosticFormatter extends
 
     @Override
     public String format(JCDiagnostic diag, Locale l) {
-        enter();
-        try {
+        return enter(() -> {
             StringBuilder sb = new StringBuilder();
             preprocessDiagnostic(diag);
             sb.append(formatter.format(diag, l));
@@ -153,20 +153,15 @@ public class RichDiagnosticFormatter extends
                 }
             }
             return sb.toString();
-        } finally {
-            exit();
-        }
+        });
     }
 
     @Override
     public String formatMessage(JCDiagnostic diag, Locale l) {
-        enter();
-        try {
+        return enter(() -> {
             preprocessDiagnostic(diag);
             return super.formatMessage(diag, l);
-        } finally {
-            exit();
-        }
+        });
     }
 
     /**

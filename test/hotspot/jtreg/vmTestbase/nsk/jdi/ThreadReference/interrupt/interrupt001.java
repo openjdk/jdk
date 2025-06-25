@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,9 @@ public class interrupt001 {
     }
 
     private void executeCase(int testCase, String threadName2) {
-        ThreadReference thread2 = debuggee.threadByName(threadName2);
+        ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
+        ThreadReference thread2 =
+            debuggee.threadByFieldName(debuggeeClass, "thread2", threadName2);
         if (thread2 == null) {
             debuggee.quit();
             throw new TestBug("ERROR: Not found ThreadReference for name :" + threadName2);

@@ -1626,6 +1626,8 @@ void ArchDesc::declareClasses(FILE *fp) {
     while (attr != nullptr) {
       if (strcmp (attr->_ident, "ins_is_TrapBasedCheckNode") == 0) {
         fprintf(fp, "  virtual bool           is_TrapBasedCheckNode() const { return %s; }\n", attr->_val);
+      } else if (strcmp (attr->_ident, "ins_is_late_expanded_null_check_candidate") == 0) {
+        fprintf(fp, "  virtual bool           is_late_expanded_null_check_candidate() const { return %s; }\n", attr->_val);
       } else if (strcmp (attr->_ident, "ins_cost") != 0 &&
           strncmp(attr->_ident, "ins_field_", 10) != 0 &&
           // Must match function in node.hpp: return type bool, no prefix "ins_".
@@ -1962,7 +1964,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     else if( instr->is_ideal_box() ) {
       // BoxNode provides the address of a stack slot.
       // Define its bottom type to be TypeRawPtr::BOTTOM instead of TypePtr::BOTTOM
-      // This prevent s insert_anti_dependencies from complaining. It will
+      // This prevents raise_above_anti_dependences from complaining. It will
       // complain if it sees that the pointer base is TypePtr::BOTTOM since
       // it doesn't understand what that might alias.
       fprintf(fp,"  const Type            *bottom_type() const { return TypeRawPtr::BOTTOM; } // Box?\n");

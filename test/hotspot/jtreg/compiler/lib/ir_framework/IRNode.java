@@ -649,6 +649,11 @@ public class IRNode {
         fromAfterCountedLoops(COUNTED_LOOP_MAIN, regex);
     }
 
+    public static final String DECODE_HEAP_OOP_NOT_NULL = PREFIX + "DECODE_HEAP_OOP_NOT_NULL" + POSTFIX;
+    static {
+        machOnly(DECODE_HEAP_OOP_NOT_NULL, "decodeHeapOop_not_null");
+    }
+
     public static final String DIV = PREFIX + "DIV" + POSTFIX;
     static {
         beforeMatchingNameRegex(DIV, "Div(I|L|F|D)");
@@ -868,6 +873,12 @@ public class IRNode {
     public static final String IS_INFINITE_F = PREFIX + "IS_INFINITE_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(IS_INFINITE_F, "IsInfiniteF");
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P = PREFIX + "LEA_P" + POSTFIX;
+    static {
+        machOnly(LEA_P, "leaP(CompressedOopOffset|(8|32)Narrow)");
     }
 
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
@@ -1208,6 +1219,11 @@ public class IRNode {
         beforeMatchingNameRegex(MEMBAR_VOLATILE, "MemBarVolatile");
     }
 
+    public static final String MEM_TO_REG_SPILL_COPY = PREFIX + "MEM_TO_REG_SPILL_COPY" + POSTFIX;
+    static {
+        machOnly(MEM_TO_REG_SPILL_COPY, "MemToRegSpillCopy");
+    }
+
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
     static {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
@@ -1497,6 +1513,11 @@ public class IRNode {
     public static final String NULL_ASSERT_TRAP = PREFIX + "NULL_ASSERT_TRAP" + POSTFIX;
     static {
         trapNodes(NULL_ASSERT_TRAP, "null_assert");
+    }
+
+    public static final String NULL_CHECK = PREFIX + "NULL_CHECK" + POSTFIX;
+    static {
+        machOnlyNameRegex(NULL_CHECK, "NullCheck");
     }
 
     public static final String NULL_CHECK_TRAP = PREFIX + "NULL_CHECK_TRAP" + POSTFIX;
@@ -2466,9 +2487,19 @@ public class IRNode {
         machOnlyNameRegex(VFMSB_MASKED, "vfmsb_masked");
     }
 
+    public static final String RISCV_VFNMSUB_MASKED = PREFIX + "RISCV_VFNMSUB_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFNMSUB_MASKED, "vfnmsub_masked");
+    }
+
     public static final String VFNMAD_MASKED = PREFIX + "VFNMAD_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VFNMAD_MASKED, "vfnmad_masked");
+    }
+
+    public static final String RISCV_VFNMADD_MASKED = PREFIX + "RISCV_VFNMADD_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFNMADD_MASKED, "vfnmadd_masked");
     }
 
     public static final String VFNMSB_MASKED = PREFIX + "VFNMSB_MASKED" + POSTFIX;
@@ -2476,9 +2507,19 @@ public class IRNode {
         machOnlyNameRegex(VFNMSB_MASKED, "vfnmsb_masked");
     }
 
+    public static final String RISCV_VFMSUB_MASKED = PREFIX + "RISCV_VFMSUB_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFMSUB_MASKED, "vfmsub_masked");
+    }
+
     public static final String VFMAD_MASKED = PREFIX + "VFMAD_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VFMAD_MASKED, "vfmad_masked");
+    }
+
+    public static final String RISCV_VFMADD_MASKED = PREFIX + "RISCV_VFMADD_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VFMADD_MASKED, "vfmadd_masked");
     }
 
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
@@ -2509,6 +2550,16 @@ public class IRNode {
     public static final String FNMSUB = PREFIX + "FNMSUB" + POSTFIX;
     static {
         machOnlyNameRegex(FNMSUB, "mnsub(F|D)_reg_reg");
+    }
+
+    public static final String FMA_F = PREFIX + "FMA_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_F, "FmaF");
+    }
+
+    public static final String FMA_D = PREFIX + "FMA_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_D, "FmaD");
     }
 
     public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;

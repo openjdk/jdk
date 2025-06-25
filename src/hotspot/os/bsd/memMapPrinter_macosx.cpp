@@ -29,6 +29,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #include <limits.h>
@@ -303,7 +304,7 @@ public:
     st->print_cr("vminfo:  VM information (requires NMT)");
     st->print_cr("file:    file mapped, if mapping is not anonymous");
     {
-      streamIndentor si(st, 16);
+      StreamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
     st->print_cr("file:            file mapped, if mapping is not anonymous");
