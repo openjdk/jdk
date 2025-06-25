@@ -1313,15 +1313,6 @@ final class StringUTF16 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    private static void putCharsUnchecked(byte[] val, int index, char[] str, int off, int end) {
-        Unsafe.getUnsafe().copyMemory(
-                str,
-                Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) off << 1),
-                val,
-                Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) index << 1),
-                ((long) (end - off)) << 1);
-    }
-
     public static String newString(byte[] val, int index, int len) {
         if (len == 0) {
             return "";
@@ -1491,7 +1482,12 @@ final class StringUTF16 {
     public static void putCharsSB(byte[] val, int index, char[] ca, int off, int end) {
         checkBoundsBeginEnd(index, index + end - off, val);
         checkBoundsBeginEnd(off, end, ca);
-        putCharsUnchecked(val, index, ca, off, end);
+        Unsafe.getUnsafe().copyMemory(
+                ca,
+                Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) off << 1),
+                val,
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) index << 1),
+                ((long) (end - off)) << 1);
     }
 
     public static void putCharsSB(byte[] val, int index, CharSequence s, int off, int end) {
