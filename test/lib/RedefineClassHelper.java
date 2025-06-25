@@ -91,12 +91,7 @@ public class RedefineClassHelper {
 
         ClassModel classModel = ClassFile.of().parse(buf);
         ClassDesc newClassDesc = ClassDesc.of(newClassName);
-        byte[] newBytes = ClassFile.of().build(newClassDesc,
-            classBuilder -> {
-                for (ClassElement ce : classModel) {
-                    classBuilder.with(ce);
-                }
-            });
+        byte[] newBytes = ClassFile.of().build(newClassDesc, classModel::forEach);
         return newBytes;
     }
 
