@@ -322,10 +322,13 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
             byte[] bytesToWrite = new byte[] { type };
             writer.scheduleForWriting(ByteBuffer.wrap(bytesToWrite), false);
             // wait for the stream data to be sent before resetting
+            System.out.println("Server: sending first ping");
             c.requestSendPing().join();
             // sometimes the first ping succeeds before the stream frame is delivered.
             // Send another one just in case.
+            System.out.println("Server: sending second ping");
             c.requestSendPing().join();
+            System.out.println("Server: resetting control stream " + writer.stream().streamId());
             writer.reset(0);
             // ignore the request stream; we're expecting the client to close the connection
             completeUponTermination(c, errorCF);

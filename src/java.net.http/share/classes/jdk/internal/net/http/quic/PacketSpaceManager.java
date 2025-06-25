@@ -486,6 +486,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 boolean stillPTO = isPTO(now);
                 // if the ack frame is not sent yet, send it now
                 var ackFrame = getNextAckFrame(!stillPTO);
+                var pingRequested = PacketSpaceManager.this.pingRequested;
                 boolean sendPing = pingRequested != null || stillPTO
                         || shouldSendPing(now, ackFrame);
                 if (sendPing || ackFrame != null) {
@@ -507,7 +508,9 @@ public sealed class PacketSpaceManager implements PacketSpace
                     if (sendPing && pingRequested != null) {
                         if (emitted < 0) pingRequested.complete(-1L);
                         else registerPingRequest(new PingRequest(now, emitted, pingRequested));
-                        pingRequested = null;
+                        synchronized (PacketSpaceManager.this) {
+                            PacketSpaceManager.this.pingRequested = null;
+                        }
                     }
                 }
                 if (needBackoff) {
