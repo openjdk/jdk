@@ -412,7 +412,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
     MutableSpace *s = ls->space();
     old_region = s->region();
 
-    size_t chunk_byte_size = 0, old_chunk_byte_size = 0;
+    size_t chunk_byte_size = 0;
     if (i < lgrp_spaces()->length() - 1) {
       if (!UseAdaptiveNUMAChunkSizing                                ||
           (UseAdaptiveNUMAChunkSizing && NUMAChunkResizeWeight == 0) ||
