@@ -25,6 +25,7 @@
 
 /*
  * @test
+ * @bug 8359436
  * @summary Sanity-check that eager compilation flags are accepted
  * @requires vm.cds
  * @requires vm.flagless
