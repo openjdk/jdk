@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SequencedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -54,6 +55,21 @@ public class Wrappers {
         System.out.println(">>>> Total inherited default methods = " + inheritedCount);
     }
 
+    static void addSequencedMapViews(List<Object[]> cases, SequencedMap<?, ?> seqMap) {
+        // TODO move into loop to include three views of reversed map
+        cases.add(new Object[] { seqMap.entrySet() });
+        cases.add(new Object[] { seqMap.keySet() });
+        cases.add(new Object[] { seqMap.values() });
+        for (var map : List.of(seqMap, seqMap.reversed())) {
+            cases.add(new Object[] { map.sequencedEntrySet() });
+            cases.add(new Object[] { map.sequencedKeySet() });
+            cases.add(new Object[] { map.sequencedValues() });
+            cases.add(new Object[] { map.sequencedEntrySet().reversed() });
+            cases.add(new Object[] { map.sequencedKeySet().reversed() });
+            cases.add(new Object[] { map.sequencedValues().reversed() });
+        }
+    }
+
     @DataProvider(name="collections")
     public static Object[][] collectionCases() {
         List<Object[]> cases = new ArrayList<>();
@@ -70,6 +86,7 @@ public class Wrappers {
         }
 
         // Unmodifiable collections
+
         cases.add(new Object[] { Collections.unmodifiableCollection(seedList) });
         cases.add(new Object[] { Collections.unmodifiableSequencedCollection(seedList) });
         cases.add(new Object[] { Collections.unmodifiableList(seedList) });
@@ -79,37 +96,18 @@ public class Wrappers {
         cases.add(new Object[] { Collections.unmodifiableSortedSet(seedSet) });
         cases.add(new Object[] { Collections.unmodifiableNavigableSet(seedSet) });
 
-        // Map views also need to be unmodifiable, thus a wrapping
-        // layer exists and should not inherit default methods
+        // Views of unmodifiable maps
+
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).entrySet() });
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.unmodifiableMap(seedMap).values() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).entrySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).keySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).values() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().entrySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().keySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().values() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedEntrySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedKeySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).sequencedValues().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedEntrySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedKeySet().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSequencedMap(seedMap).reversed().sequencedValues().reversed() });
-        cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).entrySet() });
-        cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).keySet() });
-        cases.add(new Object[] { Collections.unmodifiableSortedMap(seedMap).values() });
-        cases.add(new Object[] { Collections.unmodifiableNavigableMap(seedMap).entrySet() });
-        cases.add(new Object[] { Collections.unmodifiableNavigableMap(seedMap).keySet() });
-        cases.add(new Object[] { Collections.unmodifiableNavigableMap(seedMap).values() });
+
+        addSequencedMapViews(cases, Collections.unmodifiableSequencedMap(seedMap));
+        addSequencedMapViews(cases, Collections.unmodifiableSortedMap(seedMap));
+        addSequencedMapViews(cases, Collections.unmodifiableNavigableMap(seedMap));
 
         // Synchronized collections
+
         cases.add(new Object[] { Collections.synchronizedCollection(seedList) });
         cases.add(new Object[] { Collections.synchronizedList(seedList) });
         cases.add(new Object[] { Collections.synchronizedList(seedRandomAccess) });
@@ -117,19 +115,17 @@ public class Wrappers {
         cases.add(new Object[] { Collections.synchronizedSortedSet(seedSet) });
         cases.add(new Object[] { Collections.synchronizedNavigableSet(seedSet) });
 
-        // Map views also need to be synchronized on the map, thus a
-        // wrapping layer exists and should not inherit default methods
+        // Views of synchronized maps
+
         cases.add(new Object[] { Collections.synchronizedMap(seedMap).entrySet() });
         cases.add(new Object[] { Collections.synchronizedMap(seedMap).keySet() });
         cases.add(new Object[] { Collections.synchronizedMap(seedMap).values() });
-        cases.add(new Object[] { Collections.synchronizedSortedMap(seedMap).entrySet() });
-        cases.add(new Object[] { Collections.synchronizedSortedMap(seedMap).keySet() });
-        cases.add(new Object[] { Collections.synchronizedSortedMap(seedMap).values() });
-        cases.add(new Object[] { Collections.synchronizedNavigableMap(seedMap).entrySet() });
-        cases.add(new Object[] { Collections.synchronizedNavigableMap(seedMap).keySet() });
-        cases.add(new Object[] { Collections.synchronizedNavigableMap(seedMap).values() });
+
+        addSequencedMapViews(cases, Collections.synchronizedSortedMap(seedMap));
+        addSequencedMapViews(cases, Collections.synchronizedNavigableMap(seedMap));
 
         // Checked collections
+
         cases.add(new Object[] { Collections.checkedCollection(seedList, Integer.class) });
         cases.add(new Object[] { Collections.checkedList(seedList, Integer.class) });
         cases.add(new Object[] { Collections.checkedList(seedRandomAccess, Integer.class) });
@@ -137,6 +133,12 @@ public class Wrappers {
         cases.add(new Object[] { Collections.checkedSortedSet(seedSet, Integer.class) });
         cases.add(new Object[] { Collections.checkedNavigableSet(seedSet, Integer.class) });
         cases.add(new Object[] { Collections.checkedQueue(seedList, Integer.class) });
+
+        // Omit views of checked maps for now. In general, checked maps' keySet and values views
+        // don't have any operations that need checking and so they're simply the views from
+        // the underlying map. The checked maps' entrySet views' only responsibilities are to
+        // provide checked map entries. This is done by the iterator() and toArray() methods,
+        // and most other things are inherited, including default methods.
 
         // asLifoQueue is another wrapper
         cases.add(new Object[] { Collections.asLifoQueue(seedList) });
