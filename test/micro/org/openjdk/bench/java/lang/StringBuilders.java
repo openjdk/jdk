@@ -282,8 +282,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithCharArrayLatin1() {
-        StringBuilder buf = sbLatin1;
-        buf.delete(0, buf.length());
+        StringBuilder buf = new StringBuilder();
         for (char[] charArray : charArray22p40p31) {
             buf.append(charArray);
         }
@@ -292,8 +291,7 @@ public class StringBuilders {
 
     @Benchmark
     public int appendWithCharArrayUTF16() {
-        StringBuilder buf = sbUtf16;
-        buf.delete(0, buf.length());
+        StringBuilder buf = new StringBuilder("\uFF11");
         for (char[] charArray : charArray22p40p31) {
             buf.append(charArray);
         }
