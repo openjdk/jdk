@@ -173,7 +173,7 @@ public final class HPACK {
     // -- low-level utilities --
 
     @FunctionalInterface
-    public interface BufferUpdateConsumer {
+    interface BufferUpdateConsumer {
         void accept(long data, int len);
     }
 
