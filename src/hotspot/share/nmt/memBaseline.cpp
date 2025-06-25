@@ -160,7 +160,7 @@ bool MemBaseline::baseline_allocation_sites() {
 
   // Virtual memory allocation sites
   VirtualMemoryAllocationWalker virtual_memory_walker;
-  if (!VirtualMemoryTracker::walk_virtual_memory(&virtual_memory_walker)) {
+  if (!VirtualMemoryTracker::Instance::walk_virtual_memory(&virtual_memory_walker)) {
     return false;
   }
 
