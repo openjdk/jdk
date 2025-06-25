@@ -378,7 +378,7 @@ public class TestFloat16ScalarOperations {
     }
 
     @Check(test="testSNaNFP16ConstantPatterns")
-    public void checkSNaNFP16ConstantPatterns(short actual) throws Exception {
+    public void checkSNaNFP16ConstantPatterns(short actual) {
         Verify.checkEQ(GOLDEN_SNAN, actual);
     }
 
@@ -644,9 +644,8 @@ public class TestFloat16ScalarOperations {
 
         // Division of a nonzero finite value by a zero results in a signed infinity. The sign
         // is determined by the rule stated above
-        // FIXME : C2 compiler limitaition to identify sign of ZERO value.
-        // assertResult(divide(valueOf(2.0f), NEGATIVE_ZERO).floatValue(), Float.NEGATIVE_INFINITY, "testDivConstantFolding");
-        // assertResult(divide(valueOf(2.0f), POSITIVE_ZERO).floatValue(), Float.POSITIVE_INFINITY, "testDivConstantFolding");
+        assertResult(divide(valueOf(2.0f), NEGATIVE_ZERO).floatValue(), Float.NEGATIVE_INFINITY, "testDivConstantFolding");
+        assertResult(divide(valueOf(2.0f), POSITIVE_ZERO).floatValue(), Float.POSITIVE_INFINITY, "testDivConstantFolding");
 
         // If the magnitude of the quotient is too large to represent, we say the operation
         // overflows; the result is then an infinity of appropriate sign.
