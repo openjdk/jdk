@@ -151,7 +151,7 @@ class UnsafeMemoryAccessMark : public StackObj {
   ~UnsafeMemoryAccessMark();
 };
 
-// declare stubgen blob id enum
+// declare stubgen-specific blob id enum
 
 #define BLOB_ENUM_DECLARE(blob_name) \
   STUB_ID_NAME(blob_name),
@@ -164,29 +164,10 @@ enum StubGenBlobId : int {
 
 #undef BLOB_ENUM_DECLARE
 
-// declare blob local stub id enums
-
-#define BLOB_LOCAL_ENUM_START(blob_name)        \
-  enum StubGenStubId_ ## blob_name {            \
-    NO_STUBID_ ## blob_name = -1,
-
-#define BLOB_LOCAL_ENUM_END(blob_name)   \
-    NUM_STUBIDS_ ## blob_name            \
-  };
-
-#define BLOB_LOCAL_STUB_ENUM_DECLARE(blob_name, stub_name) \
-  blob_name ## _ ## stub_name ## _id,
-
-STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_STUB_ENUM_DECLARE)
-
-#undef BLOB_LOCAL_ENUM_START
-#undef BLOB_LOCAL_ENUM_END
-#undef BLOB_LOCAL_STUB_ENUM_DECLARE
-
-// declare global stub id enum
+// declare StubGen-specific stub id enum
 
 #define STUB_ENUM_DECLARE(blob_name, stub_name) \
-  STUB_ID_NAME(stub_name) ,
+  STUB_ID_NAME(stub_name),
 
 enum StubGenStubId : int {
   NO_STUBID = -1,

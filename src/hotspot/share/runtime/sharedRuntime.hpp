@@ -59,7 +59,7 @@ class SharedRuntime: AllStatic {
  private:
   // Declare shared stub fields
 #define SHARED_STUB_FIELD_DECLARE(name, type) \
-  static type        BLOB_FIELD_NAME(name);
+  static type*       BLOB_FIELD_NAME(name);
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DECLARE)
 #undef SHARED_STUB_FIELD_DECLARE
 

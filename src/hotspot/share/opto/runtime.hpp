@@ -118,7 +118,7 @@ class OptoRuntime : public AllStatic {
  private:
   // declare opto stub address/blob holder static fields
 #define C2_BLOB_FIELD_DECLARE(name, type) \
-  static type        BLOB_FIELD_NAME(name);
+  static type*       BLOB_FIELD_NAME(name);
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_FIELD_DECLARE(name, f, t, r) \
   static address     C2_STUB_FIELD_NAME(name) ;

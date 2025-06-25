@@ -52,50 +52,50 @@ address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 
 // use a template to generate the initializer for the blob names array
 
-#define DEFINE_BLOB_NAME(blob_name)             \
+#define DEFINE_STUBGEN_BLOB_NAME(blob_name)     \
   # blob_name,
 
 const char* StubRoutines::_blob_names[StubGenBlobId::NUM_BLOBIDS] = {
-  STUBGEN_BLOBS_DO(DEFINE_BLOB_NAME)
+  STUBGEN_BLOBS_DO(DEFINE_STUBGEN_BLOB_NAME)
 };
 
-#undef DEFINE_BLOB_NAME
+#undef DEFINE_STUBGEN_BLOB_NAME
 
-#define DEFINE_STUB_NAME(blob_name, stub_name)          \
+#define DEFINE_STUBGEN_STUB_NAME(blob_name, stub_name)  \
   # stub_name ,                                         \
 
 // use a template to generate the initializer for the stub names array
 const char* StubRoutines::_stub_names[StubGenStubId::NUM_STUBIDS] = {
-  STUBGEN_STUBS_DO(DEFINE_STUB_NAME)
+  STUBGEN_STUBS_DO(DEFINE_STUBGEN_STUB_NAME)
 };
 
-#undef DEFINE_STUB_NAME
+#undef DEFINE_STUBGEN_STUB_NAME
 
 // Define fields used to store blobs
 
-#define DEFINE_BLOB_FIELD(blob_name) \
+#define DEFINE_STUBGEN_BLOB_FIELD(blob_name)                            \
   BufferBlob* StubRoutines:: STUBGEN_BLOB_FIELD_NAME(blob_name) = nullptr;
 
-STUBGEN_BLOBS_DO(DEFINE_BLOB_FIELD)
+STUBGEN_BLOBS_DO(DEFINE_STUBGEN_BLOB_FIELD)
 
-#undef DEFINE_BLOB_FIELD
+#undef DEFINE_STUBGEN_BLOB_FIELD
 
-// Define fields used to store stub entries
+// Define fields used to store stubgen stub entries
 
-#define DEFINE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
+#define DEFINE_STUBGEN_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name) \
   address StubRoutines:: STUB_FIELD_NAME(field_name) = nullptr;
 
-#define DEFINE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
+#define DEFINE_STUBGEN_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: STUB_FIELD_NAME(field_name) = CAST_FROM_FN_PTR(address, init_function);
 
-#define DEFINE_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+#define DEFINE_STUBGEN_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
   address StubRoutines:: STUB_FIELD_NAME(field_name)[count] = { nullptr };
 
-STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT, DEFINE_ENTRY_FIELD_ARRAY)
+STUBGEN_ENTRIES_DO(DEFINE_STUBGEN_ENTRY_FIELD, DEFINE_STUBGEN_ENTRY_FIELD_INIT, DEFINE_STUBGEN_ENTRY_FIELD_ARRAY)
 
-#undef DEFINE_ENTRY_FIELD_ARRAY
-#undef DEFINE_ENTRY_FIELD_INIT
-#undef DEFINE_ENTRY_FIELD
+#undef DEFINE_STUBGEN_ENTRY_FIELD_ARRAY
+#undef DEFINE_STUBGEN_ENTRY_FIELD_INIT
+#undef DEFINE_STUBGEN_ENTRY_FIELD
 
 jint    StubRoutines::_verify_oop_count                         = 0;
 
@@ -119,64 +119,62 @@ const char* StubRoutines::get_stub_name(StubGenStubId id) {
 // stub with id (StubGenStubId) stub_id declared within the blob:
 // _blob_offsets[blob_id] <= stub_id < _blob_offsets[blob_id+1]
 
-static int _blob_limits[StubGenBlobId::NUM_BLOBIDS + 1];
+static enum StubGenStubId _blob_limits[StubGenBlobId::NUM_BLOBIDS + 1];
 
-// macro used to compute blob limits
-#define BLOB_COUNT(blob_name)                                           \
-  counter += StubGenStubId_ ## blob_name :: NUM_STUBIDS_ ## blob_name;  \
-  _blob_limits[++index] = counter;                                      \
+static void count_stubgen_blob(StubGenBlobId &current_blob,
+                               StubGenStubId &current_stub,
+                               StubGenBlobId next_blob) {
+  //  int blob_idx = static_cast<int>(current_blob);
+  //  _blob_limits[blob_idx] = current_stub;
+  _blob_limits[next_blob] = current_stub;
+  current_blob = next_blob;
+}
 
-// macro that checks stubs are associated with the correct blobs
-#define STUB_VERIFY(blob_name, stub_name)                               \
-  localStubId = (int) (StubGenStubId_ ## blob_name :: blob_name ## _ ## stub_name ## _id); \
-  globalStubId = (int) (StubGenStubId:: stub_name ## _id);              \
-  blobId = (int) (StubGenBlobId:: blob_name ## _id);                    \
-  assert((globalStubId >= _blob_limits[blobId] &&                       \
-          globalStubId < _blob_limits[blobId+1]),                       \
-         "stub " # stub_name " uses incorrect blob name " # blob_name); \
-  assert(globalStubId == _blob_limits[blobId] + localStubId,            \
-         "stub " # stub_name " id found at wrong offset!");             \
+static void count_stubgen_stub(StubGenBlobId &current_blob,
+                               StubGenStubId &current_stub,
+                               StubGenBlobId next_blob,
+                               StubGenStubId next_stub) {
+  current_stub = next_stub;
+}
 
-bool verifyStubIds() {
-  // first compute the blob limits
-  int counter = 0;
-  int index = 0;
-  // populate offsets table with cumulative total of local enum counts
-  STUBGEN_BLOBS_DO(BLOB_COUNT);
+#define COUNT_BLOB(blob)                                \
+  count_stubgen_blob(_blob_cursor, _stub_cursor,        \
+                     StubGenBlobId:: JOIN2(blob, id));
 
-  // ensure 1) global stub ids lie in the range of the associated blob
-  // and 2) each blob's base + local stub id == global stub id
-  int globalStubId, blobId, localStubId;
-  STUBGEN_STUBS_DO(STUB_VERIFY);
+#define COUNT_STUB(blob, stub)                          \
+  count_stubgen_stub(_blob_cursor, _stub_cursor,        \
+                     StubGenBlobId:: JOIN2(blob, id),   \
+                     StubGenStubId:: JOIN2(stub, id));
+
+static bool count_stubgen_blobs_stubs() {
+  for (int i = 0; i <= StubGenBlobId::NUM_BLOBIDS; i++) {
+    _blob_limits[i] = StubGenStubId::NO_STUBID;
+  }
+  StubGenBlobId _blob_cursor = StubGenBlobId::NO_BLOBID;
+  StubGenStubId _stub_cursor = StubGenStubId::NO_STUBID;
+  STUBGEN_BLOBS_STUBS_DO(COUNT_BLOB, DO_BLOB_EMPTY1, COUNT_STUB);
+  _blob_limits[StubGenBlobId::NUM_BLOBIDS] = _stub_cursor;
   return true;
 }
 
-#undef BLOB_COUNT
-#undef STUB_VERIFY
-
-// ensure we verify the blob ids when this compile unit is first entered
-bool _verified_stub_ids = verifyStubIds();
-
-
-// macro used by stub to blob translation
-
-#define BLOB_CHECK_OFFSET(blob_name)                                \
-  if (id < _blob_limits[((int)blobId) + 1]) { return blobId; }      \
-  blobId = StubGenBlobId:: blob_name ## _id;                        \
+static bool _counted_stubgen_blobs_stubs = count_stubgen_blobs_stubs();
 
 // translate a global stub id to an associated blob id based on the
 // computed blob limits
 
 StubGenBlobId StubRoutines::stub_to_blob(StubGenStubId stubId) {
-  int id = (int)stubId;
-  assert(id > ((int)StubGenStubId::NO_STUBID) && id < ((int)StubGenStubId::NUM_STUBIDS), "stub id out of range!");
-  // start with no blob to catch stub id == -1
-  StubGenBlobId blobId = StubGenBlobId::NO_BLOBID;
-  STUBGEN_BLOBS_DO(BLOB_CHECK_OFFSET);
-  // if we reach here we should have the last blob id
-  assert(blobId == StubGenBlobId::NUM_BLOBIDS - 1, "unexpected blob id");
-  return blobId;
+  assert(stubId > StubGenStubId::NO_STUBID && stubId < StubGenStubId::NUM_STUBIDS, "stub id out of range!");
+  for (int i = 0; i < StubGenBlobId::NUM_BLOBIDS; i++) {
+    if (stubId <= _blob_limits[i+1]) {
+      return static_cast<StubGenBlobId>(i);
+    }
+  }
+  assert(false, "should not reach here");
+  return StubGenBlobId::NO_BLOBID;
 }
+
+#undef COUNT_BLOB
+#undef COUNT_STUB
 
 #endif // ASSERT
 
@@ -273,9 +271,9 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_METHOD)
 
 
 #define DEFINE_BLOB_INIT_FUNCTION(blob_name)            \
-void blob_name ## _stubs_init()  {                      \
-  StubRoutines::initialize_ ## blob_name ## _stubs();   \
-}
+  void blob_name ## _stubs_init()  {                    \
+    StubRoutines::initialize_ ## blob_name ## _stubs(); \
+  }
 
 STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 
@@ -303,103 +301,102 @@ void compiler_stubs_init(bool in_compiler_thread) {
   }
 }
 
-
 //
 // Default versions of arraycopy functions
 //
 
 JRT_LEAF(void, StubRoutines::jbyte_copy(jbyte* src, jbyte* dest, size_t count))
 #ifndef PRODUCT
-  SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
+SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-  Copy::conjoint_jbytes_atomic(src, dest, count);
+Copy::conjoint_jbytes_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jshort_copy(jshort* src, jshort* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-  Copy::conjoint_jshorts_atomic(src, dest, count);
+Copy::conjoint_jshorts_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jint_copy(jint* src, jint* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  Copy::conjoint_jints_atomic(src, dest, count);
+Copy::conjoint_jints_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jlong_copy(jlong* src, jlong* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;      // Slow-path long/double array copy
 #endif // !PRODUCT
-  Copy::conjoint_jlongs_atomic(src, dest, count);
+Copy::conjoint_jlongs_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::oop_copy(oop* src, oop* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  ArrayAccess<>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
+assert(count != 0, "count should be non-zero");
+ArrayAccess<>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::oop_copy_uninit(oop* src, oop* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  ArrayAccess<IS_DEST_UNINITIALIZED>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
+assert(count != 0, "count should be non-zero");
+ArrayAccess<IS_DEST_UNINITIALIZED>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jbyte_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-  Copy::arrayof_conjoint_jbytes(src, dest, count);
+Copy::arrayof_conjoint_jbytes(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jshort_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-  Copy::arrayof_conjoint_jshorts(src, dest, count);
+Copy::arrayof_conjoint_jshorts(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jint_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  Copy::arrayof_conjoint_jints(src, dest, count);
+Copy::arrayof_conjoint_jints(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jlong_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  Copy::arrayof_conjoint_jlongs(src, dest, count);
+Copy::arrayof_conjoint_jlongs(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_oop_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  ArrayAccess<ARRAYCOPY_ARRAYOF>::oop_arraycopy_raw(src, dest, count);
+assert(count != 0, "count should be non-zero");
+ArrayAccess<ARRAYCOPY_ARRAYOF>::oop_arraycopy_raw(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  ArrayAccess<ARRAYCOPY_ARRAYOF | IS_DEST_UNINITIALIZED>::oop_arraycopy_raw(src, dest, count);
+assert(count != 0, "count should be non-zero");
+ArrayAccess<ARRAYCOPY_ARRAYOF | IS_DEST_UNINITIALIZED>::oop_arraycopy_raw(src, dest, count);
 JRT_END
 
 address StubRoutines::select_fill_function(BasicType t, bool aligned, const char* &name) {
-#define RETURN_STUB(xxx_fill) { \
-  name = #xxx_fill; \
-  return StubRoutines::xxx_fill(); }
+#define RETURN_STUB(xxx_fill) {                 \
+    name = #xxx_fill;                           \
+    return StubRoutines::xxx_fill(); }
 
   switch (t) {
   case T_BYTE:
@@ -449,13 +446,13 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
     (aligned  ? COPYFUNC_ALIGNED  : COPYFUNC_UNALIGNED) +
     (disjoint ? COPYFUNC_DISJOINT : COPYFUNC_CONJOINT);
 
-#define RETURN_STUB(xxx_arraycopy) { \
-  name = #xxx_arraycopy; \
-  return StubRoutines::xxx_arraycopy(); }
+#define RETURN_STUB(xxx_arraycopy) {            \
+    name = #xxx_arraycopy;                      \
+    return StubRoutines::xxx_arraycopy(); }
 
-#define RETURN_STUB_PARM(xxx_arraycopy, parm) { \
-  name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy; \
-  return StubRoutines::xxx_arraycopy(parm); }
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) {                 \
+    name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy;     \
+    return StubRoutines::xxx_arraycopy(parm); }
 
   switch (t) {
   case T_BYTE:

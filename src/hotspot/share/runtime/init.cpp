@@ -68,6 +68,7 @@ void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
 void icache_init2();
+void initialize_stub_info();    // must precede all blob/stub generation
 void preuniverse_stubs_init();
 void initial_stubs_init();
 
@@ -130,6 +131,8 @@ jint init_globals() {
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
   icache_init2();                 // depends on VM_Version for choosing the mechanism
+  // ensure we know about all blobs, stubs and entries
+  initialize_stub_info();
   // initialize stubs needed before we can init the universe
   preuniverse_stubs_init();
   // stub routines in initial blob are referenced by later generated code

@@ -88,7 +88,7 @@
 
 
 #define C2_BLOB_FIELD_DEFINE(name, type) \
-  type OptoRuntime:: BLOB_FIELD_NAME(name)  = nullptr;
+  type* OptoRuntime:: BLOB_FIELD_NAME(name)  = nullptr;
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_FIELD_DEFINE(name, f, t, r) \
   address OptoRuntime:: C2_STUB_FIELD_NAME(name) = nullptr;
