@@ -257,7 +257,9 @@ bool os::Linux::available_memory(size_t& value) {
   }
   if (avail_mem == static_cast<julong>(-1L)) {
     size_t free_mem = 0;
-    free_memory(free_mem);
+    if (!free_memory(free_mem)) {
+      return false;
+    }
     avail_mem = static_cast<julong>(free_mem);
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
@@ -305,22 +307,28 @@ bool os::total_swap_space(size_t& value) {
   return true;
 }
 
-static jlong host_free_swap() {
+static bool host_free_swap_f(size_t& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
-    return -1;
+    return false;
   }
-  return (jlong)(si.freeswap * si.mem_unit);
+  value = static_cast<size_t>(si.freeswap * si.mem_unit);
+  return true;
 }
 
 bool os::free_swap_space(size_t& value) {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
   size_t total_swap_space = 0;
-  os::total_swap_space(total_swap_space);
-  jlong host_free_swap_val = MIN2(static_cast<jlong>(total_swap_space), host_free_swap());
-  assert(host_free_swap_val >= 0, "sysinfo failed?");
+  bool total_swap_space_ok = os::total_swap_space(total_swap_space);
+  size_t host_free_swap = 0;
+  bool host_free_swap_ok = host_free_swap_f(host_free_swap);
+  if (!total_swap_space_ok || !host_free_swap_ok) {
+    assert(false, "sysinfo failed ? ");
+    return false;
+  }
+  size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -343,10 +351,10 @@ bool os::free_swap_space(size_t& value) {
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: " JLONG_FORMAT,
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
-  value = static_cast<size_t>(host_free_swap_val);
+  value = host_free_swap_val;
   return true;
 }
 
