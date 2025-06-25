@@ -118,7 +118,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.jvmti", this::vmHasJVMTI);
         map.put("vm.cpu.features", this::cpuFeatures);
         map.put("vm.pageSize", this::vmPageSize);
-        map.put("vm.rtm.cpu", this::vmRTMCPU);
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
@@ -414,13 +413,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmHasDTrace() {
         return "" + WB.isDTraceIncluded();
-    }
-
-    /**
-     * @return true if VM runs RTM supported CPU and false otherwise.
-     */
-    protected String vmRTMCPU() {
-        return "" + CPUInfo.hasFeature("rtm");
     }
 
     /**
