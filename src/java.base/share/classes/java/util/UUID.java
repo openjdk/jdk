@@ -232,7 +232,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @spec RFC 9562
      */
-<<<<<<< HEAD
     public static UUID unixEpochTimeMillis(long timestamp) {
         if ((timestamp >> 48) != 0) {
             throw new IllegalArgumentException("Timestamp must be an unsigned 48-bit Unix Epoch time in milliseconds.");
