@@ -183,6 +183,11 @@ int lookupCharacteristicsToAddressFamily(int characteristics);
 
 int addressesInSystemOrder(int characteristics);
 
+/* return codes */
+#define ENH_INIT_ERROR -1  /* initialization error: check exceptions */
+#define ENH_DISABLED    0  /* enhanced exceptions disabled */
+#define ENH_ENABLED     1  /* enhanced exceptions enabled */
+
 int getEnhancedExceptionsAllowed(JNIEnv *env);
 
 #endif /* NET_UTILS_H */
