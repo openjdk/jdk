@@ -24,7 +24,7 @@
 
 #ifndef SHARE_GC_G1_G1SHAREDCLOSURES_HPP
 #define SHARE_GC_G1_G1SHAREDCLOSURES_HPP
- 
+
 #include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "memory/iterator.hpp"
