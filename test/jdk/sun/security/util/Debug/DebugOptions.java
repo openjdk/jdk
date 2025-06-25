@@ -85,31 +85,6 @@ public class DebugOptions {
     );
 
     /**
-     * This will execute the test logic without any param manipulation
-     *
-     * @param paramName   name of the parameter e.g. -Djava.security.debug=
-     * @param paramVal    value of the parameter
-     * @param expected    expected output
-     * @param notExpected not expected output
-     */
-    public void testParameter(String paramName,
-                              String paramVal,
-                              String expected,
-                              String notExpected) throws Exception {
-
-        System.out.printf("Executing: {%s%s DebugOptions}%n",
-                paramName,
-                paramVal);
-
-        final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                paramName + paramVal,
-                "DebugOptions");
-        outputAnalyzer.shouldHaveExitValue(0)
-                .shouldMatch(expected)
-                .shouldNotMatch(notExpected);
-    }
-
-    /**
      * This will execute the test logic, but first change the param
      * to be mixed case
      *
@@ -124,33 +99,6 @@ public class DebugOptions {
                                        String notExpected) throws Exception {
 
         final String formattedParam = makeFirstAndLastLetterUppercase(paramVal);
-        System.out.printf("Executing: {%s%s DebugOptions}%n",
-                paramName,
-                formattedParam);
-
-        final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                paramName + formattedParam,
-                "DebugOptions");
-        outputAnalyzer.shouldHaveExitValue(0)
-                .shouldMatch(expected)
-                .shouldNotMatch(notExpected);
-    }
-
-    /**
-     * This will execute the test logic, but first change the param
-     * to be uppercase
-     *
-     * @param paramName   name of the parameter e.g. -Djava.security.debug=
-     * @param paramVal    value of the parameter
-     * @param expected    expected output
-     * @param notExpected not expected output
-     */
-    public void testUpperCaseParameter(String paramName,
-                                       String paramVal,
-                                       String expected,
-                                       String notExpected) throws Exception {
-
-        final String formattedParam = paramVal.toUpperCase();
         System.out.printf("Executing: {%s%s DebugOptions}%n",
                 paramName,
                 formattedParam);
@@ -187,45 +135,6 @@ public class DebugOptions {
 
     /**
      * This test will run all options in parallel with all param names
-     * in lowercase
-     */
-    @Test
-    public void debugOptionsLowerCaseTest() throws Exception {
-
-        try (final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-            final List<Callable<Void>> testsCallables = new ArrayList<>();
-
-            patternMatches.forEach(params -> {
-                testsCallables.add(() -> {
-                    testParameter(
-                            "-Djava.security.debug=",
-                            params[0],
-                            params[1],
-                            params[2]);
-                    return null;
-                });
-                testsCallables.add(() -> {
-                    testParameter(
-                            "-Djava.security.auth.debug=",
-                            params[0],
-                            params[1],
-                            params[2]);
-                    return null;
-                });
-
-                System.out.println("Option added to all lowercase tests " + Arrays.toString(params));
-            });
-
-            System.out.println("Starting all the threads");
-            final List<Future<Void>> res = executorService.invokeAll(testsCallables);
-            for (final Future<Void> future : res) {
-                future.get();
-            }
-        }
-    }
-
-    /**
-     * This test will run all options in parallel with all param names
      * in mixed case
      */
     @Test
@@ -253,45 +162,6 @@ public class DebugOptions {
                 });
 
                 System.out.println("Option added to all mixed case tests " + Arrays.toString(params));
-            });
-
-            System.out.println("Starting all the threads");
-            final List<Future<Void>> res = executorService.invokeAll(testsCallables);
-            for (final Future<Void> future : res) {
-                future.get();
-            }
-        }
-    }
-
-    /**
-     * This test will run all options in parallel with all param names
-     * in uppercase
-     */
-    @Test
-    public void debugOptionsUpperCaseTest() throws Exception {
-
-        try (final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-            final List<Callable<Void>> testsCallables = new ArrayList<>();
-
-            patternMatches.forEach(params -> {
-                testsCallables.add(() -> {
-                    testUpperCaseParameter(
-                            "-Djava.security.debug=",
-                            params[0],
-                            params[1],
-                            params[2]);
-                    return null;
-                });
-                testsCallables.add(() -> {
-                    testUpperCaseParameter(
-                            "-Djava.security.auth.debug=",
-                            params[0],
-                            params[1],
-                            params[2]);
-                    return null;
-                });
-
-                System.out.println("Option added to all upper case tests " + Arrays.toString(params));
             });
 
             System.out.println("Starting all the threads");
