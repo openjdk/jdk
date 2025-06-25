@@ -449,7 +449,7 @@ public class ImmutableDescriptor implements Descriptor {
             illegal("Different array sizes");
         for (int i = 0; i < fieldNames.length; i++)
             checkIllegalFieldName(fieldNames[i]);
-        hashCode = -1;
+        hashCode = -1; // Force recalculation
         for (int i = 0; i < fieldNames.length; i++)
             setField(fieldNames[i], fieldValues[i]);
     }
@@ -470,7 +470,7 @@ public class ImmutableDescriptor implements Descriptor {
         int i = fieldIndex(fieldName);
         if (i < 0)
             unsupported();
-        hashCode = -1;
+        hashCode = -1; // Force recalculation
         Object value = values[i];
         if ((value == null) ?
                 (fieldValue != null) :
@@ -490,7 +490,7 @@ public class ImmutableDescriptor implements Descriptor {
      * be an {@link UnsupportedOperationException}.
      */
     public final void removeField(String fieldName) {
-        hashCode = -1;
+        hashCode = -1; // Force recalculation
         if (fieldName != null && fieldIndex(fieldName) >= 0)
             unsupported();
     }
