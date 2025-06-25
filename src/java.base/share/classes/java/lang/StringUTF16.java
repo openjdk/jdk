@@ -1481,7 +1481,7 @@ final class StringUTF16 {
 
     public static void putCharsSB(byte[] val, int index, char[] ca, int off, int end) {
         checkBoundsBeginEnd(index, index + end - off, val);
-        checkBoundsBeginEnd(off, end, ca);
+        String.checkBoundsBeginEnd(off, end, ca.length);
         Unsafe.getUnsafe().copyMemory(
                 ca,
                 Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) off << 1),
@@ -1657,10 +1657,6 @@ final class StringUTF16 {
 
     public static void checkBoundsBeginEnd(int begin, int end, byte[] val) {
         String.checkBoundsBeginEnd(begin, end, length(val));
-    }
-
-    private static void checkBoundsBeginEnd(int begin, int end, char[] val) {
-        String.checkBoundsBeginEnd(begin, end, val.length);
     }
 
     public static void checkBoundsOffCount(int offset, int count, byte[] val) {
