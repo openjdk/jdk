@@ -23,8 +23,8 @@
  */
 
 #include "asm/macroAssembler.hpp"
-#include "ci/ciUtilities.inline.hpp"
 #include "ci/ciSymbols.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -47,8 +47,8 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
-#include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #include "prims/jvmtiExport.hpp"

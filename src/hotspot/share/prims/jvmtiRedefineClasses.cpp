@@ -29,6 +29,7 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
+#include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/verifier.hpp"
@@ -659,10 +660,11 @@ u2 VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& s
 // Append a bootstrap specifier into the merge_cp operands that is semantically equal
 // to the scratch_cp operands bootstrap specifier passed by the old_bs_i index.
 // Recursively append new merge_cp entries referenced by the new bootstrap specifier.
-void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, int old_bs_i,
+void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, const int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
-  u2 old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
+  BSMAttributeEntry* old_bsme = scratch_cp->bsm_attribute_entry(old_bs_i);
+  u2 old_ref_i = old_bsme->bootstrap_method_index();
   u2 new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
                                                merge_cp_length_p);
   if (new_ref_i != old_ref_i) {
@@ -676,14 +678,14 @@ void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, in
   // However, the operand_offset_at(0) was set in the extend_operands() call.
   int new_base = (new_bs_i == 0) ? (*merge_cp_p)->operand_offset_at(0)
                                  : (*merge_cp_p)->operand_next_offset_at(new_bs_i - 1);
-  u2 argc      = scratch_cp->operand_argument_count_at(old_bs_i);
+  u2 argc      = old_bsme->argument_count();
 
   ConstantPool::operand_offset_at_put(merge_ops, _operands_cur_length, new_base);
   merge_ops->at_put(new_base++, new_ref_i);
   merge_ops->at_put(new_base++, argc);
 
   for (int i = 0; i < argc; i++) {
-    u2 old_arg_ref_i = scratch_cp->operand_argument_index_at(old_bs_i, i);
+    u2 old_arg_ref_i = old_bsme->argument_index(i);
     u2 new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
                                                      merge_cp_length_p);
     merge_ops->at_put(new_base++, new_arg_ref_i);
@@ -3266,7 +3268,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     // same_frame {
     //   u1 frame_type = SAME; /* 0-63 */
     // }
-    if (frame_type <= 63) {
+    if (frame_type <= StackMapReader::SAME_FRAME_END) {
       // nothing more to do for same_frame
     }
 
@@ -3274,13 +3276,15 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = SAME_LOCALS_1_STACK_ITEM; /* 64-127 */
     //   verification_type_info stack[1];
     // }
-    else if (frame_type >= 64 && frame_type <= 127) {
+    else if (frame_type >= StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME_START &&
+             frame_type <= StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME_END) {
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
     }
 
     // reserved for future use
-    else if (frame_type >= 128 && frame_type <= 246) {
+    else if (frame_type >= StackMapReader::RESERVED_START &&
+             frame_type <= StackMapReader::RESERVED_END) {
       // nothing more to do for reserved frame_types
     }
 
@@ -3289,7 +3293,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 offset_delta;
     //   verification_type_info stack[1];
     // }
-    else if (frame_type == 247) {
+    else if (frame_type == StackMapReader::SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
       stackmap_p += 2;
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
@@ -3299,28 +3303,30 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = CHOP; /* 248-250 */
     //   u2 offset_delta;
     // }
-    else if (frame_type >= 248 && frame_type <= 250) {
+    else if (frame_type >= StackMapReader::CHOP_FRAME_START &&
+             frame_type <= StackMapReader::CHOP_FRAME_END) {
       stackmap_p += 2;
     }
 
     // same_frame_extended {
-    //   u1 frame_type = SAME_FRAME_EXTENDED; /* 251*/
+    //   u1 frame_type = SAME_EXTENDED; /* 251 */
     //   u2 offset_delta;
     // }
-    else if (frame_type == 251) {
+    else if (frame_type == StackMapReader::SAME_FRAME_EXTENDED) {
       stackmap_p += 2;
     }
 
     // append_frame {
     //   u1 frame_type = APPEND; /* 252-254 */
     //   u2 offset_delta;
-    //   verification_type_info locals[frame_type - 251];
+    //   verification_type_info locals[frame_type - SAME_EXTENDED];
     // }
-    else if (frame_type >= 252 && frame_type <= 254) {
+    else if (frame_type >= StackMapReader::APPEND_FRAME_START &&
+             frame_type <= StackMapReader::APPEND_FRAME_END) {
       assert(stackmap_p + 2 <= stackmap_end,
         "no room for offset_delta");
       stackmap_p += 2;
-      u1 len = frame_type - 251;
+      u1 len = frame_type - StackMapReader::APPEND_FRAME_START + 1;
       for (u1 i = 0; i < len; i++) {
         rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
           calc_number_of_entries, frame_type);
@@ -3335,7 +3341,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 number_of_stack_items;
     //   verification_type_info stack[number_of_stack_items];
     // }
-    else if (frame_type == 255) {
+    else if (frame_type == StackMapReader::FULL_FRAME) {
       assert(stackmap_p + 2 + 2 <= stackmap_end,
         "no room for smallest full_frame");
       stackmap_p += 2;
