@@ -145,7 +145,6 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         if (role == null) {
             throw new IllegalArgumentException("Invalid parameter");
         }
-        checkTypeSafe(role);
         super.add(role);
     }
 
@@ -171,7 +170,6 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         if (role == null) {
             throw new IllegalArgumentException("Invalid parameter");
         }
-        checkTypeSafe(role);
         super.add(index, role);
     }
 
@@ -196,7 +194,6 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         if (role == null) {
             throw new IllegalArgumentException("Invalid parameter");
         }
-        checkTypeSafe(role);
         super.set(index, role);
      }
 
@@ -219,7 +216,6 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         if (roleList == null) {
             return true;
         }
-        checkTypeSafe(roleList);
         return (super.addAll(roleList));
     }
 
@@ -246,7 +242,6 @@ public class RoleUnresolvedList extends ArrayList<Object> {
         if (roleList == null) {
             throw new IllegalArgumentException("Invalid parameter");
         }
-        checkTypeSafe(roleList);
         return (super.addAll(index, roleList));
     }
 

@@ -145,7 +145,6 @@ public class RoleList extends ArrayList<Object> {
         if (role == null) {
             throw new IllegalArgumentException("Invalid parameter");
         }
-        checkTypeSafe(role);
         super.add(role);
     }
 
@@ -170,7 +169,6 @@ public class RoleList extends ArrayList<Object> {
         if (role == null) {
             throw new IllegalArgumentException("Invalid parameter");
         }
-        checkTypeSafe(role);
         super.add(index, role);
     }
 
@@ -194,7 +192,6 @@ public class RoleList extends ArrayList<Object> {
         if (role == null) {
             throw new IllegalArgumentException("Invalid parameter");
         }
-        checkTypeSafe(role);
         super.set(index, role);
      }
 
