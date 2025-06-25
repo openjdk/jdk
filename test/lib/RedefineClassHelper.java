@@ -88,11 +88,8 @@ public class RedefineClassHelper {
      */
     public static byte[] replaceAllStrings(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
         byte[] buf = getBytecodes(loader, oldClassName);
-
         ClassModel classModel = ClassFile.of().parse(buf);
-        ClassDesc newClassDesc = ClassDesc.of(newClassName);
-        byte[] newBytes = ClassFile.of().build(newClassDesc, classModel::forEach);
-        return newBytes;
+        return ClassFile.of().build(ClassDesc.of(newClassName), classModel::forEach);
     }
 
     /**
