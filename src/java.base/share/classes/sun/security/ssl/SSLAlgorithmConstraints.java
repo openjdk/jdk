@@ -153,42 +153,16 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     private static AlgorithmConstraints getUserSpecifiedConstraints(
             SSLEngine engine) {
-        if (engine != null) {
-            // Note that the KeyManager or TrustManager implementation may be
-            // not implemented in the same provider as SSLSocket/SSLEngine.
-            // Please check the instance before casting to use SSLEngineImpl.
-            if (engine instanceof SSLEngineImpl) {
-                HandshakeContext hc =
-                        ((SSLEngineImpl)engine).conContext.handshakeContext;
-                if (hc != null) {
-                    return hc.sslConfig.userSpecifiedAlgorithmConstraints;
-                }
-            }
-
-            return engine.getSSLParameters().getAlgorithmConstraints();
-        }
-
-        return null;
+        return engine != null ?
+                engine.getSSLParameters().getAlgorithmConstraints()
+                : null;
     }
 
     private static AlgorithmConstraints getUserSpecifiedConstraints(
             SSLSocket socket) {
-        if (socket != null) {
-            // Note that the KeyManager or TrustManager implementation may be
-            // not implemented in the same provider as SSLSocket/SSLEngine.
-            // Please check the instance before casting to use SSLSocketImpl.
-            if (socket instanceof SSLSocketImpl) {
-                HandshakeContext hc =
-                        ((SSLSocketImpl)socket).conContext.handshakeContext;
-                if (hc != null) {
-                    return hc.sslConfig.userSpecifiedAlgorithmConstraints;
-                }
-            }
-
-            return socket.getSSLParameters().getAlgorithmConstraints();
-        }
-
-        return null;
+        return socket != null ?
+                socket.getSSLParameters().getAlgorithmConstraints()
+                : null;
     }
 
     @Override
