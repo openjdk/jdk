@@ -24,6 +24,7 @@
 #include "asm/codeBuffer.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -171,7 +172,7 @@ static bool build(JfrSampleRequest& request, intptr_t* fp, JavaThread* jt) {
   assert(request._sample_sp != nullptr, "invariant");
   assert(request._sample_pc != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
-  assert(jt->thread_state() == _thread_in_Java, "invariant");
+  assert(jt->thread_state() == _thread_in_Java || jt->thread_state() == _thread_in_native, "invariant");
 
   // 1. Interpreter frame?
   if (is_interpreter(request)) {
@@ -302,4 +303,34 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const void* u
     return set_unbiased_java_sample(request, tl, jt);
   }
   return set_biased_java_sample(request, tl, jt);
+}
+
+
+// A biased sample request is denoted by an empty bcp and an empty pc.
+static inline void set_cpu_time_biased_sample(JfrSampleRequest& request, JavaThread* jt) {
+  if (request._sample_bcp != nullptr) {
+    request._sample_bcp = nullptr;
+  }
+  assert(request._sample_bcp == nullptr, "invariant");
+  request._sample_pc = nullptr;
+}
+
+void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& request,
+                                                            void* ucontext,
+                                                            JavaThread* jt,
+                                                            JfrThreadLocal* tl,
+                                                            JfrTicks& now) {
+  assert(jt != nullptr, "invariant");
+  request._sample_ticks = now;
+
+  // Prioritize the ljf, if one exists.
+  request._sample_sp = jt->last_Java_sp();
+  if (request._sample_sp == nullptr || !build_from_ljf(request, tl, jt)) {
+    intptr_t* fp;
+    request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
+    assert(sp_in_stack(request, jt), "invariant");
+    if (!build(request, fp, jt)) {
+      set_cpu_time_biased_sample(request, jt);
+    }
+  }
 }

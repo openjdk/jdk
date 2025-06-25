@@ -34,6 +34,7 @@ class Thread;
 // Mutexes used in the VM.
 
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
+extern Mutex*   NMethodEntryBarrier_lock;        // protects nmethod entry barrier
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
 extern Monitor* InvokeMethodIntrinsicTable_lock;
@@ -86,6 +87,7 @@ extern Monitor* Compilation_lock;                // a lock used to pause compila
 extern Mutex*   TrainingData_lock;               // a lock used when accessing training records
 extern Monitor* TrainingReplayQueue_lock;        // a lock held when class are added/removed to the training replay queue
 extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
+extern Monitor* CompileTaskWait_lock;            // a lock held when CompileTasks are waited/notified
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
