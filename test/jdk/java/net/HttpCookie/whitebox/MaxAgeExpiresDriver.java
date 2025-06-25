@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
-#define SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
-
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcVMOperations.hpp"
-
-class VM_ParallelCollectForAllocation : public VM_CollectForAllocation {
-  bool _is_tlab;
-public:
-  VM_ParallelCollectForAllocation(size_t word_size, bool is_tlab, uint gc_count);
-
-  virtual VMOp_Type type() const {
-    return VMOp_ParallelCollectForAllocation;
-  }
-  virtual void doit();
-};
-
-class VM_ParallelGCCollect: public VM_GC_Collect_Operation {
- public:
-  VM_ParallelGCCollect(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
-  virtual VMOp_Type type() const { return VMOp_ParallelGCCollect; }
-  virtual void doit();
-};
-
-#endif // SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP
+/*
+ * @test
+ * @bug 8351983
+ * @summary HttpCookie Parser Incorrectly Handles Cookies with Expires Attribute
+ * @run testng java.base/java.net.MaxAgeExpires
+ */
+public class MaxAgeExpiresDriver {
+}
