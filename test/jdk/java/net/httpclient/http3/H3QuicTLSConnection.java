@@ -120,15 +120,15 @@ public class H3QuicTLSConnection {
                     UnsupportedProtocolVersionException.class,
                     Optional.empty());
 
-            // set SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA and expect it to fail since
+            // set TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 and expect it to fail since
             // it's not supported with TLS v1.3
             success &= expectFailure(
                     "---\nTest #4: SSL parameters with "
-                            + "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA cipher suite, "
+                            + "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 cipher suite, "
                             + "expect No appropriate protocol " +
                             "(protocol is disabled or cipher suites are inappropriate)",
                     () -> connect(uriString, new SSLParameters(
-                            new String[]{"SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA"},
+                            new String[]{"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"},
                             new String[]{"TLSv1.3"})),
                     SSLHandshakeException.class,
                     Optional.of("protocol is disabled or cipher suites are inappropriate"));
