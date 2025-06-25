@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +23,34 @@
 
 /*
  * @test
- * @bug 4089415
- * @summary Test MulticastSocket send for modification of ttl
+ * @bug 8350576
+ * @summary Optimization bails out and hits an assert:
+ *          assert(false) failed: reduction has ctrl or bad vector_input
+ * @run main/othervm -Xbatch -XX:-TieredCompilation
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.LoopReductionHasControlOrBadInput::*
+ *      compiler.loopopts.LoopReductionHasControlOrBadInput
+ * @run main compiler.loopopts.LoopReductionHasControlOrBadInput
  *
  */
-import java.io.*;
-import java.net.*;
 
-public class MulticastTTL {
+package compiler.loopopts;
 
-    public static void main(String args[]) throws Exception {
-        MulticastSocket soc = null;
-        DatagramPacket pac = null;
-        InetAddress sin = null;
-        byte [] array = new byte[65537];
-        int port = 0;
-        byte old_ttl = 0;
-        byte new_ttl = 64;
-        byte ttl = 0;
+public class LoopReductionHasControlOrBadInput {
+    static long lFld;
+    static long lArr[] = new long[400];
 
-        sin = InetAddress.getByName("224.80.80.80");
-        soc = new MulticastSocket();
-        port = soc.getLocalPort();
-        old_ttl = soc.getTTL();
-        pac = new DatagramPacket(array, array.length, sin, port);
+    static void test() {
+        int i = 1;
+        do {
+            long x = -1;
+            lArr[i] = i;
+            lFld += i | x;
+        } while (++i < 355);
+    }
 
-        try {
-            soc.send(pac, new_ttl);
-        } catch(java.io.IOException e) {
-            ttl = soc.getTTL();
-            soc.close();
-            if(ttl != old_ttl)
-                throw new RuntimeException("TTL ");
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 100; i++) {
+            test();
         }
-        soc.close();
     }
 }

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,18 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_AIX_C1_GLOBALS_AIX_HPP
-#define OS_AIX_C1_GLOBALS_AIX_HPP
-
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
-
-//
-// Sets the default values for operating system dependent flags used by the
-// client compiler. (see c1_globals.hpp)
-//
-
-#endif // OS_AIX_C1_GLOBALS_AIX_HPP
+/*
+ * @test
+ * @bug 8351983
+ * @summary HttpCookie Parser Incorrectly Handles Cookies with Expires Attribute
+ * @run testng java.base/java.net.MaxAgeExpires
+ */
+public class MaxAgeExpiresDriver {
+}
