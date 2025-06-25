@@ -33,11 +33,11 @@
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 yield 1
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 sb
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 sb 1
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 isb 3
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield
- * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 sb
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 yield 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 sb 1
  */
 
 package compiler.onSpinWait;
@@ -52,7 +52,7 @@ public class TestOnSpinWaitAArch64 {
     public static void main(String[] args) throws Exception {
         String compiler = args[0];
         String spinWaitInst = args[1];
-        String spinWaitInstCount = (args.length == 3) ? args[2] : "1";
+        String spinWaitInstCount = args[2];
         ArrayList<String> command = new ArrayList<String>();
         command.add("-XX:+IgnoreUnrecognizedVMOptions");
         command.add("-showversion");
@@ -77,10 +77,12 @@ public class TestOnSpinWaitAArch64 {
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
 
-        if (analyzer.getExitValue() != 0 && "sb".equals(spinWaitInst) && analyzer.contains("CPU does not support SB")) {
+        if ("sb".equals(spinWaitInst) && analyzer.contains("CPU does not support SB")) {
             System.out.println("Skipping the test. The current CPU does not support SB instruction.");
             return;
         }
+
+        analyzer.shouldHaveExitValue(0);
 
         System.out.println(analyzer.getOutput());
 
