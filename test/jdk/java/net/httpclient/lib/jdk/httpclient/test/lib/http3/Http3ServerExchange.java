@@ -201,10 +201,14 @@ public final class Http3ServerExchange implements Http2TestExchange {
     public void sendResponseHeaders(int rCode, long responseLength) throws IOException {
         // occasionally send an unknown/reserved HTTP3 frame to exercise the case
         // where the client is expected to ignore such frames
-        optionallySendUnknownOrReservedFrame();
-        this.responseLength = responseLength;
-        sendResponseHeaders(serverStream.streamId(), serverStream.writer, isHeadRequest(),
-                rCode, responseLength, rspheadersBuilder, os);
+        try {
+            optionallySendUnknownOrReservedFrame();
+            this.responseLength = responseLength;
+            sendResponseHeaders(serverStream.streamId(), serverStream.writer, isHeadRequest(),
+                    rCode, responseLength, rspheadersBuilder, os);
+        } catch (Exception ex) {
+            throw new IOException("failed to send headers: " + ex, ex);
+        }
     }
 
     // WARNING: this method is also called for PushStreams, which has
