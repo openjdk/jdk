@@ -341,8 +341,11 @@ class LateInlineCallGenerator : public DirectCallGenerator {
     // Emit the CallStaticJava and request separate projections so
     // that the late inlining logic can distinguish between fall
     // through and exceptional uses of the memory and io projections
-    // as is done for allocations and macro expansion.
-    return DirectCallGenerator::generate(jvms);
+    // as is done for allocations and macro expansion. Also, mark
+    // the call as late inlined for later use in verification.
+    JVMState* new_jvms = DirectCallGenerator::generate(jvms);
+    call_node()->set_late_inlined_call(true);
+    return new_jvms;
   }
 
   virtual void set_unique_id(jlong id) {
