@@ -100,7 +100,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 //   It is also guaranteed to be walkable even though it is in a skeletal state
 //
 // is_top_frame == true:
-//   We're processing the *oldest* interpreter frame!
+//   We're processing the *youngest* interpreter frame on top of stack!
 //
 // pop_frame_extra_args:
 //   If this is != 0 we are returning to a deoptimized frame by popping
