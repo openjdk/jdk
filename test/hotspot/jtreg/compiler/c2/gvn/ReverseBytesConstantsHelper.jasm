@@ -22,7 +22,7 @@
  *
  */
 
-public class ReverseBytesConstantsHelper version 65:0 {
+public class ReverseBytesConstantsHelper {
     public Method "<init>":"()V" stack 1 locals 1 {
         aload_0;
         invokespecial Method java/lang/Object."<init>":"()V";
