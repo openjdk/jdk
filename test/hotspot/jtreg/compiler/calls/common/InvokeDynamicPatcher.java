@@ -76,7 +76,7 @@ public final class InvokeDynamicPatcher {
                         // discard
                     }
 
-                    /* a code generate looks like
+                    /* the code generated looks like
                      *  0: aload_0
                      *  1: ldc           #125  // int 1
                      *  3: ldc2_w        #126  // long 2l
