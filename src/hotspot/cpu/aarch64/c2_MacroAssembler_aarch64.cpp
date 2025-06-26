@@ -2854,12 +2854,16 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
   }
 }
 
-void C2_MacroAssembler::select_from_two_vectors_HS_Neon(FloatRegister dst, FloatRegister src1,
-                                                        FloatRegister src2, FloatRegister index,
-                                                        FloatRegister tmp1, BasicType bt, bool isQ) {
+void C2_MacroAssembler::select_from_two_vectors_Neon(FloatRegister dst, FloatRegister src1,
+                                                     FloatRegister src2, FloatRegister index,
+                                                     FloatRegister tmp1, BasicType bt, bool isQ) {
 
   assert_different_registers(dst, src1, src2, index, tmp1);
-  assert(bt == T_SHORT || bt == T_INT || bt == T_FLOAT, "unsupported basic type");
+
+  // The only BasicTypes that can reach here are T_SHORT, T_BYTE, T_INT and T_FLOAT
+  assert(bt != T_DOUBLE || bt != T_LONG, "unsupported basic type");
+
+  assert(UseSVE < 2, "must be either 0 or 1");
 
   SIMD_Arrangement size1 = isQ ? T16B : T8B;
   SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
@@ -2877,16 +2881,23 @@ void C2_MacroAssembler::select_from_two_vectors_HS_Neon(FloatRegister dst, Float
   // offsets - dst = [0x0504, 0x0b0a, 0x0302, 0x0100]
   // Use these offsets in the "tbl" instruction to select chunks of 2B.
 
-  // The cases that can reach this method are -
-  // UseSVE == 0, vector length = 8, 16
-  // UseSVE == 1, vector length = 8, 16
-  // UseSVE == 2, vector length = 8
-  //
-  // Generate Neon tbl when UseSVE == 0 or UseSVE == 1 with vector length of 16B
+  bool is_byte = (bt == T_BYTE);
 
-  bool useNeon = (UseSVE == 0) || (UseSVE == 1 && isQ);
-
-  if (useNeon) {
+  if (is_byte) {
+    if (isQ) {
+      assert(UseSVE <= 1, "sve must be <= 1");
+      // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
+      tbl(dst, size1, src1, 2, index);
+    } else { // vector length == 8
+      assert(UseSVE == 0, "must be Neon only");
+      // We need to fit both the source vectors (src1, src2) in a 128-bit register because the
+      // Neon "tbl" instruction supports only looking up 16B vectors. We then use the Neon "tbl"
+      // instruction with one vector lookup
+      ins(tmp1, D, src1, 0, 0);
+      ins(tmp1, D, src2, 1, 0);
+      tbl(dst, size1, tmp1, 1, index);
+    }
+  } else {
     int elemSize = (bt == T_SHORT) ? 2 : 4;
     uint64_t tblOffset = (bt == T_SHORT) ? 0x0100u : 0x03020100u;
 
@@ -2895,39 +2906,35 @@ void C2_MacroAssembler::select_from_two_vectors_HS_Neon(FloatRegister dst, Float
     mov(tmp1, size2, tblOffset);
     addv(dst, size1, dst, tmp1); // "dst" now contains the processed index elements
                                  // to select a set of 2B/4B
-
     if (isQ) {
+      assert(UseSVE <= 1, "sve must be <= 1");
       // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
       tbl(dst, size1, src1, 2, dst);
     } else {  // vector length == 8
       // We need to fit both the source vectors (src1, src2) in a 128-bit register because the
       // Neon "tbl" instruction supports only looking up 16B vectors. We then use the Neon "tbl"
       // instruction with one vector lookup
+      assert(UseSVE == 0, "must be Neon only");
       ins(tmp1, D, src1, 0, 0);
       ins(tmp1, D, src2, 1, 0);
       tbl(dst, size1, tmp1, 1, dst);
     }
-    // Generate tbl one vector lookup (SVE1) when UseSVE >= 1 and vector length == 8
-  } else if (UseSVE >= 1 && !isQ) {
-    ins(tmp1, D, src1, 0, 0);
-    ins(tmp1, D, src2, 1, 0);
-    sve_tbl(dst, elemType_to_regVariant(bt), tmp1, 1, index);
   }
 }
 
-void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister src1,
-                                                FloatRegister src2, FloatRegister index,
-                                                FloatRegister tmp1, BasicType bt,
-                                                unsigned vector_length_in_bytes) {
-  if (bt == T_BYTE && vector_length_in_bytes == 8) {
+void C2_MacroAssembler::select_from_two_vectors_SVE(FloatRegister dst, FloatRegister src1,
+                                                    FloatRegister src2, FloatRegister index,
+                                                    FloatRegister tmp1, BasicType bt,
+                                                    unsigned vector_length_in_bytes) {
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
+
+  if (vector_length_in_bytes == 8) {
+    assert(UseSVE >= 1, "sve must be >= 1");
     ins(tmp1, D, src1, 0, 0);
     ins(tmp1, D, src2, 1, 0);
-    tbl(dst, T8B, tmp1, 1, index);
-  } else if (bt == T_BYTE && vector_length_in_bytes == 16 && UseSVE < 2){
-    tbl(dst, T16B, src1, 2, index);
-  } else {
-    assert(UseSVE == 2, "must be sve2");
-    SIMD_RegVariant size = elemType_to_regVariant(bt);
-    sve_tbl(dst, size, src1, 2, index);
+    sve_tbl(dst, size, tmp1, 1, index);
+  } else {  // UseSVE == 2 and vector_length_in_bytes > 8
+  assert(UseSVE == 2, "must be sve2");
+  sve_tbl(dst, size, src1, 2, index);
   }
 }

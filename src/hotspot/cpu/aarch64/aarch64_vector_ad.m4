@@ -235,19 +235,22 @@ source %{
           return false;
         }
         break;
-      // The "tbl" instruction for two vector table is supported only in Neon and SVE2. Return
-      // false if vector length > 16B but supported SVE version < 2.
-      // For vector length of 16B, generate SVE2 "tbl" instruction if SVE2 is supported, else
-      // generate Neon "tbl" instruction to select from two vectors.
-      // This operation is disabled for doubles and longs on machines with SVE < 2 and instead
-      // the default VectorRearrange + VectorBlend is generated as the performance of the default
-      // implementation was slightly better/similar than the implementaion for SelectFromTwoVector.
-      // As the SVE2 "tbl" instruction in unpredicated and partial operations cannot be generated
-      // using masks, we currently disable this operation on machines where length_in_bytes <
-      // MaxVectorSize on that machine with the only exception of 8B vector length.
       case Op_SelectFromTwoVector:
-        if ((UseSVE < 2 && (type2aelembytes(bt) == 8 || length_in_bytes > 16)) ||
-            (UseSVE == 2 && length_in_bytes > 8 && length_in_bytes < MaxVectorSize )) {
+        // The "tbl" instruction for two vector table is supported only in Neon and SVE2. Return
+        // false if vector length > 16B but supported SVE version < 2.
+        // For vector length of 16B, generate SVE2 "tbl" instruction if SVE2 is supported, else
+        // generate Neon "tbl" instruction to select from two vectors.
+        // This operation is disabled for doubles and longs on machines with SVE < 2 and instead
+        // the default VectorRearrange + VectorBlend is generated as the performance of the default
+        // implementation was slightly better/similar than the implementation for SelectFromTwoVector.
+        if (UseSVE < 2 && (type2aelembytes(bt) == 8 || length_in_bytes > 16)) {
+          return false;
+        }
+
+        // Because the SVE2 "tbl" instruction is unpredicated and partial operations cannot be generated
+        // using masks, we currently disable this operation on machines where length_in_bytes <
+        // MaxVectorSize on that machine with the only exception of 8B vector length.
+        if (UseSVE == 2 && length_in_bytes > 8 && length_in_bytes < MaxVectorSize) {
           return false;
         }
         break;
@@ -5149,8 +5152,7 @@ BITPERM(vcompressBits, CompressBitsV, sve_bext)
 // ----------------------------------- ExpandBitsV ---------------------------------
 BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
 
-// --------------------------------SelectFromTwoVector -----------------------------
-
+// ------------------------------------- SelectFromTwoVector ------------------------------------
 // The Neon and SVE2 tbl instruction for two vector lookup requires both the source vectors to be
 // consecutive. The match rules for SelectFromTwoVector reserve two consecutive vector registers
 // for src1 and src2.
@@ -5158,131 +5160,55 @@ BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
 // vselect_from_two_vectors are chosen at random (two from volatile and two from non-volatile set)
 // which gives more freedom to the register allocator to choose the best pair of source registers
 // at that point.
-
-instruct vselect_from_two_vectors_HS_Neon_1(vReg dst, vReg_V10 src1, vReg_V11 src2,
-                                            vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) != T_BYTE &&
-            (UseSVE < 2 || Matcher::vector_length_in_bytes(n) < 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+dnl
+dnl SELECT_FROM_TWO_VECTORS_NEON($1,          $2,        $3       )
+dnl SELECT_FROM_TWO_VECTORS_NEON(rule_number, first_reg, second_reg)
+define(`SELECT_FROM_TWO_VECTORS_NEON', `
+instruct vselect_from_two_vectors_Neon_$1(vReg dst, vReg_V$2 src1, vReg_V$3 src2,
+                                         vReg index, vReg tmp1) %{
+  predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
   effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors_HS_Neon $dst, $src1, $src2, $index\t# vector (4S/8S/2I/4I/2F/4F). KILL $tmp1" %}
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "vselect_from_two_vectors_Neon_$1 $dst, $src1, $src2, $index\t# vector (8B/16B/4S/8S/2I/4I/2F/4F). KILL $tmp1" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_HS_Neon($dst$$FloatRegister, $src1$$FloatRegister,
-                                       $src2$$FloatRegister,$index$$FloatRegister,
-                                       $tmp1$$FloatRegister, bt, /* isQ */ length_in_bytes == 16);
+    __ select_from_two_vectors_Neon($dst$$FloatRegister, $src1$$FloatRegister,
+                                    $src2$$FloatRegister,$index$$FloatRegister,
+                                    $tmp1$$FloatRegister, bt, /* isQ */ length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
-%}
+%}')dnl
+dnl
 
-instruct vselect_from_two_vectors_HS_Neon_2(vReg dst, vReg_V12 src1, vReg_V13 src2,
-                                            vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) != T_BYTE &&
-            (UseSVE < 2 || Matcher::vector_length_in_bytes(n) < 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+dnl
+dnl SELECT_FROM_TWO_VECTORS_SVE($1,          $2  ,      $3       )
+dnl SELECT_FROM_TWO_VECTORS_SVE(rule_number, first_reg, second_reg)
+define(`SELECT_FROM_TWO_VECTORS_SVE', `
+instruct vselect_from_two_vectors_SVE_$1(vReg dst, vReg_V$2 src1, vReg_V$3 src2,
+                                        vReg index, vReg tmp1) %{
+  predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
   effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors_HS_Neon $dst, $src1, $src2, $index\t# vector (4S/8S/2I/4I/2F/4F). KILL $tmp1" %}
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "vselect_from_two_vectors_SVE_$1 $dst, $src1, $src2, $index\t# KILL $tmp1" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_HS_Neon($dst$$FloatRegister, $src1$$FloatRegister,
-                                       $src2$$FloatRegister,$index$$FloatRegister,
-                                       $tmp1$$FloatRegister, bt, /* isQ */ length_in_bytes == 16);
+    __ select_from_two_vectors_SVE($dst$$FloatRegister, $src1$$FloatRegister,
+                                   $src2$$FloatRegister,$index$$FloatRegister,
+                                   $tmp1$$FloatRegister, bt, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
-%}
+%}')dnl
+dnl
+// ----------------------------------- SelectFromTwoVector Neon ---------------------------------
+SELECT_FROM_TWO_VECTORS_NEON(1, 10, 11)
+SELECT_FROM_TWO_VECTORS_NEON(2, 12, 13)
+SELECT_FROM_TWO_VECTORS_NEON(3, 17, 18)
+SELECT_FROM_TWO_VECTORS_NEON(4, 23, 24)
 
-instruct vselect_from_two_vectors_HS_Neon_3(vReg dst, vReg_V17 src1, vReg_V18 src2,
-                                            vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) != T_BYTE &&
-            (UseSVE < 2 || Matcher::vector_length_in_bytes(n) < 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors_HS_Neon $dst, $src1, $src2, $index\t# vector (4S/8S/2I/4I/2F/4F). KILL $tmp1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_HS_Neon($dst$$FloatRegister, $src1$$FloatRegister,
-                                       $src2$$FloatRegister,$index$$FloatRegister,
-                                       $tmp1$$FloatRegister, bt, /* isQ */ length_in_bytes == 16);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vselect_from_two_vectors_HS_Neon_4(vReg dst, vReg_V23 src1, vReg_V24 src2,
-                                            vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) != T_BYTE &&
-            (UseSVE < 2 || Matcher::vector_length_in_bytes(n) < 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors_HS_Neon $dst, $src1, $src2, $index\t# vector (4S/8S/2I/4I/2F/4F). KILL $tmp1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_HS_Neon($dst$$FloatRegister, $src1$$FloatRegister,
-                                       $src2$$FloatRegister,$index$$FloatRegister,
-                                       $tmp1$$FloatRegister, bt, /* isQ */ length_in_bytes == 16);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vselect_from_two_vectors_1(vReg dst, vReg_V10 src1, vReg_V11 src2, vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-           (UseSVE == 2 && Matcher::vector_length_in_bytes(n) >= 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors $dst, $src1, $src2, $index\t# KILL $tmp1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                               $index$$FloatRegister, $tmp1$$FloatRegister, bt, length_in_bytes);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vselect_from_two_vectors_2(vReg dst, vReg_V12 src1, vReg_V13 src2, vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-           (UseSVE == 2 && Matcher::vector_length_in_bytes(n) >= 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors $dst, $src1, $src2, $index\t# KILL $tmp1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                               $index$$FloatRegister, $tmp1$$FloatRegister, bt, length_in_bytes);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vselect_from_two_vectors_3(vReg dst, vReg_V17 src1, vReg_V18 src2, vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-           (UseSVE == 2 && Matcher::vector_length_in_bytes(n) >= 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors $dst, $src1, $src2, $index\t# KILL $tmp1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                               $index$$FloatRegister, $tmp1$$FloatRegister, bt, length_in_bytes);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vselect_from_two_vectors_4(vReg dst, vReg_V23 src1, vReg_V24 src2, vReg index, vReg tmp1) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-           (UseSVE == 2 && Matcher::vector_length_in_bytes(n) >= 16));
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "vselect_from_two_vectors $dst, $src1, $src2, $index\t# KILL $tmp1" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                               $index$$FloatRegister, $tmp1$$FloatRegister, bt, length_in_bytes);
-  %}
-  ins_pipe(pipe_slow);
-%}
+// ----------------------------------- SelectFromTwoVector SVE ----------------------------------
+SELECT_FROM_TWO_VECTORS_SVE(1, 10, 11)
+SELECT_FROM_TWO_VECTORS_SVE(2, 12, 13)
+SELECT_FROM_TWO_VECTORS_SVE(3, 17, 18)
+SELECT_FROM_TWO_VECTORS_SVE(4, 23, 24)
