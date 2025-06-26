@@ -2750,6 +2750,7 @@ private:
   void eminmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
   void eminmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
   void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
   void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
   void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
   void evminmaxpd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);

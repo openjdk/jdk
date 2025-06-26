@@ -8690,7 +8690,6 @@ void Assembler::vpminsq(XMMRegister dst, XMMRegister nds, XMMRegister src, int v
   emit_int16(0x39, (0xC0 | encode));
 }
 
-
 void Assembler::minps(XMMRegister dst, XMMRegister src) {
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
@@ -8782,7 +8781,7 @@ void Assembler::vmaxps(XMMRegister dst, XMMRegister nds, XMMRegister src, int ve
 
 void Assembler::evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len) {
   assert(VM_Version::supports_avx10_2(), "");
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false,/* uses_vl */ true);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_is_evex_instruction();
   attributes.set_embedded_opmask_register_specifier(mask);
   if (merge) {
@@ -16617,6 +16616,22 @@ void Assembler::evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMM
   }
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x52, (0xC0 | encode), imm8);
+}
+
+void Assembler::evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len) {
+  assert(VM_Version::supports_avx10_2(), "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x52);
+  emit_operand(dst, src, 0);
+  emit_int8(imm8);
 }
 
 void Assembler::evmaxph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
