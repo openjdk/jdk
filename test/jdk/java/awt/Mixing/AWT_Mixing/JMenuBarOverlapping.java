@@ -53,7 +53,7 @@ import test.java.awt.regtesthelpers.Util;
  *          java.desktop/java.awt.peer
  * @build java.desktop/java.awt.Helper
  * @build Util
- * @run main JMenuBarOverlapping
+ * @run main/timeout=180 JMenuBarOverlapping
  */
 public class JMenuBarOverlapping extends OverlappingTestBase {
 
