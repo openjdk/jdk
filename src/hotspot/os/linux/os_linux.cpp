@@ -2571,7 +2571,7 @@ void os::print_memory_info(outputStream* st) {
   struct sysinfo si;
   sysinfo(&si);
   size_t phys_mem = 0;
-  os::physical_memory(phys_mem)
+  os::physical_memory(phys_mem);
   st->print(", physical &zuk",
             phys_mem >> 10);
   size_t avail_mem = 0;
