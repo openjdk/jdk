@@ -7832,7 +7832,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="approximately">≈{0}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">{0} кунсем</pluralMinimalPairs>
+			<pluralMinimalPairs count="zero">Пан улми ҫук.</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">{0} пан улми пур. Ӑна илесшӗн-и?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} пан улми пур. Вӗсене илесшӗн-и?</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}-мӗш хӗреслӗ урамран сылтӑм енне пӑрӑнӑр</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>

@@ -1471,6 +1471,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="aem" to="aem_Latn_VN" origin="sil1"/>		<!--Arem‧?‧?	➡ Arem‧Latin‧Vietnam-->
 		<likelySubtag from="aeq" to="aeq_Arab_PK" origin="sil1"/>		<!--Aer‧?‧?	➡ Aer‧Arabic‧Pakistan-->
 		<likelySubtag from="aer" to="aer_Latn_AU" origin="sil1"/>		<!--Eastern Arrernte‧?‧?	➡ Eastern Arrernte‧Latin‧Australia-->
+		<likelySubtag from="aes" to="aes_Latn_US" origin="sil1"/>		<!--Alsea‧?‧?	➡ Alsea‧Latin‧United States-->
 		<likelySubtag from="aeu" to="aeu_Latn_CN" origin="sil1"/>		<!--Akeu‧?‧?	➡ Akeu‧Latin‧China-->
 		<likelySubtag from="aew" to="aew_Latn_PG" origin="sil1"/>		<!--Ambakich‧?‧?	➡ Ambakich‧Latin‧Papua New Guinea-->
 		<likelySubtag from="aey" to="aey_Latn_PG" origin="sil1"/>		<!--Amele‧?‧?	➡ Amele‧Latin‧Papua New Guinea-->
@@ -1694,6 +1695,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="arp" to="arp_Latn_US" origin="sil1"/>		<!--Arapaho‧?‧?	➡ Arapaho‧Latin‧United States-->
 		<likelySubtag from="arr" to="arr_Latn_BR" origin="sil1"/>		<!--Karo (Brazil)‧?‧?	➡ Karo (Brazil)‧Latin‧Brazil-->
 		<likelySubtag from="aru" to="aru_Latn_BR" origin="sil1"/>		<!--Aruá (Amazonas State)‧?‧?	➡ Aruá (Amazonas State)‧Latin‧Brazil-->
+		<likelySubtag from="arv" to="arv_Latn_ET" origin="sil1"/>		<!--Arbore‧?‧?	➡ Arbore‧Latin‧Ethiopia-->
 		<likelySubtag from="arw" to="arw_Latn_SR" origin="sil1"/>		<!--Arawak‧?‧?	➡ Arawak‧Latin‧Suriname-->
 		<likelySubtag from="arx" to="arx_Latn_BR" origin="sil1"/>		<!--Aruá (Rodonia State)‧?‧?	➡ Aruá (Rodonia State)‧Latin‧Brazil-->
 		<likelySubtag from="asb" to="asb_Latn_CA" origin="sil1"/>		<!--Assiniboine‧?‧?	➡ Assiniboine‧Latin‧Canada-->
@@ -1993,6 +1995,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="biu" to="biu_Latn_IN" origin="sil1"/>		<!--Biete‧?‧?	➡ Biete‧Latin‧India-->
 		<likelySubtag from="biv" to="biv_Latn_GH" origin="sil1"/>		<!--Southern Birifor‧?‧?	➡ Southern Birifor‧Latin‧Ghana-->
 		<likelySubtag from="biw" to="biw_Latn_CM" origin="sil1"/>		<!--Kol (Cameroon)‧?‧?	➡ Kol (Cameroon)‧Latin‧Cameroon-->
+		<likelySubtag from="bix" to="bix_Deva_IN" origin="sil1"/>		<!--Bijori‧?‧?	➡ Bijori‧Devanagari‧India-->
 		<likelySubtag from="biy" to="biy_Deva_IN" origin="sil1"/>		<!--Birhor‧?‧?	➡ Birhor‧Devanagari‧India-->
 		<likelySubtag from="biz" to="biz_Latn_CD" origin="sil1"/>		<!--Baloi‧?‧?	➡ Baloi‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="bja" to="bja_Latn_CD" origin="sil1"/>		<!--Budza‧?‧?	➡ Budza‧Latin‧Congo - Kinshasa-->
@@ -2403,6 +2406,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="cdi" to="cdi_Gujr_IN" origin="sil1"/>		<!--Chodri‧?‧?	➡ Chodri‧Gujarati‧India-->
 		<likelySubtag from="cdj" to="cdj_Deva_IN" origin="sil1"/>		<!--Churahi‧?‧?	➡ Churahi‧Devanagari‧India-->
 		<likelySubtag from="cdm" to="cdm_Deva_NP" origin="sil1"/>		<!--Chepang‧?‧?	➡ Chepang‧Devanagari‧Nepal-->
+		<likelySubtag from="cdn" to="cdn_Deva_IN" origin="sil1"/>		<!--Chaudangsi‧?‧?	➡ Chaudangsi‧Devanagari‧India-->
 		<likelySubtag from="cdo" to="cdo_Hans_CN" origin="sil1"/>		<!--Min Dong Chinese‧?‧?	➡ Min Dong Chinese‧Simplified‧China-->
 		<likelySubtag from="cdr" to="cdr_Latn_NG" origin="sil1"/>		<!--Cinda-Regi-Tiyal‧?‧?	➡ Cinda-Regi-Tiyal‧Latin‧Nigeria-->
 		<likelySubtag from="cdz" to="cdz_Beng_IN" origin="sil1"/>		<!--Koda‧?‧?	➡ Koda‧Bangla‧India-->
@@ -2686,7 +2690,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="dhl" to="dhl_Latn_AU" origin="sil1"/>		<!--Dhalandji‧?‧?	➡ Dhalandji‧Latin‧Australia-->
 		<likelySubtag from="dhm" to="dhm_Latn_AO" origin="sil1"/>		<!--Zemba‧?‧?	➡ Zemba‧Latin‧Angola-->
 		<likelySubtag from="dhn" to="dhn_Gujr_IN" origin="sil1"/>		<!--Dhanki‧?‧?	➡ Dhanki‧Gujarati‧India-->
-		<likelySubtag from="dho" to="dho_Deva_IN" origin="sil1"/>		<!--Dhodia‧?‧?	➡ Dhodia‧Devanagari‧India-->
+		<likelySubtag from="dho" to="dho_Gujr_IN" origin="sil1"/>		<!--Dhodia‧?‧?	➡ Dhodia‧Gujarati‧India-->
 		<likelySubtag from="dhr" to="dhr_Latn_AU" origin="sil1"/>		<!--Dhargari‧?‧?	➡ Dhargari‧Latin‧Australia-->
 		<likelySubtag from="dhs" to="dhs_Latn_TZ" origin="sil1"/>		<!--Dhaiso‧?‧?	➡ Dhaiso‧Latin‧Tanzania-->
 		<likelySubtag from="dhu" to="dhu_Latn_AU" origin="sil1"/>		<!--Dhurga‧?‧?	➡ Dhurga‧Latin‧Australia-->
@@ -3373,6 +3377,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="hng" to="hng_Latn_AO" origin="sil1"/>		<!--Hungu‧?‧?	➡ Hungu‧Latin‧Angola-->
 		<likelySubtag from="hnh" to="hnh_Latn_BW" origin="sil1"/>		<!--ǁAni‧?‧?	➡ ǁAni‧Latin‧Botswana-->
 		<likelySubtag from="hni" to="hni_Latn_CN" origin="sil1"/>		<!--Hani‧?‧?	➡ Hani‧Latin‧China-->
+		<likelySubtag from="hnm" to="hnm_Hans_CN" origin="sil1"/>		<!--Hainanese‧?‧?	➡ Hainanese‧Simplified‧China-->
 		<likelySubtag from="hns" to="hns_Latn_SR" origin="sil1"/>		<!--Caribbean Hindustani‧?‧?	➡ Caribbean Hindustani‧Latin‧Suriname-->
 		<likelySubtag from="hoa" to="hoa_Latn_SB" origin="sil1"/>		<!--Hoava‧?‧?	➡ Hoava‧Latin‧Solomon Islands-->
 		<likelySubtag from="hob" to="hob_Latn_PG" origin="sil1"/>		<!--Mari (Madang Province)‧?‧?	➡ Mari (Madang Province)‧Latin‧Papua New Guinea-->
@@ -3825,7 +3830,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="kgv" to="kgv_Latn_ID" origin="sil1"/>		<!--Karas‧?‧?	➡ Karas‧Latin‧Indonesia-->
 		<likelySubtag from="kgw" to="kgw_Latn_ID" origin="sil1"/>		<!--Karon Dori‧?‧?	➡ Karon Dori‧Latin‧Indonesia-->
 		<likelySubtag from="kgx" to="kgx_Latn_ID" origin="sil1"/>		<!--Kamaru‧?‧?	➡ Kamaru‧Latin‧Indonesia-->
-		<likelySubtag from="kgy" to="kgy_Deva_NP" origin="sil1"/>		<!--Kyerung‧?‧?	➡ Kyerung‧Devanagari‧Nepal-->
+		<likelySubtag from="kgy" to="kgy_Tibt_NP" origin="sil1"/>		<!--Kyerung‧?‧?	➡ Kyerung‧Tibetan‧Nepal-->
 		<likelySubtag from="khc" to="khc_Latn_ID" origin="sil1"/>		<!--Tukang Besi North‧?‧?	➡ Tukang Besi North‧Latin‧Indonesia-->
 		<likelySubtag from="khd" to="khd_Latn_ID" origin="sil1"/>		<!--Bädi Kanum‧?‧?	➡ Bädi Kanum‧Latin‧Indonesia-->
 		<likelySubtag from="khe" to="khe_Latn_ID" origin="sil1"/>		<!--Korowai‧?‧?	➡ Korowai‧Latin‧Indonesia-->
@@ -4170,6 +4175,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="kwu" to="kwu_Latn_CM" origin="sil1"/>		<!--Kwakum‧?‧?	➡ Kwakum‧Latin‧Cameroon-->
 		<likelySubtag from="kwv" to="kwv_Latn_TD" origin="sil1"/>		<!--Sara Kaba Náà‧?‧?	➡ Sara Kaba Náà‧Latin‧Chad-->
 		<likelySubtag from="kww" to="kww_Latn_SR" origin="sil1"/>		<!--Kwinti‧?‧?	➡ Kwinti‧Latin‧Suriname-->
+		<likelySubtag from="kwx" to="kwx_Deva_IN" origin="sil1"/>		<!--Khirwar‧?‧?	➡ Khirwar‧Devanagari‧India-->
 		<likelySubtag from="kwy" to="kwy_Latn_AO" origin="sil1"/>		<!--San Salvador Kongo‧?‧?	➡ San Salvador Kongo‧Latin‧Angola-->
 		<likelySubtag from="kwz" to="kwz_Latn_AO" origin="sil1"/>		<!--Kwadi‧?‧?	➡ Kwadi‧Latin‧Angola-->
 		<likelySubtag from="kxa" to="kxa_Latn_PG" origin="sil1"/>		<!--Kairiru‧?‧?	➡ Kairiru‧Latin‧Papua New Guinea-->
@@ -4477,6 +4483,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="luc" to="luc_Latn_UG" origin="sil1"/>		<!--Aringa‧?‧?	➡ Aringa‧Latin‧Uganda-->
 		<likelySubtag from="lud" to="lud_Latn_RU" origin="sil1"/>		<!--Ludian‧?‧?	➡ Ludian‧Latin‧Russia-->
 		<likelySubtag from="luf" to="luf_Latn_PG" origin="sil1"/>		<!--Laua‧?‧?	➡ Laua‧Latin‧Papua New Guinea-->
+		<likelySubtag from="luh" to="luh_Hans_CN" origin="sil1"/>		<!--Leizhou Chinese‧?‧?	➡ Leizhou Chinese‧Simplified‧China-->
 		<likelySubtag from="lui" to="lui_Latn_US" origin="sil1"/>		<!--Luiseno‧?‧?	➡ Luiseno‧Latin‧United States-->
 		<likelySubtag from="luj" to="luj_Latn_CD" origin="sil1"/>		<!--Luna‧?‧?	➡ Luna‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="luk" to="luk_Tibt_BT" origin="sil1"/>		<!--Lunanakha‧?‧?	➡ Lunanakha‧Tibetan‧Bhutan-->
@@ -4731,7 +4738,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mkr" to="mkr_Latn_PG" origin="sil1"/>		<!--Malas‧?‧?	➡ Malas‧Latin‧Papua New Guinea-->
 		<likelySubtag from="mks" to="mks_Latn_MX" origin="sil1"/>		<!--Silacayoapan Mixtec‧?‧?	➡ Silacayoapan Mixtec‧Latin‧Mexico-->
 		<likelySubtag from="mkt" to="mkt_Latn_NC" origin="sil1"/>		<!--Vamale‧?‧?	➡ Vamale‧Latin‧New Caledonia-->
-		<likelySubtag from="mku" to="mku_Latn_GN" origin="sil1"/>		<!--Konyanka Maninka‧?‧?	➡ Konyanka Maninka‧Latin‧Guinea-->
 		<likelySubtag from="mkv" to="mkv_Latn_VU" origin="sil1"/>		<!--Mafea‧?‧?	➡ Mafea‧Latin‧Vanuatu-->
 		<likelySubtag from="mkw" to="mkw_Latn_CG" origin="sil1"/>		<!--Kituba (Congo)‧?‧?	➡ Kituba (Congo)‧Latin‧Congo - Brazzaville-->
 		<likelySubtag from="mkx" to="mkx_Latn_PH" origin="sil1"/>		<!--Kinamiging Manobo‧?‧?	➡ Kinamiging Manobo‧Latin‧Philippines-->
@@ -4750,7 +4756,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mln" to="mln_Latn_SB" origin="sil1"/>		<!--Malango‧?‧?	➡ Malango‧Latin‧Solomon Islands-->
 		<likelySubtag from="mlo" to="mlo_Latn_SN" origin="sil1"/>		<!--Mlomp‧?‧?	➡ Mlomp‧Latin‧Senegal-->
 		<likelySubtag from="mlp" to="mlp_Latn_PG" origin="sil1"/>		<!--Bargam‧?‧?	➡ Bargam‧Latin‧Papua New Guinea-->
-		<likelySubtag from="mlq" to="mlq_Latn_SN" origin="sil1"/>		<!--Western Maninkakan‧?‧?	➡ Western Maninkakan‧Latin‧Senegal-->
 		<likelySubtag from="mlr" to="mlr_Latn_CM" origin="sil1"/>		<!--Vame‧?‧?	➡ Vame‧Latin‧Cameroon-->
 		<likelySubtag from="mlu" to="mlu_Latn_SB" origin="sil1"/>		<!--To'abaita‧?‧?	➡ To'abaita‧Latin‧Solomon Islands-->
 		<likelySubtag from="mlv" to="mlv_Latn_VU" origin="sil1"/>		<!--Motlav‧?‧?	➡ Motlav‧Latin‧Vanuatu-->
@@ -4788,6 +4793,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mng" to="mng_Latn_VN" origin="sil1"/>		<!--Eastern Mnong‧?‧?	➡ Eastern Mnong‧Latin‧Vietnam-->
 		<likelySubtag from="mnh" to="mnh_Latn_CD" origin="sil1"/>		<!--Mono (Democratic Republic of Congo)‧?‧?	➡ Mono (Democratic Republic of Congo)‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="mnj" to="mnj_Arab_AF" origin="sil1"/>		<!--Munji‧?‧?	➡ Munji‧Arabic‧Afghanistan-->
+		<likelySubtag from="mnk" to="mnk_Latn_GM" origin="sil1"/>		<!--Mandinka‧?‧?	➡ Mandinka‧Latin‧Gambia-->
 		<likelySubtag from="mnl" to="mnl_Latn_VU" origin="sil1"/>		<!--Tiale‧?‧?	➡ Tiale‧Latin‧Vanuatu-->
 		<likelySubtag from="mnm" to="mnm_Latn_PG" origin="sil1"/>		<!--Mapena‧?‧?	➡ Mapena‧Latin‧Papua New Guinea-->
 		<likelySubtag from="mnn" to="mnn_Latn_VN" origin="sil1"/>		<!--Southern Mnong‧?‧?	➡ Southern Mnong‧Latin‧Vietnam-->
@@ -4861,6 +4867,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mqq" to="mqq_Latn_MY" origin="sil1"/>		<!--Minokok‧?‧?	➡ Minokok‧Latin‧Malaysia-->
 		<likelySubtag from="mqr" to="mqr_Latn_ID" origin="sil1"/>		<!--Mander‧?‧?	➡ Mander‧Latin‧Indonesia-->
 		<likelySubtag from="mqs" to="mqs_Latn_ID" origin="sil1"/>		<!--West Makian‧?‧?	➡ West Makian‧Latin‧Indonesia-->
+		<likelySubtag from="mqt" to="mqt_Latn_TH" origin="sil1"/>		<!--Mok‧?‧?	➡ Mok‧Latin‧Thailand-->
 		<likelySubtag from="mqu" to="mqu_Latn_SS" origin="sil1"/>		<!--Mandari‧?‧?	➡ Mandari‧Latin‧South Sudan-->
 		<likelySubtag from="mqv" to="mqv_Latn_PG" origin="sil1"/>		<!--Mosimo‧?‧?	➡ Mosimo‧Latin‧Papua New Guinea-->
 		<likelySubtag from="mqw" to="mqw_Latn_PG" origin="sil1"/>		<!--Murupi‧?‧?	➡ Murupi‧Latin‧Papua New Guinea-->
@@ -4889,7 +4896,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mry" to="mry_Latn_PH" origin="sil1"/>		<!--Mandaya‧?‧?	➡ Mandaya‧Latin‧Philippines-->
 		<likelySubtag from="mrz" to="mrz_Latn_ID" origin="sil1"/>		<!--Marind‧?‧?	➡ Marind‧Latin‧Indonesia-->
 		<likelySubtag from="msb" to="msb_Latn_PH" origin="sil1"/>		<!--Masbatenyo‧?‧?	➡ Masbatenyo‧Latin‧Philippines-->
-		<likelySubtag from="msc" to="msc_Latn_GN" origin="sil1"/>		<!--Sankaran Maninka‧?‧?	➡ Sankaran Maninka‧Latin‧Guinea-->
 		<likelySubtag from="mse" to="mse_Latn_TD" origin="sil1"/>		<!--Musey‧?‧?	➡ Musey‧Latin‧Chad-->
 		<likelySubtag from="msf" to="msf_Latn_ID" origin="sil1"/>		<!--Mekwei‧?‧?	➡ Mekwei‧Latin‧Indonesia-->
 		<likelySubtag from="msg" to="msg_Latn_ID" origin="sil1"/>		<!--Moraid‧?‧?	➡ Moraid‧Latin‧Indonesia-->
@@ -5400,7 +5406,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="nua" to="nua_Latn_NC" origin="sil1"/>		<!--Yuanga‧?‧?	➡ Yuanga‧Latin‧New Caledonia-->
 		<likelySubtag from="nuc" to="nuc_Latn_BR" origin="sil1"/>		<!--Nukuini‧?‧?	➡ Nukuini‧Latin‧Brazil-->
 		<likelySubtag from="nud" to="nud_Latn_PG" origin="sil1"/>		<!--Ngala‧?‧?	➡ Ngala‧Latin‧Papua New Guinea-->
-		<likelySubtag from="nue" to="nue_Latn_CD" origin="sil1"/>		<!--Ngundu‧?‧?	➡ Ngundu‧Latin‧Congo - Kinshasa-->
+		<likelySubtag from="nue" to="nue_Latn_CF" origin="sil1"/>		<!--Ngundu‧?‧?	➡ Ngundu‧Latin‧Central African Republic-->
 		<likelySubtag from="nuf" to="nuf_Latn_CN" origin="sil1"/>		<!--Nusu‧?‧?	➡ Nusu‧Latin‧China-->
 		<likelySubtag from="nug" to="nug_Latn_AU" origin="sil1"/>		<!--Nungali‧?‧?	➡ Nungali‧Latin‧Australia-->
 		<likelySubtag from="nuh" to="nuh_Latn_NG" origin="sil1"/>		<!--Ndunda‧?‧?	➡ Ndunda‧Latin‧Nigeria-->
@@ -5438,6 +5444,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="nxe" to="nxe_Latn_ID" origin="sil1"/>		<!--Nage‧?‧?	➡ Nage‧Latin‧Indonesia-->
 		<likelySubtag from="nxg" to="nxg_Latn_ID" origin="sil1"/>		<!--Ngad'a‧?‧?	➡ Ngad'a‧Latin‧Indonesia-->
 		<likelySubtag from="nxi" to="nxi_Latn_TZ" origin="sil1"/>		<!--Nindi‧?‧?	➡ Nindi‧Latin‧Tanzania-->
+		<likelySubtag from="nxk" to="nxk_Latn_MM" origin="sil1"/>		<!--Koki Naga‧?‧?	➡ Koki Naga‧Latin‧Myanmar (Burma)-->
 		<likelySubtag from="nxl" to="nxl_Latn_ID" origin="sil1"/>		<!--South Nuaulu‧?‧?	➡ South Nuaulu‧Latin‧Indonesia-->
 		<likelySubtag from="nxn" to="nxn_Latn_AU" origin="sil1"/>		<!--Ngawun‧?‧?	➡ Ngawun‧Latin‧Australia-->
 		<likelySubtag from="nxo" to="nxo_Latn_GA" origin="sil1"/>		<!--Ndambomo‧?‧?	➡ Ndambomo‧Latin‧Gabon-->
@@ -5613,6 +5620,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ovd" to="ovd_Latn_SE" origin="sil1"/>		<!--Elfdalian‧?‧?	➡ Elfdalian‧Latin‧Sweden-->
 		<likelySubtag from="owi" to="owi_Latn_PG" origin="sil1"/>		<!--Owiniga‧?‧?	➡ Owiniga‧Latin‧Papua New Guinea-->
 		<likelySubtag from="owl" to="owl_Latn_GB" origin="sil1"/>		<!--Old Welsh‧?‧?	➡ Old Welsh‧Latin‧United Kingdom-->
+		<likelySubtag from="oyb" to="oyb_Laoo_LA" origin="sil1"/>		<!--Oy‧?‧?	➡ Oy‧Lao‧Laos-->
 		<likelySubtag from="oyd" to="oyd_Latn_ET" origin="sil1"/>		<!--Oyda‧?‧?	➡ Oyda‧Latin‧Ethiopia-->
 		<likelySubtag from="oym" to="oym_Latn_BR" origin="sil1"/>		<!--Wayampi‧?‧?	➡ Wayampi‧Latin‧Brazil-->
 		<likelySubtag from="oyy" to="oyy_Latn_PG" origin="sil1"/>		<!--Oya'oya‧?‧?	➡ Oya'oya‧Latin‧Papua New Guinea-->
@@ -6201,6 +6209,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="siz" to="siz_Arab_EG" origin="sil1"/>		<!--Siwi‧?‧?	➡ Siwi‧Arabic‧Egypt-->
 		<likelySubtag from="sja" to="sja_Latn_CO" origin="sil1"/>		<!--Epena‧?‧?	➡ Epena‧Latin‧Colombia-->
 		<likelySubtag from="sjb" to="sjb_Latn_ID" origin="sil1"/>		<!--Sajau Basap‧?‧?	➡ Sajau Basap‧Latin‧Indonesia-->
+		<likelySubtag from="sjc" to="sjc_Hans_CN" origin="sil1"/>		<!--Shaojiang Chinese‧?‧?	➡ Shaojiang Chinese‧Simplified‧China-->
 		<likelySubtag from="sjd" to="sjd_Cyrl_RU" origin="sil1"/>		<!--Kildin Sami‧?‧?	➡ Kildin Sami‧Cyrillic‧Russia-->
 		<likelySubtag from="sje" to="sje_Latn_SE" origin="sil1"/>		<!--Pite Sami‧?‧?	➡ Pite Sami‧Latin‧Sweden-->
 		<likelySubtag from="sjg" to="sjg_Latn_TD" origin="sil1"/>		<!--Assangori‧?‧?	➡ Assangori‧Latin‧Chad-->
@@ -6495,7 +6504,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="tci" to="tci_Latn_PG" origin="sil1"/>		<!--Wára‧?‧?	➡ Wára‧Latin‧Papua New Guinea-->
 		<likelySubtag from="tck" to="tck_Latn_GA" origin="sil1"/>		<!--Tchitchege‧?‧?	➡ Tchitchege‧Latin‧Gabon-->
 		<likelySubtag from="tcm" to="tcm_Latn_ID" origin="sil1"/>		<!--Tanahmerah‧?‧?	➡ Tanahmerah‧Latin‧Indonesia-->
-		<likelySubtag from="tcn" to="tcn_Tibt_NP" origin="sil1"/>		<!--Tichurong‧?‧?	➡ Tichurong‧Tibetan‧Nepal-->
+		<likelySubtag from="tcn" to="tcn_Deva_NP" origin="sil1"/>		<!--Tichurong‧?‧?	➡ Tichurong‧Devanagari‧Nepal-->
 		<likelySubtag from="tco" to="tco_Mymr_MM" origin="sil1"/>		<!--Taungyo‧?‧?	➡ Taungyo‧Myanmar‧Myanmar (Burma)-->
 		<likelySubtag from="tcp" to="tcp_Latn_MM" origin="sil1"/>		<!--Tawr Chin‧?‧?	➡ Tawr Chin‧Latin‧Myanmar (Burma)-->
 		<likelySubtag from="tcq" to="tcq_Latn_ID" origin="sil1"/>		<!--Kaiy‧?‧?	➡ Kaiy‧Latin‧Indonesia-->
@@ -6826,7 +6835,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="twg" to="twg_Latn_ID" origin="sil1"/>		<!--Tereweng‧?‧?	➡ Tereweng‧Latin‧Indonesia-->
 		<likelySubtag from="twh" to="twh_Latn_VN" origin="sil1"/>		<!--Tai Dón‧?‧?	➡ Tai Dón‧Latin‧Vietnam-->
 		<likelySubtag from="twl" to="twl_Latn_MZ" origin="sil1"/>		<!--Tawara‧?‧?	➡ Tawara‧Latin‧Mozambique-->
-		<likelySubtag from="twm" to="twm_Deva_IN" origin="sil1"/>		<!--Tawang Monpa‧?‧?	➡ Tawang Monpa‧Devanagari‧India-->
+		<likelySubtag from="twm" to="twm_Tibt_IN" origin="sil1"/>		<!--Tawang Monpa‧?‧?	➡ Tawang Monpa‧Tibetan‧India-->
 		<likelySubtag from="twn" to="twn_Latn_CM" origin="sil1"/>		<!--Twendi‧?‧?	➡ Twendi‧Latin‧Cameroon-->
 		<likelySubtag from="two" to="two_Latn_BW" origin="sil1"/>		<!--Tswapong‧?‧?	➡ Tswapong‧Latin‧Botswana-->
 		<likelySubtag from="twp" to="twp_Latn_PG" origin="sil1"/>		<!--Ere‧?‧?	➡ Ere‧Latin‧Papua New Guinea-->
@@ -7564,6 +7573,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ymo" to="ymo_Latn_PG" origin="sil1"/>		<!--Yangum Mon‧?‧?	➡ Yangum Mon‧Latin‧Papua New Guinea-->
 		<likelySubtag from="ymp" to="ymp_Latn_PG" origin="sil1"/>		<!--Yamap‧?‧?	➡ Yamap‧Latin‧Papua New Guinea-->
 		<likelySubtag from="yna" to="yna_Plrd_CN" origin="sil1"/>		<!--Aluo‧?‧?	➡ Aluo‧Pollard Phonetic‧China-->
+		<likelySubtag from="ynb" to="ynb_Latn_PG" origin="sil1"/>		<!--Yamben‧?‧?	➡ Yamben‧Latin‧Papua New Guinea-->
 		<likelySubtag from="ynd" to="ynd_Latn_AU" origin="sil1"/>		<!--Yandruwandha‧?‧?	➡ Yandruwandha‧Latin‧Australia-->
 		<likelySubtag from="yng" to="yng_Latn_CD" origin="sil1"/>		<!--Yango‧?‧?	➡ Yango‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="ynk" to="ynk_Cyrl_RU" origin="sil1"/>		<!--Naukan Yupik‧?‧?	➡ Naukan Yupik‧Cyrillic‧Russia-->

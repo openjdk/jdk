@@ -13,7 +13,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
         <!-- 1: other -->
 
-        <pluralRules locales="af am an ar ast bg bs ce cs da de dsb el es et eu fa fi fy gl gsw he hr hsb ia id ie in is iw ja km kn ko ky lt lv ml mn my nb nl no pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tpi tr ur uz yue zh zu">
+        <pluralRules locales="af am an ar ast bg bs ce cs cv da de dsb el es et eu fa fi fy gl gsw he hr hsb ia id ie in is iw ja km kn ko ky lt lv ml mn my nb nl no pa pl prg ps pt root ru sd sh si sk sl sr sw ta te th tpi tr ur uz yue zh zu">
             <pluralRule count="other"> @integer 0~15, 100, 1000, 10000, 100000, 1000000, …</pluralRule>
         </pluralRules>
 
