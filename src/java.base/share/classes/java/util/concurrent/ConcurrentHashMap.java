@@ -3704,7 +3704,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each (key, value).
+     * Performs the given {@linkplain ##Bulk bulk} action for each (key, value).
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -3720,7 +3720,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each (key, value).
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -3743,7 +3743,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from applying the given <a href="#Bulk"> bulk</a> search
+     * Returns a non-null result from applying the given {@linkplain ##Bulk bulk} search
      * function on each (key, value), or null if none.  Upon
      * success, further element processing is suppressed and the
      * results of any other parallel invocations of the search
@@ -3767,7 +3767,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given <a href="#Bulk"> bulk</a> transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, or null if none.
      *
@@ -3793,7 +3793,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given <a href="#Bulk"> bulk</a> transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, and the given basis as an identity value.
      *
@@ -3819,7 +3819,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given <a href="#Bulk"> bulk</a> transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, and the given basis as an identity value.
      *
@@ -3845,7 +3845,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of accumulating the given <a href="#Bulk"> bulk</a> transformation
+     * Returns the result of accumulating the given {@linkplain ##Bulk bulk} transformation
      * of all (key, value) pairs using the given reducer to
      * combine values, and the given basis as an identity value.
      *
@@ -3871,7 +3871,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each key.
+     * Performs the given {@linkplain ##Bulk bulk} action for each key.
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -3887,7 +3887,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each key.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -3910,7 +3910,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from applying the given <a href="#Bulk"> bulk</a> search
+     * Returns a non-null result from applying the given {@linkplain ##Bulk bulk} search
      * function on each key, or null if none. Upon success,
      * further element processing is suppressed and the results of
      * any other parallel invocations of the search function are
@@ -3934,7 +3934,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating all keys using the given
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating all keys using the given
      * reducer to combine values, or null if none.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -3953,7 +3953,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, or
      * null if none.
      *
@@ -3979,7 +3979,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, and
      * the given basis as an identity value.
      *
@@ -4005,7 +4005,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, and
      * the given basis as an identity value.
      *
@@ -4031,7 +4031,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all keys using the given reducer to combine values, and
      * the given basis as an identity value.
      *
@@ -4057,7 +4057,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each value.
+     * Performs the given {@linkplain ##Bulk bulk} action for each value.
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -4074,7 +4074,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each value.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4097,7 +4097,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from <a href="#Bulk"> bulk</a> applying the given search
+     * Returns a non-null result from {@linkplain ##Bulk bulk} applying the given search
      * function on each value, or null if none.  Upon success,
      * further element processing is suppressed and the results of
      * any other parallel invocations of the search function are
@@ -4121,7 +4121,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating all values using the
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating all values using the
      * given reducer to combine values, or null if none.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4139,7 +4139,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values, or
      * null if none.
      *
@@ -4165,7 +4165,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4191,7 +4191,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4217,7 +4217,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all values using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4243,7 +4243,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each entry.
+     * Performs the given {@linkplain ##Bulk bulk} action for each entry.
      *
      * @param parallelismThreshold the (estimated) number of elements
      * needed for this operation to be executed in parallel
@@ -4258,7 +4258,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Performs the given <a href="#Bulk"> bulk</a> action for each non-null transformation
+     * Performs the given {@linkplain ##Bulk bulk} action for each non-null transformation
      * of each entry.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4281,7 +4281,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a non-null result from <a href="#Bulk"> bulk</a> applying the given search
+     * Returns a non-null result from {@linkplain ##Bulk bulk} applying the given search
      * function on each entry, or null if none.  Upon success,
      * further element processing is suppressed and the results of
      * any other parallel invocations of the search function are
@@ -4305,7 +4305,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating all entries using the
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating all entries using the
      * given reducer to combine values, or null if none.
      *
      * @param parallelismThreshold the (estimated) number of elements
@@ -4323,7 +4323,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * or null if none.
      *
@@ -4349,7 +4349,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4375,7 +4375,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * and the given basis as an identity value.
      *
@@ -4401,7 +4401,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns the result of <a href="#Bulk"> bulk</a> accumulating the given transformation
+     * Returns the result of {@linkplain ##Bulk bulk} accumulating the given transformation
      * of all entries using the given reducer to combine values,
      * and the given basis as an identity value.
      *
