@@ -268,7 +268,6 @@ bool os::Aix::available_memory(size_t& value) {
     value = static_cast<size_t>(mi.real_free);
     return true;
   } else {
-    value = static_cast<size_t>(ULONG_MAX);
     return false;
   }
 }
