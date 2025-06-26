@@ -63,7 +63,7 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
   if (result) {
     _committed_high_addr += bytes;
   } else {
-    log_warning(gc)("expand_by commit %zu bytes failed", bytes);
+    log_warning(gc)("PSVirtualSpace::expand_by: to commit %zu bytes failed", bytes);
   }
 
   return result;

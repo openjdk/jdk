@@ -535,8 +535,7 @@ bool PSScavenge::should_attempt_scavenge() {
   PSOldGen* old_gen = heap->old_gen();
 
   if (!young_gen->to_space()->is_empty()) {
-    // To-space is not empty; should run full-gc instead.
-    log_debug(gc, ergo)("non-empty to-space; full-gc instead");
+    log_debug(gc, ergo)("To-space is not empty; should run full-gc instead.");
     return false;
   }
 
