@@ -930,7 +930,7 @@ sealed abstract class QuicKeyManager
                 final QuicVersion quicVersion, final QuicWriteCipher current) {
             final SSLKeyDerivation kd =
                     new QuicTLSKeyDerivation(current.getCipherSuite(),
-                            current.getSecret());
+                            current.getBaseSecret());
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
             try {
                 final SecretKey nplus1Secret =
@@ -955,7 +955,7 @@ sealed abstract class QuicKeyManager
                 final QuicVersion quicVersion, final QuicReadCipher current) {
             final SSLKeyDerivation kd =
                     new QuicTLSKeyDerivation(current.getCipherSuite(),
-                            current.getSecret());
+                            current.getBaseSecret());
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
             try {
                 final SecretKey nPlus1Secret =

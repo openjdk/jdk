@@ -109,21 +109,21 @@ abstract class QuicCipher {
 
     private final CipherSuite cipherSuite;
     private final QuicHeaderProtectionCipher hpCipher;
-    private final SecretKey secret;
+    private final SecretKey baseSecret;
     private final int keyPhase;
 
-    protected QuicCipher(final CipherSuite cipherSuite, final SecretKey secret,
+    protected QuicCipher(final CipherSuite cipherSuite, final SecretKey baseSecret,
             final QuicHeaderProtectionCipher hpCipher, final int keyPhase) {
         assert keyPhase == 0 || keyPhase == 1 :
                 "invalid key phase: " + keyPhase;
         this.cipherSuite = cipherSuite;
-        this.secret = secret;
+        this.baseSecret = baseSecret;
         this.hpCipher = hpCipher;
         this.keyPhase = keyPhase;
     }
 
-    final SecretKey getSecret() {
-        return this.secret;
+    final SecretKey getBaseSecret() {
+        return this.baseSecret;
     }
 
     final CipherSuite getCipherSuite() {
@@ -143,7 +143,7 @@ abstract class QuicCipher {
     }
 
     final void discard(boolean destroyHP) {
-        safeDiscard(this.secret);
+        safeDiscard(this.baseSecret);
         if (destroyHP) {
             this.hpCipher.discard();
         }
@@ -153,31 +153,31 @@ abstract class QuicCipher {
     protected abstract void doDiscard();
 
     static QuicReadCipher createReadCipher(final CipherSuite cipherSuite,
-            final SecretKey secret, final SecretKey key,
+            final SecretKey baseSecret, final SecretKey key,
             final byte[] iv, final SecretKey hp,
             final int keyPhase) throws GeneralSecurityException {
         return switch (cipherSuite) {
             case TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384 ->
                     new T13GCMReadCipher(
-                            cipherSuite, secret, key, iv, hp, keyPhase);
+                            cipherSuite, baseSecret, key, iv, hp, keyPhase);
             case TLS_CHACHA20_POLY1305_SHA256 ->
                     new T13CC20P1305ReadCipher(
-                            cipherSuite, secret, key, iv, hp, keyPhase);
+                            cipherSuite, baseSecret, key, iv, hp, keyPhase);
             default -> throw new IllegalArgumentException("Cipher suite "
                     + cipherSuite + " not supported");
         };
     }
 
     static QuicWriteCipher createWriteCipher(final CipherSuite cipherSuite,
-            final SecretKey secret, final SecretKey key,
+            final SecretKey baseSecret, final SecretKey key,
             final byte[] iv, final SecretKey hp,
             final int keyPhase) throws GeneralSecurityException {
         return switch (cipherSuite) {
             case TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384 ->
-                    new T13GCMWriteCipher(cipherSuite, secret, key, iv, hp,
+                    new T13GCMWriteCipher(cipherSuite, baseSecret, key, iv, hp,
                             keyPhase);
             case TLS_CHACHA20_POLY1305_SHA256 ->
-                    new T13CC20P1305WriteCipher(cipherSuite, secret, key, iv,
+                    new T13CC20P1305WriteCipher(cipherSuite, baseSecret, key, iv,
                             hp, keyPhase);
             default -> throw new IllegalArgumentException("Cipher suite "
                     + cipherSuite + " not supported");
@@ -191,9 +191,9 @@ abstract class QuicCipher {
     abstract static class QuicReadCipher extends QuicCipher {
         private final AtomicLong lowestDecryptedPktNum = new AtomicLong(-1);
 
-        QuicReadCipher(CipherSuite cipherSuite, SecretKey secret,
+        QuicReadCipher(CipherSuite cipherSuite, SecretKey baseSecret,
                        QuicHeaderProtectionCipher hpCipher, int keyPhase) {
-            super(cipherSuite, secret, hpCipher, keyPhase);
+            super(cipherSuite, baseSecret, hpCipher, keyPhase);
         }
 
         final void decryptPacket(long packetNumber, ByteBuffer packet,
@@ -248,9 +248,9 @@ abstract class QuicCipher {
         private final AtomicLong numPacketsEncrypted = new AtomicLong();
         private final AtomicLong lowestEncryptedPktNum = new AtomicLong(-1);
 
-        QuicWriteCipher(CipherSuite cipherSuite, SecretKey secret,
+        QuicWriteCipher(CipherSuite cipherSuite, SecretKey baseSecret,
                 QuicHeaderProtectionCipher hpCipher, int keyPhase) {
-            super(cipherSuite, secret, hpCipher, keyPhase);
+            super(cipherSuite, baseSecret, hpCipher, keyPhase);
         }
 
         final void encryptPacket(final long packetNumber,
@@ -366,11 +366,11 @@ abstract class QuicCipher {
         private final SecretKey key;
         private final byte[] iv;
 
-        T13GCMReadCipher(final CipherSuite cipherSuite, final SecretKey secret,
+        T13GCMReadCipher(final CipherSuite cipherSuite, final SecretKey baseSecret,
                 final SecretKey key, final byte[] iv, final SecretKey hp,
                 final int keyPhase)
                 throws GeneralSecurityException {
-            super(cipherSuite, secret, new T13AESHPCipher(hp), keyPhase);
+            super(cipherSuite, baseSecret, new T13AESHPCipher(hp), keyPhase);
             this.key = key;
             this.iv = iv;
             this.cipher = Cipher.getInstance("AES/GCM/NoPadding");
@@ -443,10 +443,10 @@ abstract class QuicCipher {
         private final Cipher cipher;
         private final byte[] iv;
 
-        T13GCMWriteCipher(final CipherSuite cipherSuite, final SecretKey secret,
+        T13GCMWriteCipher(final CipherSuite cipherSuite, final SecretKey baseSecret,
                 final SecretKey key, final byte[] iv, final SecretKey hp,
                 final int keyPhase) throws GeneralSecurityException {
-            super(cipherSuite, secret, new T13AESHPCipher(hp), keyPhase);
+            super(cipherSuite, baseSecret, new T13AESHPCipher(hp), keyPhase);
             this.key = key;
             this.iv = iv;
             this.cipher = Cipher.getInstance(CIPHER_ALGORITHM_NAME);
@@ -534,10 +534,10 @@ abstract class QuicCipher {
         private final byte[] iv;
 
         T13CC20P1305ReadCipher(final CipherSuite cipherSuite,
-                final SecretKey secret, final SecretKey key,
+                final SecretKey baseSecret, final SecretKey key,
                 final byte[] iv, final SecretKey hp, final int keyPhase)
                 throws GeneralSecurityException {
-            super(cipherSuite, secret, new T13CC20HPCipher(hp), keyPhase);
+            super(cipherSuite, baseSecret, new T13CC20HPCipher(hp), keyPhase);
             this.key = key;
             this.iv = iv;
             this.cipher = Cipher.getInstance("ChaCha20-Poly1305");
@@ -610,11 +610,11 @@ abstract class QuicCipher {
         private final byte[] iv;
 
         T13CC20P1305WriteCipher(final CipherSuite cipherSuite,
-                                final SecretKey secret, final SecretKey key,
+                                final SecretKey baseSecret, final SecretKey key,
                                 final byte[] iv, final SecretKey hp,
                                 final int keyPhase)
                 throws GeneralSecurityException {
-            super(cipherSuite, secret, new T13CC20HPCipher(hp), keyPhase);
+            super(cipherSuite, baseSecret, new T13CC20HPCipher(hp), keyPhase);
             this.key = key;
             this.iv = iv;
             this.cipher = Cipher.getInstance(CIPHER_ALGORITHM_NAME);
