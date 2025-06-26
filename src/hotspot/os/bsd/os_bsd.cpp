@@ -114,7 +114,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-julong os::Bsd::_physical_memory = 0;
+size_t os::Bsd::_physical_memory = 0;
 
 #ifdef __APPLE__
 mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
@@ -145,7 +145,7 @@ bool os::free_memory(size_t& value) {
 // for future memory pressure it is far too conservative, since MacOS will use a lot
 // of unused memory for caches, and return it willingly in case of needs.
 bool os::Bsd::available_memory(size_t& value) {
-  uint64_t available = physical_memory() >> 2;
+  uint64_t available = static_cast<uint64_t>(physical_memory() >> 2);
 #ifdef __APPLE__
   mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
   vm_statistics64_data_t vmstat;
@@ -209,8 +209,7 @@ bool os::free_swap_space(size_t& value) {
 }
 
 bool os::physical_memory(size_t& value) {
-  julong phys_mem = Bsd::physical_memory();
-  value = static_cast<size_t>(phys_mem);
+  value = Bsd::physical_memory();
   return true;
 }
 
@@ -288,7 +287,7 @@ void os::Bsd::initialize_system_info() {
   len = sizeof(mem_val);
   if (sysctl(mib, 2, &mem_val, &len, nullptr, 0) != -1) {
     assert(len == sizeof(mem_val), "unexpected data size");
-    _physical_memory = mem_val;
+    _physical_memory = static_cast<size_t>(mem_val);
   } else {
     _physical_memory = 256 * 1024 * 1024;       // fallback (XXXBSD?)
   }

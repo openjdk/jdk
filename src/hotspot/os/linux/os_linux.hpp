@@ -50,7 +50,7 @@ class os::Linux {
 
  protected:
 
-  static julong _physical_memory;
+  static size_t _physical_memory;
   static pthread_t _main_thread;
 
   static bool available_memory(size_t& value);
@@ -117,7 +117,7 @@ class os::Linux {
   static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
 
-  static julong physical_memory() { return _physical_memory; }
+  static size_t physical_memory() { return _physical_memory; }
   static julong host_swap();
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);

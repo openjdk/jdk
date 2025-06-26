@@ -169,7 +169,7 @@ static void vmembk_print_on(outputStream* os);
 ////////////////////////////////////////////////////////////////////////////////
 // global variables (for a description see os_aix.hpp)
 
-julong    os::Aix::_physical_memory = 0;
+size_t    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
 
@@ -292,8 +292,13 @@ bool os::free_swap_space(size_t& value) {
 }
 
 bool os::physical_memory(size_t& value) {
-  julong phys_mem = Aix::physical_memory();
-  value = static_cast<size_t>(phys_mem);
+  size_t phys_mem = Aix::physical_memory();
+  if (phys_mem == std::numeric_limits<size_t>::max())
+  {
+    // os::Aix::get_meminfo failed
+    return false;
+  }
+  value = phys_mem;
   return true;
 }
 
@@ -331,8 +336,11 @@ void os::Aix::initialize_system_info() {
   os::Aix::meminfo_t mi;
   if (!os::Aix::get_meminfo(&mi)) {
     assert(false, "os::Aix::get_meminfo failed.");
+    // to propagate error
+    _physical_memory = std::numeric_limits<size_t>::max();
+  } else {
+    _physical_memory = static_cast<size_t>(mi.real_total);
   }
-  _physical_memory = (julong) mi.real_total;
 }
 
 // Helper function for tracing page sizes.
@@ -2210,7 +2218,7 @@ jint os::init_2(void) {
   os::Posix::init_2();
 
   trcVerbose("processor count: %d", os::_processor_count);
-  trcVerbose("physical memory: %lu", Aix::_physical_memory);
+  trcVerbose("physical memory: %zu", Aix::_physical_memory);
 
   // Initially build up the loaded dll map.
   LoadedLibraries::reload();

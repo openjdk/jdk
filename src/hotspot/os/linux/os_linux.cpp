@@ -157,7 +157,7 @@ enum CoredumpFilterBit {
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-julong os::Linux::_physical_memory = 0;
+size_t os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
@@ -359,7 +359,6 @@ bool os::free_swap_space(size_t& value) {
 }
 
 bool os::physical_memory(size_t& value) {
-  jlong phys_mem = 0;
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
@@ -369,9 +368,9 @@ bool os::physical_memory(size_t& value) {
     }
   }
 
-  phys_mem = Linux::physical_memory();
-  log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
-  value = static_cast<size_t>(phys_mem);
+  size_t phys_mem = Linux::physical_memory();
+  log_trace(os)("total system memory: %zu", phys_mem);
+  value = phys_mem;
   return true;
 }
 
@@ -546,7 +545,7 @@ void os::Linux::initialize_system_info() {
       fclose(fp);
     }
   }
-  _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
+  _physical_memory = static_cast<size_t>(sysconf(_SC_PHYS_PAGES)) * static_cast<size_t>(sysconf(_SC_PAGESIZE));
   assert(processor_count() > 0, "linux error");
 }
 
