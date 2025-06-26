@@ -32,6 +32,14 @@ import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
 import java.util.List;
 
+import static javax.crypto.spec.HPKEParameterSpec.AEAD_AES_256_GCM;
+import static javax.crypto.spec.HPKEParameterSpec.KDF_HKDF_SHA256;
+import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256;
+import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384;
+import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512;
+import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
+import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512;
+
 /*
  * @test
  * @bug 8325448
@@ -39,13 +47,13 @@ import java.util.List;
  * @summary HPKE running with different keys
  */
 public class Functions {
-    record Params(String name) {}
+    record Params(String name, int kem) {}
     static List<Params> PARAMS = List.of(
-            new Params("secp256r1"),
-            new Params("secp384r1"),
-            new Params("secp521r1"),
-            new Params("X25519"),
-            new Params("X448")
+            new Params("secp256r1", KEM_DHKEM_P_256_HKDF_SHA256),
+            new Params("secp384r1", KEM_DHKEM_P_384_HKDF_SHA384),
+            new Params("secp521r1", KEM_DHKEM_P_521_HKDF_SHA512),
+            new Params("X25519", KEM_DHKEM_X25519_HKDF_SHA256),
+            new Params("X448", KEM_DHKEM_X448_HKDF_SHA512)
     );
     public static void main(String[] args) throws Exception {
 
@@ -59,28 +67,27 @@ public class Functions {
             var c = Cipher.getInstance("HPKE");
             var kp = genKeyPair(param.name());
             var kp2 = genKeyPair(param.name());
+            var params = HPKEParameterSpec
+                    .of(param.kem, KDF_HKDF_SHA256, AEAD_AES_256_GCM);
 
-            c.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+            c.init(Cipher.ENCRYPT_MODE, kp.getPublic(), params);
             var ct = c.doFinal(msg);
 
-            var ap = c.getParameters();
-            var spec = ap.getParameterSpec(HPKEParameterSpec.class);
-
-            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), ap);
+            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params.encapsulation(c.getIV()));
             Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
 
-            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), spec);
-            Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
-
-            c.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of()
+            c.init(Cipher.ENCRYPT_MODE, kp.getPublic(), params
                     .authKey(kp2.getPrivate())
                     .info(info)
                     .psk(psk, psk_id));
             ct = c.doFinal(msg);
-            var params = c.getParameters().getParameterSpec(HPKEParameterSpec.class);
 
             c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params
-                    .authKey(kp2.getPublic()));
+                    .authKey(kp2.getPublic())
+                    .info(info)
+                    .psk(psk, psk_id)
+                    .encapsulation(c.getIV()));
+
             Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
         }
     }

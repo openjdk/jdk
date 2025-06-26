@@ -45,20 +45,11 @@ import java.util.Objects;
  * while the recipient's {@code Cipher} object is initialized with its own
  * private key in {@linkplain Cipher#DECRYPT_MODE decrypt mode}.
  * <p>
- * An {@code HPKEParameterSpec} object can be provided at HPKE
+ * An {@code HPKEParameterSpec} object must be provided at HPKE
  * {@linkplain Cipher#init(int, Key, AlgorithmParameterSpec) cipher initialization}.
  * <p>
- * An {@code HPKEParameterSpec} object can be created in two ways:
- * <ul>
- * <li> {@link #of()} creates an instance with unspecified KEM, KDF, and AEAD
- * algorithm identifiers, which will be determined by the implementation based
- * on the key provided to {@code init()}. This instance can only be used by the
- * sender. If an implementation does not support initializing with default
- * algorithm identifiers, an {@code InvalidAlgorithmParameterException} will be thrown.
- * <li> {@link #of(int, int, int)} creates an instance with explicitly
- * specified KEM, KDF, and AEAD algorithm identifiers. This instance can be
- * used by both the sender and the receiver.
- * </ul>
+ * {@link #of(int, int, int)} creates an {@code HPKEParameterSpec} instance with
+ * specified KEM, KDF, and AEAD algorithm identifiers.
  * The terms "KEM algorithm identifiers", "KDF algorithm identifiers", and
  * "AEAD algorithm identifiers" refer to their respective numeric values
  * (specifically, {@code kem_id}, {@code kdf_id}, and {@code aead_id}) as
@@ -99,17 +90,14 @@ import java.util.Objects;
  * encapsulation message must be provided using the {@link #encapsulation(byte[])}
  * method.
  * </ul>
- * For successful interoperability, both sides need to supply identical
+ * For successful interoperability, both sides need to have identical algorithm
+ * identifiers, and supply identical
  * {@code info}, {@code psk}, and {@code psk_id} or matching authentication
  * keys if provided. For details about HPKE modes, refer to
  * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5">Section 5</a>
  * of RFC 9180.
  * <p>
- * If the sender cipher is initialized without parameters, it assumes a
- * default parameters object is used, which is equivalent to
- * {@code HPKEParameterSpec.of()}. In this case, the
- * cipher always works in {@code mode_base} mode with an empty {@code info}.
- * If the recipient side is initialized without parameters, an
+ * If an HPKE cipher is initialized without parameters, an
  * {@code InvalidKeyException} will be thrown.
  * <p>
  * At HPKE cipher initialization, if no HPKE implementation supports the provided
@@ -119,58 +107,13 @@ import java.util.Objects;
  * For example:
  * <ul>
  * <li> The algorithm identifiers do not match the provided key type.
- * <li> The algorithm identifiers are not specified on the receiver side.
  * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
  * <li> An attempt to use {@code authKey(key)} is made but the selected KEM
  *      does not support authentication.
  * </ul>
  * <p>
- * After an HPKE cipher is initialized, the {@link Cipher#getParameters} method
- * returns an {@link java.security.AlgorithmParameters} object containing the
- * actual {@code HPKEParameterSpec} object used by the cipher. Users can call
- * {@link #kem_id()}, {@link #kdf_id()}, and {@link #aead_id()} on the
- * {@code HPKEParameterSpec} object to obtain the algorithm identifiers
- * selected during initialization. On the sender side, the key encapsulation
- * message is also included in this {@code HPKEParameterSpec} object,
- * even if it was not provided to the cipher initialization.
- * <p>
  * Example:
  * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
- *
- * @implNote
- * In the HPKE implementation in the SunJCE provider included in this JDK
- * implementation, if the sender's HPKE cipher is initialized with
- * {@code HPKEParameterSpec.of()}, the following KEM, KDF, and AEAD algorithm
- * identifiers will be chosen depending on the provided key type and returned
- * by the {@code getParameters} method:
- * <table class="striped">
- * <caption style="display:none">Default Algorithm Identifiers</caption>
- * <thead>
- * <tr><th scope="col">key type
- *     <th scope="col">{@code kem_id}
- *     <th scope="col">{@code kdf_id}
- *     <th scope="col">{@code aead_id}
- * </thead>
- * <tbody>
- * <tr><td>EC (secp256r1)
- *     <td>{@link #KEM_DHKEM_P_256_HKDF_SHA256}
- *     <td>{@link #KDF_HKDF_SHA256}
- *     <td rowspan="5">{@link #AEAD_AES_256_GCM}
- * <tr><td>EC (secp384r1)
- *     <td>{@link #KEM_DHKEM_P_384_HKDF_SHA384}
- *     <td>{@link #KDF_HKDF_SHA384}
- * <tr><td>EC (secp521r1)
- *     <td>{@link #KEM_DHKEM_P_521_HKDF_SHA512}
- *     <td>{@link #KDF_HKDF_SHA512}
- * <tr><td>XDH (X25519)
- *     <td>{@link #KEM_DHKEM_X25519_HKDF_SHA256}
- *     <td>{@link #KDF_HKDF_SHA256}
- * <tr><td>XDH (X448)
- *     <td>{@link #KEM_DHKEM_X448_HKDF_SHA512}
- *     <td>{@link #KDF_HKDF_SHA512}
- * </tbody>
- * </table>
- * No other keys are supported.
  *
  * @spec https://www.rfc-editor.org/info/rfc9180
  *      RFC 9180: Hybrid Public Key Encryption
@@ -252,9 +195,9 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      */
     public static final int EXPORT_ONLY = 0xffff;
 
-    private final int kem_id; // -1 is determined by key later
-    private final int kdf_id; // -1 is determined by key later
-    private final int aead_id; // -1 is determined by key later
+    private final int kem_id;
+    private final int kdf_id;
+    private final int aead_id;
     private final byte[] info; // never null, can be empty
     private final SecretKey psk; // null if not used
     private final byte[] psk_id; // never null, can be empty
@@ -272,19 +215,6 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
         this.psk_id = psk_id;
         this.kS = kS;
         this.encapsulation = encapsulation;
-    }
-
-    /**
-     * A factory method to create an empty {@code HPKEParameterSpec} in
-     * {@code mode_base} mode with an empty {@code info}. The KEM, KDF,
-     * and AEAD algorithm identifiers are not specified and will be
-     * determined by the key used in cipher initialization.
-     *
-     * @return a new {@code HPKEParameterSpec} object
-     */
-    public static HPKEParameterSpec of() {
-        return new HPKEParameterSpec(-1, -1, -1,
-                new byte[0], null, new byte[0], null, null);
     }
 
     /**
@@ -392,21 +322,21 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * {@return the identifier for KEM, -1 if unspecified}
+     * {@return the identifier for KEM }
      */
     public int kem_id() {
         return kem_id;
     }
 
     /**
-     * {@return the identifier for KDF, -1 if unspecified}
+     * {@return the identifier for KDF }
      */
     public int kdf_id() {
         return kdf_id;
     }
 
     /**
-     * {@return the identifier for AEAD, -1 if unspecified}
+     * {@return the identifier for AEAD }
      */
     public int aead_id() {
         return aead_id;

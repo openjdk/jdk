@@ -50,7 +50,6 @@ import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
 public class Compliance {
     public static void main(String[] args) throws Exception {
 
-        var emptyParams = HPKEParameterSpec.of();
         var defaultParams = HPKEParameterSpec.of(
                 KEM_DHKEM_X25519_HKDF_SHA256,
                 KDF_HKDF_SHA256,
@@ -64,10 +63,10 @@ public class Compliance {
         // HPKEParameterSpec
 
         // Default values
-        var spec = emptyParams;
-        Asserts.assertEQ(spec.kem_id(), -1);
-        Asserts.assertEQ(spec.kdf_id(), -1);
-        Asserts.assertEQ(spec.aead_id(), -1);
+        var spec = defaultParams;
+        Asserts.assertEQ(spec.kem_id(), KEM_DHKEM_X25519_HKDF_SHA256);
+        Asserts.assertEQ(spec.kdf_id(), KDF_HKDF_SHA256);
+        Asserts.assertEQ(spec.aead_id(), AEAD_AES_256_GCM);
         Asserts.assertEQ(spec.authKey(), null);
         Asserts.assertEQ(spec.encapsulation(), null);
         Asserts.assertEqualsByteArray(spec.info(), new byte[0]);
@@ -151,19 +150,16 @@ public class Compliance {
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1, new byte[1024], 0));
 
         // Simplest usages
-        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), defaultParams);
         var encap = c1.getIV();
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
                 defaultParams.encapsulation(encap));
 
-        var params = c1.getParameters().getParameterSpec(HPKEParameterSpec.class);
-        Asserts.assertEqualsByteArray(encap, params.encapsulation());
-
         // Does not support WRAP and UNWRAP mode
         Asserts.assertThrows(UnsupportedOperationException.class,
-                () -> c1.init(Cipher.WRAP_MODE, kp.getPublic()));
+                () -> c1.init(Cipher.WRAP_MODE, kp.getPublic(), defaultParams));
         Asserts.assertThrows(UnsupportedOperationException.class,
-                () -> c1.init(Cipher.UNWRAP_MODE, kp.getPublic()));
+                () -> c1.init(Cipher.UNWRAP_MODE, kp.getPublic(), defaultParams));
 
         // Cannot init sender with private key
         Asserts.assertThrows(InvalidKeyException.class,
@@ -172,17 +168,13 @@ public class Compliance {
         // Cannot provide key encap msg to sender
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        emptyParams.encapsulation(new byte[32])));
+                        defaultParams.encapsulation(new byte[32])));
 
-        // Cannot init recipient without algorithm identifiers
+        // Cannot init without algorithm identifiers
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> c2.init(Cipher.ENCRYPT_MODE, kp.getPublic()));
         Asserts.assertThrows(InvalidKeyException.class,
                 () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate()));
-        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                        emptyParams));
-        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                        emptyParams.encapsulation(encap)));
 
         // Cannot init recipient with public key
         Asserts.assertThrows(InvalidKeyException.class,
@@ -215,7 +207,7 @@ public class Compliance {
         var aad = "AAD".getBytes(StandardCharsets.UTF_8);
 
         // HPKE with encryption
-        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), defaultParams);
         Asserts.assertEquals(16, c1.getBlockSize());
         Asserts.assertEquals(116, c1.getOutputSize(100));
         c1.updateAAD(aad);
@@ -248,11 +240,6 @@ public class Compliance {
                 defaultParams.authKey(kp2.getPrivate()),
                 defaultParams.authKey(kp2.getPublic()));
 
-        // check default values
-        checkEncryptDecrypt(kp,
-                emptyParams,
-                defaultParams);
-
         checkEncryptDecrypt(kp,
                 defaultParams,
                 defaultParams.info(new byte[0]));
@@ -266,8 +253,6 @@ public class Compliance {
         Asserts.assertThrows(IOException.class, () -> ap.init(new byte[100]));
         Asserts.assertThrows(InvalidParameterSpecException.class,
                 () -> ap.init(NamedParameterSpec.X25519));
-        Asserts.assertThrows(InvalidParameterSpecException.class,
-                () -> ap.init(emptyParams));
         Asserts.assertTrue(ap.toString() == null);
 
         ap.init(defaultParams);

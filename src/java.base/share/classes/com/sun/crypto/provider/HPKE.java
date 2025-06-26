@@ -54,7 +54,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 
@@ -120,31 +119,13 @@ public class HPKE extends CipherSpi {
 
     @Override
     protected AlgorithmParameters engineGetParameters() {
-        if (state == BEGIN) {
-            return null;
-        }
-        try {
-            var result = AlgorithmParameters.getInstance("HPKE");
-            result.init(impl.params);
-            return result;
-        } catch (NoSuchAlgorithmException e) {
-            throw new ProviderException("Cannot find implementations", e);
-        } catch (InvalidParameterSpecException e) {
-            throw new ProviderException("Parameters not supported", e);
-        }
+        return null;
     }
 
     @Override
     protected void engineInit(int opmode, Key key, SecureRandom random)
             throws InvalidKeyException {
-        try {
-            engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
-        } catch (InvalidAlgorithmParameterException e) {
-            // Parent spec says "throws InvalidKeyException if the given key
-            // requires algorithm parameters that cannot be determined from
-            // the given key"
-            throw new InvalidKeyException(e);
-        }
+        throw new InvalidKeyException("HPKEParameterSpec must be provided");
     }
 
     @Override
@@ -155,9 +136,7 @@ public class HPKE extends CipherSpi {
         if (!(key instanceof AsymmetricKey ak)) {
             throw new InvalidKeyException("Not an asymmetric key");
         }
-        if (params == null) {
-            impl.init(ak, HPKEParameterSpec.of(), random);
-        } else if (params instanceof HPKEParameterSpec hps) {
+        if (params instanceof HPKEParameterSpec hps) {
             impl.init(ak, hps, random);
         } else {
             throw new InvalidAlgorithmParameterException(
@@ -175,11 +154,7 @@ public class HPKE extends CipherSpi {
     protected void engineInit(int opmode, Key key,
             AlgorithmParameters params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        try {
-            engineInit(opmode, key, params.getParameterSpec(HPKEParameterSpec.class), random);
-        } catch (InvalidParameterSpecException e) {
-            throw new InvalidAlgorithmParameterException("Cannot extract HPKEParameterSpec", e);
-        }
+        throw new InvalidKeyException("HPKEParameterSpec must be provided");
     }
 
     // state is ENCRYPT_AND_EXPORT after this call succeeds
@@ -404,7 +379,7 @@ public class HPKE extends CipherSpi {
                 throw new UnsupportedOperationException(
                         "Can only be used for encryption and decryption");
             }
-            setParams(key, p);
+            setParams(p);
             SecretKey shared_secret;
             if (opmode == Cipher.ENCRYPT_MODE) {
                 if (!(key instanceof PublicKey pk)) {
@@ -503,61 +478,9 @@ public class HPKE extends CipherSpi {
             }
         }
 
-        private int kemIdFromKey(AsymmetricKey k) throws InvalidKeyException {
-            var p = k.getParams();
-            if (p instanceof ECParameterSpec ecp) {
-                if (ECUtil.equals(ecp, CurveDB.P_256)) {
-                    return HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256;
-                } else if (ECUtil.equals(ecp, CurveDB.P_384)) {
-                    return HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384;
-                } else if (ECUtil.equals(ecp, CurveDB.P_521)) {
-                    return HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512;
-                }
-            } else if (p instanceof NamedParameterSpec ns) {
-                if (ns.getName().equalsIgnoreCase("X25519")) {
-                    return HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
-                } else if (ns.getName().equalsIgnoreCase("X448")) {
-                    return HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512;
-                }
-            }
-            throw new InvalidKeyException("Unsupported key");
-        }
-
-        private void setParams(AsymmetricKey key, HPKEParameterSpec p)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            if (p.kem_id() == -1 || p.kdf_id() == -1 || p.aead_id() == -1) {
-                if (opmode == Cipher.DECRYPT_MODE) {
-                    throw new InvalidAlgorithmParameterException(
-                            "Algorithm identifiers must be provided on receiver");
-                }
-                var kem_id = p.kem_id() != -1
-                        ? p.kem_id()
-                        : kemIdFromKey(key);
-                var kdf_id = p.kdf_id() != -1
-                        ? p.kdf_id()
-                        : switch (kem_id) {
-                    case HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256,
-                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256
-                            -> HPKEParameterSpec.KDF_HKDF_SHA256;
-                    case HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384
-                            -> HPKEParameterSpec.KDF_HKDF_SHA384;
-                    case HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512,
-                         HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512
-                            -> HPKEParameterSpec.KDF_HKDF_SHA512;
-                    default -> throw new InvalidAlgorithmParameterException(
-                            "Unsupported kem_id: " + params.kem_id());
-                };
-                var aead_id = p.aead_id() != -1
-                        ? p.aead_id()
-                        : HPKEParameterSpec.AEAD_AES_256_GCM;
-                params = HPKEParameterSpec.of(kem_id, kdf_id, aead_id)
-                        .info(p.info())
-                        .psk(p.psk(), p.psk_id())
-                        .authKey(p.authKey())
-                        .encapsulation(p.encapsulation());
-            } else {
-                params = p;
-            }
+        private void setParams(HPKEParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            params = p;
             suite_id = concat(
                     HPKE,
                     DHKEM.I2OSP(params.kem_id(), 2),
