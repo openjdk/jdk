@@ -47,8 +47,6 @@
 
 G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   ConcurrentGCThread(),
-  _vtime_start(0.0),
-  _vtime_accum(0.0),
   _cm(cm),
   _state(Idle)
 {
@@ -113,8 +111,6 @@ class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc,
 };
 
 void G1ConcurrentMarkThread::run_service() {
-  _vtime_start = os::elapsedVTime();
-
   while (wait_for_next_cycle()) {
     assert(in_progress(), "must be");
 
@@ -132,8 +128,6 @@ void G1ConcurrentMarkThread::run_service() {
     }
 
     concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
-
-    _vtime_accum = (os::elapsedVTime() - _vtime_start);
 
     update_threads_cpu_time();
   }
@@ -343,7 +337,7 @@ void G1ConcurrentMarkThread::concurrent_cycle_end(bool mark_cycle_completed) {
 }
 
 void G1ConcurrentMarkThread::update_threads_cpu_time() {
-  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+  if (!UsePerfData) {
     return;
   }
   ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_mark);

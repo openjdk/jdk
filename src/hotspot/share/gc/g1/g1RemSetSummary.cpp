@@ -44,7 +44,7 @@ void G1RemSetSummary::update() {
     CollectData(G1RemSetSummary * summary) : _summary(summary),  _counter(0) {}
     virtual void do_thread(Thread* t) {
       G1ConcurrentRefineThread* crt = static_cast<G1ConcurrentRefineThread*>(t);
-      _summary->set_rs_thread_vtime(_counter, crt->vtime_accum());
+      _summary->set_rs_thread_vtime(_counter, crt->cpu_time_s());
       _counter++;
     }
   } collector(this);

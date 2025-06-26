@@ -1194,21 +1194,6 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
-double os::elapsedVTime() {
-  FILETIME created;
-  FILETIME exited;
-  FILETIME kernel;
-  FILETIME user;
-  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
-    // the resolution of windows_to_java_time() should be sufficient (ms)
-    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
-  } else {
-    return elapsedTime();
-  }
-}
-
 jlong os::javaTimeMillis() {
   FILETIME wt;
   GetSystemTimeAsFileTime(&wt);

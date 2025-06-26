@@ -40,8 +40,6 @@
 
 G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :
   ConcurrentGCThread(),
-  _vtime_start(0.0),
-  _vtime_accum(0.0),
   _notifier(Mutex::nosafepoint, FormatBuffer<>("G1 Refine#%d", worker_id), true),
   _requested_active(false),
   _refinement_stats(),
@@ -53,8 +51,6 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
 }
 
 void G1ConcurrentRefineThread::run_service() {
-  _vtime_start = os::elapsedVTime();
-
   while (wait_for_completed_buffers()) {
     SuspendibleThreadSetJoiner sts_join;
     G1ConcurrentRefineStats active_stats_start = _refinement_stats;
@@ -128,6 +124,10 @@ void G1ConcurrentRefineThread::stop_service() {
   activate();
 }
 
+double G1ConcurrentRefineThread::cpu_time_s() {  
+  return (double)os::thread_cpu_time(this) / NANOSECS_PER_SEC;
+}
+
 // The (single) primary thread drives the controller for the refinement threads.
 class G1PrimaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
   bool wait_for_completed_buffers() override;
@@ -182,7 +182,7 @@ void G1PrimaryConcurrentRefineThread::do_refinement_step() {
 void G1PrimaryConcurrentRefineThread::track_usage() {
   G1ConcurrentRefineThread::track_usage();
   // The primary thread is responsible for updating the CPU time for all workers.
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+  if (UsePerfData) {
     ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_refine);
     cr()->threads_do(&tttc);
   }
