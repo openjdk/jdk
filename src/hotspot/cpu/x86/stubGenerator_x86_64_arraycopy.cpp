@@ -1849,16 +1849,16 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubId::stubgen_StubId::stubgen_jint_disjoint_arraycopy_id:
+  case StubId::stubgen_jint_disjoint_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_disjoint_arraycopy_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -1980,16 +1980,16 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubId::stubgen_StubId::stubgen_jint_arraycopy_id:
+  case StubId::stubgen_jint_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_arraycopy_id:
+  case StubId::stubgen_oop_arraycopy_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_arraycopy_uninit_id:
+  case StubId::stubgen_oop_arraycopy_uninit_id:
     assert(UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -2113,16 +2113,16 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubId::stubgen_StubId::stubgen_jlong_disjoint_arraycopy_id:
+  case StubId::stubgen_jlong_disjoint_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_disjoint_arraycopy_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
+  case StubId::stubgen_oop_disjoint_arraycopy_uninit_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -2246,16 +2246,16 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   bool is_oop;
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubId::stubgen_StubId::stubgen_jlong_arraycopy_id:
+  case StubId::stubgen_jlong_arraycopy_id:
     is_oop = false;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_arraycopy_id:
+  case StubId::stubgen_oop_arraycopy_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_oop_arraycopy_uninit_id:
+  case StubId::stubgen_oop_arraycopy_uninit_id:
     assert(!UseCompressedOops, "inconsistent oop copy size!");
     is_oop = true;
     dest_uninitialized = true;
@@ -2395,10 +2395,10 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 
   bool dest_uninitialized;
   switch (stub_id) {
-  case StubId::stubgen_StubId::stubgen_checkcast_arraycopy_id:
+  case StubId::stubgen_checkcast_arraycopy_id:
     dest_uninitialized = false;
     break;
-  case StubId::stubgen_StubId::stubgen_checkcast_arraycopy_uninit_id:
+  case StubId::stubgen_checkcast_arraycopy_uninit_id:
     dest_uninitialized = true;
     break;
   default:

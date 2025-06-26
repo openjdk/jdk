@@ -327,7 +327,7 @@ static address generate_sha3_implCompress(StubId stub_id,
 // two computations are executed interleaved.
 static address generate_double_keccak(StubGenerator *stubgen, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
-  StubId stub_id = double_keccak_id;
+  StubId stub_id = StubId::stubgen_double_keccak_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
 

@@ -5071,23 +5071,23 @@ void generate_lookup_secondary_supers_table_stub() {
  public:
   StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
-    case BlobId::preuniverse_id:
+    case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
       break;
-    case BlobId::initial_id:
+    case BlobId::stubgen_initial_id:
       generate_initial_stubs();
       break;
-    case BlobId::continuation_id:
+    case BlobId::stubgen_continuation_id:
       generate_continuation_stubs();
       break;
-    case BlobId::compiler_id:
+    case BlobId::stubgen_compiler_id:
       generate_compiler_stubs();
       break;
-    case BlobId::final_id:
+    case BlobId::stubgen_final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected blob id: %d", blob_id);
+      fatal("unexpected blob id: %s", StubInfo::name(blob_id));
       break;
     };
   }
