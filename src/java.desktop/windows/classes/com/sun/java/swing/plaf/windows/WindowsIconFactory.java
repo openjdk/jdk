@@ -919,7 +919,7 @@ public final class WindowsIconFactory implements Serializable
                                         getIconWidth(), getIconHeight(), backgroundState);
                                 if (icon == null) {
                                     skin = xp.getSkin(c, part);
-                                    skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
+                                    skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                                 }
                             } else {
                                 skin.paintSkin(g, x - 2 * OFFSET, y,
