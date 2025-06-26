@@ -108,13 +108,13 @@ import sun.security.util.KnownOIDs;
  * methods) <b>before</b> the ciphertext is processed (via
  * the {@code update} and {@code doFinal} methods).
  * <p>
- * When {@code doFinal} methods completes the operation, the {@code Cipher} object will attempt
+ * When a {@code doFinal} method completes the operation, the {@code Cipher} object will attempt
  * to reset the state to the most recent call to {@code init}, allowing for additional
  * operations. A successful reset depends on the mode ({@code ENCRYPT_MODE} or
- * {@code DECRYPT_MODE}) and the algorithm. AEAD algorithms may not reset to prevent
+ * {@code DECRYPT_MODE}) and the algorithm. AEAD algorithms may not reset, in order to prevent
  * forgery attacks due to Key and IV uniqueness requirements.
- * An {@link IllegalStateException} will be thrown when calling {@code update}
- * or {@code doFinal} methods when a reset did not occur. {@code init} may
+ * <p> An {@link IllegalStateException} will be thrown when calling {@code update}
+ * or {@code doFinal} methods if a reset did not occur. A call to {@code init} will
  * re-initialize the {@code Cipher} object with new parameters.
  *
  *  @see javax.crypto.Cipher
@@ -2086,7 +2086,7 @@ public class Cipher {
      * @return the new buffer with the result
      *
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state or cannot be reset.
+     * is in an incorrect mode or cannot be reset.
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2191,7 +2191,7 @@ public class Cipher {
      * @return the new buffer with the result
      *
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state or cannot be reset.
+     * is in an incorrect mode or cannot be reset.
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2239,7 +2239,7 @@ public class Cipher {
      * @return the new buffer with the result
      *
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state or cannot be reset.
+     * is in an incorrect mode or cannot be reset.
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2300,7 +2300,7 @@ public class Cipher {
      * @return the number of bytes stored in {@code output}
      *
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state or cannot be reset.
+     * is in an incorrect mode or cannot be reset.
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2370,7 +2370,7 @@ public class Cipher {
      * @return the number of bytes stored in {@code output}
      *
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state or cannot be reset.
+     * is in an incorrect mode or cannot be reset.
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2436,7 +2436,7 @@ public class Cipher {
      * @return the number of bytes stored in {@code output}
      *
      * @throws IllegalStateException if this {@code Cipher} object
-     * is in a wrong state or cannot be reset.
+     * is in an incorrect mode or cannot be reset.
      * @throws IllegalArgumentException if input and output are the
      *   same object
      * @throws ReadOnlyBufferException if the output buffer is read-only
