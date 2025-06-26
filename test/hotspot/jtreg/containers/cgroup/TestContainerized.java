@@ -43,6 +43,9 @@ public class TestContainerized {
         if (wb.isContainerized()) {
             throw new RuntimeException("Test failed! Expected not containerized on plain Linux.");
         }
+        if (wb.hasMemoryLimit()) {
+            throw new RuntimeException("Test failed! Expected no memory limit for plain Linux.");
+        }
         System.out.println("Plain linux, no limits. Passed!");
     }
 }

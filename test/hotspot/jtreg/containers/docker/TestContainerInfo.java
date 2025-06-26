@@ -33,7 +33,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build CheckContainerized jdk.test.whitebox.WhiteBox PrintContainerInfo
+ * @build jdk.test.whitebox.WhiteBox PrintContainerInfo
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver TestContainerInfo
  */

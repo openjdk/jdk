@@ -72,7 +72,13 @@ public class SystemdTestUtils {
         return new SystemdRunOptions(testClass,
                                      "-Xlog:os+container=trace",
                                      "-cp",
-                                     Utils.TEST_CLASSES);
+                                     Utils.TEST_CLASS_PATH);
+    }
+
+    public static SystemdRunOptions addWhiteBoxOpts(SystemdRunOptions opts) {
+        opts.addJavaOpts("-Xbootclasspath/a:whitebox.jar",
+                         "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI");
+        return opts;
     }
 
     /**

@@ -2508,6 +2508,11 @@ WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
   return false;
 WB_END
 
+WB_ENTRY(jboolean, WB_HasMemoryLimit(JNIEnv* env, jobject o))
+  LINUX_ONLY(return OSContainer::has_memory_limit();)
+  return false;
+WB_END
+
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   LINUX_ONLY(return os::Linux::physical_memory();)
@@ -2981,6 +2986,7 @@ static JNINativeMethod methods[] = {
   {CC"checkLibSpecifiesNoexecstack", CC"(Ljava/lang/String;)Z",
                                                       (void*)&WB_CheckLibSpecifiesNoexecstack},
   {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },
+  {CC"hasMemoryLimit",            CC"()Z",            (void*)&WB_HasMemoryLimit },
   {CC"validateCgroup",
       CC"(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
                                                       (void*)&WB_ValidateCgroup },

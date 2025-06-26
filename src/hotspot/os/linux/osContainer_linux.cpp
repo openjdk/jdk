@@ -35,6 +35,7 @@
 
 bool  OSContainer::_is_initialized   = false;
 bool  OSContainer::_is_containerized = false;
+bool  OSContainer::_has_memory_limit = false;
 CgroupSubsystem* cgroup_subsystem;
 
 /* init
@@ -76,6 +77,7 @@ void OSContainer::init() {
   const char *reason;
   bool any_mem_cpu_limit_present = false;
   bool controllers_read_only = cgroup_subsystem->is_containerized();
+  _has_memory_limit = cgroup_subsystem->memory_limit_in_bytes() > 0;
   if (controllers_read_only) {
     // in-container case
     reason = " because all controllers are mounted read-only (container case)";
@@ -83,7 +85,7 @@ void OSContainer::init() {
     // We can be in one of two cases:
     //  1.) On a physical Linux system without any limit
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
-    any_mem_cpu_limit_present = cgroup_subsystem->memory_limit_in_bytes() > 0 ||
+    any_mem_cpu_limit_present = _has_memory_limit ||
                                      os::Linux::active_processor_count() != cgroup_subsystem->active_processor_count();
     if (any_mem_cpu_limit_present) {
       reason = " because either a cpu or a memory limit is present";
