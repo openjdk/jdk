@@ -26,10 +26,10 @@ import java.awt.Window;
 /**
  * @test
  * @bug 8346952
- * @summary Verifies no exception occurs when triggering updateCG() for an ownerless window.
+ * @summary Verifies no exception occurs when triggering updateCG() 
+ * for an ownerless window.
  * @key headful
  */
-
 public final class BogusFocusableWindowState {
 
     public static void main(String[] args) {
