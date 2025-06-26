@@ -3400,26 +3400,14 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
 void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src, Register tmp) {
   // we have to load the klass base from the AOT constants area but
   // not the shift because it is not allowed to change
-
   int shift = CompressedKlassPointers::shift();
   assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
   assert_different_registers(src, tmp);
-  if (dst != src) {
-    // we can load the base into dst then add the offset with a suitable shift
-    la(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ld(dst, dst);
-    Register t = src == dst ? dst : t0;
-    assert_different_registers(t, tmp);
-    shadd(dst, src, dst, t, shift);
-  } else {
-    assert (dst == src, "must");
-    assert_different_registers(src, tmp);
-    la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ld(tmp, tmp);
-    Register t = src == dst ? dst : t0;
-    assert_different_registers(t, tmp);
-    shadd(dst, src, tmp, t, shift);
-  }
+  la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+  ld(tmp, tmp);
+  Register t = src == dst ? dst : t0;
+  assert_different_registers(t, tmp);
+  shadd(dst, src, tmp, t, shift);
 }
 
 void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
@@ -3453,7 +3441,6 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
-    // stop("CompressedKlassPointers::shift");
     Register t = src == dst ? dst : t0;
     assert_different_registers(t, xbase);
     shadd(dst, src, xbase, t, CompressedKlassPointers::shift());
@@ -3465,23 +3452,17 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
 void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src, Register tmp) {
   // we have to load the klass base from the AOT constants area but
   // not the shift because it is not allowed to change
-
   int shift = CompressedKlassPointers::shift();
   assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
-  assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
-  if (dst != src) {
-    assert(dst != t0, "must not");
-    la(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ld(dst, dst);
-    sub(dst, src, dst);
-    srli(dst, dst, shift);
-  } else {
-    assert(dst == src, "must");
-    assert(dst != tmp, "must not");
-    la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
-    ld(tmp, tmp);
-    sub(dst, src, tmp);
+  Register xbase = dst;
+  if (dst == src) {
+    xbase = tmp;
+  }
+  la(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
+  ld(xbase, xbase);
+  sub(dst, src, xbase);
+  if (shift != 0) {
     srli(dst, dst, shift);
   }
 }
@@ -3521,7 +3502,6 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
 
   assert_different_registers(src, xbase);
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
-
   sub(dst, src, xbase);
   if (CompressedKlassPointers::shift() != 0) {
     srli(dst, dst, CompressedKlassPointers::shift());
