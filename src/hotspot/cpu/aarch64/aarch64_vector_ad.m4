@@ -5161,15 +5161,15 @@ BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
 // which gives more freedom to the register allocator to choose the best pair of source registers
 // at that point.
 dnl
-dnl SELECT_FROM_TWO_VECTORS_NEON($1,          $2,        $3       )
-dnl SELECT_FROM_TWO_VECTORS_NEON(rule_number, first_reg, second_reg)
+dnl SELECT_FROM_TWO_VECTORS_NEON($1,        $2        )
+dnl SELECT_FROM_TWO_VECTORS_NEON(first_reg, second_reg)
 define(`SELECT_FROM_TWO_VECTORS_NEON', `
-instruct vselect_from_two_vectors_Neon_$1(vReg dst, vReg_V$2 src1, vReg_V$3 src2,
-                                         vReg index, vReg tmp1) %{
+instruct vselect_from_two_vectors_Neon_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+                                             vReg index, vReg tmp1) %{
   predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
   effect(TEMP_DEF dst, TEMP tmp1);
   match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  format %{ "vselect_from_two_vectors_Neon_$1 $dst, $src1, $src2, $index\t# vector (8B/16B/4S/8S/2I/4I/2F/4F). KILL $tmp1" %}
+  format %{ "vselect_from_two_vectors_Neon_$1_$2 $dst, $src1, $src2, $index\t# vector (8B/16B/4S/8S/2I/4I/2F/4F). KILL $tmp1" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -5182,15 +5182,15 @@ instruct vselect_from_two_vectors_Neon_$1(vReg dst, vReg_V$2 src1, vReg_V$3 src2
 dnl
 
 dnl
-dnl SELECT_FROM_TWO_VECTORS_SVE($1,          $2  ,      $3       )
-dnl SELECT_FROM_TWO_VECTORS_SVE(rule_number, first_reg, second_reg)
+dnl SELECT_FROM_TWO_VECTORS_SVE($1,        $2        )
+dnl SELECT_FROM_TWO_VECTORS_SVE(first_reg, second_reg)
 define(`SELECT_FROM_TWO_VECTORS_SVE', `
-instruct vselect_from_two_vectors_SVE_$1(vReg dst, vReg_V$2 src1, vReg_V$3 src2,
-                                        vReg index, vReg tmp1) %{
+instruct vselect_from_two_vectors_SVE_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+                                            vReg index, vReg tmp1) %{
   predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
   effect(TEMP_DEF dst, TEMP tmp1);
   match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  format %{ "vselect_from_two_vectors_SVE_$1 $dst, $src1, $src2, $index\t# KILL $tmp1" %}
+  format %{ "vselect_from_two_vectors_SVE_$1_$2 $dst, $src1, $src2, $index\t# KILL $tmp1" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
@@ -5202,13 +5202,13 @@ instruct vselect_from_two_vectors_SVE_$1(vReg dst, vReg_V$2 src1, vReg_V$3 src2,
 %}')dnl
 dnl
 // ----------------------------------- SelectFromTwoVector Neon ---------------------------------
-SELECT_FROM_TWO_VECTORS_NEON(1, 10, 11)
-SELECT_FROM_TWO_VECTORS_NEON(2, 12, 13)
-SELECT_FROM_TWO_VECTORS_NEON(3, 17, 18)
-SELECT_FROM_TWO_VECTORS_NEON(4, 23, 24)
+SELECT_FROM_TWO_VECTORS_NEON(10, 11)
+SELECT_FROM_TWO_VECTORS_NEON(12, 13)
+SELECT_FROM_TWO_VECTORS_NEON(17, 18)
+SELECT_FROM_TWO_VECTORS_NEON(23, 24)
 
 // ----------------------------------- SelectFromTwoVector SVE ----------------------------------
-SELECT_FROM_TWO_VECTORS_SVE(1, 10, 11)
-SELECT_FROM_TWO_VECTORS_SVE(2, 12, 13)
-SELECT_FROM_TWO_VECTORS_SVE(3, 17, 18)
-SELECT_FROM_TWO_VECTORS_SVE(4, 23, 24)
+SELECT_FROM_TWO_VECTORS_SVE(10, 11)
+SELECT_FROM_TWO_VECTORS_SVE(12, 13)
+SELECT_FROM_TWO_VECTORS_SVE(17, 18)
+SELECT_FROM_TWO_VECTORS_SVE(23, 24)
