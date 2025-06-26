@@ -32,6 +32,8 @@ import jdk.internal.net.http.quic.streams.QuicSenderStream;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+import org.testng.IRetryAnalyzer;
+import org.testng.ITestResult;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -307,10 +309,23 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
         triggerError(errorCF, Http3Error.H3_CLOSED_CRITICAL_STREAM);
     }
 
+    public static class RetryOnce implements IRetryAnalyzer {
+        boolean retried;
+
+        @Override
+        public boolean retry(ITestResult iTestResult) {
+            if (!retried) {
+                retried = true;
+                return true;
+            }
+            return false;
+        }
+    }
+
     /**
      * Server resets control stream
      */
-    @Test(dataProvider = "controlStreams")
+    @Test(dataProvider = "controlStreams", retryAnalyzer = RetryOnce.class)
     public void testResetControlStream(byte type) throws Exception {
         CompletableFuture<TerminationCause> errorCF = new CompletableFuture<>();
         server.addHandler((c,s)-> {
@@ -329,6 +344,8 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
             System.out.println("Server: sending second ping");
             c.requestSendPing().join();
             System.out.println("Server: resetting control stream " + writer.stream().streamId());
+            // the test may fail if the stream type byte is not processed by HTTP3
+            // before the reset is received.
             writer.reset(0);
             // ignore the request stream; we're expecting the client to close the connection
             completeUponTermination(c, errorCF);
