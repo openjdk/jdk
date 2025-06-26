@@ -186,8 +186,8 @@ void JmethodIDTable::clear_jmethod_id(jmethodID jmid, Method* obsolete_method) {
   JmethodEntry* result = get_jmethod_entry(jmid);
   // We need to make sure that jmethodID actually resolves to this method
   // - multiple redefined versions may share jmethodID slots and if a method
-  //   has already been rewired to a newer version we could be clearing reference
-  //   to a still existing method instance.
+  //   has already been rewired to a newer version we could be clearing
+  //   the reference to a still existing method instance.
   if (result->_method == obsolete_method) {
     result->_method = nullptr;
   }
