@@ -70,7 +70,7 @@ void G1ConcurrentRefineThread::run_service() {
       }
     }
     report_inactive("Deactivated", _refinement_stats - active_stats_start);
-    update_cpu_usage();
+    update_perf_counter_cpu_time();
   }
 
   log_debug(gc, refine)("Stopping %d", _worker_id);
@@ -134,7 +134,7 @@ class G1PrimaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
   bool maybe_deactivate() override;
   void do_refinement_step() override;
   // Updates jstat cpu usage for all refinement threads.
-  void update_cpu_usage() override;
+  void update_perf_counter_cpu_time() override;
 
 public:
   G1PrimaryConcurrentRefineThread(G1ConcurrentRefine* cr) :
@@ -180,9 +180,7 @@ void G1PrimaryConcurrentRefineThread::do_refinement_step() {
   }
 }
 
-void G1PrimaryConcurrentRefineThread::update_cpu_usage() {
-  G1ConcurrentRefineThread::update_cpu_usage();
-
+void G1PrimaryConcurrentRefineThread::update_perf_counter_cpu_time() {
   if (UsePerfData) {
     ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_refine);
     cr()->threads_do(&tttc);
@@ -192,6 +190,7 @@ void G1PrimaryConcurrentRefineThread::update_cpu_usage() {
 class G1SecondaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
   bool wait_for_completed_buffers() override;
   void do_refinement_step() override;
+  void update_perf_counter_cpu_time() override { /* Nothing to do. The primary thread does all the work. */ }
 
 public:
   G1SecondaryConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :

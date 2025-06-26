@@ -32,12 +32,12 @@
 
   // Total virtual time so far.
 inline double G1ConcurrentMarkThread::total_mark_cpu_time_s() {
-  return os::thread_cpu_time(this) + mark_worker_cpu_time_s();
+  return os::thread_cpu_time(this) + worker_threads_cpu_time_s();
 }
 
 // Marking virtual time so far
-inline double G1ConcurrentMarkThread::mark_worker_cpu_time_s() {
-  return _cm->mark_worker_cpu_time_s();
+inline double G1ConcurrentMarkThread::worker_threads_cpu_time_s() {
+  return _cm->worker_threads_cpu_time_s();
 }
 
 inline void G1ConcurrentMarkThread::set_idle() {

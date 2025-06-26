@@ -611,7 +611,7 @@ public:
   void abort_marking_threads();
 
   // Total cpu time spent in mark worker threads in seconds.
-  double mark_worker_cpu_time_s();
+  double worker_threads_cpu_time_s();
 
   // Attempts to steal an object from the task queues of other tasks
   bool try_stealing(uint worker_id, G1TaskQueueEntry& task_entry);
@@ -744,7 +744,7 @@ private:
   // When the virtual timer reaches this time, the marking step should exit
   double                      _time_target_ms;
   // Start cpu time of the current marking step
-  jlong                       _start_time_ns;
+  jlong                       _start_cpu_time_ns;
 
   // Oop closure used for iterations over oops
   G1CMOopClosure*             _cm_oop_closure;

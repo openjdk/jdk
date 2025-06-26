@@ -89,7 +89,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   // marking worker threads) in seconds.
   double total_mark_cpu_time_s();
   // Cpu time used by all marking worker threads in seconds.
-  double mark_worker_cpu_time_s();
+  double worker_threads_cpu_time_s();
 
   G1ConcurrentMark* cm() { return _cm; }
 
@@ -108,7 +108,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool in_undo_mark() const;
 
   // Update the perf data counter for concurrent mark.
-  void update_threads_cpu_time();
+  void update_perf_counter_cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP

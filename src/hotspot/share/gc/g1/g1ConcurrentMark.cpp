@@ -1485,7 +1485,7 @@ void G1ConcurrentMark::remark() {
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
 
-  _g1h->update_parallel_gc_threads_cpu_time();
+  _g1h->update_perf_counter_cpu_time();
 
   policy->record_concurrent_mark_remark_end();
 }
@@ -2079,7 +2079,7 @@ void G1ConcurrentMark::abort_marking_threads() {
   _second_overflow_barrier_sync.abort();
 }
 
-double G1ConcurrentMark::mark_worker_cpu_time_s() {
+double G1ConcurrentMark::worker_threads_cpu_time_s() {
   class CountCpuTimeThreadClosure : public ThreadClosure {
   public:
     jlong _total_cpu_time;
@@ -2125,7 +2125,7 @@ void G1ConcurrentMark::print_summary_info() {
   log.trace("  Total stop_world time = %8.2f s.",
             (_remark_times.sum() + _cleanup_times.sum())/1000.0);
   log.trace("  Total concurrent time = %8.2f s (%8.2f s marking).",
-            cm_thread()->total_mark_cpu_time_s(), cm_thread()->mark_worker_cpu_time_s());
+            cm_thread()->total_mark_cpu_time_s(), cm_thread()->worker_threads_cpu_time_s());
 }
 
 void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
@@ -2280,7 +2280,7 @@ bool G1CMTask::regular_clock_call() {
 
   // (5) We check whether we've reached our time quota. If we have,
   // then we abort.
-  double elapsed_time_ms = (double)(curr_time_ns - _start_time_ns) / NANOSECS_PER_MILLISEC;
+  double elapsed_time_ms = (double)(curr_time_ns - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
   if (elapsed_time_ms > _time_target_ms) {
     _has_timed_out = true;
     return false;
@@ -2820,7 +2820,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
                                bool is_serial) {
   assert(time_target_ms >= 1.0, "minimum granularity is 1ms");
 
-  _start_time_ns = os::current_thread_cpu_time();
+  _start_cpu_time_ns = os::current_thread_cpu_time();
 
   // If do_stealing is true then do_marking_step will attempt to
   // steal work from the other G1CMTasks. It only makes sense to
@@ -2915,7 +2915,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
   // escape it by accident.
   set_cm_oop_closure(nullptr);
   jlong end_time_ns = os::current_thread_cpu_time();
-  double elapsed_time_ms = (double)(end_time_ns - _start_time_ns) / NANOSECS_PER_MILLISEC;
+  double elapsed_time_ms = (double)(end_time_ns - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
   // Update the step history.
   _step_times_ms.add(elapsed_time_ms);
 
@@ -2938,7 +2938,7 @@ G1CMTask::G1CMTask(uint worker_id,
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),
-  _start_time_ns(0),
+  _start_cpu_time_ns(0),
   _cm_oop_closure(nullptr),
   _curr_region(nullptr),
   _finger(nullptr),

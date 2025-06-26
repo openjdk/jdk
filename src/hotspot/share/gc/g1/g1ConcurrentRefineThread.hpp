@@ -68,8 +68,8 @@ protected:
   // precondition: this is the current thread.
   virtual void do_refinement_step() = 0;
 
-  // Update concurrent refine threads cpu usage stats.
-  virtual void update_cpu_usage() { /* nothing to do by default */ }
+  // Update concurrent refine threads cpu time stats.
+  virtual void update_perf_counter_cpu_time() = 0;
 
   // Helper for do_refinement_step implementations.  Try to perform some
   // refinement work, limited by stop_at.  Returns true if any refinement work

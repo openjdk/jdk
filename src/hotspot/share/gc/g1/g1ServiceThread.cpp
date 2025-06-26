@@ -119,7 +119,7 @@ G1ServiceTask* G1ServiceThread::wait_for_task() {
 
 void G1ServiceThread::run_task(G1ServiceTask* task) {
   jlong start = os::elapsed_counter();
-  jlong cpu_time_start_ns = os::thread_cpu_time(this);
+  jlong start_cpu_time_ns = os::thread_cpu_time(this);
 
   assert(task->time() <= start,
          "task run early: " JLONG_FORMAT " > " JLONG_FORMAT,
@@ -130,12 +130,12 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 
   task->execute();
 
-  update_thread_cpu_time();
+  update_perf_counter_cpu_time();
 
   log_debug(gc, task)("G1 Service Thread (%s) (run: %1.3fms) (cpu: %1.3fms)",
                       task->name(),
                       TimeHelper::counter_to_millis(os::elapsed_counter() - start),
-                      (double)(os::thread_cpu_time(this) - cpu_time_start_ns) / NANOSECS_PER_MILLISEC);
+                      (double)(os::thread_cpu_time(this) - start_cpu_time_ns) / NANOSECS_PER_MILLISEC);
 }
 
 void G1ServiceThread::run_service() {
@@ -153,7 +153,7 @@ void G1ServiceThread::stop_service() {
   ml.notify();
 }
 
-void G1ServiceThread::update_thread_cpu_time() {
+void G1ServiceThread::update_perf_counter_cpu_time() {
   if (UsePerfData ) {
     ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_service);
     tttc.do_thread(this);
