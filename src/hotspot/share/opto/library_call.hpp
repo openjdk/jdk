@@ -127,17 +127,21 @@ class LibraryCallKit : public GraphKit {
   virtual int reexecute_sp() { return _reexecute_sp; }
 
   // Helper functions to inline natives
-  Node* generate_guard(Node* test, RegionNode* region, float true_prob);
+  Node* generate_guard(Node* test, RegionNode* region, float true_prob,
+                       bool halt = false);
   Node* generate_slow_guard(Node* test, RegionNode* region);
   Node* generate_fair_guard(Node* test, RegionNode* region);
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
-                                Node* *pos_index = nullptr);
+                                Node* *pos_index = nullptr,
+                                bool halt = false);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
-                             RegionNode* region);
+                             RegionNode* region,
+                             bool halt = false);
   void  generate_string_range_check(Node* array, Node* offset,
-                                    Node* length, bool char_count);
+                                    Node* length, bool char_count,
+                                    bool halt = false);
   Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
                               bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);

@@ -659,6 +659,9 @@
   product(bool, PrintIntrinsics, false, DIAGNOSTIC,                         \
           "prints attempted and successful inlining of intrinsics")         \
                                                                             \
+  develop(bool, VerifyIntrinsicRangeChecks, false,                          \
+          "Enable range checks in intrinsics")                              \
+                                                                            \
   develop(bool, StressReflectiveCode, false,                                \
           "Use inexact types at allocations, etc., to test reflection")     \
                                                                             \

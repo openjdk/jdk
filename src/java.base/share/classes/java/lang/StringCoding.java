@@ -28,6 +28,8 @@ package java.lang;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
+import java.util.Objects;
+
 /**
  * Utility class for string encoding and decoding.
  */
@@ -86,8 +88,14 @@ class StringCoding {
      *   a value that is less than or equal to the index of the first negative byte
      *   in the range.
      */
-    @IntrinsicCandidate
     public static int countPositives(byte[] ba, int off, int len) {
+        Objects.requireNonNull(ba, "ba");
+        Objects.checkFromIndexSize(off, len, ba.length);
+        return countPositives0(ba, off, len);
+    }
+
+    @IntrinsicCandidate
+    private static int countPositives0(byte[] ba, int off, int len) {
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] < 0) {
