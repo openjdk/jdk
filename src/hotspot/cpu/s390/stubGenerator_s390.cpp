@@ -3197,7 +3197,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
-    __ z_ltr(Z_R0_scratch, Z_RET);
+    __ z_ltr(Z_RET, Z_RET);
 
     // VM-Call Epilogue
     __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
@@ -3281,6 +3281,10 @@ class StubGenerator: public StubCodeGenerator {
     __ z_br(Z_R14);
 
     return start;
+  }
+
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for s390
   }
 
   void generate_initial_stubs() {
@@ -3418,6 +3422,9 @@ class StubGenerator: public StubCodeGenerator {
  public:
   StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
+    case preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
     case initial_id:
       generate_initial_stubs();
       break;

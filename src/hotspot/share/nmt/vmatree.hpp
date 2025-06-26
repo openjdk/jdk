@@ -27,6 +27,7 @@
 #define SHARE_NMT_VMATREE_HPP
 
 #include "nmt/memTag.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -40,6 +41,7 @@
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
   friend class NMTVMATreeTest;
+  friend class VMTWithVMATreeTest;
   // A position in memory.
 public:
   using position = size_t;
@@ -56,16 +58,18 @@ public:
     }
   };
 
-  enum class StateType : uint8_t { Released, Reserved, Committed, LAST };
+  // Bit fields view: bit 0 for Reserved, bit 1 for Committed.
+  // Setting a region as Committed preserves the Reserved state.
+  enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, st_number_of_states = 4 };
 
 private:
-  static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
+  static const char* statetype_strings[static_cast<uint8_t>(StateType::st_number_of_states)];
 
 public:
   NONCOPYABLE(VMATree);
 
   static const char* statetype_to_string(StateType type) {
-    assert(type != StateType::LAST, "must be");
+    assert(type < StateType::st_number_of_states, "must be");
     return statetype_strings[static_cast<uint8_t>(type)];
   }
 
@@ -304,12 +308,8 @@ public:
     return register_mapping(from, from + size, StateType::Reserved, metadata, true);
   }
 
-  SummaryDiff release_mapping(position from, size size) {
-    return register_mapping(from, from + size, StateType::Released, VMATree::empty_regiondata);
-  }
-
-  VMATreap& tree() {
-    return _tree;
+  SummaryDiff release_mapping(position from, position sz) {
+    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
   }
 
 public:
@@ -321,7 +321,10 @@ public:
 #ifdef ASSERT
   void print_on(outputStream* out);
 #endif
-
+  template<typename F>
+  void visit_range_in_order(const position& from, const position& to, F f) {
+    _tree.visit_range_in_order(from, to, f);
+  }
+  VMATreap& tree() { return _tree; }
 };
-
 #endif
