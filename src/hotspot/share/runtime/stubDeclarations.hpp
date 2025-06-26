@@ -27,6 +27,7 @@
 #define SHARE_RUNTIME_STUBDECLARATIONS_HPP
 
 #include "code/codeBlob.hpp"
+#include "oops/klass.hpp"
 #include "utilities/macros.hpp"
 
 // Macros for generating definitions and declarations for shared, c1,

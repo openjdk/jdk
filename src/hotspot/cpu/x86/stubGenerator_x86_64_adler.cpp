@@ -66,7 +66,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::updateBytesAdler32_id;
+  StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

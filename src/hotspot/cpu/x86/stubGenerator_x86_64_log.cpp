@@ -176,7 +176,7 @@ ATTRIBUTE_ALIGNED(16) static const juint _coeff[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmLog() {
-  StubGenStubId stub_id = StubGenStubId::dlog_id;
+  StubId stub_id = StubId::stubgen_dlog_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -515,7 +515,7 @@ ATTRIBUTE_ALIGNED(16) static const juint _coeff_log10[] =
 };
 
 address StubGenerator::generate_libmLog10() {
-  StubGenStubId stub_id = StubGenStubId::dlog10_id;
+  StubId stub_id = StubId::stubgen_dlog10_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

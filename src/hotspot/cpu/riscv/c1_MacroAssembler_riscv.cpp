@@ -1,4 +1,4 @@
-/*
+!/*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
@@ -281,7 +281,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == x10, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
@@ -321,7 +321,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == x10, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);

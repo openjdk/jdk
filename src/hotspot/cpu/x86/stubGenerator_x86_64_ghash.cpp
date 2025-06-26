@@ -82,7 +82,7 @@ void StubGenerator::generate_ghash_stubs() {
 address StubGenerator::generate_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
   Label L_ghash_loop, L_exit;
-  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -219,7 +219,7 @@ address StubGenerator::generate_ghash_processBlocks() {
 address StubGenerator::generate_avx_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
 
-  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

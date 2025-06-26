@@ -205,7 +205,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   bool isU = isUL || isUU;  // At least one is UTF-16
   assert(isLL || isUL || isUU, "Encoding not recognized");
 
-  StubGenStubId stub_id = (isLL ?  StubGenStubId::string_indexof_linear_ll_id : (isUL ? StubGenStubId::string_indexof_linear_ul_id : StubGenStubId::string_indexof_linear_uu_id));
+  StubId stub_id = (isLL ?  StubId::stubgen_string_indexof_linear_ll_id : (isUL ? StubId::stubgen_string_indexof_linear_ul_id : StubId::stubgen_string_indexof_linear_uu_id));
   StubCodeMark mark(stubgen, stub_id);
   // Keep track of isUL since we need to generate UU code in the main body
   // for the case where we expand the needle from bytes to words on the stack.

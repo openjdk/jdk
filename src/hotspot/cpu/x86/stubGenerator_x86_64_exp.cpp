@@ -165,7 +165,7 @@ ATTRIBUTE_ALIGNED(4) static const juint _INF[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmExp() {
-  StubGenStubId stub_id = StubGenStubId::dexp_id;
+  StubId stub_id = StubId::stubgen_dexp_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
