@@ -4158,7 +4158,6 @@ void os::win32::initialize_system_info() {
   } else {
     _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
   }
-  
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Adjust MaxRAM according to the maximum virtual address space available.

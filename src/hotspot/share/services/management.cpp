@@ -980,7 +980,6 @@ static jlong get_long_attribute(jmmLongAttribute att) {
       os::physical_memory(phys_mem);
       return phys_mem;
     }
-    
 
   default:
     return -1;
