@@ -115,7 +115,7 @@ public:
   static bool is_adapter(Kind kind) { return kind == Adapter; }
 };
 
-// Addresses of stubs, blobs and runtime functions called from compiled code.
+// Addresses of stubs, blobs and runtime finctions called from compiled code.
 class AOTCodeAddressTable : public CHeapObj<mtCode> {
 private:
   address* _extrs_addr;

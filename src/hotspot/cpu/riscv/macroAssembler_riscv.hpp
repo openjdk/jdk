@@ -1241,7 +1241,6 @@ public:
   void far_call(const Address &entry, Register tmp = t1);
   void far_jump(const Address &entry, Register tmp = t1);
 
-  // TODO, check codestub_branch_needs_far_jump() in hotspot/cpu/aarch64/macroAssembler_aarch64.hpp
   static int far_branch_size() {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
   }

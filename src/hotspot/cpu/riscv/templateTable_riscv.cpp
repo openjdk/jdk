@@ -2097,7 +2097,6 @@ void TemplateTable::_return(TosState state) {
     Label skip_register_finalizer;
     __ test_bit(t0, x13, exact_log2(KlassFlags::_misc_has_finalizer));
     __ beqz(t0, skip_register_finalizer);
-    __ slli(x0, t0, 17);   // Here!!!
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), c_rarg1);
 

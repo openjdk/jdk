@@ -118,8 +118,7 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 //     rw  - read-write metadata
 //     ro  - read-only metadata and read-only tables
 //     hp  - heap region
-//     bm  - bitmap for relocating the above 7 regions
-//     ac  - aot code
+//     bm  - bitmap for relocating the above 7 regions.
 //
 // The rw and ro regions are linearly allocated, in the order of rw->ro.
 // These regions are aligned with MetaspaceShared::core_region_alignment().

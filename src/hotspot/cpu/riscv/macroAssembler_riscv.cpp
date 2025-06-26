@@ -793,7 +793,6 @@ void MacroAssembler::emit_static_call_stub() {
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
-  // int32_t offset = 0;
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
   movptr(t1, RuntimeAddress(entry_point), t0);
   jalr(t1);
@@ -3402,10 +3401,8 @@ void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src, R
   // we have to load the klass base from the AOT constants area but
   // not the shift because it is not allowed to change
 
-  // TODO: check decode_klass_not_null_for_aot() in hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
   int shift = CompressedKlassPointers::shift();
   assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
-  // assert_different_registers(dst, tmp); // can assert here!
   assert_different_registers(src, tmp);
   if (dst != src) {
     // we can load the base into dst then add the offset with a suitable shift
@@ -3469,7 +3466,6 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src, R
   // we have to load the klass base from the AOT constants area but
   // not the shift because it is not allowed to change
 
-  // TODO: check encode_klass_not_null_for_aot in hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
   int shift = CompressedKlassPointers::shift();
   assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
   assert_different_registers(dst, tmp);
@@ -3483,7 +3479,6 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src, R
   } else {
     assert(dst == src, "must");
     assert(dst != tmp, "must not");
-    // assert(false, "must not");
     la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
     ld(tmp, tmp);
     sub(dst, src, tmp);
@@ -4276,7 +4271,6 @@ void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   });
 }
 
-// TODO: check target_needs_far_branch in hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
 void MacroAssembler::far_call(const Address &entry, Register tmp) {
   assert(tmp != x5, "tmp register must not be x5.");
   assert(CodeCache::contains(entry.target()),
@@ -5048,7 +5042,6 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   zext(dst, dst, 32);
 }
 
-// TODO: check is_always_within_branch_range in hotspot/cpu/aarch64/macroAssembler_aarch64.cpp
 address MacroAssembler::reloc_call(Address entry, Register tmp) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type ||
          entry.rspec().type() == relocInfo::opt_virtual_call_type ||
