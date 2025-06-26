@@ -69,7 +69,7 @@ public class RedefineClassHelper {
     }
 
     private static byte[] getBytecodes(ClassLoader loader, String name) throws Exception {
-        try(InputStream is = loader.getResourceAsStream(name + ".class")) {
+        try (InputStream is = loader.getResourceAsStream(name + ".class")) {
             byte[] buf = is.readAllBytes();
             System.out.println("sizeof(" + name + ".class) == " + buf.length);
             return buf;
