@@ -851,8 +851,7 @@ void LibraryCallKit::set_result(RegionNode* region, PhiNode* value) {
 // or null if it is obvious that the slow path can never be taken.
 // Also, if region and the slow control are not null, the slow edge
 // is appended to the region.
-Node* LibraryCallKit::generate_guard(Node* test, RegionNode* region, float true_prob,
-                                     bool halt) {
+Node* LibraryCallKit::generate_guard(Node* test, RegionNode* region, float true_prob) {
   if (stopped()) {
     // Already short circuited.
     return nullptr;
@@ -873,13 +872,8 @@ Node* LibraryCallKit::generate_guard(Node* test, RegionNode* region, float true_
     return nullptr;
   }
 
-  if (halt) {
-    Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
-    Node* halt = _gvn.transform(new HaltNode(if_slow, frame, "unexpected guard failure in intrinsic"));
-    C->root()->add_req(halt);
-  } else if (region != nullptr) {
+  if (region != nullptr)
     region->add_req(if_slow);
-  }
 
   Node* if_fast = _gvn.transform(new IfFalseNode(iff));
   set_control(if_fast);
@@ -895,15 +889,14 @@ inline Node* LibraryCallKit::generate_fair_guard(Node* test, RegionNode* region)
 }
 
 inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* region,
-                                                     Node* *pos_index,
-                                                     bool halt) {
+                                                     Node* *pos_index) {
   if (stopped())
     return nullptr;                // already stopped
   if (_gvn.type(index)->higher_equal(TypeInt::POS)) // [0,maxint]
     return nullptr;                // index is already adequately typed
   Node* cmp_lt = _gvn.transform(new CmpINode(index, intcon(0)));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
-  Node* is_neg = generate_guard(bol_lt, region, PROB_MIN, halt);
+  Node* is_neg = generate_guard(bol_lt, region, PROB_MIN);
   if (is_neg != nullptr && pos_index != nullptr) {
     // Emulate effect of Parse::adjust_map_after_if.
     Node* ccast = new CastIINode(control(), index, TypeInt::POS);
@@ -929,8 +922,7 @@ inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* re
 inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
                                                   Node* subseq_length,
                                                   Node* array_length,
-                                                  RegionNode* region,
-                                                  bool halt) {
+                                                  RegionNode* region) {
   if (stopped())
     return nullptr;                // already stopped
   bool zero_offset = _gvn.type(offset) == TypeInt::ZERO;
@@ -941,7 +933,7 @@ inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
     last = _gvn.transform(new AddINode(last, offset));
   Node* cmp_lt = _gvn.transform(new CmpUNode(array_length, last));
   Node* bol_lt = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
-  Node* is_over = generate_guard(bol_lt, region, PROB_MIN, halt);
+  Node* is_over = generate_guard(bol_lt, region, PROB_MIN);
   return is_over;
 }
 
@@ -962,16 +954,23 @@ void LibraryCallKit::generate_string_range_check(Node* array,
   }
 
   // Offset and count must not be negative
-  generate_negative_guard(offset, bailout, nullptr, halt);
-  generate_negative_guard(count, bailout, nullptr, halt);
+  generate_negative_guard(offset, bailout);
+  generate_negative_guard(count, bailout);
   // Offset + count must not exceed length of array
-  generate_limit_guard(offset, count, load_array_length(array), bailout, halt);
+  generate_limit_guard(offset, count, load_array_length(array), bailout);
 
   if (bailout->req() > 1) {
-    PreserveJVMState pjvms(this);
-    set_control(_gvn.transform(bailout));
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
+    if (halt) {
+      Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+      Node* bailoutN = _gvn.transform(bailout);
+      Node* halt = _gvn.transform(new HaltNode(bailoutN, frame, "unexpected guard failure in intrinsic"));
+      C->root()->add_req(halt);
+    } else {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(bailout));
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_maybe_recompile);
+    }
   }
 }
 
@@ -1140,7 +1139,7 @@ bool LibraryCallKit::inline_countPositives() {
   Node* offset     = argument(1);
   Node* len        = argument(2);
 
-  if (VerifyIntrinsicRangeChecks) {
+  if (VerifyIntrinsicChecks) {
     ba = must_be_not_null(ba, true);
     generate_string_range_check(ba, offset, len, false, true);
     if (stopped()) {
