@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,10 @@ import java.util.stream.Stream;
  * <p>For example, to capture the output of a program known to produce some output and then exit:
  * {@snippet lang = "java" :
  * List<String> capture(List<String> args) throws Exception {
- *     ProcessBuilder pb = new ProcessBuilder().command(args);
+ *     ProcessBuilder pb = new ProcessBuilder(args);
  *     Process process = pb.start();
  *     try (BufferedReader in = process.inputReader()) {
- *         List<String> captured = in.lines().toList();
+ *         List<String> captured = in.readAllLines();
  *         int status = process.waitFor();
  *         if (status != 0) {
  *             throw new RuntimeException("Process %d: %s failed with %d"
