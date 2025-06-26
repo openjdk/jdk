@@ -26,7 +26,8 @@
  * @key headful
  * @requires (os.family == "mac")
  * @bug 8360462
- * @summary Verifies ctrl+shift+down slects next row in AquaL&F
+ * @summary Verifies ctrl+shift+down selects next row
+ *          and ctrl+shift+up selects previous row in Aqua L&F
  * @run main TestTreeRowSelection
  */
 
@@ -40,6 +41,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 public class TestTreeRowSelection {
     static JTree tree;
     static JFrame frame;
+
     public static void main(String[]  args) throws Exception {
 
         try {
