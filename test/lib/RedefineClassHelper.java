@@ -22,17 +22,15 @@
  */
 
 import java.io.InputStream;
-import java.lang.constant.ClassDesc;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
-import java.util.Map;
-import java.lang.instrument.Instrumentation;
+import java.lang.constant.ClassDesc;
+
 import java.lang.instrument.ClassDefinition;
+import java.lang.instrument.Instrumentation;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.helpers.ClassFileInstaller;
-
-import static jdk.test.lib.Asserts.assertTrue;
 
 /*
  * Helper class to write tests that redefine classes.
