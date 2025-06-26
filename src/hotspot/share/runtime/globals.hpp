@@ -1957,13 +1957,6 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
-          "(Deprecated) Select locking mode: "                              \
-          "0: (Deprecated) monitors only (LM_MONITOR), "                    \
-          "1: (Deprecated) monitors & legacy stack-locking (LM_LEGACY), "   \
-          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
-          range(0, 2)                                                       \
-                                                                            \
   product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
           "With Lightweight Locking mode, use a table to record inflated "  \
           "monitors rather than the first word of the object.")             \

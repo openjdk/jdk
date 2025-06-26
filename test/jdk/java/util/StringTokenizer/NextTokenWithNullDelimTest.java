@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008 Red Hat, Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "asm/assembler.inline.hpp"
-#include "entry_zero.hpp"
-#include "interpreter/zero/zeroInterpreter.hpp"
-#include "nativeInst_zero.hpp"
-#include "runtime/sharedRuntime.hpp"
+/*
+ * @test
+ * @bug 8360045
+ * @summary Verify StringTokenizer.nextToken(null) does not alter the
+ *      existing delimiter
+ * @run junit NextTokenWithNullDelimTest
+ */
 
-// This method is called by nmethod::make_not_entrant to
-// insert a jump to SharedRuntime::get_handle_wrong_method_stub()
-// (dest) at the start of a compiled method (verified_entry) to avoid
-// a race where a method is invoked while being made non-entrant.
+import java.util.StringTokenizer;
+import org.junit.jupiter.api.Test;
 
-void NativeJump::patch_verified_entry(address entry,
-                                      address verified_entry,
-                                      address dest) {
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-  ((ZeroEntry*) verified_entry)->set_entry_point(
-    (address) ZeroInterpreter::normal_entry);
+public class NextTokenWithNullDelimTest {
+    @Test
+    void testNextTokenWithNullDelim() {
+        StringTokenizer st = new StringTokenizer("test");
+        assertThrows(NullPointerException.class, () -> st.nextToken(null));
+        assertDoesNotThrow(st::hasMoreTokens);
+    }
 }
