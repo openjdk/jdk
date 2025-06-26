@@ -1472,11 +1472,16 @@ void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
   st->print(" %zuk page", os::vm_page_size()>>10);
   size_t phys_mem = 0;
-  os::physical_memory(phys_mem);
+  if (!os::physical_memory(phys_mem)) {
+    log_debug(os, thread)("os::physical_memory() failed");
+  }
   st->print(", physical %zuk",
             phys_mem >> 10);
   size_t avail_mem = 0;
-  os::available_memory(avail_mem);
+  if (!os::available_memory(avail_mem))
+  {
+    log_debug(os, thread)("os::available_memory() failed");
+  }
   st->print("(%zuk free)",
             avail_mem >> 10);
 

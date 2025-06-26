@@ -1502,14 +1502,19 @@ void Arguments::set_heap_size() {
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
-      os::physical_memory(physical_mem_val);
+      if (!os::physical_memory(physical_mem_val)) {
+        log_debug(os)("os::physical_memory() failed");
+      }
+
       phys_mem = static_cast<julong>(physical_mem_val);
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
       phys_mem = (julong)MaxRAM;
     }
   } else {
-    os::physical_memory(physical_mem_val);
+    if (!os::physical_memory(physical_mem_val)) {
+      log_debug(os)("os::physical_memory() failed");
+    }
     phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(physical_mem_val), (julong)MaxRAM)
                                        : (julong)MaxRAM;
   }

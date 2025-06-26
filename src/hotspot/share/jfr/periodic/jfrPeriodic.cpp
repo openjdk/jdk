@@ -529,12 +529,16 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
  */
 TRACE_REQUEST_FUNC(PhysicalMemory) {
   size_t phys_mem = 0;
-  os::physical_memory(phys_mem);
+  if (!os::physical_memory(phys_mem)) {
+    log_debug(jfr, system)("os::physical_memory() failed");
+  }
   u8 totalPhysicalMemory = static_cast<u8>(phys_mem);
   EventPhysicalMemory event;
   event.set_totalSize(totalPhysicalMemory);
   size_t avail_mem = 0;
-  os::available_memory(avail_mem);
+  if (!os::available_memory(avail_mem)) {
+    log_debug(jfr, system)("os::available_memory() failed");
+  }
   event.set_usedSize(totalPhysicalMemory - static_cast<u8>(avail_mem));
   event.commit();
 }
@@ -542,10 +546,14 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
 TRACE_REQUEST_FUNC(SwapSpace) {
   EventSwapSpace event;
   size_t total_swap_space = 0;
-  os::total_swap_space(total_swap_space);
+  if (!os::total_swap_space(total_swap_space)) {
+    log_debug(jfr, system)("os::total_swap_space() failed");
+  }
   event.set_totalSize(static_cast<s8>(total_swap_space));
   size_t free_swap_space = 0;
-  os::free_swap_space(free_swap_space);
+  if (!os::free_swap_space(free_swap_space)) {
+    log_debug(jfr, system)("os::free_swap_space() failed");
+  }
   event.set_freeSize(static_cast<s8>(free_swap_space));
   event.commit();
 }

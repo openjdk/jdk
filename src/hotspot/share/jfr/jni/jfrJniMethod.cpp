@@ -409,7 +409,7 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
   // os::physical_memory() would return the container limit.
   return os::Linux::physical_memory();
 #else
-os::physical_memory(phys_mem);
+  os::physical_memory(phys_mem);
   return static_cast<jlong>(phys_mem);
 #endif
 JVM_END
