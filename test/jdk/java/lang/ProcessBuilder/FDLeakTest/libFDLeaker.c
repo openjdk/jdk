@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,11 +21,16 @@
  * questions.
  */
 
-package java.lang.invoke;
+#include <stdio.h>
+#include "jvmti.h"
 
-/**
- * This is a place-holder class.  Some HotSpot implementations need to see it.
- */
-final class InvokeDynamic {
-    private InvokeDynamic() { throw new InternalError(); }  // do not instantiate
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  const char* filename = "./testfile_FDLeaker.txt";
+  FILE* f = fopen(filename, "w");
+  if (f == NULL) {
+    return JNI_ERR;
+  }
+  printf("Opened and leaked %s (%d)", filename, fileno(f));
+  return JNI_OK;
 }

@@ -1207,7 +1207,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
         assert(JVMCIENV->isa_HotSpotNmethod(installed_code_handle), "wrong type");
         // Clear the link to an old nmethod first
         JVMCIObject nmethod_mirror = installed_code_handle;
-        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, nmethod::ChangeReason::JVMCI_replacing_with_new_code, JVMCI_CHECK_0);
+        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, nmethod::InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE, JVMCI_CHECK_0);
       } else {
         assert(JVMCIENV->isa_InstalledCode(installed_code_handle), "wrong type");
       }
@@ -1216,6 +1216,14 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
     }
   }
   return result;
+C2V_END
+
+C2V_VMENTRY_0(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
+  HandleMark hm(THREAD);
+  JNIHandleMark jni_hm(thread);
+  nmethod::InvalidationReason reason = static_cast<nmethod::InvalidationReason>(invalidation_reason);
+  JVMCIObject desc = JVMCIENV->create_string(nmethod::invalidation_reason_to_string(reason), JVMCI_CHECK_NULL);
+  return JVMCIENV->get_jobject(desc);
 C2V_END
 
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv* env, jobject))
@@ -1383,7 +1391,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   nmethod* code = method->code();
   if (code != nullptr) {
-    code->make_not_entrant(nmethod::ChangeReason::JVMCI_reprofile);
+    code->make_not_entrant(nmethod::InvalidationReason::JVMCI_REPROFILE);
   }
 
   MethodData* method_data = method->method_data();
@@ -1396,9 +1404,14 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 C2V_END
 
 
-C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize))
+C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize, jint invalidation_reason))
+  int first = static_cast<int>(nmethod::InvalidationReason::C1_CODEPATCH);
+  int last = static_cast<int>(nmethod::InvalidationReason::INVALIDATION_REASONS_COUNT);
+  if (invalidation_reason < first || invalidation_reason >= last) {
+    JVMCI_THROW_MSG(IllegalArgumentException, err_msg("Invalid invalidation_reason: %d", invalidation_reason));
+  }
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, nmethod::ChangeReason::JVMCI_invalidate_nmethod, JVMCI_CHECK);
+  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, static_cast<nmethod::InvalidationReason>(invalidation_reason), JVMCI_CHECK);
 C2V_END
 
 C2V_VMENTRY_NULL(jlongArray, collectCounters, (JNIEnv* env, jobject))
@@ -1823,7 +1836,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    fst.current()->cb()->as_nmethod()->make_not_entrant(nmethod::ChangeReason::JVMCI_materialize_virtual_object);
+    fst.current()->cb()->as_nmethod()->make_not_entrant(nmethod::InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT);
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
@@ -3352,6 +3365,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode0",                                 CC "(JJZ" HS_COMPILED_CODE "[" OBJECT INSTALLED_CODE "J[B)I",                         FN_PTR(installCode0)},
+  {CC "getInvalidationReasonDescription",             CC "(I)" STRING,                                                                      FN_PTR(getInvalidationReasonDescription)},
   {CC "getInstallCodeFlags",                          CC "()I",                                                                             FN_PTR(getInstallCodeFlags)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},
   {CC "disassembleCodeBlob",                          CC "(" INSTALLED_CODE ")" STRING,                                                     FN_PTR(disassembleCodeBlob)},
@@ -3360,7 +3374,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getLocalVariableTableStart",                   CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getLocalVariableTableStart)},
   {CC "getLocalVariableTableLength",                  CC "(" HS_METHOD2 ")I",                                                               FN_PTR(getLocalVariableTableLength)},
   {CC "reprofile",                                    CC "(" HS_METHOD2 ")V",                                                               FN_PTR(reprofile)},
-  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "Z)V",                                                              FN_PTR(invalidateHotSpotNmethod)},
+  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "ZI)V",                                                             FN_PTR(invalidateHotSpotNmethod)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
   {CC "getCountersSize",                              CC "()I",                                                                             FN_PTR(getCountersSize)},
   {CC "setCountersSize",                              CC "(I)Z",                                                                            FN_PTR(setCountersSize)},

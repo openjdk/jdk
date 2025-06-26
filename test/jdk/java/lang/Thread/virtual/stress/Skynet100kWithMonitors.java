@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark that uses
  *   a channel implementation based on object monitors. This variant uses a reduced number of
  *   100k virtual threads at the final level.
- * @requires vm.debug != true & vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.debug != true & vm.continuations
  * @run main/othervm/timeout=300 Skynet100kWithMonitors 50
  */
 
 /*
  * @test
- * @requires vm.debug == true & vm.continuations & vm.opt.LockingMode != 1
+ * @requires vm.debug == true & vm.continuations
  * @run main/othervm/timeout=300 Skynet100kWithMonitors 10
  */
 
