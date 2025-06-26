@@ -35,9 +35,9 @@ class ZDeferredConstructed {
 
   DEBUG_ONLY(bool _initialized;)
 
-public:
   NONCOPYABLE(ZDeferredConstructed);
 
+public:
   ZDeferredConstructed();
   ~ZDeferredConstructed();
 
