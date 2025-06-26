@@ -952,8 +952,10 @@ class StubGenerator: public StubCodeGenerator {
     address start_pc = __ pc();
     Register tmp1 = R6_ARG4;
     // probably copy stub would have changed value reset it.
-    __ load_const_optimized(tmp1, VM_Version::_dscr_val);
-    __ mtdscr(tmp1);
+    if (VM_Version::has_mfdscr()) {
+      __ load_const_optimized(tmp1, VM_Version::_dscr_val);
+      __ mtdscr(tmp1);
+    }
     __ li(R3_RET, 0); // return 0
     __ blr();
     return start_pc;
@@ -1070,9 +1072,10 @@ class StubGenerator: public StubCodeGenerator {
         __ dcbt(R3_ARG1, 0);
 
         // If supported set DSCR pre-fetch to deepest.
-        __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
-        __ mtdscr(tmp2);
-
+        if (VM_Version::has_mfdscr()) {
+          __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
+          __ mtdscr(tmp2);
+        }
         __ li(tmp1, 16);
 
         // Backbranch target aligned to 32-byte. Not 16-byte align as
@@ -1092,8 +1095,10 @@ class StubGenerator: public StubCodeGenerator {
         __ bdnz(l_10);                       // Dec CTR and loop if not zero.
 
         // Restore DSCR pre-fetch value.
-        __ load_const_optimized(tmp2, VM_Version::_dscr_val);
-        __ mtdscr(tmp2);
+        if (VM_Version::has_mfdscr()) {
+          __ load_const_optimized(tmp2, VM_Version::_dscr_val);
+          __ mtdscr(tmp2);
+        }
 
      } // FasterArrayCopy
 
@@ -1344,8 +1349,10 @@ class StubGenerator: public StubCodeGenerator {
           __ dcbt(R3_ARG1, 0);
 
           // If supported set DSCR pre-fetch to deepest.
-          __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
-          __ mtdscr(tmp2);
+          if (VM_Version::has_mfdscr()) {
+            __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
+            __ mtdscr(tmp2);
+          }
           __ li(tmp1, 16);
 
           // Backbranch target aligned to 32-byte. It's not aligned 16-byte
@@ -1365,8 +1372,11 @@ class StubGenerator: public StubCodeGenerator {
           __ bdnz(l_9);                        // Dec CTR and loop if not zero.
 
           // Restore DSCR pre-fetch value.
-          __ load_const_optimized(tmp2, VM_Version::_dscr_val);
-          __ mtdscr(tmp2);
+          if (VM_Version::has_mfdscr()) {
+            __ load_const_optimized(tmp2, VM_Version::_dscr_val);
+            __ mtdscr(tmp2);
+          }
+
       } // FasterArrayCopy
       __ bind(l_6);
 
@@ -1527,9 +1537,10 @@ class StubGenerator: public StubCodeGenerator {
     __ dcbt(R3_ARG1, 0);
 
     // Set DSCR pre-fetch to deepest.
-    __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
-    __ mtdscr(tmp2);
-
+    if (VM_Version::has_mfdscr()) {
+      __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
+      __ mtdscr(tmp2);
+    }
     __ li(tmp1, 16);
 
     // Backbranch target aligned to 32-byte. Not 16-byte align as
@@ -1549,9 +1560,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bdnz(l_7);                        // Dec CTR and loop if not zero.
 
     // Restore DSCR pre-fetch value.
-    __ load_const_optimized(tmp2, VM_Version::_dscr_val);
-    __ mtdscr(tmp2);
-
+    if (VM_Version::has_mfdscr()) {
+      __ load_const_optimized(tmp2, VM_Version::_dscr_val);
+      __ mtdscr(tmp2);
+    }
 
    } // FasterArrayCopy
 
@@ -1672,9 +1684,10 @@ class StubGenerator: public StubCodeGenerator {
       __ dcbt(R3_ARG1, 0);
 
       // Set DSCR pre-fetch to deepest.
-      __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
-      __ mtdscr(tmp2);
-
+      if (VM_Version::has_mfdscr()) {
+        __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
+        __ mtdscr(tmp2);
+      }
       __ li(tmp1, 16);
 
       // Backbranch target aligned to 32-byte. Not 16-byte align as
@@ -1694,8 +1707,10 @@ class StubGenerator: public StubCodeGenerator {
       __ bdnz(l_4);
 
       // Restore DSCR pre-fetch value.
-      __ load_const_optimized(tmp2, VM_Version::_dscr_val);
-      __ mtdscr(tmp2);
+      if (VM_Version::has_mfdscr()) {
+        __ load_const_optimized(tmp2, VM_Version::_dscr_val);
+        __ mtdscr(tmp2);
+      }
 
       __ cmpwi(CR0, R5_ARG3, 0);
       __ beq(CR0, l_6);
@@ -1788,9 +1803,10 @@ class StubGenerator: public StubCodeGenerator {
       __ dcbt(R3_ARG1, 0);
 
       // Set DSCR pre-fetch to deepest.
-      __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
-      __ mtdscr(tmp2);
-
+      if (VM_Version::has_mfdscr()) {
+        __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
+        __ mtdscr(tmp2);
+      }
       __ li(tmp1, 16);
 
       // Backbranch target aligned to 32-byte. Not 16-byte align as
@@ -1810,8 +1826,10 @@ class StubGenerator: public StubCodeGenerator {
       __ bdnz(l_5);                        // Dec CTR and loop if not zero.
 
       // Restore DSCR pre-fetch value.
-      __ load_const_optimized(tmp2, VM_Version::_dscr_val);
-      __ mtdscr(tmp2);
+      if (VM_Version::has_mfdscr()) {
+        __ load_const_optimized(tmp2, VM_Version::_dscr_val);
+        __ mtdscr(tmp2);
+      }
 
    } // FasterArrayCopy
 
@@ -1910,9 +1928,10 @@ class StubGenerator: public StubCodeGenerator {
       __ dcbt(R3_ARG1, 0);
 
       // Set DSCR pre-fetch to deepest.
-      __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
-      __ mtdscr(tmp2);
-
+      if (VM_Version::has_mfdscr()) {
+        __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
+        __ mtdscr(tmp2);
+      }
       __ li(tmp1, 16);
 
       // Backbranch target aligned to 32-byte. Not 16-byte align as
@@ -1932,8 +1951,10 @@ class StubGenerator: public StubCodeGenerator {
       __ bdnz(l_4);
 
       // Restore DSCR pre-fetch value.
-      __ load_const_optimized(tmp2, VM_Version::_dscr_val);
-      __ mtdscr(tmp2);
+      if (VM_Version::has_mfdscr()) {
+        __ load_const_optimized(tmp2, VM_Version::_dscr_val);
+        __ mtdscr(tmp2);
+      }
 
       __ cmpwi(CR0, R5_ARG3, 0);
       __ beq(CR0, l_1);
