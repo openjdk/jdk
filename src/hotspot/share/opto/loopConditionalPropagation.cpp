@@ -830,7 +830,6 @@ void PhaseConditionalPropagation::Analyzer::propagate_types(bool &extra_type_ini
         assert(t == prev_t, "current type should be narrower than prev type");
         if (!(n->in(0)->is_CountedLoop() &&
               n->in(0)->as_CountedLoop()->phi() == n &&
-              PhaseValues::type(n->in(0)->in(LoopNode::EntryControl)) != Type::TOP &&
               PhaseValues::type(n->in(LoopNode::EntryControl)) != Type::TOP)) {
           t = saturate(t, prev_type, nullptr);
         }
