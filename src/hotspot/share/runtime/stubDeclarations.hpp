@@ -1123,7 +1123,7 @@
 
 #define STUBGEN_BLOB_FIELD_NAME(base) _ ## base ## _stubs_code
 
-// first some macros that add an increment 
+// first some macros that add an increment
 
 #define COUNT1(_1)                              \
   + 1
