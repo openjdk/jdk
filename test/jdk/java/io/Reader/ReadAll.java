@@ -94,6 +94,14 @@ public class ReadAll {
             strings.add(sb.toString());
             sb.setLength(0);
         }
+
+        strings.add(PHRASE.repeat((4096 + plen - 1)/plen) + "\n" +
+                    " ".repeat(8192) + PHRASE);
+        strings.add("x".repeat(8191) + "\n");
+        strings.add("x".repeat(9000) + "\n" + "y".repeat(100));
+        strings.add("x".repeat(8200) + "y".repeat(8200) + "x".repeat(8200) +
+                    PHRASE + "\n");
+
         Files.write(path, strings);
         System.out.println(strings.size() + " lines written");
     }

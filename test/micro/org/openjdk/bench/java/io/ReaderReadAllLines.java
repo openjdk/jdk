@@ -45,7 +45,7 @@ public class ReaderReadAllLines {
         Random rnd = new Random(System.nanoTime());
         int off = 0;
         while (off < len) {
-            int lineLen = 40 + rnd.nextInt(40);
+            int lineLen = 40 + rnd.nextInt(8192);
             if (lineLen > len - off) {
                 off = len;
             } else {

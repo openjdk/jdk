@@ -450,49 +450,70 @@ public abstract class Reader implements Readable, Closeable {
      */
     public List<String> readAllLines() throws IOException {
         List<String> lines = new ArrayList<>();
-        StringBuilder sb = new StringBuilder(0);
+
+        int writePos = 0;
+        int fragPos = -1;
+        int fragLen = 0;
 
         char[] cb = new char[TRANSFER_BUFFER_SIZE];
         boolean skipLF = false;
         int n;
-        while ((n = read(cb, 0, cb.length)) != -1) {
-            int pos = 0;
-            while (pos < n) {
-                // find next line terminator; if none found, "term" equals "n"
+        while ((n = read(cb, writePos, cb.length - writePos)) != -1) {
+            int pos = writePos;
+            int limit = pos + n;
+            while (pos < limit) {
+                // find next line terminator
                 int term = pos;
-                while (term < n) {
+                while (term < limit) {
                     char c = cb[term];
                     if (c == '\n' || c == '\r')
                         break;
                     term++;
                 }
 
-                if (term < n) { // line terminator
+                if (term < limit) { // line terminator
                     boolean isCR = (cb[term] == '\r');
                     if (isCR || !(skipLF && term == pos)) {
                         // line terminator is a CR or an LF just after a CR
-                        if (sb.isEmpty()) {
-                            // avoid the StringBuilder if possible
-                            lines.add(new String(cb, pos, term - pos));
+                        if (fragPos != -1) {
+                            lines.add(new String(cb, fragPos, term - fragPos));
+                            fragPos = -1;
                         } else {
-                            sb.append(cb, pos, term - pos);
-                            lines.add(sb.toString());
-                            sb.setLength(0);
+                            lines.add(new String(cb, pos, term - pos));
                         }
                     }
                     pos = term + 1;
+                    if (pos == limit)
+                        writePos = 0;
                     skipLF = isCR;
                 } else { // no line terminator
-                    sb.append(cb, pos, n - pos);
-                    pos = n;
+                    int len = term - pos;
+                    if (fragPos == -1) {
+                        fragPos = pos;
+                        fragLen = len;
+                    } else {
+                        fragLen += len;
+                    }
+                    if (fragLen >= cb.length/2) {
+                        // allocate larger buffer and copy chars to beginning
+                        char[] tmp = new char[2*cb.length];
+                        System.arraycopy(cb, fragPos, tmp, 0, fragLen);
+                        cb = tmp;
+                    } else if (fragPos != 0) {
+                        // move fragment to beginning of buffer
+                        System.arraycopy(cb, fragPos, cb, 0, fragLen);
+                    }
+                    writePos = fragLen;
+                    fragPos = 0;
+                    pos = limit;
                     skipLF = false;
                 }
             }
         }
 
         // add a string if EOS terminates the last line
-        if (!sb.isEmpty())
-            lines.add(sb.toString());
+        if (fragPos != -1)
+            lines.add(new String(cb, fragPos, fragLen));
 
         return Collections.unmodifiableList(lines);
     }
