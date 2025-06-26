@@ -837,7 +837,12 @@ void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
 
 void ParallelScavengeHeap::resize_after_full_gc() {
   resize_old_gen_after_full_gc();
-  young_gen()->resize_after_full_gc();
+  // We don't resize young-gen after full-gc because:
+  // 1. eden-size directly affects young-gc frequency (GCTimeRatio), and we
+  // don't have enough info to determine its desired size.
+  // 2. eden can contain live objs after a full-gc, which is unsafe for
+  // resizing. We will perform expansion on allocation if needed, in
+  // satisfy_failed_allocation().
 }
 
 HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {

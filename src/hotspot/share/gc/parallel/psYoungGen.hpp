@@ -113,7 +113,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   }
 
   void resize_after_young_gc(bool is_survivor_overflowing);
-  void resize_after_full_gc();
 
   // Size info
   size_t capacity_in_bytes() const;

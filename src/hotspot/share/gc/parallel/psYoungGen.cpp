@@ -370,21 +370,6 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
   assert(is_aligned(survivor_size, SpaceAlignment), "inv");
 }
 
-void PSYoungGen::resize_after_full_gc() {
-  // We usually resize young-gen only after a successful young-gc. However, in
-  // an emergency state, we want to expand young-gen to its max-capacity.
-  // Young-gen should be empty normally after a full-gc.
-  if (eden_space()->is_empty() && from_space()->is_empty() && to_space()->is_empty()) {
-    return;
-  }
-
-  // Emergency state; keep survivor size and expand eden to its max
-  const size_t survivor_size = from_space()->capacity_in_bytes();
-  const size_t eden_size = max_gen_size() - 2 * survivor_size;
-
-  resize_inner(eden_size, survivor_size);
-}
-
 void PSYoungGen::resize_inner(size_t desired_eden_size,
                               size_t desired_survivor_size) {
   assert(desired_eden_size != 0, "precondition");
@@ -418,6 +403,9 @@ void PSYoungGen::resize_inner(size_t desired_eden_size,
 }
 
 void PSYoungGen::resize_after_young_gc(bool is_survivor_overflowing) {
+  assert(eden_space()->is_empty(), "precondition");
+  assert(to_space()->is_empty(), "precondition");
+
   size_t desired_eden_size = 0;
   size_t desired_survivor_size = 0;
 
@@ -487,30 +475,15 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
          "precondition");
   assert(is_aligned(requested_eden_size, SpaceAlignment), "precondition");
   assert(is_aligned(requested_survivor_size, SpaceAlignment), "precondition");
+  assert(from_space()->bottom() < to_space()->bottom(), "precondition");
 
-  assert(requested_eden_size >= eden_space()->used_in_bytes(), "precondition");
-  assert(requested_survivor_size >= from_space()->used_in_bytes(), "precondition");
-  assert(requested_survivor_size >= to_space()->used_in_bytes(), "precondition");
-
-  char *from_start, *from_end, *to_start, *to_end, *eden_start, *eden_end;
-
-  if (from_space()->bottom() < to_space()->bottom()) {
-    // layout: from, to, eden
-    from_start = virtual_space()->low();
-    from_end = from_start + requested_survivor_size;
-    to_start = from_end;
-    to_end = to_start + requested_survivor_size;
-    eden_start = to_end;
-    eden_end = eden_start + requested_eden_size;
-  } else {
-    // layout: to, from, eden
-    to_start = virtual_space()->low();
-    to_end = to_start + requested_survivor_size;
-    from_start = to_end;
-    from_end = from_start + requested_survivor_size;
-    eden_start = from_end;
-    eden_end = eden_start + requested_eden_size;
-  }
+  // layout: from, to, eden
+  char* from_start = virtual_space()->low();
+  char* from_end = from_start + requested_survivor_size;
+  char* to_start = from_end;
+  char* to_end = to_start + requested_survivor_size;
+  char* eden_start = to_end;
+  char* eden_end = eden_start + requested_eden_size;
 
   assert(eden_end <= virtual_space()->high(), "inv");
 
@@ -523,14 +496,6 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     assert(fromMR.start() == from_space()->bottom(), "inv");
     assert(fromMR.contains(from_space()->used_region()), "inv");
   }
-  if (!to_space()->is_empty()) {
-    assert(toMR.start() == to_space()->bottom(), "inv");
-    assert(toMR.contains(to_space()->used_region()), "inv");
-  }
-  if (!eden_space()->is_empty()) {
-    assert(edenMR.start() == eden_space()->bottom(), "inv");
-    assert(edenMR.contains(eden_space()->used_region()), "inv");
-  }
 #endif
   // For logging below
   size_t old_from_capacity = from_space()->capacity_in_bytes();
@@ -539,12 +504,12 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
   WorkerThreads* workers = &ParallelScavengeHeap::heap()->workers();
 
   eden_space()->initialize(edenMR,
-                           eden_space()->is_empty(),
+                           SpaceDecorator::Clear,
                            SpaceDecorator::DontMangle,
                            MutableSpace::SetupPages,
                            workers);
     to_space()->initialize(toMR,
-                           to_space()->is_empty(),
+                           SpaceDecorator::Clear,
                            SpaceDecorator::DontMangle,
                            MutableSpace::SetupPages,
                            workers);
