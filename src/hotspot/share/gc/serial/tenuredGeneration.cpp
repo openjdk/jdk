@@ -368,7 +368,7 @@ void TenuredGeneration::update_promote_stats() {
 void TenuredGeneration::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
 
@@ -445,6 +445,6 @@ void TenuredGeneration::print_on(outputStream* st)  const {
             capacity()/K, used()/K);
   _virtual_space.print_space_boundaries_on(st);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   _the_space->print_on(st, "the  ");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,6 +31,8 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFunctionException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
+
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlFeatures;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -39,7 +41,7 @@ import org.xml.sax.InputSource;
  * The XPathExpression interface encapsulates a (compiled) XPath expression.
  *
  * @author  Ramesh Mandava
- * @LastModified: May 2022
+ * @LastModified: May 2025
  */
 public class XPathExpressionImpl extends XPathImplUtil implements XPathExpression {
 
@@ -49,7 +51,7 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
      * from the context.
      */
     protected XPathExpressionImpl() {
-        this(null, null, null, null, false, new JdkXmlFeatures(false));
+        this(null, null, null, null, false, JdkXmlConfig.getInstance(false).getXMLFeatures(true));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,
@@ -57,7 +59,7 @@ public class XPathExpressionImpl extends XPathImplUtil implements XPathExpressio
             XPathFunctionResolver functionResolver,
             XPathVariableResolver variableResolver) {
         this(xpath, prefixResolver, functionResolver, variableResolver,
-             false, new JdkXmlFeatures(false));
+             false, JdkXmlConfig.getInstance(false).getXMLFeatures(true));
     };
 
     protected XPathExpressionImpl(com.sun.org.apache.xpath.internal.XPath xpath,

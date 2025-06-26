@@ -814,7 +814,7 @@ void DefNewGeneration::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
 
@@ -830,7 +830,7 @@ void DefNewGeneration::print_on(outputStream* st) const {
   st->print(" total %zuK, used %zuK ", capacity() / K, used() / K);
   _virtual_space.print_space_boundaries_on(st);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   eden()->print_on(st, "eden ");
   from()->print_on(st, "from ");
   to()->print_on(st, "to   ");

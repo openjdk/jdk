@@ -422,7 +422,7 @@ class SerializeClosure;
   template(sp_name,                                   "sp")                                       \
   template(pc_name,                                   "pc")                                       \
   template(cs_name,                                   "cs")                                       \
-  template(get_name,                                  "get")                                      \
+  template(get0_name,                                 "get0")                                     \
   template(refersTo0_name,                            "refersTo0")                                \
   template(clear0_name,                               "clear0")                                   \
   template(put_name,                                  "put")                                      \
@@ -719,7 +719,6 @@ class SerializeClosure;
   JFR_TEMPLATES(template)                                                                                         \
                                                                                                                   \
   /* CDS */                                                                                                       \
-  template(createArchivedObjects,                           "createArchivedObjects")                              \
   template(dumpSharedArchive,                               "dumpSharedArchive")                                  \
   template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
@@ -743,6 +742,12 @@ class SerializeClosure;
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
+  template(jdk_internal_vm_ThreadSnapshot,         "jdk/internal/vm/ThreadSnapshot")                              \
+  template(jdk_internal_vm_ThreadLock,             "jdk/internal/vm/ThreadSnapshot$ThreadLock")                   \
+  template(jdk_internal_vm_ThreadLock_signature,   "Ljdk/internal/vm/ThreadSnapshot$ThreadLock;")                 \
+  template(jdk_internal_vm_ThreadLock_array,       "[Ljdk/internal/vm/ThreadSnapshot$ThreadLock;")                \
+  template(java_lang_StackTraceElement_of_name,    "of")                                                          \
+  template(java_lang_StackTraceElement_of_signature, "([Ljava/lang/StackTraceElement;)[Ljava/lang/StackTraceElement;") \
                                                                                                                   \
   /* jcmd Thread.vthread_scheduler and Thread.vthread_pollers */                                                  \
   template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \
