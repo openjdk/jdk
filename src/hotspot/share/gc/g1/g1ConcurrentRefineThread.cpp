@@ -124,7 +124,7 @@ void G1ConcurrentRefineThread::stop_service() {
   activate();
 }
 
-double G1ConcurrentRefineThread::cpu_time_s() {  
+double G1ConcurrentRefineThread::cpu_time_s() {
   return (double)os::thread_cpu_time(this) / NANOSECS_PER_SEC;
 }
 

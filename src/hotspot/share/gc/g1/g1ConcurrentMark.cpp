@@ -2914,8 +2914,8 @@ void G1CMTask::do_marking_step(double time_target_ms,
   // closure which was statically allocated in this frame doesn't
   // escape it by accident.
   set_cm_oop_closure(nullptr);
-  jlong end_time_ns = os::current_thread_cpu_time();
-  double elapsed_time_ms = (double)(end_time_ns - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
+  jlong end_cpu_time_ns = os::current_thread_cpu_time();
+  double elapsed_time_ms = (double)(end_cpu_time_ns - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
   // Update the step history.
   _step_times_ms.add(elapsed_time_ms);
 
