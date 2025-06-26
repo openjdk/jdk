@@ -296,24 +296,6 @@
 // Alongside the global enums, the stubgen declarations are used to
 // define the following elements of class StubRoutines:
 //
-// StubGen Blob identifiers:
-//
-// public enum StubGenBlobId is generated to identify each of the
-// StubGenerator blobs in blob declaration order. This enum is
-// provided for use by client code to identify a specific StubGen
-// blob.  For a blob declared with name <blob_name> the associated
-// enum value is StubGenBlobId::<blob_name>_id.
-//
-// StubGen stub identifiers:
-//
-// public enum StubGenStubId is generated to identify all declared
-// StubGen stubs across all blobs, sorted first by blob declaration
-// order and then within a blob by stub declaration order, generic
-// stubs before arch-specific stubs. This enum is provided for use by
-// client code to identify a specific StubGen stub, independent of the
-// blob it belongs to. For a stub declared with name <stub_name> the
-// associated enum value is StubGenStubId::<stub_name>_id.
-//
 // Stub names and associated getters:
 //
 // Name strings are generated for each blob where a blob declared with
@@ -326,8 +308,8 @@
 // Corresponding public static lookup methods are generated to allow
 // names to be looked up by blob or global stub id.
 //
-//  const char* StubRoutines::get_blob_name(StubGenBlobId id)
-//  const char* StubRoutines::get_stub_name(StubGenStubId id)
+//  const char* StubRoutines::get_blob_name(BlobId id)
+//  const char* StubRoutines::get_stub_name(StubId id)
 //
 // These name lookup methods should be used by generic and
 // cpu-specific client code to ensure that blobs and stubs are
