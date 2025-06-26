@@ -41,6 +41,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 public class TestTreeRowSelection {
     static JTree tree;
     static JFrame frame;
+    static volatile int selectedRowCount;
+    static volatile int curSelectedRowCount;
 
     public static void main(String[]  args) throws Exception {
 
@@ -64,7 +66,9 @@ public class TestTreeRowSelection {
             Robot robot = new Robot();
             robot.waitForIdle();
             robot.delay(1000);
-            int selectedRowCount = tree.getSelectionCount();
+            SwingUtilities.invokeAndWait(() -> {
+                selectedRowCount = tree.getSelectionCount();
+            });
             System.out.println("rows selected " + selectedRowCount);
             for (int i = 0; i < 2; i++) {
                 robot.keyPress(KeyEvent.VK_CONTROL);
@@ -76,10 +80,12 @@ public class TestTreeRowSelection {
                 robot.waitForIdle();
                 robot.delay(500);
             }
-            int curSelectedRowCount = tree.getSelectionCount();
+            SwingUtilities.invokeAndWait(() -> {
+                curSelectedRowCount = tree.getSelectionCount();
+            });
             System.out.println("rows selected " + curSelectedRowCount);
             if (curSelectedRowCount != selectedRowCount + 2) {
-                throw new RuntimeException("ctrl+shift+down not working");
+                throw new RuntimeException("ctrl+shift+down doesn't select next row");
             }
             robot.keyPress(KeyEvent.VK_CONTROL);
             robot.keyPress(KeyEvent.VK_SHIFT);
@@ -89,10 +95,12 @@ public class TestTreeRowSelection {
             robot.keyRelease(KeyEvent.VK_CONTROL);
             robot.waitForIdle();
             robot.delay(500);
-            curSelectedRowCount = tree.getSelectionCount();
+            SwingUtilities.invokeAndWait(() -> {
+                curSelectedRowCount = tree.getSelectionCount();
+            });
             System.out.println("rows selected " + curSelectedRowCount);
             if (curSelectedRowCount != selectedRowCount + 1) {
-                throw new RuntimeException("ctrl+shift+up not working");
+                throw new RuntimeException("ctrl+shift+up doesn't select previous row");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
