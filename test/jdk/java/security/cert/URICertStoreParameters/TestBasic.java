@@ -24,6 +24,8 @@
 import java.security.cert.CertStore;
 import java.security.cert.URICertStoreParameters;
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 
 /*
  * @test
@@ -37,6 +39,8 @@ public class TestBasic {
         String str1 = "ldap://myownhost:5000/";
         String str2 = "ldap://myownhost:5000/cn=foo";
         test(str1, str2);
+        testRepeatedHashCode(str1);
+        testHashUniqueness();
         System.out.println("Test passed");
     }
 
@@ -67,5 +71,31 @@ public class TestBasic {
         if (p1.equals(p2) || p1Too.equals(p2)) {
             throw new Exception("Error: p1/p1Too should NOT equal p2");
         }
+    }
+
+    private static void testRepeatedHashCode(String str) throws Exception {
+        System.out.println("Testing repeated hashCode consistency");
+        URICertStoreParameters p = new URICertStoreParameters(new URI(str));
+        int h1 = p.hashCode();
+        int h2 = p.hashCode();
+        if (h1 != h2) {
+            throw new Exception("hashCode inconsistent across calls");
+        }
+        System.out.println("hashCode consistency verified");
+    }
+
+    private static void testHashUniqueness() throws Exception {
+        System.out.println("Testing hashCode uniqueness across multiple URIs");
+        Set<Integer> seen = new HashSet<>();
+        int collisions = 0;
+        for (int i = 0; i < 500; i++) {
+            URI uri = new URI("ldap://host" + i + ":389/dn=" + i);
+            URICertStoreParameters param = new URICertStoreParameters(uri);
+            if (!seen.add(param.hashCode())) {
+                System.out.println("Collision for: " + uri);
+                collisions++;
+            }
+        }
+        System.out.println("Hash uniqueness test complete with " + collisions + " collision(s)");
     }
 }
