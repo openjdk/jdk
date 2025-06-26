@@ -201,24 +201,24 @@ void PSYoungGen::space_invariants() {
   guarantee(from_space()->capacity_in_bytes() >= SpaceAlignment, "from too small");
   assert(from_space()->capacity_in_bytes() == to_space()->capacity_in_bytes(), "inv");
 
-  char* eden_bottom = (char*)eden_space()->bottom();
-  char* eden_end   = (char*)eden_space()->end();
-  char* eden_top = (char*)eden_space()->top();
+  HeapWord* eden_bottom = eden_space()->bottom();
+  HeapWord* eden_end    = eden_space()->end();
+  HeapWord* eden_top    = eden_space()->top();
 
-  char* from_bottom = (char*)from_space()->bottom();
-  char* from_end   = (char*)from_space()->end();
-  char* from_top = (char*)from_space()->top();
+  HeapWord* from_bottom = from_space()->bottom();
+  HeapWord* from_end    = from_space()->end();
+  HeapWord* from_top    = from_space()->top();
 
-  char* to_bottom   = (char*)to_space()->bottom();
-  char* to_end     = (char*)to_space()->end();
-  char* to_top = (char*)to_space()->top();
+  HeapWord* to_bottom   = to_space()->bottom();
+  HeapWord* to_end      = to_space()->end();
+  HeapWord* to_top      = to_space()->top();
 
   assert(eden_bottom <= eden_top && eden_top <= eden_end, "inv");
   assert(from_bottom <= from_top && from_top <= from_end, "inv");
   assert(to_bottom <= to_top && to_top <= to_end, "inv");
 
   // Relationship of spaces to each other; from/to, eden
-  guarantee(MIN2(from_bottom, to_bottom) == virtual_space()->low(), "inv");
+  guarantee((char*)MIN2(from_bottom, to_bottom) == virtual_space()->low(), "inv");
 
   guarantee(is_aligned(eden_bottom, SpaceAlignment), "inv");
   guarantee(is_aligned(from_bottom, SpaceAlignment), "inv");
@@ -234,7 +234,7 @@ void PSYoungGen::space_invariants() {
     guarantee(to_end == from_bottom, "inv");
     guarantee(from_end == eden_bottom, "inv");
   }
-  guarantee(eden_end <= virtual_space()->high(), "inv");
+  guarantee((char*)eden_end <= virtual_space()->high(), "inv");
   guarantee(is_aligned(eden_end, SpaceAlignment), "inv");
 
   // More checks that the virtual space is consistent with the spaces
