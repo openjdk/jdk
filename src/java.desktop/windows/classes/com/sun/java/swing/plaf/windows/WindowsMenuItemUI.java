@@ -278,8 +278,9 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
             // selected/deselected individually without affecting other
             // the menuitem text alignment is decided by presence of imageicon
             // for that menuitem
-            if (checkIfImageIconPresent(mi) ||
-                    (mi instanceof JCheckBoxMenuItem && (menuItem.getIcon() != null))) {
+            if (checkIfImageIconPresent(mi)
+                    || (mi instanceof JCheckBoxMenuItem && (menuItem.getIcon() != null))
+                    || (mi instanceof JMenuItem && (menuItem.getIcon() != null))) {
                 rect.x = rect.x + checkIcon.getIconWidth() / 2;
             } else {
                 rect.x = rect.x - checkIcon.getIconWidth() / 2;
