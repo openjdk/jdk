@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=with-default-wait
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.Asserts
@@ -31,6 +31,21 @@
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
  *                     -Djdk.internal.httpclient.debug=false
  *                     -Djdk.httpclient.quic.maxBidiStreams=1
+ *                     H3StreamLimitReachedTest
+ */
+
+/*
+ * @test id=with-no-wait
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
+ *                     -Djdk.internal.httpclient.debug=false
+ *                     -Djdk.httpclient.quic.maxBidiStreams=1
+ *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
+ *                     -Djdk.httpclient.retryOnStreamlimit=9
  *                     H3StreamLimitReachedTest
  */
 
@@ -312,7 +327,11 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
             var response2 = responseCF2.get();
             printResponse("Second response", response2);
 
+            // set a timeout to make sure we wait long enough for
+            // the MAX_STREAMS update to reach us before attempting
+            // to create the HTTP/3 exchange.
             HttpRequest request3 = reqBuilder.copy()
+                    .timeout(Duration.ofSeconds(30))
                     .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .build();
             var responseCF3 = client.sendAsync(request3, BodyHandlers.ofString());
@@ -787,6 +806,11 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
                 List<CompletableFuture<HttpResponse<String>>> altResponses = new ArrayList<>();
                 List<CompletableFuture<HttpResponse<String>>> anyResponses = new ArrayList<>();
                 checkStatus(200, h2resp2.statusCode());
+
+                // We're going to send nine requests here. We could get
+                // "No more stream available on connection" when we run with
+                // a stream limit timeout of 0, unless we raise the retry on
+                // stream limit to at least 6
                 for (int i = 0; i < 3; i++) {
                     anyResponses.add(client.sendAsync(request3, BodyHandlers.ofString()));
                     directResponses.add(client.sendAsync(request1, BodyHandlers.ofString()));
