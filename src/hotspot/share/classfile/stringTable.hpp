@@ -74,7 +74,7 @@ private:
 
   static void item_added();
   static void item_removed();
-  static size_t items_count();
+  static size_t items_count_acquire();
 
   static oop intern(const StringWrapper& name, TRAPS);
   static oop do_intern(const StringWrapper& name, uintx hash, TRAPS);

@@ -348,7 +348,7 @@ bool StringTable::has_work() {
   return Atomic::load_acquire(&_has_work);
 }
 
-size_t StringTable::items_count() {
+size_t StringTable::items_count_acquire() {
   return Atomic::load_acquire(&_items_count);
 }
 
@@ -814,7 +814,7 @@ class StringTable::VerifyCompStrings : StackObj {
                               string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings() : _table(unsigned(items_count() / 8) + 1, 0 /* do not resize */), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(items_count_acquire() / 8) + 1, 0 /* do not resize */), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == nullptr) {
@@ -969,11 +969,11 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
   // compiler again (for future AOT method compilation, etc).
   DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, 1));
 
-  if (items_count() > (size_t)max_jint) {
-    fatal("Too many strings to be archived: %zu", items_count());
+  if (items_count_acquire() > (size_t)max_jint) {
+    fatal("Too many strings to be archived: %zu", items_count_acquire());
   }
 
-  int total = (int)items_count();
+  int total = (int)items_count_acquire();
   size_t single_array_size = objArrayOopDesc::object_size(total);
 
   log_info(aot)("allocated string table for %d strings", total);
@@ -993,7 +993,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // This can only happen if you have an extremely large number of classes that
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
-      log_error(aot)("Too many strings to be archived: %zu", items_count());
+      log_error(aot)("Too many strings to be archived: %zu", items_count_acquire());
       MetaspaceShared::unrecoverable_writing_error();
     }
 
@@ -1091,7 +1091,7 @@ oop StringTable::init_shared_strings_array() {
 
 void StringTable::write_shared_table() {
   _shared_table.reset();
-  CompactHashtableWriter writer((int)items_count(), ArchiveBuilder::string_stats());
+  CompactHashtableWriter writer((int)items_count_acquire(), ArchiveBuilder::string_stats());
 
   int index = 0;
   auto copy_into_shared_table = [&] (WeakHandle* val) {
