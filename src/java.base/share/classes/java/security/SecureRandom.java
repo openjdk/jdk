@@ -25,6 +25,7 @@
 
 package java.security;
 
+import jdk.internal.util.ByteArray;
 import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.jca.Providers;
@@ -837,33 +838,11 @@ public class SecureRandom extends java.util.Random {
         return next >>> (numBytes*8 - numBits);
     }
 
-    /**
-     * Generates a cryptographically strong pseudo-random {@code long} value.
-     * <p>
-     * This method overrides the {@code java.util.Random.nextLong()} method to provide
-     * a secure implementation using a single call to {@code nextBytes(byte[])}.
-     * It fills an 8-byte array with secure random bytes and assembles them into a
-     * {@code long} value using big-endian byte order.
-     * <p>
-     * This approach avoids generating two separate 32-bit values and reduces memory
-     * allocation overhead by using a single 8-byte array.
-     *
-     * @return a pseudo-random {@code long} value generated using a secure random number generator
-     *
-     * @see java.security.SecureRandom#nextBytes(byte[])
-     */
     @Override
     public synchronized long nextLong() {
         byte[] b = new byte[8];
         nextBytes(b); // Calls engineNextBytes internally
-        return ((long)(b[0] & 0xff) << 56) |
-                ((long)(b[1] & 0xff) << 48) |
-                ((long)(b[2] & 0xff) << 40) |
-                ((long)(b[3] & 0xff) << 32) |
-                ((long)(b[4] & 0xff) << 24) |
-                ((long)(b[5] & 0xff) << 16) |
-                ((long)(b[6] & 0xff) << 8)  |
-                ((long)(b[7] & 0xff));
+        return ByteArray.getLong(b, 0);
     }
 
     /**
