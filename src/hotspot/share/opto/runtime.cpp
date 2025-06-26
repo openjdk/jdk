@@ -99,16 +99,6 @@ C2_STUBS_DO(C2_BLOB_FIELD_DEFINE, C2_STUB_FIELD_DEFINE, C2_JVMTI_STUB_FIELD_DEFI
 #undef C2_STUB_FIELD_DEFINE
 #undef C2_JVMTI_STUB_FIELD_DEFINE
 
-#define C2_BLOB_NAME_DEFINE(name, type)  "C2 Runtime " # name "_blob",
-#define C2_STUB_NAME_DEFINE(name, f, t, r)  "C2 Runtime " # name,
-#define C2_JVMTI_STUB_NAME_DEFINE(name)  "C2 Runtime " # name,
-const char* OptoRuntime::_stub_names[] = {
-  C2_STUBS_DO(C2_BLOB_NAME_DEFINE, C2_STUB_NAME_DEFINE, C2_JVMTI_STUB_NAME_DEFINE)
-};
-#undef C2_BLOB_NAME_DEFINE
-#undef C2_STUB_NAME_DEFINE
-#undef C2_JVMTI_STUB_NAME_DEFINE
-
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
 #ifdef ASSERT
@@ -139,8 +129,8 @@ static bool check_compiled_frame(JavaThread* thread) {
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_TYPEFUNC(name) name ## _Type
 #define C2_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, name ## _C)
-#define C2_STUB_NAME(name) stub_name(OptoStubId::name ## _id)
-#define C2_STUB_ID(name) OptoStubId::name ## _id
+#define C2_STUB_ID(name) StubId:: JOIN3(c2, name, id)
+#define C2_STUB_NAME(name) stub_name(C2_STUB_ID(name))
 
 // Almost all the C functions targeted from the generated stubs are
 // implemented locally to OptoRuntime with names that can be generated

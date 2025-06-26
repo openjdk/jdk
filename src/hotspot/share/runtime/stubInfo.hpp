@@ -26,6 +26,7 @@
 #ifndef SHARE_RUNTIME_STUBINFO_HPP
 #define SHARE_RUNTIME_STUBINFO_HPP
 
+#include "logging/logStream.hpp"
 #include "runtime/stubDeclarations.hpp"
 
 // class StubInfo records details of the global stubgroup, blob, stub
@@ -85,7 +86,7 @@ enum class StubGroup : int {
 //
 // StubId  StubInfo::stub_base(StubGroup)
 // StubId  StubInfo::stub_max(StubGroup)
-// int           StubInfo::stub_count(StubGroup)
+// int     StubInfo::stub_count(StubGroup)
 //
 // EntryId StubInfo::entry_base(StubGroup)
 // EntryId StubInfo::entry_max(StubGroup)
@@ -178,6 +179,7 @@ enum class BlobId : int {
   C2_STUBS_DO(C2_DECLARE_TAG2,
               C2_DECLARE_TAG4,
               C2_DECLARE_TAG1)
+  // declare an enum tag for each stubgen blob
   STUBGEN_BLOBS_DO(STUBGEN_DECLARE_TAG)
   NUM_BLOBIDS
 };
@@ -227,6 +229,7 @@ enum class StubId : int {
   C2_STUBS_DO(C2_DECLARE_TAG2,
               C2_DECLARE_TAG4,
               C2_DECLARE_TAG1)
+  // declare an enum tag for each stubgen runtime stub
   STUBGEN_STUBS_DO(STUBGEN_DECLARE_TAG)
   NUM_STUBIDS
 };
@@ -386,6 +389,31 @@ enum class EntryId : int {
 #undef STUBGEN_DECLARE_ARCH_TAG
 #undef STUBGEN_DECLARE_ARCH_INIT_TAG
 
+// we need static init expressions for blob, stub and entry counts in
+// each stubgroup
+
+#define SHARED_STUB_COUNT_INITIALIZER           \
+  0 SHARED_STUBS_DO(COUNT2)
+
+#define SHARED_ENTRY_COUNT_INITIALIZER          \
+  0 SHARED_STUBS_DO(SHARED_COUNT2)
+
+#define C1_STUB_COUNT_INITIALIZER               \
+  0 C1_STUBS_DO(COUNT1)
+
+#define C2_STUB_COUNT_INITIALIZER               \
+  0 C2_STUBS_DO(COUNT2, COUNT4, COUNT1)
+
+#define STUBGEN_BLOB_COUNT_INITIALIZER          \
+  0 STUBGEN_BLOBS_DO(COUNT1)
+
+#define STUBGEN_STUB_COUNT_INITIALIZER          \
+  0 STUBGEN_STUBS_DO(COUNT2)
+
+#define STUBGEN_ENTRY_COUNT_INITIALIZER          \
+  0 STUBGEN_ALL_ENTRIES_DO(COUNT4, COUNT5,       \
+                           STUBGEN_COUNT5,       \
+                           COUNT5, COUNT6)
 
 // Declare management class StubInfo
 
@@ -486,55 +514,55 @@ private:
   static int local_offset(StubGroup group, StubId id);
   static int local_offset(StubGroup group, EntryId id);
 
-  // implementation of the counting methods used to populate the
-  // stubgroup, blob, stub and entry tables
-  static void count_shared_blob(StubGroup& group_cursor,
-                                BlobId&  blob_cursor,
-                                StubId& stub_cursor,
-                                EntryId& entry_cursor,
-                                const char *name,
-                                BlobId declaredBlob,
-                                StubId declaredStub,
-                                EntryId declaredEntry,
-                                EntryId declaredMax);
-  static void count_c1_blob(StubGroup& group_cursor,
-                            BlobId&  blob_cursor,
-                            StubId& stub_cursor,
-                            EntryId& entry_cursor,
-                            const char *name,
-                            BlobId declaredBlob,
-                            StubId declaredStub,
-                            EntryId declaredEntry);
-  static void count_c2_blob(StubGroup& group_cursor,
-                            BlobId&  blob_cursor,
-                            StubId& stub_cursor,
-                            EntryId& entry_cursor,
-                            const char *name,
-                            BlobId declaredBlob,
-                            StubId declaredStub,
-                            EntryId declaredEntry);
-  static void count_stubgen_blob(StubGroup& group_cursor,
-                                 BlobId&  blob_cursor,
-                                 StubId& stub_cursor,
-                                 EntryId& entry_cursor,
-                                 const char *name,
-                                 BlobId declaredBlob);
-  static void count_stubgen_stub(StubGroup& group_cursor,
-                                 BlobId&  blob_cursor,
-                                 StubId& stub_cursor,
-                                 EntryId& entry_cursor,
-                                 const char *name,
-                                 BlobId declaredBlob,
-                                 StubId declaredStub);
-  static void count_stubgen_entry(StubGroup& group_cursor,
+  // implementation of methods used to populate the stubgroup, blob,
+  // stub and entry tables
+  static void process_shared_blob(StubGroup& group_cursor,
                                   BlobId&  blob_cursor,
                                   StubId& stub_cursor,
                                   EntryId& entry_cursor,
-                                  const char *name,
+                                  const char* name,
                                   BlobId declaredBlob,
                                   StubId declaredStub,
                                   EntryId declaredEntry,
-                                  int arrayCount);
+                                  EntryId declaredMax);
+  static void process_c1_blob(StubGroup& group_cursor,
+                              BlobId&  blob_cursor,
+                              StubId& stub_cursor,
+                              EntryId& entry_cursor,
+                              const char* name,
+                              BlobId declaredBlob,
+                              StubId declaredStub,
+                              EntryId declaredEntry);
+  static void process_c2_blob(StubGroup& group_cursor,
+                              BlobId&  blob_cursor,
+                              StubId& stub_cursor,
+                              EntryId& entry_cursor,
+                              const char* name,
+                              BlobId declaredBlob,
+                              StubId declaredStub,
+                              EntryId declaredEntry);
+  static void process_stubgen_blob(StubGroup& group_cursor,
+                                   BlobId&  blob_cursor,
+                                   StubId& stub_cursor,
+                                   EntryId& entry_cursor,
+                                   const char* name,
+                                   BlobId declaredBlob);
+  static void process_stubgen_stub(StubGroup& group_cursor,
+                                   BlobId&  blob_cursor,
+                                   StubId& stub_cursor,
+                                   EntryId& entry_cursor,
+                                   const char* name,
+                                   BlobId declaredBlob,
+                                   StubId declaredStub);
+  static void process_stubgen_entry(StubGroup& group_cursor,
+                                    BlobId&  blob_cursor,
+                                    StubId& stub_cursor,
+                                    EntryId& entry_cursor,
+                                    const char* name,
+                                    BlobId declaredBlob,
+                                    StubId declaredStub,
+                                    EntryId declaredEntry,
+                                    int arrayCount);
 
   static void dump_group_table(LogStream& ls);
   static void dump_blob_table(LogStream& ls);
@@ -543,6 +571,20 @@ private:
 
   static void verify_stub_tables();
 public:
+
+  // Define statically sized counts for blobs, stubs and entries in
+  // each stub group. n.b. we omit cases where the blob or entry count
+  // equals the stub count.
+  static const int SHARED_STUB_COUNT = SHARED_STUB_COUNT_INITIALIZER;
+  static const int SHARED_ENTRY_COUNT = SHARED_ENTRY_COUNT_INITIALIZER;
+
+  static const int C1_STUB_COUNT = C1_STUB_COUNT_INITIALIZER;
+
+  static const int C2_STUB_COUNT = C2_STUB_COUNT_INITIALIZER;
+
+  static const int STUBGEN_STUB_COUNT = STUBGEN_STUB_COUNT_INITIALIZER;
+  static const int STUBGEN_BLOB_COUNT = STUBGEN_BLOB_COUNT_INITIALIZER;
+  static const int STUBGEN_ENTRY_COUNT = STUBGEN_ENTRY_COUNT_INITIALIZER;
 
   // init method called from a static initializer
   static void populate_stub_tables();
@@ -617,12 +659,13 @@ public:
 
   // Global <-> Local Id Management:
 
-  // check that a stub belongs to an expected stub group
+  // check that a blob/stub belongs to an expected stub group
 
   static bool is_shared(StubId id);
   static bool is_c1(StubId id);
   static bool is_c2(StubId id);
   static bool is_stubgen(StubId id);
+  static bool is_stubgen(BlobId id);
 
   // Convert a stub id to a unique, zero-based offset in the range of
   // stub ids for a given stub group.
@@ -631,17 +674,6 @@ public:
   static int  c1_offset(StubId id);
   static int  c2_offset(StubId id);
   static int  stubgen_offset(StubId id);
-
-  // Convert a blob id to a unique, zero-based offset in the range of
-  // blob ids for a given stub group.
-
-  static int  stubgen_offset(BlobId id);
-
-  // Convert an entry id to a unique, zero-based offset in the range
-  // of entry ids for a given stub group.
-
-  static int  shared_offset(EntryId id);
-  static int  stubgen_offset(EntryId id);
 };
 
 

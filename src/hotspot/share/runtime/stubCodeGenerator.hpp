@@ -27,6 +27,7 @@
 
 #include "asm/assembler.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/stubInfo.hpp"
 
 // All the basic framework for stub code generation/debugging/printing.
 
@@ -98,32 +99,29 @@ class StubCodeDesc: public CHeapObj<mtCode> {
 
 // forward declare blob and stub id enums
 
-enum StubGenBlobId : int;
-enum StubGenStubId : int;
-
 // The base class for all stub-generating code generators.
 // Provides utility functions.
 
 class StubCodeGenerator: public StackObj {
  private:
   bool _print_code;
-  StubGenBlobId _blob_id;
- protected:
+  BlobId _blob_id;
+protected:
   MacroAssembler*  _masm;
 
  public:
   StubCodeGenerator(CodeBuffer* code, bool print_code = false);
-  StubCodeGenerator(CodeBuffer* code, StubGenBlobId blob_id, bool print_code = false);
+  StubCodeGenerator(CodeBuffer* code, BlobId blob_id, bool print_code = false);
   ~StubCodeGenerator();
 
   MacroAssembler* assembler() const              { return _masm; }
-  StubGenBlobId blob_id()                        { return _blob_id; }
+  BlobId blob_id()                        { return _blob_id; }
 
   virtual void stub_prolog(StubCodeDesc* cdesc); // called by StubCodeMark constructor
   virtual void stub_epilog(StubCodeDesc* cdesc); // called by StubCodeMark destructor
 
 #ifdef ASSERT
-  void verify_stub(StubGenStubId stub_id);
+  void verify_stub(StubId stub_id);
 #endif
 };
 
@@ -139,7 +137,7 @@ class StubCodeMark: public StackObj {
 
  public:
   StubCodeMark(StubCodeGenerator* cgen, const char* group, const char* name);
-  StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id);
+  StubCodeMark(StubCodeGenerator* cgen, StubId stub_id);
   ~StubCodeMark();
 
 };

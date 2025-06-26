@@ -264,10 +264,10 @@ class NewInstanceStub: public CodeStub {
   LIR_Opr          _klass_reg;
   LIR_Opr          _result;
   CodeEmitInfo*    _info;
-  C1StubId         _stub_id;
+  StubId           _stub_id;
 
  public:
-  NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, C1StubId stub_id);
+  NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, StubId stub_id);
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {
@@ -515,11 +515,11 @@ public:
 class SimpleExceptionStub: public CodeStub {
  private:
   LIR_Opr          _obj;
-  C1StubId         _stub;
+  StubId           _stub;
   CodeEmitInfo*    _info;
 
  public:
-  SimpleExceptionStub(C1StubId stub, LIR_Opr obj, CodeEmitInfo* info):
+  SimpleExceptionStub(StubId stub, LIR_Opr obj, CodeEmitInfo* info):
     _obj(obj), _stub(stub), _info(info) {
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
@@ -546,7 +546,7 @@ class SimpleExceptionStub: public CodeStub {
 
 class ArrayStoreExceptionStub: public SimpleExceptionStub {
  public:
-  ArrayStoreExceptionStub(LIR_Opr obj, CodeEmitInfo* info): SimpleExceptionStub(C1StubId::throw_array_store_exception_id, obj, info) {}
+  ArrayStoreExceptionStub(LIR_Opr obj, CodeEmitInfo* info): SimpleExceptionStub(StubId::c1_throw_array_store_exception_id, obj, info) {}
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("ArrayStoreExceptionStub"); }
 #endif // PRODUCT

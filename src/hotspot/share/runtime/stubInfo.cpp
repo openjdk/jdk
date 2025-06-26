@@ -24,7 +24,6 @@
  */
 
 #include "code/codeBlob.hpp"
-#include "logging/logStream.hpp"
 #include "runtime/stubDeclarations.hpp"
 #include "runtime/stubInfo.hpp"
 
@@ -189,15 +188,15 @@ bool StubInfo::is_next(EntryId second, EntryId first) {
 // implementation of the counting methods used to populate the
 // stubgroup, blob, stub and entry tables
 
-void StubInfo::count_shared_blob(StubGroup& group_cursor,
-                                 BlobId&  blob_cursor,
-                                 StubId& stub_cursor,
-                                 EntryId& entry_cursor,
-                                 const char *name,
-                                 BlobId declaredBlob,
-                                 StubId declaredStub,
-                                 EntryId declaredEntry,
-                                 EntryId declaredMax) {
+void StubInfo::process_shared_blob(StubGroup& group_cursor,
+                                   BlobId&  blob_cursor,
+                                   StubId& stub_cursor,
+                                   EntryId& entry_cursor,
+                                   const char* name,
+                                   BlobId declaredBlob,
+                                   StubId declaredStub,
+                                   EntryId declaredEntry,
+                                   EntryId declaredMax) {
   // for shared declarations we update the blob, stub and entry tables
   // all in one go based on each unique blob declaration. We may need
   // to write more than one entry table element if the stub has
@@ -248,14 +247,14 @@ void StubInfo::count_shared_blob(StubGroup& group_cursor,
   }
 }
 
-void StubInfo::count_c1_blob(StubGroup& group_cursor,
-                             BlobId&  blob_cursor,
-                             StubId& stub_cursor,
-                             EntryId& entry_cursor,
-                             const char *name,
-                             BlobId declaredBlob,
-                             StubId declaredStub,
-                             EntryId declaredEntry) {
+void StubInfo::process_c1_blob(StubGroup& group_cursor,
+                               BlobId&  blob_cursor,
+                               StubId& stub_cursor,
+                               EntryId& entry_cursor,
+                               const char* name,
+                               BlobId declaredBlob,
+                               StubId declaredStub,
+                               EntryId declaredEntry) {
   // for c1 declarations we update the blob, stub and entry tables all
   // in one go based on each unique blob declaration
   assert(group_cursor == StubGroup::C1, "must be");
@@ -294,14 +293,14 @@ void StubInfo::count_c1_blob(StubGroup& group_cursor,
   entry_details(entry_cursor)._name = name;
 }
 
-void StubInfo::count_c2_blob(StubGroup& group_cursor,
-                             BlobId&  blob_cursor,
-                             StubId& stub_cursor,
-                             EntryId& entry_cursor,
-                             const char *name,
-                             BlobId declaredBlob,
-                             StubId declaredStub,
-                             EntryId declaredEntry) {
+void StubInfo::process_c2_blob(StubGroup& group_cursor,
+                               BlobId&  blob_cursor,
+                               StubId& stub_cursor,
+                               EntryId& entry_cursor,
+                               const char* name,
+                               BlobId declaredBlob,
+                               StubId declaredStub,
+                               EntryId declaredEntry) {
   // for c2 declarations we update the blob, stub and entry tables all
   // in one go based on the same details garnered from each unique
   // blob, stub r jvmti stub declaration
@@ -341,12 +340,12 @@ void StubInfo::count_c2_blob(StubGroup& group_cursor,
   entry_details(entry_cursor)._name = name;
 }
 
-void StubInfo::count_stubgen_blob(StubGroup& group_cursor,
-                                  BlobId&  blob_cursor,
-                                  StubId& stub_cursor,
-                                  EntryId& entry_cursor,
-                                  const char *name,
-                                  BlobId declaredBlob) {
+void StubInfo::process_stubgen_blob(StubGroup& group_cursor,
+                                    BlobId&  blob_cursor,
+                                    StubId& stub_cursor,
+                                    EntryId& entry_cursor,
+                                    const char* name,
+                                    BlobId declaredBlob) {
   // for stubgen blob declarations we update the blob table, allowing
   // us to link subsequent stubs to that blob
   assert(group_cursor == StubGroup::STUBGEN, "must be");
@@ -371,13 +370,13 @@ void StubInfo::count_stubgen_blob(StubGroup& group_cursor,
   blob_details(blob_cursor)._name = name;
 }
 
-void StubInfo::count_stubgen_stub(StubGroup& group_cursor,
-                                  BlobId&  blob_cursor,
-                                  StubId& stub_cursor,
-                                  EntryId& entry_cursor,
-                                  const char *name,
-                                  BlobId declaredBlob,
-                                  StubId declaredStub) {
+void StubInfo::process_stubgen_stub(StubGroup& group_cursor,
+                                    BlobId&  blob_cursor,
+                                    StubId& stub_cursor,
+                                    EntryId& entry_cursor,
+                                    const char* name,
+                                    BlobId declaredBlob,
+                                    StubId declaredStub) {
   // for stubgen stub declarations we update the stub table, allowing
   // us to link subsequent entries to that stub
   assert(group_cursor == StubGroup::STUBGEN, "must be");
@@ -401,15 +400,15 @@ void StubInfo::count_stubgen_stub(StubGroup& group_cursor,
   stub_details(stub_cursor)._name = name;;
 }
 
-void StubInfo::count_stubgen_entry(StubGroup& group_cursor,
-                                   BlobId&  blob_cursor,
-                                   StubId& stub_cursor,
-                                   EntryId& entry_cursor,
-                                   const char *name,
-                                   BlobId declaredBlob,
-                                   StubId declaredStub,
-                                   EntryId declaredEntry,
-                                   int arrayCount) {
+void StubInfo::process_stubgen_entry(StubGroup& group_cursor,
+                                     BlobId&  blob_cursor,
+                                     StubId& stub_cursor,
+                                     EntryId& entry_cursor,
+                                     const char* name,
+                                     BlobId declaredBlob,
+                                     StubId declaredStub,
+                                     EntryId declaredEntry,
+                                     int arrayCount) {
   // for stubgen entry declarations we update the entry table
   assert(group_cursor == StubGroup::STUBGEN, "must be");
   assert(declaredBlob == blob_cursor, "Stubgen entry %s in scope of wrong blob %s", name, blob_details(blob_cursor)._name);
@@ -460,111 +459,111 @@ void StubInfo::count_stubgen_entry(StubGroup& group_cursor,
 // and, where appropriate, update cursors identifying current
 // positions in each table.
 
-#define COUNT_SHARED_BLOB(name, type)                           \
-  count_shared_blob(_group_cursor, _blob_cursor,                \
-                    _stub_cursor, _entry_cursor,                \
-                    STR_JOIN3(shared, name, id),                \
-                    BlobId:: JOIN3(shared, name, id),     \
-                    StubId:: JOIN3(shared, name, id),     \
-                    EntryId:: JOIN3(shared, name, id),    \
-                    EntryId:: JOIN3(shared, name, max));  \
-
-#define COUNT_C1_BLOB(name)                             \
-  count_c1_blob(_group_cursor, _blob_cursor,            \
-                _stub_cursor, _entry_cursor,            \
-                STR_JOIN3(c1, name, id),                \
-                BlobId:: JOIN3(c1, name, id),     \
-                StubId:: JOIN3(c1, name, id),     \
-                EntryId:: JOIN3(c1, name, id));   \
-
-#define COUNT_C2_BLOB(name, type)                       \
-  count_c2_blob(_group_cursor, _blob_cursor,            \
-                _stub_cursor, _entry_cursor,            \
-                STR_JOIN3(c2, name, id),                \
-                BlobId:: JOIN3(c2, name, id),     \
-                StubId:: JOIN3(c2, name, id),     \
-                EntryId:: JOIN3(c2, name, id));   \
-
-#define COUNT_C2_STUB(name, fancy_jump, pass_tls, return_pc)    \
-  count_c2_blob(_group_cursor, _blob_cursor,                    \
-                _stub_cursor, _entry_cursor,                    \
-                STR_JOIN3(c2, name, id),                        \
-                BlobId:: JOIN3(c2, name, id),             \
-                StubId:: JOIN3(c2, name, id),             \
-                EntryId:: JOIN3(c2, name, id));           \
-
-#define COUNT_C2_JVMTI_STUB(name)                       \
-  count_c2_blob(_group_cursor, _blob_cursor,            \
-                _stub_cursor, _entry_cursor,            \
-                STR_JOIN3(c2, name, id),                \
-                BlobId:: JOIN3(c2, name, id),     \
-                StubId:: JOIN3(c2, name, id),     \
-                EntryId:: JOIN3(c2, name, id));   \
-
-#define COUNT_STUBGEN_BLOB(blob)                                \
-  count_stubgen_blob(_group_cursor, _blob_cursor,               \
-                     _stub_cursor, _entry_cursor,               \
-                     STR_JOIN3(stubgen, blob, id),              \
-                     BlobId:: JOIN3(stubgen, blob, id));  \
-
-#define COUNT_STUBGEN_STUB(blob, stub)                          \
-  count_stubgen_stub(_group_cursor, _blob_cursor,               \
-                     _stub_cursor, _entry_cursor,               \
-                     STR_JOIN3(stubgen, stub, id),              \
-                     BlobId:: JOIN3(stubgen, blob, id),   \
-                     StubId:: JOIN3(stubgen, stub, id));  \
-
-#define COUNT_STUBGEN_ENTRY(blob, stub, field_name, getter_name)        \
-  count_stubgen_entry(_group_cursor, _blob_cursor,                      \
+#define PROCESS_SHARED_BLOB(name, type)                                 \
+  process_shared_blob(_group_cursor, _blob_cursor,                      \
                       _stub_cursor, _entry_cursor,                      \
-                      STR_JOIN3(stubgen, field_name, id),               \
-                      BlobId:: JOIN3(stubgen, blob, id),          \
-                      StubId:: JOIN3(stubgen, stub, id),          \
-                      EntryId:: JOIN3(stubgen, field_name, id),   \
-                      0);                                               \
+                      "Shared Runtime " # name "_blob",                 \
+                      BlobId:: JOIN3(shared, name, id),                 \
+                      StubId:: JOIN3(shared, name, id),                 \
+                      EntryId:: JOIN3(shared, name, id),                \
+                      EntryId:: JOIN3(shared, name, max));              \
 
-#define COUNT_STUBGEN_ENTRY_INIT(blob, stub, field_name, getter_name,   \
-                                 init_funcion)                          \
-  count_stubgen_entry(_group_cursor, _blob_cursor,                      \
-                      _stub_cursor, _entry_cursor,                      \
-                      STR_JOIN3(stubgen, field_name, id),               \
-                      BlobId:: JOIN3(stubgen, blob, id),          \
-                      StubId:: JOIN3(stubgen, stub, id),          \
-                      EntryId:: JOIN3(stubgen, field_name, id),   \
-                      0);                                               \
+#define PROCESS_C1_BLOB(name)                                     \
+  process_c1_blob(_group_cursor, _blob_cursor,                    \
+                  _stub_cursor, _entry_cursor,                    \
+                  "C1 Runtime " # name "_blob",                   \
+                  BlobId:: JOIN3(c1, name, id),                   \
+                  StubId:: JOIN3(c1, name, id),                   \
+                  EntryId:: JOIN3(c1, name, id));                 \
 
-#define COUNT_STUBGEN_ENTRY_ARRAY(blob, stub, field_name, getter_name,  \
-                                  count)                                \
-  count_stubgen_entry(_group_cursor, _blob_cursor,                      \
-                      _stub_cursor, _entry_cursor,                      \
-                      STR_JOIN3(stubgen, field_name, id),               \
-                      BlobId:: JOIN3(stubgen, blob, id),          \
-                      StubId:: JOIN3(stubgen, stub, id),          \
-                      EntryId:: JOIN3(stubgen, field_name, id),   \
-                      count);                                           \
+#define PROCESS_C2_BLOB(name, type)                         \
+  process_c2_blob(_group_cursor, _blob_cursor,              \
+                  _stub_cursor, _entry_cursor,              \
+                  "C2 Runtime " # name "_blob",             \
+                  BlobId:: JOIN3(c2, name, id),             \
+                  StubId:: JOIN3(c2, name, id),             \
+                  EntryId:: JOIN3(c2, name, id));           \
 
-#define COUNT_STUBGEN_ENTRY_ARCH(arch_name, blob, stub, field_name,     \
-                                 getter_name)                           \
-  count_stubgen_entry(_group_cursor, _blob_cursor,                      \
-                      _stub_cursor, _entry_cursor,                      \
-                      STR_JOIN4(stubgen, arch_name, field_name, id),    \
-                      BlobId:: JOIN3(stubgen, blob, id),          \
-                      StubId:: JOIN3(stubgen, stub, id),          \
-                      EntryId:: JOIN4(stubgen, arch_name,         \
-                                            field_name, id),            \
-                      0);                                               \
+#define PROCESS_C2_STUB(name, fancy_jump, pass_tls, return_pc)    \
+  process_c2_blob(_group_cursor, _blob_cursor,                    \
+                  _stub_cursor, _entry_cursor,                    \
+                  "C2 Runtime " # name "_blob",                   \
+                  BlobId:: JOIN3(c2, name, id),                   \
+                  StubId:: JOIN3(c2, name, id),                   \
+                  EntryId:: JOIN3(c2, name, id));                 \
 
-#define COUNT_STUBGEN_ENTRY_ARCH_INIT(arch_name, blob, stub,            \
-                                      field_name, getter_name,          \
-                                      init_function)                    \
-  count_stubgen_entry(_group_cursor, _blob_cursor,                      \
-                      _stub_cursor, _entry_cursor,                      \
-                      STR_JOIN4(stubgen, arch_name, field_name, id),    \
-                      BlobId:: JOIN3(stubgen, blob, id),          \
-                      StubId:: JOIN3(stubgen, stub, id),          \
-                      EntryId:: JOIN4(stubgen, arch_name,         \
-                                            field_name, id),            \
-                      0);                                               \
+#define PROCESS_C2_JVMTI_STUB(name)                               \
+  process_c2_blob(_group_cursor, _blob_cursor,                    \
+                  _stub_cursor, _entry_cursor,                    \
+                  "C2 Runtime " # name "_blob",                   \
+                  BlobId:: JOIN3(c2, name, id),                   \
+                  StubId:: JOIN3(c2, name, id),                   \
+                  EntryId:: JOIN3(c2, name, id));                 \
+
+#define PROCESS_STUBGEN_BLOB(blob)                                \
+  process_stubgen_blob(_group_cursor, _blob_cursor,               \
+                       _stub_cursor, _entry_cursor,               \
+                       "Stub Generator " # blob "_blob",          \
+                       BlobId:: JOIN3(stubgen, blob, id));        \
+
+#define PROCESS_STUBGEN_STUB(blob, stub)                          \
+  process_stubgen_stub(_group_cursor, _blob_cursor,               \
+                       _stub_cursor, _entry_cursor,               \
+                       "Stub Generator " # stub "_stub",          \
+                       BlobId:: JOIN3(stubgen, blob, id),         \
+                       StubId:: JOIN3(stubgen, stub, id));        \
+
+#define PROCESS_STUBGEN_ENTRY(blob, stub, field_name, getter_name)      \
+  process_stubgen_entry(_group_cursor, _blob_cursor,                    \
+                        _stub_cursor, _entry_cursor,                    \
+                        "Stub Generator " # field_name "_entry",        \
+                        BlobId:: JOIN3(stubgen, blob, id),              \
+                        StubId:: JOIN3(stubgen, stub, id),              \
+                        EntryId:: JOIN3(stubgen, field_name, id),       \
+                        0);                                             \
+
+#define PROCESS_STUBGEN_ENTRY_INIT(blob, stub, field_name, getter_name, \
+                                   init_funcion)                        \
+  process_stubgen_entry(_group_cursor, _blob_cursor,                    \
+                        _stub_cursor, _entry_cursor,                    \
+                        "Stub Generator " # field_name "_entry",        \
+                        BlobId:: JOIN3(stubgen, blob, id),              \
+                        StubId:: JOIN3(stubgen, stub, id),              \
+                        EntryId:: JOIN3(stubgen, field_name, id),       \
+                        0);                                             \
+
+#define PROCESS_STUBGEN_ENTRY_ARRAY(blob, stub, field_name, getter_name, \
+                                    count)                              \
+  process_stubgen_entry(_group_cursor, _blob_cursor,                    \
+                        _stub_cursor, _entry_cursor,                    \
+                        "Stub Generator " # field_name "_entry",        \
+                        BlobId:: JOIN3(stubgen, blob, id),              \
+                        StubId:: JOIN3(stubgen, stub, id),              \
+                        EntryId:: JOIN3(stubgen, field_name, id),       \
+                        count);                                         \
+
+#define PROCESS_STUBGEN_ENTRY_ARCH(arch_name, blob, stub, field_name,   \
+                                   getter_name)                         \
+  process_stubgen_entry(_group_cursor, _blob_cursor,                    \
+                        _stub_cursor, _entry_cursor,                    \
+                        #arch_name "_" # field_name,                    \
+                        BlobId:: JOIN3(stubgen, blob, id),              \
+                        StubId:: JOIN3(stubgen, stub, id),              \
+                        EntryId:: JOIN4(stubgen, arch_name,             \
+                                        field_name, id),                \
+                        0);                                             \
+
+#define PROCESS_STUBGEN_ENTRY_ARCH_INIT(arch_name, blob, stub,          \
+                                        field_name, getter_name,        \
+                                        init_function)                  \
+  process_stubgen_entry(_group_cursor, _blob_cursor,                    \
+                        _stub_cursor, _entry_cursor,                    \
+                        "Stub Generator " # arch_name "_" # field_name "_entry", \
+                        BlobId:: JOIN3(stubgen, blob, id),              \
+                        StubId:: JOIN3(stubgen, stub, id),              \
+                        EntryId:: JOIN4(stubgen, arch_name,             \
+                                        field_name, id),                \
+                        0);                                             \
 
 void StubInfo::populate_stub_tables() {
   StubGroup _group_cursor;
@@ -578,7 +577,7 @@ void StubInfo::populate_stub_tables() {
   group_details(_group_cursor)._max = BlobId::NO_BLOBID;
   group_details(_group_cursor)._entry_base = EntryId::NO_ENTRYID;
   group_details(_group_cursor)._entry_max = EntryId::NO_ENTRYID;
-  SHARED_STUBS_DO(COUNT_SHARED_BLOB);
+  SHARED_STUBS_DO(PROCESS_SHARED_BLOB);
 
   _group_cursor = StubGroup::C1;
   group_details(_group_cursor)._name = "C1 Stubs";
@@ -586,7 +585,7 @@ void StubInfo::populate_stub_tables() {
   group_details(_group_cursor)._max = BlobId::NO_BLOBID;
   group_details(_group_cursor)._entry_base = EntryId::NO_ENTRYID;
   group_details(_group_cursor)._entry_max = EntryId::NO_ENTRYID;
-  C1_STUBS_DO(COUNT_C1_BLOB);
+  C1_STUBS_DO(PROCESS_C1_BLOB);
 
   _group_cursor = StubGroup::C2;
   group_details(_group_cursor)._name = "C2 Stubs";
@@ -594,7 +593,7 @@ void StubInfo::populate_stub_tables() {
   group_details(_group_cursor)._max = BlobId::NO_BLOBID;
   group_details(_group_cursor)._entry_base = EntryId::NO_ENTRYID;
   group_details(_group_cursor)._entry_max = EntryId::NO_ENTRYID;
-  C2_STUBS_DO(COUNT_C2_BLOB, COUNT_C2_STUB, COUNT_C2_JVMTI_STUB);
+  C2_STUBS_DO(PROCESS_C2_BLOB, PROCESS_C2_STUB, PROCESS_C2_JVMTI_STUB);
 
   _group_cursor = StubGroup::STUBGEN;
   group_details(_group_cursor)._name = "StubGen Stubs";
@@ -602,12 +601,12 @@ void StubInfo::populate_stub_tables() {
   group_details(_group_cursor)._max = BlobId::NO_BLOBID;
   group_details(_group_cursor)._entry_base = EntryId::NO_ENTRYID;
   group_details(_group_cursor)._entry_max = EntryId::NO_ENTRYID;
-  STUBGEN_ALL_DO(COUNT_STUBGEN_BLOB, DO_BLOB_EMPTY1,
-                 COUNT_STUBGEN_STUB,
-                 COUNT_STUBGEN_ENTRY, COUNT_STUBGEN_ENTRY_INIT,
-                 COUNT_STUBGEN_ENTRY_ARRAY,
+  STUBGEN_ALL_DO(PROCESS_STUBGEN_BLOB, DO_BLOB_EMPTY1,
+                 PROCESS_STUBGEN_STUB,
+                 PROCESS_STUBGEN_ENTRY, PROCESS_STUBGEN_ENTRY_INIT,
+                 PROCESS_STUBGEN_ENTRY_ARRAY,
                  DO_ARCH_BLOB_EMPTY2,
-                 COUNT_STUBGEN_ENTRY_ARCH, COUNT_STUBGEN_ENTRY_ARCH_INIT);
+                 PROCESS_STUBGEN_ENTRY_ARCH, PROCESS_STUBGEN_ENTRY_ARCH_INIT);
   assert(next(_blob_cursor) == BlobId::NUM_BLOBIDS, "should have exhausted all blob ids!");
   assert(next(_stub_cursor) == StubId::NUM_STUBIDS, "should have exhausted all stub ids!");
   assert(next(_entry_cursor) == EntryId::NUM_ENTRYIDS, "should have exhausted all entry ids!");
@@ -617,18 +616,18 @@ void StubInfo::populate_stub_tables() {
 #endif // ASSERT
 }
 
-#undef COUNT_SHARED_BLOB
-#undef COUNT_C1_BLOB
-#undef COUNT_C2_BLOB
-#undef COUNT_C2_STUB
-#undef COUNT_C2_JVMTI_STUB
-#undef COUNT_STUBGEN_BLOB
-#undef COUNT_STUBGEN_STUB
-#undef COUNT_STUBGEN_ENTRY
-#undef COUNT_STUBGEN_ENTRY_INIT
-#undef COUNT_STUBGEN_ENTRY_ARRAY
-#undef COUNT_STUBGEN_ENTRY_ARCH
-#undef COUNT_STUBGEN_ENTRY_ARCH_INIT
+#undef PROCESS_SHARED_BLOB
+#undef PROCESS_C1_BLOB
+#undef PROCESS_C2_BLOB
+#undef PROCESS_C2_STUB
+#undef PROCESS_C2_JVMTI_STUB
+#undef PROCESS_STUBGEN_BLOB
+#undef PROCESS_STUBGEN_STUB
+#undef PROCESS_STUBGEN_ENTRY
+#undef PROCESS_STUBGEN_ENTRY_INIT
+#undef PROCESS_STUBGEN_ENTRY_ARRAY
+#undef PROCESS_STUBGEN_ENTRY_ARCH
+#undef PROCESS_STUBGEN_ENTRY_ARCH_INIT
 
 #ifdef ASSERT
 
@@ -640,6 +639,56 @@ void StubInfo::verify_stub_tables() {
     StubGroup::C1,
     StubGroup::C2,
     StubGroup::STUBGEN };
+
+  // check that the statically defined blob, stub and entry counts
+  // match the computed totals
+  assert(blob_count(StubGroup::SHARED) == StubInfo::SHARED_STUB_COUNT,
+         "miscounted number of shared blobs %d vs %d",
+         blob_count(StubGroup::SHARED), StubInfo::SHARED_STUB_COUNT);
+
+  assert(stub_count(StubGroup::SHARED) == StubInfo::SHARED_STUB_COUNT,
+         "miscounted number of shared stubs %d vs %d",
+         stub_count(StubGroup::SHARED), StubInfo::SHARED_STUB_COUNT);
+
+  assert(entry_count(StubGroup::SHARED) == StubInfo::SHARED_ENTRY_COUNT,
+         "miscounted number of shared entries %d vs %d",
+         entry_count(StubGroup::SHARED), StubInfo::SHARED_ENTRY_COUNT);
+
+  assert(blob_count(StubGroup::C1) == StubInfo::C1_STUB_COUNT,
+         "miscounted number of c1 blobs %d vs %d",
+         blob_count(StubGroup::C1), StubInfo::C1_STUB_COUNT);
+
+  assert(stub_count(StubGroup::C1) == StubInfo::C1_STUB_COUNT,
+         "miscounted number of c1 stubs %d vs %d",
+         stub_count(StubGroup::C1), StubInfo::C1_STUB_COUNT);
+
+  assert(entry_count(StubGroup::C1) == StubInfo::C1_STUB_COUNT,
+         "miscounted number of c1 entries %d vs %d",
+         entry_count(StubGroup::C1), StubInfo::C1_STUB_COUNT);
+
+  assert(blob_count(StubGroup::C2) == StubInfo::C2_STUB_COUNT,
+         "miscounted number of c2 blobs %d vs %d",
+         blob_count(StubGroup::C2), StubInfo::C2_STUB_COUNT);
+
+  assert(stub_count(StubGroup::C2) == StubInfo::C2_STUB_COUNT,
+         "miscounted number of c2 stubs %d vs %d",
+         stub_count(StubGroup::C2), StubInfo::C2_STUB_COUNT);
+
+  assert(entry_count(StubGroup::C2) == StubInfo::C2_STUB_COUNT,
+         "miscounted number of c2 entries %d vs %d",
+         entry_count(StubGroup::C2), StubInfo::C2_STUB_COUNT);
+
+  assert(blob_count(StubGroup::STUBGEN) == StubInfo::STUBGEN_BLOB_COUNT,
+         "miscounted number of stubgen blobs %d vs %d",
+         blob_count(StubGroup::STUBGEN), StubInfo::STUBGEN_STUB_COUNT);
+
+  assert(stub_count(StubGroup::STUBGEN) == StubInfo::STUBGEN_STUB_COUNT,
+         "miscounted number of stubgen stubs %d vs %d",
+         stub_count(StubGroup::STUBGEN), StubInfo::STUBGEN_STUB_COUNT);
+
+  assert(entry_count(StubGroup::STUBGEN) == StubInfo::STUBGEN_ENTRY_COUNT,
+         "miscounted number of stubgen entries %d vs %d",
+         entry_count(StubGroup::STUBGEN), StubInfo::STUBGEN_ENTRY_COUNT);
 
   // 1) check that the per-group blob counts add up
   for (int gidx = 0; gidx < NUM_STUBGROUPS ; gidx++) {
@@ -979,6 +1028,13 @@ bool StubInfo::is_stubgen(StubId id) {
   return has_group(id, StubGroup::STUBGEN);
 }
 
+bool StubInfo::is_stubgen(BlobId id) {
+  return has_group(id, StubGroup::STUBGEN);
+}
+
+// Convert a stub id to a unique, zero-based offset in the range of
+// stub ids for a given stub group.
+
 int StubInfo::shared_offset(StubId id) {
   return local_offset(StubGroup::SHARED, id);
 }
@@ -994,25 +1050,6 @@ int StubInfo::c2_offset(StubId id) {
 int StubInfo::stubgen_offset(StubId id) {
   return local_offset(StubGroup::STUBGEN, id);
 }
-
-
-// Convert a blob id to a unique, zero-based offset in the range of
-// blob ids for a given stub group. we only need this for stubgen
-// blobs as for all other stub groups the stub indices and blob
-// indices are identical.
-//
-// int  StubInfo::stubgen_offset(BlobId id);
-//
-// Convert an entry id to a unique, zero-based offset in the range
-// of entry ids for a given stub group. we only need this for shared
-// and stubgen blobs as for all other stub groups the stub indices
-// and entry indices are identical.
-//
-// int  StubInfo::shared_offset(EntryId id);
-// int  StubInfo::stubgen_offset(EntryId id);
-//
-// n.b. invalid interconversions from a global id to the wrong type of
-// group id are caught by asserts
 
 // initialization function called to populate blob. stub and entry
 // tables. this must be called before any stubs are generated

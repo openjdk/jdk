@@ -26,6 +26,7 @@
 #ifndef SHARE_RUNTIME_STUBDECLARATIONS_HPP
 #define SHARE_RUNTIME_STUBDECLARATIONS_HPP
 
+#include "code/codeBlob.hpp"
 #include "utilities/macros.hpp"
 
 // Macros for generating definitions and declarations for shared, c1,
@@ -1107,12 +1108,6 @@
 #define JOIN4(prefix, prefix2, name, suffix)            \
   prefix ## _ ## prefix2 ## _ ## name ## _ ## suffix
 
-#define STR_JOIN3(prefix, name, suffix)         \
-  # prefix "_" # name "_" # suffix
-
-#define STR_JOIN4(prefix, prefix2, name, suffix)        \
-  # prefix "_" # prefix2 "_" # name "_" # suffix
-
 #define STUB_ID_NAME(base) JOIN2(base, id)
 
 // emit a runtime or stubgen stub field name
@@ -1126,6 +1121,29 @@
 // emit a stubgen blob field name
 
 #define STUBGEN_BLOB_FIELD_NAME(base) _ ## base ## _stubs_code
+
+// first some macros that add an increment 
+
+#define COUNT1(_1)                              \
+  + 1
+
+#define COUNT2(_1, _2)                          \
+  + 1
+
+#define COUNT4(_1, _2, _3, _4)                  \
+  + 1
+
+#define COUNT5(_1, _2, _3, _4, _5)              \
+  + 1
+
+#define COUNT6(_1, _2, _3, _4, _5, _6)          \
+  + 1
+
+#define SHARED_COUNT2(_1, type)                 \
+  + type :: ENTRY_COUNT
+
+#define STUBGEN_COUNT5(_1, _2, _3, _4, count)   \
+  + count
 
 // Convenience templates that emit nothing
 

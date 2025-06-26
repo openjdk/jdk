@@ -42,6 +42,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER1
@@ -113,10 +114,10 @@ static uint32_t encode_id(AOTCodeEntry::Kind kind, int id) {
   } else if (kind == AOTCodeEntry::SharedBlob) {
     return id;
   } else if (kind == AOTCodeEntry::C1Blob) {
-    return (int)SharedStubId::NUM_STUBIDS + id;
+    return id;
   } else {
     // kind must be AOTCodeEntry::C2Blob
-    return (int)SharedStubId::NUM_STUBIDS + COMPILER1_PRESENT((int)C1StubId::NUM_STUBIDS) + id;
+    return id;
   }
 }
 
@@ -1410,8 +1411,10 @@ void AOTCodeAddressTable::init_shared_blobs() {
 void AOTCodeAddressTable::init_early_c1() {
 #ifdef COMPILER1
   // Runtime1 Blobs
-  for (int i = 0; i <= (int)C1StubId::forward_exception_id; i++) {
-    C1StubId id = (C1StubId)i;
+  StubId id = StubInfo::stub_base(StubGroup::C1);
+  // include forward_exception in range we publish
+  StubId limit = StubInfo::next(StubId::c1_forward_exception_id);
+  for (; id != limit; id = StubInfo::next(id)) {
     if (Runtime1::blob_for(id) == nullptr) {
       log_info(aot, codecache, init)("C1 blob %s is missing", Runtime1::name_for(id));
       continue;
