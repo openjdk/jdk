@@ -142,7 +142,6 @@ tier1_common = \
   sources \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
-  gtest/LockStackGtests.java \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \
   gtest/NMTGtests.java \
