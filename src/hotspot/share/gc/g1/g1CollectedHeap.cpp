@@ -1752,13 +1752,16 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
         LOG_COLLECT_CONCURRENTLY(cause, "ignoring STW full GC");
         old_marking_started_before = old_marking_started_after;
       }
-    } else if (!GCCause::is_user_requested_gc(cause)) {
+    } else if (!GCCause::is_user_requested_gc(cause) &&
+               // We can only skip CodeCache requested GCs if we are before marking. 
+               (!GCCause::is_codecache_requested_gc(cause) || op.marking_in_progress()) ) {
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.
       //
       // Request is finished if any of
       // (1) the VMOp successfully performed a GC,
-      // (2) a concurrent cycle was already in progress,
+      // (2) a concurrent cycle was already in progress and we were
+      //     before the Remark pause for CodeCache requested GCs,
       // (3) whitebox is controlling concurrent cycles,
       // (4) a new cycle was started (by this thread or some other), or
       // (5) a Full GC was performed.
@@ -1769,8 +1772,12 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // phase of an earlier concurrent collection, the request to make the
       // collection a concurrent start won't be honored.  If we don't check for
       // both conditions we'll spin doing back-to-back collections.
+      bool concurrent_cycle_ensures_progress = (GCCause::is_codecache_requested_gc(cause)
+                                             ? op.marking_in_progress()
+                                             : op.cycle_already_in_progress());
+
       if (op.gc_succeeded() ||
-          op.cycle_already_in_progress() ||
+          concurrent_cycle_ensures_progress ||
           op.whitebox_attached() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);

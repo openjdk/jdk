@@ -593,6 +593,7 @@ void G1Policy::record_full_collection_end() {
   collector_state()->set_in_young_gc_before_mixed(false);
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC"));
   collector_state()->set_in_concurrent_start_gc(false);
+  collector_state()->set_mark_in_progress(false);
   collector_state()->set_mark_or_rebuild_in_progress(false);
   collector_state()->set_clearing_bitmap(false);
 
@@ -704,6 +705,7 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
   record_pause(G1GCPauseType::Remark, _mark_remark_start_sec, end_time_sec);
+  collector_state()->set_mark_in_progress(false);
 }
 
 void G1Policy::record_concurrent_mark_cleanup_start() {
@@ -941,6 +943,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
          "If the last pause has been concurrent start, we should not have been in the marking window");
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
+    collector_state()->set_mark_in_progress(concurrent_operation_is_full_mark);
     collector_state()->set_mark_or_rebuild_in_progress(concurrent_operation_is_full_mark);
   }
 

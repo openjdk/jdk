@@ -59,6 +59,7 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
                                                    GCCause::Cause gc_cause) :
   VM_GC_Collect_Operation(gc_count_before, gc_cause),
   _transient_failure(false),
+  _marking_in_progress(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
   _terminating(false),
@@ -91,8 +92,9 @@ void VM_G1TryInitiateConcMark::doit() {
     // requests the alternative GC might still be needed.
   } else if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
-    // there is already a concurrent marking cycle in progress.  Set flag
+    // there is already a concurrent marking cycle in progress.  Set flags
     // to notify the caller and return immediately.
+    _marking_in_progress = g1h->collector_state()->mark_in_progress();
     _cycle_already_in_progress = true;
   } else if ((_gc_cause != GCCause::_wb_breakpoint) &&
              ConcurrentGCBreakpoints::is_controlled()) {
