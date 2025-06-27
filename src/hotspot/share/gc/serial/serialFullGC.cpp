@@ -49,6 +49,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -66,6 +67,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
@@ -483,13 +485,15 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   {
     StrongRootsScope srs(0);
 
-    CLDClosure* weak_cld_closure = ClassUnloading ? nullptr : &follow_cld_closure;
-    MarkingNMethodClosure mark_code_closure(&follow_root_closure, !NMethodToOopClosure::FixRelocations, true);
-    gch->process_roots(SerialHeap::SO_None,
-                       &follow_root_closure,
-                       &follow_cld_closure,
-                       weak_cld_closure,
-                       &mark_code_closure);
+    MarkingNMethodClosure mark_code_closure(&follow_root_closure,
+                                            !NMethodToOopClosure::FixRelocations,
+                                            true);
+
+    ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
+
+    Threads::oops_do(&follow_root_closure, &mark_code_closure);
+
+    OopStorageSet::strong_oops_do(&follow_root_closure);
   }
 
   // Process reference objects found during marking
@@ -717,12 +721,14 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    NMethodToOopClosure code_closure(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
-    gch->process_roots(SerialHeap::SO_AllCodeCache,
-                       &adjust_pointer_closure,
-                       &adjust_cld_closure,
-                       &adjust_cld_closure,
-                       &code_closure);
+    ClassLoaderDataGraph::cld_do(&adjust_cld_closure);
+
+    Threads::oops_do(&adjust_pointer_closure, nullptr);
+
+    OopStorageSet::strong_oops_do(&adjust_pointer_closure);
+
+    NMethodToOopClosure nmthod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
+    CodeCache::nmethods_do(&nmthod_cl);
 
     WeakProcessor::oops_do(&adjust_pointer_closure);
 
