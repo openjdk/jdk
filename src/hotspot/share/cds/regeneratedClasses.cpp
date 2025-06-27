@@ -24,6 +24,7 @@
 
 #include "cds/archiveBuilder.hpp"
 #include "cds/regeneratedClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
@@ -57,7 +58,9 @@ void RegeneratedClasses::add_class(InstanceKlass* orig_klass, InstanceKlass* reg
     Method* regen_m = regen_klass->find_method(orig_m->name(), orig_m->signature());
     if (regen_m == nullptr) {
       ResourceMark rm;
-      if (strstr(orig_m->external_name(), "$Holder.<init>") == nullptr) {
+      if (orig_m->name() != vmSymbols::object_initializer_name()) {
+        // JLI Holder classes are never instantiated, they don't need to have constructors.
+        // Not printing the warning if the method is a constructor.
         log_warning(aot)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
                          p2i(orig_m), orig_m->external_name());
       }
