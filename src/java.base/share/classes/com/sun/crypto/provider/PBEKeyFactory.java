@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,10 +265,6 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
             && (validTypes.contains(key.getAlgorithm().toUpperCase(Locale.ENGLISH)))
             && (key.getFormat().equalsIgnoreCase("RAW"))) {
 
-            if (key.isDestroyed()) {
-                throw new InvalidKeySpecException("Key is destroyed");
-            }
-
             // Check if requested key spec is amongst the valid ones
             if ((keySpecCl != null)
                     && keySpecCl.isAssignableFrom(PBEKeySpec.class)) {
@@ -310,10 +306,6 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
             if ((key != null) &&
                 (validTypes.contains(key.getAlgorithm().toUpperCase(Locale.ENGLISH))) &&
                 (key.getFormat().equalsIgnoreCase("RAW"))) {
-
-                if (key.isDestroyed()) {
-                    throw new InvalidKeyException("Key is destroyed");
-                }
 
                 // Check if key originates from this factory
                 if (key instanceof com.sun.crypto.provider.PBEKey) {

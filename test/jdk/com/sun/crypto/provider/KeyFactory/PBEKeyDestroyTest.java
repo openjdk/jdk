@@ -42,6 +42,9 @@ import org.testng.annotations.Test;
 
 public class PBEKeyDestroyTest {
 
+    private static final Class<IllegalStateException> ISE =
+            IllegalStateException.class;
+
     private static void printKeyInfo(SecretKey k, String name) {
         System.out.println(name);
         System.out.println("algo: " + k.getAlgorithm());
@@ -78,39 +81,15 @@ public class PBEKeyDestroyTest {
         Assert.assertTrue(key1.isDestroyed());
         Assert.assertFalse(key1.equals(key2));
         Assert.assertFalse(key2.equals(key1));
-        try {
-            byte[] val = key1.getEncoded();
-            throw new Exception("getEncoded() should error out, encoding = " +
-                    Arrays.toString(val));
-        } catch (IllegalStateException ise) {
-            // expected exception
-            System.out.println("Expected ISE is thrown for getEncoded()");
-        }
+
+        Assert.assertThrows(ISE, () -> key1.getEncoded());
 
         // serialization should fail
         ObjectOutputStream oos = new ObjectOutputStream(
                 new ByteArrayOutputStream());
-        try {
-            oos.writeObject(key1);
-            throw new Exception("Serialization should error out");
-        } catch (NotSerializableException e) {
-            // expected exception
-            System.out.println("Expected NSE is thrown for serialization");
-        }
-        try {
-            skf.translateKey(key1);
-            throw new Exception("translateKey() should error out");
-        } catch (InvalidKeyException ike) {
-            // expected exception
-            System.out.println("Expected IKE is thrown for translateKey()");
-        }
-        try {
-            skf.getKeySpec(key1, PBEKeySpec.class);
-            throw new Exception("getKeySpec() should error out");
-        } catch (InvalidKeySpecException ikse) {
-            // expected exception
-            System.out.println("Expected IKSE is thrown for getKeySpec()");
-        }
+        Assert.assertThrows(ISE, () -> oos.writeObject(key1));
+        Assert.assertThrows(ISE, () -> skf.translateKey(key1));
+        Assert.assertThrows(ISE, () -> skf.getKeySpec(key1, PBEKeySpec.class));
 
         // also destroy key2
         key2.destroy();
