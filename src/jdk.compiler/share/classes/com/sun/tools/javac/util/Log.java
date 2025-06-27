@@ -735,8 +735,7 @@ public class Log extends AbstractLog {
         return switch (lc) {
         case PREVIEW -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, Source.instance(context), c));
         case DEPRECATION -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c, "deprecated"));
-        case REMOVAL, UNCHECKED -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
-        case null, default -> null;
+        default -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
         };
     }
 

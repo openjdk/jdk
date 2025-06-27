@@ -175,8 +175,7 @@ public class Preview {
         log.mandatoryWarning(pos,
             feature.isPlural() ?
                 LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-                LintWarnings.PreviewFeatureUse(feature.nameFragment()),
-            DiagnosticFlag.AGGREGATE);
+                LintWarnings.PreviewFeatureUse(feature.nameFragment()));
     }
 
     /**
