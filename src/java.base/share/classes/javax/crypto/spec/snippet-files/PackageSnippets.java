@@ -32,10 +32,6 @@ import java.util.Arrays;
 class PackageSnippets {
     public static void main(String[] args) throws Exception {
 
-        int kem_id = HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
-        int kdf_id = HPKEParameterSpec.KDF_HKDF_SHA256;
-        int aead_id = HPKEParameterSpec.AEAD_AES_128_GCM;
-
         // @start region="hpke-spec-example"
         // Recipient key pair generation
         KeyPairGenerator g = KeyPairGenerator.getInstance("X25519");
@@ -44,7 +40,10 @@ class PackageSnippets {
         // The HPKE sender side is initialized with the recipient's public key
         // and default HPKEParameterSpec with an application-supplied info.
         Cipher senderCipher = Cipher.getInstance("HPKE");
-        HPKEParameterSpec ps = HPKEParameterSpec.of(kem_id, kdf_id, aead_id)
+        HPKEParameterSpec ps = HPKEParameterSpec.of(
+                        HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
+                        HPKEParameterSpec.KDF_HKDF_SHA256,
+                        HPKEParameterSpec.AEAD_AES_128_GCM)
                 .info("app_info".getBytes(StandardCharsets.UTF_8));
         senderCipher.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
 
@@ -55,7 +54,10 @@ class PackageSnippets {
         // the same algorithm identifiers as used by the sender,
         // and the key encapsulation message from the sender.
         Cipher recipientCipher = Cipher.getInstance("HPKE");
-        HPKEParameterSpec pr = HPKEParameterSpec.of(kem_id, kdf_id, aead_id)
+        HPKEParameterSpec pr = HPKEParameterSpec.of(
+                        HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
+                        HPKEParameterSpec.KDF_HKDF_SHA256,
+                        HPKEParameterSpec.AEAD_AES_128_GCM)
                 .info("app_info".getBytes(StandardCharsets.UTF_8))
                 .encapsulation(kemEncap);
         recipientCipher.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);

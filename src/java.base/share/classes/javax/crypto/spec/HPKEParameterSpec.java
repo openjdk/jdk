@@ -56,9 +56,6 @@ import java.util.Objects;
  * defined in <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-7">Section 7</a>
  * of RFC 9180 and the
  * <a href="https://www.iana.org/assignments/hpke/hpke.xhtml">IANA HPKE page</a>.
- * This class has defined constants for the standard algorithm identifiers.
- * For example, {@link #KEM_DHKEM_P_256_HKDF_SHA256}, {@link #KDF_HKDF_SHA256},
- * and {@link #AEAD_AES_128_GCM}.
  * <p>
  * Once an {@code HPKEParameterSpec} object is created, additional methods
  * are available to generate new {@code HPKEParameterSpec} objects with
@@ -84,11 +81,9 @@ import java.util.Objects;
  * encapsulation message must be transmitted from the sender to the recipient
  * so that the recipient can recover this shared secret. On the sender side,
  * after the cipher is initialized, the key encapsulation message can be
- * retrieved directly using the {@link Cipher#getIV()} method, or from the
- * {@code HPKEParameterSpec} object contained in the returned value of the
- * {@link Cipher#getParameters} method. On the recipient side, the key
- * encapsulation message must be provided using the {@link #encapsulation(byte[])}
- * method.
+ * retrieved directly using the {@link Cipher#getIV()} method. On the recipient
+ * side, the key encapsulation message must be provided using the
+ * {@link #encapsulation(byte[])} method.
  * </ul>
  * For successful interoperability, both sides need to have identical algorithm
  * identifiers, and supply identical
@@ -101,12 +96,11 @@ import java.util.Objects;
  * {@code InvalidKeyException} will be thrown.
  * <p>
  * At HPKE cipher initialization, if no HPKE implementation supports the provided
- * key type, an {@code InvalidKeyException} should be thrown. If an
- * {@code HPKEParameterSpec} is provided but it is not supported by any HPKE
- * implementation, an {@code InvalidAlgorithmParameterException} will be thrown.
- * For example:
+ * key type, an {@code InvalidKeyException} should be thrown. If the provided
+ * {@code HPKEParameterSpec} is not supported by any HPKE implementation,
+ * an {@code InvalidAlgorithmParameterException} will be thrown. For example:
  * <ul>
- * <li> The algorithm identifiers do not match the provided key type.
+ * <li> An algorithm identifier is unsupported or does not match the provided key type.
  * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
  * <li> An attempt to use {@code authKey(key)} is made but the selected KEM
  *      does not support authentication.
@@ -114,6 +108,13 @@ import java.util.Objects;
  * <p>
  * Example:
  * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
+ *
+ * @implNote This class has defined constants for some of the standard algorithm
+ * identifiers. For example, {@link #KEM_DHKEM_P_256_HKDF_SHA256},
+ * {@link #KDF_HKDF_SHA256}, and {@link #AEAD_AES_128_GCM}. An implementation
+ * may support all, some, or none of the algorithm identifiers defined here.
+ * It may also support additional identifiers not listed here, including private
+ * or experimental values.
  *
  * @spec https://www.rfc-editor.org/info/rfc9180
  *      RFC 9180: Hybrid Public Key Encryption
