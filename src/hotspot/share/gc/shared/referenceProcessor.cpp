@@ -634,10 +634,16 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[]) {
   for (uint from_idx = 0; from_idx < _max_num_queues; from_idx++) {
     size_t from_len = ref_lists[from_idx].length();
 
-    bool move_all = (from_idx >= _num_queues);
-    size_t remaining_to_move = move_all
-      ? from_len
-      : (from_len > avg_refs ? from_len - avg_refs : 0);
+    size_t remaining_to_move;
+    if (from_idx >= _num_queues) {
+      // Move all
+      remaining_to_move = from_len;
+    } else {
+      // Move those above avg_refs
+      remaining_to_move = from_len > avg_refs
+                        ? from_len - avg_refs
+                        : 0;
+    }
 
     while (remaining_to_move > 0) {
       assert(to_idx < _num_queues, "Sanity Check!");
