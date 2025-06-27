@@ -180,7 +180,14 @@ public class AbsPathsInImage {
     }
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
-        List<String> matches = scanBytes(Files.readAllBytes(file), searchPatterns);
+        int bytesRead;
+        byte[] buffer = new byte[8192];
+        List<String> matches = new ArrayList<>();
+        try(InputStream inputStream = Files.newInputStream(file)) {
+            while((bytesRead = inputStream.read(buffer)) != -1) {
+                matches.addAll(scanBytes(buffer, bytesRead, searchPatterns));
+            }
+        }
         if (matches.size() > 0) {
             matchFound = true;
             System.out.println(file + ":");
@@ -192,10 +199,15 @@ public class AbsPathsInImage {
     }
 
     private void scanZipFile(Path zipFile, List<byte[]> searchPatterns) throws IOException {
+        ZipEntry zipEntry;
+        int bytesRead;
+        byte[] buffer = new byte[8192];
         try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
-            ZipEntry zipEntry;
             while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                List<String> matches = scanBytes(zipInputStream.readAllBytes(), searchPatterns);
+                List<String> matches = new ArrayList<>();
+                while((bytesRead = zipInputStream.read(buffer)) != -1) {
+                    matches.addAll(scanBytes(buffer, bytesRead, searchPatterns));
+                }   
                 if (matches.size() > 0) {
                     matchFound = true;
                     System.out.println(zipFile + ", " + zipEntry.getName() + ":");
@@ -208,19 +220,19 @@ public class AbsPathsInImage {
         }
     }
 
-    private List<String> scanBytes(byte[] data, List<byte[]> searchPatterns) {
+    private List<String> scanBytes(byte[] data, int dataLength, List<byte[]> searchPatterns) {
         List<String> matches = new ArrayList<>();
-        for (int i = 0; i < data.length; i++) {
+        for (int i = 0; i < dataLength; i++) {
             for (byte[] searchPattern : searchPatterns) {
                 boolean found = true;
                 for (int j = 0; j < searchPattern.length; j++) {
-                    if ((i + j >= data.length || data[i + j] != searchPattern[j])) {
+                    if ((i + j >= dataLength || data[i + j] != searchPattern[j])) {
                         found = false;
                         break;
                     }
                 }
                 if (found) {
-                    matches.add(new String(data, charsStart(data, i), charsOffset(data, i, searchPattern.length)));
+                    matches.add(new String(data, charsStart(data, i), charsOffset(data, dataLength, i, searchPattern.length)));
                     // No need to search the same string for multiple patterns
                     break;
                 }
@@ -240,9 +252,9 @@ public class AbsPathsInImage {
         return index + 1;
     }
 
-    private int charsOffset(byte[] data, int startIndex, int startOffset) {
+    private int charsOffset(byte[] data, int dataLength, int startIndex, int startOffset) {
         int offset = startOffset;
-        while (startIndex + ++offset < data.length) {
+        while (startIndex + ++offset < dataLength) {
             byte datum = data[startIndex + offset];
             if (datum < 32 || datum > 126) {
                 break;
