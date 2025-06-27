@@ -26,6 +26,7 @@
  * @bug 8359602
  * @summary TODO
  *          TODO
+ * @requires vm.debug == true
  * @run main/othervm -XX:CompileCommand=quiet -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:VerifyIterativeGVN=1110
  *      -XX:CompileCommand=compileonly,compiler.c2.TestPropagateTypeRefinementToIGVN::test
