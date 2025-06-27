@@ -282,6 +282,11 @@ public class Basic {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
             if (!Files.getFileStore(dir).supportsFileAttributeView("user")) {
+                // check if getFileAttributeView behaves as specified in this case
+                if (Files.getFileAttributeView(dir, UserDefinedFileAttributeView.class) != null) {
+                    throw new RuntimeException("UserDefinedFileAttributeView not supported, getFileAttributeView should return null");
+                }
+
                 System.out.println("UserDefinedFileAttributeView not supported - skip test");
                 return;
             }
