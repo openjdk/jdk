@@ -38,7 +38,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 
-public final class StreamEncoder extends Writer {
+public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
 
     private static final int INITIAL_BYTE_BUFFER_CAPACITY = 512;
     private static final int MAX_BYTE_BUFFER_CAPACITY = 8192;
@@ -57,7 +57,7 @@ public final class StreamEncoder extends Writer {
         throws UnsupportedEncodingException
     {
         try {
-            return new StreamEncoder(out, lock, Charset.forName(charsetName));
+            return forOutputStreamWriter(out, lock, Charset.forName(charsetName));
         } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
             throw new UnsupportedEncodingException (charsetName);
         }
@@ -67,6 +67,9 @@ public final class StreamEncoder extends Writer {
                                                       Object lock,
                                                       Charset cs)
     {
+        if (cs == UTF_8.INSTANCE) {
+            return new StreamEncoderUTF8(out, lock);
+        }
         return new StreamEncoder(out, lock, cs);
     }
 
@@ -172,17 +175,17 @@ public final class StreamEncoder extends Writer {
 
     private final Charset cs;
     private final CharsetEncoder encoder;
-    private ByteBuffer bb;
-    private final int maxBufferCapacity;
+    protected ByteBuffer bb;
+    protected final int maxBufferCapacity;
 
-    private final OutputStream out;
+    protected final OutputStream out;
 
     // Leftover first char in a surrogate pair
-    private boolean haveLeftoverChar = false;
+    protected boolean haveLeftoverChar = false;
     private char leftoverChar;
     private CharBuffer lcb = null;
 
-    private StreamEncoder(OutputStream out, Object lock, Charset cs) {
+    StreamEncoder(OutputStream out, Object lock, Charset cs) {
         this(out, lock,
             cs.newEncoder()
                 .onMalformedInput(CodingErrorAction.REPLACE)
@@ -298,7 +301,7 @@ public final class StreamEncoder extends Writer {
     /**
      * Grows bb to a capacity to allow len characters be encoded.
      */
-    void growByteBufferIfNeeded(int len) throws IOException {
+    public void growByteBufferIfNeeded(int len) throws IOException {
         int cap = bb.capacity();
         if (cap < maxBufferCapacity) {
             int maxBytes = len * Math.round(encoder.maxBytesPerChar());

@@ -1298,7 +1298,7 @@ public final class String
 
     private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
         if (coder == UTF16) {
-            return encodeUTF8_UTF16(val, doReplace);
+            return encodeUTF8_UTF16(val, 0, val.length >> 1, doReplace);
         }
 
         if (!StringCoding.hasNegatives(val, 0, val.length)) {
@@ -1321,18 +1321,69 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    private static byte[] encodeUTF8_UTF16(byte[] val, boolean doReplace) {
+    long computeSizeUTF8(int sp, int sl) {
+        byte[] val = this.value;
+        if (!isLatin1()) {
+            return computeSizeUTF8_UTF16(val, sp, sl, true);
+        }
+
+        int count = StringCoding.countPositives(val, sp, sl);
+        if (count == sl) {
+            return count;
+        }
+
+        int i = count;
+        count = sl;
+        while (i < sl) {
+            if (val[i++] < 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    int encodeUTF8(int sp, int sl, byte[] dst, int dp) {
+        byte[] val = this.value;
+        if (!isLatin1()) {
+            return encodeUTF8_UTF16(val, sp, sl, true, dst, dp);
+        }
+
+        if (!StringCoding.hasNegatives(val, sp, sl)) {
+            System.arraycopy(val, sp, dst, dp, sl);
+            return dp + sl;
+        }
+
+        for (int i = 0; i < sl; i++) {
+            byte c = val[sp + i];
+            if (c < 0) {
+                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
+                dst[dp++] = (byte) (0x80 | (c & 0x3f));
+            } else {
+                dst[dp++] = c;
+            }
+        }
+        return dp;
+    }
+
+    private static byte[] encodeUTF8_UTF16(byte[] val, int sp, int sl, boolean doReplace) {
         int dp = 0;
-        int sp = 0;
-        int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, doReplace) : sl * 3;
+        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, sp, sl, doReplace) : sl * 3;
         if (allocLen > (long)Integer.MAX_VALUE) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
         byte[] dst = new byte[(int) allocLen];
-        while (sp < sl) {
+        dp = encodeUTF8_UTF16(val, 0, sl, doReplace, dst, dp);
+        if (dp == dst.length) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    private static int encodeUTF8_UTF16(byte[] val, int sp, int sl, boolean doReplace, byte[] dst, int dp) {
+        int end = sp + sl;
+        while (sp < end) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
             if (c >= '\u0080') {
@@ -1341,7 +1392,7 @@ public final class String
             dst[dp++] = (byte)c;
             sp++;
         }
-        while (sp < sl) {
+        while (sp < end) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dst[dp++] = (byte)c;
@@ -1375,10 +1426,7 @@ public final class String
                 dst[dp++] = (byte)(0x80 | (c & 0x3f));
             }
         }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
+        return dp;
     }
 
     /**
@@ -1386,12 +1434,11 @@ public final class String
      * @param val UTF16 encoded byte array
      * @param doReplace true to replace unmappable characters
      */
-    private static long computeSizeUTF8_UTF16(byte[] val, boolean doReplace) {
+    private static long computeSizeUTF8_UTF16(byte[] val, int sp, int sl, boolean doReplace) {
         long dp = 0L;
-        int sp = 0;
-        int sl = val.length >> 1;
 
-        while (sp < sl) {
+        int end = sp + sl;
+        while (sp < end) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dp++;
