@@ -251,7 +251,44 @@ $(eval $(call SetupCopyFiles, copy-static-launchers-debuginfo, \
 
 TARGETS += $(copy-static-launchers-debuginfo)
 
-static-jdk-image: $(copy-from-jdk-image) $(copy-static-launchers) $(copy-static-launchers-debuginfo)
+# Copy the microsoft runtime libraries on windows
+ifeq ($(call isTargetOs, windows), true)
+  # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
+  # Use separate macro calls in case the source files are not in the same
+  # directory.
+  $(eval $(call SetupCopyFiles, copy-windows-msvcr, \
+      DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+      FILES := $(MSVCR_DLL), \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  $(eval $(call SetupCopyFiles, copy-windows-vcruntime, \
+      DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+      FILES := $(VCRUNTIME_1_DLL), \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  $(eval $(call SetupCopyFiles, copy-windows-msvcp, \
+      DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+      FILES := $(MSVCP_DLL), \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  ifneq ($(UCRT_DLL_DIR), )
+    $(eval $(call SetupCopyFiles, copy-windows-ucrt, \
+        DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+        SRC := $(UCRT_DLL_DIR), \
+        FILES := $(wildcard $(UCRT_DLL_DIR)/*.dll), \
+        MACRO := copy-and-chmod-executable, \
+    ))
+
+    copy-windows-libs := $(copy-windows-msvcr) $(copy-windows-vcruntime) $(copy-windows-msvcp) $(copy-windows-ucrt)
+    TARGETS += $(copy-windows-libs)
+  endif
+endif
+
+static-jdk-image: $(copy-from-jdk-image) $(copy-static-launchers) \
+    $(copy-static-launchers-debuginfo) $(copy-windows-libs)
 
 TARGETS += static-jdk-image
 
