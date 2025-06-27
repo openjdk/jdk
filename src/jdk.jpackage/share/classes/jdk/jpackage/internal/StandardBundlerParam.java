@@ -307,24 +307,6 @@ final class StandardBundlerParam {
                             true : Boolean.valueOf(s)
             );
 
-    static final BundlerParamInfo<Boolean> SHORTCUT_HINT  =
-            new BundlerParamInfo<>(
-                    "shortcut-hint", // not directly related to a CLI option
-                    Boolean.class,
-                    params -> true,  // defaults to true
-                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                            true : Boolean.valueOf(s)
-            );
-
-    static final BundlerParamInfo<Boolean> MENU_HINT  =
-            new BundlerParamInfo<>(
-                    "menu-hint", // not directly related to a CLI option
-                    Boolean.class,
-                    params -> true,  // defaults to true
-                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                            true : Boolean.valueOf(s)
-            );
-
     static final BundlerParamInfo<Path> RESOURCE_DIR =
             new BundlerParamInfo<>(
                     Arguments.CLIOptions.RESOURCE_DIR.getId(),
