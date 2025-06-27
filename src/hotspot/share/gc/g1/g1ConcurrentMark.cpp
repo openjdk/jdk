@@ -2087,7 +2087,7 @@ double G1ConcurrentMark::worker_threads_cpu_time_s() {
     CountCpuTimeThreadClosure() : ThreadClosure(), _total_cpu_time(0) { }
 
     void do_thread(Thread* t) {
-      _total_cpu_time = os::thread_cpu_time(t);
+      _total_cpu_time += os::thread_cpu_time(t);
     }
   } cl;
 
@@ -2795,9 +2795,9 @@ void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
     phase has visited reach a given limit. Additional invocations to
     the method clock have been planted in a few other strategic places
     too. The initial reason for the clock method was to avoid calling
-    vtime too regularly, as it is quite expensive. So, once it was in
-    place, it was natural to piggy-back all the other conditions on it
-    too and not constantly check them throughout the code.
+    cpu time gathering too regularly, as it is quite expensive. So,
+    once it was in place, it was natural to piggy-back all the other
+    conditions on it too and not constantly check them throughout the code.
 
     If do_termination is true then do_marking_step will enter its
     termination protocol.

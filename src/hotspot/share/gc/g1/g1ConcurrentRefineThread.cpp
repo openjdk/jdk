@@ -124,8 +124,8 @@ void G1ConcurrentRefineThread::stop_service() {
   activate();
 }
 
-double G1ConcurrentRefineThread::cpu_time_s() {
-  return (double)os::thread_cpu_time(this) / NANOSECS_PER_SEC;
+jlong G1ConcurrentRefineThread::cpu_time() {
+  return os::thread_cpu_time(this);
 }
 
 // The (single) primary thread drives the controller for the refinement threads.

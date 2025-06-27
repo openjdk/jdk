@@ -103,8 +103,8 @@ public:
     return &_refinement_stats;
   }
 
-  // Total cpu time spent in this thread in seconds so far.
-  double cpu_time_s();
+  // Total cpu time spent in this thread so far.
+  jlong cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP

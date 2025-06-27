@@ -154,7 +154,7 @@ void G1ServiceThread::stop_service() {
 }
 
 void G1ServiceThread::update_perf_counter_cpu_time() {
-  if (UsePerfData ) {
+  if (UsePerfData) {
     ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_service);
     tttc.do_thread(this);
   }
