@@ -23,6 +23,7 @@
  */
 
 #include "cds/archiveBuilder.hpp"
+#include "cds/lambdaFormInvokers.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
@@ -57,8 +58,10 @@ void RegeneratedClasses::add_class(InstanceKlass* orig_klass, InstanceKlass* reg
     Method* regen_m = regen_klass->find_method(orig_m->name(), orig_m->signature());
     if (regen_m == nullptr) {
       ResourceMark rm;
-      log_warning(aot)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
-                       p2i(orig_m), orig_m->external_name());
+      if (strstr(orig_m->external_name(), "$Holder.<init>") == nullptr) {
+        log_warning(aot)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
+                         p2i(orig_m), orig_m->external_name());
+      }
     } else {
       _renegerated_objs->put((address)orig_m, (address)regen_m);
     }
