@@ -262,17 +262,25 @@ ifeq ($(call isTargetOs, windows), true)
       MACRO := copy-and-chmod-executable, \
   ))
 
+  TARGETS += $(copy-windows-msvcr)
+
   $(eval $(call SetupCopyFiles, copy-windows-vcruntime, \
       DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
       FILES := $(VCRUNTIME_1_DLL), \
       MACRO := copy-and-chmod-executable, \
   ))
 
+  TARGETS += $(copy-windows-vcruntime)
+
   $(eval $(call SetupCopyFiles, copy-windows-msvcp, \
       DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
       FILES := $(MSVCP_DLL), \
       MACRO := copy-and-chmod-executable, \
   ))
+
+  TARGETS += $(copy-windows-msvcp)
+
+  copy-windows-libs := $(copy-windows-msvcr) $(copy-windows-vcruntime) $(copy-windows-msvcp)
 
   ifneq ($(UCRT_DLL_DIR), )
     $(eval $(call SetupCopyFiles, copy-windows-ucrt, \
@@ -282,8 +290,9 @@ ifeq ($(call isTargetOs, windows), true)
         MACRO := copy-and-chmod-executable, \
     ))
 
-    copy-windows-libs := $(copy-windows-msvcr) $(copy-windows-vcruntime) $(copy-windows-msvcp) $(copy-windows-ucrt)
-    TARGETS += $(copy-windows-libs)
+    TARGETS += $(copy-windows-ucrt)
+
+    copy-windows-libs += $(copy-windows-ucrt)
   endif
 endif
 
