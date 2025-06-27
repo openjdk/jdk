@@ -242,9 +242,12 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         ng.nextBytes(randomBytes);
 
         // Embed the timestamp into the first 6 bytes
-        for (int i = 0; i < 6; i++) {
-            randomBytes[i] = (byte) (timestamp >>> (40 - 8 * i));
-        }
+        randomBytes[0] = (byte)(timestamp >>> 40);
+        randomBytes[1] = (byte)(timestamp >>> 32);
+        randomBytes[2] = (byte)(timestamp >>> 24);
+        randomBytes[3] = (byte)(timestamp >>> 16);
+        randomBytes[4] = (byte)(timestamp >>> 8);
+        randomBytes[5] = (byte)(timestamp);
 
         // Set version to 7
         randomBytes[6] &= 0x0f;
