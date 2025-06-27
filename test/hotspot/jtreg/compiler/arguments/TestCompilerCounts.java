@@ -27,6 +27,7 @@
  * @bug 8356000
  * @requires vm.flagless
  * @requires vm.bits == "64"
+ * @requires vm.debug
  * @run driver compiler.arguments.TestCompilerCounts
  */
 
@@ -133,31 +134,56 @@ public class TestCompilerCounts {
             pass(0, opt, "-XX:TieredStopAtLevel=0");
 
             // Non-tiered modes
-            int nonTieredCount = heuristicCount(cpus, false);
-            pass(nonTieredCount, opt, "-XX:TieredStopAtLevel=1");
-            pass(nonTieredCount, opt, "-XX:TieredStopAtLevel=2");
-            pass(nonTieredCount, opt, "-XX:TieredStopAtLevel=3");
-            pass(nonTieredCount, opt, "-XX:-TieredCompilation");
+            int c1OnlyCount = heuristicCount(cpus, Compilation.C1Only);
+            pass(c1OnlyCount, opt, "-XX:TieredStopAtLevel=1", "-XX:NonNMethodCodeHeapSize="+NonNMethodCodeHeapSize, "-XX:CodeCacheMinimumUseSpace="+CodeCacheMinimumUseSpace);
+            pass(c1OnlyCount, opt, "-XX:TieredStopAtLevel=2", "-XX:NonNMethodCodeHeapSize="+NonNMethodCodeHeapSize, "-XX:CodeCacheMinimumUseSpace="+CodeCacheMinimumUseSpace);
+            pass(c1OnlyCount, opt, "-XX:TieredStopAtLevel=3", "-XX:NonNMethodCodeHeapSize="+NonNMethodCodeHeapSize, "-XX:CodeCacheMinimumUseSpace="+CodeCacheMinimumUseSpace);
+            int c2OnlyCount = heuristicCount(cpus, Compilation.C2Only);
+            pass(c2OnlyCount, opt, "-XX:-TieredCompilation", "-XX:NonNMethodCodeHeapSize="+NonNMethodCodeHeapSize, "-XX:CodeCacheMinimumUseSpace="+CodeCacheMinimumUseSpace);
 
             // Tiered modes
-            int tieredCount = heuristicCount(cpus, true);
-            pass(tieredCount, opt);
-            pass(tieredCount, opt, "-XX:TieredStopAtLevel=4");
+            int tieredCount = heuristicCount(cpus, Compilation.Tiered);
+            pass(tieredCount, opt, "-XX:NonNMethodCodeHeapSize="+NonNMethodCodeHeapSize, "-XX:CodeCacheMinimumUseSpace="+CodeCacheMinimumUseSpace);
+            pass(tieredCount, opt, "-XX:TieredStopAtLevel=4", "-XX:NonNMethodCodeHeapSize="+NonNMethodCodeHeapSize, "-XX:CodeCacheMinimumUseSpace="+CodeCacheMinimumUseSpace);
 
             // Also check that heuristics did not set up more threads than CPUs available
-            Asserts.assertTrue(nonTieredCount <= cpus,
-                "Non-tiered count is larger than number of CPUs: " + nonTieredCount + " > " + cpus);
+            Asserts.assertTrue(c1OnlyCount <= cpus,
+                "Non-tiered count is larger than number of CPUs: " + c1OnlyCount + " > " + cpus);
             Asserts.assertTrue(tieredCount <= cpus,
                 "Tiered count is larger than number of CPUs: " + tieredCount + " > " + cpus);
         }
     }
 
+    enum Compilation {
+        C1Only,
+        C2Only,
+        Tiered,
+    }
+
+    // Buffer sizes for caclulating the maximum number of compiler threads.
+    static final int NonNMethodCodeHeapSize = 5 * 1024 * 1024;
+    static final int CodeCacheMinimumUseSpace = 400 * 1024;
+    static final int C1BufSize = 64 * 1024 * 8 + (64 * 1024 * 8 / 10);
+    static final int C1MaxCount = (NonNMethodCodeHeapSize - 3 * CodeCacheMinimumUseSpace) / C1BufSize;
+    static final int C2BufSize = 6544;
+    static final int C2MaxCount = (NonNMethodCodeHeapSize - 3 * CodeCacheMinimumUseSpace) / C2BufSize;
+    static final int TieredBufSize = C1BufSize / 3 + 2 * C2BufSize / 3;
+    static final int TieredMaxCount = (NonNMethodCodeHeapSize - 3 * CodeCacheMinimumUseSpace) / TieredBufSize;
+
+
     // Direct translation from CompilationPolicy::initialize:
-    public static int heuristicCount(int cpus, boolean tiered) {
+    public static int heuristicCount(int cpus, Compilation comp) {
         int log_cpu = log2(cpus);
         int loglog_cpu = log2(Math.max(log_cpu, 1));
-        int min_count = tiered ? 2 : 1;
-        return Math.max(log_cpu * loglog_cpu * 3 / 2, min_count);
+        int min_count = comp == Compilation.C1Only || comp == Compilation.C2Only ? 1 : 2;
+        int count = Math.max(log_cpu * loglog_cpu * 3 / 2, min_count);
+        int max_count = switch (comp) {
+            case C1Only -> C1MaxCount;
+            case C2Only -> C2MaxCount;
+            case Tiered -> TieredMaxCount;
+        };
+        return Math.max(Math.min(count, max_count), min_count);
+
     }
 
     public static int log2(int v) {
