@@ -50,7 +50,7 @@ public class MemoryLimitTest {
 
     private static void testHasMemoryLimit() throws Exception {
         SystemdRunOptions opts = SystemdTestUtils.newOpts("ContainerMemory");
-	opts.addClassOptions("hasMemoryLimit", "true");
+        opts.addClassOptions("hasMemoryLimit", "true");
         opts.memoryLimit("100M");
         opts.sliceName(TEST_SLICE_NAME);
         SystemdTestUtils.addWhiteBoxOpts(opts);
