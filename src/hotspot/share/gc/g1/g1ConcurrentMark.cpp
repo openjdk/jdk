@@ -2269,8 +2269,6 @@ bool G1CMTask::regular_clock_call() {
     return false;
   }
 
-  jlong curr_time_ns = os::current_thread_cpu_time();
-
   // (4) We check whether we should yield. If we have to, then we abort.
   if (SuspendibleThreadSet::should_yield()) {
     // We should yield. To do this we abort the task. The caller is
@@ -2280,7 +2278,7 @@ bool G1CMTask::regular_clock_call() {
 
   // (5) We check whether we've reached our time quota. If we have,
   // then we abort.
-  double elapsed_time_ms = (double)(curr_time_ns - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
+  double elapsed_time_ms = (double)(os::current_thread_cpu_time() - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
   if (elapsed_time_ms > _time_target_ms) {
     _has_timed_out = true;
     return false;
