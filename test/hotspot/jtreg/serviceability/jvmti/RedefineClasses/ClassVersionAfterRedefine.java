@@ -43,7 +43,7 @@ public class ClassVersionAfterRedefine extends ClassLoader {
         ClassVersionAfterRedefine cvar = new ClassVersionAfterRedefine();
 
         // Poor man's renaming of class "TestClassOld" to "TestClassXXX"
-        byte[] buf = RedefineClassHelper.replaceAllStrings(cvar, "TestClassOld", "TestClassXXX");
+        byte[] buf = RedefineClassHelper.replaceClassName(cvar, "TestClassOld", "TestClassXXX");
         Class<?> old = cvar.defineClass(null, buf, 0, buf.length);
         Method foo = old.getMethod("foo");
         Object result = foo.invoke(null);
@@ -52,7 +52,7 @@ public class ClassVersionAfterRedefine extends ClassLoader {
 
         // Rename class "TestClassNew" to "TestClassXXX" so we can use it for
         // redefining the original version of "TestClassXXX" (i.e. "TestClassOld").
-        buf = RedefineClassHelper.replaceAllStrings(cvar, "TestClassNew", "TestClassXXX");
+        buf = RedefineClassHelper.replaceClassName(cvar, "TestClassNew", "TestClassXXX");
         // Now redine the original version of "TestClassXXX" (i.e. "TestClassOld").
         RedefineClassHelper.redefineClass(old, buf);
         result = foo.invoke(null);

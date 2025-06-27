@@ -80,14 +80,26 @@ public class RedefineClassHelper {
      * Replace class name in bytecodes to the class we're trying to redefine, so that both
      * old and new classes can be compiled with jtreg for the test.
      *
+     * @param bytes in original class file.
+     * @param oldClassName old class name.
+     * @param newClassName new class name to replace with old class name.
+     */
+    public static byte[] replaceClassName(byte[] bytes, String oldClassName, String newClassName) throws Exception {
+        ClassModel classModel = ClassFile.of().parse(bytes);
+        return ClassFile.of().build(ClassDesc.of(newClassName), classModel::forEach);
+    }
+
+    /*
+     * Replace class name in bytecodes to the class we're trying to redefine, so that both
+     * old and new classes can be compiled with jtreg for the test.
+     *
      * @param loader ClassLoader to find the bytes for the class.
      * @param oldClassName old class name.
      * @param newClassName new class name to replace with old class name.
      */
-    public static byte[] replaceAllStrings(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
+    public static byte[] replaceClassName(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
         byte[] buf = getBytecodes(loader, oldClassName);
-        ClassModel classModel = ClassFile.of().parse(buf);
-        return ClassFile.of().build(ClassDesc.of(newClassName), classModel::forEach);
+        return replaceClassName(buf, oldClassName, newClassName);
     }
 
     /**
