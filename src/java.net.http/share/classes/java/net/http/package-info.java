@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,12 @@
  * </ul>
  *
  * <p> The protocol-specific requirements are defined in the
- * <a href="https://tools.ietf.org/html/rfc9114">Hypertext Transfer Protocol
- * Version 3 (HTTP/3)</a>, the <a href="https://tools.ietf.org/html/rfc7540">
+ * <a href="https://www.rfc-editor.org/info/rfc9114">Hypertext Transfer Protocol
+ * Version 3 (HTTP/3)</a>, the <a href="https://www.rfc-editor.org/info/rfc7540">
  * Hypertext Transfer Protocol Version 2 (HTTP/2)</a>, the
- * <a href="https://tools.ietf.org/html/rfc2616">
+ * <a href="https://www.rfc-editor.org/info/rfc2616">
  * Hypertext Transfer Protocol (HTTP/1.1)</a>, and
- * <a href="https://tools.ietf.org/html/rfc6455">The WebSocket Protocol</a>.
+ * <a href="https://www.rfc-editor.org/info/rfc6455">The WebSocket Protocol</a>.
  *
  * <p> In general, asynchronous tasks execute in either the thread invoking
  * the operation, e.g. {@linkplain HttpClient#send(HttpRequest, BodyHandler)

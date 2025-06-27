@@ -63,7 +63,7 @@ final class Exchange<T> {
     volatile ExchangeImpl<T> exchImpl;
     volatile CompletableFuture<? extends ExchangeImpl<T>> exchangeCF;
     volatile CompletableFuture<Void> bodyIgnored;
-    volatile Version streamLimitReached;
+    volatile boolean streamLimitReached;
 
     // used to record possible cancellation raised before the exchImpl
     // has been established.
@@ -76,7 +76,7 @@ final class Exchange<T> {
     final String dbgTag;
 
     // Keeps track of the underlying connection when establishing an HTTP/2
-    // exchange so that it can be aborted/timed out mid setup.
+    // or HTTP/3 exchange so that it can be aborted/timed out mid setup.
     final ConnectionAborter connectionAborter = new ConnectionAborter();
 
     final AtomicInteger nonFinalResponses = new AtomicInteger();
@@ -119,7 +119,7 @@ final class Exchange<T> {
     }
 
     // Keeps track of the underlying connection when establishing an HTTP/2
-    // exchange so that it can be aborted/timed out mid setup.
+    // or HTTP/3 exchange so that it can be aborted/timed out mid setup.
     final class ConnectionAborter {
         // In case of HTTP/3 direct connection we may have
         // two connections in parallel: a regular TCP connection
@@ -213,9 +213,9 @@ final class Exchange<T> {
     }
 
     // true if previous attempt resulted in streamLimitReached
-    public boolean hasReachedStreamLimit(Version version) { return streamLimitReached == version; }
+    public boolean hasReachedStreamLimit() { return streamLimitReached; }
     // can be used to set or clear streamLimitReached (for instance clear it after retrying)
-    void streamLimitReached(Version version) { streamLimitReached = version; }
+    void streamLimitReached(boolean streamLimitReached) { this.streamLimitReached = streamLimitReached; }
 
     // Called for 204 response - when no body is permitted
     // This is actually only needed for HTTP/1.1 in order
@@ -296,7 +296,7 @@ final class Exchange<T> {
             impl.cancel(cause);
         } else {
              // abort/close the connection if setting up the exchange. This can
-            // be important when setting up HTTP/2
+            // be important when setting up HTTP/2 or HTTP/3
             closeReason = failed.get();
             if (closeReason != null) {
                 connectionAborter.closeConnection(closeReason);

@@ -521,7 +521,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 PendingConnection pendingConnection = null;
                 String key;
                 Waiter waiter = null;
-                if (reconnecting = exchange.hasReachedStreamLimit(HTTP_3)) {
+                if (reconnecting = exchange.hasReachedStreamLimit()) {
                     if (debug.on()) {
                         debug.log("Exchange has reached limit for: " + request + " #"
                                 + exchange.multi.id);
@@ -545,7 +545,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                         waiter = pendingWaiter == null
                                 ? Waiter.of(request, exchange)
                                 : pendingWaiter;
-                        exchange.streamLimitReached(null);
+                        exchange.streamLimitReached(false);
                         pendingConnection.waiters.add(waiter);
                         return waiter.cf;
                     } else if (recovery instanceof StreamLimitReached) {

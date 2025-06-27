@@ -457,9 +457,9 @@ abstract class ExchangeImpl<T> {
             if (debug.on())
                 debug.log("creating HTTP/3 exchange");
             try {
-                if (exchange.hasReachedStreamLimit(HTTP_3)) {
+                if (exchange.hasReachedStreamLimit()) {
                     // clear the flag before attempting to create a stream again
-                    exchange.streamLimitReached(null);
+                    exchange.streamLimitReached(false);
                 }
                 return c.createStream(exchange)
                         .thenApply(ExchangeImpl::checkCancelled);
