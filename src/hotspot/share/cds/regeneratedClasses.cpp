@@ -23,7 +23,6 @@
  */
 
 #include "cds/archiveBuilder.hpp"
-#include "cds/lambdaFormInvokers.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
