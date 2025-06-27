@@ -34,7 +34,6 @@ import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
@@ -265,10 +264,10 @@ public class Preview {
     public void checkSourceLevel(DiagnosticPosition pos, Feature feature) {
         if (isPreview(feature) && !isEnabled()) {
             //preview feature without --preview flag, error
-            log.error(DiagnosticFlag.SOURCE_LEVEL, pos, disabledError(feature));
+            log.error(pos, disabledError(feature));
         } else {
             if (!feature.allowedInSource(source)) {
-                log.error(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
+                log.error(pos, feature.error(source.name));
             }
             if (isEnabled() && isPreview(feature)) {
                 warnPreview(pos, feature);
