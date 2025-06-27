@@ -79,8 +79,9 @@ public class ContainerRuntimeVersionTestUtils implements Comparable<ContainerRun
         try {
             // Example 'docker version 20.10.0 or podman version 4.9.4-rhel'
             String versNums = version.split("\\s+", 3)[2];
-            // On some docker implementations e.g. RHEL8 ppc64le we have a version v25.0.3
-            // with a leading v, skip this
+            // On some docker implementations e.g. RHEL8 ppc64le we have the following version output:
+            //    Docker version v25.0.3, build 4debf41
+            // Trim potentially leading 'v' and trailing ','
             if (versNums.startsWith("v")) {
                 versNums = versNums.substring(1);
             }
