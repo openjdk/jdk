@@ -207,7 +207,7 @@ public class AbsPathsInImage {
                 List<String> matches = new ArrayList<>();
                 while((bytesRead = zipInputStream.read(buffer)) != -1) {
                     matches.addAll(scanBytes(buffer, bytesRead, searchPatterns));
-                }   
+                }
                 if (matches.size() > 0) {
                     matchFound = true;
                     System.out.println(zipFile + ", " + zipEntry.getName() + ":");
