@@ -114,7 +114,7 @@ public class ScaledLineBorderTest {
                 checkVerticalBorders((int) (SIZE.width * test.scale / 2), effectiveThickness, img);
 
                 for (Point p : test.panelLocations) {
-                    int y = (int) (p.y * test.scale) + (int) (SIZE.height * test.scale / 2);
+                    int y = (int) ((p.y + (SIZE.height / 2)) * test.scale);
                     checkHorizontalBorder(y, effectiveThickness, img);
                 }
             } catch (Error e) {
