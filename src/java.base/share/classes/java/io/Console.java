@@ -31,6 +31,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -555,9 +556,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     private static final boolean istty = istty();
     private static final Charset STDIN_CHARSET =
-        Charset.forName(System.getProperty("stdin.encoding"), UTF_8.INSTANCE);
+        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE);
     private static final Charset STDOUT_CHARSET =
-        Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
+        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {
         // Set up JavaIOAccess in SharedSecrets

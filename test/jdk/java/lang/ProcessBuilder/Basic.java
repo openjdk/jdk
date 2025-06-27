@@ -337,7 +337,7 @@ public class Basic {
             } else if (action.equals("testIO")) {
                 String expected = "standard input";
                 char[] buf = new char[expected.length()+1];
-                int n = new InputStreamReader(System.in).read(buf,0,buf.length);
+                int n = new InputStreamReader(System.in, System.getProperty("stdin.encoding")).read(buf,0,buf.length);
                 if (n != expected.length())
                     System.exit(5);
                 if (! new String(buf,0,n).equals(expected))
@@ -696,7 +696,7 @@ public class Basic {
         public static String path() { return path; }
         private static final String path = path0();
         private static String path0(){
-            if (!Platform.isBusybox("/bin/true")) {
+            if (!Files.isSymbolicLink(Paths.get("/bin/true"))) {
                 return "/bin/true";
             } else {
                 File trueExe = new File("true");
@@ -711,7 +711,7 @@ public class Basic {
         public static String path() { return path; }
         private static final String path = path0();
         private static String path0(){
-            if (!Platform.isBusybox("/bin/false")) {
+            if (!Files.isSymbolicLink(Paths.get("/bin/false"))) {
                 return "/bin/false";
             } else {
                 File falseExe = new File("false");
