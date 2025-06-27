@@ -1211,16 +1211,20 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Prints this property list out to the specified {@code PrintStream}.
+     * Prints this property list out to the specified {@link PrintStream}.
      * This method is useful for debugging.
      *
-     * @implNote This method first writes a header
-     * text {@code -- listing properties --} followed by a line separator
-     * to the {@code out}. Each property is then written to {@code out}
-     * in the form of {@code key=value} followed by a line separator.
-     * If any property's value is greater than 40 characters then only
-     * the first 37 characters of that value are written followed by 3 dot
-     * characters.
+     * @implNote If any property's value is greater than 40 characters then
+     * this method writes only the first 37 characters of that value
+     * followed by 3 dot characters.
+     * <p>
+     * An alternative for listing the {@code Properties} to a {@code PrintStream} is:
+     * {@snippet lang=java :
+     *      Properties p = ...
+     *      PrintStream out = ...
+     *      // list the properties to PrintStream
+     *      p.forEach((k, v) -> out.println(k + "=" + v));
+     * }
      *
      * @param   out   a PrintStream
      * @throws  ClassCastException if any key in this property list
@@ -1241,16 +1245,20 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Prints this property list out to the specified {@code PrintWriter}.
+     * Prints this property list out to the specified {@link PrintWriter}.
      * This method is useful for debugging.
      *
-     * @implNote This method first writes a header
-     * text {@code -- listing properties --} followed by a line separator
-     * to the {@code out}. Each property is then written to {@code out}
-     * in the form of {@code key=value} followed by a line separator.
-     * If any property's value is greater than 40 characters then only
-     * the first 37 characters of that value are written followed by 3 dot
-     * characters.
+     * @implNote If any property's value is greater than 40 characters then
+     * this method writes only the first 37 characters of that value
+     * followed by 3 dot characters.
+     * <p>
+     * An alternative for listing the {@code Properties} to a {@code PrintWriter} is:
+     * {@snippet lang=java :
+     *      Properties p = ...
+     *      PrintWriter out = ...
+     *      // list the properties to PrintWriter
+     *      p.forEach((k, v) -> out.println(k + "=" + v));
+     * }
      *
      * @param   out   a PrintWriter
      * @throws  ClassCastException if any key in this property list
