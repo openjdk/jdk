@@ -95,12 +95,25 @@ public class ReadAll {
             sb.setLength(0);
         }
 
-        strings.add(PHRASE.repeat((4096 + plen - 1)/plen) + "\n" +
-                    " ".repeat(8192) + PHRASE);
-        strings.add("x".repeat(8191) + "\n");
-        strings.add("x".repeat(9000) + "\n" + "y".repeat(100));
-        strings.add("x".repeat(8200) + "y".repeat(8200) + "x".repeat(8200) +
-                    PHRASE + "\n");
+        String p4096  = PHRASE.repeat((4096 + plen - 1)/plen);
+        String p8192  = PHRASE.repeat((8192 + plen - 1)/plen);
+        String p16384 = PHRASE.repeat((16384 + plen - 1)/plen);
+
+        for (int i = 0; i < 64; i++) {
+            for (int j = 0; j < 32; j++) {
+                switch (rnd.nextInt(8)) {
+                case 0 -> sb.append("");
+                case 1 -> sb.append(" ");
+                case 2 -> sb.append("\n");
+                case 3 -> sb.append(PHRASE);
+                case 5 -> sb.append(p4096);
+                case 6 -> sb.append(p8192);
+                case 7 -> sb.append(p16384);
+                }
+            }
+            strings.add(sb.toString());
+            sb.setLength(0);
+        }
 
         Files.write(path, strings);
         System.out.println(strings.size() + " lines written");
