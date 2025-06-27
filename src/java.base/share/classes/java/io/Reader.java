@@ -474,7 +474,7 @@ public abstract class Reader implements Readable, Closeable {
                 if (term < limit) { // line terminator
                     boolean isCR = (cb[term] == '\r');
                     if (isCR || !(skipLF && term == pos)) {
-                        // line terminator is a CR or an LF just after a CR
+                        // line terminator is a CR or an LF not just after a CR
                         if (fragPos != -1) {
                             lines.add(new String(cb, fragPos, term - fragPos));
                             fragPos = -1;
@@ -485,6 +485,10 @@ public abstract class Reader implements Readable, Closeable {
                     pos = term + 1;
                     if (pos == limit)
                         writePos = 0;
+                    else if (isCR && cb[pos] == '\n') {
+                        pos++;
+                        isCR = false;
+                    }
                     skipLF = isCR;
                 } else { // no line terminator
                     int len = term - pos;
