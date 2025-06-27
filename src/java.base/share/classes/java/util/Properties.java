@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1211,10 +1211,18 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Prints this property list out to the specified output stream.
+     * Prints this property list out to the specified {@code PrintStream}.
      * This method is useful for debugging.
      *
-     * @param   out   an output stream.
+     * @implNote This method first writes a header
+     * text {@code -- listing properties --} followed by a line separator
+     * to the {@code out}. Each property is then written to {@code out}
+     * in the form of {@code key=value} followed by a line separator.
+     * If any property's value is greater than 40 characters then only
+     * the first 37 characters of that value are written followed by 3 dot
+     * characters.
+     *
+     * @param   out   a PrintStream
      * @throws  ClassCastException if any key in this property list
      *          is not a string.
      */
@@ -1233,10 +1241,18 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Prints this property list out to the specified output stream.
+     * Prints this property list out to the specified {@code PrintWriter}.
      * This method is useful for debugging.
      *
-     * @param   out   an output stream.
+     * @implNote This method first writes a header
+     * text {@code -- listing properties --} followed by a line separator
+     * to the {@code out}. Each property is then written to {@code out}
+     * in the form of {@code key=value} followed by a line separator.
+     * If any property's value is greater than 40 characters then only
+     * the first 37 characters of that value are written followed by 3 dot
+     * characters.
+     *
+     * @param   out   a PrintWriter
      * @throws  ClassCastException if any key in this property list
      *          is not a string.
      * @since   1.1
