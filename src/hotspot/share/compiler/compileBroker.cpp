@@ -218,6 +218,7 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
+  thread->timeout_arm();
   if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
 }
 
@@ -232,6 +233,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
     bool free_task = false;
     {
       MutexLocker notifier(thread, CompileTaskWait_lock);
+      thread->timeout_disarm();
       task->mark_complete();
 #if INCLUDE_JVMCI
       if (CompileBroker::compiler(task->comp_level())->is_jvmci()) {
@@ -253,6 +255,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
       delete task;
     }
   } else {
+    thread->timeout_disarm();
     task->mark_complete();
 
     // By convention, the compiling thread is responsible for deleting
@@ -1923,6 +1926,10 @@ void CompileBroker::compiler_thread_loop() {
                     os::current_process_id());
     log->stamp();
     log->end_elem();
+  }
+
+  if (!thread->init_compilation_timeout()) {
+    return;
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread

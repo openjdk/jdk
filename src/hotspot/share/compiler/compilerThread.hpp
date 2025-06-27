@@ -26,6 +26,13 @@
 #define SHARE_COMPILER_COMPILERTHREAD_HPP
 
 #include "runtime/javaThread.hpp"
+#include "utilities/macros.hpp"
+
+#ifndef PRODUCT
+#ifdef LINUX
+#include <csignal>
+#endif //LINUX
+#endif //!PRODUCT
 
 class AbstractCompiler;
 class ArenaStatCounter;
@@ -113,7 +120,25 @@ class CompilerThread : public JavaThread {
  public:
   IdealGraphPrinter *ideal_graph_printer()           { return _ideal_graph_printer; }
   void set_ideal_graph_printer(IdealGraphPrinter *n) { _ideal_graph_printer = n; }
-#endif
+#endif // !PRODUCT
+
+#ifdef LINUX
+#ifndef PRODUCT
+ private:
+  static const int TIMEOUT_SIGNAL = SIGALRM;
+  timer_t               _timeout_timer;
+  volatile bool         _timeout_armed;
+ public:
+  void compiler_signal_handler(int signo, siginfo_t* info, void* context);
+#endif // !PRODUCT
+  bool init_compilation_timeout() PRODUCT_RETURN_(return true;);
+  void timeout_arm() PRODUCT_RETURN;
+  void timeout_disarm() PRODUCT_RETURN;
+#else
+  bool init_compilation_timeout() { return true; };
+  void timeout_arm() {};
+  void timeout_disarm() {};
+#endif // LINUX
 
   // Get/set the thread's current task
   CompileTask* task()                      { return _task; }
