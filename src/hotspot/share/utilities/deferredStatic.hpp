@@ -22,17 +22,29 @@
 *
 */
 
-#ifndef SHARE_UTILITIES_STABLEVALUE_HPP
-#define SHARE_UTILITIES_STABLEVALUE_HPP
+#ifndef SHARE_UTILITIES_DEFERREDSTATIC_HPP
+#define SHARE_UTILITIES_DEFERREDSTATIC_HPP
 
-#include "globalDefinitions.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#include <new>
 #include <type_traits>
 
-// The purpose of this class is to defer initialization of a T to a later point in time,
-// and then to never deallocate it. This is mainly useful for deferring the initialization of
-// static fields in classes, in order to avoid "Static Initialization Order Fiasco".
+// The purpose of this class is to provide control over the initialization
+// time for an object of type T with static storage duration. An instance of
+// this class provides storage for an object, sized and aligned for T. The
+// object must be explicitly initialized before use. This avoids problems
+// resulting from the unspecified initialization time and ordering between
+// different objects that comes from using undeferred objects (the so-called
+// "Static Initialization Order Fiasco).
+//
+// Once initialized, the object is never destroyed. This avoids similar issues
+// with the timing and ordering of destruction on normal program exit.
+//
+// T must not be a reference type. T may be cv-qualified; accessors will
+// return a correspondingly cv-qualified reference to the object.
 template<typename T>
-class Deferred {
+class DeferredStatic {
   union {
     T _t;
   };
@@ -40,14 +52,14 @@ class Deferred {
   DEBUG_ONLY(bool _initialized);
 
 public:
-  NONCOPYABLE(Deferred);
+  NONCOPYABLE(DeferredStatic);
 
-  Deferred()
+  DeferredStatic()
   DEBUG_ONLY(: _initialized(false)) {
     // Do not construct value, on purpose.
   }
 
-  ~Deferred() {
+  ~DeferredStatic() {
     // Do not destruct value, on purpose.
   }
 
@@ -73,4 +85,4 @@ public:
   }
 };
 
-#endif // SHARE_UTILITIES_STABLEVALUE_HPP
+#endif // SHARE_UTILITIES_DEFERREDSTATIC_HPP

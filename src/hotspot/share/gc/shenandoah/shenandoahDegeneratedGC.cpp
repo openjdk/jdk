@@ -136,9 +136,15 @@ void ShenandoahDegenGC::op_degenerated() {
       heap->set_unload_classes(_generation->heuristics()->can_unload_classes() &&
                                 (!heap->mode()->is_generational() || _generation->is_global()));
 
-      if (heap->mode()->is_generational() && _generation->is_young()) {
-        // Swap remembered sets for young
-        _generation->swap_card_tables();
+      if (heap->mode()->is_generational()) {
+        // Clean the read table before swapping it. The end goal here is to have a clean
+        // write table, and to have the read table updated with the previous write table.
+        heap->old_generation()->card_scan()->mark_read_table_as_clean();
+
+        if (_generation->is_young()) {
+          // Swap remembered sets for young
+          _generation->swap_card_tables();
+        }
       }
 
     case _degenerated_roots:
