@@ -298,7 +298,7 @@ public class ScaledLineBorderTest {
     }
 
     private static String getImageFileName(final double scaling,
-                                           int thickness) {
+                                           final int thickness) {
         return String.format("test%02d@%.2f.png", thickness, scaling);
     }
 
