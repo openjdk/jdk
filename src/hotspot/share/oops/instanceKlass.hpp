@@ -781,8 +781,8 @@ public:
                                     u2 method_index);
 
   // jmethodID support
-  jmethodID get_jmethod_id(const methodHandle& method_h);
-  void ensure_space_for_methodids(int start_offset = 0);
+  jmethodID get_jmethod_id(Method* method);
+  void make_methods_jmethod_ids();
   jmethodID jmethod_id_or_null(Method* method);
   void update_methods_jmethod_cache();
 
@@ -1056,10 +1056,10 @@ private:
     Atomic::store(&_init_thread, thread);
   }
 
-  inline jmethodID* methods_jmethod_ids_acquire() const;
-  inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
-  // This nulls out jmethodIDs for all methods in 'klass'
-  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID* methods_jmethod_ids_acquire() const;
+  void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out obsolete jmethodIDs for all methods in 'klass'.
+  static void clear_obsolete_jmethod_ids(InstanceKlass* klass);
   jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
 public:

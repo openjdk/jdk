@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,34 @@
  *
  */
 
-#ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
-#define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#ifndef SHARE_OOPS_JMETHODIDTABLE_HPP
+#define SHARE_OOPS_JMETHODIDTABLE_HPP
 
-class SpinWait {
-public:
-  enum Inst {
-    NONE = -1,
-    NOP,
-    ISB,
-    YIELD,
-    SB
-  };
+#include "jni.h"
+#include "memory/allocation.hpp"
 
-private:
-  Inst _inst;
-  int _count;
+// Class for associating Method with jmethodID
+class Method;
 
-public:
-  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(count) {}
+class JmethodIDTable : public AllStatic {
+ public:
+  static void initialize();
 
-  Inst inst() const { return _inst; }
-  int inst_count() const { return _count; }
+  // Given a Method return a jmethodID.
+  static jmethodID make_jmethod_id(Method* m);
+
+  // Given a jmethodID, return a Method.
+  static Method* resolve_jmethod_id(jmethodID mid);
+
+  // Class unloading support, remove the associations from the tables.  Stale jmethodID will
+  // not be found and return null.
+  static void remove(jmethodID mid);
+
+  // RedefineClasses support
+  static void change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method);
+  static void clear_jmethod_id(jmethodID jmid, Method* m);
+
+  static uint64_t get_entry_count();
 };
 
-#endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#endif // SHARE_OOPS_JMETHODIDTABLE_HPP
