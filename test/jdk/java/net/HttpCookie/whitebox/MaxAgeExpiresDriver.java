@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @summary Verify ThreadStart JVMTI event with can_generate_early_vmstart capability
- * @requires vm.jvmti
- * @run main/othervm/native -agentlib:MAAThreadStart MAAThreadStart
+ * @bug 8351983
+ * @summary HttpCookie Parser Incorrectly Handles Cookies with Expires Attribute
+ * @run testng java.base/java.net.MaxAgeExpires
  */
-
-public class MAAThreadStart {
-
-    static {
-        try {
-            System.loadLibrary("MAAThreadStart");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load MAAThreadStart library");
-            System.err.println("java.library.path: "
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
-    }
-
-    native static int check();
-
-    public static void main(String args[]) {
-        int status = check();
-        if (status != 0) {
-            throw new RuntimeException("Non-zero status returned from the agent: " + status);
-        }
-    }
+public class MaxAgeExpiresDriver {
 }

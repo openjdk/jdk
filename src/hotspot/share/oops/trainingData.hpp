@@ -34,6 +34,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/resizeableResourceHash.hpp"
@@ -286,7 +287,12 @@ private:
   static bool is_klass_loaded(Klass* k) {
     if (have_data()) {
       // If we're running in AOT mode some classes may not be loaded yet
-      return !k->is_instance_klass() || InstanceKlass::cast(k)->is_loaded();
+      if (k->is_objArray_klass()) {
+        k = ObjArrayKlass::cast(k)->bottom_klass();
+      }
+      if (k->is_instance_klass()) {
+        return InstanceKlass::cast(k)->is_loaded();
+      }
     }
     return true;
   }
