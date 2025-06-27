@@ -78,7 +78,24 @@ import java.util.stream.Stream;
  * process I/O can also be redirected</a>
  * using methods of the {@link ProcessBuilder} class.
  *
- * <p>{@linkplain ProcessBuilder#start() Starting a process} uses resources in both the invoking process and the invoked
+ * <p>There is no requirement that the process represented by a {@code
+ * Process} object execute asynchronously or concurrently with respect
+ * to the Java process that owns the {@code Process} object.
+ *
+ * <p>As of 1.5, {@link ProcessBuilder#start()} is the preferred way
+ * to create a {@code Process}.
+ *
+ * <p>Subclasses of Process should override the {@link #onExit()} and
+ * {@link #toHandle()} methods to provide a fully functional Process including the
+ * {@linkplain #pid() process id},
+ * {@linkplain #info() information about the process},
+ * {@linkplain #children() direct children}, and
+ * {@linkplain #descendants() direct children plus descendants of those children} of the process.
+ * Delegating to the underlying Process or ProcessHandle is typically
+ * easiest and most efficient.
+ *
+ * <h2>Resource Usage</h2>
+ * {@linkplain ProcessBuilder#start() Starting a process} uses resources in both the invoking process and the invoked
  * process and for the communication streams between them.
  * The resources to control the process and for communication between the processes are retained
  * until there are no longer any references to the Process or the input, error, and output streams
@@ -109,27 +126,16 @@ import java.util.stream.Stream;
  *     }
  * }
  * }
- * <p>Stream resources (file descriptor or handle) are always paired; one in the invoking process
+ * <p>Stream resources (file descriptord or handled) are always paired; one in the invoking process
  * and the other end of that connection in the invoked process.
  * Closing a stream at either end terminates communication but does not have any direct effect
- * on the other Process. Typically, the other process responds to the closing of the stream
- * by exiting.
+ * on the other Process. The closing of the stream typically results in the other process exiting.
  *
- * <p>There is no requirement that the process represented by a {@code
- * Process} object execute asynchronously or concurrently with respect
- * to the Java process that owns the {@code Process} object.
- *
- * <p>As of 1.5, {@link ProcessBuilder#start()} is the preferred way
- * to create a {@code Process}.
- *
- * <p>Subclasses of Process should override the {@link #onExit()} and
- * {@link #toHandle()} methods to provide a fully functional Process including the
- * {@linkplain #pid() process id},
- * {@linkplain #info() information about the process},
- * {@linkplain #children() direct children}, and
- * {@linkplain #descendants() direct children plus descendants of those children} of the process.
- * Delegating to the underlying Process or ProcessHandle is typically
- * easiest and most efficient.
+ * <p> {@linkplain #destroy Destroying a process} signals the operating system to terminate the process.
+ * It is up to the operating system to cleanup and release the resources of that process.
+ * Typically, file descriptors and handles are closed. When they are closed, any connections to
+ * other processes are terminated and file descriptors and handles in the invoking process signal
+ * end-of-file or closed. Usually, that is seen as an end-of-file or an exception.
  *
  * @since   1.0
  */
@@ -199,7 +205,8 @@ public abstract class Process {
      * when it is no longer needed.
      *
      * @apiNote
-     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
+     * Use either this method or an {@linkplain #inputReader(Charset) input reader}
+     * but not both on the same {@code Process}.
      * The input reader consumes and buffers bytes from the input stream.
      * Bytes read from the input stream would not be seen by the reader and
      * buffer contents are unpredictable.
@@ -230,7 +237,8 @@ public abstract class Process {
      * when it is no longer needed.
      *
      * @apiNote
-     * Avoid using both {@link #getErrorStream} and {@link #inputReader(Charset)}.
+     * Use either this method or an {@linkplain #errorReader(Charset) error reader}
+     * but not both on the same {@code Process}.
      * The error reader consumes and buffers bytes from the error stream.
      * Bytes read from the error stream would not be seen by the reader and the
      * buffer contents are unpredictable.
@@ -256,6 +264,13 @@ public abstract class Process {
      *
      * <p>The reader should be {@linkplain BufferedReader#close closed}
      * when it is no longer needed.
+     *
+     * @apiNote
+     * Use either this method or the {@linkplain #getInputStream input stream}
+     * but not both on the same {@code Process}.
+     * The input reader consumes and buffers bytes from the input stream.
+     * Bytes read from the input stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
      *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
@@ -297,7 +312,8 @@ public abstract class Process {
      * of the process.
      *
      * @apiNote
-     * Avoid using both {@link #getInputStream} and {@link #inputReader(Charset)}.
+     * Use either this method or the {@linkplain #getInputStream input stream}
+     * but not both on the same {@code Process}.
      * The input reader consumes and buffers bytes from the input stream.
      * Bytes read from the input stream would not be seen by the reader and the
      * buffer contents are unpredictable.
@@ -339,6 +355,13 @@ public abstract class Process {
      * <p>The error reader should be {@linkplain BufferedReader#close closed}
      * when it is no longer needed.
      *
+     * @apiNote
+     * Use either this method or the {@linkplain #getErrorStream error stream}
+     * but not both on the same {@code Process}.
+     * The error reader consumes and buffers bytes from the error stream.
+     * Bytes read from the error stream would not be seen by the reader and the
+     * buffer contents are unpredictable.
+     *
      * @return a {@link BufferedReader BufferedReader} using the
      *          {@code native.encoding} if supported, otherwise, the
      *          {@link Charset#defaultCharset()}
@@ -374,7 +397,8 @@ public abstract class Process {
      * when it is no longer needed.
      *
      * @apiNote
-     * Avoid using both {@link #getErrorStream} and {@link #errorReader(Charset)}.
+     * Use either this method or the {@linkplain #getErrorStream error stream}
+     * but not both on the same {@code Process}.
      * The error reader consumes and buffers bytes from the error stream.
      * Bytes read from the error stream would not be seen by the reader and the
      * buffer contents are unpredictable.
