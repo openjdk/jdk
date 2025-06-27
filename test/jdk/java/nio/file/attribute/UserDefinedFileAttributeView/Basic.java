@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8273922
+ * @bug 4313887 6838333 8273922 8360887
  * @summary Unit test for java.nio.file.attribute.UserDefinedFileAttributeView
  * @library ../.. /test/lib
  * @key randomness
