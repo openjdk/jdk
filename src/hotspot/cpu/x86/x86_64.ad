@@ -4456,7 +4456,7 @@ instruct maxF_avx10_reg(regF dst, regF a, regF b) %{
   match(Set dst (MaxF a b));
   format %{ "maxF $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, 0x5);
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4492,7 +4492,7 @@ instruct maxD_avx10_reg(regD dst, regD a, regD b) %{
   match(Set dst (MaxD a b));
   format %{ "maxD $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, 0x5);
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4528,7 +4528,7 @@ instruct minF_avx10_reg(regF dst, regF a, regF b) %{
   match(Set dst (MinF a b));
   format %{ "maxF $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, 0x4);
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4564,7 +4564,7 @@ instruct minD_avx10_reg(regD dst, regD a, regD b) %{
   match(Set dst (MinD a b));
   format %{ "maxD $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, 0x4);
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}

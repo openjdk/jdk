@@ -1234,11 +1234,14 @@ void C2_MacroAssembler::vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, 
                                    XMMRegister src1, XMMRegister src2, int vlen_enc) {
   assert(opc == Op_MinV || opc == Op_MinReductionV ||
          opc == Op_MaxV || opc == Op_MaxReductionV, "sanity");
+
+  int imm8 = (opc == Op_MinV || opc == Op_MinReductionV) ? AVX10_MINMAX_MIN_COMPARE_SIGN
+                                                         : AVX10_MINMAX_MAX_COMPARE_SIGN;
   if (elem_bt == T_FLOAT) {
-    evminmaxps(dst, mask, src1, src2, true, opc == Op_MinV || opc == Op_MinReductionV ? 0x4 : 0x5, vlen_enc);
+    evminmaxps(dst, mask, src1, src2, true, imm8, vlen_enc);
   } else {
     assert(elem_bt == T_DOUBLE, "");
-    evminmaxpd(dst, mask, src1, src2, true, opc == Op_MinV || opc == Op_MinReductionV ? 0x4 : 0x5, vlen_enc);
+    evminmaxpd(dst, mask, src1, src2, true, imm8, vlen_enc);
   }
 }
 
