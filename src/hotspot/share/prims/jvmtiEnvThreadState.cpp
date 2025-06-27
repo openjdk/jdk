@@ -260,13 +260,13 @@ bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
   return get_frame_pops()->contains(fp);
 }
 
-class GetCurrentLocationClosure : public JvmtiUnitedHandshakeClosure {
+class GetCurrentLocationHandshakeClosure : public JvmtiUnitedHandshakeClosure {
  private:
    jmethodID _method_id;
    int _bci;
    bool _completed;
  public:
-  GetCurrentLocationClosure()
+  GetCurrentLocationHandshakeClosure()
     : JvmtiUnitedHandshakeClosure("GetCurrentLocation"),
       _method_id(nullptr),
       _bci(0),
@@ -354,7 +354,7 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
       Handle thread_h(current, thread_oop);
       ThreadsListHandle tlh(current);
 
-      GetCurrentLocationClosure op;
+      GetCurrentLocationHandshakeClosure op;
       JvmtiHandshake::execute(&op, &tlh, thread, thread_h);
 
       if (op.completed()) {

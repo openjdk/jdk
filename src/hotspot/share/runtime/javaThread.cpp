@@ -1124,7 +1124,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   }
 }
 
-void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
+void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aeh) {
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
@@ -1151,13 +1151,13 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   }
 }
 
-class InstallAsyncExceptionHandshake : public HandshakeClosure {
-  AsyncExceptionHandshake* _aeh;
+class InstallAsyncExceptionHandshakeClosure : public HandshakeClosure {
+  AsyncExceptionHandshakeClosure* _aeh;
 public:
-  InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
+  InstallAsyncExceptionHandshakeClosure(AsyncExceptionHandshakeClosure* aeh) :
     HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
-  ~InstallAsyncExceptionHandshake() {
-    // If InstallAsyncExceptionHandshake was never executed we need to clean up _aeh.
+  ~InstallAsyncExceptionHandshakeClosure() {
+    // If InstallAsyncExceptionHandshakeClosure was never executed we need to clean up _aeh.
     delete _aeh;
   }
   void do_thread(Thread* thr) {
@@ -1169,7 +1169,7 @@ public:
 
 void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   OopHandle e(Universe::vm_global(), java_throwable);
-  InstallAsyncExceptionHandshake iaeh(new AsyncExceptionHandshake(e));
+  InstallAsyncExceptionHandshakeClosure iaeh(new AsyncExceptionHandshakeClosure(e));
   Handshake::execute(&iaeh, target);
 }
 

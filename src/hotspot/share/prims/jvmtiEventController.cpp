@@ -198,16 +198,16 @@ JvmtiEnvEventEnable::~JvmtiEnvEventEnable() {
 
 ///////////////////////////////////////////////////////////////
 //
-// EnterInterpOnlyModeClosure
+// EnterInterpOnlyModeHandshakeClosure
 //
 
-class EnterInterpOnlyModeClosure : public HandshakeClosure {
+class EnterInterpOnlyModeHandshakeClosure : public HandshakeClosure {
  private:
   bool _completed;
   JvmtiThreadState* _state;
 
  public:
-  EnterInterpOnlyModeClosure(JvmtiThreadState* state)
+  EnterInterpOnlyModeHandshakeClosure(JvmtiThreadState* state)
     : HandshakeClosure("EnterInterpOnlyMode"),
       _completed(false),
       _state(state) { }
@@ -368,14 +368,14 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
 
   assert(state != nullptr, "sanity check");
   if (state->is_pending_interp_only_mode()) {
-    return;  // An EnterInterpOnlyModeClosure handshake is already pending for execution.
+    return;  // An EnterInterpOnlyModeHandshakeClosure handshake is already pending for execution.
   }
-  // This flag will be cleared in EnterInterpOnlyModeClosure handshake.
+  // This flag will be cleared in EnterInterpOnlyModeHandshakeClosure handshake.
   state->set_pending_interp_only_mode(true);
   if (target == nullptr) { // an unmounted virtual thread
-    return;  // EnterInterpOnlyModeClosure will be executed right after mount.
+    return;  // EnterInterpOnlyModeHandshakeClosure will be executed right after mount.
   }
-  EnterInterpOnlyModeClosure hs(state);
+  EnterInterpOnlyModeHandshakeClosure hs(state);
   if (target->is_handshake_safe_for(current)) {
     hs.do_thread(target);
   } else {
@@ -1118,7 +1118,7 @@ JvmtiEventController::set_extension_event_callback(JvmtiEnvBase *env,
 void
 JvmtiEventController::enter_interp_only_mode(JvmtiThreadState* state) {
   Thread *current = Thread::current();
-  EnterInterpOnlyModeClosure hs(state);
+  EnterInterpOnlyModeHandshakeClosure hs(state);
   hs.do_thread(current);
 }
 

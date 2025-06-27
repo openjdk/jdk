@@ -1899,7 +1899,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     return nullptr;
   }
 
-  class GetStackTraceClosure : public HandshakeClosure {
+  class GetStackTraceHandshakeClosure : public HandshakeClosure {
   public:
     const Handle _java_thread;
     int _depth;
@@ -1907,11 +1907,11 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
-    GetStackTraceClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+    GetStackTraceHandshakeClosure(Handle java_thread) :
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
         _methods(nullptr), _bcis(nullptr) {
     }
-    ~GetStackTraceClosure() {
+    ~GetStackTraceHandshakeClosure() {
       delete _methods;
       delete _bcis;
     }
@@ -1977,7 +1977,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   // Handshake with target
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  GetStackTraceClosure gstc(Handle(THREAD, java_thread));
+  GetStackTraceHandshakeClosure gstc(Handle(THREAD, java_thread));
   do {
    Handshake::execute(&gstc, &tlh, thread);
   } while (gstc.read_reset_retry());
