@@ -299,7 +299,7 @@ void VMThread::evaluate_operation(VM_Operation* op) {
 
 class ALotOfHandshakeClosure : public HandshakeClosure {
  public:
-  ALotOfHandshakeClosure() : HandshakeClosure("ALotOf") {}
+  ALotOfHandshakeClosure() : HandshakeClosure("ALotOfHandshakeClosure") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
     JavaThread::cast(thread)->verify_states_for_handshake();
