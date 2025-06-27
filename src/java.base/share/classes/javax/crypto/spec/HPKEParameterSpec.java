@@ -107,10 +107,11 @@ import java.util.Objects;
  * </ul>
  * After initialization, both the sender and receiver can encrypt or decrypt
  * multiple plaintexts in sequence using repeated calls to {@code doFinal},
- * optionally preceded by one or more {@code update}. Each {@code doFinal}
+ * optionally preceded by one or more {@code update} calls. Each {@code doFinal}
  * call performs a complete HPKE encryption or decryption operation using a
  * distinct nonce derived from an internal sequence counter, as specified by
- * the HPKE protocol.
+ * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5.2">Section 5.2</a>
+ * of RFC 9180.
  * <p>
  * As with any AEAD cipher, each {@code doFinal} call on the server side must
  * correspond to exactly one complete ciphertext, and the number and order of
