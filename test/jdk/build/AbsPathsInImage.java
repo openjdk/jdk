@@ -42,7 +42,7 @@ import java.util.zip.ZipInputStream;
  * @requires !vm.debug
  * @comment ASAN keeps the 'unwanted' paths in the binaries because of its build options
  * @requires !vm.asan
- * @run main/othervm -Xmx900m AbsPathsInImage
+ * @run main AbsPathsInImage
  */
 public class AbsPathsInImage {
 
