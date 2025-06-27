@@ -65,7 +65,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
-#include "jvm.h"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -89,7 +88,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -842,8 +840,8 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       } else {
         tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
       }
-      ThreadToNativeFromVM ttnfv(THREAD);
-      JVM_Halt(0);
+      before_exit(THREAD);
+      vm_exit(0);
     }
   }
 }
