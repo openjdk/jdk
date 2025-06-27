@@ -171,7 +171,7 @@ public class Compiler {
         @Override
         public final void run() {
             // Make sure method is not compiled at any level before starting
-            // progressive compilations. No deopt in-between tiers deopt is needed,
+            // progressive compilations. No deopt in-between tiers is needed,
             // as long as we increase the compilation levels one by one.
             WHITE_BOX.deoptimizeMethod(method);
 
