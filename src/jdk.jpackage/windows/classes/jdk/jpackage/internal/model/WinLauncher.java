@@ -24,9 +24,8 @@
  */
 package jdk.jpackage.internal.model;
 
-import static java.util.stream.Collectors.toMap;
-
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import jdk.jpackage.internal.resources.ResourceLocator;
@@ -47,10 +46,20 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
 
     @Override
     default Map<String, String> extraAppImageFileData() {
-        return shortcuts().stream().collect(toMap(WinShortcut::name, v -> Boolean.toString(true)));
+        Map<String, String> map = new HashMap<>();
+        desktopShortcut().ifPresent(shortcut -> {
+            shortcut.store(SHORTCUT_DESKTOP_ID, map::put);
+        });
+        startMenuShortcut().ifPresent(shortcut -> {
+            shortcut.store(SHORTCUT_START_MENU_ID, map::put);
+        });
+        return map;
     }
 
     public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
         return CompositeProxy.create(WinLauncher.class, launcher, mixin);
     }
+
+    public static final String SHORTCUT_START_MENU_ID = "win-menu";
+    public static final String SHORTCUT_DESKTOP_ID = "win-shortcut";
 }
