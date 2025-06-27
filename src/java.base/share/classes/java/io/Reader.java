@@ -490,8 +490,8 @@ public abstract class Reader implements Readable, Closeable {
                         isCR = false;
                     }
                     skipLF = isCR;
-                } else { // no line terminator
-                    int len = term - pos;
+                } else { // no line terminator before reaching end of buffer
+                    int len = limit - pos;
                     int fragPos;
                     if (hasFrag) {
                         fragPos = 0;
