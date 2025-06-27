@@ -1185,7 +1185,7 @@ void LIRGenerator::do_Return(Return* x) {
 
 // Example: ref.get()
 // Combination of LoadField and g1 pre-write barrier
-void LIRGenerator::do_Reference_get(Intrinsic* x) {
+void LIRGenerator::do_Reference_get0(Intrinsic* x) {
 
   const int referent_offset = java_lang_ref_Reference::referent_offset();
 
@@ -2914,8 +2914,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_onSpinWait:
     __ on_spin_wait();
     break;
-  case vmIntrinsics::_Reference_get:
-    do_Reference_get(x);
+  case vmIntrinsics::_Reference_get0:
+    do_Reference_get0(x);
     break;
 
   case vmIntrinsics::_updateCRC32:

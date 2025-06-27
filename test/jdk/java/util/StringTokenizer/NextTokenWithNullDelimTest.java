@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,42 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.runtime;
+/*
+ * @test
+ * @bug 8360045
+ * @summary Verify StringTokenizer.nextToken(null) does not alter the
+ *      existing delimiter
+ * @run junit NextTokenWithNullDelimTest
+ */
 
-import sun.jvm.hotspot.types.TypeDataBase;
+import java.util.StringTokenizer;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** Encapsulates the LockingMode enum in globalDefinitions.hpp in
-    the VM. */
-
-public class LockingMode {
-  private static int monitor;
-  private static int legacy;
-  private static int lightweight;
-
-  static {
-    VM.registerVMInitializedObserver(
-        (o, d) -> initialize(VM.getVM().getTypeDataBase()));
-  }
-
-  private static synchronized void initialize(TypeDataBase db) {
-    monitor     = db.lookupIntConstant("LM_MONITOR").intValue();
-    legacy      = db.lookupIntConstant("LM_LEGACY").intValue();
-    lightweight = db.lookupIntConstant("LM_LIGHTWEIGHT").intValue();
-  }
-
-  public static int getMonitor() {
-    return monitor;
-  }
-
-  public static int getLegacy() {
-    return legacy;
-  }
-
-  public static int getLightweight() {
-    return lightweight;
-  }
+public class NextTokenWithNullDelimTest {
+    @Test
+    void testNextTokenWithNullDelim() {
+        StringTokenizer st = new StringTokenizer("test");
+        assertThrows(NullPointerException.class, () -> st.nextToken(null));
+        assertDoesNotThrow(st::hasMoreTokens);
+    }
 }

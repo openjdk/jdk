@@ -1094,9 +1094,13 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, CollectIndexSetStatistics, false,                           \
           "Collect information about IndexSets")                            \
                                                                             \
+  /* This value is later shifted left by up to LogBytesPerLong bits       */\
+  /* (to convert from element count to size in bytes), so we must ensure  */\
+  /* it does not overflow during the shift.                               */\
   develop(int, FastAllocateSizeLimit, 128*K,                                \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
+          range(0, (1 << (BitsPerInt - LogBytesPerLong - 1)) - 1)           \
                                                                             \
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \
@@ -1952,13 +1956,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
-          "(Deprecated) Select locking mode: "                              \
-          "0: (Deprecated) monitors only (LM_MONITOR), "                    \
-          "1: (Deprecated) monitors & legacy stack-locking (LM_LEGACY), "   \
-          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
-          range(0, 2)                                                       \
                                                                             \
   product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
           "With Lightweight Locking mode, use a table to record inflated "  \

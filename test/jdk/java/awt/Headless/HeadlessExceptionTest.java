@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,29 @@
  * questions.
  */
 
-import java.lang.management.ManagementFactory;
-import com.sun.management.HotSpotDiagnosticMXBean;
+import java.awt.HeadlessException;
 
-class LockingMode {
-    private LockingMode() { }
+/*
+ * @test 8358526
+ * @summary Verify behaviour of no-args HeadlessException and getMessage
+ * @run main/othervm -Djava.awt.headless=true HeadlessExceptionTest
+ * @run main/othervm HeadlessExceptionTest
+ */
 
-    /**
-     * Returns true if using legacy locking mode.
-     */
-    static boolean isLegacy() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                .getVMOption("LockingMode")
-                .getValue()
-                .equals("1");
+public class HeadlessExceptionTest {
+
+    public static void main (String[] args) {
+        String nullmsg = new HeadlessException().getMessage();
+        String emptymsg = new HeadlessException("").getMessage();
+        System.out.println("nullmsg=" + nullmsg);
+        System.out.println("emptymsg=" + emptymsg);
+        if (nullmsg != null) {
+            if ("".equals(nullmsg)) {
+                throw new RuntimeException("empty message instead of null");
+            }
+            if (!nullmsg.equals(emptymsg)) {
+                throw new RuntimeException("non-null messages differ");
+            }
+        }
     }
 }
