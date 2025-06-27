@@ -52,7 +52,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.doclint.DocLint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -67,6 +66,7 @@ import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
@@ -503,12 +503,9 @@ public class Arguments {
                     }
                 } else {
                     // single-module or legacy mode
-                    boolean lintPaths = !options.isExplicitlyDisabled(Option.XLINT, LintCategory.PATH);
-                    if (lintPaths) {
-                        Path outDirParent = outDir.getParent();
-                        if (outDirParent != null && Files.exists(outDirParent.resolve("module-info.class"))) {
-                            log.warning(LintWarnings.OutdirIsInExplodedModule(outDir));
-                        }
+                    Path outDirParent = outDir.getParent();
+                    if (outDirParent != null && Files.exists(outDirParent.resolve("module-info.class"))) {
+                        log.warning(LintWarnings.OutdirIsInExplodedModule(outDir), DiagnosticFlag.DEFAULT_ENABLED);
                     }
                 }
             }
@@ -576,15 +573,16 @@ public class Arguments {
             reportDiag(Errors.SourcepathModulesourcepathConflict);
         }
 
-        boolean lintOptions = !options.isExplicitlyDisabled(Option.XLINT, LintCategory.OPTIONS);
-        if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
+        if (source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
             if (fm instanceof BaseFileManager baseFileManager) {
                 if (source.compareTo(Source.JDK8) <= 0) {
-                    if (baseFileManager.isDefaultBootClassPath())
-                        log.warning(LintWarnings.SourceNoBootclasspath(source.name, releaseNote(source, targetString)));
-                } else {
-                    if (baseFileManager.isDefaultSystemModulesPath())
-                        log.warning(LintWarnings.SourceNoSystemModulesPath(source.name, releaseNote(source, targetString)));
+                    if (baseFileManager.isDefaultBootClassPath()) {
+                        log.warning(LintWarnings.SourceNoBootclasspath(source.name, releaseNote(source, targetString)),
+                          DiagnosticFlag.DEFAULT_ENABLED);
+                    }
+                } else if (baseFileManager.isDefaultSystemModulesPath()) {
+                    log.warning(LintWarnings.SourceNoSystemModulesPath(source.name, releaseNote(source, targetString)),
+                      DiagnosticFlag.DEFAULT_ENABLED);
                 }
             }
         }
@@ -593,15 +591,15 @@ public class Arguments {
 
         if (source.compareTo(Source.MIN) < 0) {
             log.error(Errors.OptionRemovedSource(source.name, Source.MIN.name));
-        } else if (source == Source.MIN && lintOptions) {
-            log.warning(LintWarnings.OptionObsoleteSource(source.name));
+        } else if (source == Source.MIN) {
+            log.warning(LintWarnings.OptionObsoleteSource(source.name), DiagnosticFlag.DEFAULT_ENABLED);
             obsoleteOptionFound = true;
         }
 
         if (target.compareTo(Target.MIN) < 0) {
             log.error(Errors.OptionRemovedTarget(target, Target.MIN));
-        } else if (target == Target.MIN && lintOptions) {
-            log.warning(LintWarnings.OptionObsoleteTarget(target));
+        } else if (target == Target.MIN) {
+            log.warning(LintWarnings.OptionObsoleteTarget(target), DiagnosticFlag.DEFAULT_ENABLED);
             obsoleteOptionFound = true;
         }
 
@@ -634,8 +632,8 @@ public class Arguments {
             log.error(Errors.ProcessorpathNoProcessormodulepath);
         }
 
-        if (obsoleteOptionFound && lintOptions) {
-            log.warning(LintWarnings.OptionObsoleteSuppression);
+        if (obsoleteOptionFound) {
+            log.warning(LintWarnings.OptionObsoleteSuppression, DiagnosticFlag.DEFAULT_ENABLED);
         }
 
         SourceVersion sv = Source.toSourceVersion(source);
@@ -645,8 +643,8 @@ public class Arguments {
         validateLimitModules(sv);
         validateDefaultModuleForCreatedFiles(sv);
 
-        if (lintOptions && options.isSet(Option.ADD_OPENS)) {
-            log.warning(LintWarnings.AddopensIgnored);
+        if (options.isSet(Option.ADD_OPENS)) {
+            log.warning(LintWarnings.AddopensIgnored, DiagnosticFlag.DEFAULT_ENABLED);
         }
 
         return !errors && (log.nerrors == 0);
