@@ -67,7 +67,6 @@ public class TestContainerMemory {
         }
     }
 
-
     private static void testWithMemoryLimit() throws Exception {
         String memLimit = "100m"; // Any limit will do
         Common.logNewTestCase("testing container memory with limit: " + memLimit);
@@ -80,7 +79,7 @@ public class TestContainerMemory {
         // We are interested in the default option when run in a container, so
         // don't append test java options
         opts.appendTestJavaOptions = false;
-	Common.run(opts)
+        Common.run(opts)
             .shouldContain("hasMemoryLimit=true");
     }
 
@@ -94,7 +93,7 @@ public class TestContainerMemory {
         // We are interested in the default option when run in a container, so
         // don't append test java options
         opts.appendTestJavaOptions = false;
-	Common.run(opts)
+        Common.run(opts)
             .shouldContain("hasMemoryLimit=false");
     }
 }
