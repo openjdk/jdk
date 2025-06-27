@@ -46,9 +46,10 @@
 //
 /******************************************************************************/
 
+/* Represents 0x7FFFFFFFFFFFFFFF double precision in lower 64 bits*/
 ATTRIBUTE_ALIGNED(16) static const juint _ABS_MASK[] =
 {
-    4294967295, 2147483647
+    4294967295, 2147483647, 0, 0
 };
 
 ATTRIBUTE_ALIGNED(4) static const juint _SIG_MASK[] =
@@ -214,7 +215,7 @@ address StubGenerator::generate_libmCbrt() {
 
   __ bind(B1_1);
   __ ucomisd(xmm0, ExternalAddress(ZERON), r11 /*rscratch*/);
-  __ jcc(Assembler::zero, L_2TAG_PACKET_1_0_1); // Branch only if x is +/- zero or NaN
+  __ jcc(Assembler::equal, L_2TAG_PACKET_1_0_1); // Branch only if x is +/- zero or NaN
   __ movq(xmm1, xmm0);
   __ andpd(xmm1, ExternalAddress(ABS_MASK), r11 /*rscratch*/);
   __ ucomisd(xmm1, ExternalAddress(INF), r11 /*rscratch*/);
