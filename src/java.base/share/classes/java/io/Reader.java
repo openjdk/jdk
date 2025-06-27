@@ -450,13 +450,13 @@ public abstract class Reader implements Readable, Closeable {
      */
     public List<String> readAllLines() throws IOException {
         List<String> lines = new ArrayList<>();
+        char[] cb = new char[TRANSFER_BUFFER_SIZE];
 
         int writePos = 0;
-        int fragPos = -1;
+        boolean hasFrag = false;
         int fragLen = 0;
-
-        char[] cb = new char[TRANSFER_BUFFER_SIZE];
         boolean skipLF = false;
+
         int n;
         while ((n = read(cb, writePos, cb.length - writePos)) != -1) {
             int pos = writePos;
@@ -475,9 +475,9 @@ public abstract class Reader implements Readable, Closeable {
                     boolean isCR = (cb[term] == '\r');
                     if (isCR || !(skipLF && term == pos)) {
                         // line terminator is a CR or an LF not just after a CR
-                        if (fragPos != -1) {
-                            lines.add(new String(cb, fragPos, term - fragPos));
-                            fragPos = -1;
+                        if (hasFrag) {
+                            lines.add(new String(cb, 0, term));
+                            hasFrag = false;
                         } else {
                             lines.add(new String(cb, pos, term - pos));
                         }
@@ -485,18 +485,20 @@ public abstract class Reader implements Readable, Closeable {
                     pos = term + 1;
                     if (pos == limit)
                         writePos = 0;
-                    else if (isCR && cb[pos] == '\n') {
+                    else if (isCR && cb[pos] == '\n') { // pos < limit
                         pos++;
                         isCR = false;
                     }
                     skipLF = isCR;
                 } else { // no line terminator
                     int len = term - pos;
-                    if (fragPos == -1) {
+                    int fragPos;
+                    if (hasFrag) {
+                        fragPos = 0;
+                        fragLen += len;
+                    } else {
                         fragPos = pos;
                         fragLen = len;
-                    } else {
-                        fragLen += len;
                     }
                     if (fragLen >= cb.length/2) {
                         // allocate larger buffer and copy chars to beginning
@@ -508,7 +510,7 @@ public abstract class Reader implements Readable, Closeable {
                         System.arraycopy(cb, fragPos, cb, 0, fragLen);
                     }
                     writePos = fragLen;
-                    fragPos = 0;
+                    hasFrag = true;
                     pos = limit;
                     skipLF = false;
                 }
@@ -516,8 +518,8 @@ public abstract class Reader implements Readable, Closeable {
         }
 
         // add a string if EOS terminates the last line
-        if (fragPos != -1)
-            lines.add(new String(cb, fragPos, fragLen));
+        if (hasFrag)
+            lines.add(new String(cb, 0, fragLen));
 
         return Collections.unmodifiableList(lines);
     }
