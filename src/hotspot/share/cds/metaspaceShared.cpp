@@ -840,8 +840,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       } else {
         tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
       }
-      before_exit(THREAD);
-      vm_exit(0);
+      vm_direct_exit(0);
     }
   }
 }
