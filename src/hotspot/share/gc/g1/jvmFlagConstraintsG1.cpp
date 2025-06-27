@@ -212,9 +212,9 @@ JVMFlag::Error G1UpdateBufferSizeConstraintFunc(size_t value, bool verbose) {
                                        verbose);
 }
 
-JVMFlag::Error gc_cpu_usage_threshold_healper(JVMFlagsEnum flagid,
-                                              uint value,
-                                              bool verbose) {
+JVMFlag::Error gc_cpu_usage_threshold_helper(JVMFlagsEnum flagid,
+                                             uint value,
+                                             bool verbose) {
   if (UseG1GC) {
     JVMFlag* flag = JVMFlag::flag_from_enum(flagid);
     const uint max_count = G1HeapSizingPolicy::long_term_count_limit();
@@ -230,13 +230,13 @@ JVMFlag::Error gc_cpu_usage_threshold_healper(JVMFlagsEnum flagid,
 }
 
 JVMFlag::Error G1CPUUsageExpandConstraintFunc(uint value, bool verbose) {
-  return gc_cpu_usage_threshold_healper(FLAG_MEMBER_ENUM(G1CPUUsageExpandThreshold),
-                                        value,
-                                        verbose);
+  return gc_cpu_usage_threshold_helper(FLAG_MEMBER_ENUM(G1CPUUsageExpandThreshold),
+                                       value,
+                                       verbose);
 }
 
 JVMFlag::Error G1CPUUsageShrinkConstraintFunc(uint value, bool verbose) {
-  return gc_cpu_usage_threshold_healper(FLAG_MEMBER_ENUM(G1CPUUsageShrinkThreshold),
-                                        value,
-                                        verbose);
+  return gc_cpu_usage_threshold_helper(FLAG_MEMBER_ENUM(G1CPUUsageShrinkThreshold),
+                                       value,
+                                       verbose);
 }

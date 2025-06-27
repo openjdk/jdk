@@ -34,34 +34,34 @@ class G1CollectedHeap;
 //
 // Contains heuristics to resize the heap, i.e. expand or shrink, during operation.
 //
-// For young collections, this heuristics is based on GC CPU usage, i.e. trying
-// to change the heap so that the GC CPU usage stays approximately close to the
-// target GC CPU usage set by the user.
+// For young collections, this heuristics is based on GC CPU usage, i.e. trying to
+// change the heap so that the GC CPU usage stays approximately close to the target
+// GC CPU usage set by the user.
 //
-// The heuristics tracks both short and long term GC behavior to effect heap size
-// change.
+// The heuristics track both short and long term GC behavior to effect heap resizing.
 //
-// Short term tracking is based on the short-term GC CPU usage i.e we count
-// events for which short-term GC CPU usage is outside the range:
+// Short term tracking is based on the short-term GC CPU usage i.e we count events
+// for which short-term GC CPU usage is outside the range:
 // gc_cpu_usage_target × [1 - d, 1 + d], where d = G1CPUUsageDeviationPercent / 100
 // If below that range, we decrement that counter, if above, we increment it.
-// The intent of this mechanism is to filter short term events because heap sizing has
-// some overhead.
 //
 // If that counter reaches the G1CPUUsageExpandThreshold we consider expansion,
 // if that counter reaches -G1CPUUsageShrinkThreshold we consider shrinking the heap.
 //
-// While doing so, we accumulate the relative difference to the gc_cpu_usage_target
+// While doing so, we accumulate the relative difference to the target GC CPU usage
 // to guide the expansion/shrinking amount.
 //
-// Furthermore, if there is no short-term based resizing event for a "long" time, we
-// decay that counter, i.e. drop it towards zero again to avoid that previous
+// Furthermore, if there is no short-term based resizing event for a "long" time,
+// we decay that counter, i.e. drop it towards zero again to avoid that previous
 // intermediate length short term behavior followed by a quiet time and a single
 // short term event causes unnecessary resizes.
 //
 // Long term behavior is solely managed by regularly comparing actual long term
-// GC CPU usage with the boundaries of above range in regular long term intervals.
-// If current long term GC CPU usage is outside, expand or shrink respectively.
+// GC CPU usage with the boundaries of acceptable deviation range. If the actual
+// long term GC CPU usage is outside this range, expand or shrink accordingly.
+//
+// The mechanism is meant to filter out short term events because heap resizing
+// has some overhead.
 //
 // For full collections, we base resize decisions only on Min/MaxHeapFreeRatio.
 //

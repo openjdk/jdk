@@ -101,7 +101,7 @@ static double sigmoid_function(double value) {
   return 1.0 / (1.0 + exp(-steepness * (value - inflection_point)));
 }
 
-// Computes a smooth scaling factor based on the relative deviation of observed gc_cpu_usage
+// Computes a smooth scaling factor based on the relative deviation of actual gc_cpu_usage
 // from the gc_cpu_usage_target, using a sigmoid function to transition between
 // the specified minimum and maximum scaling factors.
 //
@@ -110,8 +110,7 @@ static double sigmoid_function(double value) {
 // output between 0 and 1, which is then scaled to the range [min_scale_factor, max_scale_factor].
 //
 // The sigmoid's inflection point is set at cpu_usage_delta = 1.0 (a 100% deviation), where the scaling
-// response increases most rapidly. This ensures appropriate heap resizing when deviations become
-// significant, while avoiding overreacting to minor deviations.
+// response increases most rapidly.
 //
 // The steepness parameter controls how sharply the scale factor changes near the inflection point.
 //  * Low steepness (1-3): gradual scaling over a wide range of deviations (more conservative).
@@ -147,8 +146,7 @@ size_t G1HeapSizingPolicy::young_collection_expand_amount(double cpu_usage_delta
   size_t reserved_bytes = _g1h->max_capacity();
   size_t committed_bytes = _g1h->capacity();
   size_t uncommitted_bytes = reserved_bytes - committed_bytes;
-  size_t expand_bytes_via_pct =
-    uncommitted_bytes * G1ExpandByPercentOfAvailable / 100;
+  size_t expand_bytes_via_pct = uncommitted_bytes * G1ExpandByPercentOfAvailable / 100;
   size_t min_expand_bytes = MIN2(G1HeapRegion::GrainBytes, uncommitted_bytes);
 
   // Take the current size or G1ExpandByPercentOfAvailable % of
@@ -187,8 +185,6 @@ size_t G1HeapSizingPolicy::young_collection_shrink_amount(double cpu_usage_delta
   // going to use during this mutator phase.
   uint target_regions_to_shrink = _g1h->num_free_regions();
 
-  uint reserve_regions = ceil(_g1h->num_committed_regions() * G1ReservePercent / 100.0);
-
   uint needed_for_allocation = _g1h->eden_target_length();
   if (_g1h->is_humongous(allocation_word_size)) {
     needed_for_allocation += (uint) _g1h->humongous_obj_size_in_regions(allocation_word_size);
@@ -204,13 +200,11 @@ size_t G1HeapSizingPolicy::young_collection_shrink_amount(double cpu_usage_delta
 
   log_debug(gc, ergo, heap)("Shrink log: scale factor %1.2f%% "
                             "total free regions %u "
-                            "reserve regions %u "
                             "needed for alloc %u "
                             "base targeted for shrinking %u "
                             "resize_bytes %zd ( %zu regions)",
                             scale_factor * 100.0,
                             _g1h->num_free_regions(),
-                            reserve_regions,
                             needed_for_allocation,
                             target_regions_to_shrink,
                             resize_bytes,
@@ -258,14 +252,13 @@ size_t G1HeapSizingPolicy::young_collection_resize_amount(bool& expand, size_t a
   log_trace(gc, ergo, heap)("Heap resize triggers: long term count: %u "
                             "long term count limit: %u "
                             "short term delta: %1.2f "
+                            "recent recorded short term deltas: %u"
                             "GC CPU usage deviation counter: %d",
                             _long_term_count,
                             long_term_count_limit(),
                             short_term_delta,
+                            _recent_cpu_usage_deltas.num(),
                             _gc_cpu_usage_deviation_counter);
-
-  log_debug(gc, ergo, heap)("Heap triggers: pauses-since-start: %u num-prev-pauses-for-heuristics: %u GC CPU usage deviation counter: %d",
-                            _recent_cpu_usage_deltas.num(), long_term_count_limit(), _gc_cpu_usage_deviation_counter);
 
   // Check if there is a short- or long-term need for resizing, expansion first.
   //
