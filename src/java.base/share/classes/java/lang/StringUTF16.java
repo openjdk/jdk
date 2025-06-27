@@ -1487,7 +1487,7 @@ final class StringUTF16 {
                 Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) off << 1),
                 val,
                 Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) index << 1),
-                ((long) (end - off)) << 1);
+                (long) (end - off) << 1);
     }
 
     public static void putCharsSB(byte[] val, int index, CharSequence s, int off, int end) {
