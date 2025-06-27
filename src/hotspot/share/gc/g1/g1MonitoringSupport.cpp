@@ -62,7 +62,7 @@ public:
 
   void update_all() {
     size_t committed = _monitoring_support->young_gen_committed();
-    GenerationCounters::update_all(committed);
+    GenerationCounters::update_capacity(committed);
   }
 };
 
@@ -83,7 +83,7 @@ public:
 
   void update_all() {
     size_t committed = _monitoring_support->old_gen_committed();
-    GenerationCounters::update_all(committed);
+    GenerationCounters::update_capacity(committed);
   }
 };
 
