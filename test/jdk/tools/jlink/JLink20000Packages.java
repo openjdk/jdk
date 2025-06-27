@@ -52,11 +52,7 @@ import static java.lang.constant.ConstantDescs.CD_void;
  * @bug 8321413
  * @library ../lib /test/lib
  * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jlink.plugin
- *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
- *          jdk.compiler
  * @build tests.*
  * @run main/othervm -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
  */
