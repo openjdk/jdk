@@ -1218,7 +1218,8 @@ public class Properties extends Hashtable<Object,Object> {
      * this method writes only the first 37 characters of that value
      * followed by 3 dot characters.
      * <p>
-     * An alternative for listing the {@code Properties} to a {@code PrintStream} is:
+     * An alternative for listing the {@code Properties} to a {@code PrintStream}
+     * without truncation is:
      * {@snippet lang=java :
      *      Properties p = ...
      *      PrintStream out = ...
@@ -1226,7 +1227,7 @@ public class Properties extends Hashtable<Object,Object> {
      *      p.forEach((k, v) -> out.println(k + "=" + v));
      * }
      *
-     * @param   out   a PrintStream
+     * @param   out   the output PrintStream
      * @throws  ClassCastException if any key in this property list
      *          is not a string.
      */
@@ -1252,7 +1253,8 @@ public class Properties extends Hashtable<Object,Object> {
      * this method writes only the first 37 characters of that value
      * followed by 3 dot characters.
      * <p>
-     * An alternative for listing the {@code Properties} to a {@code PrintWriter} is:
+     * An alternative for listing the {@code Properties} to a {@code PrintWriter}
+     * without truncation is:
      * {@snippet lang=java :
      *      Properties p = ...
      *      PrintWriter out = ...
@@ -1260,7 +1262,7 @@ public class Properties extends Hashtable<Object,Object> {
      *      p.forEach((k, v) -> out.println(k + "=" + v));
      * }
      *
-     * @param   out   a PrintWriter
+     * @param   out   the output PrintWriter
      * @throws  ClassCastException if any key in this property list
      *          is not a string.
      * @since   1.1
