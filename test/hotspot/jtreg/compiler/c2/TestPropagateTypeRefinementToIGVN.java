@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 8359602
- * @summary TODO
- *          TODO
+ * @summary The control input of a ModI node should be discarded if it is
+ *          possible to prove that the divisor can never be 0.
+ *          VerifyIterativeGVN checks that this optimization was applied
  * @requires vm.debug == true
  * @run main/othervm -XX:CompileCommand=quiet -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:VerifyIterativeGVN=1110
@@ -44,6 +45,8 @@ public class TestPropagateTypeRefinementToIGVN {
         for (int i = 1;i < 100; i++) {
             for (int j = 4; j > i; j--) {
                 i22 = i24;
+
+                // divisor is either -1191 or -13957
                 iArr1[0] = 5 % i22;
             }
             for (i28 = i; i28 < 2; ++i28) {
