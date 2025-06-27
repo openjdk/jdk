@@ -57,7 +57,7 @@ public class ScopedValuesData {
     public static void run(Runnable action) {
         try {
             tl1.set(42); tl2.set(2); tl3.set(3); tl4.set(4); tl5.set(5); tl6.set(6);
-            tl1.get();  // Create the ScopedValue cache as a side effect
+            sl1.get();  // Create the ScopedValue cache as a side effect
             tl_atomicInt.set(new AtomicInteger());
             VALUES.where(sl_atomicInt, new AtomicInteger())
                   .where(sl_atomicRef, new AtomicReference<>())
