@@ -105,6 +105,20 @@ import java.util.Objects;
  * <li> An attempt to use {@code authKey(key)} is made but the selected KEM
  *      does not support authentication.
  * </ul>
+ * After initialization, both the sender and receiver can encrypt or decrypt
+ * multiple plaintexts in sequence using repeated calls to {@code doFinal},
+ * optionally preceded by one or more {@code update}. Each {@code doFinal}
+ * call performs a complete HPKE encryption or decryption operation using a
+ * distinct nonce derived from an internal sequence counter, as specified by
+ * the HPKE protocol.
+ * <p>
+ * As with any AEAD cipher, each {@code doFinal} call on the server side must
+ * correspond to exactly one complete ciphertext, and the number and order of
+ * calls must match on both sides. Unlike raw AEAD usage, however, an HPKE
+ * cipher manages nonce generation internally, and there is no need for the
+ * application to reinitialize the cipher with a new IV for each message.
+ * This simplifies usage while ensuring nonce uniqueness and preserving AEAD
+ * security guarantees.
  * <p>
  * Example:
  * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
