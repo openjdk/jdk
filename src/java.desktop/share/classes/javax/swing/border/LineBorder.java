@@ -163,7 +163,7 @@ public class LineBorder extends AbstractBorder
             Shape outer;
             Shape inner;
 
-            int offs = clipRound(this.thickness*scaleFactor);
+            int offs = clipRound(this.thickness * scaleFactor);
 
             int size = offs + offs;
             if (this.roundedCorners) {
