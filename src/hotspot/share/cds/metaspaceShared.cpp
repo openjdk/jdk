@@ -1288,6 +1288,10 @@ void MetaspaceShared::report_loading_error(const char* format, ...) {
   LogStream ls_cds(level, LogTagSetMapping<LOG_TAGS(cds)>::tagset());
 
   LogStream& ls = CDSConfig::new_aot_flags_used() ? ls_aot : ls_cds;
+  if (!ls.is_enabled()) {
+    return;
+  }
+
   va_list ap;
   va_start(ap, format);
 
@@ -2014,10 +2018,7 @@ void MetaspaceShared::initialize_shared_spaces() {
 
     TrainingData::print_archived_training_data_on(tty);
 
-    if (AOTCodeCache::is_on_for_use()) {
-      tty->print_cr("\n\nAOT Code");
-      AOTCodeCache::print_on(tty);
-    }
+    AOTCodeCache::print_on(tty);
 
     // collect shared symbols and strings
     CountSharedSymbols cl;
