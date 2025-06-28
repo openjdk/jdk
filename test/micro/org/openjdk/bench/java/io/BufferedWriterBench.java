@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.concurrent.TimeUnit;
@@ -42,9 +43,13 @@ public class BufferedWriterBench {
     @Param({"ascii", "utf8_2_bytes", "utf8_3_bytes", "emoji"})
     public String charType;
 
+    @Param({"UTF8"})
+    public String charset;
+
     ByteArrayOutputStream bytesOutput;
     BufferedWriter dataOutput;
     String[] strings;
+    char[][] charArrays;
 
     @Setup(Level.Trial)
     public void setup() throws Exception {
@@ -59,18 +64,31 @@ public class BufferedWriterBench {
         );
         String s = new String(bytes, 0, bytes.length, StandardCharsets.UTF_8);
         strings = new String[128];
+        charArrays = new char[strings.length][];
         for (int i = 0; i < strings.length; i++) {
             strings[i] = "A".repeat(i).concat(s.repeat(i));
+            charArrays[i] = strings[i].toCharArray();
         }
 
         bytesOutput = new ByteArrayOutputStream(1024 * 64);
-        dataOutput = new BufferedWriter(new OutputStreamWriter(bytesOutput, StandardCharsets.UTF_8));
+        dataOutput = new BufferedWriter(
+                new OutputStreamWriter(bytesOutput, Charset.forName(charset)));
     }
 
     @Benchmark
     public void writeString(Blackhole bh) throws Exception {
         bytesOutput.reset();
         for (var s : strings) {
+            dataOutput.write(s);
+        }
+        dataOutput.flush();
+        bh.consume(bytesOutput.size());
+    }
+
+    @Benchmark
+    public void writeCharArray(Blackhole bh) throws Exception {
+        bytesOutput.reset();
+        for (var s : charArrays) {
             dataOutput.write(s);
         }
         dataOutput.flush();
