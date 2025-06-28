@@ -185,6 +185,12 @@ void JvmtiBreakpoint::print_on(outputStream* out) const {
 //
 
 void VM_ChangeBreakpoints::doit() {
+ if (_bp->method() != Method::resolve_jmethod_id(_preservred_method)) {
+   // the jmethod_id's method was updated if class redefintion happened for this class
+   // after JvmtBreakpoint was created but before JVM_ChangeBreakpoints started
+   // all class breakpoints are cleared during redefinition so don't set/clear this breakpoint
+   return;
+  }
   switch (_operation) {
   case SET_BREAKPOINT:
     _breakpoints->set_at_safepoint(*_bp);
