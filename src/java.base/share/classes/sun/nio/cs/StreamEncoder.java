@@ -180,13 +180,13 @@ public sealed class StreamEncoder extends Writer permits StreamEncoder.UTF8Impl 
 
     private final Charset cs;
     private final CharsetEncoder encoder;
-    private ByteBuffer bb;
-    private final int maxBufferCapacity;
+    protected ByteBuffer bb;
+    protected final int maxBufferCapacity;
 
-    private final OutputStream out;
+    protected final OutputStream out;
 
     // Leftover first char in a surrogate pair
-    private boolean haveLeftoverChar = false;
+    protected boolean haveLeftoverChar = false;
     private char leftoverChar;
     private CharBuffer lcb = null;
 
