@@ -100,7 +100,8 @@ public class BufferedWriter extends Writer {
         }
 
         if (out instanceof OutputStreamWriter w) {
-            this.impl = new OutputStreamWriterImpl((OutputStreamWriter) out);
+            w.se.growByteBufferIfEmptyNeeded(initialSize);
+            this.impl = new OutputStreamWriterImpl(w);
         } else {
             this.impl = new WriterImpl(out, initialSize, maxSize);
         }

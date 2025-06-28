@@ -92,13 +92,13 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
     // methods; the concrete stream-encoder subclasses defined below need not
     // do any such checking.
 
-    public String getEncoding() {
+    public final String getEncoding() {
         if (isOpen())
             return encodingName();
         return null;
     }
 
-    public void flushBuffer() throws IOException {
+    public final void flushBuffer() throws IOException {
         synchronized (lock) {
             if (isOpen())
                 implFlushBuffer();
@@ -107,13 +107,13 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
         }
     }
 
-    public void write(int c) throws IOException {
+    public final void write(int c) throws IOException {
         char[] cbuf = new char[1];
         cbuf[0] = (char) c;
         write(cbuf, 0, 1);
     }
 
-    public void write(char[] cbuf, int off, int len) throws IOException {
+    public final void write(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             ensureOpen();
             if ((off < 0) || (off > cbuf.length) || (len < 0) ||
@@ -135,7 +135,7 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
         write(cbuf, 0, len);
     }
 
-    public void write(CharBuffer cb) throws IOException {
+    public final void write(CharBuffer cb) throws IOException {
         int position = cb.position();
         try {
             synchronized (lock) {
@@ -147,14 +147,14 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
         }
     }
 
-    public void flush() throws IOException {
+    public final void flush() throws IOException {
         synchronized (lock) {
             ensureOpen();
             implFlush();
         }
     }
 
-    public void close() throws IOException {
+    public final void close() throws IOException {
         synchronized (lock) {
             if (closed)
                 return;
@@ -263,14 +263,14 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
         haveLeftoverChar = false;
     }
 
-    void implWrite(char[] cbuf, int off, int len)
+    final void implWrite(char[] cbuf, int off, int len)
         throws IOException
     {
         CharBuffer cb = CharBuffer.wrap(cbuf, off, len);
         implWrite(cb);
     }
 
-    void implWrite(CharBuffer cb)
+    final void implWrite(CharBuffer cb)
         throws IOException
     {
         if (haveLeftoverChar) {
@@ -298,10 +298,24 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
         }
     }
 
+    public final void growByteBufferIfEmptyNeeded(int len) {
+        if (bb.position() != 0) {
+            return;
+        }
+        int cap = bb.capacity();
+        if (cap < maxBufferCapacity) {
+            int maxBytes = len;
+            int newCap = Math.min(maxBytes, maxBufferCapacity);
+            if (newCap > cap) {
+                bb = ByteBuffer.allocate(newCap);
+            }
+        }
+    }
+
     /**
      * Grows bb to a capacity to allow len characters be encoded.
      */
-    public void growByteBufferIfNeeded(int len) throws IOException {
+    public final void growByteBufferIfNeeded(int len) throws IOException {
         int cap = bb.capacity();
         if (cap < maxBufferCapacity) {
             int maxBytes = len * Math.round(encoder.maxBytesPerChar());
@@ -313,18 +327,18 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
         }
     }
 
-    void implFlushBuffer() throws IOException {
+    final void implFlushBuffer() throws IOException {
         if (bb.position() > 0) {
             writeBytes();
         }
     }
 
-    void implFlush() throws IOException {
+    final void implFlush() throws IOException {
         implFlushBuffer();
         out.flush();
     }
 
-    void implClose() throws IOException {
+    final void implClose() throws IOException {
         try (out) {
             flushLeftoverChar(null, true);
             for (;;) {
@@ -348,7 +362,7 @@ public sealed class StreamEncoder extends Writer permits StreamEncoderUTF8 {
         }
     }
 
-    String encodingName() {
+    final String encodingName() {
         return ((cs instanceof HistoricallyNamedCharset)
             ? ((HistoricallyNamedCharset)cs).historicalName()
             : cs.name());

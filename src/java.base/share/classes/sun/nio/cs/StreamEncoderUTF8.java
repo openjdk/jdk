@@ -50,18 +50,17 @@ public final class StreamEncoderUTF8 extends StreamEncoder {
             return;
         }
 
-        int utf8Size = (int) JLA.computeSizeUTF8(str, off, len);
+        int utf8Size = len * 3;
         if (utf8Size >= maxBufferCapacity) {
             byte[] utf8 = new byte[utf8Size];
-            JLA.encodeUTF8(str, off, len, utf8, 0);
+            utf8Size = JLA.encodeUTF8(str, off, len, utf8, 0);
                 /* If the request length exceeds the max size of the output buffer,
                    flush the buffer and then write the data directly.  In this
                    way buffered streams will cascade harmlessly. */
             implFlushBuffer();
-            out.write(utf8, 0, utf8.length);
+            out.write(utf8, 0, utf8Size);
             return;
         }
-
 
         int cap = bb.capacity();
         int newCap = bb.position() + utf8Size;

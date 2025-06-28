@@ -72,7 +72,7 @@ import sun.nio.cs.StreamEncoder;
  */
 
 public class OutputStreamWriter extends Writer {
-    private final StreamEncoder se;
+    final StreamEncoder se;
 
     /**
      * Creates an OutputStreamWriter that uses the named charset.

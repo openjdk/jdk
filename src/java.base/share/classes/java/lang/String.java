@@ -1307,7 +1307,7 @@ public final class String
     long computeSizeUTF8(int sp, int sl) {
         byte[] val = this.value;
         if (!isLatin1()) {
-            return computeSizeUTF8_UTF16(val, sp, sl, true);
+            return computeSizeUTF8_UTF16(val, true);
         }
 
         int count = StringCoding.countPositives(val, sp, sl);
@@ -1352,7 +1352,7 @@ public final class String
         int dp = 0;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, sp, sl, doReplace) : sl * 3;
+        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, doReplace) : sl * 3;
         if (allocLen > (long)Integer.MAX_VALUE) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
@@ -1417,11 +1417,12 @@ public final class String
      * @param val UTF16 encoded byte array
      * @param doReplace true to replace unmappable characters
      */
-    private static long computeSizeUTF8_UTF16(byte[] val, int sp, int sl, boolean doReplace) {
+    private static long computeSizeUTF8_UTF16(byte[] val, boolean doReplace) {
         long dp = 0L;
+        int sp = 0;
+        int sl = val.length >> 1;
 
-        int end = sp + sl;
-        while (sp < end) {
+        while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dp++;

@@ -487,8 +487,6 @@ public interface JavaLangAccess {
      */
     String concat(String prefix, Object value, String suffix);
 
-    long computeSizeUTF8(String s, int sp, int sl);
-
     int encodeUTF8(String s, int sp, int sl, byte[] dst, int dp);
 
     /*
