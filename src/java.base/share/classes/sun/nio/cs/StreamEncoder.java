@@ -103,6 +103,10 @@ public sealed class StreamEncoder extends Writer permits StreamEncoder.UTF8Impl 
         return null;
     }
 
+    public Charset getCharset() {
+        return cs;
+    }
+
     public final void flushBuffer() throws IOException {
         synchronized (lock) {
             if (isOpen())

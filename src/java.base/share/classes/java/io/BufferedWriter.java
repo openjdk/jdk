@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +27,8 @@ package java.io;
 
 import java.util.Arrays;
 import java.util.Objects;
-
-import sun.nio.cs.StreamEncoder;
 import jdk.internal.misc.VM;
+import sun.nio.cs.UTF_8;
 
 /**
  * Writes text to a character-output stream, buffering characters so as to
@@ -78,7 +76,14 @@ public class BufferedWriter extends Writer {
     private static final int DEFAULT_INITIAL_BUFFER_SIZE = 512;
     private static final int DEFAULT_MAX_BUFFER_SIZE = 8192;
 
-    private final BufferedImpl impl;
+    private Writer out;
+    private OutputStreamWriter osw;
+
+    private char[] cb;
+    private int nChars;
+    private int nextChar;
+    private final int maxChars;  // maximum number of buffers chars
+
     /**
      * Returns the buffer size to use when no output buffer size specified
      */
@@ -99,12 +104,16 @@ public class BufferedWriter extends Writer {
             throw new IllegalArgumentException("Buffer size <= 0");
         }
 
-        if (out instanceof OutputStreamWriter w) {
+        if (out instanceof OutputStreamWriter w && w.se.getCharset() == UTF_8.INSTANCE) {
             w.se.growByteBufferIfEmptyNeeded(initialSize);
-            this.impl = new OutputStreamWriterImpl(w);
+            this.osw = w;
+            this.out = w;
         } else {
-            this.impl = new WriterImpl(out, initialSize, maxSize);
+            this.out = out;
+            this.cb = new char[initialSize];
+            this.nChars = initialSize;
         }
+        this.maxChars = maxSize;
     }
 
     /**
@@ -132,7 +141,26 @@ public class BufferedWriter extends Writer {
 
     /** Checks to make sure that the stream has not been closed */
     private void ensureOpen() throws IOException {
-        impl.ensureOpen();
+        if (out == null)
+            throw new IOException("Stream closed");
+    }
+
+    /**
+     * Grow char array to fit an additional len characters if needed.
+     * If possible, it grows by len+1 to avoid flushing when len chars
+     * are added.
+     *
+     * This method should only be called while holding the lock.
+     */
+    private void growIfNeeded(int len) {
+        int neededSize = nextChar + len + 1;
+        if (neededSize < 0)
+            neededSize = Integer.MAX_VALUE;
+        if (neededSize > nChars && nChars < maxChars) {
+            int newSize = min(neededSize, maxChars);
+            cb = Arrays.copyOf(cb, newSize);
+            nChars = newSize;
+        }
     }
 
     /**
@@ -142,8 +170,28 @@ public class BufferedWriter extends Writer {
      */
     void flushBuffer() throws IOException {
         synchronized (lock) {
-            impl.flushBuffer();
+            flushBufferInternal();
         }
+    }
+
+    private void flushBufferInternal() throws IOException {
+        if (osw != null) {
+            ensureOpen();
+            osw.flushBuffer();
+        } else {
+            flushBuffer0();
+        }
+    }
+
+    private void flushBuffer0() throws IOException {
+        ensureOpen();
+        if (nextChar == 0)
+            return;
+        out.write(cb, 0, nextChar);
+//        if (out instanceof OutputStreamWriter w) {
+//            w.flushBuffer();
+//        }
+        nextChar = 0;
     }
 
     /**
@@ -153,8 +201,21 @@ public class BufferedWriter extends Writer {
      */
     public void write(int c) throws IOException {
         synchronized (lock) {
-            impl.write(c);
+            ensureOpen();
+            growIfNeeded(1);
+            if (nextChar >= nChars)
+                flushBufferInternal();
+            cb[nextChar++] = (char) c;
         }
+    }
+
+    /**
+     * Our own little min method, to avoid loading java.lang.Math if we've run
+     * out of file descriptors and we're trying to print a stack trace.
+     */
+    private static int min(int a, int b) {
+        if (a < b) return a;
+        return b;
     }
 
     /**
@@ -180,7 +241,40 @@ public class BufferedWriter extends Writer {
      */
     public void write(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
-            impl.write(cbuf, off, len);
+            if(osw != null) {
+                osw.write(cbuf, off, len);
+            } else {
+                write0(cbuf, off, len);
+            }
+        }
+    }
+
+    private void write0(char[] cbuf, int off, int len) throws IOException {
+        ensureOpen();
+        Objects.checkFromIndexSize(off, len, cbuf.length);
+        if (len == 0) {
+            return;
+        }
+
+        if (len >= maxChars) {
+                /* If the request length exceeds the max size of the output buffer,
+                   flush the buffer and then write the data directly.  In this
+                   way buffered streams will cascade harmlessly. */
+            flushBufferInternal();
+            out.write(cbuf, off, len);
+            return;
+        }
+
+        growIfNeeded(len);
+        int b = off, t = off + len;
+        while (b < t) {
+            int d = min(nChars - nextChar, t - b);
+            System.arraycopy(cbuf, b, cb, nextChar, d);
+            b += d;
+            nextChar += d;
+            if (nextChar >= nChars) {
+                flushBufferInternal();
+            }
         }
     }
 
@@ -208,7 +302,25 @@ public class BufferedWriter extends Writer {
      */
     public void write(String s, int off, int len) throws IOException {
         synchronized (lock) {
-            impl.write(s, off, len);
+            if(osw != null) {
+                osw.write(s, off, len);
+            } else {
+                write0(s, off, len);
+            }
+        }
+    }
+
+    private void write0(String s, int off, int len) throws IOException {
+        ensureOpen();
+        growIfNeeded(len);
+        int b = off, t = off + len;
+        while (b < t) {
+            int d = min(nChars - nextChar, t - b);
+            s.getChars(b, b + d, cb, nextChar);
+            b += d;
+            nextChar += d;
+            if (nextChar >= nChars)
+                flushBufferInternal();
         }
     }
 
@@ -230,250 +342,23 @@ public class BufferedWriter extends Writer {
      */
     public void flush() throws IOException {
         synchronized (lock) {
-            impl.flush();
+            flushBufferInternal();
+            out.flush();
         }
     }
 
     @SuppressWarnings("try")
     public void close() throws IOException {
         synchronized (lock) {
-            impl.close();
-        }
-    }
-
-    static abstract sealed class BufferedImpl permits WriterImpl, OutputStreamWriterImpl {
-        Writer out;
-
-        public BufferedImpl(Writer out) {
-            this.out = out;
-        }
-
-        /** Checks to make sure that the stream has not been closed */
-        final void ensureOpen() throws IOException {
-            if (out == null)
-                throw new IOException("Stream closed");
-        }
-
-        abstract void flushBuffer() throws IOException;
-
-        abstract void write(int c) throws IOException;
-
-        abstract void write(char[] cbuf, int off, int len) throws IOException;
-
-        abstract void write(String s, int off, int len) throws IOException;
-
-        abstract void flush() throws IOException;
-
-        abstract void close() throws IOException;
-    }
-
-    static final class WriterImpl extends BufferedImpl {
-        private char[] cb;
-        private int nChars;
-        private int nextChar;
-        private final int maxChars;  // maximum number of buffers chars
-
-        WriterImpl(Writer out, int initialSize, int maxSize) {
-            super(out);
-            this.cb = new char[initialSize];
-            this.nChars = initialSize;
-            this.maxChars = maxSize;
-        }
-
-        /**
-         * Grow char array to fit an additional len characters if needed.
-         * If possible, it grows by len+1 to avoid flushing when len chars
-         * are added.
-         *
-         * This method should only be called while holding the lock.
-         */
-        private void growIfNeeded(int len) {
-            int neededSize = nextChar + len + 1;
-            if (neededSize < 0)
-                neededSize = Integer.MAX_VALUE;
-            if (neededSize > nChars && nChars < maxChars) {
-                int newSize = min(neededSize, maxChars);
-                cb = Arrays.copyOf(cb, newSize);
-                nChars = newSize;
-            }
-        }
-
-        void flushBuffer() throws IOException {
-            ensureOpen();
-            if (nextChar == 0)
-                return;
-            out.write(cb, 0, nextChar);
-            nextChar = 0;
-        }
-
-        /**
-         * Writes a single character.
-         *
-         * @throws     IOException  If an I/O error occurs
-         */
-        public void write(int c) throws IOException {
-            ensureOpen();
-            growIfNeeded(1);
-            if (nextChar >= nChars)
-                flushBuffer();
-            cb[nextChar++] = (char) c;
-        }
-
-        /**
-         * Writes a portion of an array of characters.
-         *
-         * <p> Ordinarily this method stores characters from the given array into
-         * this stream's buffer, flushing the buffer to the underlying stream as
-         * needed.  If the requested length is at least as large as the buffer,
-         * however, then this method will flush the buffer and write the characters
-         * directly to the underlying stream.  Thus redundant
-         * {@code BufferedWriter}s will not copy data unnecessarily.
-         *
-         * @param  cbuf  A character array
-         * @param  off   Offset from which to start reading characters
-         * @param  len   Number of characters to write
-         *
-         * @throws  IndexOutOfBoundsException
-         *          If {@code off} is negative, or {@code len} is negative,
-         *          or {@code off + len} is negative or greater than the length
-         *          of the given array
-         *
-         * @throws  IOException  If an I/O error occurs
-         */
-        public void write(char[] cbuf, int off, int len) throws IOException {
-            ensureOpen();
-            Objects.checkFromIndexSize(off, len, cbuf.length);
-            if (len == 0) {
-                return;
-            }
-
-            if (len >= maxChars) {
-                /* If the request length exceeds the max size of the output buffer,
-                   flush the buffer and then write the data directly.  In this
-                   way buffered streams will cascade harmlessly. */
-                flushBuffer();
-                out.write(cbuf, off, len);
-                return;
-            }
-
-            growIfNeeded(len);
-            int b = off, t = off + len;
-            while (b < t) {
-                int d = min(nChars - nextChar, t - b);
-                System.arraycopy(cbuf, b, cb, nextChar, d);
-                b += d;
-                nextChar += d;
-                if (nextChar >= nChars) {
-                    flushBuffer();
-                }
-            }
-        }
-
-
-        /**
-         * Writes a portion of a String.
-         *
-         * @implSpec
-         * While the specification of this method in the
-         * {@linkplain java.io.Writer#write(java.lang.String,int,int) superclass}
-         * recommends that an {@link IndexOutOfBoundsException} be thrown
-         * if {@code len} is negative or {@code off + len} is negative,
-         * the implementation in this class does not throw such an exception in
-         * these cases but instead simply writes no characters.
-         *
-         * @param  s     String to be written
-         * @param  off   Offset from which to start reading characters
-         * @param  len   Number of characters to be written
-         *
-         * @throws  IndexOutOfBoundsException
-         *          If {@code off} is negative,
-         *          or {@code off + len} is greater than the length
-         *          of the given string
-         *
-         * @throws  IOException  If an I/O error occurs
-         */
-        public void write(String s, int off, int len) throws IOException {
-            ensureOpen();
-            growIfNeeded(len);
-            int b = off, t = off + len;
-            while (b < t) {
-                int d = min(nChars - nextChar, t - b);
-                s.getChars(b, b + d, cb, nextChar);
-                b += d;
-                nextChar += d;
-                if (nextChar >= nChars)
-                    flushBuffer();
-            }
-        }
-
-        @SuppressWarnings("try")
-        public void close() throws IOException {
             if (out == null) {
                 return;
             }
             try (Writer w = out) {
-                flushBuffer();
+                flushBufferInternal();
             } finally {
+                osw = null;
                 out = null;
                 cb = null;
-            }
-        }
-
-        /**
-         * Flushes the stream.
-         *
-         * @throws     IOException  If an I/O error occurs
-         */
-        public void flush() throws IOException {
-            flushBuffer();
-            out.flush();
-        }
-
-        /**
-         * Our own little min method, to avoid loading java.lang.Math if we've run
-         * out of file descriptors and we're trying to print a stack trace.
-         */
-        private static int min(int a, int b) {
-            return a < b ? a : b;
-        }
-    }
-
-    static final class OutputStreamWriterImpl extends BufferedImpl {
-        OutputStreamWriter os;
-        OutputStreamWriterImpl(OutputStreamWriter out) {
-            super(out);
-            this.os = out;
-        }
-
-        public void flushBuffer() throws IOException {
-            os.flushBuffer();
-        }
-
-        public void write(int c) throws IOException {
-            os.write(new char[] {(char) c});
-        }
-
-        public void write(char[] cbuf, int off, int len) throws IOException {
-            os.write(cbuf, off, len);
-        }
-
-        public void write(String s, int off, int len) throws IOException {
-            os.write(s, off, len);
-        }
-
-        public void flush() throws IOException {
-            os.flush();
-        }
-
-        public void close() throws IOException {
-            if (out == null) {
-                return;
-            }
-            try (OutputStreamWriter w = os) {
-                w.flushBuffer();
-            } finally {
-                out = null;
-                os = null;
             }
         }
     }
