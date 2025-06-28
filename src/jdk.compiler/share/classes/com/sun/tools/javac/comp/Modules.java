@@ -102,7 +102,6 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -1255,7 +1254,7 @@ public class Modules extends JCTree.Visitor {
             observable.addAll(rootModules);
             for (ModuleSymbol msym : limitMods) {
                 if (!observable.contains(msym)) {
-                    log.warning(LintWarnings.ModuleForOptionNotFound(Option.LIMIT_MODULES, msym), DiagnosticFlag.DEFAULT_ENABLED);
+                    log.warning(LintWarnings.ModuleForOptionNotFound(Option.LIMIT_MODULES, msym));
                 }
             }
         }
@@ -1708,7 +1707,7 @@ public class Modules extends JCTree.Visitor {
         }
 
         if (!unknownModules.contains(msym)) {
-            log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_EXPORTS, msym), DiagnosticFlag.DEFAULT_ENABLED);
+            log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_EXPORTS, msym));
             unknownModules.add(msym);
         }
         return false;
@@ -1744,7 +1743,7 @@ public class Modules extends JCTree.Visitor {
 
             ModuleSymbol msym = syms.enterModule(names.fromString(sourceName));
             if (!allModules.contains(msym)) {
-                log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, msym), DiagnosticFlag.DEFAULT_ENABLED);
+                log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
                 continue;
             }
 
@@ -1762,8 +1761,7 @@ public class Modules extends JCTree.Visitor {
                         continue;
                     targetModule = syms.enterModule(names.fromString(targetName));
                     if (!allModules.contains(targetModule)) {
-                        log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule),
-                            DiagnosticFlag.DEFAULT_ENABLED);
+                        log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule));
                         continue;
                     }
                 }

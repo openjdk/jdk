@@ -231,7 +231,7 @@ public class Check {
             (sym.kind == MDL ?
                 LintWarnings.HasBeenDeprecatedModule(sym) :
                 LintWarnings.HasBeenDeprecated(sym, sym.location()));
-        log.mandatoryWarning(pos, warningKey, DiagnosticFlag.AGGREGATE);
+        log.mandatoryWarning(pos, warningKey);
     }
 
     /** Log a preview warning.
@@ -239,9 +239,8 @@ public class Check {
      *  @param msg        A Warning describing the problem.
      */
     public void warnPreviewAPI(DiagnosticPosition pos, LintWarning warnKey) {
-        if (!importSuppression) {
-            log.mandatoryWarning(pos, warnKey, DiagnosticFlag.AGGREGATE);
-        }
+        if (!importSuppression)
+            log.mandatoryWarning(pos, warnKey);
     }
 
     /** Warn about unchecked operation.
@@ -249,7 +248,7 @@ public class Check {
      *  @param msg        A string describing the problem.
      */
     public void warnUnchecked(DiagnosticPosition pos, LintWarning warnKey) {
-        log.mandatoryWarning(pos, warnKey, DiagnosticFlag.AGGREGATE);
+        log.mandatoryWarning(pos, warnKey);
     }
 
     /** Report a failure to complete a class.
@@ -2895,14 +2894,13 @@ public class Check {
         }
 
         if (!types.isSubtype(sym.owner.type, syms.serializableType) && isEffectivelyNonPublic(sym)) {
-            DiagnosticFlag[] flags = warnOnAnyAccessToMembers ?
-              new DiagnosticFlag[] { DiagnosticFlag.DEFAULT_ENABLED } : new DiagnosticFlag[0];
+            DiagnosticFlag flag = warnOnAnyAccessToMembers ? DiagnosticFlag.DEFAULT_ENABLED : null;
             if (isLambda) {
                 if (belongsToRestrictedPackage(sym)) {
-                    log.warning(tree.pos(), LintWarnings.AccessToMemberFromSerializableLambda(sym), flags);
+                    log.warning(flag, tree.pos(), LintWarnings.AccessToMemberFromSerializableLambda(sym));
                 }
             } else {
-                log.warning(tree.pos(), LintWarnings.AccessToMemberFromSerializableElement(sym), flags);
+                log.warning(flag, tree.pos(), LintWarnings.AccessToMemberFromSerializableElement(sym));
             }
         }
     }

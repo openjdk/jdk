@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.util;
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import javax.tools.JavaFileObject;
@@ -160,45 +159,45 @@ public abstract class AbstractLog {
      * maximum number of warnings has been reached.
      *
      * @param warningKey The key for the localized warning message.
-     * @param flags      Any additional flags required
      */
-    public void warning(Warning warningKey, DiagnosticFlag... flags) {
-        warning(null, warningKey, flags);
+    public void warning(Warning warningKey) {
+        report(diags.warning(null, source, null, warningKey));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
      *  maximum number of warnings has been reached.
      *  @param pos    The source position at which to report the warning.
      *  @param warningKey    The key for the localized warning message.
-     *  @param flags         Any additional flags required
      */
-    public void warning(int pos, Warning warningKey, DiagnosticFlag... flags) {
-        warning(wrap(pos), warningKey, flags);
+    public void warning(DiagnosticPosition pos, Warning warningKey) {
+        report(diags.warning(null, source, pos, warningKey));
+    }
+
+    /** Report a warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param flag   A flag to set on the diagnostic
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(DiagnosticFlag flag, DiagnosticPosition pos, Warning warningKey) {
+        report(diags.warning(flag, source, pos, warningKey));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
      *  maximum number of warnings has been reached.
      *  @param pos    The source position at which to report the warning.
      *  @param warningKey    The key for the localized warning message.
-     *  @param flags         Any additional flags required
      */
-    public void warning(DiagnosticPosition pos, Warning warningKey, DiagnosticFlag... flags) {
-        EnumSet<DiagnosticFlag> flagSet = EnumSet.noneOf(DiagnosticFlag.class);
-        for (DiagnosticFlag flag : flags)
-            flagSet.add(flag);
-        report(diags.create(flagSet, source, pos, warningKey));
+    public void warning(int pos, Warning warningKey) {
+        report(diags.warning(null, source, wrap(pos), warningKey));
     }
 
-    /** Report a mandatory warning.
+    /** Report a warning.
      *  @param pos    The source position at which to report the warning.
      *  @param warningKey    The key for the localized warning message.
-     *  @param flags         Any additional flags required
      */
-    public void mandatoryWarning(DiagnosticPosition pos, Warning warningKey, DiagnosticFlag... flags) {
-        EnumSet<DiagnosticFlag> flagSet = EnumSet.of(DiagnosticFlag.MANDATORY, DiagnosticFlag.DEFAULT_ENABLED);
-        for (DiagnosticFlag flag : flags)
-            flagSet.add(flag);
-        report(diags.create(flagSet, source, pos, warningKey));
+    public void mandatoryWarning(DiagnosticPosition pos, Warning warningKey) {
+        report(diags.mandatoryWarning(source, pos, warningKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.

@@ -160,7 +160,8 @@ public class Log extends AbstractLog {
 
             // Apply hackery for REQUIRES_TRANSITIVE_AUTOMATIC (see also Check.checkModuleRequires())
             if (diag.getCode().equals(RequiresTransitiveAutomatic.key()) && !lint.isEnabled(REQUIRES_TRANSITIVE_AUTOMATIC)) {
-                reportWithLint(diags.warning(diag.getDiagnosticSource(), diag.getDiagnosticPosition(), RequiresAutomatic), lint);
+                reportWithLint(
+                  diags.warning(null, diag.getDiagnosticSource(), diag.getDiagnosticPosition(), RequiresAutomatic), lint);
                 return;
             }
 
@@ -885,8 +886,7 @@ public class Log extends AbstractLog {
         return switch (lc) {
         case PREVIEW -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, Source.instance(context), c));
         case DEPRECATION -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c, "deprecated"));
-        case REMOVAL, UNCHECKED -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
-        case null, default -> null;
+        default -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
         };
     }
 
@@ -902,7 +902,7 @@ public class Log extends AbstractLog {
         nsuppressedwarns = 0;
         while (diagnosticHandler.prev != null)
             popDiagnosticHandler(diagnosticHandler);
-        aggregators.values().forEach(MandatoryWarningAggregator::clear);
+        aggregators.clear();
         suppressedDeferredMandatory.clear();
     }
 
