@@ -79,7 +79,8 @@ JfrThreadLocal::JfrThreadLocal() :
   _enqueued_requests(false),
   _vthread(false),
   _notified(false),
-  _dead(false)
+  _dead(false),
+  _sampling_critical_section(false)
 #ifdef LINUX
   ,_cpu_timer(nullptr),
   _cpu_time_jfr_locked(UNLOCKED),

@@ -131,6 +131,7 @@ enum Ampere_CPU_Model {
     decl(SHA3,          sha3,          17)    \
     decl(SHA512,        sha512,        21)    \
     decl(SVE,           sve,           22)    \
+    decl(SB,            sb,            29)    \
     decl(PACA,          paca,          30)    \
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \

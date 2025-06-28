@@ -26,6 +26,7 @@
 package sun.security.tools.keytool;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.*;
@@ -58,6 +59,8 @@ import java.security.cert.X509CRLEntry;
 import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
 import java.util.Base64;
+
+import jdk.internal.util.StaticProperty;
 
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
@@ -1473,7 +1476,7 @@ public final class Main {
         info.setVersion(new CertificateVersion(CertificateVersion.V3));
         info.setIssuer(issuer);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        BufferedReader reader = stdinAwareReader(in);
         boolean canRead = false;
         StringBuilder sb = new StringBuilder();
         while (true) {
@@ -2828,7 +2831,7 @@ public final class Main {
     private void doPrintCertReq(InputStream in, PrintStream out)
             throws Exception {
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        BufferedReader reader = stdinAwareReader(in);
         StringBuilder sb = new StringBuilder();
         boolean started = false;
         while (true) {
@@ -3533,8 +3536,7 @@ public final class Main {
         } else {
             System.err.print(rb.getString("Enter.alias.name."));
         }
-        return (new BufferedReader(new InputStreamReader(
-                                        System.in))).readLine();
+        return stdinAwareReader(System.in).readLine();
     }
 
     /**
@@ -3544,8 +3546,14 @@ public final class Main {
      */
     private String inputStringFromStdin(String prompt) throws Exception {
         System.err.print(prompt);
-        return (new BufferedReader(new InputStreamReader(
-                                        System.in))).readLine();
+        return stdinAwareReader(System.in).readLine();
+    }
+
+    private static BufferedReader stdinAwareReader(InputStream in) {
+        InputStreamReader reader = in == System.in
+                ? new InputStreamReader(in, Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset()))
+                : new InputStreamReader(in);
+        return new BufferedReader(reader);
     }
 
     /**
@@ -3732,7 +3740,7 @@ public final class Main {
      */
     private X500Name getX500Name() throws IOException {
         BufferedReader in;
-        in = new BufferedReader(new InputStreamReader(System.in));
+        in = stdinAwareReader(System.in);
         String commonName = "Unknown";
         String organizationalUnit = "Unknown";
         String organization = "Unknown";
@@ -4238,8 +4246,7 @@ public final class Main {
             }
             System.err.print(prompt);
             System.err.flush();
-            reply = (new BufferedReader(new InputStreamReader
-                                        (System.in))).readLine();
+            reply = stdinAwareReader(System.in).readLine();
             if (reply == null ||
                 collator.compare(reply, "") == 0 ||
                 collator.compare(reply, rb.getString("n")) == 0 ||
