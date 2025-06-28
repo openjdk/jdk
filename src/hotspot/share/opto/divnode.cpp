@@ -28,13 +28,13 @@
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/machnode.hpp"
-#include "opto/movenode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "opto/runtime.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -823,37 +823,9 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
     return bot;
   }
 
-  // x/x == 1, we ignore 0/0.
-  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
-  // Does not work for variables because of NaN's
-  if (in(1) == in(2) && t1->base() == Type::HalfFloatCon &&
-      !g_isnan(t1->getf()) && g_isfinite(t1->getf()) && t1->getf() != 0.0) { // could be negative ZERO or NaN
-    return TypeH::ONE;
-  }
-
-  if (t2 == TypeH::ONE) {
-    return t1;
-  }
-
-  // If divisor is a constant and not zero, divide the numbers
   if (t1->base() == Type::HalfFloatCon &&
-      t2->base() == Type::HalfFloatCon &&
-      t2->getf() != 0.0)  {
-    // could be negative zero
+      t2->base() == Type::HalfFloatCon)  {
     return TypeH::make(t1->getf() / t2->getf());
-  }
-
-  // If the dividend is a constant zero
-  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
-  // Test TypeHF::ZERO is not sufficient as it could be negative zero
-
-  if (t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0) {
-    return TypeH::ZERO;
-  }
-
-  // If divisor or dividend is nan then result is nan.
-  if (g_isnan(t1->getf()) || g_isnan(t2->getf())) {
-    return TypeH::make(NAN);
   }
 
   // Otherwise we give up all hope

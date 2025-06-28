@@ -26,9 +26,9 @@
 #define PRINTINLINING_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/ostream.hpp"
-#include "utilities/growableArray.hpp"
 #include "nmt/nmtTreap.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 
 class JVMState;
 class ciMethod;

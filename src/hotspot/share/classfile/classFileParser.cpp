@@ -3740,6 +3740,7 @@ void ClassFileParser::apply_parsed_class_metadata(
   _cp->set_pool_holder(this_klass);
   this_klass->set_constants(_cp);
   this_klass->set_fieldinfo_stream(_fieldinfo_stream);
+  this_klass->set_fieldinfo_search_table(_fieldinfo_search_table);
   this_klass->set_fields_status(_fields_status);
   this_klass->set_methods(_methods);
   this_klass->set_inner_classes(_inner_classes);
@@ -3748,6 +3749,8 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_cp, _fieldinfo_stream, _fieldinfo_search_table));
 
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
@@ -5056,6 +5059,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // note that is not safe to use the fields in the parser from this point on
   assert(nullptr == _cp, "invariant");
   assert(nullptr == _fieldinfo_stream, "invariant");
+  assert(nullptr == _fieldinfo_search_table, "invariant");
   assert(nullptr == _fields_status, "invariant");
   assert(nullptr == _methods, "invariant");
   assert(nullptr == _inner_classes, "invariant");
@@ -5276,6 +5280,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _super_klass(),
   _cp(nullptr),
   _fieldinfo_stream(nullptr),
+  _fieldinfo_search_table(nullptr),
   _fields_status(nullptr),
   _methods(nullptr),
   _inner_classes(nullptr),
@@ -5352,6 +5357,7 @@ void ClassFileParser::clear_class_metadata() {
   // deallocated if classfile parsing returns an error.
   _cp = nullptr;
   _fieldinfo_stream = nullptr;
+  _fieldinfo_search_table = nullptr;
   _fields_status = nullptr;
   _methods = nullptr;
   _inner_classes = nullptr;
@@ -5374,6 +5380,7 @@ ClassFileParser::~ClassFileParser() {
   if (_fieldinfo_stream != nullptr) {
     MetadataFactory::free_array<u1>(_loader_data, _fieldinfo_stream);
   }
+  MetadataFactory::free_array<u1>(_loader_data, _fieldinfo_search_table);
 
   if (_fields_status != nullptr) {
     MetadataFactory::free_array<FieldStatus>(_loader_data, _fields_status);
@@ -5774,6 +5781,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   _fieldinfo_stream =
     FieldInfoStream::create_FieldInfoStream(_temp_field_info, _java_fields_count,
                                             injected_fields_count, loader_data(), CHECK);
+  _fieldinfo_search_table = FieldInfoStream::create_search_table(_cp, _fieldinfo_stream, _loader_data, CHECK);
   _fields_status =
     MetadataFactory::new_array<FieldStatus>(_loader_data, _temp_field_info->length(),
                                             FieldStatus(0), CHECK);

@@ -160,6 +160,10 @@ class VM_Operation : public StackObj {
   virtual VMOp_Type type() const = 0;
   virtual bool allow_nested_vm_operations() const { return false; }
 
+  // VMOp_Type may belong to a category of the operation.
+  // Override is_XX_operation() appropriately in subclasses.
+  virtual bool is_gc_operation() const { return false; }
+
   // You may override skip_thread_oop_barriers to return true if the operation
   // does not access thread-private oops (including frames).
   virtual bool skip_thread_oop_barriers() const { return false; }
