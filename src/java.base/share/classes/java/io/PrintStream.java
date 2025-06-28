@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class PrintStream extends FilterOutputStream
      * can be flushed without flushing the entire stream.
      */
     private BufferedWriter textOut;
+    private OutputStreamWriter charOut;
 
     /**
      * requireNonNull is explicitly declared here so as not to create an extra
@@ -108,7 +109,8 @@ public class PrintStream extends FilterOutputStream
         super(out);
         this.autoFlush = autoFlush;
         this.charset = out instanceof PrintStream ps ? ps.charset() : Charset.defaultCharset();
-        this.textOut = new BufferedWriter(new OutputStreamWriter(this, charset));
+        this.charOut = new OutputStreamWriter(this, charset);
+        this.textOut = new BufferedWriter(charOut);
     }
 
     /* Variant of the private constructor so that the given charset name
@@ -202,7 +204,8 @@ public class PrintStream extends FilterOutputStream
     public PrintStream(OutputStream out, boolean autoFlush, Charset charset) {
         super(out);
         this.autoFlush = autoFlush;
-        this.textOut = new BufferedWriter(new OutputStreamWriter(this, charset));
+        this.charOut = new OutputStreamWriter(this, charset);
+        this.textOut = new BufferedWriter(charOut);
         this.charset = charset;
     }
 
@@ -429,6 +432,7 @@ public class PrintStream extends FilterOutputStream
                     trouble = true;
                 }
                 textOut = null;
+                charOut = null;
                 out = null;
             }
         }
@@ -613,6 +617,7 @@ public class PrintStream extends FilterOutputStream
                 ensureOpen();
                 textOut.write(buf);
                 textOut.flushBuffer();
+                charOut.flushBuffer();
                 if (autoFlush) {
                     for (int i = 0; i < buf.length; i++)
                         if (buf[i] == '\n') {
@@ -639,6 +644,7 @@ public class PrintStream extends FilterOutputStream
                 textOut.write(buf);
                 textOut.newLine();
                 textOut.flushBuffer();
+                charOut.flushBuffer();
                 if (autoFlush)
                     out.flush();
             }
@@ -657,6 +663,7 @@ public class PrintStream extends FilterOutputStream
                 ensureOpen();
                 textOut.write(s);
                 textOut.flushBuffer();
+                charOut.flushBuffer();
                 if (autoFlush && (s.indexOf('\n') >= 0))
                     out.flush();
             }
@@ -680,6 +687,7 @@ public class PrintStream extends FilterOutputStream
                 textOut.write(s);
                 textOut.newLine();
                 textOut.flushBuffer();
+                charOut.flushBuffer();
                 if (autoFlush)
                     out.flush();
             }
@@ -698,6 +706,7 @@ public class PrintStream extends FilterOutputStream
                 ensureOpen();
                 textOut.newLine();
                 textOut.flushBuffer();
+                charOut.flushBuffer();
                 if (autoFlush)
                     out.flush();
             }
