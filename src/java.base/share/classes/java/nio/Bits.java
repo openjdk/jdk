@@ -105,6 +105,9 @@ class Bits {                            // package-private
     private static final int MAX_SLEEPS = 9;
 
     private static final Object RESERVE_SLOWPATH_LOCK = new Object();
+
+    // Token for detecting whether some other thread has done a GC since the
+    // last time the checking thread went around the retry-with-GC loop.
     private static int RESERVE_GC_EPOCH = 0; // Never negative.
 
     // These methods should be called whenever direct memory is allocated or
@@ -128,17 +131,21 @@ class Bits {                            // package-private
         try {
             // Keep trying to reserve until either succeed or there is no
             // further cleaning available from prior GCs. If the latter then
-            // GC to hopefully find more cleaning to do.
+            // GC to hopefully find more cleaning to do. Once a thread GCs it
+            // drops to the later retry with backoff loop.
             for (int cleanedEpoch = -1; true; ) {
                 synchronized (RESERVE_SLOWPATH_LOCK) {
                     // Test if cleaning for prior GCs (from here) is complete.
-                    // If so, GC to produce more cleaning work, and increment
-                    // the counter to inform other threads that there may be
+                    // If so, GC to produce more cleaning work, and change
+                    // the token to inform other threads that there may be
                     // more cleaning work to do.  This is done under the lock
                     // to close a race.  We could have multiple threads pass
                     // the test "simultaneously", resulting in back-to-back
                     // GCs.  For a STW GC the window is small, but for a
-                    // concurrent GC it's quite large.
+                    // concurrent GC it's quite large. If a thread were to
+                    // somehow be stuck trying to take the lock while enough
+                    // other threads succeeded for the epoch to wrap, it just
+                    // does an excess GC.
                     if (RESERVE_GC_EPOCH == cleanedEpoch) {
                         // Increment with overflow to 0, so the value can
                         // never equal the initial/reset cleanedEpoch value.
