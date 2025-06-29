@@ -74,7 +74,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _the_class_for_redefinition_verification = nullptr;
   _scratch_class_for_redefinition_verification = nullptr;
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
-  _saved_interp_only_mode = 0;
+  _saved_interp_only_mode = false;
 
   // JVMTI ForceEarlyReturn support
   _pending_step_for_earlyret = false;
@@ -800,7 +800,7 @@ void JvmtiThreadState::leave_interp_only_mode() {
   assert(is_interp_only_mode(), "leaving interp only when not in interp only mode");
   if (_thread == nullptr) {
     // Unmounted virtual thread updates the saved value.
-    _saved_interp_only_mode = 0;
+    _saved_interp_only_mode = false;
   } else {
     _thread->set_interp_only_mode(false);
   }

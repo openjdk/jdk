@@ -32,6 +32,7 @@ import jdk.internal.platform.Metrics;
  * @test
  * @key cgroups
  * @requires os.family == "linux"
+ * @requires !vm.asan
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
