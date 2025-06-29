@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,29 @@ public abstract class TestThread
             throw failure;
     }
 
+    /**
+     * Awaits the completion of this {@code Thread} and throws any failures
+     * that may have occurred during the execution of this {@code Thread}'s task
+     *
+     * @throws InterruptedException if the wait was interrupted
+     * @throws Exception any failure that may have occurred during the TestThread's execution
+     */
+    public final void awaitFinish() throws Exception {
+        try {
+            join();
+        } catch (InterruptedException ie) {
+            // we ignore interruption of only the main thread because the main thread
+            // is always interrupted by this TestThread upon failure of the Thread's task
+            if (Thread.currentThread() != main) {
+                throw ie;
+            }
+        }
+        if (this.failure != null) {
+            throw failure;
+        }
+    }
+
+    @Override
     public String toString() {
         return name;
     }

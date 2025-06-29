@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+
 import jdk.test.lib.RandomFactory;
 
 public class VectorIO {
@@ -61,9 +63,12 @@ public class VectorIO {
         System.err.println("Length " + testSize);
         Server sv = new Server(testSize);
         sv.start();
-        bufferTest(sv.port());
-        if (sv.finish(8000) == 0)
-            throw new Exception("Failed: Length = " + testSize);
+        System.err.println("waiting for server to be ready, before initiating test");
+        sv.waitToStartTest();
+        int serverPort = sv.port();
+        System.err.println("initiating test against server port " + serverPort);
+        bufferTest(serverPort);
+        sv.awaitFinish();
     }
 
     static void bufferTest(int port) throws Exception {
@@ -121,6 +126,7 @@ public class VectorIO {
     {
         final int testSize;
         final ServerSocketChannel ssc;
+        final CountDownLatch connAcceptLatch = new CountDownLatch(1);
 
         Server(int testSize) throws IOException {
             super("Server " + testSize);
@@ -132,8 +138,15 @@ public class VectorIO {
             return ssc.socket().getLocalPort();
         }
 
+        @Override
         void go() throws Exception {
             bufferTest();
+        }
+
+        // await for the server to be ready to accept the
+        // connections from the client/test
+        private void waitToStartTest() throws InterruptedException {
+            this.connAcceptLatch.await();
         }
 
         void bufferTest() throws Exception {
@@ -157,7 +170,7 @@ public class VectorIO {
             try {
 
                 ssc.configureBlocking(false);
-
+                connAcceptLatch.countDown();
                 for (;;) {
                     sc = ssc.accept();
                     if (sc != null) {
@@ -209,9 +222,12 @@ public class VectorIO {
 
             } finally {
                 // Clean up
+                System.err.println("closing " + ssc);
                 ssc.close();
-                if (sc != null)
+                if (sc != null) {
+                    System.err.println("closing " + sc);
                     sc.close();
+                }
             }
 
         }
