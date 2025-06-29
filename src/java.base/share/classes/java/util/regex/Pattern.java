@@ -4154,7 +4154,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     if (predicate.is(ch0))
                         return next.match(matcher, j, seq);
                 } else {
-                    while (i + n < j) {
+                    while (i + n <= j) {
                         String nfc = Normalizer.normalize(
                             seq.toString().substring(i, j), Normalizer.Form.NFC);
                         if (nfc.codePointCount(0, nfc.length()) == 1) {
@@ -4163,13 +4163,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                 return true;
                             }
                         }
-
                         ch0 = Character.codePointBefore(seq, j);
                         j -= Character.charCount(ch0);
                     }
                 }
-                if (j < matcher.to)
-                    return false;
             } else {
                 matcher.hitEnd = true;
             }
