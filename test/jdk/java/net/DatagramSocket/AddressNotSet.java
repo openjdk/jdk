@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,43 +108,5 @@ public class AddressNotSet {
         p = new DatagramPacket(buf, buf.length, addr, port);
         sock.send(p);
         serversock.receive(p);
-
-        if (sock instanceof MulticastSocket) {
-            sock.disconnect();
-            testTTL((MulticastSocket)sock);
-        }
-    }
-
-    private void testTTL(MulticastSocket sock) throws Exception {
-        out.println("Testing deprecated send TTL with " + sock.getClass());
-        final byte ttl = 100;
-        InetAddress addr = loopbackAddress;
-        byte[] buf;
-        DatagramPacket p;
-        int port = serversock.getLocalPort();
-
-        out.println("Checking send to non-connected address ...");
-        try {
-            out.println("Checking send with no packet address");
-            buf = ("Hello, server"+(++i)).getBytes();
-            p = new DatagramPacket(buf, buf.length);
-            sock.send(p,ttl);
-            throw new AssertionError("Expected IllegalArgumentException not received");
-        } catch (IllegalArgumentException x) {
-            out.println("Got expected exception: " + x);
-        }
-
-        out.println("Connecting to connected address: " + sock);
-        sock.connect(addr, port);
-
-        try {
-            out.println("Checking send with different address than connected");
-            buf = ("Hello, server"+(++i)).getBytes();
-            p = new DatagramPacket(buf, buf.length, addr, port+1);
-            sock.send(p, ttl);
-            throw new AssertionError("Expected IllegalArgumentException not received");
-        } catch (IllegalArgumentException x) {
-            out.println("Got expected exception: " + x);
-        }
     }
 }
