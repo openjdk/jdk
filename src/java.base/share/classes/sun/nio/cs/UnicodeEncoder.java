@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,25 +56,20 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
         byteOrder = bo;
     }
 
-    private void put(char c, ByteBuffer dst) {
-        if (byteOrder == BIG) {
-            dst.put((byte)(c >> 8));
-            dst.put((byte)(c & 0xff));
-        } else {
-            dst.put((byte)(c & 0xff));
-            dst.put((byte)(c >> 8));
-        }
+    private static char convEndian(boolean nativeOrder, char c) {
+        return nativeOrder ? c : Character.reverseBytes(c);
     }
 
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
         int mark = src.position();
+        boolean nativeOrder = (byteOrder == BIG) == (dst.order() == ByteOrder.BIG_ENDIAN);
 
         if (needsMark && src.hasRemaining()) {
             if (dst.remaining() < 2)
                 return CoderResult.OVERFLOW;
-            put(BYTE_ORDER_MARK, dst);
+            dst.putChar(convEndian(nativeOrder, BYTE_ORDER_MARK));
             needsMark = false;
         }
         try {
@@ -83,7 +79,7 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
                     if (dst.remaining() < 2)
                         return CoderResult.OVERFLOW;
                     mark++;
-                    put(c, dst);
+                    dst.putChar(convEndian(nativeOrder, c));
                     continue;
                 }
                 int d = sgp.parse(c, src);
@@ -92,8 +88,8 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
                 if (dst.remaining() < 4)
                     return CoderResult.OVERFLOW;
                 mark += 2;
-                put(Character.highSurrogate(d), dst);
-                put(Character.lowSurrogate(d), dst);
+                dst.putChar(convEndian(nativeOrder, Character.highSurrogate(d)));
+                dst.putChar(convEndian(nativeOrder, Character.lowSurrogate(d)));
             }
             return CoderResult.UNDERFLOW;
         } finally {
