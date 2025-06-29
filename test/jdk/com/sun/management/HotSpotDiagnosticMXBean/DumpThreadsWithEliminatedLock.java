@@ -30,10 +30,10 @@
  * @requires (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm DumpThreadsWithEliminatedLock plain platform
- * @run main/othervm DumpThreadsWithEliminatedLock plain virtual
- * @run main/othervm DumpThreadsWithEliminatedLock json platform
- * @run main/othervm DumpThreadsWithEliminatedLock json virtual
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/StringBuffer.* DumpThreadsWithEliminatedLock plain platform
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/StringBuffer.* DumpThreadsWithEliminatedLock plain virtual
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/StringBuffer.* DumpThreadsWithEliminatedLock json platform
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/StringBuffer.* DumpThreadsWithEliminatedLock json virtual
  */
 
 import java.io.IOException;
