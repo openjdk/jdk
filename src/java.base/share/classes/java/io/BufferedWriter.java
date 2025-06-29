@@ -140,7 +140,7 @@ public class BufferedWriter extends Writer {
      * flushing the stream itself.  This method is non-private only so that it
      * may be invoked by PrintStream.
      */
-    void flushBuffer() throws IOException {
+    final void flushBuffer() throws IOException {
         synchronized (lock) {
             impl.flushBuffer();
         }
@@ -241,7 +241,7 @@ public class BufferedWriter extends Writer {
         }
     }
 
-    static abstract sealed class BufferedImpl permits WriterImpl, OutputStreamWriterImpl {
+    private static abstract sealed class BufferedImpl permits WriterImpl, OutputStreamWriterImpl {
         Writer out;
 
         public BufferedImpl(Writer out) {
@@ -267,7 +267,7 @@ public class BufferedWriter extends Writer {
         abstract void close() throws IOException;
     }
 
-    static final class WriterImpl extends BufferedImpl {
+    private static final class WriterImpl extends BufferedImpl {
         private char[] cb;
         private int nChars;
         private int nextChar;
@@ -438,7 +438,7 @@ public class BufferedWriter extends Writer {
         }
     }
 
-    static final class OutputStreamWriterImpl extends BufferedImpl {
+    private static final class OutputStreamWriterImpl extends BufferedImpl {
         OutputStreamWriter os;
         OutputStreamWriterImpl(OutputStreamWriter out) {
             super(out);
