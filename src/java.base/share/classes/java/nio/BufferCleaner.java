@@ -66,6 +66,7 @@ class BufferCleaner {
             this.action = action;
         }
 
+        @Override
         public void clean() {
             if (cleanerList.remove(this)) {
                 // If being cleaned explicitly by application, rather than via
