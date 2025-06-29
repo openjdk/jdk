@@ -90,8 +90,8 @@ public class VectorIO {
         System.arraycopy(bufs, 0, bufsPlus1, 0, bufs.length);
 
         // Get a connection to the server
-        InetAddress lh = InetAddress.getLocalHost();
-        InetSocketAddress isa = new InetSocketAddress(lh, port);
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress isa = new InetSocketAddress(loopback, port);
         SocketChannel sc = SocketChannel.open();
         sc.connect(isa);
         sc.configureBlocking(generator.nextBoolean());
@@ -131,7 +131,8 @@ public class VectorIO {
         Server(int testSize) throws IOException {
             super("Server " + testSize);
             this.testSize = testSize;
-            this.ssc = ServerSocketChannel.open().bind(new InetSocketAddress(0));
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+            this.ssc = ServerSocketChannel.open().bind(new InetSocketAddress(loopback, 0));
         }
 
         int port() {
