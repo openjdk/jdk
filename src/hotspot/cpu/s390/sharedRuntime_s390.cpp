@@ -2544,7 +2544,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -2767,7 +2767,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -2895,7 +2895,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 //
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
   assert(is_polling_page_id(id), "expected a polling page stub id");
@@ -2913,13 +2913,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   address call_pc = nullptr;
   int frame_size_in_bytes;
 
-  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == StubId::shared_polling_page_return_handler_id);
   // Make room for return address (or push it again)
   if (!cause_return) {
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
   }
 
-  bool save_vectors = (id == SharedStubId::polling_page_vectors_safepoint_handler_id);
+  bool save_vectors = (id == StubId::shared_polling_page_vectors_safepoint_handler_id);
   // Save registers, fpu state, and flags
   map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, save_vectors);
 
@@ -2999,7 +2999,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
@@ -3098,7 +3098,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
   const char* name = SharedRuntime::stub_name(id);

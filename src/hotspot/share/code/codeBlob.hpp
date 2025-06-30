@@ -457,6 +457,7 @@ class RuntimeStub: public RuntimeBlob {
   void* operator new(size_t s, unsigned size) throw();
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static RuntimeStub* new_runtime_stub(
     const char* stub_name,
@@ -559,6 +560,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 4 JVMTI_ONLY(+ 2);
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
@@ -689,6 +691,7 @@ class SafepointBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static SafepointBlob* create(
     CodeBuffer* cb,

@@ -180,7 +180,7 @@ ATTRIBUTE_ALIGNED(8) static const juint _ALL_ONES[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmSin() {
-  StubGenStubId stub_id = StubGenStubId::dsin_id;
+  StubId stub_id = StubId::stubgen_dsin_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

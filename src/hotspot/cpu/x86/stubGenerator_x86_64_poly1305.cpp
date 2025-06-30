@@ -910,7 +910,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
 // and accumulator will point to the current accumulator value
 address StubGenerator::generate_poly1305_processBlocks() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::poly1305_processBlocks_id;
+  StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();

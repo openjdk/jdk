@@ -759,7 +759,7 @@ ATTRIBUTE_ALIGNED(8) static const juint _DOUBLE0DOT5[] = {
 #define __ _masm->
 
 address StubGenerator::generate_libmPow() {
-  StubGenStubId stub_id = StubGenStubId::dpow_id;
+  StubId stub_id = StubId::stubgen_dpow_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

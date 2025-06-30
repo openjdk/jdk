@@ -187,7 +187,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
   assert((int)frame::entry_frame_after_call_words == -(int)rsp_after_call_off + 1 &&
          (int)frame::entry_frame_call_wrapper_offset == (int)call_wrapper_off,
          "adjust this code");
-  StubGenStubId stub_id = StubGenStubId::call_stub_id;
+  StubId stub_id = StubId::stubgen_call_stub_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -410,7 +410,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
 // rax: exception oop
 
 address StubGenerator::generate_catch_exception() {
-  StubGenStubId stub_id = StubGenStubId::catch_exception_id;
+  StubId stub_id = StubId::stubgen_catch_exception_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -466,7 +466,7 @@ address StubGenerator::generate_catch_exception() {
 // NOTE: At entry of this stub, exception-pc must be on stack !!
 
 address StubGenerator::generate_forward_exception() {
-  StubGenStubId stub_id = StubGenStubId::forward_exception_id;
+  StubId stub_id = StubId::stubgen_forward_exception_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -530,7 +530,7 @@ address StubGenerator::generate_forward_exception() {
 //
 // Result:
 address StubGenerator::generate_orderaccess_fence() {
-  StubGenStubId stub_id = StubGenStubId::fence_id;
+  StubId stub_id = StubId::stubgen_fence_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -546,7 +546,7 @@ address StubGenerator::generate_orderaccess_fence() {
 // This routine is used to find the previous stack pointer for the
 // caller.
 address StubGenerator::generate_get_previous_sp() {
-  StubGenStubId stub_id = StubGenStubId::get_previous_sp_id;
+  StubId stub_id = StubId::stubgen_get_previous_sp_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -565,7 +565,7 @@ address StubGenerator::generate_get_previous_sp() {
 // MXCSR register to our expected state.
 
 address StubGenerator::generate_verify_mxcsr() {
-  StubGenStubId stub_id = StubGenStubId::verify_mxcsr_id;
+  StubId stub_id = StubId::stubgen_verify_mxcsr_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -594,7 +594,7 @@ address StubGenerator::generate_verify_mxcsr() {
 }
 
 address StubGenerator::generate_f2i_fixup() {
-  StubGenStubId stub_id = StubGenStubId::f2i_fixup_id;
+  StubId stub_id = StubId::stubgen_f2i_fixup_id;
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 5 * wordSize); // return address + 4 saves
 
@@ -633,7 +633,7 @@ address StubGenerator::generate_f2i_fixup() {
 }
 
 address StubGenerator::generate_f2l_fixup() {
-  StubGenStubId stub_id = StubGenStubId::f2l_fixup_id;
+  StubId stub_id = StubId::stubgen_f2l_fixup_id;
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 5 * wordSize); // return address + 4 saves
   address start = __ pc();
@@ -671,7 +671,7 @@ address StubGenerator::generate_f2l_fixup() {
 }
 
 address StubGenerator::generate_d2i_fixup() {
-  StubGenStubId stub_id = StubGenStubId::d2i_fixup_id;
+  StubId stub_id = StubId::stubgen_d2i_fixup_id;
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 6 * wordSize); // return address + 5 saves
 
@@ -719,7 +719,7 @@ address StubGenerator::generate_d2i_fixup() {
 }
 
 address StubGenerator::generate_d2l_fixup() {
-  StubGenStubId stub_id = StubGenStubId::d2l_fixup_id;
+  StubId stub_id = StubId::stubgen_d2l_fixup_id;
   StubCodeMark mark(this, stub_id);
   Address inout(rsp, 6 * wordSize); // return address + 5 saves
 
@@ -768,7 +768,7 @@ address StubGenerator::generate_d2l_fixup() {
 
 address StubGenerator::generate_count_leading_zeros_lut() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::vector_count_leading_zeros_lut_id;
+  StubId stub_id = StubId::stubgen_vector_count_leading_zeros_lut_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -786,7 +786,7 @@ address StubGenerator::generate_count_leading_zeros_lut() {
 
 address StubGenerator::generate_popcount_avx_lut() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::vector_popcount_lut_id;
+  StubId stub_id = StubId::stubgen_vector_popcount_lut_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -804,7 +804,7 @@ address StubGenerator::generate_popcount_avx_lut() {
 
 address StubGenerator::generate_iota_indices() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vector_iota_indices_id;
+  StubId stub_id = StubId::stubgen_vector_iota_indices_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
   // B
@@ -866,7 +866,7 @@ address StubGenerator::generate_iota_indices() {
 
 address StubGenerator::generate_vector_reverse_bit_lut() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vector_reverse_bit_lut_id;
+  StubId stub_id = StubId::stubgen_vector_reverse_bit_lut_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -884,7 +884,7 @@ address StubGenerator::generate_vector_reverse_bit_lut() {
 
 address StubGenerator::generate_vector_reverse_byte_perm_mask_long() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vector_reverse_byte_perm_mask_long_id;
+  StubId stub_id = StubId::stubgen_vector_reverse_byte_perm_mask_long_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -902,7 +902,7 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_long() {
 
 address StubGenerator::generate_vector_reverse_byte_perm_mask_int() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vector_reverse_byte_perm_mask_int_id;
+  StubId stub_id = StubId::stubgen_vector_reverse_byte_perm_mask_int_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -920,7 +920,7 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_int() {
 
 address StubGenerator::generate_vector_reverse_byte_perm_mask_short() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vector_reverse_byte_perm_mask_short_id;
+  StubId stub_id = StubId::stubgen_vector_reverse_byte_perm_mask_short_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -938,7 +938,7 @@ address StubGenerator::generate_vector_reverse_byte_perm_mask_short() {
 
 address StubGenerator::generate_vector_byte_shuffle_mask() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vector_byte_shuffle_mask_id;
+  StubId stub_id = StubId::stubgen_vector_byte_shuffle_mask_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -950,7 +950,7 @@ address StubGenerator::generate_vector_byte_shuffle_mask() {
   return start;
 }
 
-address StubGenerator::generate_fp_mask(StubGenStubId stub_id, int64_t mask) {
+address StubGenerator::generate_fp_mask(StubId stub_id, int64_t mask) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
@@ -961,13 +961,13 @@ address StubGenerator::generate_fp_mask(StubGenStubId stub_id, int64_t mask) {
   return start;
 }
 
-address StubGenerator::generate_compress_perm_table(StubGenStubId stub_id) {
+address StubGenerator::generate_compress_perm_table(StubId stub_id) {
   int esize;
   switch (stub_id) {
-  case compress_perm_table32_id:
+  case StubId::stubgen_compress_perm_table32_id:
     esize = 32;
     break;
-  case compress_perm_table64_id:
+  case StubId::stubgen_compress_perm_table64_id:
     esize = 64;
     break;
   default:
@@ -1016,13 +1016,13 @@ address StubGenerator::generate_compress_perm_table(StubGenStubId stub_id) {
   return start;
 }
 
-address StubGenerator::generate_expand_perm_table(StubGenStubId stub_id) {
+address StubGenerator::generate_expand_perm_table(StubId stub_id) {
   int esize;
   switch (stub_id) {
-  case expand_perm_table32_id:
+  case StubId::stubgen_expand_perm_table32_id:
     esize = 32;
     break;
-  case expand_perm_table64_id:
+  case StubId::stubgen_expand_perm_table64_id:
     esize = 64;
     break;
   default:
@@ -1069,7 +1069,7 @@ address StubGenerator::generate_expand_perm_table(StubGenStubId stub_id) {
   return start;
 }
 
-address StubGenerator::generate_vector_mask(StubGenStubId stub_id, int64_t mask) {
+address StubGenerator::generate_vector_mask(StubId stub_id, int64_t mask) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
@@ -1088,7 +1088,7 @@ address StubGenerator::generate_vector_mask(StubGenStubId stub_id, int64_t mask)
 
 address StubGenerator::generate_vector_byte_perm_mask() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vector_byte_perm_mask_id;
+  StubId stub_id = StubId::stubgen_vector_byte_perm_mask_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1104,7 +1104,7 @@ address StubGenerator::generate_vector_byte_perm_mask() {
   return start;
 }
 
-address StubGenerator::generate_vector_fp_mask(StubGenStubId stub_id, int64_t mask) {
+address StubGenerator::generate_vector_fp_mask(StubId stub_id, int64_t mask) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
@@ -1121,7 +1121,7 @@ address StubGenerator::generate_vector_fp_mask(StubGenStubId stub_id, int64_t ma
   return start;
 }
 
-address StubGenerator::generate_vector_custom_i32(StubGenStubId stub_id, Assembler::AvxVectorLen len,
+address StubGenerator::generate_vector_custom_i32(StubId stub_id, Assembler::AvxVectorLen len,
                                    int32_t val0, int32_t val1, int32_t val2, int32_t val3,
                                    int32_t val4, int32_t val5, int32_t val6, int32_t val7,
                                    int32_t val8, int32_t val9, int32_t val10, int32_t val11,
@@ -1171,7 +1171,7 @@ address StubGenerator::generate_vector_custom_i32(StubGenStubId stub_id, Assembl
 //  * [tos + 8]: saved r10 (rscratch1) - saved by caller
 //  * = popped on exit
 address StubGenerator::generate_verify_oop() {
-  StubGenStubId stub_id = StubGenStubId::verify_oop_id;
+  StubId stub_id = StubId::stubgen_verify_oop_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1369,7 +1369,7 @@ address StubGenerator::generate_data_cache_writeback() {
 
   __ align(CodeEntryAlignment);
 
-  StubGenStubId stub_id = StubGenStubId::data_cache_writeback_id;
+  StubId stub_id = StubId::stubgen_data_cache_writeback_id;
   StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
@@ -1387,7 +1387,7 @@ address StubGenerator::generate_data_cache_writeback_sync() {
 
   __ align(CodeEntryAlignment);
 
-  StubGenStubId stub_id = StubGenStubId::data_cache_writeback_sync_id;
+  StubId stub_id = StubId::stubgen_data_cache_writeback_sync_id;
   StubCodeMark mark(this, stub_id);
 
   // pre wbsync is a no-op
@@ -1409,13 +1409,13 @@ address StubGenerator::generate_data_cache_writeback_sync() {
 
 // ofs and limit are use for multi-block byte array.
 // int com.sun.security.provider.MD5.implCompress(byte[] b, int ofs)
-address StubGenerator::generate_md5_implCompress(StubGenStubId stub_id) {
+address StubGenerator::generate_md5_implCompress(StubId stub_id) {
   bool multi_block;
   switch (stub_id) {
-  case md5_implCompress_id:
+  case StubId::stubgen_md5_implCompress_id:
     multi_block = false;
     break;
-  case md5_implCompressMB_id:
+  case StubId::stubgen_md5_implCompressMB_id:
     multi_block = true;
     break;
   default:
@@ -1458,7 +1458,7 @@ address StubGenerator::generate_md5_implCompress(StubGenStubId stub_id) {
 
 address StubGenerator::generate_upper_word_mask() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::upper_word_mask_id;
+  StubId stub_id = StubId::stubgen_upper_word_mask_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1470,7 +1470,7 @@ address StubGenerator::generate_upper_word_mask() {
 
 address StubGenerator::generate_shuffle_byte_flip_mask() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::shuffle_byte_flip_mask_id;
+  StubId stub_id = StubId::stubgen_shuffle_byte_flip_mask_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1482,13 +1482,13 @@ address StubGenerator::generate_shuffle_byte_flip_mask() {
 
 // ofs and limit are use for multi-block byte array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-address StubGenerator::generate_sha1_implCompress(StubGenStubId stub_id) {
+address StubGenerator::generate_sha1_implCompress(StubId stub_id) {
   bool multi_block;
   switch (stub_id) {
-  case sha1_implCompress_id:
+  case StubId::stubgen_sha1_implCompress_id:
     multi_block = false;
     break;
-  case sha1_implCompressMB_id:
+  case StubId::stubgen_sha1_implCompressMB_id:
     multi_block = true;
     break;
   default:
@@ -1530,7 +1530,7 @@ address StubGenerator::generate_sha1_implCompress(StubGenStubId stub_id) {
 
 address StubGenerator::generate_pshuffle_byte_flip_mask() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::pshuffle_byte_flip_mask_id;
+  StubId stub_id = StubId::stubgen_pshuffle_byte_flip_mask_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1558,7 +1558,7 @@ address StubGenerator::generate_pshuffle_byte_flip_mask() {
 //Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
 address StubGenerator::generate_pshuffle_byte_flip_mask_sha512() {
   __ align32();
-  StubGenStubId stub_id = StubGenStubId::pshuffle_byte_flip_mask_sha512_id;
+  StubId stub_id = StubId::stubgen_pshuffle_byte_flip_mask_sha512_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1578,13 +1578,13 @@ address StubGenerator::generate_pshuffle_byte_flip_mask_sha512() {
 
 // ofs and limit are use for multi-block byte array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-address StubGenerator::generate_sha256_implCompress(StubGenStubId stub_id) {
+address StubGenerator::generate_sha256_implCompress(StubId stub_id) {
   bool multi_block;
   switch (stub_id) {
-  case sha256_implCompress_id:
+  case StubId::stubgen_sha256_implCompress_id:
     multi_block = false;
     break;
-  case sha256_implCompressMB_id:
+  case StubId::stubgen_sha256_implCompressMB_id:
     multi_block = true;
     break;
   default:
@@ -1631,13 +1631,13 @@ address StubGenerator::generate_sha256_implCompress(StubGenStubId stub_id) {
   return start;
 }
 
-address StubGenerator::generate_sha512_implCompress(StubGenStubId stub_id) {
+address StubGenerator::generate_sha512_implCompress(StubId stub_id) {
   bool multi_block;
   switch (stub_id) {
-  case sha512_implCompress_id:
+  case StubId::stubgen_sha512_implCompress_id:
     multi_block = false;
     break;
-  case sha512_implCompressMB_id:
+  case StubId::stubgen_sha512_implCompressMB_id:
     multi_block = true;
     break;
   default:
@@ -1681,7 +1681,7 @@ address StubGenerator::generate_sha512_implCompress(StubGenStubId stub_id) {
 
 address StubGenerator::base64_shuffle_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::shuffle_base64_id;
+  StubId stub_id = StubId::stubgen_shuffle_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1701,7 +1701,7 @@ address StubGenerator::base64_shuffle_addr() {
 
 address StubGenerator::base64_avx2_shuffle_addr() {
   __ align32();
-  StubGenStubId stub_id = StubGenStubId::avx2_shuffle_base64_id;
+  StubId stub_id = StubId::stubgen_avx2_shuffle_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1715,7 +1715,7 @@ address StubGenerator::base64_avx2_shuffle_addr() {
 
 address StubGenerator::base64_avx2_input_mask_addr() {
   __ align32();
-  StubGenStubId stub_id = StubGenStubId::avx2_input_mask_base64_id;
+  StubId stub_id = StubId::stubgen_avx2_input_mask_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1729,7 +1729,7 @@ address StubGenerator::base64_avx2_input_mask_addr() {
 
 address StubGenerator::base64_avx2_lut_addr() {
   __ align32();
-  StubGenStubId stub_id = StubGenStubId::avx2_lut_base64_id;
+  StubId stub_id = StubId::stubgen_avx2_lut_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1749,7 +1749,7 @@ address StubGenerator::base64_avx2_lut_addr() {
 
 address StubGenerator::base64_encoding_table_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::encoding_table_base64_id;
+  StubId stub_id = StubId::stubgen_encoding_table_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1783,7 +1783,7 @@ address StubGenerator::base64_encoding_table_addr() {
 address StubGenerator::generate_base64_encodeBlock()
 {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::base64_encodeBlock_id;
+  StubId stub_id = StubId::stubgen_base64_encodeBlock_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2166,7 +2166,7 @@ address StubGenerator::generate_base64_encodeBlock()
 // base64 AVX512vbmi tables
 address StubGenerator::base64_vbmi_lookup_lo_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::lookup_lo_base64_id;
+  StubId stub_id = StubId::stubgen_lookup_lo_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2186,7 +2186,7 @@ address StubGenerator::base64_vbmi_lookup_lo_addr() {
 
 address StubGenerator::base64_vbmi_lookup_hi_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::lookup_hi_base64_id;
+  StubId stub_id = StubId::stubgen_lookup_hi_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2205,7 +2205,7 @@ address StubGenerator::base64_vbmi_lookup_hi_addr() {
 }
 address StubGenerator::base64_vbmi_lookup_lo_url_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::lookup_lo_base64url_id;
+  StubId stub_id = StubId::stubgen_lookup_lo_base64url_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2225,7 +2225,7 @@ address StubGenerator::base64_vbmi_lookup_lo_url_addr() {
 
 address StubGenerator::base64_vbmi_lookup_hi_url_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::lookup_hi_base64url_id;
+  StubId stub_id = StubId::stubgen_lookup_hi_base64url_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2245,7 +2245,7 @@ address StubGenerator::base64_vbmi_lookup_hi_url_addr() {
 
 address StubGenerator::base64_vbmi_pack_vec_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::pack_vec_base64_id;
+  StubId stub_id = StubId::stubgen_pack_vec_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2265,7 +2265,7 @@ address StubGenerator::base64_vbmi_pack_vec_addr() {
 
 address StubGenerator::base64_vbmi_join_0_1_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::join_0_1_base64_id;
+  StubId stub_id = StubId::stubgen_join_0_1_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2285,7 +2285,7 @@ address StubGenerator::base64_vbmi_join_0_1_addr() {
 
 address StubGenerator::base64_vbmi_join_1_2_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::join_1_2_base64_id;
+  StubId stub_id = StubId::stubgen_join_1_2_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2305,7 +2305,7 @@ address StubGenerator::base64_vbmi_join_1_2_addr() {
 
 address StubGenerator::base64_vbmi_join_2_3_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::join_2_3_base64_id;
+  StubId stub_id = StubId::stubgen_join_2_3_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2325,7 +2325,7 @@ address StubGenerator::base64_vbmi_join_2_3_addr() {
 
 address StubGenerator::base64_AVX2_decode_tables_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::avx2_decode_tables_base64_id;
+  StubId stub_id = StubId::stubgen_avx2_decode_tables_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2360,7 +2360,7 @@ address StubGenerator::base64_AVX2_decode_tables_addr() {
 
 address StubGenerator::base64_AVX2_decode_LUT_tables_addr() {
   __ align64();
-  StubGenStubId stub_id = StubGenStubId::avx2_decode_lut_tables_base64_id;
+  StubId stub_id = StubId::stubgen_avx2_decode_lut_tables_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2400,7 +2400,7 @@ address StubGenerator::base64_AVX2_decode_LUT_tables_addr() {
 }
 
 address StubGenerator::base64_decoding_table_addr() {
-  StubGenStubId stub_id = StubGenStubId::decoding_table_base64_id;
+  StubId stub_id = StubId::stubgen_decoding_table_base64_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -2483,7 +2483,7 @@ address StubGenerator::base64_decoding_table_addr() {
 // private void decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, isMIME) {
 address StubGenerator::generate_base64_decodeBlock() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::base64_decodeBlock_id;
+  StubId stub_id = StubId::stubgen_base64_decodeBlock_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3017,7 +3017,7 @@ address StubGenerator::generate_updateBytesCRC32() {
   assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions");
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::updateBytesCRC32_id;
+  StubId stub_id = StubId::stubgen_updateBytesCRC32_id;
   StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
@@ -3074,7 +3074,7 @@ address StubGenerator::generate_updateBytesCRC32() {
 address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
   assert(UseCRC32CIntrinsics, "need SSE4_2");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::updateBytesCRC32C_id;
+  StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3155,7 +3155,7 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
  */
 address StubGenerator::generate_multiplyToLen() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::multiplyToLen_id;
+  StubId stub_id = StubId::stubgen_multiplyToLen_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3212,7 +3212,7 @@ address StubGenerator::generate_multiplyToLen() {
 */
 address StubGenerator::generate_vectorizedMismatch() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::vectorizedMismatch_id;
+  StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3264,7 +3264,7 @@ address StubGenerator::generate_vectorizedMismatch() {
 address StubGenerator::generate_squareToLen() {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::squareToLen_id;
+  StubId stub_id = StubId::stubgen_squareToLen_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3300,7 +3300,7 @@ address StubGenerator::generate_squareToLen() {
 
 address StubGenerator::generate_method_entry_barrier() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::method_entry_barrier_id;
+  StubId stub_id = StubId::stubgen_method_entry_barrier_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3390,7 +3390,7 @@ address StubGenerator::generate_method_entry_barrier() {
  */
 address StubGenerator::generate_mulAdd() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::mulAdd_id;
+  StubId stub_id = StubId::stubgen_mulAdd_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3432,7 +3432,7 @@ address StubGenerator::generate_mulAdd() {
 
 address StubGenerator::generate_bigIntegerRightShift() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::bigIntegerRightShiftWorker_id;
+  StubId stub_id = StubId::stubgen_bigIntegerRightShiftWorker_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3568,7 +3568,7 @@ address StubGenerator::generate_bigIntegerRightShift() {
  */
 address StubGenerator::generate_bigIntegerLeftShift() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::bigIntegerLeftShiftWorker_id;
+  StubId stub_id = StubId::stubgen_bigIntegerLeftShiftWorker_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3720,7 +3720,7 @@ void StubGenerator::generate_libm_stubs() {
 *       xmm0   - float
 */
 address StubGenerator::generate_float16ToFloat() {
-  StubGenStubId stub_id = StubGenStubId::hf2f_id;
+  StubId stub_id = StubId::stubgen_hf2f_id;
   StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
@@ -3746,7 +3746,7 @@ address StubGenerator::generate_float16ToFloat() {
 *        rax   - float16  jshort
 */
 address StubGenerator::generate_floatToFloat16() {
-  StubGenStubId stub_id = StubGenStubId::f2hf_id;
+  StubId stub_id = StubId::stubgen_f2hf_id;
   StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
@@ -3762,7 +3762,7 @@ address StubGenerator::generate_floatToFloat16() {
   return start;
 }
 
-address StubGenerator::generate_cont_thaw(StubGenStubId stub_id) {
+address StubGenerator::generate_cont_thaw(StubId stub_id) {
   if (!Continuations::enabled()) return nullptr;
 
   bool return_barrier;
@@ -3770,17 +3770,17 @@ address StubGenerator::generate_cont_thaw(StubGenStubId stub_id) {
   Continuation::thaw_kind kind;
 
   switch (stub_id) {
-  case cont_thaw_id:
+  case StubId::stubgen_cont_thaw_id:
     return_barrier = false;
     return_barrier_exception = false;
     kind = Continuation::thaw_top;
     break;
-  case cont_returnBarrier_id:
+  case StubId::stubgen_cont_returnBarrier_id:
     return_barrier = true;
     return_barrier_exception = false;
     kind = Continuation::thaw_return_barrier;
     break;
-  case cont_returnBarrierExc_id:
+  case StubId::stubgen_cont_returnBarrierExc_id:
     return_barrier = true;
     return_barrier_exception = true;
     kind = Continuation::thaw_return_barrier_exception;
@@ -3906,22 +3906,22 @@ address StubGenerator::generate_cont_thaw(StubGenStubId stub_id) {
 }
 
 address StubGenerator::generate_cont_thaw() {
-  return generate_cont_thaw(StubGenStubId::cont_thaw_id);
+  return generate_cont_thaw(StubId::stubgen_cont_thaw_id);
 }
 
 // TODO: will probably need multiple return barriers depending on return type
 
 address StubGenerator::generate_cont_returnBarrier() {
-  return generate_cont_thaw(StubGenStubId::cont_returnBarrier_id);
+  return generate_cont_thaw(StubId::stubgen_cont_returnBarrier_id);
 }
 
 address StubGenerator::generate_cont_returnBarrier_exception() {
-  return generate_cont_thaw(StubGenStubId::cont_returnBarrierExc_id);
+  return generate_cont_thaw(StubId::stubgen_cont_returnBarrierExc_id);
 }
 
 address StubGenerator::generate_cont_preempt_stub() {
   if (!Continuations::enabled()) return nullptr;
-  StubGenStubId stub_id = StubGenStubId::cont_preempt_id;
+  StubId stub_id = StubId::stubgen_cont_preempt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3952,7 +3952,7 @@ address StubGenerator::generate_cont_preempt_stub() {
 
 // exception handler for upcall stubs
 address StubGenerator::generate_upcall_stub_exception_handler() {
-  StubGenStubId stub_id = StubGenStubId::upcall_stub_exception_handler_id;
+  StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3973,7 +3973,7 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
 // j_rarg0 = jobject receiver
 // rbx = result
 address StubGenerator::generate_upcall_stub_load_target() {
-  StubGenStubId stub_id = StubGenStubId::upcall_stub_load_target_id;
+  StubId stub_id = StubId::stubgen_upcall_stub_load_target_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -3993,7 +3993,7 @@ address StubGenerator::generate_upcall_stub_load_target() {
 }
 
 void StubGenerator::generate_lookup_secondary_supers_table_stub() {
-  StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
+  StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_id;
   StubCodeMark mark(this, stub_id);
 
   const Register
@@ -4013,7 +4013,7 @@ void StubGenerator::generate_lookup_secondary_supers_table_stub() {
 
 // Slow path implementation for UseSecondarySupersTable.
 address StubGenerator::generate_lookup_secondary_supers_table_slow_path_stub() {
-  StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_slow_path_id;
+  StubId stub_id = StubId::stubgen_lookup_secondary_supers_table_slow_path_id;
   StubCodeMark mark(this, stub_id);
 
   address start = __ pc();
@@ -4089,10 +4089,10 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::x86::_d2i_fixup             = generate_d2i_fixup();
   StubRoutines::x86::_d2l_fixup             = generate_d2l_fixup();
 
-  StubRoutines::x86::_float_sign_mask       = generate_fp_mask(StubGenStubId::float_sign_mask_id,  0x7FFFFFFF7FFFFFFF);
-  StubRoutines::x86::_float_sign_flip       = generate_fp_mask(StubGenStubId::float_sign_flip_id,  0x8000000080000000);
-  StubRoutines::x86::_double_sign_mask      = generate_fp_mask(StubGenStubId::double_sign_mask_id, 0x7FFFFFFFFFFFFFFF);
-  StubRoutines::x86::_double_sign_flip      = generate_fp_mask(StubGenStubId::double_sign_flip_id, 0x8000000000000000);
+  StubRoutines::x86::_float_sign_mask       = generate_fp_mask(StubId::stubgen_float_sign_mask_id,  0x7FFFFFFF7FFFFFFF);
+  StubRoutines::x86::_float_sign_flip       = generate_fp_mask(StubId::stubgen_float_sign_flip_id,  0x8000000080000000);
+  StubRoutines::x86::_double_sign_mask      = generate_fp_mask(StubId::stubgen_double_sign_mask_id, 0x7FFFFFFFFFFFFFFF);
+  StubRoutines::x86::_double_sign_flip      = generate_fp_mask(StubId::stubgen_double_sign_flip_id, 0x8000000000000000);
 
   if (UseCRC32Intrinsics) {
     // set table address before stub generation which use it
@@ -4165,25 +4165,25 @@ void StubGenerator::generate_compiler_stubs() {
 
   // Entry points that are C2 compiler specific.
 
-  StubRoutines::x86::_vector_float_sign_mask = generate_vector_mask(StubGenStubId::vector_float_sign_mask_id, 0x7FFFFFFF7FFFFFFF);
-  StubRoutines::x86::_vector_float_sign_flip = generate_vector_mask(StubGenStubId::vector_float_sign_flip_id, 0x8000000080000000);
-  StubRoutines::x86::_vector_double_sign_mask = generate_vector_mask(StubGenStubId::vector_double_sign_mask_id, 0x7FFFFFFFFFFFFFFF);
-  StubRoutines::x86::_vector_double_sign_flip = generate_vector_mask(StubGenStubId::vector_double_sign_flip_id, 0x8000000000000000);
-  StubRoutines::x86::_vector_all_bits_set = generate_vector_mask(StubGenStubId::vector_all_bits_set_id, 0xFFFFFFFFFFFFFFFF);
-  StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask(StubGenStubId::vector_int_mask_cmp_bits_id, 0x0000000100000001);
-  StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask(StubGenStubId::vector_short_to_byte_mask_id, 0x00ff00ff00ff00ff);
+  StubRoutines::x86::_vector_float_sign_mask = generate_vector_mask(StubId::stubgen_vector_float_sign_mask_id, 0x7FFFFFFF7FFFFFFF);
+  StubRoutines::x86::_vector_float_sign_flip = generate_vector_mask(StubId::stubgen_vector_float_sign_flip_id, 0x8000000080000000);
+  StubRoutines::x86::_vector_double_sign_mask = generate_vector_mask(StubId::stubgen_vector_double_sign_mask_id, 0x7FFFFFFFFFFFFFFF);
+  StubRoutines::x86::_vector_double_sign_flip = generate_vector_mask(StubId::stubgen_vector_double_sign_flip_id, 0x8000000000000000);
+  StubRoutines::x86::_vector_all_bits_set = generate_vector_mask(StubId::stubgen_vector_all_bits_set_id, 0xFFFFFFFFFFFFFFFF);
+  StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask(StubId::stubgen_vector_int_mask_cmp_bits_id, 0x0000000100000001);
+  StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_short_to_byte_mask_id, 0x00ff00ff00ff00ff);
   StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask();
-  StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask(StubGenStubId::vector_int_to_byte_mask_id, 0x000000ff000000ff);
-  StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask(StubGenStubId::vector_int_to_short_mask_id, 0x0000ffff0000ffff);
-  StubRoutines::x86::_vector_32_bit_mask = generate_vector_custom_i32(StubGenStubId::vector_32_bit_mask_id, Assembler::AVX_512bit,
+  StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask(StubId::stubgen_vector_int_to_byte_mask_id, 0x000000ff000000ff);
+  StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask(StubId::stubgen_vector_int_to_short_mask_id, 0x0000ffff0000ffff);
+  StubRoutines::x86::_vector_32_bit_mask = generate_vector_custom_i32(StubId::stubgen_vector_32_bit_mask_id, Assembler::AVX_512bit,
                                                                       0xFFFFFFFF, 0, 0, 0);
-  StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32(StubGenStubId::vector_64_bit_mask_id, Assembler::AVX_512bit,
+  StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32(StubId::stubgen_vector_64_bit_mask_id, Assembler::AVX_512bit,
                                                                       0xFFFFFFFF, 0xFFFFFFFF, 0, 0);
-  StubRoutines::x86::_vector_int_shuffle_mask = generate_vector_mask(StubGenStubId::vector_int_shuffle_mask_id, 0x0302010003020100);
+  StubRoutines::x86::_vector_int_shuffle_mask = generate_vector_mask(StubId::stubgen_vector_int_shuffle_mask_id, 0x0302010003020100);
   StubRoutines::x86::_vector_byte_shuffle_mask = generate_vector_byte_shuffle_mask();
-  StubRoutines::x86::_vector_short_shuffle_mask = generate_vector_mask(StubGenStubId::vector_short_shuffle_mask_id, 0x0100010001000100);
-  StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask(StubGenStubId::vector_long_shuffle_mask_id, 0x0000000100000000);
-  StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask(StubGenStubId::vector_long_sign_mask_id, 0x8000000000000000);
+  StubRoutines::x86::_vector_short_shuffle_mask = generate_vector_mask(StubId::stubgen_vector_short_shuffle_mask_id, 0x0100010001000100);
+  StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask(StubId::stubgen_vector_long_shuffle_mask_id, 0x0000000100000000);
+  StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask(StubId::stubgen_vector_long_sign_mask_id, 0x8000000000000000);
   StubRoutines::x86::_vector_iota_indices = generate_iota_indices();
   StubRoutines::x86::_vector_count_leading_zeros_lut = generate_count_leading_zeros_lut();
   StubRoutines::x86::_vector_reverse_bit_lut = generate_vector_reverse_bit_lut();
@@ -4192,10 +4192,10 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_reverse_byte_perm_mask_short = generate_vector_reverse_byte_perm_mask_short();
 
   if (VM_Version::supports_avx2() && !VM_Version::supports_avx512vl()) {
-    StubRoutines::x86::_compress_perm_table32 = generate_compress_perm_table(StubGenStubId::compress_perm_table32_id);
-    StubRoutines::x86::_compress_perm_table64 = generate_compress_perm_table(StubGenStubId::compress_perm_table64_id);
-    StubRoutines::x86::_expand_perm_table32 = generate_expand_perm_table(StubGenStubId::expand_perm_table32_id);
-    StubRoutines::x86::_expand_perm_table64 = generate_expand_perm_table(StubGenStubId::expand_perm_table64_id);
+    StubRoutines::x86::_compress_perm_table32 = generate_compress_perm_table(StubId::stubgen_compress_perm_table32_id);
+    StubRoutines::x86::_compress_perm_table64 = generate_compress_perm_table(StubId::stubgen_compress_perm_table64_id);
+    StubRoutines::x86::_expand_perm_table32 = generate_expand_perm_table(StubId::stubgen_expand_perm_table32_id);
+    StubRoutines::x86::_expand_perm_table64 = generate_expand_perm_table(StubId::stubgen_expand_perm_table64_id);
   }
 
   if (VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
@@ -4239,15 +4239,15 @@ void StubGenerator::generate_compiler_stubs() {
   }
 
   if (UseMD5Intrinsics) {
-    StubRoutines::_md5_implCompress = generate_md5_implCompress(StubGenStubId::md5_implCompress_id);
-    StubRoutines::_md5_implCompressMB = generate_md5_implCompress(StubGenStubId::md5_implCompressMB_id);
+    StubRoutines::_md5_implCompress = generate_md5_implCompress(StubId::stubgen_md5_implCompress_id);
+    StubRoutines::_md5_implCompressMB = generate_md5_implCompress(StubId::stubgen_md5_implCompressMB_id);
   }
 
   if (UseSHA1Intrinsics) {
     StubRoutines::x86::_upper_word_mask_addr = generate_upper_word_mask();
     StubRoutines::x86::_shuffle_byte_flip_mask_addr = generate_shuffle_byte_flip_mask();
-    StubRoutines::_sha1_implCompress = generate_sha1_implCompress(StubGenStubId::sha1_implCompress_id);
-    StubRoutines::_sha1_implCompressMB = generate_sha1_implCompress(StubGenStubId::sha1_implCompressMB_id);
+    StubRoutines::_sha1_implCompress = generate_sha1_implCompress(StubId::stubgen_sha1_implCompress_id);
+    StubRoutines::_sha1_implCompressMB = generate_sha1_implCompress(StubId::stubgen_sha1_implCompressMB_id);
   }
 
   if (UseSHA256Intrinsics) {
@@ -4260,15 +4260,15 @@ void StubGenerator::generate_compiler_stubs() {
     }
     StubRoutines::x86::_k256_W_adr = (address)StubRoutines::x86::_k256_W;
     StubRoutines::x86::_pshuffle_byte_flip_mask_addr = generate_pshuffle_byte_flip_mask();
-    StubRoutines::_sha256_implCompress = generate_sha256_implCompress(StubGenStubId::sha256_implCompress_id);
-    StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubGenStubId::sha256_implCompressMB_id);
+    StubRoutines::_sha256_implCompress = generate_sha256_implCompress(StubId::stubgen_sha256_implCompress_id);
+    StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(StubId::stubgen_sha256_implCompressMB_id);
   }
 
   if (UseSHA512Intrinsics) {
     StubRoutines::x86::_k512_W_addr = (address)StubRoutines::x86::_k512_W;
     StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = generate_pshuffle_byte_flip_mask_sha512();
-    StubRoutines::_sha512_implCompress = generate_sha512_implCompress(StubGenStubId::sha512_implCompress_id);
-    StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubGenStubId::sha512_implCompressMB_id);
+    StubRoutines::_sha512_implCompress = generate_sha512_implCompress(StubId::stubgen_sha512_implCompress_id);
+    StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubId::stubgen_sha512_implCompressMB_id);
   }
 
   if (UseBASE64Intrinsics) {
@@ -4344,30 +4344,30 @@ void StubGenerator::generate_compiler_stubs() {
 #endif // COMPILER2_OR_JVMCI
 }
 
-StubGenerator::StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+StubGenerator::StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
   switch(blob_id) {
-  case preuniverse_id:
+  case BlobId::stubgen_preuniverse_id:
     generate_preuniverse_stubs();
     break;
-  case initial_id:
+  case BlobId::stubgen_initial_id:
     generate_initial_stubs();
     break;
-  case continuation_id:
+  case BlobId::stubgen_continuation_id:
     generate_continuation_stubs();
     break;
-  case compiler_id:
+  case BlobId::stubgen_compiler_id:
     generate_compiler_stubs();
     break;
-  case final_id:
+  case BlobId::stubgen_final_id:
     generate_final_stubs();
     break;
   default:
-    fatal("unexpected blob id: %d", blob_id);
+    fatal("unexpected blob id: %s", StubInfo::name(blob_id));
     break;
   };
 }
 
-void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
   StubGenerator g(code, blob_id);
 }
 

@@ -69,11 +69,13 @@ void StubCodeDesc::print() const { print_on(tty); }
 
 StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
   _masm = new MacroAssembler(code);
-  _blob_id = StubGenBlobId::NO_BLOBID;
+  _blob_id = BlobId::NO_BLOBID;
   _print_code = PrintStubCode || print_code;
 }
 
-StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, StubGenBlobId blob_id, bool print_code) {
+StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, BlobId blob_id, bool print_code) {
+  assert(StubInfo::is_stubgen(blob_id),
+         "not a stubgen blob %s", StubInfo::name(blob_id));
   _masm = new MacroAssembler(code);
   _blob_id = blob_id;
   _print_code = PrintStubCode || print_code;
@@ -119,7 +121,7 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
 }
 
 #ifdef ASSERT
-void StubCodeGenerator::verify_stub(StubGenStubId stub_id) {
+void StubCodeGenerator::verify_stub(StubId stub_id) {
   assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob %s for generation of stub %s", StubRoutines::get_blob_name(blob_id()), StubRoutines::get_stub_name(stub_id));
 }
 #endif
@@ -134,7 +136,7 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const cha
   _cdesc->set_begin(_cgen->assembler()->pc());
 }
 
-StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubGenStubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) {
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) {
 #ifdef ASSERT
   cgen->verify_stub(stub_id);
 #endif

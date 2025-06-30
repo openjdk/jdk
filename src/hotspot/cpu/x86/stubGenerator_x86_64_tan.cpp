@@ -455,7 +455,7 @@ ATTRIBUTE_ALIGNED(8) static const juint _QQ_2_tan[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmTan() {
-  StubGenStubId stub_id = StubGenStubId::dtan_id;
+  StubId stub_id = StubId::stubgen_dtan_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
