@@ -23,31 +23,14 @@
 
 /*
  * @test
- * @bug 8155781
+ * @bug 8155781 8359344
  * @modules java.base/jdk.internal.misc
- *
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                                 -XX:-TieredCompilation -Xbatch
- *                                 -XX:+UseCompressedOops -XX:+UseCompressedClassPointers
- *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
- *                                 compiler.unsafe.OpaqueAccesses
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                                 -XX:-TieredCompilation -Xbatch
- *                                 -XX:+UseCompressedOops -XX:-UseCompressedClassPointers
- *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
- *                                 compiler.unsafe.OpaqueAccesses
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                                 -XX:-TieredCompilation -Xbatch
- *                                 -XX:-UseCompressedOops -XX:+UseCompressedClassPointers
- *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
- *                                 compiler.unsafe.OpaqueAccesses
- * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                                 -XX:-TieredCompilation -Xbatch
- *                                 -XX:-UseCompressedOops -XX:-UseCompressedClassPointers
- *                                 -XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*
- *                                 compiler.unsafe.OpaqueAccesses
+ * @library /test/lib /
+ * @run driver compiler.unsafe.OpaqueAccesses
  */
 package compiler.unsafe;
+
+import compiler.lib.ir_framework.*;
 
 import jdk.internal.misc.Unsafe;
 
@@ -77,74 +60,186 @@ public class OpaqueAccesses {
     private Object f = new Object();
     private long l1, l2;
 
+
+    private static final String FULL_LINES = "(.*\\R)*";
+    private static final String SKIP = IRNode.MID + IRNode.END + "\\R" + FULL_LINES + "\\s*" + IRNode.START;
+
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedOffsetField(Object o) {
         return UNSAFE.getReference(o, F_OFFSET);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader0(Object o) {
         return UNSAFE.getInt(o, 0);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader4(Object o) {
         return UNSAFE.getInt(o, 4);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader8(Object o) {
         return UNSAFE.getInt(o, 8);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader12(Object o) {
         return UNSAFE.getInt(o, 12);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader16(Object o) {
         return UNSAFE.getInt(o, 16);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader17(Object o) {
         return UNSAFE.getIntUnaligned(o, 17);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedBase(long off) {
         return UNSAFE.getReference(INSTANCE, off);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testOpaque(Object o, long off) {
         return UNSAFE.getReference(o, off);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray0(Object[] arr) {
         return UNSAFE.getInt(arr, 0);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray4(Object[] arr) {
         return UNSAFE.getInt(arr, 4);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray8(Object[] arr) {
         return UNSAFE.getInt(arr, 8);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray12(Object[] arr) {
         return UNSAFE.getInt(arr, 12);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray16(Object[] arr) {
         return UNSAFE.getInt(arr, 16);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray17(Object[] arr) {
         return UNSAFE.getIntUnaligned(arr, 17);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedOffsetArray(Object[] arr) {
         return UNSAFE.getReference(arr, E_OFFSET);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedBaseArray(long off) {
         return UNSAFE.getReference(ARRAY, off);
     }
 
+    @Test
+    @IR(failOn = {
+            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
+            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
+    },
+            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testOpaqueArray(Object[] o, long off) {
         return UNSAFE.getReference(o, off);
     }
@@ -152,6 +247,7 @@ public class OpaqueAccesses {
     static final long ADDR = UNSAFE.allocateMemory(10);
     static boolean flag;
 
+    @Test
     static int testMixedAccess() {
         flag = !flag;
         Object o = (flag ? INSTANCE : null);
@@ -159,8 +255,29 @@ public class OpaqueAccesses {
         return UNSAFE.getInt(o, off);
     }
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
+    @Run(test = {
+            "testFixedOffsetField",
+            "testFixedOffsetHeader0",
+            "testFixedOffsetHeader4",
+            "testFixedOffsetHeader8",
+            "testFixedOffsetHeader12",
+            "testFixedOffsetHeader16",
+            "testFixedOffsetHeader17",
+            "testFixedBase",
+            "testOpaque",
+            "testMixedAccess",
+            "testFixedOffsetHeaderArray0",
+            "testFixedOffsetHeaderArray4",
+            "testFixedOffsetHeaderArray8",
+            "testFixedOffsetHeaderArray12",
+            "testFixedOffsetHeaderArray16",
+            "testFixedOffsetHeaderArray17",
+            "testFixedOffsetArray",
+            "testFixedBaseArray",
+            "testOpaqueArray",
+    })
+    public static void runMethod() {
+        /* for (int i = 0; i < 20_000; i++) */ {
             // Instance
             testFixedOffsetField(INSTANCE);
             testFixedOffsetHeader0(INSTANCE);
@@ -185,5 +302,36 @@ public class OpaqueAccesses {
             testOpaqueArray(ARRAY, E_OFFSET);
         }
         System.out.println("TEST PASSED");
+    }
+
+    public static void main(String[] args) {
+        TestFramework.runWithFlags(
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:-TieredCompilation", "-Xbatch",
+                "-XX:+UseCompressedOops", "-XX:+UseCompressedClassPointers",
+                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
+        );
+        TestFramework.runWithFlags(
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:-TieredCompilation", "-Xbatch",
+                "-XX:+UseCompressedOops", "-XX:-UseCompressedClassPointers",
+                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
+        );
+        TestFramework.runWithFlags(
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:-TieredCompilation", "-Xbatch",
+                "-XX:-UseCompressedOops", "-XX:+UseCompressedClassPointers",
+                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
+        );
+        TestFramework.runWithFlags(
+                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:-TieredCompilation", "-Xbatch",
+                "-XX:-UseCompressedOops", "-XX:-UseCompressedClassPointers",
+                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
+        );
     }
 }

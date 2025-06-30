@@ -99,9 +99,9 @@ public class IRNode {
 
     private static final String POSTFIX = "#_";
 
-    private static final String START = "(\\d+(\\s){2}(";
-    private static final String MID = ".*)+(\\s){2}===.*";
-    private static final String END = ")";
+    public static final String START = "(\\d+(\\s){2}(";
+    public static final String MID = ".*)+(\\s){2}===.*";
+    public static final String END = ")";
     private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
 
