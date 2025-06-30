@@ -51,11 +51,11 @@ import jdk.internal.math.FloatingDecimal;
  * DecimalFormat is that DigitList handles the radix 10 representation
  * issues; DecimalFormat handles the locale-specific issues such as
  * positive/negative, grouping, decimal point, currency, and so on.
- *
+ * <p>
  * A DigitList is really a representation of a floating point value.
  * It may be an integer value; we assume that a double has sufficient
  * precision to represent all digits of a long.
- *
+ * <p>
  * The DigitList representation consists of a string of characters,
  * which are the digits radix 10, from '0' to '9'.  It also has a radix
  * 10 exponent associated with it.  The value represented by a DigitList
@@ -81,22 +81,22 @@ final class DigitList implements Cloneable {
 
     /**
      * These data members are intentionally public and can be set directly.
-     *
+     * <p>
      * The value represented is given by placing the decimal point before
      * digits[decimalAt].  If decimalAt is < 0, then leading zeros between
      * the decimal point and the first nonzero digit are implied.  If decimalAt
      * is > count, then trailing zeros between the digits[count-1] and the
      * decimal point are implied.
-     *
+     * <p>
      * Equivalently, the represented value is given by f * 10^decimalAt.  Here
      * f is a value 0.1 <= f < 1 arrived at by placing the digits in Digits to
      * the right of the decimal.
-     *
+     * <p>
      * DigitList is normalized, so if it is non-zero, digits[0] is non-zero.  We
      * don't allow denormalized numbers because our exponent is effectively of
      * unlimited magnitude.  The count value contains the number of significant
      * digits present in digits[].
-     *
+     * <p>
      * Zero is represented by any DigitList with count == 0 or with each digits[i]
      * for all i <= count == '0'.
      */
@@ -165,7 +165,7 @@ final class DigitList implements Cloneable {
      * If (count == 0) this returns 0.0,
      * unlike Double.parseDouble("") which throws NumberFormatException.
      */
-    public final double getDouble() {
+    public double getDouble() {
         if (count == 0) {
             return 0.0;
         }
@@ -183,7 +183,7 @@ final class DigitList implements Cloneable {
      * If (count == 0) this returns 0,
      * unlike Long.parseLong("") which throws NumberFormatException.
      */
-    public final long getLong() {
+    public long getLong() {
         // for now, simple implementation; later, do proper IEEE native stuff
 
         if (count == 0) {
@@ -208,7 +208,7 @@ final class DigitList implements Cloneable {
      * If (count == 0) this does not throw a NumberFormatException,
      * unlike BigDecimal("").
      */
-    public final BigDecimal getBigDecimal() {
+    public BigDecimal getBigDecimal() {
         if (count == 0) {
             if (decimalAt == 0) {
                 return BigDecimal.ZERO;
@@ -284,7 +284,7 @@ final class DigitList implements Cloneable {
      * @param maximumFractionDigits The most fractional digits which should
      * be converted.
      */
-    final void set(boolean isNegative, double source, int maximumFractionDigits) {
+    void set(boolean isNegative, double source, int maximumFractionDigits) {
         set(isNegative, source, maximumFractionDigits, true);
     }
 
@@ -299,9 +299,11 @@ final class DigitList implements Cloneable {
      * @param fixedPoint If true, then maximumDigits is the maximum
      * fractional digits to be converted.  If false, total digits.
      */
-    final void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
-
-        FloatingDecimal.BinaryToASCIIConverter fdConverter  = FloatingDecimal.getBinaryToASCIIConverter(source);
+    void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
+        FloatingDecimal.BinaryToASCIIConverter fdConverter =
+                Boolean.getBoolean("decimal.format.compat")
+                        ? FloatingDecimal.getCompatBinaryToASCIIConverter(source)
+                        : FloatingDecimal.getBinaryToASCIIConverter(source);
         boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
         boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
         assert !fdConverter.isExceptional();
@@ -419,7 +421,7 @@ final class DigitList implements Cloneable {
      *
      * Upon return, count will be less than or equal to maximumDigits.
      */
-    private final void round(int maximumDigits,
+    private void round(int maximumDigits,
                              boolean alreadyRounded,
                              boolean valueExactAsDecimal) {
         // Eliminate digits beyond maximum digits to be displayed.
@@ -586,7 +588,7 @@ final class DigitList implements Cloneable {
     /**
      * Utility routine to set the value of the digit list from a long
      */
-    final void set(boolean isNegative, long source) {
+    void set(boolean isNegative, long source) {
         set(isNegative, source, 0);
     }
 
@@ -599,7 +601,7 @@ final class DigitList implements Cloneable {
      * If maximumDigits is lower than the number of significant digits
      * in source, the representation will be rounded.  Ignored if <= 0.
      */
-    final void set(boolean isNegative, long source, int maximumDigits) {
+    void set(boolean isNegative, long source, int maximumDigits) {
         this.isNegative = isNegative;
 
         // This method does not expect a negative number. However,
@@ -649,7 +651,7 @@ final class DigitList implements Cloneable {
      * @param fixedPoint If true, then maximumDigits is the maximum
      * fractional digits to be converted.  If false, total digits.
      */
-    final void set(boolean isNegative, BigDecimal source, int maximumDigits, boolean fixedPoint) {
+    void set(boolean isNegative, BigDecimal source, int maximumDigits, boolean fixedPoint) {
         String s = source.toString();
         extendDigits(s.length());
 
@@ -666,7 +668,7 @@ final class DigitList implements Cloneable {
      * If maximumDigits is lower than the number of significant digits
      * in source, the representation will be rounded.  Ignored if <= 0.
      */
-    final void set(boolean isNegative, BigInteger source, int maximumDigits) {
+    void set(boolean isNegative, BigInteger source, int maximumDigits) {
         this.isNegative = isNegative;
         String s = source.toString();
         int len = s.length();
@@ -754,7 +756,7 @@ final class DigitList implements Cloneable {
         return true;
     }
 
-    private static final int parseInt(char[] str, int offset, int strLen) {
+    private static int parseInt(char[] str, int offset, int strLen) {
         char c;
         boolean positive = true;
         if ((c = str[offset]) == '-') {
@@ -804,7 +806,7 @@ final class DigitList implements Cloneable {
         }
     }
 
-    private final char[] getDataChars(int length) {
+    private char[] getDataChars(int length) {
         if (data == null || data.length < length) {
             data = new char[length];
         }

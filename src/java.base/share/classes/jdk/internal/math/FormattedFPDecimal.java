@@ -70,7 +70,7 @@ public final class FormattedFPDecimal {
         };
     }
 
-    private static FormattedFPDecimal split(double v) {
+    static FormattedFPDecimal split(double v) {
         FormattedFPDecimal fd = new FormattedFPDecimal();
         DoubleToDecimal.split(v, fd);
         return fd;
@@ -132,6 +132,14 @@ public final class FormattedFPDecimal {
 
     public int getPrecision() {
         return n;
+    }
+
+    public boolean getAway() {
+        return away;
+    }
+
+    public boolean getExact() {
+        return exact;
     }
 
     public int getExp() {
