@@ -782,10 +782,6 @@ void os::free_thread(OSThread* osthread) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
-}
 
 #ifdef __APPLE__
 void os::Bsd::clock_init() {

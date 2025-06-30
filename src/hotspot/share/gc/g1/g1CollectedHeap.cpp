@@ -1269,6 +1269,9 @@ jint G1CollectedHeap::initialize_service_thread() {
 
 jint G1CollectedHeap::initialize() {
 
+  if (!os::is_thread_cpu_time_supported()) {
+    vm_exit_during_initialization("G1 requires cpu time gathering support");
+  }
   // Necessary to satisfy locking discipline assertions.
 
   MutexLocker x(Heap_lock);
@@ -2234,7 +2237,7 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   _free_arena_memory_task->notify_new_stats(&_young_gen_card_set_stats,
                                             &_collection_set_candidates_card_set_stats);
 
-  update_parallel_gc_threads_cpu_time();
+  update_perf_counter_cpu_time();
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {
@@ -2318,10 +2321,10 @@ void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
 }
 #endif
 
-void G1CollectedHeap::update_parallel_gc_threads_cpu_time() {
+void G1CollectedHeap::update_perf_counter_cpu_time() {
   assert(Thread::current()->is_VM_thread(),
          "Must be called from VM thread to avoid races");
-  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+  if (!UsePerfData) {
     return;
   }
 

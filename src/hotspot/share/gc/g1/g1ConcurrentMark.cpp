@@ -71,6 +71,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/align.hpp"
@@ -507,8 +508,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _remark_weak_ref_times(),
   _cleanup_times(),
 
-  _accum_task_vtime(nullptr),
-
   _concurrent_workers(nullptr),
   _num_concurrent_workers(0),
   _max_concurrent_workers(0),
@@ -542,7 +541,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   }
 
   _tasks = NEW_C_HEAP_ARRAY(G1CMTask*, _max_num_tasks, mtGC);
-  _accum_task_vtime = NEW_C_HEAP_ARRAY(double, _max_num_tasks, mtGC);
 
   // so that the assertion in MarkingTaskQueue::task_queue doesn't fail
   _num_active_tasks = _max_num_tasks;
@@ -552,8 +550,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
     _task_queues->register_queue(i, task_queue);
 
     _tasks[i] = new G1CMTask(i, this, task_queue, _region_mark_stats);
-
-    _accum_task_vtime[i] = 0.0;
   }
 
   reset_at_marking_complete();
@@ -980,30 +976,23 @@ public:
   void work(uint worker_id) {
     ResourceMark rm;
 
-    double start_vtime = os::elapsedVTime();
+    SuspendibleThreadSetJoiner sts_join;
 
-    {
-      SuspendibleThreadSetJoiner sts_join;
+    assert(worker_id < _cm->active_tasks(), "invariant");
 
-      assert(worker_id < _cm->active_tasks(), "invariant");
+    G1CMTask* task = _cm->task(worker_id);
+    task->record_start_time();
+    if (!_cm->has_aborted()) {
+      do {
+        task->do_marking_step(G1ConcMarkStepDurationMillis,
+                              true  /* do_termination */,
+                              false /* is_serial*/);
 
-      G1CMTask* task = _cm->task(worker_id);
-      task->record_start_time();
-      if (!_cm->has_aborted()) {
-        do {
-          task->do_marking_step(G1ConcMarkStepDurationMillis,
-                                true  /* do_termination */,
-                                false /* is_serial*/);
-
-          _cm->do_yield_check();
-        } while (!_cm->has_aborted() && task->has_aborted());
-      }
-      task->record_end_time();
-      guarantee(!task->has_aborted() || _cm->has_aborted(), "invariant");
+        _cm->do_yield_check();
+      } while (!_cm->has_aborted() && task->has_aborted());
     }
-
-    double end_vtime = os::elapsedVTime();
-    _cm->update_accum_task_vtime(worker_id, end_vtime - start_vtime);
+    task->record_end_time();
+    guarantee(!task->has_aborted() || _cm->has_aborted(), "invariant");
   }
 
   G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
@@ -1496,7 +1485,7 @@ void G1ConcurrentMark::remark() {
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
 
-  _g1h->update_parallel_gc_threads_cpu_time();
+  _g1h->update_perf_counter_cpu_time();
 
   policy->record_concurrent_mark_remark_end();
 }
@@ -2090,6 +2079,23 @@ void G1ConcurrentMark::abort_marking_threads() {
   _second_overflow_barrier_sync.abort();
 }
 
+double G1ConcurrentMark::worker_threads_cpu_time_s() {
+  class CountCpuTimeThreadClosure : public ThreadClosure {
+  public:
+    jlong _total_cpu_time;
+
+    CountCpuTimeThreadClosure() : ThreadClosure(), _total_cpu_time(0) { }
+
+    void do_thread(Thread* t) {
+      _total_cpu_time += os::thread_cpu_time(t);
+    }
+  } cl;
+
+  threads_do(&cl);
+
+  return (double)cl._total_cpu_time / NANOSECS_PER_SEC;
+}
+
 static void print_ms_time_info(const char* prefix, const char* name,
                                NumberSeq& ns) {
   log_trace(gc, marking)("%s%5d %12s: total time = %8.2f s (avg = %8.2f ms).",
@@ -2119,7 +2125,7 @@ void G1ConcurrentMark::print_summary_info() {
   log.trace("  Total stop_world time = %8.2f s.",
             (_remark_times.sum() + _cleanup_times.sum())/1000.0);
   log.trace("  Total concurrent time = %8.2f s (%8.2f s marking).",
-            cm_thread()->vtime_accum(), cm_thread()->vtime_mark_accum());
+            cm_thread()->total_mark_cpu_time_s(), cm_thread()->worker_threads_cpu_time_s());
 }
 
 void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
@@ -2263,8 +2269,6 @@ bool G1CMTask::regular_clock_call() {
     return false;
   }
 
-  double curr_time_ms = os::elapsedVTime() * 1000.0;
-
   // (4) We check whether we should yield. If we have to, then we abort.
   if (SuspendibleThreadSet::should_yield()) {
     // We should yield. To do this we abort the task. The caller is
@@ -2274,7 +2278,7 @@ bool G1CMTask::regular_clock_call() {
 
   // (5) We check whether we've reached our time quota. If we have,
   // then we abort.
-  double elapsed_time_ms = curr_time_ms - _start_time_ms;
+  double elapsed_time_ms = (double)(os::current_thread_cpu_time() - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
   if (elapsed_time_ms > _time_target_ms) {
     _has_timed_out = true;
     return false;
@@ -2789,9 +2793,9 @@ void G1CMTask::handle_abort(bool is_serial, double elapsed_time_ms) {
     phase has visited reach a given limit. Additional invocations to
     the method clock have been planted in a few other strategic places
     too. The initial reason for the clock method was to avoid calling
-    vtime too regularly, as it is quite expensive. So, once it was in
-    place, it was natural to piggy-back all the other conditions on it
-    too and not constantly check them throughout the code.
+    cpu time gathering too regularly, as it is quite expensive. So,
+    once it was in place, it was natural to piggy-back all the other
+    conditions on it too and not constantly check them throughout the code.
 
     If do_termination is true then do_marking_step will enter its
     termination protocol.
@@ -2814,7 +2818,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
                                bool is_serial) {
   assert(time_target_ms >= 1.0, "minimum granularity is 1ms");
 
-  _start_time_ms = os::elapsedVTime() * 1000.0;
+  _start_cpu_time_ns = os::current_thread_cpu_time();
 
   // If do_stealing is true then do_marking_step will attempt to
   // steal work from the other G1CMTasks. It only makes sense to
@@ -2908,8 +2912,8 @@ void G1CMTask::do_marking_step(double time_target_ms,
   // closure which was statically allocated in this frame doesn't
   // escape it by accident.
   set_cm_oop_closure(nullptr);
-  double end_time_ms = os::elapsedVTime() * 1000.0;
-  double elapsed_time_ms = end_time_ms - _start_time_ms;
+  jlong end_cpu_time_ns = os::current_thread_cpu_time();
+  double elapsed_time_ms = (double)(end_cpu_time_ns - _start_cpu_time_ns) / NANOSECS_PER_MILLISEC;
   // Update the step history.
   _step_times_ms.add(elapsed_time_ms);
 
@@ -2932,7 +2936,7 @@ G1CMTask::G1CMTask(uint worker_id,
   _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize),
   _calls(0),
   _time_target_ms(0.0),
-  _start_time_ms(0.0),
+  _start_cpu_time_ns(0),
   _cm_oop_closure(nullptr),
   _curr_region(nullptr),
   _finger(nullptr),

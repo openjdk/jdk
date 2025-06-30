@@ -1487,16 +1487,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  struct rusage usage;
-  int retval = getrusage(RUSAGE_THREAD, &usage);
-  if (retval == 0) {
-    return (double) (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (double) (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000 * 1000);
-  } else {
-    // better than nothing, but not much
-    return elapsedTime();
-  }
-}
 
 void os::Linux::fast_thread_clock_init() {
   clockid_t clockid;

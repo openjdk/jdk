@@ -879,17 +879,6 @@ void os::free_thread(OSThread* osthread) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
-double os::elapsedVTime() {
-  struct rusage usage;
-  int retval = getrusage(RUSAGE_THREAD, &usage);
-  if (retval == 0) {
-    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec + (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000);
-  } else {
-    // better than nothing, but not much
-    return elapsedTime();
-  }
-}
-
 // We use mread_real_time here.
 // On AIX: If the CPU has a time register, the result will be RTC_POWER and
 // it has to be converted to real time. AIX documentations suggests to do
