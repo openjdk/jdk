@@ -34,6 +34,7 @@ import java.security.NoSuchProviderException;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.security.x509.X509CertImpl;
 
 /**
@@ -69,7 +70,8 @@ public abstract class Certificate implements java.io.Serializable {
     private final transient String type;
 
     /** The hash code for the certificate. */
-    private transient int hash = -1; // Default to -1
+    @Stable
+    private transient int hash; // Default to 0
 
     /**
      * Creates a certificate of the specified type.
@@ -130,7 +132,7 @@ public abstract class Certificate implements java.io.Serializable {
     @Override
     public int hashCode() {
         int h = hash;
-        if (h == -1) {
+        if (h == 0) {
             try {
                 h = Arrays.hashCode(X509CertImpl.getEncodedInternal(this));
             } catch (CertificateException e) {
