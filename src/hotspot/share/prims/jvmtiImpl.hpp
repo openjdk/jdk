@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_PRIMS_JVMTIIMPL_HPP
 
 #include "jvmtifiles/jvmti.h"
+#include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
@@ -140,7 +141,7 @@ private:
   JvmtiBreakpoints* _breakpoints;
   int               _operation;
   JvmtiBreakpoint*  _bp;
-
+  jmethodID         _preservred_method; //needed to track class redefintion
 public:
   enum { SET_BREAKPOINT=0, CLEAR_BREAKPOINT=1 };
 
@@ -150,6 +151,7 @@ public:
     _bp = bp;
     _operation = operation;
     assert(bp != nullptr, "bp != null");
+    _preservred_method = bp->method()->jmethod_id();
   }
 
   VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
