@@ -444,6 +444,9 @@ public:
     assert(_nest_host != nullptr, "must be");
     return _nest_host;
   }
+  InstanceKlass* nest_host_or_null() {
+    return _nest_host;
+  }
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns null if there was no error.
