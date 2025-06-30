@@ -42,6 +42,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @summary Tests that FileDialog can be closed by ESC any time
  * @key headful
  * @run main DoubleActionESC
+ * @run main/othervm -Dsun.awt.disableGtkFileDialogs=true DoubleActionESC
  */
 
 public class DoubleActionESC {
