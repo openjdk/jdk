@@ -38,7 +38,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   return nullptr;
 }
 
-void Relocation::pd_set_call_destination(address x) {
+void Relocation::pd_set_call_destination(address x, bool be_safe) {
   ShouldNotCallThis();
 }
 
@@ -53,7 +53,8 @@ address* Relocation::pd_address_in_code() {
 }
 
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src,
-                                                CodeBuffer*       dst) {
+                                                CodeBuffer*       dst,
+                                                bool              is_nmethod_relocation) {
   ShouldNotCallThis();
 }
 

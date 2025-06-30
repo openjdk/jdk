@@ -73,7 +73,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   }
 }
 
-void Relocation::pd_set_call_destination(address x) {
+void Relocation::pd_set_call_destination(address x, bool be_safe) {
   address inst_loc = addr();
 
   if (NativeFarCall::is_far_call_at(inst_loc)) {
@@ -99,7 +99,7 @@ address Relocation::pd_get_address_from_code() {
   return (address)(nativeMovConstReg_at(addr())->data());
 }
 
-void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
+void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) {
 }
 
 void metadata_Relocation::pd_fix_value(address x) {
