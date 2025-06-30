@@ -1065,6 +1065,9 @@ public final class Unsafe {
      * the field locations in a form usable by {@link #getInt(Object,long)}.
      * Therefore, code which will be ported to such JVMs on 64-bit platforms
      * must preserve all bits of static field offsets.
+     *
+     * @throws NullPointerException if the field is {@code null}
+     * @throws IllegalArgumentException if the field is static
      * @see #getInt(Object, long)
      */
     public long objectFieldOffset(Field f) {
@@ -1078,11 +1081,15 @@ public final class Unsafe {
     /**
      * Reports the location of the field with a given name in the storage
      * allocation of its class.
+     * <p>
+     * Great care must be taken to ensure the passed field name is validated
+     * to be an instance field.  Do not pass arbitrary field names.
      *
      * @throws NullPointerException if any parameter is {@code null}.
      * @throws InternalError if there is no field named {@code name} declared
      *         in class {@code c}, i.e., if {@code c.getDeclaredField(name)}
-     *         would throw {@code java.lang.NoSuchFieldException}.
+     *         would throw {@code java.lang.NoSuchFieldException}, or if such
+     *         a field is static
      *
      * @see #objectFieldOffset(Field)
      */
@@ -1109,6 +1116,9 @@ public final class Unsafe {
      * a few bits to encode an offset within a non-array object,
      * However, for consistency with other methods in this class,
      * this method reports its result as a long value.
+     *
+     * @throws NullPointerException if the field is {@code null}
+     * @throws IllegalArgumentException if the field is not static
      * @see #getInt(Object, long)
      */
     public long staticFieldOffset(Field f) {
@@ -1128,6 +1138,9 @@ public final class Unsafe {
      * which is a "cookie", not guaranteed to be a real Object, and it should
      * not be used in any way except as argument to the get and put routines in
      * this class.
+     *
+     * @throws NullPointerException if the field is {@code null}
+     * @throws IllegalArgumentException if the field is not static
      */
     public Object staticFieldBase(Field f) {
         if (f == null) {
@@ -3844,10 +3857,10 @@ public final class Unsafe {
     @IntrinsicCandidate
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
     private native void copySwapMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes, long elemSize);
-    private native long objectFieldOffset0(Field f);
-    private native long objectFieldOffset1(Class<?> c, String name);
-    private native long staticFieldOffset0(Field f);
-    private native Object staticFieldBase0(Field f);
+    private native long objectFieldOffset0(Field f); // throws IAE
+    private native long objectFieldOffset1(Class<?> c, String name); // throws InternalError
+    private native long staticFieldOffset0(Field f); // throws IAE
+    private native Object staticFieldBase0(Field f); // throws IAE
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
     private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetic
