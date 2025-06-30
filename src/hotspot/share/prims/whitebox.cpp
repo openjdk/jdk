@@ -2510,13 +2510,17 @@ WB_END
 
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
+  size_t phys_mem = 0;
   LINUX_ONLY(return os::Linux::physical_memory();)
-  return os::physical_memory();
+  os::physical_memory(phys_mem);
+  return static_cast<jlong>(phys_mem);
 WB_END
 
 // Available memory of the host machine (container-aware)
 WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
-  return os::available_memory();
+  size_t avail_mem = 0;
+  os::available_memory(avail_mem);
+  return static_cast<jlong>(avail_mem);
 WB_END
 
 // Physical swap of the host machine (including containers), Linux only.
