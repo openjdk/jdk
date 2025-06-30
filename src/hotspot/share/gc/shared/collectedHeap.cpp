@@ -202,7 +202,7 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 }
 
-class CPUThreadClosure : public ThreadClosure {
+class CPUTimeThreadClosure : public ThreadClosure {
 private:
   volatile jlong _cpu_time = 0;
 
@@ -214,7 +214,7 @@ public:
 };
 
 double CollectedHeap::elapsed_gc_cpu_time() const {
-  CPUThreadClosure cl;
+  CPUTimeThreadClosure cl;
   gc_threads_do(&cl);
   return (double)(cl.cpu_time() + _vmthread_cpu_time) / NANOSECS_PER_SEC;
 }
