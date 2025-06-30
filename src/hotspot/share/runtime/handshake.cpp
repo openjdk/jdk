@@ -705,7 +705,7 @@ void HandshakeState::handle_unsafe_access_error() {
     // back to Java until resumed we cannot create the exception
     // object yet. Add a new unsafe access error operation to
     // the end of the queue and try again in the next attempt.
-    Handshake::execute(new UnsafeAccessErrorHandshake(), _handshakee);
+    Handshake::execute(new UnsafeAccessErrorHandshakeClosure(), _handshakee);
     log_info(handshake)("JavaThread " INTPTR_FORMAT " skipping unsafe access processing due to suspend.", p2i(_handshakee));
     return;
   }

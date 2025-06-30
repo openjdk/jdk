@@ -508,14 +508,14 @@ class JvmtiHandshake : public Handshake {
   static void execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target);
 };
 
-class SetForceEarlyReturn : public JvmtiUnitedHandshakeClosure {
+class SetForceEarlyReturnHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiThreadState* _state;
   jvalue _value;
   TosState _tos;
 public:
-  SetForceEarlyReturn(JvmtiThreadState* state, jvalue value, TosState tos)
-    : JvmtiUnitedHandshakeClosure("SetForceEarlyReturn"),
+  SetForceEarlyReturnHandshakeClosure(JvmtiThreadState* state, jvalue value, TosState tos)
+    : JvmtiUnitedHandshakeClosure("SetForceEarlyReturnHandshakeClosure"),
      _state(state),
      _value(value),
      _tos(tos) {}
@@ -533,12 +533,12 @@ public:
 };
 
 // HandshakeClosure to update for pop top frame.
-class UpdateForPopTopFrameClosure : public JvmtiUnitedHandshakeClosure {
+class UpdateForPopTopFrameHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiThreadState* _state;
 
 public:
-  UpdateForPopTopFrameClosure(JvmtiThreadState* state)
+  UpdateForPopTopFrameHandshakeClosure(JvmtiThreadState* state)
     : JvmtiUnitedHandshakeClosure("UpdateForPopTopFrame"),
      _state(state) {}
   void doit(Thread *target);
@@ -555,7 +555,7 @@ public:
 };
 
 // HandshakeClosure to set frame pop.
-class SetOrClearFramePopClosure : public JvmtiUnitedHandshakeClosure {
+class SetOrClearFramePopHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnvBase *_env;
   JvmtiThreadState* _state;
@@ -563,8 +563,8 @@ private:
   jint _depth; // used for NotiftyFramePop only
 
 public:
-  SetOrClearFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, bool set, jint depth = 0)
-    : JvmtiUnitedHandshakeClosure("SetOrClearFramePopClosure"),
+  SetOrClearFramePopHandshakeClosure(JvmtiEnv *env, JvmtiThreadState* state, bool set, jint depth = 0)
+    : JvmtiUnitedHandshakeClosure("SetOrClearFramePopHandshakeClosure"),
       _env((JvmtiEnvBase*)env),
       _state(state),
       _set(set),
@@ -574,14 +574,14 @@ public:
 };
 
 // HandshakeClosure to get monitor information with stack depth.
-class GetOwnedMonitorInfoClosure : public JvmtiUnitedHandshakeClosure {
+class GetOwnedMonitorInfoHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   JavaThread* _calling_thread;
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
 
 public:
-  GetOwnedMonitorInfoClosure(JvmtiEnv* env,
+  GetOwnedMonitorInfoHandshakeClosure(JvmtiEnv* env,
                              JavaThread* calling_thread,
                              GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
     : JvmtiUnitedHandshakeClosure("GetOwnedMonitorInfo"),
@@ -618,14 +618,14 @@ public:
 };
 
 // HandshakeClosure to get current contended monitor. It is used for both platform and virtual threads.
-class GetCurrentContendedMonitorClosure : public JvmtiUnitedHandshakeClosure {
+class GetCurrentContendedMonitorHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   JavaThread *_calling_thread;
   jobject *_owned_monitor_ptr;
 
 public:
-  GetCurrentContendedMonitorClosure(JvmtiEnv *env,
+  GetCurrentContendedMonitorHandshakeClosure(JvmtiEnv *env,
                                     JavaThread* calling_thread,
                                     jobject *owned_monitor_ptr)
     : JvmtiUnitedHandshakeClosure("GetCurrentContendedMonitor"),
@@ -637,7 +637,7 @@ public:
 };
 
 // HandshakeClosure to get stack trace.
-class GetStackTraceClosure : public JvmtiUnitedHandshakeClosure {
+class GetStackTraceHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint _start_depth;
@@ -646,7 +646,7 @@ private:
   jint *_count_ptr;
 
 public:
-  GetStackTraceClosure(JvmtiEnv *env, jint start_depth, jint max_count,
+  GetStackTraceHandshakeClosure(JvmtiEnv *env, jint start_depth, jint max_count,
                        jvmtiFrameInfo* frame_buffer, jint* count_ptr)
     : JvmtiUnitedHandshakeClosure("GetStackTrace"),
       _env(env),
@@ -660,12 +660,12 @@ public:
 
 #ifdef ASSERT
 // HandshakeClosure to print stack trace in JvmtiVTMSTransitionDisabler error handling.
-class PrintStackTraceClosure : public HandshakeClosure {
+class PrintStackTraceHandshakeClosure : public HandshakeClosure {
  public:
   static void do_thread_impl(Thread *target);
 
-  PrintStackTraceClosure()
-      : HandshakeClosure("PrintStackTraceClosure") {}
+  PrintStackTraceHandshakeClosure()
+      : HandshakeClosure("PrintStackTraceHandshakeClosure") {}
   void do_thread(Thread *target);
 };
 #endif
@@ -749,14 +749,14 @@ public:
 };
 
 // HandshakeClosure to get single stack trace.
-class GetSingleStackTraceClosure : public JvmtiUnitedHandshakeClosure {
+class GetSingleStackTraceHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JavaThread *_calling_thread;
   jthread _jthread;
   MultipleStackTracesCollector _collector;
 
 public:
-  GetSingleStackTraceClosure(JvmtiEnv *env, JavaThread *calling_thread,
+  GetSingleStackTraceHandshakeClosure(JvmtiEnv *env, JavaThread *calling_thread,
                              jthread thread, jint max_frame_count)
     : JvmtiUnitedHandshakeClosure("GetSingleStackTrace"),
       _calling_thread(calling_thread),
@@ -771,13 +771,13 @@ public:
 };
 
 // HandshakeClosure to count stack frames.
-class GetFrameCountClosure : public JvmtiUnitedHandshakeClosure {
+class GetFrameCountHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint *_count_ptr;
 
 public:
-  GetFrameCountClosure(JvmtiEnv *env, jint *count_ptr)
+  GetFrameCountHandshakeClosure(JvmtiEnv *env, jint *count_ptr)
     : JvmtiUnitedHandshakeClosure("GetFrameCount"),
       _env(env),
       _count_ptr(count_ptr) {}
@@ -786,7 +786,7 @@ public:
 };
 
 // HandshakeClosure to get frame location.
-class GetFrameLocationClosure : public JvmtiUnitedHandshakeClosure {
+class GetFrameLocationHandshakeClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   jint _depth;
@@ -794,7 +794,7 @@ private:
   jlocation* _location_ptr;
 
 public:
-  GetFrameLocationClosure(JvmtiEnv *env, jint depth,
+  GetFrameLocationHandshakeClosure(JvmtiEnv *env, jint depth,
                           jmethodID* method_ptr, jlocation* location_ptr)
     : JvmtiUnitedHandshakeClosure("GetFrameLocation"),
       _env(env),

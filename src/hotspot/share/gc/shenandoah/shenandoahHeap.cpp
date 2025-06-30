@@ -1245,9 +1245,9 @@ public:
   }
 };
 
-class ShenandoahGCStatePropagator : public HandshakeClosure {
+class ShenandoahGCStatePropagatorHandshakeClosure : public HandshakeClosure {
 public:
-  explicit ShenandoahGCStatePropagator(char gc_state) :
+  explicit ShenandoahGCStatePropagatorHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah GC State Change"),
     _gc_state(gc_state) {}
 
@@ -1258,9 +1258,9 @@ private:
   char _gc_state;
 };
 
-class ShenandoahPrepareForUpdateRefs : public HandshakeClosure {
+class ShenandoahPrepareForUpdateRefsHandshakeClosure : public HandshakeClosure {
 public:
-  explicit ShenandoahPrepareForUpdateRefs(char gc_state) :
+  explicit ShenandoahPrepareForUpdateRefsHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah Prepare for Update Refs"),
     _retire(ResizeTLAB), _propagator(gc_state) {}
 
@@ -1272,7 +1272,7 @@ public:
   }
 private:
   ShenandoahRetireGCLABClosure _retire;
-  ShenandoahGCStatePropagator _propagator;
+  ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
@@ -1295,7 +1295,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   }
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
-  ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
+  ShenandoahPrepareForUpdateRefsHandshakeClosure prepare_for_update_refs(_gc_state.raw_value());
 
   // The handshake won't touch worker threads (or control thread, or VM thread), so do those separately.
   Threads::non_java_threads_do(&prepare_for_update_refs);
@@ -1327,7 +1327,7 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
     set_gc_state_concurrent(WEAK_ROOTS, false);
   }
 
-  ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+  ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
   Threads::non_java_threads_do(&propagator);
   if (handshake_closure == nullptr) {
     Handshake::execute(&propagator);
@@ -2020,14 +2020,14 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   }
 }
 
-class ShenandoahRendezvousClosure : public HandshakeClosure {
+class ShenandoahRendezvousHandshakeClosure : public HandshakeClosure {
 public:
-  inline ShenandoahRendezvousClosure(const char* name) : HandshakeClosure(name) {}
+  inline ShenandoahRendezvousHandshakeClosure(const char* name) : HandshakeClosure(name) {}
   inline void do_thread(Thread* thread) {}
 };
 
 void ShenandoahHeap::rendezvous_threads(const char* name) {
-  ShenandoahRendezvousClosure cl(name);
+  ShenandoahRendezvousHandshakeClosure cl(name);
   Handshake::execute(&cl);
 }
 
@@ -2069,7 +2069,7 @@ void ShenandoahHeap::prepare_update_heap_references() {
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
-    ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+    ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
   }

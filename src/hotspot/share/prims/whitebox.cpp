@@ -2246,7 +2246,7 @@ WB_END
 #endif // INCLUDE_CDS
 
 WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thread_handle))
-  class ReadMonitorsClosure : public HandshakeClosure {
+  class ReadMonitorsHandshakeClosure : public HandshakeClosure {
     jboolean _executed;
 
     void do_thread(Thread* th) {
@@ -2281,11 +2281,11 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
     }
 
    public:
-    ReadMonitorsClosure() : HandshakeClosure("WB_HandshakeReadMonitors"), _executed(false) {}
+    ReadMonitorsHandshakeClosure() : HandshakeClosure("WB_HandshakeReadMonitors"), _executed(false) {}
     jboolean executed() const { return _executed; }
   };
 
-  ReadMonitorsClosure rmc;
+  ReadMonitorsHandshakeClosure rmc;
   if (thread_handle != nullptr) {
     ThreadsListHandle tlh;
     JavaThread* target = nullptr;
@@ -2298,7 +2298,7 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
 WB_END
 
 WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle, jboolean all_threads))
-  class TraceSelfClosure : public HandshakeClosure {
+  class TraceSelfHandshakeClosure : public HandshakeClosure {
     jint _num_threads_completed;
 
     void do_thread(Thread* th) {
@@ -2312,11 +2312,11 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
     }
 
   public:
-    TraceSelfClosure(Thread* thread) : HandshakeClosure("WB_TraceSelf"), _num_threads_completed(0) {}
+    TraceSelfHandshakeClosure(Thread* thread) : HandshakeClosure("WB_TraceSelf"), _num_threads_completed(0) {}
 
     jint num_threads_completed() const { return _num_threads_completed; }
   };
-  TraceSelfClosure tsc(Thread::current());
+  TraceSelfHandshakeClosure tsc(Thread::current());
 
   if (all_threads) {
     Handshake::execute(&tsc);
@@ -2332,7 +2332,7 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
 WB_END
 
 WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle))
-  class TraceSelfClosure : public AsyncHandshakeClosure {
+  class TraceSelfHandshakeClosure : public AsyncHandshakeClosure {
     JavaThread* _self;
     void do_thread(Thread* th) {
       assert(th->is_Java_thread(), "sanity");
@@ -2347,14 +2347,14 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
     }
 
   public:
-    TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
+    TraceSelfHandshakeClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
   };
   if (thread_handle != nullptr) {
     ThreadsListHandle tlh;
     JavaThread* target = nullptr;
     bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, nullptr);
     if (is_alive) {
-      TraceSelfClosure* tsc = new TraceSelfClosure(target);
+      TraceSelfHandshakeClosure* tsc = new TraceSelfHandshakeClosure(target);
       Handshake::execute(tsc, target);
     }
   }

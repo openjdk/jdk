@@ -35,9 +35,9 @@
 
 // This is the closure that prevents a suspended JavaThread from
 // escaping the suspend request.
-class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
+class ThreadSelfSuspensionHandshakeClosure : public AsyncHandshakeClosure {
 public:
-  ThreadSelfSuspensionHandshake() : AsyncHandshakeClosure("ThreadSelfSuspensionHandshake") {}
+  ThreadSelfSuspensionHandshakeClosure() : AsyncHandshakeClosure("ThreadSelfSuspensionHandshakeClosure") {}
   void do_thread(Thread* thr) {
     JavaThread* current = JavaThread::cast(thr);
     assert(current == Thread::current(), "Must be self executed.");
@@ -52,11 +52,11 @@ public:
 };
 
 // This is the closure that synchronously honors the suspend request.
-class SuspendThreadHandshake : public HandshakeClosure {
+class SuspendThreadHandshakeClosure : public HandshakeClosure {
   bool _register_vthread_SR;
   bool _did_suspend;
 public:
-  SuspendThreadHandshake(bool register_vthread_SR) : HandshakeClosure("SuspendThread"),
+  SuspendThreadHandshakeClosure(bool register_vthread_SR) : HandshakeClosure("SuspendThread"),
     _register_vthread_SR(register_vthread_SR), _did_suspend(false) {
   }
   void do_thread(Thread* thr) {
@@ -93,7 +93,7 @@ bool SuspendResumeManager::suspend(bool register_vthread_SR) {
     do_owner_suspend();
     return true;
   } else {
-    SuspendThreadHandshake st(register_vthread_SR);
+    SuspendThreadHandshakeClosure st(register_vthread_SR);
     Handshake::execute(&st, _target);
     return st.did_suspend();
   }
@@ -150,7 +150,7 @@ bool SuspendResumeManager::suspend_with_handshake(bool register_vthread_SR) {
   set_suspended(true, register_vthread_SR);
   set_async_suspend_handshake(true);
   log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended, arming ThreadSuspension", p2i(_target));
-  ThreadSelfSuspensionHandshake* ts = new ThreadSelfSuspensionHandshake();
+  ThreadSelfSuspensionHandshakeClosure* ts = new ThreadSelfSuspensionHandshakeClosure();
   Handshake::execute(ts, _target);
   return true;
 }

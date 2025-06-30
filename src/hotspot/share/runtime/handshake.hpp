@@ -35,7 +35,7 @@
 class HandshakeOperation;
 class AsyncHandshakeOperation;
 class JavaThread;
-class UnsafeAccessErrorHandshake;
+class UnsafeAccessErrorHandshakeClosure;
 class ThreadsListHandle;
 
 // A handshake closure is a callback that is executed for a JavaThread
@@ -86,7 +86,7 @@ class JvmtiRawMonitor;
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
-  friend UnsafeAccessErrorHandshake;
+  friend UnsafeAccessErrorHandshakeClosure;
   friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.

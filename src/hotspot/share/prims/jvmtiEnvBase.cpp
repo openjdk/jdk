@@ -1988,14 +1988,14 @@ MultipleStackTracesCollector::allocate_and_fill_stacks(jint thread_count) {
          "the last copied frame info must be the last record");
 }
 
-// AdapterClosure is to make use of JvmtiUnitedHandshakeClosure objects from
+// AdapterHandshakeClosure is to make use of JvmtiUnitedHandshakeClosure objects from
 // Handshake::execute() which is unaware of the do_vthread() member functions.
-class AdapterClosure : public HandshakeClosure {
+class AdapterHandshakeClosure : public HandshakeClosure {
   JvmtiUnitedHandshakeClosure* _hs_cl;
   Handle _target_h;
 
  public:
-  AdapterClosure(JvmtiUnitedHandshakeClosure* hs_cl, Handle target_h)
+  AdapterHandshakeClosure(JvmtiUnitedHandshakeClosure* hs_cl, Handle target_h)
       : HandshakeClosure(hs_cl->name()), _hs_cl(hs_cl), _target_h(target_h) {}
 
   virtual void do_thread(Thread* target) {
@@ -2053,7 +2053,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
     }
   }
   if (target_jt != nullptr) {      // mounted virtual or platform thread
-    AdapterClosure acl(hs_cl, target_h);
+    AdapterHandshakeClosure acl(hs_cl, target_h);
     if (self) {                    // target platform thread is current
       acl.do_thread(target_jt);    // execute handshake closure callback on current thread directly
     } else {
@@ -2093,7 +2093,7 @@ VM_GetThreadListStackTraces::doit() {
 }
 
 void
-GetSingleStackTraceClosure::doit() {
+GetSingleStackTraceHandshakeClosure::doit() {
   JavaThread *jt = _target_jt;
   oop thread_oop = JNIHandles::resolve_external_guard(_jthread);
 
@@ -2106,13 +2106,13 @@ GetSingleStackTraceClosure::doit() {
 }
 
 void
-GetSingleStackTraceClosure::do_thread(Thread *target) {
+GetSingleStackTraceHandshakeClosure::do_thread(Thread *target) {
   assert(_target_jt == JavaThread::cast(target), "sanity check");
   doit();
 }
 
 void
-GetSingleStackTraceClosure::do_vthread(Handle target_h) {
+GetSingleStackTraceHandshakeClosure::do_vthread(Handle target_h) {
   // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
   // identity to carrier thread (see VirtualThread.switchToCarrierThread).
   assert(_target_jt == nullptr || _target_jt->jvmti_vthread() == target_h(), "sanity check");
@@ -2243,13 +2243,13 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   }
 
   MutexLocker mu(JvmtiThreadState_lock);
-  SetForceEarlyReturn op(state, value, tos);
+  SetForceEarlyReturnHandshakeClosure op(state, value, tos);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 }
 
 void
-SetForceEarlyReturn::doit(Thread *target) {
+SetForceEarlyReturnHandshakeClosure::doit(Thread *target) {
   JavaThread* java_thread = JavaThread::cast(target);
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
@@ -2384,7 +2384,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
 }
 
 void
-UpdateForPopTopFrameClosure::doit(Thread *target) {
+UpdateForPopTopFrameHandshakeClosure::doit(Thread *target) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = JavaThread::cast(target);
@@ -2472,7 +2472,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
 }
 
 void
-SetOrClearFramePopClosure::do_thread(Thread *target) {
+SetOrClearFramePopHandshakeClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
   JavaThread* java_thread = JavaThread::cast(target);
@@ -2504,7 +2504,7 @@ SetOrClearFramePopClosure::do_thread(Thread *target) {
 }
 
 void
-SetOrClearFramePopClosure::do_vthread(Handle target_h) {
+SetOrClearFramePopHandshakeClosure::do_vthread(Handle target_h) {
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
 
@@ -2521,7 +2521,7 @@ SetOrClearFramePopClosure::do_vthread(Handle target_h) {
 }
 
 void
-GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
+GetOwnedMonitorInfoHandshakeClosure::do_thread(Thread *target) {
   JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && (jt->threadObj() != nullptr)) {
     _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread,
@@ -2531,7 +2531,7 @@ GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
 }
 
 void
-GetOwnedMonitorInfoClosure::do_vthread(Handle target_h) {
+GetOwnedMonitorInfoHandshakeClosure::do_vthread(Handle target_h) {
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
   HandleMark hm(current);
@@ -2548,7 +2548,7 @@ GetOwnedMonitorInfoClosure::do_vthread(Handle target_h) {
 }
 
 void
-GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
+GetCurrentContendedMonitorHandshakeClosure::do_thread(Thread *target) {
   JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && (jt->threadObj() != nullptr)) {
     _result = ((JvmtiEnvBase *)_env)->get_current_contended_monitor(_calling_thread,
@@ -2559,7 +2559,7 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
 }
 
 void
-GetCurrentContendedMonitorClosure::do_vthread(Handle target_h) {
+GetCurrentContendedMonitorHandshakeClosure::do_vthread(Handle target_h) {
   if (_target_jt == nullptr) {
     ObjectMonitor *mon = java_lang_VirtualThread::current_pending_monitor(target_h());
     if (mon != nullptr) {
@@ -2573,7 +2573,7 @@ GetCurrentContendedMonitorClosure::do_vthread(Handle target_h) {
 }
 
 void
-GetStackTraceClosure::do_thread(Thread *target) {
+GetStackTraceHandshakeClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
   ResourceMark rm(current);
 
@@ -2586,7 +2586,7 @@ GetStackTraceClosure::do_thread(Thread *target) {
 }
 
 void
-GetStackTraceClosure::do_vthread(Handle target_h) {
+GetStackTraceHandshakeClosure::do_vthread(Handle target_h) {
   Thread* current = Thread::current();
   ResourceMark rm(current);
 
@@ -2598,7 +2598,7 @@ GetStackTraceClosure::do_vthread(Handle target_h) {
 
 #ifdef ASSERT
 void
-PrintStackTraceClosure::do_thread_impl(Thread *target) {
+PrintStackTraceHandshakeClosure::do_thread_impl(Thread *target) {
   JavaThread *java_thread = JavaThread::cast(target);
   Thread *current_thread = Thread::current();
 
@@ -2633,7 +2633,7 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
 }
 
 void
-PrintStackTraceClosure::do_thread(Thread *target) {
+PrintStackTraceHandshakeClosure::do_thread(Thread *target) {
   JavaThread *java_thread = JavaThread::cast(target);
   Thread *current_thread = Thread::current();
 
@@ -2641,12 +2641,12 @@ PrintStackTraceClosure::do_thread(Thread *target) {
          java_thread->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
 
-  PrintStackTraceClosure::do_thread_impl(target);
+  PrintStackTraceHandshakeClosure::do_thread_impl(target);
 }
 #endif
 
 void
-GetFrameCountClosure::do_thread(Thread *target) {
+GetFrameCountHandshakeClosure::do_thread(Thread *target) {
   JavaThread* jt = JavaThread::cast(target);
   assert(target == jt, "just checking");
 
@@ -2656,12 +2656,12 @@ GetFrameCountClosure::do_thread(Thread *target) {
 }
 
 void
-GetFrameCountClosure::do_vthread(Handle target_h) {
+GetFrameCountHandshakeClosure::do_vthread(Handle target_h) {
   _result = ((JvmtiEnvBase*)_env)->get_frame_count(target_h(), _count_ptr);
 }
 
 void
-GetFrameLocationClosure::do_thread(Thread *target) {
+GetFrameLocationHandshakeClosure::do_thread(Thread *target) {
   JavaThread *jt = JavaThread::cast(target);
   assert(target == jt, "just checking");
 
@@ -2672,7 +2672,7 @@ GetFrameLocationClosure::do_thread(Thread *target) {
 }
 
 void
-GetFrameLocationClosure::do_vthread(Handle target_h) {
+GetFrameLocationHandshakeClosure::do_vthread(Handle target_h) {
   _result = ((JvmtiEnvBase*)_env)->get_frame_location(target_h(), _depth,
                                                       _method_ptr, _location_ptr);
 }

@@ -1049,9 +1049,9 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   return bt;
 JRT_END
 
-class DeoptimizeMarkedClosure : public HandshakeClosure {
+class DeoptimizeMarkedHandshakeClosure : public HandshakeClosure {
  public:
-  DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
+  DeoptimizeMarkedHandshakeClosure() : HandshakeClosure("Deoptimize") {}
   void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
     jt->deoptimize_marked_methods();
@@ -1064,7 +1064,7 @@ void Deoptimization::deoptimize_all_marked() {
   // Make the dependent methods not entrant
   CodeCache::make_marked_nmethods_deoptimized();
 
-  DeoptimizeMarkedClosure deopt;
+  DeoptimizeMarkedHandshakeClosure deopt;
   if (SafepointSynchronize::is_at_safepoint()) {
     Threads::java_threads_do(&deopt);
   } else {
