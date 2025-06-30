@@ -59,103 +59,78 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public final class SSLLogger {
     private static final System.Logger logger;
-    private static final String property;
-    public static final boolean isOn;
+    // high level boolean to track whether "all" or "ssl" option
+    // is specified. Further checks may be necessary to determine
+    // if data is logged
+    public static final boolean logging;
 
     static {
         String p = System.getProperty("javax.net.debug");
         if (p != null) {
             if (p.isEmpty()) {
-                property = "";
                 logger = System.getLogger("javax.net.ssl");
+                Opt.ALL.on = true;
             } else {
-                property = p.toLowerCase(Locale.ENGLISH);
-                if (property.equals("help")) {
+                p = p.toLowerCase(Locale.ENGLISH);
+                if (p.contains("help")) {
+                    // help option calls exit(0)
                     help();
                 }
-
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
-            }
-            isOn = true;
-        } else {
-            property = null;
-            logger = null;
-            isOn = false;
-        }
-    }
+                if (p.contains("all")) {
+                    Opt.ALL.on = true;
+                } else {
+                    for (Opt o : Opt.values()) {
+                        // deal with special "_" options later
+                        if (o.component.contains("_")) {
+                            continue;
+                        }
 
-    private static void help() {
-        System.err.println();
-        System.err.println("help           print the help messages");
-        System.err.println("expand         expand debugging information");
-        System.err.println();
-        System.err.println("all            turn on all debugging");
-        System.err.println("ssl            turn on ssl debugging");
-        System.err.println();
-        System.err.println("The following can be used with ssl:");
-        System.err.println("\trecord       enable per-record tracing");
-        System.err.println("\thandshake    print each handshake message");
-        System.err.println("\tkeygen       print key generation data");
-        System.err.println("\tsession      print session activity");
-        System.err.println("\tdefaultctx   print default SSL initialization");
-        System.err.println("\tsslctx       print SSLContext tracing");
-        System.err.println("\tsessioncache print session cache tracing");
-        System.err.println("\tkeymanager   print key manager tracing");
-        System.err.println("\ttrustmanager print trust manager tracing");
-        System.err.println("\tpluggability print pluggability tracing");
-        System.err.println();
-        System.err.println("\thandshake debugging can be widened with:");
-        System.err.println("\tdata         hex dump of each handshake message");
-        System.err.println("\tverbose      verbose handshake message printing");
-        System.err.println();
-        System.err.println("\trecord debugging can be widened with:");
-        System.err.println("\tplaintext    hex dump of record plaintext");
-        System.err.println("\tpacket       print raw SSL/TLS packets");
-        System.err.println();
-        System.exit(0);
+                        if (p.contains(o.component)) {
+                            o.on = true;
+                            // remove pattern to avoid it being reused
+                            // e.g. "ssl,sslctx" parsing
+                            p = p.replaceFirst(o.component, "");
+                        }
+                    }
+
+                    // "record" and "handshake" subcomponents allow
+                    // extra configuration options
+                    if (Opt.HANDSHAKE.on && p.contains("verbose")) {
+                        Opt.HANDSHAKE_VERBOSE.on = true;
+                    }
+
+                    if (Opt.RECORD.on) {
+                        if (p.contains("packet")) {
+                            Opt.RECORD_PACKET.on = true;
+                        }
+                        if (p.contains("plaintext")) {
+                            Opt.RECORD_PLAINTEXT.on = true;
+                        }
+                    }
+                    // finally, if only "ssl" component is declared, then
+                    // enable all subcomponents. "ssl" logs all activity
+                    // except for the "data" and "packet" categories
+                    if (Opt.SSL.on && !Opt.isAnySubComponentEnabled()) {
+                        Opt.enableAllSubComponents();
+                    }
+                }
+            }
+            // javax.net.debug would be misconfigured property with respect
+            // to logging if value didn't contain "all" or "ssl"
+            logging = Opt.ALL.on || Opt.SSL.on;
+        } else {
+            logger = null;
+            logging = false;
+        }
     }
 
     /**
-     * Return true if the "javax.net.debug" property contains the
-     * debug check points, or System.Logger is used.
+     * Return true if the specific DebugOption is enabled or ALL is enabled
      */
-    public static boolean isOn(String checkPoints) {
-        if (property == null) {              // debugging is turned off
-            return false;
-        } else if (property.isEmpty()) {     // use System.Logger
-            return true;
-        }                                   // use provider logger
 
-        String[] options = checkPoints.split(",");
-        for (String option : options) {
-            option = option.trim();
-            if (!SSLLogger.hasOption(option)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean hasOption(String option) {
-        option = option.toLowerCase(Locale.ENGLISH);
-        if (property.contains("all")) {
-            return true;
-        } else {
-            // remove first occurrence of "sslctx" since
-            // it interferes with search for "ssl"
-            String modified = property.replaceFirst("sslctx", "");
-            if (modified.contains("ssl")) {
-                // don't enable data and plaintext options by default
-                if (!(option.equals("data")
-                        || option.equals("packet")
-                        || option.equals("plaintext"))) {
-                    return true;
-                }
-            }
-        }
-
-        return property.contains(option);
+    public static boolean isOn(Opt option) {
+        return Opt.ALL.on || option.on;
     }
 
     public static void severe(String msg, Object... params) {
@@ -188,9 +163,7 @@ public final class SSLLogger {
                 logger.log(level, msg);
             } else {
                 try {
-                    String formatted =
-                            SSLSimpleFormatter.formatParameters(params);
-                    logger.log(level, msg, formatted);
+                     logger.log(level, () -> msg + ":\n" + SSLSimpleFormatter.formatParameters(params));
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
@@ -208,11 +181,93 @@ public final class SSLLogger {
 
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
-    public static boolean logWarning(String option, String s) {
-        if (SSLLogger.isOn && SSLLogger.isOn(option)) {
+    public static boolean logWarning(Opt option, String s) {
+        if (SSLLogger.logging && option.on) {
             SSLLogger.warning(s);
         }
         return false;
+    }
+
+    private static void help() {
+        System.err.println();
+        System.err.println("help           print this help message and exit");
+        System.err.println("expand         expanded (less compact) output format");
+        System.err.println();
+        System.err.println("all            turn on all debugging");
+        System.err.println("ssl            turn on ssl debugging");
+        System.err.println();
+        System.err.println("The following can be used with ssl:");
+        System.err.println("\tdefaultctx   print default SSL initialization");
+        System.err.println("\thandshake    print each handshake message");
+        System.err.println("\tkeymanager   print key manager tracing");
+        System.err.println("\trecord       enable per-record tracing");
+        System.err.println("\trespmgr      print OCSP response tracing");
+        System.err.println("\tsession      print session activity");
+        System.err.println("\tdefaultctx   print default SSL initialization");
+        System.err.println("\tsslctx       print SSLContext tracing");
+        System.err.println("\tsessioncache print session cache tracing");
+        System.err.println("\tkeymanager   print key manager tracing");
+        System.err.println("\ttrustmanager print trust manager tracing");
+        System.err.println("\tpluggability print pluggability tracing");
+        System.err.println();
+        System.err.println("\thandshake debugging can be widened with:");
+        System.err.println("\tverbose   verbose handshake message printing");
+        System.err.println();
+        System.err.println("\trecord debugging can be widened with:");
+        System.err.println("\tplaintext    hex dump of record plaintext");
+        System.err.println("\tpacket       print raw SSL/TLS packets");
+        System.err.println();
+        System.exit(0);
+    }
+
+    public enum Opt {
+        ALL,
+        DEFAULTCTX,
+        HANDSHAKE,
+        HANDSHAKE_VERBOSE,
+        KEYMANAGER,
+        RECORD,
+        RECORD_PACKET,
+        RECORD_PLAINTEXT,
+        RESPMGR,
+        SESSION,
+        SSLCTX,
+        TRUSTMANAGER,
+        SSL; // define ssl last, helps with sslctx matching later.
+
+        final String component;
+        boolean on;
+
+        Opt() {
+            this.component = this.toString().toLowerCase(Locale.ROOT);
+        }
+
+        public static boolean isAnySubComponentEnabled() {
+            for (Opt option : subComponentList()) {
+                if (option.on) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static void enableAllSubComponents() {
+            for (Opt option: subComponentList()) {
+                option.on = true;
+            }
+        }
+
+        public static List<Opt> subComponentList() {
+            List<Opt> subComponents = new ArrayList<>();
+            for (Opt option : values()) {
+                if (option.component.contains("_")
+                        || option.equals(ALL) || option.equals(SSL)) {
+                    continue;
+                }
+                subComponents.add(option);
+            }
+            return subComponents;
+        }
     }
 
     private static class SSLConsoleLogger implements Logger {
@@ -282,7 +337,7 @@ public final class SSLLogger {
                         """,
                 Locale.ENGLISH);
 
-        private static final MessageFormat extendedCertFormart =
+        private static final MessageFormat extendedCertFormat =
             new MessageFormat(
                     """
                             "version"            : "v{0}",
@@ -298,15 +353,6 @@ public final class SSLLogger {
                             ]
                             """,
                 Locale.ENGLISH);
-
-        //
-        // private static MessageFormat certExtFormat = new MessageFormat(
-        //         "{0} [{1}] '{'\n" +
-        //         "  critical: {2}\n" +
-        //         "  value: {3}\n" +
-        //         "'}'",
-        //         Locale.ENGLISH);
-        //
 
         private static final MessageFormat messageFormatNoParas =
             new MessageFormat(
@@ -521,7 +567,7 @@ public final class SSLLogger {
                         Utilities.indent(extBuilder.toString())
                         };
                     builder.append(Utilities.indent(
-                            extendedCertFormart.format(certFields)));
+                            extendedCertFormat.format(certFields)));
                 }
             } catch (Exception ce) {
                 // ignore the exception
