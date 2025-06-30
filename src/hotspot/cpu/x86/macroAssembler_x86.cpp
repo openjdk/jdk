@@ -1621,19 +1621,6 @@ void MacroAssembler::post_call_nop() {
   emit_int32(0x00);
 }
 
-// A 5 byte nop that is safe for patching (see patch_verified_entry)
-void MacroAssembler::fat_nop() {
-  if (UseAddressNop) {
-    addr_nop_5();
-  } else {
-    emit_int8((uint8_t)0x26); // es:
-    emit_int8((uint8_t)0x2e); // cs:
-    emit_int8((uint8_t)0x64); // fs:
-    emit_int8((uint8_t)0x65); // gs:
-    emit_int8((uint8_t)0x90);
-  }
-}
-
 void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
   if (reachable(src)) {
