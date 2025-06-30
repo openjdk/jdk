@@ -2116,11 +2116,11 @@ instruct reduce_mulI_gt128b(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulL_le128b(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
+instruct reduce_mulL_128b(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) == 16);
   match(Set dst (MulReductionVL isrc vsrc));
   effect(TEMP_DEF dst);
-  format %{ "reduce_mulL_le128b $dst, $isrc, $vsrc\t# 2L" %}
+  format %{ "reduce_mulL_128b $dst, $isrc, $vsrc\t# 2L" %}
   ins_encode %{
     __ reduce_mul_integral_le128b($dst$$Register, T_LONG, $isrc$$Register,
                                   $vsrc$$FloatRegister, 16, fnoreg, fnoreg);
@@ -2128,18 +2128,18 @@ instruct reduce_mulL_le128b(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulL_gt128b(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp1,
+instruct reduce_mulL_gt128b(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp,
                             pRegGov pgtmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16);
   match(Set dst (MulReductionVL isrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP pgtmp);
-  format %{ "reduce_mulL_gt128b $dst, $isrc, $vsrc\t# vector (> 128 bits). KILL $tmp1, $pgtmp" %}
+  effect(TEMP_DEF dst, TEMP tmp, TEMP pgtmp);
+  format %{ "reduce_mulL_gt128b $dst, $isrc, $vsrc\t# vector (> 128 bits). KILL $tmp, $pgtmp" %}
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
     __ reduce_mul_integral_gt128b($dst$$Register, T_LONG, $isrc$$Register,
                                   $vsrc$$FloatRegister, length_in_bytes,
-                                  $tmp1$$FloatRegister, fnoreg,
+                                  $tmp$$FloatRegister, fnoreg,
                                   $pgtmp$$PRegister);
   %}
   ins_pipe(pipe_slow);
@@ -2189,11 +2189,11 @@ instruct reduce_non_strict_order_mulF_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, v
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulD_le128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_mulD_128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) == 16);
   match(Set dst (MulReductionVD dsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_mulD_le128b $dst, $dsrc, $vsrc\t# 2D. KILL $tmp" %}
+  format %{ "reduce_mulD_128b $dst, $dsrc, $vsrc\t# 2D. KILL $tmp" %}
   ins_encode %{
     __ reduce_mul_fp_le128b($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
                             $vsrc$$FloatRegister, 16, $tmp$$FloatRegister);
