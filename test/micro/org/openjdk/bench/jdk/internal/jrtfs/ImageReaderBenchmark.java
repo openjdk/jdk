@@ -59,7 +59,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 @Fork(value = 1, jvmArgs = {
         "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.jrtfs=ALL-UNNAMED"})
-public class NewImageBenchmark {
+public class ImageReaderBenchmark {
 
     private static final Path SYSTEM_IMAGE_FILE = Path.of(System.getProperty("java.home"), "lib", "modules");
     static {
