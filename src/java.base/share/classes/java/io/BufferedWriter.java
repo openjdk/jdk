@@ -298,6 +298,7 @@ public class BufferedWriter extends Writer {
             }
         }
 
+        @Override
         void flushBuffer() throws IOException {
             ensureOpen();
             if (nextChar == 0)
@@ -311,7 +312,8 @@ public class BufferedWriter extends Writer {
          *
          * @throws     IOException  If an I/O error occurs
          */
-        public void write(int c) throws IOException {
+        @Override
+        void write(int c) throws IOException {
             ensureOpen();
             growIfNeeded(1);
             if (nextChar >= nChars)
@@ -340,7 +342,8 @@ public class BufferedWriter extends Writer {
          *
          * @throws  IOException  If an I/O error occurs
          */
-        public void write(char[] cbuf, int off, int len) throws IOException {
+        @Override
+        void write(char[] cbuf, int off, int len) throws IOException {
             ensureOpen();
             Objects.checkFromIndexSize(off, len, cbuf.length);
             if (len == 0) {
@@ -392,7 +395,8 @@ public class BufferedWriter extends Writer {
          *
          * @throws  IOException  If an I/O error occurs
          */
-        public void write(String s, int off, int len) throws IOException {
+        @Override
+        void write(String s, int off, int len) throws IOException {
             ensureOpen();
             growIfNeeded(len);
             int b = off, t = off + len;
@@ -407,7 +411,8 @@ public class BufferedWriter extends Writer {
         }
 
         @SuppressWarnings("try")
-        public void close() throws IOException {
+        @Override
+        void close() throws IOException {
             if (out == null) {
                 return;
             }
@@ -424,7 +429,8 @@ public class BufferedWriter extends Writer {
          *
          * @throws     IOException  If an I/O error occurs
          */
-        public void flush() throws IOException {
+        @Override
+        void flush() throws IOException {
             flushBuffer();
             out.flush();
         }
