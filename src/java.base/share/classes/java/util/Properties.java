@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1211,10 +1211,23 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Prints this property list out to the specified output stream.
+     * Prints this property list out to the specified {@link PrintStream}.
      * This method is useful for debugging.
      *
-     * @param   out   an output stream.
+     * @implNote If any property's value is greater than 40 characters then
+     * this method writes only the first 37 characters of that value
+     * followed by 3 dot characters.
+     * <p>
+     * An alternative for listing the {@code Properties} to a {@code PrintStream}
+     * without truncation is:
+     * {@snippet lang=java :
+     *      Properties p = ...
+     *      PrintStream out = ...
+     *      // list the properties to PrintStream
+     *      p.forEach((k, v) -> out.println(k + "=" + v));
+     * }
+     *
+     * @param   out   the output PrintStream
      * @throws  ClassCastException if any key in this property list
      *          is not a string.
      */
@@ -1233,10 +1246,23 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Prints this property list out to the specified output stream.
+     * Prints this property list out to the specified {@link PrintWriter}.
      * This method is useful for debugging.
      *
-     * @param   out   an output stream.
+     * @implNote If any property's value is greater than 40 characters then
+     * this method writes only the first 37 characters of that value
+     * followed by 3 dot characters.
+     * <p>
+     * An alternative for listing the {@code Properties} to a {@code PrintWriter}
+     * without truncation is:
+     * {@snippet lang=java :
+     *      Properties p = ...
+     *      PrintWriter out = ...
+     *      // list the properties to PrintWriter
+     *      p.forEach((k, v) -> out.println(k + "=" + v));
+     * }
+     *
+     * @param   out   the output PrintWriter
      * @throws  ClassCastException if any key in this property list
      *          is not a string.
      * @since   1.1
