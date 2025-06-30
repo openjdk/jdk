@@ -55,6 +55,7 @@ class InstanceKlassFlags {
     flag(has_miranda_methods                , 1 << 12) /* True if this class has miranda methods in it's vtable */ \
     flag(has_final_method                   , 1 << 13) /* True if klass has final method */ \
     flag(has_aot_initialization             , 1 << 14) /* True if klass explicitly requests to be initialized in AOT archive */ \
+    flag(is_runtime_setup_required          , 1 << 15) /* True if klass has a runtimeSetup method to be called */ \
     /* end of list */
 
 #define IK_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,

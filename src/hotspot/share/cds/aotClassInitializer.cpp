@@ -267,26 +267,33 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   return false;
 }
 
-void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
-  assert(ik->has_aot_initialized_mirror(), "sanity check %s", ik->external_name());
+bool AOTClassInitializer::has_runtime_setup(InstanceKlass* ik) {
   if (ik->has_aot_initialization()) {
     Method* runtime_setup_method = ik->find_method(vmSymbols::runtimeSetup(), vmSymbols::void_method_signature());
     if (runtime_setup_method != nullptr) {
       assert(runtime_setup_method->access_flags().is_private() && runtime_setup_method->access_flags().is_static(),
              "%s::runtimeSetup() not private static", ik->external_name());
-      if (log_is_enabled(Info, aot, init)) {
-        ResourceMark rm;
-        log_info(aot, init)("Calling %s::runtimeSetup()", ik->external_name());
-      }
-      JavaValue result(T_VOID);
-      methodHandle handle(current, runtime_setup_method);
-      JavaCallArguments args;
-      JavaCalls::call(&result, handle, &args, current);
-      if (current->has_pending_exception()) {
-        // We cannot continue, as we might have cached instances of ik in the heap, but propagating the
-        // exception would cause ik to be in an error state.
-        AOTLinkedClassBulkLoader::exit_on_exception(current);
-      }
+      return true;
+    }
+  }
+  return false;
+}
+
+void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
+  assert(ik->has_aot_initialized_mirror(), "sanity");
+  if (ik->is_runtime_setup_required()) {
+    if (log_is_enabled(Info, aot, init)) {
+      ResourceMark rm;
+      log_info(aot, init)("Calling %s::runtimeSetup()", ik->external_name());
+    }
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result, ik,
+                           vmSymbols::runtimeSetup(),
+                           vmSymbols::void_method_signature(), current);
+    if (current->has_pending_exception()) {
+      // We cannot continue, as we might have cached instances of ik in the heap, but propagating the
+      // exception would cause ik to be in an error state.
+      AOTLinkedClassBulkLoader::exit_on_exception(current);
     }
   }
 }

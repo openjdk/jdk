@@ -38,6 +38,7 @@ public:
   // the initialized state.
   static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
 
+  static bool has_runtime_setup(InstanceKlass* ik);
   static void call_runtime_setup(JavaThread* current, InstanceKlass* ik);
 
   // Support for regression testing. Available in debug builds only.

@@ -771,6 +771,9 @@ public:
   bool has_aot_initialization() const { return _misc_flags.has_aot_initialization(); }
   void set_has_aot_initialization()   { _misc_flags.set_has_aot_initialization(true); }
 
+  bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
+  void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
+
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
