@@ -82,6 +82,8 @@ compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
+compiler/onSpinWait/TestOnSpinWaitAArch64.java 8360936 linux-aarch64,macosx-aarch64
+
 #############################################################################
 
 # :hotspot_gc
