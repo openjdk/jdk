@@ -82,7 +82,7 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
         boolean big = byteOrder == BIG;
 
         try {
-            if (needsMark && sl - sp > 0) {
+            if (needsMark && sp < sl) {
                 if (dl - dp < 2)
                     return CoderResult.OVERFLOW;
                 putChar(da, dp, BYTE_ORDER_MARK, big);
