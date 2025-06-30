@@ -458,7 +458,7 @@ enum SSLExtension implements SSLStringizer {
                                 null, null, null, null,
                                 KeyShareExtension.hrrStringizer),
 
-    // Extension defined in RFC 9000
+    // Extension defined in RFC 9001
     CH_QUIC_TRANSPORT_PARAMETERS     (0x0039, "quic_transport_parameters",
             SSLHandshake.CLIENT_HELLO,
             ProtocolVersion.PROTOCOLS_OF_13,
