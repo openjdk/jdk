@@ -33,6 +33,17 @@
 
 #define SA_ALTROOT "SA_ALTROOT"
 
+// variables used for remapping file names
+static const char* _remap_from;
+static const char* _remap_to;
+static int _remap_from_length = -1;
+
+void pathmap_remap(const char* remap_from, const char* remap_to, int remap_from_length) {
+  _remap_from = remap_from;
+  _remap_to = remap_to;
+  _remap_from_length = remap_from_length;
+}
+
 int pathmap_open(const char* name) {
   static const char *alt_root = NULL;
   static int alt_root_initialized = 0;
@@ -45,6 +56,21 @@ int pathmap_open(const char* name) {
   if (!alt_root_initialized) {
     alt_root_initialized = -1;
     alt_root = getenv(SA_ALTROOT);
+  }
+
+  if (_remap_from_length != -1 &&
+      memcmp(name, _remap_from, _remap_from_length) == 0) {
+    // try to remap the path
+    char remapped_name[PATH_MAX];
+    int result = snprintf(remapped_name, PATH_MAX, "%s%s",
+        _remap_to, &name[_remap_from_length]);
+    if (result < PATH_MAX) {
+      int lib_fd = open(remapped_name, O_RDONLY);
+      if (lib_fd >= 0) {
+        print_debug("remapped %s to %s\n", name, remapped_name);
+        return lib_fd;
+      }
+    }
   }
 
   if (alt_root == NULL) {
