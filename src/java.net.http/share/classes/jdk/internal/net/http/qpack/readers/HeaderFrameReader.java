@@ -33,6 +33,7 @@ import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -255,7 +256,7 @@ public class HeaderFrameReader {
                 } else {
                     logger.log(NORMAL, () -> "unexpected end of representation");
                     throw QPackException.decompressionFailed(
-                            new IOException("Unexpected end of header block"), true);
+                            new ProtocolException("Unexpected end of header block"), true);
                 }
             }
         }

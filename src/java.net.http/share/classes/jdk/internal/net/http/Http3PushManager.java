@@ -25,6 +25,7 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
@@ -693,12 +694,12 @@ public final class Http3PushManager {
             var previousHeaders = ppp.promiseHeaders;
             if (previousHeaders != null && !previousHeaders.equals(promiseHeaders)) {
                 connection.protocolError(
-                        new IOException("push headers do not match with previous promise for " + pushId));
+                        new ProtocolException("push headers do not match with previous promise for " + pushId));
             }
         } else if (promise instanceof ProcessedPushPromise ppp) {
             if (!ppp.promiseHeaders().equals(promiseHeaders)) {
                 connection.protocolError(
-                        new IOException("push headers do not match with previous promise for " + pushId));
+                        new ProtocolException("push headers do not match with previous promise for " + pushId));
             }
         } else if (promise instanceof CancelledPushPromise) {
             // already cancelled - nothing to do
@@ -762,11 +763,11 @@ public final class Http3PushManager {
                 return pp;
             } else {
                 // Error! cancel stream...
-                var io = new IOException("HTTP/3 pushId %s already used on this connection".formatted(pushId));
+                var io = new ProtocolException("HTTP/3 pushId %s already used on this connection".formatted(pushId));
                 connection.connectionError(io, Http3Error.H3_ID_ERROR);
             }
         } else if (promise instanceof ProcessedPushPromise) {
-            var io = new IOException("HTTP/3 pushId %s already used on this connection".formatted(pushId));
+            var io = new ProtocolException("HTTP/3 pushId %s already used on this connection".formatted(pushId));
             connection.connectionError(io, Http3Error.H3_ID_ERROR);
         } else {
             // already cancelled?

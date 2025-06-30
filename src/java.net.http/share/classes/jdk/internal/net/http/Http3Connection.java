@@ -27,6 +27,7 @@ package jdk.internal.net.http;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.net.ProtocolException;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse.PushPromiseHandler.PushId;
 import java.net.http.HttpResponse.PushPromiseHandler.PushId.Http3PushId;
@@ -612,8 +613,8 @@ public final class Http3Connection implements AutoCloseable {
 
     void close(final Http3Error error, final String message) {
         if (error != H3_NO_ERROR) {
-            // construct a IOException representing the connection termination cause
-            final IOException cause = new IOException(message);
+            // construct a ProtocolException representing the connection termination cause
+            final ProtocolException cause = new ProtocolException(message);
             close(error, message, cause);
         } else {
             close(error, message, null);
@@ -1103,8 +1104,8 @@ public final class Http3Connection implements AutoCloseable {
                 // If either control stream is closed at any point,
                 // this MUST be treated as a connection error of type H3_CLOSED_CRITICAL_STREAM.
                 final String logMsg = "control stream " + stream.streamId()
-                        + " was reset even though disallowed";
-                close(H3_CLOSED_CRITICAL_STREAM, logMsg, throwable);
+                        + " was reset";
+                close(H3_CLOSED_CRITICAL_STREAM, logMsg);
                 return;
             }
         }
@@ -1285,8 +1286,8 @@ public final class Http3Connection implements AutoCloseable {
                 // Closure of either unidirectional stream type MUST be treated as a connection
                 // error of type H3_CLOSED_CRITICAL_STREAM.
                 final String logMsg = "QPACK encoder stream " + stream.streamId()
-                        + " was reset even though disallowed";
-                close(H3_CLOSED_CRITICAL_STREAM, logMsg, throwable);
+                        + " was reset";
+                close(H3_CLOSED_CRITICAL_STREAM, logMsg);
                 return;
             }
         }
@@ -1313,8 +1314,8 @@ public final class Http3Connection implements AutoCloseable {
                 // Closure of either unidirectional stream type MUST be treated as a connection
                 // error of type H3_CLOSED_CRITICAL_STREAM.
                 final String logMsg = "QPACK decoder stream " + stream.streamId()
-                        + " was reset even though disallowed";
-                close(H3_CLOSED_CRITICAL_STREAM, logMsg, throwable);
+                        + " was reset";
+                close(H3_CLOSED_CRITICAL_STREAM, logMsg);
                 return;
             }
         }
@@ -1639,7 +1640,7 @@ public final class Http3Connection implements AutoCloseable {
      */
     private IOException checkMaxPushId(long pushId, long max) {
         if (pushId >= max) {
-            var io = new IOException("Max pushId exceeded (%s >= %s)".formatted(pushId, max));
+            var io = new ProtocolException("Max pushId exceeded (%s >= %s)".formatted(pushId, max));
             connectionError(io, Http3Error.H3_ID_ERROR);
             return io;
         }

@@ -413,7 +413,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
                              " {0} on stream", unexpectedFrameType);
                      readScheduler.stop();
                      final String errMsg = "Unexpected frame " + unexpectedFrameType;
-                     connectionError(new IOException(errMsg), Http3Error.H3_FRAME_UNEXPECTED);
+                     connectionError(new ProtocolException(errMsg), Http3Error.H3_FRAME_UNEXPECTED);
                      return;
                  }
                  if (frame instanceof PartialFrame partialFrame) {

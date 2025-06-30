@@ -276,7 +276,7 @@ public final class Decoder {
             // Closure of either unidirectional stream type MUST be treated as a connection
             // error of type H3_CLOSED_CRITICAL_STREAM.
             qpackErrorHandler.closeOnError(
-                    new IOException("QPACK " + decoderStreamPair.remoteStreamType()
+                    new ProtocolException("QPACK " + decoderStreamPair.remoteStreamType()
                             + " remote stream was unexpectedly closed"), H3_CLOSED_CRITICAL_STREAM);
             return;
         }

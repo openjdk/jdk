@@ -42,6 +42,7 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.OutputStream;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -58,7 +59,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
@@ -831,7 +831,7 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
         triggerError(errorCF, Http3Error.H3_STREAM_CREATION_ERROR);
     }
 
-    private void triggerError(CompletableFuture<TerminationCause> errorCF, Http3Error expected) throws InterruptedException, ExecutionException, TimeoutException {
+    private void triggerError(CompletableFuture<TerminationCause> errorCF, Http3Error expected) throws Exception {
         HttpClient client = getHttpClient();
         try {
             HttpRequest request = getRequest();
@@ -840,8 +840,10 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
                     BodyHandlers.discarding())
                     .get(10, TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
-        } catch (Exception e) {
+        } catch (ExecutionException e) {
             System.out.println("Client exception [expected]: " + e);
+            var cause = e.getCause();
+            assertTrue(cause instanceof ProtocolException, "Expected ProtocolException");
             TerminationCause terminationCause = errorCF.get(10, TimeUnit.SECONDS);
             System.out.println("Server reason: \"" + terminationCause.getPeerVisibleReason()+'"');
             final long actual = terminationCause.getCloseCode();
@@ -852,7 +854,7 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
         }
     }
 
-    private void triggerError(CompletableFuture<TerminationCause> errorCF, Http3Error... expected) throws InterruptedException, ExecutionException, TimeoutException {
+    private void triggerError(CompletableFuture<TerminationCause> errorCF, Http3Error... expected) throws Exception {
         HttpClient client = getHttpClient();
         try {
             HttpRequest request = getRequest();
@@ -861,8 +863,10 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
                             BodyHandlers.discarding())
                     .get(10, TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
-        } catch (Exception e) {
+        } catch (ExecutionException e) {
             System.out.println("Client exception [expected]: " + e);
+            var cause = e.getCause();
+            assertTrue(cause instanceof ProtocolException, "Expected ProtocolException");
             TerminationCause terminationCause = errorCF.get(10, TimeUnit.SECONDS);
             System.out.println("Server reason: \"" + terminationCause.getPeerVisibleReason()+'"');
             final long actual = terminationCause.getCloseCode();
@@ -877,7 +881,7 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
         }
     }
 
-    private void triggerPushError(CompletableFuture<TerminationCause> errorCF, Http3Error http3Error) throws InterruptedException, ExecutionException, TimeoutException {
+    private void triggerPushError(CompletableFuture<TerminationCause> errorCF, Http3Error http3Error) throws Exception {
         HttpClient client = getHttpClient();
         // close might block; use shutdownNow instead
         try {
@@ -889,8 +893,10 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
                             acceptor.apply(BodyHandlers.discarding())
             ).get(10, TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response);
-        } catch (Exception e) {
+        } catch (ExecutionException e) {
             System.out.println("Client exception [expected]: " + e);
+            var cause = e.getCause();
+            assertTrue(cause instanceof ProtocolException, "Expected ProtocolException");
             TerminationCause terminationCause = errorCF.get(10, TimeUnit.SECONDS);
             System.out.println("Server reason: \"" + terminationCause.getPeerVisibleReason()+'"');
             final long actual = terminationCause.getCloseCode();

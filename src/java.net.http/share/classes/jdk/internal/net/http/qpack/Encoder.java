@@ -36,7 +36,7 @@ import jdk.internal.net.http.qpack.writers.FieldLineSectionPrefixWriter;
 import jdk.internal.net.http.qpack.writers.HeaderFrameWriter;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
-import java.io.IOException;
+import java.net.ProtocolException;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -297,7 +297,7 @@ public class Encoder {
             // Closure of either unidirectional stream type MUST be treated as a connection
             // error of type H3_CLOSED_CRITICAL_STREAM.
             qpackErrorHandler.closeOnError(
-                    new IOException("QPACK " + encoderStreams.remoteStreamType()
+                    new ProtocolException("QPACK " + encoderStreams.remoteStreamType()
                             + " remote stream was unexpectedly closed"), H3_CLOSED_CRITICAL_STREAM);
             return;
         }
