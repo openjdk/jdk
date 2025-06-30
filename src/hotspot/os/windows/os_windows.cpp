@@ -2752,19 +2752,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
     }
 
-#ifdef _M_ARM64
-    if (in_java &&
-        (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
-          exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
-      }
-    }
-#endif
-
     if (in_java) {
       switch (exception_code) {
       case EXCEPTION_INT_DIVIDE_BY_ZERO:

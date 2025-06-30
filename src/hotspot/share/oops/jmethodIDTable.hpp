@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,37 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * @test
- * @summary Verify ThreadStart JVMTI event with can_generate_early_vmstart capability
- * @requires vm.jvmti
- * @run main/othervm/native -agentlib:MAAThreadStart MAAThreadStart
- */
+#ifndef SHARE_OOPS_JMETHODIDTABLE_HPP
+#define SHARE_OOPS_JMETHODIDTABLE_HPP
 
-public class MAAThreadStart {
+#include "jni.h"
+#include "memory/allocation.hpp"
 
-    static {
-        try {
-            System.loadLibrary("MAAThreadStart");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load MAAThreadStart library");
-            System.err.println("java.library.path: "
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
-    }
+// Class for associating Method with jmethodID
+class Method;
 
-    native static int check();
+class JmethodIDTable : public AllStatic {
+ public:
+  static void initialize();
 
-    public static void main(String args[]) {
-        int status = check();
-        if (status != 0) {
-            throw new RuntimeException("Non-zero status returned from the agent: " + status);
-        }
-    }
-}
+  // Given a Method return a jmethodID.
+  static jmethodID make_jmethod_id(Method* m);
+
+  // Given a jmethodID, return a Method.
+  static Method* resolve_jmethod_id(jmethodID mid);
+
+  // Class unloading support, remove the associations from the tables.  Stale jmethodID will
+  // not be found and return null.
+  static void remove(jmethodID mid);
+
+  // RedefineClasses support
+  static void change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method);
+  static void clear_jmethod_id(jmethodID jmid, Method* m);
+
+  static uint64_t get_entry_count();
+};
+
+#endif // SHARE_OOPS_JMETHODIDTABLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -74,7 +74,6 @@ class NativeInstruction {
   bool is_nop() const;
   bool is_jump_or_nop();
   bool is_safepoint_poll();
-  bool is_sigill_not_entrant();
   bool is_stop();
 
  protected:
@@ -274,9 +273,6 @@ class NativeJump: public NativeInstruction {
 
   // Insertion of native jump instruction
   static void insert(address code_pos, address entry);
-  // MT-safe insertion of native jump at verified method entry
-  static void check_verified_entry_alignment(address entry, address verified_entry);
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
 };
 
 inline NativeJump* nativeJump_at(address addr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
-          constraint(G1SATBBufferSizeConstraintFunc, AtParse)               \
+          constraint(G1SATBBufferSizeConstraintFunc, AfterErgo)             \
                                                                             \
   develop(uintx, G1SATBProcessCompletedThreshold, 20,                       \
           "Number of completed buffers that triggers log processing.")      \
@@ -163,7 +163,7 @@
                                                                             \
   product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
-          constraint(G1UpdateBufferSizeConstraintFunc, AtParse)             \
+          constraint(G1UpdateBufferSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(uint, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
