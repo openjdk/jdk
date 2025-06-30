@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ public enum JavaKind {
      * @return the kind
      */
     public static JavaKind fromTypeString(String typeString) {
-        assert typeString.length() > 0;
+        assert !typeString.isEmpty();
         final char first = typeString.charAt(0);
         if (first == '[' || first == 'L') {
             return JavaKind.Object;
@@ -220,27 +220,18 @@ public enum JavaKind {
      * @return the kind
      */
     public static JavaKind fromPrimitiveOrVoidTypeChar(char ch) {
-        switch (ch) {
-            case 'Z':
-                return Boolean;
-            case 'C':
-                return Char;
-            case 'F':
-                return Float;
-            case 'D':
-                return Double;
-            case 'B':
-                return Byte;
-            case 'S':
-                return Short;
-            case 'I':
-                return Int;
-            case 'J':
-                return Long;
-            case 'V':
-                return Void;
-        }
-        throw new IllegalArgumentException("unknown primitive or void type character: " + ch);
+        return switch (ch) {
+            case 'Z' -> Boolean;
+            case 'C' -> Char;
+            case 'F' -> Float;
+            case 'D' -> Double;
+            case 'B' -> Byte;
+            case 'S' -> Short;
+            case 'I' -> Int;
+            case 'J' -> Long;
+            case 'V' -> Void;
+            default -> throw new IllegalArgumentException("unknown primitive or void type character: " + ch);
+        };
     }
 
     /**
@@ -328,8 +319,7 @@ public enum JavaKind {
             if (value == null) {
                 return "null";
             } else {
-                if (value instanceof String) {
-                    String s = (String) value;
+                if (value instanceof String s) {
                     if (s.length() > 50) {
                         return "String:\"" + s.substring(0, 30) + "...\"";
                     } else {
@@ -386,26 +376,17 @@ public enum JavaKind {
      * @return the minimum value represented as a {@code long}
      */
     public long getMinValue() {
-        switch (this) {
-            case Boolean:
-                return 0;
-            case Byte:
-                return java.lang.Byte.MIN_VALUE;
-            case Char:
-                return java.lang.Character.MIN_VALUE;
-            case Short:
-                return java.lang.Short.MIN_VALUE;
-            case Int:
-                return java.lang.Integer.MIN_VALUE;
-            case Long:
-                return java.lang.Long.MIN_VALUE;
-            case Float:
-                return java.lang.Float.floatToRawIntBits(java.lang.Float.MIN_VALUE);
-            case Double:
-                return java.lang.Double.doubleToRawLongBits(java.lang.Double.MIN_VALUE);
-            default:
-                throw new IllegalArgumentException("illegal call to minValue on " + this);
-        }
+        return switch (this) {
+            case Boolean -> 0;
+            case Byte -> java.lang.Byte.MIN_VALUE;
+            case Char -> Character.MIN_VALUE;
+            case Short -> java.lang.Short.MIN_VALUE;
+            case Int -> Integer.MIN_VALUE;
+            case Long -> java.lang.Long.MIN_VALUE;
+            case Float -> java.lang.Float.floatToRawIntBits(java.lang.Float.MIN_VALUE);
+            case Double -> java.lang.Double.doubleToRawLongBits(java.lang.Double.MIN_VALUE);
+            default -> throw new IllegalArgumentException("illegal call to minValue on " + this);
+        };
     }
 
     /**
@@ -414,26 +395,17 @@ public enum JavaKind {
      * @return the maximum value represented as a {@code long}
      */
     public long getMaxValue() {
-        switch (this) {
-            case Boolean:
-                return 1;
-            case Byte:
-                return java.lang.Byte.MAX_VALUE;
-            case Char:
-                return java.lang.Character.MAX_VALUE;
-            case Short:
-                return java.lang.Short.MAX_VALUE;
-            case Int:
-                return java.lang.Integer.MAX_VALUE;
-            case Long:
-                return java.lang.Long.MAX_VALUE;
-            case Float:
-                return java.lang.Float.floatToRawIntBits(java.lang.Float.MAX_VALUE);
-            case Double:
-                return java.lang.Double.doubleToRawLongBits(java.lang.Double.MAX_VALUE);
-            default:
-                throw new IllegalArgumentException("illegal call to maxValue on " + this);
-        }
+        return switch (this) {
+            case Boolean -> 1;
+            case Byte -> java.lang.Byte.MAX_VALUE;
+            case Char -> Character.MAX_VALUE;
+            case Short -> java.lang.Short.MAX_VALUE;
+            case Int -> Integer.MAX_VALUE;
+            case Long -> java.lang.Long.MAX_VALUE;
+            case Float -> java.lang.Float.floatToRawIntBits(java.lang.Float.MAX_VALUE);
+            case Double -> java.lang.Double.doubleToRawLongBits(java.lang.Double.MAX_VALUE);
+            default -> throw new IllegalArgumentException("illegal call to maxValue on " + this);
+        };
     }
 
     /**
@@ -455,24 +427,15 @@ public enum JavaKind {
      * @return the number of bits
      */
     public int getBitCount() {
-        switch (this) {
-            case Boolean:
-                return 1;
-            case Byte:
-                return 8;
-            case Char:
-            case Short:
-                return 16;
-            case Float:
-                return 32;
-            case Int:
-                return 32;
-            case Double:
-                return 64;
-            case Long:
-                return 64;
-            default:
-                throw new IllegalArgumentException("illegal call to getBitCount() on " + this);
-        }
+        return switch (this) {
+            case Boolean -> 1;
+            case Byte -> 8;
+            case Char, Short -> 16;
+            case Float -> 32;
+            case Int -> 32;
+            case Double -> 64;
+            case Long -> 64;
+            default -> throw new IllegalArgumentException("illegal call to getBitCount() on " + this);
+        };
     }
 }

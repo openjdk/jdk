@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@ package jdk.vm.ci.code;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -97,7 +99,7 @@ public class CodeUtil {
     /**
      * Narrow an integer value to a given bit width, and return the result as a signed long.
      *
-     * @param value the value
+     * @param value      the value
      * @param resultBits the result bit width
      * @return {@code value} interpreted as {@code resultBits} bit number, encoded as signed long
      */
@@ -109,10 +111,10 @@ public class CodeUtil {
     /**
      * Sign extend an integer.
      *
-     * @param value the input value
+     * @param value     the input value
      * @param inputBits the bit width of the input value
      * @return a signed long with the same value as the signed {@code inputBits}-bit number
-     *         {@code value}
+     * {@code value}
      */
     public static long signExtend(long value, int inputBits) {
         if (inputBits < 64) {
@@ -129,10 +131,10 @@ public class CodeUtil {
     /**
      * Zero extend an integer.
      *
-     * @param value the input value
+     * @param value     the input value
      * @param inputBits the bit width of the input value
      * @return an unsigned long with the same value as the unsigned {@code inputBits}-bit number
-     *         {@code value}
+     * {@code value}
      */
     public static long zeroExtend(long value, int inputBits) {
         if (inputBits < 64) {
@@ -145,9 +147,9 @@ public class CodeUtil {
     /**
      * Convert an integer to long.
      *
-     * @param value the input value
+     * @param value     the input value
      * @param inputBits the bit width of the input value
-     * @param unsigned whether the values should be interpreted as signed or unsigned
+     * @param unsigned  whether the values should be interpreted as signed or unsigned
      * @return a long with the same value as the {@code inputBits}-bit number {@code value}
      */
     public static long convert(long value, int inputBits, boolean unsigned) {
@@ -230,9 +232,9 @@ public class CodeUtil {
      * {@link String#valueOf(Object)}.
      *
      * @param cells the cells of the table in row-major order
-     * @param cols the number of columns per row
-     * @param lpad the number of space padding inserted before each formatted cell value
-     * @param rpad the number of space padding inserted after each formatted cell value
+     * @param cols  the number of columns per row
+     * @param lpad  the number of space padding inserted before each formatted cell value
+     * @param rpad  the number of space padding inserted after each formatted cell value
      * @return a string with one line per row and each column left-aligned
      */
     public static String tabulate(Object[] cells, int cols, int lpad, int rpad) {
@@ -248,14 +250,11 @@ public class CodeUtil {
             }
         }
         StringBuilder sb = new StringBuilder();
-        String nl = NEW_LINE;
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 int index = col + (row * cols);
                 if (index < cells.length) {
-                    for (int i = 0; i < lpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, lpad)));
                     Object cell = cells[index];
                     String s = String.valueOf(cell);
                     int w = s.length();
@@ -264,12 +263,10 @@ public class CodeUtil {
                         sb.append(' ');
                         w++;
                     }
-                    for (int i = 0; i < rpad; i++) {
-                        sb.append(' ');
-                    }
+                    sb.append(" ".repeat(Math.max(0, rpad)));
                 }
             }
-            sb.append(nl);
+            sb.append(NEW_LINE);
         }
         return sb.toString();
     }
@@ -277,7 +274,7 @@ public class CodeUtil {
     /**
      * Appends a formatted code position to a {@link StringBuilder}.
      *
-     * @param sb the {@link StringBuilder} to append to
+     * @param sb  the {@link StringBuilder} to append to
      * @param pos the code position to format and append to {@code sb}
      * @return the value of {@code sb}
      */
@@ -293,7 +290,7 @@ public class CodeUtil {
     /**
      * Appends a formatted frame to a {@link StringBuilder}.
      *
-     * @param sb the {@link StringBuilder} to append to
+     * @param sb    the {@link StringBuilder} to append to
      * @param frame the frame to format and append to {@code sb}
      * @return the value of {@code sb}
      */
@@ -333,31 +330,13 @@ public class CodeUtil {
 
     /**
      * Formats a location present in a reference map.
+     *
+     * @param slotSize         the size of a stack slot.
+     * @param fp               the register used as the frame pointer.
+     * @param refMapToFPOffset the offset (in bytes) from the slot pointed to by {@link #fp} to the slot corresponding
+     *                         to bit 0 in the frame reference map.
      */
-    public static class DefaultRefMapFormatter implements RefMapFormatter {
-
-        /**
-         * The size of a stack slot.
-         */
-        public final int slotSize;
-
-        /**
-         * The register used as the frame pointer.
-         */
-        public final Register fp;
-
-        /**
-         * The offset (in bytes) from the slot pointed to by {@link #fp} to the slot corresponding
-         * to bit 0 in the frame reference map.
-         */
-        public final int refMapToFPOffset;
-
-        public DefaultRefMapFormatter(int slotSize, Register fp, int refMapToFPOffset) {
-            this.slotSize = slotSize;
-            this.fp = fp;
-            this.refMapToFPOffset = refMapToFPOffset;
-        }
-
+    public record DefaultRefMapFormatter(int slotSize, Register fp, int refMapToFPOffset) implements RefMapFormatter {
         @Override
         public String formatStackSlot(int frameRefMapIndex) {
             int refMapOffset = frameRefMapIndex * slotSize;
@@ -365,7 +344,7 @@ public class CodeUtil {
             if (fpOffset >= 0) {
                 return fp + "+" + fpOffset;
             }
-            return fp.name + fpOffset;
+            return fp.name() + fpOffset;
         }
     }
 
@@ -384,7 +363,7 @@ public class CodeUtil {
     /**
      * Appends a formatted debug info to a {@link StringBuilder}.
      *
-     * @param sb the {@link StringBuilder} to append to
+     * @param sb   the {@link StringBuilder} to append to
      * @param info the debug info to format and append to {@code sb}
      * @return the value of {@code sb}
      */
@@ -435,6 +414,16 @@ public class CodeUtil {
         }
 
         RegisterConfig registerConfig = codeCache.getRegisterConfig();
-        return registerConfig.getCallingConvention(type, retType, argTypes, valueKindFactory);
+        return registerConfig.getCallingConvention(type, retType, listFromTrustedArray(argTypes), valueKindFactory);
+    }
+
+    /**
+     * Creates an immutable list from a trusted array that has no references retained by the caller.
+     */
+    static <T> List<T> listFromTrustedArray(Object[] array) {
+        if (array == null) {
+            return List.of();
+        }
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
     }
 }

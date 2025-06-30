@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.BitSet;
+import java.util.List;
 
 /**
  * Represents a resolved Java method. Methods, like fields and types, are resolved through
@@ -40,12 +40,12 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Returns the method's bytecode. The returned bytecode does not contain breakpoints or non-Java
      * bytecodes. This will return {@code null} if {@link #getCodeSize()} returns {@code <= 0} or if
      * {@link #hasBytecodes()} returns {@code false}.
-     *
+     * <p>
      * The contained constant pool indexes may not be the ones found in the original class file but
      * they can be used with the JVMCI API (e.g. methods in {@link ConstantPool}).
      *
      * @return {@code null} if {@code getLinkedCodeSize() <= 0} otherwise the bytecode of the method
-     *         whose length is guaranteed to be {@code > 0}
+     * whose length is guaranteed to be {@code > 0}
      */
     byte[] getCode();
 
@@ -54,9 +54,9 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * {@link #getCode()} will not return {@code null}.
      *
      * @return 0 if the method has no bytecode, {@code -1} if the method does have bytecode but its
-     *         {@linkplain #getDeclaringClass() declaring class} is not
-     *         {@linkplain ResolvedJavaType#isLinked() linked} otherwise the size of the bytecode in
-     *         bytes (guaranteed to be {@code > 0})
+     * {@linkplain #getDeclaringClass() declaring class} is not
+     * {@linkplain ResolvedJavaType#isLinked() linked} otherwise the size of the bytecode in
+     * bytes (guaranteed to be {@code > 0})
      */
     int getCodeSize();
 
@@ -105,12 +105,12 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
 
     /**
      * Returns {@code true} if this method is a default method; returns {@code false} otherwise.
-     *
+     * <p>
      * A default method is a public non-abstract instance method, that is, a non-static method with
      * a body, declared in an interface type.
      *
      * @return true if and only if this method is a default method as defined by the Java Language
-     *         Specification.
+     * Specification.
      */
     boolean isDefault();
 
@@ -145,7 +145,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     /**
      * Returns the list of exception handlers for this method.
      */
-    ExceptionHandler[] getExceptionHandlers();
+    List<ExceptionHandler> getExceptionHandlers();
 
     /**
      * Returns a stack trace element for this method and a given bytecode index.
@@ -163,13 +163,13 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Returns an object that provides access to the profiling information recorded for this method.
      *
      * @param includeNormal if true,
-     *            {@linkplain ProfilingInfo#getDeoptimizationCount(DeoptimizationReason)
-     *            deoptimization counts} will include deoptimization that happened during execution
-     *            of standard non-osr methods.
-     * @param includeOSR if true,
-     *            {@linkplain ProfilingInfo#getDeoptimizationCount(DeoptimizationReason)
-     *            deoptimization counts} will include deoptimization that happened during execution
-     *            of on-stack-replacement methods.
+     *                      {@linkplain ProfilingInfo#getDeoptimizationCount(DeoptimizationReason)
+     *                      deoptimization counts} will include deoptimization that happened during execution
+     *                      of standard non-osr methods.
+     * @param includeOSR    if true,
+     *                      {@linkplain ProfilingInfo#getDeoptimizationCount(DeoptimizationReason)
+     *                      deoptimization counts} will include deoptimization that happened during execution
+     *                      of on-stack-replacement methods.
      */
     ProfilingInfo getProfilingInfo(boolean includeNormal, boolean includeOSR);
 
@@ -185,32 +185,18 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
 
     /**
      * A {@code Parameter} provides information about method parameters.
+     *
+     * @param name      the name of the parameter or {@code null} if there is no
+     *                  {@literal MethodParameters} class file attribute providing a non-empty name
+     *                  for the parameter
+     * @param modifiers the modifier flags for the parameter
+     * @param method    the method which defines this parameter
+     * @param index     the index of the parameter
      */
-    class Parameter implements AnnotatedElement {
-        private final String name;
-        private final ResolvedJavaMethod method;
-        private final int modifiers;
-        private final int index;
+    record Parameter(String name, int modifiers, ResolvedJavaMethod method, int index) implements AnnotatedElement {
 
-        /**
-         * Constructor for {@code Parameter}.
-         *
-         * @param name the name of the parameter or {@code null} if there is no
-         *            {@literal MethodParameters} class file attribute providing a non-empty name
-         *            for the parameter
-         * @param modifiers the modifier flags for the parameter
-         * @param method the method which defines this parameter
-         * @param index the index of the parameter
-         */
-        public Parameter(String name,
-                        int modifiers,
-                        ResolvedJavaMethod method,
-                        int index) {
+        public Parameter {
             assert name == null || !name.isEmpty();
-            this.name = name;
-            this.modifiers = modifiers;
-            this.method = method;
-            this.index = index;
         }
 
         /**
@@ -220,7 +206,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
          * descriptor of the method which declares the parameter.
          *
          * @return the name of the parameter, either provided by the class file or synthesized if
-         *         the class file does not provide a name
+         * the class file does not provide a name
          */
         public String getName() {
             if (name == null) {
@@ -228,20 +214,6 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
             } else {
                 return name;
             }
-        }
-
-        /**
-         * Gets the method declaring the parameter.
-         */
-        public ResolvedJavaMethod getDeclaringMethod() {
-            return method;
-        }
-
-        /**
-         * Get the modifier flags for the parameter.
-         */
-        public int getModifiers() {
-            return modifiers;
         }
 
         /**
@@ -255,7 +227,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
          * Gets the formal type of the parameter.
          */
         public Type getParameterizedType() {
-            return method.getGenericParameterTypes()[index];
+            return method.getGenericParameterTypes().get(index);
         }
 
         /**
@@ -284,7 +256,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
 
         @Override
         public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-            return method.getParameterAnnotations(annotationClass)[index];
+            return method.getParameterAnnotations(annotationClass).get(index);
         }
 
         @Override
@@ -305,25 +277,11 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
                 typename = typename.replaceFirst("\\[\\]$", "...");
             }
 
-            final StringBuilder sb = new StringBuilder(Modifier.toString(getModifiers()));
-            if (sb.length() != 0) {
+            final StringBuilder sb = new StringBuilder(Modifier.toString(modifiers()));
+            if (!sb.isEmpty()) {
                 sb.append(' ');
             }
             return sb.append(typename).append(' ').append(getName()).toString();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof Parameter) {
-                Parameter other = (Parameter) obj;
-                return (other.method.equals(method) && other.index == index);
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return method.hashCode() ^ index;
         }
     }
 
@@ -332,7 +290,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * method. Returns an array of length 0 if this method has no parameters. Returns {@code null}
      * if the parameter information is unavailable.
      */
-    default Parameter[] getParameters() {
+    default List<Parameter> getParameters() {
         return null;
     }
 
@@ -342,15 +300,16 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      *
      * @see Method#getParameterAnnotations()
      */
+    // TODO libgraal does not support this, shall we deprecate/remove this?
     Annotation[][] getParameterAnnotations();
 
     /**
-     * Returns an array of {@link Type} objects that represent the formal parameter types, in
+     * Returns a list of {@link Type} objects that represent the formal parameter types, in
      * declaration order, of this method.
      *
      * @see Method#getGenericParameterTypes()
      */
-    Type[] getGenericParameterTypes();
+    List<Type> getGenericParameterTypes();
 
     /**
      * Returns {@code true} if this method is not excluded from inlining and has associated Java
@@ -401,11 +360,11 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Gets the annotation of a particular type for a formal parameter of this method.
      *
      * @param annotationClass the Class object corresponding to the annotation type
-     * @param parameterIndex the index of a formal parameter of {@code method}
+     * @param parameterIndex  the index of a formal parameter of {@code method}
      * @return the annotation of type {@code annotationClass} for the formal parameter present, else
-     *         null
+     * null
      * @throws IndexOutOfBoundsException if {@code parameterIndex} does not denote a formal
-     *             parameter
+     *                                   parameter
      */
     default <T extends Annotation> T getParameterAnnotation(Class<T> annotationClass, int parameterIndex) {
         if (parameterIndex >= 0) {
@@ -419,7 +378,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
         return null;
     }
 
-    default JavaType[] toParameterTypes() {
+    default List<JavaType> toParameterTypes() {
         JavaType receiver = isStatic() || isConstructor() ? null : getDeclaringClass();
         return getSignature().toParameterTypes(receiver);
     }
@@ -429,10 +388,10 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      *
      * @param annotationClass the Class object corresponding to the annotation type
      * @return the annotation of type {@code annotationClass} (if any) for each formal parameter
-     *         present
+     * present
      */
     @SuppressWarnings("unchecked")
-    default <T extends Annotation> T[] getParameterAnnotations(Class<T> annotationClass) {
+    default <T extends Annotation> List<T> getParameterAnnotations(Class<T> annotationClass) {
         Annotation[][] parameterAnnotations = getParameterAnnotations();
         T[] result = (T[]) Array.newInstance(annotationClass, parameterAnnotations.length);
         for (int i = 0; i < parameterAnnotations.length; i++) {
@@ -442,12 +401,12 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
                 }
             }
         }
-        return result;
+        return MetaUtil.listFromTrustedArray(result);
     }
 
     /**
-     * @see #getCodeSize()
      * @return {@code getCodeSize() > 0}
+     * @see #getCodeSize()
      */
     default boolean hasBytecodes() {
         return getCodeSize() > 0;

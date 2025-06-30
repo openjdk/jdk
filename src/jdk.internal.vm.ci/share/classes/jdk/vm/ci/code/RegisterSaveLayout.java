@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,30 +30,15 @@ import java.util.TreeMap;
 /**
  * A map from registers to frame slots. This can be used to describe where callee saved registers
  * are saved in a callee's frame.
+ *
+ * @param registers the keys in the map. This array is now owned by this object and should not be mutated by the caller.
+ * @param slots     frame slot index for each register in {@code registers}. This array is now owned by this object and
+ *                  should not be mutated by the caller.
  */
-public final class RegisterSaveLayout {
+public record RegisterSaveLayout(Register[] registers, int[] slots) {
 
-    /**
-     * Keys.
-     */
-    private final Register[] registers;
-
-    /**
-     * Slot indexes relative to stack pointer.
-     */
-    private final int[] slots;
-
-    /**
-     * Creates a map from registers to frame slots.
-     *
-     * @param registers the keys in the map
-     * @param slots frame slot index for each register in {@code registers}
-     */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `registers` and `slots`")
-    public RegisterSaveLayout(Register[] registers, int[] slots) {
+    public RegisterSaveLayout {
         assert registers.length == slots.length;
-        this.registers = registers;
-        this.slots = slots;
         assert registersToSlots(false).size() == registers.length : "non-unique registers";
         assert new HashSet<>(registersToSlots(false).values()).size() == slots.length : "non-unqiue slots";
     }
@@ -111,25 +95,6 @@ public final class RegisterSaveLayout {
             result.put(slots[i], registers[i]);
         }
         return result;
-    }
-
-    @Override
-    public int hashCode() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof RegisterSaveLayout) {
-            RegisterSaveLayout that = (RegisterSaveLayout) obj;
-            if (Arrays.equals(registers, that.registers) && Arrays.equals(slots, that.slots)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

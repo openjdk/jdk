@@ -339,25 +339,15 @@ public class AMD64 extends Architecture {
 
     @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        switch (javaKind) {
-            case Boolean:
-            case Byte:
-                return AMD64Kind.BYTE;
-            case Short:
-            case Char:
-                return AMD64Kind.WORD;
-            case Int:
-                return AMD64Kind.DWORD;
-            case Long:
-            case Object:
-                return AMD64Kind.QWORD;
-            case Float:
-                return AMD64Kind.SINGLE;
-            case Double:
-                return AMD64Kind.DOUBLE;
-            default:
-                return null;
-        }
+        return switch (javaKind) {
+            case Boolean, Byte -> AMD64Kind.BYTE;
+            case Short, Char -> AMD64Kind.WORD;
+            case Int -> AMD64Kind.DWORD;
+            case Long, Object -> AMD64Kind.QWORD;
+            case Float -> AMD64Kind.SINGLE;
+            case Double -> AMD64Kind.DOUBLE;
+            default -> null;
+        };
     }
 
     @Override

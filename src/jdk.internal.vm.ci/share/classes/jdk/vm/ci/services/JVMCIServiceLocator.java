@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,28 +37,11 @@ import java.util.ServiceLoader;
  */
 public abstract class JVMCIServiceLocator {
 
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unused")
-    private JVMCIServiceLocator(Void ignore) {
-    }
-
     /**
      * Creates a capability for accessing JVMCI. Once successfully instantiated, JVMCI opens all its
      * packages to the module defining the type of this object.
-     *
-     * @throws SecurityException if a security manager has been installed and it denies
-     *             {@link JVMCIPermission}
      */
     protected JVMCIServiceLocator() {
-        this(checkPermission());
         Services.openJVMCITo(getClass().getModule());
     }
 
@@ -79,16 +62,8 @@ public abstract class JVMCIServiceLocator {
     /**
      * Gets the providers of the service defined by {@code service} by querying the available
      * {@link JVMCIServiceLocator} providers.
-     *
-     * @throws SecurityException if a security manager is present and it denies
-     *             {@link JVMCIPermission}
      */
     public static <S> List<S> getProviders(Class<S> service) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
         List<S> providers = new ArrayList<>();
         for (JVMCIServiceLocator access : locators) {
             S provider = access.getProvider(service);

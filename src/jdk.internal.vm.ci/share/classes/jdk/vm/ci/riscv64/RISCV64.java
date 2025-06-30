@@ -172,25 +172,15 @@ public class RISCV64 extends Architecture {
 
     @Override
     public PlatformKind getPlatformKind(JavaKind javaKind) {
-        switch (javaKind) {
-            case Boolean:
-            case Byte:
-                return RISCV64Kind.BYTE;
-            case Short:
-            case Char:
-                return RISCV64Kind.WORD;
-            case Int:
-                return RISCV64Kind.DWORD;
-            case Long:
-            case Object:
-                return RISCV64Kind.QWORD;
-            case Float:
-                return RISCV64Kind.SINGLE;
-            case Double:
-                return RISCV64Kind.DOUBLE;
-            default:
-                return null;
-        }
+        return switch (javaKind) {
+            case Boolean, Byte -> RISCV64Kind.BYTE;
+            case Short, Char -> RISCV64Kind.WORD;
+            case Int -> RISCV64Kind.DWORD;
+            case Long, Object -> RISCV64Kind.QWORD;
+            case Float -> RISCV64Kind.SINGLE;
+            case Double -> RISCV64Kind.DOUBLE;
+            default -> null;
+        };
     }
 
     @Override

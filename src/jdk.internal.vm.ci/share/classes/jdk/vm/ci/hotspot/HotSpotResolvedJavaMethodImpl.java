@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,11 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static java.util.FormattableFlags.ALTERNATE;
+import static java.util.FormattableFlags.LEFT_JUSTIFY;
+import static java.util.FormattableFlags.UPPERCASE;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.CompilerToVM.listFromTrustedArray;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.BRIDGE;
 import static jdk.vm.ci.hotspot.HotSpotModifiers.SYNTHETIC;
@@ -37,8 +41,9 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Formattable;
+import java.util.Formatter;
 import java.util.List;
-import java.util.Objects;
 
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
@@ -62,7 +67,7 @@ import jdk.vm.ci.meta.TriState;
 /**
  * Implementation of {@link JavaMethod} for resolved HotSpot methods.
  */
-final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSpotResolvedJavaMethod, MetaspaceHandleObject {
+final class HotSpotResolvedJavaMethodImpl implements JavaMethod, Formattable, HotSpotResolvedJavaMethod, MetaspaceHandleObject {
 
     /**
      * A {@code jmetadata} value that is a handle to {@code Method*} value.
@@ -152,8 +157,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HotSpotResolvedJavaMethodImpl) {
-            HotSpotResolvedJavaMethodImpl that = (HotSpotResolvedJavaMethodImpl) obj;
+        if (obj instanceof HotSpotResolvedJavaMethodImpl that) {
             return that.getMethodPointer() == getMethodPointer();
         }
         return false;
@@ -252,10 +256,10 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public ExceptionHandler[] getExceptionHandlers() {
+    public List<ExceptionHandler> getExceptionHandlers() {
         final boolean hasExceptionTable = (getConstMethodFlags() & config().constMethodHasExceptionTable) != 0;
         if (!hasExceptionTable) {
-            return new ExceptionHandler[0];
+            return List.of();
         }
 
         HotSpotVMConfig config = config();
@@ -277,8 +281,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
                 catchType = constantPool.lookupType(catchTypeIndex, opcode);
 
                 // Check for Throwable which catches everything.
-                if (catchType instanceof HotSpotResolvedObjectTypeImpl) {
-                    HotSpotResolvedObjectTypeImpl resolvedType = (HotSpotResolvedObjectTypeImpl) catchType;
+                if (catchType instanceof HotSpotResolvedObjectTypeImpl resolvedType) {
                     if (resolvedType.equals(runtime().getJavaLangThrowable())) {
                         catchTypeIndex = 0;
                         catchType = null;
@@ -291,7 +294,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             exceptionTableElement += config.exceptionTableElementSize;
         }
 
-        return handlers;
+        return listFromTrustedArray(handlers);
     }
 
     /**
@@ -455,7 +458,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     /**
-     * @param level
      * @return true if the currently installed code was generated at {@code level}.
      */
     @Override
@@ -505,9 +507,9 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public Parameter[] getParameters() {
+    public List<Parameter> getParameters() {
         if (signature.getParameterCount(false) == 0) {
-            return new ResolvedJavaMethod.Parameter[0];
+            return List.of();
         }
         return runtime().reflection.getParameters(this);
     }
@@ -587,9 +589,9 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     @Override
-    public Type[] getGenericParameterTypes() {
+    public List<Type> getGenericParameterTypes() {
         if (isClassInitializer()) {
-            return new Type[0];
+            return List.of();
         }
         return runtime().reflection.getGenericParameterTypes(this);
     }
@@ -692,8 +694,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public boolean isInVirtualMethodTable(ResolvedJavaType resolved) {
-        if (resolved instanceof HotSpotResolvedObjectTypeImpl) {
-            HotSpotResolvedObjectTypeImpl hotspotResolved = (HotSpotResolvedObjectTypeImpl) resolved;
+        if (resolved instanceof HotSpotResolvedObjectTypeImpl hotspotResolved) {
             int vtableIndex = getVtableIndex(hotspotResolved);
             return vtableIndex >= 0 && vtableIndex < hotspotResolved.getVtableLength();
         }
@@ -777,7 +778,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         if (!hasAnnotations()) {
             return null;
         }
-        return getAnnotationData0(type).get(0);
+        return getAnnotationData0(type).getFirst();
     }
 
     @Override
@@ -802,5 +803,49 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         long[] oopMap = new long[nwords];
         compilerToVM().getOopMapAt(this, bci, oopMap);
         return BitSet.valueOf(oopMap);
+    }
+
+    private static String applyFormattingFlagsAndWidth(String s, int flags, int width) {
+        if (flags == 0 && width < 0) {
+            return s;
+        }
+        StringBuilder sb = new StringBuilder(s);
+
+        // apply width and justification
+        int len = sb.length();
+        if (len < width) {
+            for (int i = 0; i < width - len; i++) {
+                if ((flags & LEFT_JUSTIFY) == LEFT_JUSTIFY) {
+                    sb.append(' ');
+                } else {
+                    sb.insert(0, ' ');
+                }
+            }
+        }
+
+        String res = sb.toString();
+        if ((flags & UPPERCASE) == UPPERCASE) {
+            res = res.toUpperCase();
+        }
+        return res;
+    }
+
+    /**
+     * Controls whether {@link #toString()} includes the qualified or simple name of the class in
+     * which the method is declared.
+     */
+    private static final boolean FULLY_QUALIFIED_METHOD_NAME = false;
+
+    @Override
+    public final String toString() {
+        char h = FULLY_QUALIFIED_METHOD_NAME ? 'H' : 'h';
+        String fmt = String.format("HotSpotMethod<%%%c.%%n(%%p)>", h);
+        return format(fmt);
+    }
+
+    @Override
+    public void formatTo(Formatter formatter, int flags, int width, int precision) {
+        String base = (flags & ALTERNATE) == ALTERNATE ? getName() : toString();
+        formatter.format(applyFormattingFlagsAndWidth(base, flags & ~ALTERNATE, width));
     }
 }

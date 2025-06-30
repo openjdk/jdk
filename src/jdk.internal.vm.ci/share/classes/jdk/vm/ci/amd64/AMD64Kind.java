@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,111 +108,43 @@ public enum AMD64Kind implements PlatformKind {
     }
 
     public boolean isInteger() {
-        switch (this) {
-            case BYTE:
-            case WORD:
-            case DWORD:
-            case QWORD:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case BYTE, WORD, DWORD, QWORD -> true;
+            default -> false;
+        };
     }
 
     public boolean isXMM() {
-        switch (this) {
-            case SINGLE:
-            case DOUBLE:
-            case V32_BYTE:
-            case V32_WORD:
-            case V64_BYTE:
-            case V64_WORD:
-            case V64_DWORD:
-            case V128_BYTE:
-            case V128_WORD:
-            case V128_DWORD:
-            case V128_QWORD:
-            case V128_SINGLE:
-            case V128_DOUBLE:
-            case V256_BYTE:
-            case V256_WORD:
-            case V256_DWORD:
-            case V256_QWORD:
-            case V256_SINGLE:
-            case V256_DOUBLE:
-            case V512_BYTE:
-            case V512_WORD:
-            case V512_DWORD:
-            case V512_QWORD:
-            case V512_SINGLE:
-            case V512_DOUBLE:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case SINGLE, DOUBLE, V32_BYTE, V32_WORD, V64_BYTE, V64_WORD, V64_DWORD, V128_BYTE, V128_WORD, V128_DWORD,
+                 V128_QWORD, V128_SINGLE, V128_DOUBLE, V256_BYTE, V256_WORD, V256_DWORD, V256_QWORD, V256_SINGLE,
+                 V256_DOUBLE, V512_BYTE, V512_WORD, V512_DWORD, V512_QWORD, V512_SINGLE, V512_DOUBLE -> true;
+            default -> false;
+        };
     }
 
     public boolean isMask() {
-        switch (this) {
-            case MASK8:
-            case MASK16:
-            case MASK32:
-            case MASK64:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case MASK8, MASK16, MASK32, MASK64 -> true;
+            default -> false;
+        };
     }
 
     @Override
     public char getTypeChar() {
-        switch (this) {
-            case BYTE:
-                return 'b';
-            case WORD:
-                return 'w';
-            case DWORD:
-                return 'd';
-            case QWORD:
-                return 'q';
-            case SINGLE:
-                return 'S';
-            case DOUBLE:
-                return 'D';
-            case V32_BYTE:
-            case V32_WORD:
-            case V64_BYTE:
-            case V64_WORD:
-            case V64_DWORD:
-                return 'v';
-            case V128_BYTE:
-            case V128_WORD:
-            case V128_DWORD:
-            case V128_QWORD:
-            case V128_SINGLE:
-            case V128_DOUBLE:
-                return 'x';
-            case V256_BYTE:
-            case V256_WORD:
-            case V256_DWORD:
-            case V256_QWORD:
-            case V256_SINGLE:
-            case V256_DOUBLE:
-                return 'y';
-            case V512_BYTE:
-            case V512_WORD:
-            case V512_DWORD:
-            case V512_QWORD:
-            case V512_SINGLE:
-            case V512_DOUBLE:
-                return 'z';
-            case MASK8:
-            case MASK16:
-            case MASK32:
-            case MASK64:
-                return 'k';
-            default:
-                return '-';
-        }
+        return switch (this) {
+            case BYTE -> 'b';
+            case WORD -> 'w';
+            case DWORD -> 'd';
+            case QWORD -> 'q';
+            case SINGLE -> 'S';
+            case DOUBLE -> 'D';
+            case V32_BYTE, V32_WORD, V64_BYTE, V64_WORD, V64_DWORD -> 'v';
+            case V128_BYTE, V128_WORD, V128_DWORD, V128_QWORD, V128_SINGLE, V128_DOUBLE -> 'x';
+            case V256_BYTE, V256_WORD, V256_DWORD, V256_QWORD, V256_SINGLE, V256_DOUBLE -> 'y';
+            case V512_BYTE, V512_WORD, V512_DWORD, V512_QWORD, V512_SINGLE, V512_DOUBLE -> 'z';
+            case MASK8, MASK16, MASK32, MASK64 -> 'k';
+            default -> '-';
+        };
     }
 }

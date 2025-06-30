@@ -25,8 +25,8 @@ package jdk.vm.ci.hotspot;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
-import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -52,7 +52,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CompilationRequest;
@@ -170,7 +169,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * Gets the singleton {@link HotSpotJVMCIRuntime} object.
      */
     @VMEntryPoint
-    @SuppressWarnings("try")
     public static HotSpotJVMCIRuntime runtime() {
         HotSpotJVMCIRuntime result = instance;
         if (result == null) {
@@ -180,7 +178,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             synchronized (JVMCI.class) {
                 result = instance;
                 if (result == null) {
-                    try (InitTimer t = timer("HotSpotJVMCIRuntime.<init>")) {
+                    try (InitTimer _ = timer("HotSpotJVMCIRuntime.<init>")) {
                         instance = result = new HotSpotJVMCIRuntime();
 
                         // Can only do eager initialization of the JVMCI compiler
@@ -477,7 +475,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * Gets the kind of a word value on the {@linkplain #getHostJVMCIBackend() host} backend.
      */
     public static JavaKind getHostWordKind() {
-        return runtime().getHostJVMCIBackend().getCodeCache().getTarget().wordJavaKind;
+        return runtime().getHostJVMCIBackend().target().wordJavaKind();
     }
 
     protected final CompilerToVM compilerToVm;
@@ -556,11 +554,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
     private final List<HotSpotVMEventListener> vmEventListeners;
 
-    @SuppressWarnings("try")
     private HotSpotJVMCIRuntime() {
         compilerToVm = new CompilerToVM();
 
-        try (InitTimer t = timer("HotSpotVMConfig<init>")) {
+        try (InitTimer _ = timer("HotSpotVMConfig<init>")) {
             configStore = new HotSpotVMConfigStore(compilerToVm);
             config = new HotSpotVMConfig(configStore);
         }
@@ -578,7 +575,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Initialize the Option values.
         Option.parse(this);
 
-        try (InitTimer t = timer("create JVMCI backend:", backendFactory.getArchitecture())) {
+        try (InitTimer _ = timer("create JVMCI backend:", backendFactory.getArchitecture())) {
             hostBackend = registerBackend(backendFactory.createJVMCIBackend(this, null));
         }
 
@@ -723,7 +720,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     private JVMCIBackend registerBackend(JVMCIBackend backend) {
-        Class<? extends Architecture> arch = backend.getCodeCache().getTarget().arch.getClass();
+        Class<? extends Architecture> arch = backend.target().arch().getClass();
         JVMCIBackend oldValue = backends.put(arch, backend);
         assert oldValue == null : "cannot overwrite existing backend for architecture " + arch.getSimpleName();
         return backend;
@@ -811,13 +808,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return null;
     }
 
-    static class ErrorCreatingCompiler implements JVMCICompiler {
-        private final RuntimeException t;
-
-        ErrorCreatingCompiler(RuntimeException t) {
-            this.t = t;
-        }
-
+    record ErrorCreatingCompiler(RuntimeException t) implements JVMCICompiler {
         @Override
         public CompilationRequestResult compileMethod(CompilationRequest request) {
             throw t;
@@ -1137,29 +1128,18 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @return the offset in bytes
      */
     public int getArrayBaseOffset(JavaKind kind) {
-        switch (kind) {
-            case Boolean:
-                return compilerToVm.ARRAY_BOOLEAN_BASE_OFFSET;
-            case Byte:
-                return compilerToVm.ARRAY_BYTE_BASE_OFFSET;
-            case Char:
-                return compilerToVm.ARRAY_CHAR_BASE_OFFSET;
-            case Short:
-                return compilerToVm.ARRAY_SHORT_BASE_OFFSET;
-            case Int:
-                return compilerToVm.ARRAY_INT_BASE_OFFSET;
-            case Long:
-                return compilerToVm.ARRAY_LONG_BASE_OFFSET;
-            case Float:
-                return compilerToVm.ARRAY_FLOAT_BASE_OFFSET;
-            case Double:
-                return compilerToVm.ARRAY_DOUBLE_BASE_OFFSET;
-            case Object:
-                return compilerToVm.ARRAY_OBJECT_BASE_OFFSET;
-            default:
-                throw new JVMCIError("%s", kind);
-        }
-
+        return switch (kind) {
+            case Boolean -> compilerToVm.ARRAY_BOOLEAN_BASE_OFFSET;
+            case Byte -> compilerToVm.ARRAY_BYTE_BASE_OFFSET;
+            case Char -> compilerToVm.ARRAY_CHAR_BASE_OFFSET;
+            case Short -> compilerToVm.ARRAY_SHORT_BASE_OFFSET;
+            case Int -> compilerToVm.ARRAY_INT_BASE_OFFSET;
+            case Long -> compilerToVm.ARRAY_LONG_BASE_OFFSET;
+            case Float -> compilerToVm.ARRAY_FLOAT_BASE_OFFSET;
+            case Double -> compilerToVm.ARRAY_DOUBLE_BASE_OFFSET;
+            case Object -> compilerToVm.ARRAY_OBJECT_BASE_OFFSET;
+            default -> throw new JVMCIError("%s", kind);
+        };
     }
 
     /**
@@ -1168,29 +1148,18 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @return the scale in order to convert the index into a byte offset
      */
     public int getArrayIndexScale(JavaKind kind) {
-        switch (kind) {
-            case Boolean:
-                return compilerToVm.ARRAY_BOOLEAN_INDEX_SCALE;
-            case Byte:
-                return compilerToVm.ARRAY_BYTE_INDEX_SCALE;
-            case Char:
-                return compilerToVm.ARRAY_CHAR_INDEX_SCALE;
-            case Short:
-                return compilerToVm.ARRAY_SHORT_INDEX_SCALE;
-            case Int:
-                return compilerToVm.ARRAY_INT_INDEX_SCALE;
-            case Long:
-                return compilerToVm.ARRAY_LONG_INDEX_SCALE;
-            case Float:
-                return compilerToVm.ARRAY_FLOAT_INDEX_SCALE;
-            case Double:
-                return compilerToVm.ARRAY_DOUBLE_INDEX_SCALE;
-            case Object:
-                return compilerToVm.ARRAY_OBJECT_INDEX_SCALE;
-            default:
-                throw new JVMCIError("%s", kind);
-
-        }
+        return switch (kind) {
+            case Boolean -> compilerToVm.ARRAY_BOOLEAN_INDEX_SCALE;
+            case Byte -> compilerToVm.ARRAY_BYTE_INDEX_SCALE;
+            case Char -> compilerToVm.ARRAY_CHAR_INDEX_SCALE;
+            case Short -> compilerToVm.ARRAY_SHORT_INDEX_SCALE;
+            case Int -> compilerToVm.ARRAY_INT_INDEX_SCALE;
+            case Long -> compilerToVm.ARRAY_LONG_INDEX_SCALE;
+            case Float -> compilerToVm.ARRAY_FLOAT_INDEX_SCALE;
+            case Double -> compilerToVm.ARRAY_DOUBLE_INDEX_SCALE;
+            case Object -> compilerToVm.ARRAY_OBJECT_INDEX_SCALE;
+            default -> throw new JVMCIError("%s", kind);
+        };
     }
 
     /**
@@ -1323,22 +1292,26 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         String value = Option.ForceTranslateFailure.getString();
         String toMatch;
         String type;
-        if (translatedObject instanceof HotSpotResolvedJavaMethodImpl) {
-            toMatch = ((HotSpotResolvedJavaMethodImpl) translatedObject).format("%H.%n");
-            type = "method";
-        } else if (translatedObject instanceof HotSpotResolvedObjectTypeImpl) {
-            toMatch = ((HotSpotResolvedObjectTypeImpl) translatedObject).toJavaName();
-            type = "type";
-        } else if (translatedObject instanceof HotSpotNmethod) {
-            HotSpotNmethod nmethod = (HotSpotNmethod) translatedObject;
-            if (nmethod.getMethod() != null) {
-                toMatch = nmethod.getMethod().format("%H.%n");
-            } else {
-                toMatch = String.valueOf(nmethod.getName());
+        switch (translatedObject) {
+            case HotSpotResolvedJavaMethodImpl hotSpotResolvedJavaMethod -> {
+                toMatch = hotSpotResolvedJavaMethod.format("%H.%n");
+                type = "method";
             }
-            type = "nmethod";
-        } else {
-            return;
+            case HotSpotResolvedObjectTypeImpl hotSpotResolvedObjectType -> {
+                toMatch = hotSpotResolvedObjectType.toJavaName();
+                type = "type";
+            }
+            case HotSpotNmethod nmethod -> {
+                if (nmethod.getMethod() != null) {
+                    toMatch = nmethod.getMethod().format("%H.%n");
+                } else {
+                    toMatch = String.valueOf(nmethod.getName());
+                }
+                type = "nmethod";
+            }
+            case null, default -> {
+                return;
+            }
         }
         String[] filters = value.split(",");
         for (String filter : filters) {
