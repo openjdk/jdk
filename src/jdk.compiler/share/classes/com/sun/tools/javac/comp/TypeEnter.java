@@ -34,7 +34,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
 import com.sun.tools.javac.code.Directive.RequiresDirective;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
@@ -108,8 +107,6 @@ public class TypeEnter implements Completer {
     private final Annotate annotate;
     private final TypeAnnotations typeAnnotations;
     private final Types types;
-    private final DeferredLintHandler deferredLintHandler;
-    private final Lint lint;
     private final TypeEnvs typeEnvs;
     private final Dependencies dependencies;
 
@@ -135,8 +132,6 @@ public class TypeEnter implements Completer {
         annotate = Annotate.instance(context);
         typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
-        deferredLintHandler = DeferredLintHandler.instance(context);
-        lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
         Source source = Source.instance(context);
@@ -274,7 +269,6 @@ public class TypeEnter implements Completer {
                 queue.add(env);
 
                 JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-                deferredLintHandler.push(tree);
                 try {
                     dependencies.push(env.enclClass.sym, phaseName);
                     runPhase(env);
@@ -282,7 +276,6 @@ public class TypeEnter implements Completer {
                     chk.completionError(tree.pos(), ex);
                 } finally {
                     dependencies.pop();
-                    deferredLintHandler.pop();
                     log.useSource(prev);
                 }
             }
@@ -351,8 +344,6 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            deferredLintHandler.pushImmediate(lint);
-            Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
                 this.env = env;
@@ -376,20 +367,13 @@ public class TypeEnter implements Completer {
                 handleImports(tree.getImports());
 
                 if (decl != null) {
-                    deferredLintHandler.push(decl);
-                    try {
-                        //check @Deprecated:
-                        markDeprecated(decl.sym, decl.mods.annotations, env);
-                    } finally {
-                        deferredLintHandler.pop();
-                    }
+                    //check for @Deprecated annotations
+                    markDeprecated(decl.sym, decl.mods.annotations, env);
                     // process module annotations
-                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, decl);
+                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle);
                 }
             } finally {
                 this.env = prevEnv;
-                chk.setLint(prevLint);
-                deferredLintHandler.pop();
                 this.staticImportFilter = prevStaticImportFilter;
                 this.typeImportFilter = prevTypeImportFilter;
             }
@@ -422,7 +406,7 @@ public class TypeEnter implements Completer {
                 }
             }
             // process package annotations
-            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, tree);
+            annotate.annotateLater(tree.annotations, env, env.toplevel.packge);
         }
 
         private void doImport(JCImport tree, boolean fromModuleImport) {
@@ -914,9 +898,9 @@ public class TypeEnter implements Completer {
             Env<AttrContext> baseEnv = baseEnv(tree, env);
 
             if (tree.extending != null)
-                annotate.queueScanTreeAndTypeAnnotate(tree.extending, baseEnv, sym, tree);
+                annotate.queueScanTreeAndTypeAnnotate(tree.extending, baseEnv, sym);
             for (JCExpression impl : tree.implementing)
-                annotate.queueScanTreeAndTypeAnnotate(impl, baseEnv, sym, tree);
+                annotate.queueScanTreeAndTypeAnnotate(impl, baseEnv, sym);
             annotate.flush();
 
             attribSuperTypes(env, baseEnv);
@@ -931,11 +915,11 @@ public class TypeEnter implements Completer {
                     chk.checkNotRepeated(iface.pos(), types.erasure(it), interfaceSet);
             }
 
-            annotate.annotateLater(tree.mods.annotations, baseEnv, sym, tree);
+            annotate.annotateLater(tree.mods.annotations, baseEnv, sym);
             attr.attribTypeVariables(tree.typarams, baseEnv, false);
 
             for (JCTypeParameter tp : tree.typarams)
-                annotate.queueScanTreeAndTypeAnnotate(tp, baseEnv, sym, tree);
+                annotate.queueScanTreeAndTypeAnnotate(tp, baseEnv, sym);
 
             // check that no package exists with same fully qualified name,
             // but admit classes in the unnamed package which have the same

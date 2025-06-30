@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,8 @@ public class ClassGenerator {
         FACTORY_FIELD_LINT("factory.decl.field.lint"),
         WILDCARDS_EXTENDS("wildcards.extends"),
         SUPPRESS_WARNINGS("suppress.warnings"),
-        LINT_CATEGORY("lint.category");
+        LINT_CATEGORY("lint.category"),
+        DIAGNOSTIC_FLAGS("diagnostic.flags");
 
         /** stub key (as it appears in the property file) */
         String key;
@@ -259,17 +260,25 @@ public class ClassGenerator {
                 .map(MessageLine::lintCategory)
                 .findFirst().orElse(null);
         //System.out.println("category for " + key + " = " + lintCategory);
+        String diagnosticFlags = lines.stream()
+                .filter(MessageLine::isDiagnosticFlags)
+                .map(MessageLine::diagnosticFlags)
+                .flatMap(Stream::of)
+                .map(s -> "\"" + s + "\"")
+                .collect(Collectors.joining(", "));
         String factoryName = factoryName(key);
         if (msgInfo.getTypes().isEmpty()) {
             //generate field
             String factoryField;
             if (lintCategory == null) {
                 factoryField = StubKind.FACTORY_FIELD.format(k.keyClazz, factoryName,
+                        !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
                         "\"" + keyParts[0] + "\"",
                         "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
                         javadoc);
             } else {
                 factoryField = StubKind.FACTORY_FIELD_LINT.format(k.keyClazz, factoryName,
+                        !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
                         StubKind.LINT_CATEGORY.format("\"" + lintCategory + "\""),
                         "\"" + keyParts[0] + "\"",
                         "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
@@ -287,11 +296,13 @@ public class ClassGenerator {
                 String methodBody;
                 if (lintCategory == null) {
                     methodBody = StubKind.FACTORY_METHOD_BODY.format(k.keyClazz,
+                            !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
                             "\"" + keyParts[0] + "\"",
                             "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
                             argNames.stream().collect(Collectors.joining(", ")));
                 } else {
                     methodBody = StubKind.FACTORY_METHOD_BODY_LINT.format(k.keyClazz,
+                            !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
                             StubKind.LINT_CATEGORY.format("\"" + lintCategory + "\""),
                             "\"" + keyParts[0] + "\"",
                             "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
