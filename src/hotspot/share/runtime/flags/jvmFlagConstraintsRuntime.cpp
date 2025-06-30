@@ -130,12 +130,10 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
 
 JVMFlag::Error LargePageSizeInBytesConstraintFunc(size_t value, bool verbose) {
   if (!is_power_of_2(value)) {
-    JVMFlag::printError(verbose,
-                        "LargePageSizeInBytes ( %zu ) must be "
+    JVMFlag::printError(verbose, "LargePageSizeInBytes ( %zu ) must be "
                         "a power of 2\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
   }
+  return JVMFlag::SUCCESS;
 }
