@@ -69,7 +69,7 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
-        if (!src.hasArray() || !src.hasArray()) {
+        if (!src.hasArray() || !dst.hasArray()) {
             return encodeLoopBuffer(src, dst);
         }
 
