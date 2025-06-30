@@ -29,6 +29,7 @@
 #include "sanitizers/address.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include <Windows.h>
 // On windows, we use structured exception handling to implement SafeFetch
 
 template <class T>
