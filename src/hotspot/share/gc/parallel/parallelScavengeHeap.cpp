@@ -351,7 +351,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 static bool check_gc_heap_free_limit(size_t free_bytes, size_t capacity_bytes) {
-  return free_bytes * 100 / capacity_bytes < GCHeapFreeLimit;
+  return (free_bytes * 100 / capacity_bytes) < GCHeapFreeLimit;
 }
 
 bool ParallelScavengeHeap::check_gc_overhead_limit() {

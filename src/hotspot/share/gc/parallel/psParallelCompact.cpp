@@ -894,7 +894,7 @@ void PSParallelCompact::summary_phase()
       GCTraceTime(Info, gc, phases) tm("Summary Phase: expand", &_gc_timer);
       size_t live_and_waste_words = total_live_words + old_space->capacity_in_words() * (MarkSweepDeadRatio / 100.0);
       // Try to expand old-gen in order to fit all live objs (plus waste).
-      ParallelScavengeHeap::heap()->old_gen()->try_expand_till_size(live_and_waste_words * HeapWordSize);
+      ParallelScavengeHeap::heap()->old_gen()->try_expand_to_hold(live_and_waste_words * HeapWordSize);
     }
 
     HeapWord* dense_prefix_end = maximum_compaction

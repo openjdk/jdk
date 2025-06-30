@@ -82,7 +82,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   size_t max_gen_size() const { return _max_gen_size; }
   size_t min_gen_size() const { return _min_gen_size; }
 
-  void try_expand_till_size(size_t live_bytes);
+  void try_expand_to_hold(size_t live_bytes);
 
   bool is_in(const void* p) const           {
     return _virtual_space->is_in_committed((void *)p);
