@@ -28,12 +28,12 @@ package sun.nio.cs;
 
 import java.nio.*;
 import java.nio.charset.*;
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * Base class for different flavors of UTF-16 encoders
  */
 public abstract class UnicodeEncoder extends CharsetEncoder {
-
     protected static final char BYTE_ORDER_MARK = '\uFEFF';
     protected static final char REVERSED_MARK = '\uFFFE';
 
@@ -56,44 +56,64 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
         byteOrder = bo;
     }
 
-    private static char convEndian(boolean nativeOrder, char c) {
-        return nativeOrder ? c : Character.reverseBytes(c);
+    private static void putChar(byte[] ba, int off, char c, boolean big) {
+        if (big) {
+            ba[off    ] = (byte)(c >> 8);
+            ba[off + 1] = (byte)(c & 0xff);
+        } else {
+            ba[off    ] = (byte)(c & 0xff);
+            ba[off + 1] = (byte)(c >> 8);
+        }
     }
 
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
-        int mark = src.position();
-        boolean nativeOrder = (byteOrder == BIG) == (dst.order() == ByteOrder.BIG_ENDIAN);
+        char[] sa = src.array();
+        int soff = src.arrayOffset();
+        int sp = soff + src.position();
+        int sl = soff + src.limit();
 
-        if (needsMark && src.hasRemaining()) {
-            if (dst.remaining() < 2)
-                return CoderResult.OVERFLOW;
-            dst.putChar(convEndian(nativeOrder, BYTE_ORDER_MARK));
-            needsMark = false;
-        }
+        byte[] da = dst.array();
+        int doff = dst.arrayOffset();
+        int dp = doff + dst.position();
+        int dl = doff + dst.limit();
+
+        boolean big = byteOrder == BIG;
+
         try {
-            while (src.hasRemaining()) {
-                char c = src.get();
+            if (needsMark && sl - sp > 0) {
+                if (dl - dp < 2)
+                    return CoderResult.OVERFLOW;
+                putChar(da, dp, BYTE_ORDER_MARK, big);
+                dp += 2;
+                needsMark = false;
+            }
+
+            while (sp < sl) {
+                char c = sa[sp];
                 if (!Character.isSurrogate(c)) {
-                    if (dst.remaining() < 2)
+                    if (dl - dp < 2)
                         return CoderResult.OVERFLOW;
-                    mark++;
-                    dst.putChar(convEndian(nativeOrder, c));
+                    sp++;
+                    putChar(da, dp, c, big);
+                    dp += 2;
                     continue;
                 }
-                int d = sgp.parse(c, src);
+                int d = sgp.parse(c, sa, sp, sl);
                 if (d < 0)
                     return sgp.error();
-                if (dst.remaining() < 4)
+                if (dl - dp < 4)
                     return CoderResult.OVERFLOW;
-                mark += 2;
-                dst.putChar(convEndian(nativeOrder, Character.highSurrogate(d)));
-                dst.putChar(convEndian(nativeOrder, Character.lowSurrogate(d)));
+                sp += 2;
+                putChar(da, dp    , Character.highSurrogate(d), big);
+                putChar(da, dp + 2, Character.lowSurrogate(d) , big);
+                dp += 4;
             }
             return CoderResult.UNDERFLOW;
         } finally {
-            src.position(mark);
+            src.position(sp - soff);
+            dst.position(dp - doff);
         }
     }
 
