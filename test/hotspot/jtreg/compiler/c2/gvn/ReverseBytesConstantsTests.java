@@ -20,8 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package compiler.c2.gvn;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.DontCompile;
@@ -34,10 +32,11 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8353551
+ * @bug 8353551 8359678
  * @summary Test that ReverseBytes operations constant-fold.
  * @library /test/lib /
- * @run driver compiler.c2.gvn.ReverseBytesConstantsTests
+ * @compile ReverseBytesConstantsHelper.jasm
+ * @run driver ReverseBytesConstantsTests
  */
 public class ReverseBytesConstantsTests {
 
@@ -51,7 +50,7 @@ public class ReverseBytesConstantsTests {
     private static final int C_INT = GEN_INT.next();
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:CompileCommand=inline,ReverseBytesConstantsHelper::*");
     }
 
     @Run(test = {
@@ -89,6 +88,8 @@ public class ReverseBytesConstantsTests {
         Asserts.assertEQ(Short.reverseBytes((short) 0x7080), testS2());
         Asserts.assertEQ(Short.reverseBytes((short) 0x8070), testS3());
         Asserts.assertEQ(Short.reverseBytes(C_SHORT), testS4());
+        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesShort(C_INT), testS5());
+        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesShort(C_CHAR), testS6());
     }
 
     @DontCompile
@@ -97,6 +98,8 @@ public class ReverseBytesConstantsTests {
         Asserts.assertEQ(Character.reverseBytes((char) 0x7080), testUS2());
         Asserts.assertEQ(Character.reverseBytes((char) 0x8070), testUS3());
         Asserts.assertEQ(Character.reverseBytes(C_CHAR), testUS4());
+        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_INT), testUS5());
+        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_SHORT), testUS6());
     }
 
     @Test
@@ -172,6 +175,18 @@ public class ReverseBytesConstantsTests {
     }
 
     @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_S, IRNode.CALL})
+    public short testS5() {
+        return ReverseBytesConstantsHelper.reverseBytesShort(C_INT);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_S, IRNode.CALL})
+    public short testS6() {
+        return ReverseBytesConstantsHelper.reverseBytesShort(C_CHAR);
+    }
+
+    @Test
     @IR(failOn = {IRNode.REVERSE_BYTES_US})
     public char testUS1() {
         return Character.reverseBytes((char) 0x0201);
@@ -193,6 +208,18 @@ public class ReverseBytesConstantsTests {
     @IR(failOn = {IRNode.REVERSE_BYTES_US})
     public char testUS4() {
         return Character.reverseBytes(C_CHAR);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_US, IRNode.CALL})
+    public char testUS5() {
+        return ReverseBytesConstantsHelper.reverseBytesChar(C_INT);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_US, IRNode.CALL})
+    public char testUS6() {
+        return ReverseBytesConstantsHelper.reverseBytesChar(C_SHORT);
     }
 
 }
