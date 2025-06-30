@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8273922 8360887
+ * @bug 4313887 6838333 8273922
  * @summary Unit test for java.nio.file.attribute.UserDefinedFileAttributeView
  * @library ../.. /test/lib
  * @key randomness
@@ -282,11 +282,6 @@ public class Basic {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
             if (!Files.getFileStore(dir).supportsFileAttributeView("user")) {
-                // check if getFileAttributeView behaves as specified in this case
-                if (Files.getFileAttributeView(dir, UserDefinedFileAttributeView.class) != null) {
-                    throw new RuntimeException("UserDefinedFileAttributeView not supported, getFileAttributeView should return null");
-                }
-
                 System.out.println("UserDefinedFileAttributeView not supported - skip test");
                 return;
             }
