@@ -273,12 +273,7 @@ public class Types {
                     formals = formals.tail;
                 }
                 if (outer1 == outer && !changed) return t;
-                else return new ClassType(outer1, typarams1.toList(), t.tsym, t.getMetadata()) {
-                    @Override
-                    protected boolean needsStripping() {
-                        return true;
-                    }
-                };
+                else return new ClassType(outer1, typarams1.toList(), t.tsym, t.getMetadata());
             }
         }
 
@@ -292,12 +287,7 @@ public class Types {
                 //undefined
                 return syms.botType;
             } else {
-                return new ArrayType(elemtype1, t.tsym, t.metadata) {
-                    @Override
-                    protected boolean needsStripping() {
-                        return true;
-                    }
-                };
+                return new ArrayType(elemtype1, t.tsym, t.metadata);
             }
         }
 
@@ -401,12 +391,7 @@ public class Types {
             }
 
             private Type makeWildcard(Type bound, BoundKind bk) {
-                return new WildcardType(bound, bk, syms.boundClass) {
-                    @Override
-                    protected boolean needsStripping() {
-                        return true;
-                    }
-                };
+                return new WildcardType(bound, bk, syms.boundClass);
             }
         }
     }
@@ -3412,19 +3397,9 @@ public class Types {
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
                 return t;
             } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, qtype1) {
-                    @Override
-                    public boolean needsStripping() {
-                        return true;
-                    }
-                };
+                return new ForAll(tvars1, qtype1);
             } else {
-                return new ForAll(tvars1, Types.this.subst(qtype1, t.tvars, tvars1)) {
-                    @Override
-                    public boolean needsStripping() {
-                        return true;
-                    }
-                };
+                return new ForAll(tvars1, Types.this.subst(qtype1, t.tvars, tvars1));
             }
         }
     }
