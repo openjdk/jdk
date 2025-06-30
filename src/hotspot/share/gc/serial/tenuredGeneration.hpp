@@ -104,7 +104,7 @@ public:
 
   HeapWord* block_start(const void* addr) const;
 
-  void scan_old_to_young_refs(HeapWord* saved_top_in_old_gen);
+  void scan_old_to_young_refs();
 
   bool is_in(const void* p) const;
 

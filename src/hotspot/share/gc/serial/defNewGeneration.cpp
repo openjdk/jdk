@@ -615,7 +615,9 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
                                      NMethodToOopClosure::FixRelocations,
                                      false /* keepalive_nmethods */);
 
-    _old_gen->scan_old_to_young_refs(_old_gen->space()->top());
+    // Processing old-to-young pointers before relocating other kinds of roots.
+    _old_gen->scan_old_to_young_refs();
+
     // During young-gc, visit all (strong+weak) clds with the same closure.
     ClassLoaderDataGraph::cld_do(&cld_cl);
 
