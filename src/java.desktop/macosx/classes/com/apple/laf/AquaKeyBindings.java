@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -423,10 +423,14 @@ public class AquaKeyBindings {
             "KP_UP", "selectPrevious",
             "shift UP", "selectPreviousExtendSelection",
             "shift KP_UP", "selectPreviousExtendSelection",
+            "shift ctrl UP", "selectPreviousExtendSelection",
+            "shift ctrl KP_UP", "selectPreviousExtendSelection",
             "DOWN", "selectNext",
             "KP_DOWN", "selectNext",
             "shift DOWN", "selectNextExtendSelection",
             "shift KP_DOWN", "selectNextExtendSelection",
+            "shift ctrl DOWN", "selectNextExtendSelection",
+            "shift ctrl KP_DOWN", "selectNextExtendSelection",
             "RIGHT", "aquaExpandNode",
             "KP_RIGHT", "aquaExpandNode",
             "LEFT", "aquaCollapseNode",
