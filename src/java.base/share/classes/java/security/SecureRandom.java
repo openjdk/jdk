@@ -838,6 +838,9 @@ public class SecureRandom extends java.util.Random {
         return next >>> (numBytes*8 - numBits);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long nextLong() {
         byte[] b = new byte[8];
