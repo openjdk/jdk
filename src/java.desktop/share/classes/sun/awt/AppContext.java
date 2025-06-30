@@ -53,7 +53,7 @@ import java.util.function.Supplier;
  * The AppContext is a table referenced by ThreadGroup which stores
  * application service instances.  (If you are not writing an application
  * service, or don't know what one is, please do not use this class.)
- * The AppContext allows applet access to what would otherwise be
+ * The AppContext allows a context access to what would otherwise be
  * potentially dangerous services, such as the ability to peek at
  * EventQueues or change the look-and-feel of a Swing application.<p>
  *
@@ -79,7 +79,7 @@ import java.util.function.Supplier;
  * }</pre><p>
  *
  * The problem with the above is that the Foo service is global in scope,
- * so that applets and other untrusted code can execute methods on the
+ * so that untrusted code can execute methods on the
  * single, shared Foo instance.  The Foo service therefore either needs
  * to block its use by untrusted code using a SecurityManager test, or
  * restrict its capabilities so that it doesn't matter if untrusted code
@@ -104,20 +104,14 @@ import java.util.function.Supplier;
  * Since a separate AppContext can exist for each ThreadGroup, trusted
  * and untrusted code have access to different Foo instances.  This allows
  * untrusted code access to "system-wide" services -- the service remains
- * within the AppContext "sandbox".  For example, say a malicious applet
+ * within the AppContext "sandbox".  For example, say malicious code
  * wants to peek all of the key events on the EventQueue to listen for
  * passwords; if separate EventQueues are used for each ThreadGroup
- * using AppContexts, the only key events that applet will be able to
- * listen to are its own.  A more reasonable applet request would be to
+ * using AppContexts, the only key events that code will be able to
+ * listen to are its own.  A more reasonable request would be to
  * change the Swing default look-and-feel; with that default stored in
- * an AppContext, the applet's look-and-feel will change without
- * disrupting other applets or potentially the browser itself.<p>
- *
- * Because the AppContext is a facility for safely extending application
- * service support to applets, none of its methods may be blocked by a
- * a SecurityManager check in a valid Java implementation.  Applets may
- * therefore safely invoke any of its methods without worry of being
- * blocked.
+ * an AppContext, the look-and-feel will change without
+ * disrupting other contexts.
  *
  * @author  Thomas Ball
  * @author  Fred Ecks
@@ -155,7 +149,7 @@ public final class AppContext {
 
     /* The main "system" AppContext, used by everything not otherwise
        contained in another AppContext. It is implicitly created for
-       standalone apps only (i.e. not applets)
+       standalone apps only.
      */
     private static volatile AppContext mainAppContext;
 
@@ -283,9 +277,7 @@ public final class AppContext {
             ThreadGroup threadGroup = currentThreadGroup;
 
             // Special case: we implicitly create the main app context
-            // if no contexts have been created yet. This covers standalone apps
-            // and excludes applets because by the time applet starts
-            // a number of contexts have already been created by the plugin.
+            // if no contexts have been created yet.
             synchronized (getAppContextLock) {
                 if (numAppContexts.get() == 0) {
                     if (System.getProperty("javaplugin.version") == null &&

@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -274,7 +273,6 @@ public class PopupFactory {
      * Obtains the appropriate <code>Popup</code> based on
      * <code>popupType</code>.
      */
-    @SuppressWarnings("removal")
     private Popup getPopup(Component owner, Component contents,
                            int ownerX, int ownerY, int popupType) {
         if (GraphicsEnvironment.isHeadless()) {
@@ -288,10 +286,6 @@ public class PopupFactory {
             return getMediumWeightPopup(owner, contents, ownerX, ownerY);
         case HEAVY_WEIGHT_POPUP:
             Popup popup = getHeavyWeightPopup(owner, contents, ownerX, ownerY);
-            if ((OSInfo.getOSType() == OSInfo.OSType.MACOSX) && (owner != null) &&
-                (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
-                ((HeavyWeightPopup)popup).setCacheEnabled(false);
-            }
             return popup;
         }
         return null;
@@ -626,7 +620,6 @@ public class PopupFactory {
          * Returns true if popup can fit the screen and the owner's top parent.
          * It determines can popup be lightweight or mediumweight.
          */
-        @SuppressWarnings("removal")
         boolean fitsOnScreen() {
             boolean result = false;
             Component component = getComponent();
@@ -656,12 +649,6 @@ public class PopupFactory {
                         result = parentBounds
                                 .contains(x, y, popupWidth, popupHeight);
                     }
-                } else if (parent instanceof JApplet) {
-                    Rectangle parentBounds = parent.getBounds();
-                    Point p = parent.getLocationOnScreen();
-                    parentBounds.x = p.x;
-                    parentBounds.y = p.y;
-                    result = parentBounds.contains(x, y, popupWidth, popupHeight);
                 }
             }
             return result;
@@ -795,7 +782,6 @@ public class PopupFactory {
             recycleLightWeightPopup(this);
         }
 
-        @SuppressWarnings("removal")
         public void show() {
             Container parent = null;
 
@@ -816,11 +802,6 @@ public class PopupFactory {
                     if (parent == null) {
                         parent = p;
                     }
-                    break;
-                } else if (p instanceof JApplet) {
-                    // Painting code stops at Applets, we don't want
-                    // to add to a Component above an Applet otherwise
-                    // you'll never see it painted.
                     break;
                 }
             }
@@ -948,7 +929,6 @@ public class PopupFactory {
             recycleMediumWeightPopup(this);
         }
 
-        @SuppressWarnings("removal")
         public void show() {
             Component component = getComponent();
             Container parent = null;
@@ -961,7 +941,7 @@ public class PopupFactory {
               if it has a layered pane,
               add to that, otherwise
               add to the window. */
-            while (!(parent instanceof Window || parent instanceof Applet) &&
+            while (!(parent instanceof Window) &&
                    (parent!=null)) {
                 parent = parent.getParent();
             }
