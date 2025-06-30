@@ -49,6 +49,8 @@ enum class ZPageAge : uint8_t {
 constexpr uint ZPageAgeCount = static_cast<uint>(ZPageAge::old) + 1;
 constexpr ZPageAge ZPageAgeLastPlusOne = static_cast<ZPageAge>(ZPageAgeCount);
 
+constexpr uint ZNumRelocationAges = ZPageAgeCount - 1;
+
 ENUMERATOR_RANGE(ZPageAge,
                  ZPageAge::eden,
                  ZPageAge::old);
