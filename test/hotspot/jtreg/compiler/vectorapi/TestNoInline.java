@@ -32,7 +32,7 @@ import jdk.incubator.vector.VectorSpecies;
  * @modules jdk.incubator.vector
  *
  * @run main/othervm -Xbatch -XX:-Inline            compiler.vectorapi.TestNoInline
- * @run main/othervm -Xbatch -XX:-IncrementalInline compiler.vectorapi.TestNoInline
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-IncrementalInline compiler.vectorapi.TestNoInline
  */
 public class TestNoInline {
     static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_PREFERRED;
