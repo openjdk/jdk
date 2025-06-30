@@ -2545,7 +2545,14 @@ static bool can_subword_truncate(Node* in, const Type* type) {
 
   int opc = in->Opcode();
 
-  // For shorts and chars, check an additional set of nodes.
+  // If the node's base type is a subword type, check an additional set of nodes.
+  if (type == TypeInt::BYTE) {
+    switch (opc) {
+    case Op_ExtractB:
+      return true;
+    }
+  }
+
   if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
     switch (opc) {
     case Op_ExtractS:
@@ -2571,6 +2578,11 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   // While shifts have subword vectorized forms, they require knowing the precise type of input loads so they are
   // considered non-truncating.
   if (VectorNode::is_shift_opcode(opc)) {
+    return false;
+  }
+
+  // Vector nodes should not truncate.
+  if (type->isa_vect() || type->isa_vectmask()) {
     return false;
   }
 
