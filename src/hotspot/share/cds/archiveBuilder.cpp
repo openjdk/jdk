@@ -52,6 +52,7 @@
 #include "memory/memoryReserver.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/methodCounters.hpp"
@@ -339,7 +340,10 @@ address ArchiveBuilder::reserve_buffer() {
     aot_log_error(aot)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
-
+  // Once the memory is reserved, NMT can track it as mtClassShared.
+  // During an aligned reserve, some extra sub-regions of the memory region may be released due to alignment requirements.
+  // NMT will ignore releasing sub-regions (i.e., contained in other regions) that have mtClassShared tags.
+  MemTracker::record_virtual_memory_tag(rs, mtClassShared);
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
