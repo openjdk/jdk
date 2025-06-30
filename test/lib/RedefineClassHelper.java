@@ -82,7 +82,7 @@ public class RedefineClassHelper {
      *
      * @param bytes read from the original class file.
      * @param newClassName new class name for the returned class representation
-     * @return a copy of the class representated by `bytes` but with the name `newClassName`
+     * @return a copy of the class represented by `bytes` but with the name `newClassName`
      */
     public static byte[] replaceClassName(byte[] bytes, String newClassName) throws Exception {
         ClassModel classModel = ClassFile.of().parse(bytes);
