@@ -90,7 +90,7 @@ public final class JRSUIUtils {
         return false;
     }
 
-    public static class TabbedPane {
+    public static final class TabbedPane {
         public static boolean useLegacyTabs() {
             return isLeopard;
         }
@@ -99,19 +99,19 @@ public final class JRSUIUtils {
         }
     }
 
-    public static class InternalFrame {
+    public static final class InternalFrame {
         public static boolean shouldUseLegacyBorderMetrics() {
             return isSnowLeopardOrBelow;
         }
     }
 
-    public static class Tree {
+    public static final class Tree {
         public static boolean useLegacyTreeKnobs() {
             return isLeopard;
         }
     }
 
-    public static class ScrollBar {
+    public static final class ScrollBar {
         private static native boolean shouldUseScrollToClick();
 
         public static boolean useScrollToClick() {
@@ -137,13 +137,13 @@ public final class JRSUIUtils {
         }
     }
 
-    public static class Images {
+    public static final class Images {
         public static boolean shouldUseLegacySecurityUIPath() {
             return isSnowLeopardOrBelow;
         }
     }
 
-    public static class HitDetection {
+    public static final class HitDetection {
         public static Hit getHitForPoint(final JRSUIControl control,
                                          final int x, final int y, final int w,
                                          final int h, final int hitX,

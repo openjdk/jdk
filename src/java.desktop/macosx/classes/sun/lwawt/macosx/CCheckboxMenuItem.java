@@ -31,7 +31,7 @@ import java.awt.peer.CheckboxMenuItemPeer;
 
 import sun.awt.SunToolkit;
 
-public class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuItemPeer {
+public final class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuItemPeer {
     volatile boolean fAutoToggle = true;
     volatile boolean fIsIndeterminate;
 

@@ -41,7 +41,7 @@ import java.awt.desktop.QuitStrategy;
  * @since Java for Mac OS X 10.6 Update 3
  * @since Java for Mac OS X 10.5 Update 8
  */
-public class MacQuitResponse implements QuitResponse {
+public final class MacQuitResponse implements QuitResponse {
     final _AppEventHandler appEventHandler;
 
     MacQuitResponse(final _AppEventHandler appEventHandler) {
