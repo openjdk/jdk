@@ -922,11 +922,11 @@ public final class WindowsIconFactory implements Serializable
                                     skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                                 }
                             } else {
-                                skin.paintSkin(g, x - 2 * OFFSET, y,
+                                skin.paintSkin(g, x, y,
                                         getIconWidth(), getIconHeight(), backgroundState);
                                 skinWidth = getIconWidth();
                                 skin = xp.getSkin(c, part);
-                                skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
+                                skin.paintSkin(g, x, y + OFFSET, state);
                             }
                         }
                     }
@@ -935,8 +935,7 @@ public final class WindowsIconFactory implements Serializable
                     if (!isWindows11OrLater) {
                         icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     } else {
-                        icon.paintIcon(c, g, x - OFFSET +
-                                        ((skinWidth != -1) ? skinWidth : 16 + 2 * OFFSET),
+                        icon.paintIcon(c, g, x + icon.getIconWidth(),
                                 y + OFFSET);
                     }
                 }

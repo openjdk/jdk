@@ -40,7 +40,6 @@ import javax.swing.ButtonGroup;
 import javax.swing.ButtonModel;
 import javax.swing.DefaultButtonModel;
 import javax.swing.Icon;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -213,26 +212,6 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
                 foreground, defaultTextIconGap);
     }
 
-    private static boolean checkIfImageIconPresent(JMenuItem mi) {
-        boolean iconPresent = false;
-        ButtonModel model = mi.getModel();
-        if (model instanceof DefaultButtonModel defaultModel) {
-            ButtonGroup group = defaultModel.getGroup();
-            if (group != null) {
-                Enumeration<AbstractButton> elem = group.getElements();
-                for (int i = 0; i < group.getButtonCount(); i++) {
-                    if (elem.hasMoreElements()) {
-                        AbstractButton button = elem.nextElement();
-                        if (button.getIcon() != null) {
-                            iconPresent = true;
-                        }
-                    }
-                }
-            }
-        }
-        return iconPresent;
-    }
-
     static void paintMenuItem(WindowsMenuItemUIAccessor accessor, Graphics g,
                               JComponent c, Icon checkIcon, Icon arrowIcon,
                               Color background, Color foreground,
@@ -254,6 +233,7 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         if (acceleratorFont == null) {
             acceleratorFont = UIManager.getFont("MenuItem.font");
         }
+
         MenuItemLayoutHelper lh = new MenuItemLayoutHelper(mi, checkIcon,
                 arrowIcon, viewRect, defaultTextIconGap, acceleratorDelimiter,
                 mi.getComponentOrientation().isLeftToRight(), mi.getFont(),
@@ -270,21 +250,7 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
                 && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
 
-            // If ImageIcon is present in any of the JRadioButtoMenuItems,
-            // align menuItem text slightly ahead to be under same column
-            // else place text slightly before so that text appears
-            // to be at the same line as ImageIcon if it was present
-            // Since JCheckBoxMenuItem is not part of ButtonGroup and can be
-            // selected/deselected individually without affecting other
-            // the menuitem text alignment is decided by presence of imageicon
-            // for that menuitem
-            if (checkIfImageIconPresent(mi)
-                    || (mi instanceof JCheckBoxMenuItem && (menuItem.getIcon() != null))
-                    || (mi instanceof JMenuItem && (menuItem.getIcon() != null))) {
-                rect.x = rect.x + checkIcon.getIconWidth() / 2;
-            } else {
-                rect.x = rect.x - checkIcon.getIconWidth() / 2;
-            }
+            rect.x = rect.x + defaultTextIconGap;
             lr.setTextRect(rect);
         }
         if (!lh.getText().isEmpty()) {
@@ -303,7 +269,6 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         // Restore original graphics font and color
         g.setColor(holdc);
         g.setFont(holdf);
-        return;
     }
 
     /**
