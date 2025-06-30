@@ -626,8 +626,8 @@ private:
 
 public:
   GetCurrentContendedMonitorHandshakeClosure(JvmtiEnv *env,
-                                    JavaThread* calling_thread,
-                                    jobject *owned_monitor_ptr)
+                                             JavaThread* calling_thread,
+                                             jobject *owned_monitor_ptr)
     : JvmtiUnitedHandshakeClosure("GetCurrentContendedMonitor"),
       _env(env),
       _calling_thread(calling_thread),
@@ -647,7 +647,7 @@ private:
 
 public:
   GetStackTraceHandshakeClosure(JvmtiEnv *env, jint start_depth, jint max_count,
-                       jvmtiFrameInfo* frame_buffer, jint* count_ptr)
+                                jvmtiFrameInfo* frame_buffer, jint* count_ptr)
     : JvmtiUnitedHandshakeClosure("GetStackTrace"),
       _env(env),
       _start_depth(start_depth),
@@ -757,7 +757,7 @@ private:
 
 public:
   GetSingleStackTraceHandshakeClosure(JvmtiEnv *env, JavaThread *calling_thread,
-                             jthread thread, jint max_frame_count)
+                                      jthread thread, jint max_frame_count)
     : JvmtiUnitedHandshakeClosure("GetSingleStackTrace"),
       _calling_thread(calling_thread),
       _jthread(thread),
@@ -795,7 +795,7 @@ private:
 
 public:
   GetFrameLocationHandshakeClosure(JvmtiEnv *env, jint depth,
-                          jmethodID* method_ptr, jlocation* location_ptr)
+                                   jmethodID* method_ptr, jlocation* location_ptr)
     : JvmtiUnitedHandshakeClosure("GetFrameLocation"),
       _env(env),
       _depth(depth),
