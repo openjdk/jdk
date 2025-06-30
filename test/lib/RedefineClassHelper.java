@@ -96,7 +96,7 @@ public class RedefineClassHelper {
      * @param loader ClassLoader to find the bytes for the old class.
      * @param oldClassName old class name.
      * @param newClassName new class name to replace with old class name.
-     * @return a copy of the class representated by `bytes` but with the name `newClassName`
+     * @return a copy of the class represented by `bytes` but with the name `newClassName`
      */
     public static byte[] replaceClassName(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
         byte[] buf = getBytecodes(loader, oldClassName);
