@@ -217,12 +217,12 @@ JVMFlag::Error gc_cpu_usage_threshold_helper(JVMFlagsEnum flagid,
                                              bool verbose) {
   if (UseG1GC) {
     JVMFlag* flag = JVMFlag::flag_from_enum(flagid);
+    const uint min_count = 1;
     const uint max_count = G1HeapSizingPolicy::long_term_count_limit();
-    if (value > max_count) {
+    if (value < min_count || value > max_count) {
       JVMFlag::printError(verbose,
-                          "%s (%u) must be in range [0, %u]\n",
-                          flag->name(),
-                          value, max_count);
+                          "%s (%u) must be in range [%u, %u]\n",
+                          flag->name(), value, min_count, max_count);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }

@@ -293,7 +293,7 @@ size_t G1HeapSizingPolicy::young_collection_resize_amount(bool& expand, size_t a
 
   int count_threshold_for_shrink = (int)G1CPUUsageShrinkThreshold;
 
-  if ((_gc_cpu_usage_deviation_counter == (int)G1CPUUsageExpandThreshold) ||
+  if ((_gc_cpu_usage_deviation_counter >= (int)G1CPUUsageExpandThreshold) ||
       (use_long_term_delta && (long_term_gc_cpu_usage > upper_threshold))) {
     expand = true;
 
@@ -311,8 +311,8 @@ size_t G1HeapSizingPolicy::young_collection_resize_amount(bool& expand, size_t a
     resize_bytes = young_collection_expand_amount(delta);
 
     reset_cpu_usage_tracking_data();
-  } else if ((_gc_cpu_usage_deviation_counter == -count_threshold_for_shrink) ||
-           (use_long_term_delta && (long_term_gc_cpu_usage < lower_threshold))) {
+  } else if ((_gc_cpu_usage_deviation_counter <= -count_threshold_for_shrink) ||
+             (use_long_term_delta && (long_term_gc_cpu_usage < lower_threshold))) {
     expand = false;
     // Short-cut calculation if already at minimum capacity.
     if (_g1h->capacity() == _g1h->min_capacity()) {
