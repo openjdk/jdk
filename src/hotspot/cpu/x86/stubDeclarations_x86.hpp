@@ -26,6 +26,13 @@
 #ifndef CPU_X86_STUBDECLARATIONS_HPP
 #define CPU_X86_STUBDECLARATIONS_HPP
 
+#define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
+                                          do_arch_blob,                 \
+                                          do_arch_entry,                \
+                                          do_arch_entry_init)           \
+  do_arch_blob(preuniverse, 500)                                        \
+
+
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
@@ -239,7 +246,7 @@
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
                                     do_arch_entry_init)                 \
-  do_arch_blob(final, 31000                                             \
+  do_arch_blob(final, 33000                                             \
                WINDOWS_ONLY(+22000) ZGC_ONLY(+20000))                   \
 
 #endif // CPU_X86_STUBDECLARATIONS_HPP
