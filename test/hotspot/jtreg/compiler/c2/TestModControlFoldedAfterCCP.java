@@ -29,15 +29,15 @@
  *          VerifyIterativeGVN checks that this optimization was applied
  * @run main/othervm -XX:CompileCommand=quiet -XX:-TieredCompilation
  *      -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:CompileCommand=compileonly,compiler.c2.TestPropagateTypeRefinementToIGVN::test
- *      -XX:VerifyIterativeGVN=1110 compiler.c2.TestPropagateTypeRefinementToIGVN
- * @run main compiler.c2.TestPropagateTypeRefinementToIGVN
+ *      -XX:CompileCommand=compileonly,compiler.c2.TestModControlFoldedAfterCCP::test
+ *      -XX:VerifyIterativeGVN=1110 compiler.c2.TestModControlFoldedAfterCCP
+ * @run main compiler.c2.TestModControlFoldedAfterCCP
  *
  */
 
 package compiler.c2;
 
-public class TestPropagateTypeRefinementToIGVN {
+public class TestModControlFoldedAfterCCP {
     static void test() {
         int i22, i24 = -1191, i28;
         int iArr1[] = new int[1];
