@@ -25,10 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.AOTClassInitializer;
 import jdk.internal.vm.annotation.Stable;
-
-import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
  * A method handle whose behavior is determined only by its LambdaForm.
@@ -36,6 +34,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * first.
  * @author jrose
  */
+@AOTClassInitializer
 final class SimpleMethodHandle extends BoundMethodHandle {
 
     private SimpleMethodHandle(MethodType type, LambdaForm form) {
