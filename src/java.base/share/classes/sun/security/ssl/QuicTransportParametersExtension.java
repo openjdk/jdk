@@ -33,10 +33,8 @@ import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
- * QuicTransportParametersExtension is an implementation of RFC 9000.
- * It is only used by QUIC connections.
+ * Pack of the "quic_transport_parameters" extensions [RFC 9001].
  */
-
 final class QuicTransportParametersExtension {
 
     static final HandshakeProducer chNetworkProducer =
