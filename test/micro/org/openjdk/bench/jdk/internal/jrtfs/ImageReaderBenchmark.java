@@ -56,9 +56,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 @Measurement(iterations = 5, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 1, jvmArgs = {
-        "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.jrtfs=ALL-UNNAMED"})
+@Fork(value = 1, jvmArgs = {"--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED"})
 public class ImageReaderBenchmark {
 
     private static final Path SYSTEM_IMAGE_FILE = Path.of(System.getProperty("java.home"), "lib", "modules");
@@ -68,8 +66,9 @@ public class ImageReaderBenchmark {
         }
     }
 
-    /// NOT a @State since that causes setUp()/tearDown() to be shared, but we
-    /// want a new copied file every time.
+    /// NOT annotated with `@State` since it needs to potentially be used as a
+    /// per-benchmark or a per-iteration state object. The subclasses provide
+    /// any lifetime annotations that are needed.
     static class BaseState {
         protected Path copiedImageFile;
         protected ByteOrder byteOrder;
@@ -84,6 +83,22 @@ public class ImageReaderBenchmark {
         public void tearDown() throws IOException {
             Files.deleteIfExists(copiedImageFile);
             System.err.println("Result: " + count);
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class WarmStartWithImageReader extends BaseState {
+        ImageReader reader;
+
+        @Setup(Level.Trial)
+        public void setUp() throws IOException {
+            super.setUp();
+            reader = ImageReader.open(copiedImageFile, byteOrder);
+        }
+
+        @TearDown(Level.Trial)
+        public void tearDown() throws IOException {
+            super.tearDown();
         }
     }
 
@@ -120,12 +135,9 @@ public class ImageReaderBenchmark {
     /// Benchmarks counting of all nodes in the system image *after* they have all
     /// been visited at least once. Image nodes should be cached after first use,
     /// so this benchmark should be fast and very stable.
-    ///
-    /// By running this benchmark first, it should also ensure the later (one shot)
-    /// benchmarks are using hotspot compiled code.
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    public void warmCache_CountAllNodes(ColdStartWithImageReader state) throws IOException {
+    public void warmCache_CountAllNodes(WarmStartWithImageReader state) throws IOException {
         state.count = countAllNodes(state.reader, state.reader.findNode("/"));
     }
 
