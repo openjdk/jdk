@@ -619,8 +619,7 @@ void ReferenceProcessor::maybe_balance_queues(DiscoveredList refs_lists[]) {
 // Move entries from all queues[0, 1, ..., _max_num_q-1] to
 // queues[0, 1, ..., _num_q-1] because only the first _num_q
 // corresponding to the active workers will be processed.
-void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
-{
+void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[]) {
   // calculate total length
   size_t total_refs = 0;
   log_develop_trace(gc, ref)("Balance ref_lists ");
@@ -633,60 +632,60 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   size_t avg_refs = total_refs / _num_queues + 1;
   uint to_idx = 0;
   for (uint from_idx = 0; from_idx < _max_num_queues; from_idx++) {
-    bool move_all = false;
+    size_t from_len = ref_lists[from_idx].length();
+
+    size_t remaining_to_move;
     if (from_idx >= _num_queues) {
-      move_all = ref_lists[from_idx].length() > 0;
+      // Move all
+      remaining_to_move = from_len;
+    } else {
+      // Move those above avg_refs
+      remaining_to_move = from_len > avg_refs
+                        ? from_len - avg_refs
+                        : 0;
     }
-    while ((ref_lists[from_idx].length() > avg_refs) ||
-           move_all) {
+
+    while (remaining_to_move > 0) {
       assert(to_idx < _num_queues, "Sanity Check!");
-      if (ref_lists[to_idx].length() < avg_refs) {
-        // move superfluous refs
-        size_t refs_to_move;
-        // Move all the Ref's if the from queue will not be processed.
-        if (move_all) {
-          refs_to_move = MIN2(ref_lists[from_idx].length(),
-                              avg_refs - ref_lists[to_idx].length());
-        } else {
-          refs_to_move = MIN2(ref_lists[from_idx].length() - avg_refs,
-                              avg_refs - ref_lists[to_idx].length());
-        }
 
-        assert(refs_to_move > 0, "otherwise the code below will fail");
-
-        oop move_head = ref_lists[from_idx].head();
-        oop move_tail = move_head;
-        oop new_head  = move_head;
-        // find an element to split the list on
-        for (size_t j = 0; j < refs_to_move; ++j) {
-          move_tail = new_head;
-          new_head = java_lang_ref_Reference::discovered(new_head);
-        }
-
-        // Add the chain to the to list.
-        if (ref_lists[to_idx].head() == nullptr) {
-          // to list is empty. Make a loop at the end.
-          java_lang_ref_Reference::set_discovered_raw(move_tail, move_tail);
-        } else {
-          java_lang_ref_Reference::set_discovered_raw(move_tail, ref_lists[to_idx].head());
-        }
-        ref_lists[to_idx].set_head(move_head);
-        ref_lists[to_idx].inc_length(refs_to_move);
-
-        // Remove the chain from the from list.
-        if (move_tail == new_head) {
-          // We found the end of the from list.
-          ref_lists[from_idx].set_head(nullptr);
-        } else {
-          ref_lists[from_idx].set_head(new_head);
-        }
-        ref_lists[from_idx].dec_length(refs_to_move);
-        if (ref_lists[from_idx].length() == 0) {
-          break;
-        }
-      } else {
-        to_idx = (to_idx + 1) % _num_queues;
+      size_t to_len = ref_lists[to_idx].length();
+      if (to_len >= avg_refs) {
+        // this list is full enough; move on to next
+        to_idx++;
+        continue;
       }
+      size_t refs_to_move = MIN2(remaining_to_move, avg_refs - to_len);
+      assert(refs_to_move > 0, "otherwise the code below will fail");
+
+      oop move_head = ref_lists[from_idx].head();
+      oop move_tail = move_head;
+      oop new_head  = move_head;
+      // find an element to split the list on
+      for (size_t j = 0; j < refs_to_move; ++j) {
+        move_tail = new_head;
+        new_head = java_lang_ref_Reference::discovered(new_head);
+      }
+
+      // Add the chain to the to list.
+      if (ref_lists[to_idx].head() == nullptr) {
+        // to list is empty. Make a loop at the end.
+        java_lang_ref_Reference::set_discovered_raw(move_tail, move_tail);
+      } else {
+        java_lang_ref_Reference::set_discovered_raw(move_tail, ref_lists[to_idx].head());
+      }
+      ref_lists[to_idx].set_head(move_head);
+      ref_lists[to_idx].inc_length(refs_to_move);
+
+      // Remove the chain from the from list.
+      if (move_tail == new_head) {
+        // We found the end of the from list.
+        ref_lists[from_idx].set_head(nullptr);
+      } else {
+        ref_lists[from_idx].set_head(new_head);
+      }
+      ref_lists[from_idx].dec_length(refs_to_move);
+
+      remaining_to_move -= refs_to_move;
     }
   }
 #ifdef ASSERT
