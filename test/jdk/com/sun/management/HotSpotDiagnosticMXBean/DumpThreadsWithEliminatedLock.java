@@ -26,10 +26,8 @@
  * @bug 8356870
  * @summary Test HotSpotDiagnosticMXBean.dumpThreads with a thread owning a monitor for
  *     an object that is scalar replaced
- * @requires vm.compMode != "Xcomp"
- * @requires !vm.debug | (os.family == "linux")
+ * @requires !vm.debug & (vm.compMode != "Xcomp")
  * @requires (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
- * @requires vm.jvmti
  * @modules jdk.management
  * @library /test/lib
  * @run main/othervm DumpThreadsWithEliminatedLock plain platform
