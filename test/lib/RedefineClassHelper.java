@@ -77,7 +77,7 @@ public class RedefineClassHelper {
     }
 
     /*
-     * Copy the class defined by `bytes`, replacing the nameof the class with `newClassName`,
+     * Copy the class defined by `bytes`, replacing the name of the class with `newClassName`,
      * so that both old and new classes can be compiled by jtreg for the test.
      *
      * @param bytes read from the original class file.
