@@ -1332,7 +1332,7 @@ public final class String
         }
 
         int len = sl - sp;
-        int count = StringCoding.countPositives(val, sp, sl);
+        int count = StringCoding.countPositives(val, sp, len);
         if (count != 0) {
             System.arraycopy(val, sp, dst, dp, count);
             dp += count;
