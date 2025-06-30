@@ -27,6 +27,8 @@ package java.io;
 
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -397,16 +399,6 @@ public abstract class Reader implements Readable, Closeable {
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
-    private String readAllCharsAsString() throws IOException {
-        StringBuilder result = new StringBuilder();
-        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
-        int nread;
-        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
-            result.append(cbuf, 0, nread);
-        }
-        return result.toString();
-    }
-
     /**
      * Reads all remaining characters as lines of text. This method blocks until
      * all remaining characters have been read and end of stream is detected,
@@ -457,7 +449,79 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public List<String> readAllLines() throws IOException {
-        return readAllCharsAsString().lines().toList();
+        List<String> lines = new ArrayList<>();
+        char[] cb = new char[TRANSFER_BUFFER_SIZE];
+
+        int writePos = 0;
+        boolean hasFrag = false;
+        int fragLen = 0;
+        boolean skipLF = false;
+
+        int n;
+        while ((n = read(cb, writePos, cb.length - writePos)) != -1) {
+            int pos = writePos;
+            int limit = pos + n;
+            while (pos < limit) {
+                // find next line terminator
+                int term = pos;
+                while (term < limit) {
+                    char c = cb[term];
+                    if (c == '\n' || c == '\r')
+                        break;
+                    term++;
+                }
+
+                if (term < limit) { // line terminator
+                    boolean isCR = (cb[term] == '\r');
+                    if (isCR || !(skipLF && term == pos)) {
+                        // line terminator is a CR or an LF not just after a CR
+                        if (hasFrag) {
+                            lines.add(new String(cb, 0, term));
+                            hasFrag = false;
+                        } else {
+                            lines.add(new String(cb, pos, term - pos));
+                        }
+                    }
+                    pos = term + 1;
+                    if (pos == limit)
+                        writePos = 0;
+                    else if (isCR && cb[pos] == '\n') { // pos < limit
+                        pos++;
+                        isCR = false;
+                    }
+                    skipLF = isCR;
+                } else { // no line terminator before reaching end of buffer
+                    int len = limit - pos;
+                    int fragPos;
+                    if (hasFrag) {
+                        fragPos = 0;
+                        fragLen += len;
+                    } else {
+                        fragPos = pos;
+                        fragLen = len;
+                    }
+                    if (fragLen >= cb.length/2) {
+                        // allocate larger buffer and copy chars to beginning
+                        char[] tmp = new char[2*cb.length];
+                        System.arraycopy(cb, fragPos, tmp, 0, fragLen);
+                        cb = tmp;
+                    } else if (fragPos != 0) {
+                        // move fragment to beginning of buffer
+                        System.arraycopy(cb, fragPos, cb, 0, fragLen);
+                    }
+                    writePos = fragLen;
+                    hasFrag = true;
+                    pos = limit;
+                    skipLF = false;
+                }
+            }
+        }
+
+        // add a string if EOS terminates the last line
+        if (hasFrag)
+            lines.add(new String(cb, 0, fragLen));
+
+        return Collections.unmodifiableList(lines);
     }
 
     /**
@@ -499,7 +563,13 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public String readAllAsString() throws IOException {
-        return readAllCharsAsString();
+        StringBuilder result = new StringBuilder();
+        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
+        int nread;
+        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
+            result.append(cbuf, 0, nread);
+        }
+        return result.toString();
     }
 
     /** Maximum skip-buffer size */
