@@ -53,7 +53,7 @@ public class ClassVersionAfterRedefine extends ClassLoader {
         // Rename class "TestClassNew" to "TestClassXXX" so we can use it for
         // redefining the original version of "TestClassXXX" (i.e. "TestClassOld").
         buf = RedefineClassHelper.replaceClassName(cvar, "TestClassNew", "TestClassXXX");
-        // Now redine the original version of "TestClassXXX" (i.e. "TestClassOld").
+        // Now redefine the original version of "TestClassXXX" (i.e. "TestClassOld").
         RedefineClassHelper.redefineClass(old, buf);
         result = foo.invoke(null);
         assertTrue("java.lang.String".equals(result));
