@@ -107,7 +107,7 @@ public class Basic {
         assertTrue(store1.supportsFileAttributeView("user") ==
             store1.supportsFileAttributeView(UserDefinedFileAttributeView.class));
 
-        // check if getFileAttributeView behaves as specified if the used defined view is unsupported
+        // check if getFileAttributeView behaves as specified if the user defined view is unsupported
         if (!store1.supportsFileAttributeView(UserDefinedFileAttributeView.class) &&
             Files.getFileAttributeView(dir, UserDefinedFileAttributeView.class) != null) {
             throw new RuntimeException("UserDefinedFileAttributeView not supported, getFileAttributeView should return null");
