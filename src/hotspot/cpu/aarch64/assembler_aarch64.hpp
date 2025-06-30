@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3724,18 +3724,6 @@ public:
   INSN(sve_orr,  0b10, 0b0, 0b0);
   INSN(sve_orrs, 0b11, 0b0, 0b0);
   INSN(sve_bic,  0b00, 0b0, 0b1);
-#undef INSN
-
-// SVE aliases
-#define INSN(ALIAS, REFERENT)                            \
-  void ALIAS(PRegister Pd, PRegister Pg, PRegister Pn) { \
-    REFERENT(Pd, Pg, Pn, Pg);                            \
-  }
-
-  INSN(sve_mov,  sve_and);  // Move predicates (zeroing); an alias of sve_and
-  INSN(sve_movs, sve_ands); // Move predicates (zeroing), setting the condition flags; an alias of sve_ands
-  INSN(sve_not,  sve_eor);  // Bitwise invert predicate; an alias of sve_eor
-  INSN(sve_nots, sve_eors); // Bitwise invert predicate, setting the condition flags; an alias of sve_eors
 #undef INSN
 
   // SVE increment register by predicate count
