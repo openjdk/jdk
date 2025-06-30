@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,16 @@
  * questions.
  */
 
-import java.lang.management.ManagementFactory;
-import com.sun.management.HotSpotDiagnosticMXBean;
+#include <stdio.h>
+#include "jvmti.h"
 
-class LockingMode {
-    private LockingMode() { }
-
-    /**
-     * Returns true if using legacy locking mode.
-     */
-    static boolean isLegacy() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                .getVMOption("LockingMode")
-                .getValue()
-                .equals("1");
-    }
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  const char* filename = "./testfile_FDLeaker.txt";
+  FILE* f = fopen(filename, "w");
+  if (f == NULL) {
+    return JNI_ERR;
+  }
+  printf("Opened and leaked %s (%d)", filename, fileno(f));
+  return JNI_OK;
 }

@@ -144,7 +144,7 @@
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
-          constraint(G1SATBBufferSizeConstraintFunc, AtParse)               \
+          constraint(G1SATBBufferSizeConstraintFunc, AfterErgo)             \
                                                                             \
   develop(uintx, G1SATBProcessCompletedThreshold, 20,                       \
           "Number of completed buffers that triggers log processing.")      \
@@ -190,7 +190,7 @@
                                                                             \
   product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
-          constraint(G1UpdateBufferSizeConstraintFunc, AtParse)             \
+          constraint(G1UpdateBufferSizeConstraintFunc, AfterErgo)           \
                                                                             \
   product(uint, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \

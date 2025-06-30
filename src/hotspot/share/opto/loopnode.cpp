@@ -298,19 +298,52 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
   return outer_ilt;
 }
 
-// Create a skeleton strip mined outer loop: a Loop head before the
-// inner strip mined loop, a safepoint and an exit condition guarded
-// by an opaque node after the inner strip mined loop with a backedge
-// to the loop head. The inner strip mined loop is left as it is. Only
-// once loop optimizations are over, do we adjust the inner loop exit
-// condition to limit its number of iterations, set the outer loop
-// exit condition and add Phis to the outer loop head. Some loop
-// optimizations that operate on the inner strip mined loop need to be
-// aware of the outer strip mined loop: loop unswitching needs to
-// clone the outer loop as well as the inner, unrolling needs to only
-// clone the inner loop etc. No optimizations need to change the outer
-// strip mined loop as it is only a skeleton.
-IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+// Create a skeleton strip mined outer loop: an OuterStripMinedLoop head before the inner strip mined CountedLoop, a
+// SafePoint on exit of the inner CountedLoopEnd and an OuterStripMinedLoopEnd test that can't constant fold until loop
+// optimizations are over. The inner strip mined loop is left as it is. Only once loop optimizations are over, do we
+// adjust the inner loop exit condition to limit its number of iterations, set the outer loop exit condition and add
+// Phis to the outer loop head. Some loop optimizations that operate on the inner strip mined loop need to be aware of
+// the outer strip mined loop: loop unswitching needs to clone the outer loop as well as the inner, unrolling needs to
+// only clone the inner loop etc. No optimizations need to change the outer strip mined loop as it is only a skeleton.
+//
+// Schematically:
+//
+// OuterStripMinedLoop -------|
+//       |                    |
+// CountedLoop ----------- |  |
+//     \- Phi (iv) -|      |  |
+//       /  \       |      |  |
+//     CmpI  AddI --|      |  |
+//       \                 |  |
+//        Bool             |  |
+//         \               |  |
+// CountedLoopEnd          |  |
+//       /  \              |  |
+// IfFalse   IfTrue--------|  |
+//      |                     |
+// SafePoint                  |
+//      |                     |
+// OuterStripMinedLoopEnd     |
+//       /   \                |
+// IfFalse   IfTrue-----------|
+//      |
+//
+//
+// As loop optimizations transform the inner loop, the outer strip mined loop stays mostly unchanged. The only exception
+// is nodes referenced from the SafePoint and sunk from the inner loop: they end up in the outer strip mined loop.
+//
+// Not adding Phis to the outer loop head from the beginning, and only adding them after loop optimizations does not
+// conform to C2's IR rules: any variable or memory slice that is mutated in a loop should have a Phi. The main
+// motivation for such a design that doesn't conform to C2's IR rules is to allow existing loop optimizations to be
+// mostly unaffected by the outer strip mined loop: the only extra step needed in most cases is to step over the
+// OuterStripMinedLoop. The main drawback is that once loop optimizations are over, an extra step is needed to finish
+// constructing the outer loop. This is handled by OuterStripMinedLoopNode::adjust_strip_mined_loop().
+//
+// Adding Phis to the outer loop is largely straightforward: there needs to be one Phi in the outer loop for every Phi
+// in the inner loop. Things may be more complicated for sunk Store nodes: there may not be any inner loop Phi left
+// after sinking for a particular memory slice but the outer loop needs a Phi. See
+// OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction()
+IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(Node* init_control,
                                                              IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                              Node*& entry_control, Node*& iffalse) {
   Node* outer_test = intcon(0);
@@ -1656,7 +1689,9 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     return false;
   }
 
-  if (xphi->Opcode() == Op_Cast(iv_bt)) {
+  // Iteratively uncast the loop induction variable
+  // until no more CastII/CastLL nodes are found.
+  while (xphi->Opcode() == Op_Cast(iv_bt)) {
     xphi = xphi->in(1);
   }
 
@@ -2255,9 +2290,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
                          is_deleteable_safept(sfpt);
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
-    outer_ilt = create_outer_strip_mined_loop(test, cmp, init_control, loop,
-                                              cl_prob, le->_fcnt, entry_control,
-                                              iffalse);
+    outer_ilt = create_outer_strip_mined_loop(init_control, loop, cl_prob, le->_fcnt,
+                                              entry_control, iffalse);
   }
 
   // Now setup a new CountedLoopNode to replace the existing LoopNode
@@ -2870,10 +2904,11 @@ BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, Basi
   return new LongCountedLoopNode(entry, backedge);
 }
 
-void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn,
-                                              PhaseIdealLoop* iloop) {
-  Node* cle_out = inner_cle->proj_out(false);
-  Node* cle_tail = inner_cle->proj_out(true);
+void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn,
+                                                                        PhaseIdealLoop* iloop) const {
+  CountedLoopNode* inner_cl = inner_counted_loop();
+  IfFalseNode* cle_out = inner_loop_exit();
+
   if (cle_out->outcnt() > 1) {
     // Look for chains of stores that were sunk
     // out of the inner loop and are in the outer loop
@@ -2988,11 +3023,90 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
   }
 }
 
+// The outer strip mined loop is initially only partially constructed. In particular Phis are omitted.
+// See comment above: PhaseIdealLoop::create_outer_strip_mined_loop()
+// We're now in the process of finishing the construction of the outer loop. For each Phi in the inner loop, a Phi in
+// the outer loop was just now created. However, Sunk Stores cause an extra challenge:
+// 1) If all Stores in the inner loop were sunk for a particular memory slice, there's no Phi left for that memory slice
+//    in the inner loop anymore, and hence we did not yet add a Phi for the outer loop. So an extra Phi must now be
+//    added for each chain of sunk Stores for a particular memory slice.
+// 2) If some Stores were sunk and some left in the inner loop, a Phi was already created in the outer loop but
+//    its backedge input wasn't wired correctly to the last Store of the chain: the backedge input was set to the
+//    backedge of the inner loop Phi instead, but it needs to be the last Store of the chain in the outer loop. We now
+//    have to fix that too.
+void OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn) {
+  IfFalseNode* cle_exit_proj = inner_loop_exit();
+
+  // Find Sunk stores: Sunk stores are pinned on the loop exit projection of the inner loop. Indeed, because Sunk Stores
+  // modify the memory state captured by the SafePoint in the outer strip mined loop, they must be above it. The
+  // SafePoint's control input is the loop exit projection. It's also the only control out of the inner loop above the
+  // SafePoint.
+#ifdef ASSERT
+  int stores_in_outer_loop_cnt = 0;
+  for (DUIterator_Fast imax, i = cle_exit_proj->fast_outs(imax); i < imax; i++) {
+    Node* u = cle_exit_proj->fast_out(i);
+    if (u->is_Store()) {
+      stores_in_outer_loop_cnt++;
+    }
+  }
+#endif
+
+  // Sunk stores are reachable from the memory state of the outer loop safepoint
+  SafePointNode* safepoint = outer_safepoint();
+  MergeMemNode* mm = safepoint->in(TypeFunc::Memory)->isa_MergeMem();
+  if (mm == nullptr) {
+    // There is no MergeMem, which should only happen if there was no memory node
+    // sunk out of the loop.
+    assert(stores_in_outer_loop_cnt == 0, "inconsistent");
+    return;
+  }
+  DEBUG_ONLY(int stores_in_outer_loop_cnt2 = 0);
+  for (MergeMemStream mms(mm); mms.next_non_empty();) {
+    Node* mem = mms.memory();
+    // Traverse up the chain of stores to find the first store pinned
+    // at the loop exit projection.
+    Node* last = mem;
+    Node* first = nullptr;
+    while (mem->is_Store() && mem->in(0) == cle_exit_proj) {
+      DEBUG_ONLY(stores_in_outer_loop_cnt2++);
+      first = mem;
+      mem = mem->in(MemNode::Memory);
+    }
+    if (first != nullptr) {
+      // Found a chain of Stores that were sunk
+      // Do we already have a memory Phi for that slice on the outer loop? If that is the case, that Phi was created
+      // by cloning an inner loop Phi. The inner loop Phi should have mem, the memory state of the first Store out of
+      // the inner loop, as input on the backedge. So does the outer loop Phi given it's a clone.
+      Node* phi = nullptr;
+      for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+        Node* u = mem->fast_out(i);
+        if (u->is_Phi() && u->in(0) == this && u->in(LoopBackControl) == mem) {
+          assert(phi == nullptr, "there should be only one");
+          phi = u;
+          PRODUCT_ONLY(break);
+        }
+      }
+      if (phi == nullptr) {
+        // No outer loop Phi? create one
+        phi = PhiNode::make(this, last);
+        phi->set_req(EntryControl, mem);
+        phi = igvn->transform(phi);
+        igvn->replace_input_of(first, MemNode::Memory, phi);
+      } else {
+        // Fix memory state along the backedge: it should be the last sunk Store of the chain
+        igvn->replace_input_of(phi, LoopBackControl, last);
+      }
+    }
+  }
+  assert(stores_in_outer_loop_cnt == stores_in_outer_loop_cnt2, "inconsistent");
+}
+
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
+  verify_strip_mined(1);
   // Look for the outer & inner strip mined loop, reduce number of
   // iterations of the inner loop, set exit condition of outer loop,
   // construct required phi nodes for outer loop.
-  CountedLoopNode* inner_cl = unique_ctrl_out()->as_CountedLoop();
+  CountedLoopNode* inner_cl = inner_counted_loop();
   assert(inner_cl->is_strip_mined(), "inner loop should be strip mined");
   if (LoopStripMiningIter == 0) {
     remove_outer_loop_and_safepoint(igvn);
@@ -3010,7 +3124,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     inner_cl->clear_strip_mined();
     return;
   }
-  CountedLoopEndNode* inner_cle = inner_cl->loopexit();
+  CountedLoopEndNode* inner_cle = inner_counted_loop_end();
 
   int stride = inner_cl->stride_con();
   // For a min int stride, LoopStripMiningIter * stride overflows the int range for all values of LoopStripMiningIter
@@ -3091,8 +3205,9 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   }
 
   Node* iv_phi = nullptr;
-  // Make a clone of each phi in the inner loop
-  // for the outer loop
+  // Make a clone of each phi in the inner loop for the outer loop
+  // When Stores were Sunk, after this step, a Phi may still be missing or its backedge incorrectly wired. See
+  // handle_sunk_stores_when_finishing_construction()
   for (uint i = 0; i < inner_cl->outcnt(); i++) {
     Node* u = inner_cl->raw_out(i);
     if (u->is_Phi()) {
@@ -3110,6 +3225,8 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
       }
     }
   }
+
+  handle_sunk_stores_when_finishing_construction(igvn);
 
   if (iv_phi != nullptr) {
     // Now adjust the inner loop's exit condition
@@ -3166,7 +3283,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   CountedLoopEndNode* inner_cle = inner_cl->loopexit();
   Node* safepoint = outer_safepoint();
 
-  fix_sunk_stores(inner_cle, inner_cl, igvn, iloop);
+  fix_sunk_stores_when_back_to_counted_loop(igvn, iloop);
 
   // make counted loop exit test always fail
   ConINode* zero = igvn->intcon(0);
