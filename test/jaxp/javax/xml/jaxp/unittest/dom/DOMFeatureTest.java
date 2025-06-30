@@ -43,7 +43,7 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 8206132
+ * @bug 8206132 8359337
  * @summary Tests DOM features.
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @comment we use othervm because the test configures a system wide ProxySelector

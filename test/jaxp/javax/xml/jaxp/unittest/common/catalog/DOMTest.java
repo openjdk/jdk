@@ -26,7 +26,7 @@ import java.net.ProxySelector;
 
 /*
  * @test
- * @bug 8306055
+ * @bug 8306055 8359337
  * @summary verifies DOM's support of the JDK Catalog.
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
