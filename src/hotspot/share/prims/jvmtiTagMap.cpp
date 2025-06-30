@@ -944,7 +944,7 @@ class IterateOverHeapObjectClosure: public ObjectClosure {
 
 // invoked for each object in the heap
 void IterateOverHeapObjectClosure::do_object(oop o) {
-  if (o == nullptr) return;
+  assert(o != nullptr, "Parameter 'o' must not be null!");
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
 
@@ -1033,7 +1033,7 @@ class IterateThroughHeapObjectClosure: public ObjectClosure {
 
 // invoked for each object in the heap
 void IterateThroughHeapObjectClosure::do_object(oop obj) {
-  if (obj == nullptr) return;
+  assert(obj != nullptr, "Parameter 'obj' must not be null!");
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
 
