@@ -913,6 +913,10 @@ public:
   JVMCINMethodData* jvmci_nmethod_data() const {
     return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
+
+  // Returns true if a JVMCI compiled method is non-default,
+  // i.e., not triggered by CompilerBroker
+  bool is_jvmci_hosted() const;
 #endif
 
   void oops_do(OopClosure* f) { oops_do(f, false); }
