@@ -35,16 +35,20 @@ import java.util.Objects;
  * @param scheme The scheme of the origin (for example: https). Unlike the application layer
  *               protocol (which can be a finer grained protocol like h2, h3 etc...),
  *               this is actually a scheme. Only {@code http} and {@code https} literals are
- *               supported.
- * @param host   The host of the origin
- * @param port   The port of the origin
+ *               supported. Cannot be null.
+ * @param host   The host of the origin. If the host is an IPv6 address, then it must not be
+ *               enclosed in square brackets ({@code '['} and {@code ']'}). Cannot be null.
+ * @param port   The port of the origin. Must be greater than 0.
  */
 public record Origin(String scheme, String host, int port) {
     public Origin {
         Objects.requireNonNull(scheme);
         Objects.requireNonNull(host);
+        if (host.startsWith("[") && host.endsWith("]")) {
+            throw new IllegalArgumentException("Invalid host: " + host);
+        }
         if (port <= 0) {
-            throw new IllegalArgumentException("Invalid port");
+            throw new IllegalArgumentException("Invalid port: " + port);
         }
         if (!isValidScheme(scheme)) {
             throw new IllegalArgumentException("Unsupported scheme: " + scheme);
@@ -77,6 +81,14 @@ public record Origin(String scheme, String host, int port) {
         if (host == null) {
             throw new IllegalArgumentException("missing host in URI");
         }
+        final String effectiveHost;
+        if (host.startsWith("[") && host.endsWith("]")) {
+            // strip the square brackets from IPv6 host
+            effectiveHost = host.substring(1, host.length() - 1);
+        } else {
+            effectiveHost = host;
+        }
+        assert !effectiveHost.isEmpty() : "unexpected URI host: " + host;
         int port = uri.getPort();
         if (port == -1) {
             port = switch (lcaseScheme) {
@@ -87,7 +99,7 @@ public record Origin(String scheme, String host, int port) {
                 default -> throw new AssertionError("Unsupported scheme: " + scheme);
             };
         }
-        return new Origin(lcaseScheme, host, port);
+        return new Origin(lcaseScheme, effectiveHost, port);
     }
 
     static String toAuthority(final String host, final int port) {
