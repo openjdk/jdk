@@ -27,8 +27,8 @@
  * @summary Checks whether mouse events are reported correctly during drag.
  * @author Stuart Lawrence, Brent Christian: area=event
  * @key headful
- * @library /lib/client /java/awt/regtesthelpers
- * @build ExtendedRobot Util
+ * @library /java/awt/regtesthelpers
+ * @build Util
  * @run main MouseEventsDuringDrag
  */
 
@@ -59,6 +59,7 @@ import java.awt.Label;
 import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -68,7 +69,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MouseEventsDuringDrag {
 
-    private static ExtendedRobot robot;
+    private static Robot robot;
     private static Frame frame;
 
     private static final MouseHandler mouseHandler = new MouseHandler();
@@ -92,7 +93,7 @@ public class MouseEventsDuringDrag {
     }
 
     private static void test() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         robot.waitForIdle();
         robot.delay(500);
 
@@ -129,7 +130,7 @@ public class MouseEventsDuringDrag {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
 
-        robot.glide(startDragLocation, endDragLocation);
+        robot.glide(startDragLocation.x, startDragLocation.y, endDragLocation.x, endDragLocation.y);
         robot.waitForIdle();
 
         robot.glide(endDragLocation.x, endDragLocation.y, endDragLocation.x - 20, endDragLocation.y);
