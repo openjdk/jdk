@@ -22,23 +22,37 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_VTIMESCOPE_HPP
-#define SHARE_GC_SHARED_VTIMESCOPE_HPP
+#include "gc/shared/cpuTimeScope.hpp"
 
-#include "memory/allocation.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
+#include "memory/universe.hpp"
+#include "runtime/cpuTimeCounters.hpp"
+#include "runtime/os.hpp"
+#include "runtime/vmThread.hpp"
 
-class VMThread;
+inline CPUTimeScope::CPUTimeScope(VMThread* thread, bool is_gc_operation)
+  : _start(0),
+    _enabled(os::is_thread_cpu_time_supported()),
+    _is_gc_operation(is_gc_operation),
+    _thread(thread) {
+  if (_is_gc_operation && _enabled) {
+    _start = os::thread_cpu_time(_thread);
+  }
+}
 
-class VTimeScope : public StackObj {
-private:
-  jlong   _start;
-  bool    _enabled;
-  bool    _is_gc_operation;
-  Thread* _thread;
+inline CPUTimeScope::~CPUTimeScope() {
+  if (!_enabled) {
+    return;
+  }
 
-public:
-  VTimeScope(VMThread* thread, bool is_gc_operation);
-  ~VTimeScope();
-};
+  jlong end = (_is_gc_operation || UsePerfData) ? os::thread_cpu_time(_thread) : 0;
 
-#endif // SHARE_GC_SHARED_VTIMESCOPE_HPP
+  if (_is_gc_operation) {
+    jlong duration = end > _start ? end - _start : 0;
+    Universe::heap()->add_vmthread_cpu_time(duration);
+  }
+
+  if (UsePerfData) {
+    CPUTimeCounters::get_instance()->update_counter(CPUTimeGroups::CPUTimeType::vm, end);
+  }
+}

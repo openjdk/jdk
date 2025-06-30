@@ -33,7 +33,7 @@
 #include "runtime/perfData.hpp"
 #include "runtime/perfDataTypes.hpp"
 
-class VTimeScope;
+class CPUTimeScope;
 
 class CPUTimeGroups : public AllStatic {
 public:
@@ -53,7 +53,7 @@ public:
 };
 
 class CPUTimeCounters: public CHeapObj<mtServiceability> {
-  friend class VTimeScope;
+  friend class CPUTimeScope;
 
 private:
   // CPUTimeCounters is a singleton instance.

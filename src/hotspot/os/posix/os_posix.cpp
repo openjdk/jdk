@@ -1600,7 +1600,7 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-double os::elapsed_process_vtime() {
+double os::elapsed_process_cpu_time() {
   struct rusage usage;
   int retval = getrusage(RUSAGE_SELF, &usage);
   if (retval == 0) {

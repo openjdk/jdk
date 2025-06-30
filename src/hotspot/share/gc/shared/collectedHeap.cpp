@@ -67,7 +67,7 @@ size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
-jlong  CollectedHeap::_vm_vtime = 0;
+jlong  CollectedHeap::_vmthread_cpu_time = 0;
 
 class GCLogMessage : public FormatBuffer<512> {};
 
@@ -202,21 +202,21 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 }
 
-class VCPUThreadClosure : public ThreadClosure {
+class CPUThreadClosure : public ThreadClosure {
 private:
-  volatile jlong _vtime = 0;
+  volatile jlong _cpu_time = 0;
 
 public:
   virtual void do_thread(Thread* thread) {
-    Atomic::add(&_vtime, os::thread_cpu_time(thread));
+    Atomic::add(&_cpu_time, os::thread_cpu_time(thread));
   }
-  jlong vtime() { return _vtime; };
+  jlong cpu_time() { return _cpu_time; };
 };
 
-double CollectedHeap::elapsed_gc_vtime() const {
-  VCPUThreadClosure cl;
+double CollectedHeap::elapsed_gc_cpu_time() const {
+  CPUThreadClosure cl;
   gc_threads_do(&cl);
-  return (double)(cl.vtime() + _vm_vtime) / NANOSECS_PER_SEC;
+  return (double)(cl.cpu_time() + _vmthread_cpu_time) / NANOSECS_PER_SEC;
 }
 
 void CollectedHeap::print_before_gc() const {
@@ -622,24 +622,24 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::log_gc_vtime() const {
+void CollectedHeap::log_gc_cpu_time() const {
   LogTarget(Info, gc, cpu) out;
   if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
-    double process_vtime = os::elapsed_process_vtime();
-    double gc_vtime = elapsed_gc_vtime();
-    double string_dedup_vtime = UseStringDeduplication ? os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
+    double process_cpu_time = os::elapsed_process_cpu_time();
+    double gc_cpu_time = elapsed_gc_cpu_time();
+    double string_dedup_cpu_time = UseStringDeduplication ? os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
 
-    if (process_vtime == -1 || gc_vtime == -1 || string_dedup_vtime == -1) {
+    if (process_cpu_time == -1 || gc_cpu_time == -1 || string_dedup_cpu_time == -1) {
       return;
     }
 
     double usage;
-    if (gc_vtime > process_vtime || process_vtime == 0 || gc_vtime == 0) {
+    if (gc_cpu_time > process_cpu_time || process_cpu_time == 0 || gc_cpu_time == 0) {
       // This can happen e.g. for short running processes with
       // low CPU utilization
       usage = 0;
     } else {
-      usage = 100 * (gc_vtime + string_dedup_vtime) / process_vtime;
+      usage = 100 * (gc_cpu_time + string_dedup_cpu_time) / process_cpu_time;
     }
     out.print("GC CPU usage: %.2f%%", usage);
   }
@@ -647,7 +647,7 @@ void CollectedHeap::log_gc_vtime() const {
 
 void CollectedHeap::before_exit() {
   // Log GC CPU usage.
-  log_gc_vtime();
+  log_gc_cpu_time();
 
   // Stop any on-going concurrent work and prepare for exit.
   stop();

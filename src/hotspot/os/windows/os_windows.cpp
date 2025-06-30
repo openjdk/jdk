@@ -1194,7 +1194,7 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-double os::elapsed_process_vtime() {
+double os::elapsed_process_cpu_time() {
   FILETIME create;
   FILETIME exit;
   FILETIME kernel;
