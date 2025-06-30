@@ -5611,10 +5611,10 @@ public class JavacParser implements Parser {
     protected void checkSourceLevel(int pos, Feature feature) {
         if (preview.isPreview(feature) && !preview.isEnabled()) {
             //preview feature without --preview flag, error
-            log.error(DiagnosticFlag.SOURCE_LEVEL, pos, preview.disabledError(feature));
+            log.error(pos, preview.disabledError(feature));
         } else if (!feature.allowedInSource(source)) {
             //incompatible source level, error
-            log.error(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
+            log.error(pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
             preview.warnPreview(pos, feature);
