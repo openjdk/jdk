@@ -1304,35 +1304,13 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    long computeSizeUTF8(int sp, int sl) {
-        byte[] val = this.value;
-        if (!isLatin1()) {
-            return computeSizeUTF8_UTF16(val, true);
-        }
-
-        int count = StringCoding.countPositives(val, sp, sl);
-        if (count == sl) {
-            return count;
-        }
-
-        int i = count;
-        count = sl;
-        while (i < sl) {
-            if (val[i++] < 0) {
-                count++;
-            }
-        }
-        return count;
-    }
-
     int encodeUTF8(int sp, int sl, byte[] dst, int dp) {
         byte[] val = this.value;
         if (!isLatin1()) {
             return encodeUTF8_UTF16(val, sp, sl, true, dst, dp);
         }
 
-        int len = sl - sp;
-        int count = StringCoding.countPositives(val, sp, len);
+        int count = StringCoding.countPositives(val, sp, sl - sp);
         if (count != 0) {
             System.arraycopy(val, sp, dst, dp, count);
             dp += count;
@@ -1368,8 +1346,7 @@ public final class String
     }
 
     private static int encodeUTF8_UTF16(byte[] val, int sp, int sl, boolean doReplace, byte[] dst, int dp) {
-        int end = sp + sl;
-        while (sp < end) {
+        while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
             if (c >= '\u0080') {
@@ -1378,7 +1355,7 @@ public final class String
             dst[dp++] = (byte)c;
             sp++;
         }
-        while (sp < end) {
+        while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dst[dp++] = (byte)c;

@@ -394,7 +394,7 @@ public sealed class StreamEncoder extends Writer permits StreamEncoder.UTF8Impl 
             int utf8Size = len * 3;
             if (utf8Size >= maxBufferCapacity) {
                 byte[] utf8 = new byte[utf8Size];
-                utf8Size = JLA.encodeUTF8(str, off, len, utf8, 0);
+                utf8Size = JLA.encodeUTF8(str, off, off + len, utf8, 0);
                 /* If the request length exceeds the max size of the output buffer,
                    flush the buffer and then write the data directly.  In this
                    way buffered streams will cascade harmlessly. */
@@ -403,8 +403,9 @@ public sealed class StreamEncoder extends Writer permits StreamEncoder.UTF8Impl 
                 return;
             }
 
+            int boff = bb.arrayOffset();
             int cap = bb.capacity();
-            int newCap = bb.position() + utf8Size;
+            int newCap = bb.position() + boff + utf8Size;
             if (newCap >= maxBufferCapacity) {
                 implFlushBuffer();
             }
@@ -418,8 +419,9 @@ public sealed class StreamEncoder extends Writer permits StreamEncoder.UTF8Impl 
             int lim = bb.limit();
             int pos = bb.position();
 
-            pos = JLA.encodeUTF8(str, off, len, cb, pos);
-            bb.position(pos);
+
+            pos = JLA.encodeUTF8(str, off, off + len, cb, pos + boff);
+            bb.position(pos - boff);
         }
     }
 }
