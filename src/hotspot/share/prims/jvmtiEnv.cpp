@@ -1384,7 +1384,7 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
   // get owned monitors info with handshake
-  GetOwnedMonitorInfoHandshakeClosure op(this, calling_thread, owned_monitors_list);
+  GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   err = op.result();
 
@@ -1444,7 +1444,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
   // get owned monitors info with handshake
-  GetOwnedMonitorInfoHandshakeClosure op(this, calling_thread, owned_monitors_list);
+  GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   err = op.result();
 
@@ -1482,7 +1482,7 @@ JvmtiEnv::GetCurrentContendedMonitor(jthread thread, jobject* monitor_ptr) {
   *monitor_ptr = nullptr;
 
   // get contended monitor information with handshake
-  GetCurrentContendedMonitorHandshakeClosure op(this, current, monitor_ptr);
+  GetCurrentContendedMonitorClosure op(this, current, monitor_ptr);
   JvmtiHandshake::execute(&op, thread);
   return op.result();
 } /* end GetCurrentContendedMonitor */
@@ -1661,7 +1661,7 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
 // count_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetStackTrace(jthread thread, jint start_depth, jint max_frame_count, jvmtiFrameInfo* frame_buffer, jint* count_ptr) {
-  GetStackTraceHandshakeClosure op(this, start_depth, max_frame_count, frame_buffer, count_ptr);
+  GetStackTraceClosure op(this, start_depth, max_frame_count, frame_buffer, count_ptr);
   JvmtiHandshake::execute(&op, thread);
   return op.result();
 } /* end GetStackTrace */
@@ -1699,7 +1699,7 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
 
     jthread thread = thread_list[0];
 
-    GetSingleStackTraceHandshakeClosure op(this, current_thread, thread, max_frame_count);
+    GetSingleStackTraceClosure op(this, current_thread, thread, max_frame_count);
     JvmtiHandshake::execute(&op, thread);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -1724,7 +1724,7 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
 // count_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetFrameCount(jthread thread, jint* count_ptr) {
-  GetFrameCountHandshakeClosure op(this, count_ptr);
+  GetFrameCountClosure op(this, count_ptr);
   JvmtiHandshake::execute(&op, thread);
   return op.result();
 } /* end GetFrameCount */
@@ -1771,7 +1771,7 @@ JvmtiEnv::PopFrame(jthread thread) {
   }
 
   MutexLocker mu(JvmtiThreadState_lock);
-  UpdateForPopTopFrameHandshakeClosure op(state);
+  UpdateForPopTopFrameClosure op(state);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 } /* end PopFrame */
@@ -1783,7 +1783,7 @@ JvmtiEnv::PopFrame(jthread thread) {
 // location_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetFrameLocation(jthread thread, jint depth, jmethodID* method_ptr, jlocation* location_ptr) {
-  GetFrameLocationHandshakeClosure op(this, depth, method_ptr, location_ptr);
+  GetFrameLocationClosure op(this, depth, method_ptr, location_ptr);
   JvmtiHandshake::execute(&op, thread);
   return op.result();
 } /* end GetFrameLocation */
@@ -1812,7 +1812,7 @@ JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  SetOrClearFramePopHandshakeClosure op(this, state, true /* set */, depth);
+  SetOrClearFramePopClosure op(this, state, true /* set */, depth);
   MutexLocker mu(current, JvmtiThreadState_lock);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
@@ -1840,7 +1840,7 @@ JvmtiEnv::ClearAllFramePops(jthread thread) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  SetOrClearFramePopHandshakeClosure op(this, state, false /* clear all frame pops*/);
+  SetOrClearFramePopClosure op(this, state, false /* clear all frame pops*/);
   MutexLocker mu(current, JvmtiThreadState_lock);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();

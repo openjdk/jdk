@@ -245,7 +245,7 @@ JvmtiVTMSTransitionDisabler::print_info() {
     }
     ResourceMark rm;
     // Handshake with target.
-    PrintStackTraceHandshakeClosure pstc;
+    PrintStackTraceClosure pstc;
     Handshake::execute(&pstc, java_thread);
   }
 }
