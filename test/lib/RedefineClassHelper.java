@@ -82,7 +82,7 @@ public class RedefineClassHelper {
      *
      * @param bytes in original class file.
      * @param oldClassName old class name.
-     * @param newClassName new class name to replace with old class name.
+     * @param newClassName new class name to replace the old class name.
      */
     public static byte[] replaceClassName(byte[] bytes, String oldClassName, String newClassName) throws Exception {
         ClassModel classModel = ClassFile.of().parse(bytes);
