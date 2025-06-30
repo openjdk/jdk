@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,35 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
-#define SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
+#include "gc/shared/vtimeScope.hpp"
 
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
+#include "memory/universe.hpp"
+#include "runtime/cpuTimeCounters.hpp"
+#include "runtime/os.hpp"
+#include "runtime/vmThread.hpp"
 
-#include "gc/shared/memAllocator.hpp"
-#include "oops/oop.inline.hpp"
-#include "utilities/align.hpp"
-
-inline oop CollectedHeap::obj_allocate(Klass* klass, size_t size, TRAPS) {
-  ObjAllocator allocator(klass, size, THREAD);
-  return allocator.allocate();
+inline VTimeScope::VTimeScope(VMThread* thread, bool is_gc_operation)
+  : _start(0),
+    _enabled(os::is_thread_cpu_time_supported()),
+    _is_gc_operation(is_gc_operation),
+    _thread(thread) {
+  if (_is_gc_operation && _enabled) {
+    _start = os::thread_cpu_time(_thread);
+  }
 }
 
-inline oop CollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
-  ObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
-  return allocator.allocate();
-}
+inline VTimeScope::~VTimeScope() {
+  if (!_enabled) return;
 
-inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
-  ClassAllocator allocator(klass, size, THREAD);
-  return allocator.allocate();
-}
+  jlong end = (_is_gc_operation || UsePerfData) ? os::thread_cpu_time(_thread) : 0;
 
-inline void CollectedHeap::add_vm_vtime(jlong time) {
-  _vm_vtime += time;
-}
+  if (_is_gc_operation) {
+    jlong duration = end > _start ? end - _start : 0;
+    Universe::heap()->add_vm_vtime(duration);
+  }
 
-#endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
+  if (UsePerfData) {
+    CPUTimeCounters::get_instance()->update_counter(CPUTimeGroups::CPUTimeType::vm, end);
+  }
+}

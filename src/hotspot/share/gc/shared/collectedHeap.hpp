@@ -132,6 +132,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
 
+  static jlong _vm_vtime;
+
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
   GCCause::Cause _gc_cause;
@@ -240,11 +242,14 @@ protected:
   virtual void post_initialize();
 
   // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() {}
+  virtual void stop();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
+
+  static jlong vm_vtime();
+  static void add_vm_vtime(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
@@ -454,6 +459,9 @@ protected:
   // Print any relevant tracing info that flags imply.
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
+
+  double elapsed_gc_vtime() const;
+  void log_gc_vtime() const;
 
   void print_before_gc() const;
   void print_after_gc() const;
