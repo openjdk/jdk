@@ -34,7 +34,8 @@ import java.util.Objects;
  *
  * @param scheme The scheme of the origin (for example: https). Unlike the application layer
  *               protocol (which can be a finer grained protocol like h2, h3 etc...),
- *               this is actually a scheme.
+ *               this is actually a scheme. Only {@code http} and {@code https} literals are
+ *               supported.
  * @param host   The host of the origin
  * @param port   The port of the origin
  */
@@ -44,6 +45,9 @@ public record Origin(String scheme, String host, int port) {
         Objects.requireNonNull(host);
         if (port <= 0) {
             throw new IllegalArgumentException("Invalid port");
+        }
+        if (!isValidScheme(scheme)) {
+            throw new IllegalArgumentException("Unsupported scheme: " + scheme);
         }
     }
 
@@ -65,19 +69,25 @@ public record Origin(String scheme, String host, int port) {
         if (scheme == null) {
             throw new IllegalArgumentException("missing scheme in URI");
         }
+        final String lcaseScheme = scheme.toLowerCase(Locale.ROOT);
+        if (!isValidScheme(lcaseScheme)) {
+            throw new IllegalArgumentException("Unsupported scheme: " + scheme);
+        }
         final String host = uri.getHost();
         if (host == null) {
             throw new IllegalArgumentException("missing host in URI");
         }
         int port = uri.getPort();
         if (port == -1) {
-            port = switch (scheme.toLowerCase(Locale.ROOT)) {
+            port = switch (lcaseScheme) {
                 case "http" -> 80;
                 case "https" -> 443;
-                default -> throw new IllegalArgumentException("Unsupported scheme: " + scheme);
+                // we have already verified that this is a valid scheme, so this
+                // should never happen
+                default -> throw new AssertionError("Unsupported scheme: " + scheme);
             };
         }
-        return new Origin(scheme, host, port);
+        return new Origin(lcaseScheme, host, port);
     }
 
     static String toAuthority(final String host, final int port) {
@@ -90,5 +100,10 @@ public record Origin(String scheme, String host, int port) {
             return "[" + host + "]:" + port;
         }
         return host + ":" + port;
+    }
+
+    private static boolean isValidScheme(final String scheme) {
+        // only "http" and "https" literals allowed
+        return "http".equals(scheme) || "https".equals(scheme);
     }
 }
