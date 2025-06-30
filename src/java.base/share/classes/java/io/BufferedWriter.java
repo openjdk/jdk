@@ -445,27 +445,33 @@ public class BufferedWriter extends Writer {
             this.os = out;
         }
 
-        public void flushBuffer() throws IOException {
+        @Override
+        void flushBuffer() throws IOException {
             os.flushBuffer();
         }
 
-        public void write(int c) throws IOException {
+        @Override
+        void write(int c) throws IOException {
             os.write(new char[] {(char) c});
         }
 
-        public void write(char[] cbuf, int off, int len) throws IOException {
+        @Override
+        void write(char[] cbuf, int off, int len) throws IOException {
             os.write(cbuf, off, len);
         }
 
-        public void write(String s, int off, int len) throws IOException {
+        @Override
+        void write(String s, int off, int len) throws IOException {
             os.write(s, off, len);
         }
 
-        public void flush() throws IOException {
+        @Override
+        void flush() throws IOException {
             os.flush();
         }
 
-        public void close() throws IOException {
+        @Override
+        void close() throws IOException {
             if (out == null) {
                 return;
             }
