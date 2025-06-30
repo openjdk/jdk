@@ -1331,13 +1331,16 @@ public final class String
             return encodeUTF8_UTF16(val, sp, sl, true, dst, dp);
         }
 
-        if (!StringCoding.hasNegatives(val, sp, sl)) {
+        int len = sl - sp;
+        int count = StringCoding.countPositives(val, sp, sl);
+        if (count != 0) {
             System.arraycopy(val, sp, dst, dp, sl);
-            return dp + sl;
+            dp += len;
+            sp += len;
         }
 
-        for (int i = 0; i < sl; i++) {
-            byte c = val[sp + i];
+        while (sp < sl) {
+            byte c = val[sp++];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
                 dst[dp++] = (byte) (0x80 | (c & 0x3f));
