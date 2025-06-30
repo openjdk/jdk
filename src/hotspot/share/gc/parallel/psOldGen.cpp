@@ -178,9 +178,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
   return result;
 }
 
-void PSOldGen::try_expand_to_hold(size_t live_bytes) {
-  // Leaving room for a minimal delta
-  size_t target_capacity_bytes = live_bytes + SpaceAlignment;
+void PSOldGen::try_expand_till_size(size_t target_capacity_bytes) {
   if (target_capacity_bytes <= capacity_in_bytes()) {
     // Current capacity is enough
     return;
