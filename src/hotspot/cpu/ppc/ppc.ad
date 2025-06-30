@@ -1493,12 +1493,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   const Register toc_temp             = R23;
   assert_different_registers(R11, return_pc, callers_sp, push_frame_temp, toc_temp);
 
-  if (method_is_frameless) {
-    // Add nop at beginning of all frameless methods to prevent any
-    // oop instructions from getting overwritten by make_not_entrant
-    // (patching attempt would fail).
-    __ nop();
-  } else {
+  if (!method_is_frameless) {
     // Get return pc.
     __ mflr(return_pc);
   }
