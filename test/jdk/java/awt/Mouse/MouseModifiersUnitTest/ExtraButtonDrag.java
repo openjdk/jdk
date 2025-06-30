@@ -123,6 +123,12 @@ public class ExtraButtonDrag extends Frame {
         } catch (Exception e){
             throw new RuntimeException("", e);
         }
+        finally {
+            if (frame != null) {
+                frame.dispose();
+                frame = null;
+            }
+        }
     }
 
     public static void dragMouse(int button, int x0, int y0, int x1, int y1){
