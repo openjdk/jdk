@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,9 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.*;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
@@ -71,7 +71,6 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
@@ -206,8 +205,11 @@ public class HttpNegotiateServer {
         File f = new File(OneKDC.JAAS_CONF);
         FileOutputStream fos = new FileOutputStream(f);
         fos.write((
-                "com.sun.security.jgss.krb5.initiate {\n" +
-                "    com.sun.security.auth.module.Krb5LoginModule required;\n};\n"
+                """
+                        com.sun.security.jgss.krb5.initiate {
+                            com.sun.security.auth.module.Krb5LoginModule required;
+                        };
+                        """
                 ).getBytes());
         fos.close();
 
@@ -218,8 +220,8 @@ public class HttpNegotiateServer {
                 "HTTP/" + PROXY_HOST + "@" + REALM_PROXY, KRB5_TAB);
         proxyPort = h2.getAddress().getPort();
 
-        webUrl = new URL("http://" + WEB_HOST +":" + webPort + "/a/b/c");
-        proxyUrl = new URL("http://nosuchplace/a/b/c");
+        webUrl = new URI("http://" + WEB_HOST + ":" + webPort + "/a/b/c").toURL();
+        proxyUrl = new URI("http://nosuchplace/a/b/c").toURL();
 
         try {
             Exception e1 = null, e2 = null, e3 = null;
@@ -317,22 +319,15 @@ public class HttpNegotiateServer {
         final String username = WEB_USER;
         final char[] password = WEB_PASS;
 
-        CallbackHandler callback = new CallbackHandler() {
-            @Override
-            public void handle(Callback[] pCallbacks)
-                    throws IOException, UnsupportedCallbackException {
-                for (Callback cb : pCallbacks) {
-                    if (cb instanceof NameCallback) {
-                        NameCallback ncb = (NameCallback)cb;
-                        ncb.setName(username);
+        CallbackHandler callback = pCallbacks -> {
+            for (Callback cb : pCallbacks) {
+                if (cb instanceof NameCallback ncb) {
+                    ncb.setName(username);
 
-                    } else  if (cb instanceof PasswordCallback) {
-                        PasswordCallback pwdcb = (PasswordCallback) cb;
-                        pwdcb.setPassword(password);
-                    }
+                } else  if (cb instanceof PasswordCallback pwdcb) {
+                    pwdcb.setPassword(password);
                 }
             }
-
         };
 
         final String jaasConfigName = "oracle.test.kerberos.login";
@@ -374,12 +369,10 @@ public class HttpNegotiateServer {
         Subject subject = context.getSubject();
 
         final Callable<Object> test_action
-                = new Callable<Object>() {
-            public Object call() throws Exception {
-                testConnect();
-                return null;
-            }
-        };
+                = () -> {
+                    testConnect();
+                    return null;
+                };
 
         System.err.println("\n\nExpecting to succeed when executing " +
                 "with the logged in subject.");
@@ -464,19 +457,16 @@ public class HttpNegotiateServer {
             krb5.login();
             krb5.commit();
             m = GSSManager.getInstance();
-            cred = Subject.callAs(s, new Callable<GSSCredential>() {
-                @Override
-                public GSSCredential call() throws Exception {
-                    System.err.println("Creating GSSCredential");
-                    return m.createCredential(
-                            null,
-                            GSSCredential.INDEFINITE_LIFETIME,
-                            MyServerAuthenticator.this.scheme
-                                        .equalsIgnoreCase("Negotiate") ?
-                                    GSSUtil.GSS_SPNEGO_MECH_OID :
-                                    GSSUtil.GSS_KRB5_MECH_OID,
-                            GSSCredential.ACCEPT_ONLY);
-                }
+            cred = Subject.callAs(s, () -> {
+                System.err.println("Creating GSSCredential");
+                return m.createCredential(
+                        null,
+                        GSSCredential.INDEFINITE_LIFETIME,
+                        MyServerAuthenticator.this.scheme
+                                    .equalsIgnoreCase("Negotiate") ?
+                                GSSUtil.GSS_SPNEGO_MECH_OID :
+                                GSSUtil.GSS_KRB5_MECH_OID,
+                        GSSCredential.ACCEPT_ONLY);
             });
         }
 
