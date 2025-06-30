@@ -27,11 +27,10 @@
  * @summary The control input of a ModI node should be discarded if it is
  *          possible to prove that the divisor can never be 0.
  *          VerifyIterativeGVN checks that this optimization was applied
- * @requires vm.debug == true
  * @run main/othervm -XX:CompileCommand=quiet -XX:-TieredCompilation
- *      -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:VerifyIterativeGVN=1110
+ *      -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,compiler.c2.TestPropagateTypeRefinementToIGVN::test
- *      compiler.c2.TestPropagateTypeRefinementToIGVN
+ *      -XX:VerifyIterativeGVN=1110 compiler.c2.TestPropagateTypeRefinementToIGVN
  * @run main compiler.c2.TestPropagateTypeRefinementToIGVN
  *
  */
