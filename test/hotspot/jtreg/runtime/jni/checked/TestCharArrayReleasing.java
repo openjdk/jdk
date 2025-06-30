@@ -126,3 +126,4 @@ public class TestCharArrayReleasing {
         output.shouldContain(errorMsgs[relMode][srcMode]);
     }
 }
+
