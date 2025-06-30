@@ -1334,9 +1334,9 @@ public final class String
         int len = sl - sp;
         int count = StringCoding.countPositives(val, sp, sl);
         if (count != 0) {
-            System.arraycopy(val, sp, dst, dp, sl);
-            dp += len;
-            sp += len;
+            System.arraycopy(val, sp, dst, dp, count);
+            dp += count;
+            sp += count;
         }
 
         while (sp < sl) {
