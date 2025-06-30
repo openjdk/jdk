@@ -242,7 +242,9 @@ protected:
   virtual void post_initialize();
 
   // Stop any onging concurrent work and prepare for exit.
-  virtual void stop();
+  virtual void stop() = 0;
+
+  void before_exit();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}

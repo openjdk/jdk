@@ -1469,8 +1469,6 @@ bool G1CollectedHeap::concurrent_mark_is_terminating() const {
 }
 
 void G1CollectedHeap::stop() {
-  CollectedHeap::stop();
-
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.

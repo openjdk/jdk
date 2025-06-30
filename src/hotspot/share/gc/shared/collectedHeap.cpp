@@ -645,8 +645,12 @@ void CollectedHeap::log_gc_vtime() const {
   }
 }
 
-void CollectedHeap::stop() {
+void CollectedHeap::before_exit() {
+  // Log GC CPU usage.
   log_gc_vtime();
+
+  // Stop any on-going concurrent work and prepare for exit.
+  stop();
 }
 
 #ifndef PRODUCT

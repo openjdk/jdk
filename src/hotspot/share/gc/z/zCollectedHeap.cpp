@@ -105,8 +105,6 @@ public:
 };
 
 void ZCollectedHeap::stop() {
-  CollectedHeap::stop();
-
   log_info_p(gc, exit)("Stopping ZGC");
   ZAbort::abort();
   ZStopConcurrentGCThreadClosure cl;
