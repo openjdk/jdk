@@ -2215,8 +2215,4 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         this.count = limit;
         return this;
     }
-
-    final int encodeUTF8(int sp, int sl, byte[] dst, int dp) {
-        return String.encodeUTF8(this.getCoder(), this.value, sp, sl, dst, dp);
-    }
 }

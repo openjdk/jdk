@@ -181,9 +181,4 @@ final class StringCharBuffer                                  // package-private
         }
         return thisRem - thatRem;
     }
-
-    @Override
-    Object base() {
-        return str;
-    }
 }

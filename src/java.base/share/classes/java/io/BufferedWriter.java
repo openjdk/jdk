@@ -26,7 +26,6 @@
 
 package java.io;
 
-import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -269,28 +268,43 @@ public class BufferedWriter extends Writer {
     }
 
     private static final class WriterImpl extends BufferedImpl {
-        private StringBuilder cb;
+        private char[] cb;
+        private int nChars;
         private int nextChar;
         private final int maxChars;  // maximum number of buffers chars
 
         WriterImpl(Writer out, int initialSize, int maxSize) {
             super(out);
-            this.cb = new StringBuilder(initialSize);
+            this.cb = new char[initialSize];
+            this.nChars = initialSize;
             this.maxChars = maxSize;
+        }
+
+        /**
+         * Grow char array to fit an additional len characters if needed.
+         * If possible, it grows by len+1 to avoid flushing when len chars
+         * are added.
+         *
+         * This method should only be called while holding the lock.
+         */
+        private void growIfNeeded(int len) {
+            int neededSize = nextChar + len + 1;
+            if (neededSize < 0)
+                neededSize = Integer.MAX_VALUE;
+            if (neededSize > nChars && nChars < maxChars) {
+                int newSize = min(neededSize, maxChars);
+                cb = Arrays.copyOf(cb, newSize);
+                nChars = newSize;
+            }
         }
 
         @Override
         void flushBuffer() throws IOException {
             ensureOpen();
-            if (cb.isEmpty())
+            if (nextChar == 0)
                 return;
-            CharBuffer wrap = CharBuffer.wrap(cb);
-            if (out instanceof OutputStreamWriter w) {
-                w.se.write(wrap);
-            } else {
-                out.append(wrap);
-            }
-            cb.setLength(0);
+            out.write(cb, 0, nextChar);
+            nextChar = 0;
         }
 
         /**
@@ -301,9 +315,10 @@ public class BufferedWriter extends Writer {
         @Override
         void write(int c) throws IOException {
             ensureOpen();
-            if (cb.length() >= maxChars)
+            growIfNeeded(1);
+            if (nextChar >= nChars)
                 flushBuffer();
-            cb.append(c);
+            cb[nextChar++] = (char) c;
         }
 
         /**
@@ -344,11 +359,17 @@ public class BufferedWriter extends Writer {
                 return;
             }
 
-            if (len + cb.length() >= maxChars) {
-                flushBuffer();
+            growIfNeeded(len);
+            int b = off, t = off + len;
+            while (b < t) {
+                int d = min(nChars - nextChar, t - b);
+                System.arraycopy(cbuf, b, cb, nextChar, d);
+                b += d;
+                nextChar += d;
+                if (nextChar >= nChars) {
+                    flushBuffer();
+                }
             }
-
-            cb.append(cbuf, off, len);
         }
 
 
@@ -377,20 +398,16 @@ public class BufferedWriter extends Writer {
         @Override
         void write(String s, int off, int len) throws IOException {
             ensureOpen();
-            if (len >= maxChars) {
-                /* If the request length exceeds the max size of the output buffer,
-                   flush the buffer and then write the data directly.  In this
-                   way buffered streams will cascade harmlessly. */
-                flushBuffer();
-                out.write(s, off, len);
-                return;
+            growIfNeeded(len);
+            int b = off, t = off + len;
+            while (b < t) {
+                int d = min(nChars - nextChar, t - b);
+                s.getChars(b, b + d, cb, nextChar);
+                b += d;
+                nextChar += d;
+                if (nextChar >= nChars)
+                    flushBuffer();
             }
-
-            if (len + cb.length() >= maxChars) {
-                flushBuffer();
-            }
-
-            cb.append(s, off, len);
         }
 
         @SuppressWarnings("try")

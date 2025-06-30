@@ -2213,10 +2213,6 @@ public final class System {
                 return s.encodeUTF8(sp, sl, dst, dp);
             }
 
-            public int encodeUTF8(StringBuilder sb, int sp, int sl, byte[] dst, int dp) {
-                return sb.encodeUTF8(sp, sl, dst, dp);
-            }
-
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }

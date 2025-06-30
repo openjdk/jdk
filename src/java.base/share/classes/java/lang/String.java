@@ -1305,11 +1305,8 @@ public final class String
     }
 
     int encodeUTF8(int sp, int sl, byte[] dst, int dp) {
-        return encodeUTF8(this.coder(), this.value, sp, sl, dst, dp);
-    }
-
-    static int encodeUTF8(byte coder, byte[] val, int sp, int sl, byte[] dst, int dp) {
-        if (coder != LATIN1) {
+        byte[] val = this.value;
+        if (!isLatin1()) {
             return encodeUTF8_UTF16(val, sp, sl, true, dst, dp);
         }
 

@@ -489,8 +489,6 @@ public interface JavaLangAccess {
 
     int encodeUTF8(String s, int sp, int sl, byte[] dst, int dp);
 
-    int encodeUTF8(StringBuilder sb, int sp, int sl, byte[] dst, int dp);
-
     /*
      * Get the class data associated with the given class.
      * @param c the class
