@@ -1214,9 +1214,8 @@ public class Properties extends Hashtable<Object,Object> {
      * Prints this property list out to the specified {@link PrintStream}.
      * This method is useful for debugging.
      *
-     * @implNote If any property's value is greater than 40 characters then
-     * this method writes only the first 37 characters of that value
-     * followed by 3 dot characters.
+     * @implNote The implementation of this method truncates the output for very long
+     * property values.
      * <p>
      * An alternative for listing the {@code Properties} to a {@code PrintStream}
      * without truncation is:
@@ -1249,9 +1248,8 @@ public class Properties extends Hashtable<Object,Object> {
      * Prints this property list out to the specified {@link PrintWriter}.
      * This method is useful for debugging.
      *
-     * @implNote If any property's value is greater than 40 characters then
-     * this method writes only the first 37 characters of that value
-     * followed by 3 dot characters.
+     * @implNote The implementation of this method truncates the output for very long
+     * property values.
      * <p>
      * An alternative for listing the {@code Properties} to a {@code PrintWriter}
      * without truncation is:
