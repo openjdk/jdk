@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
+import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
@@ -49,6 +50,7 @@ import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
 import jdk.jpackage.internal.model.WinLauncherMixin;
 import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.model.WinExePackage;
 
 final class WinFromParams {
 
@@ -111,11 +113,25 @@ final class WinFromParams {
         return pkgBuilder.create();
     }
 
+    private static WinExePackage createWinExePackage(Map<String, ? super Object> params) throws ConfigException, IOException {
+
+        final var msiPkg = MSI_PACKAGE.fetchFrom(params);
+
+        final var pkgBuilder = new WinExePackageBuilder(msiPkg);
+
+        ICON.copyInto(params, pkgBuilder::icon);
+
+        return pkgBuilder.create();
+    }
+
     static final BundlerParamInfo<WinApplication> APPLICATION = createApplicationBundlerParam(
             WinFromParams::createWinApplication);
 
     static final BundlerParamInfo<WinMsiPackage> MSI_PACKAGE = createPackageBundlerParam(
             WinFromParams::createWinMsiPackage);
+
+    static final BundlerParamInfo<WinExePackage> EXE_PACKAGE = createPackageBundlerParam(
+            WinFromParams::createWinExePackage);
 
     private static final BundlerParamInfo<Boolean> WIN_MENU_HINT = createBooleanBundlerParam(
             Arguments.CLIOptions.WIN_MENU_HINT.getId());
