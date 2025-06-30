@@ -692,10 +692,10 @@ public final class ScopedValue<T> {
 
     private static int nextKey = 0xf0f0_f0f0;
 
-    // A Marsaglia xor-shift generator used to generate hashes. This one has full period, so
-    // it generates 2**32 - 1 hashes before it repeats. We're going to use the lowest n bits
-    // and the next n bits as cache indexes, so we make sure that those indexes map
-    // to different slots in the cache.
+    // A Marsaglia xor-shift generator used to generate hashes. This one has
+    // full period, so it generates 2**32 - 1 hashes before it repeats. We're
+    // going to use the lowest n bits and the next n bits as cache indexes, so
+    // we make sure that those indexes map to different slots in the cache.
     private static synchronized int generateKey() {
         int x = nextKey;
         do {
@@ -741,9 +741,26 @@ public final class ScopedValue<T> {
         static final int TABLE_MASK = TABLE_SIZE - 1;
         static final int PRIMARY_MASK = (1 << TABLE_SIZE) - 1;
 
-        // This class serves to defer initialization of some values
-        // until they are needed. In particular, we must not invoke
-        // System.getProperty early in the JVM boot process.
+
+        // This class serves to defer initialization of some values until they
+        // are needed. In particular, we must not invoke System.getProperty
+        // early in the JDK boot process, because that leads to a circular class
+        // initialization dependency.
+        //
+        // In more detail:
+        //
+        //  The size of the cache depends on System.getProperty. Generating the
+        //  hash of an instance of ScopedValue depends on ThreadLocalRandom.
+        //
+        //  Invoking either of these early in the JDK boot process will cause
+        //  startup to fail with an unrecoverable circular dependency.
+        //
+        // To break these cycles we allow scoped values to be created (but not
+        // used) without invoking either System.getProperty or
+        // ThreadLocalRandom. To do this we defer querying System.getProperty
+        // until the first reference to CACHE_TABLE_SIZE, and we define a local
+        // hashGenerator which is used until CACHE_TABLE_SIZE is initialized.
+
         private static class Constants {
             // The number of elements in the cache array, and a bit mask used to
             // select elements from it.
