@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2013, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,15 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
         return new AixFileStore(path);
     }
 
+    static boolean supportsUserDefinedFileAttributeView(Path obj) {
+        try {
+            FileStore store = Files.getFileStore(obj);
+            return store.supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V getFileAttributeView(Path obj,
@@ -59,8 +68,8 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
                                                                 LinkOption... options)
     {
         if (type == UserDefinedFileAttributeView.class) {
-            return (V) new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                    Util.followLinks(options));
+            return !supportsUserDefinedFileAttributeView(obj) ? null :
+                (V) new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj), Util.followLinks(options));
         }
         return super.getFileAttributeView(obj, type, options);
     }
@@ -71,8 +80,8 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
                                                          LinkOption... options)
     {
         if (name.equals("user")) {
-            return new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                    Util.followLinks(options));
+            return !supportsUserDefinedFileAttributeView(obj) ? null :
+                new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj), Util.followLinks(options));
         }
         return super.getFileAttributeView(obj, name, options);
     }
