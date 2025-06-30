@@ -69,6 +69,10 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
+        if (!src.hasArray() || !src.hasArray()) {
+            return encodeLoopBuffer(src, dst);
+        }
+
         char[] sa = src.array();
         int soff = src.arrayOffset();
         int sp = soff + src.position();
@@ -114,6 +118,45 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
         } finally {
             src.position(sp - soff);
             dst.position(dp - doff);
+        }
+    }
+
+    private static char convEndian(boolean nativeOrder, char c) {
+        return nativeOrder ? c : Character.reverseBytes(c);
+    }
+
+    private CoderResult encodeLoopBuffer(CharBuffer src, ByteBuffer dst) {
+        int mark = src.position();
+        boolean nativeOrder = (byteOrder == BIG) == (dst.order() == ByteOrder.BIG_ENDIAN);
+
+        if (needsMark && src.hasRemaining()) {
+            if (dst.remaining() < 2)
+                return CoderResult.OVERFLOW;
+            dst.putChar(convEndian(nativeOrder, BYTE_ORDER_MARK));
+            needsMark = false;
+        }
+        try {
+            while (src.hasRemaining()) {
+                char c = src.get();
+                if (!Character.isSurrogate(c)) {
+                    if (dst.remaining() < 2)
+                        return CoderResult.OVERFLOW;
+                    mark++;
+                    dst.putChar(convEndian(nativeOrder, c));
+                    continue;
+                }
+                int d = sgp.parse(c, src);
+                if (d < 0)
+                    return sgp.error();
+                if (dst.remaining() < 4)
+                    return CoderResult.OVERFLOW;
+                mark += 2;
+                dst.putChar(convEndian(nativeOrder, Character.highSurrogate(d)));
+                dst.putChar(convEndian(nativeOrder, Character.lowSurrogate(d)));
+            }
+            return CoderResult.UNDERFLOW;
+        } finally {
+            src.position(mark);
         }
     }
 
