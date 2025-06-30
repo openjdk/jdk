@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import jdk.test.lib.jfr.GCHelper;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  *
  * @requires vm.gc == "Parallel" | vm.gc == null
@@ -39,8 +39,7 @@ public class TestGCCauseWithParallelOld {
         String testID = "ParallelOld";
         String[] vmFlags = {"-XX:+UseParallelGC"};
         String[] gcNames = {GCHelper.gcParallelScavenge, GCHelper.gcParallelOld};
-        String[] gcCauses = {"Allocation Failure", "System.gc()", "GCLocker Initiated GC",
-                             "CodeCache GC Threshold"};
+        String[] gcCauses = {"Allocation Failure", "System.gc()", "CodeCache GC Threshold"};
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
     }
 }

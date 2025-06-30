@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,8 +233,12 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
     }
 
     private void assertMessage(Throwable t, String contains) {
-        if (!t.getMessage().contains(contains)) {
-            String error = "Exception message:[" + t.toString() + "] doesn't contain [" + contains + "]";
+        Throwable cause = t;
+        do {
+            if (cause.getMessage().contains(contains)) break;
+        } while ((cause = cause.getCause()) != null);
+        if (cause == null) {
+            String error = "Exception message:[" + t + "] doesn't contain [" + contains + "]";
             throw new AssertionError(error, t);
         }
     }

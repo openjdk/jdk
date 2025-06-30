@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
@@ -74,7 +73,7 @@ static void log_expansion(double short_term_pause_time_ratio,
   log_debug(gc, ergo, heap)("Heap expansion: "
                             "short term pause time ratio %1.2f%% long term pause time ratio %1.2f%% "
                             "threshold %1.2f%% pause time ratio %1.2f%% fully expanded %s "
-                            "resize by " SIZE_FORMAT "B",
+                            "resize by %zuB",
                             short_term_pause_time_ratio * 100.0,
                             long_term_pause_time_ratio * 100.0,
                             threshold * 100.0,
@@ -221,11 +220,22 @@ static size_t target_heap_capacity(size_t used_bytes, uintx free_ratio) {
   return (size_t) desired_capacity_d;
 }
 
-size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
+size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t allocation_word_size) {
+  // If the full collection was triggered by an allocation failure, we should account
+  // for the bytes required for this allocation under used_after_gc. This prevents
+  // unnecessary shrinking that would be followed by an expand call to satisfy the
+  // allocation.
+  size_t allocation_bytes = allocation_word_size * HeapWordSize;
+  if (_g1h->is_humongous(allocation_word_size)) {
+    // Humongous objects are allocated in entire regions, we must calculate
+    // required space in terms of full regions, not just the object size.
+    allocation_bytes = G1HeapRegion::align_up_to_region_byte_size(allocation_bytes);
+  }
+
   // Capacity, free and used after the GC counted as full regions to
   // include the waste in the following calculations.
   const size_t capacity_after_gc = _g1h->capacity();
-  const size_t used_after_gc = capacity_after_gc -
+  const size_t used_after_gc = capacity_after_gc + allocation_bytes -
                                _g1h->unused_committed_regions_in_bytes() -
                                // Discount space used by current Eden to establish a
                                // situation during Remark similar to at the end of full
@@ -240,8 +250,8 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
   // This assert only makes sense here, before we adjust them
   // with respect to the min and max heap size.
   assert(minimum_desired_capacity <= maximum_desired_capacity,
-         "minimum_desired_capacity = " SIZE_FORMAT ", "
-         "maximum_desired_capacity = " SIZE_FORMAT,
+         "minimum_desired_capacity = %zu, "
+         "maximum_desired_capacity = %zu",
          minimum_desired_capacity, maximum_desired_capacity);
 
   // Should not be greater than the heap max size. No need to adjust
@@ -258,8 +268,8 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
     size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
 
     log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "min_desired_capacity: " SIZE_FORMAT "B (%zu %%)",
+                              "Capacity: %zuB occupancy: %zuB live: %zuB "
+                              "min_desired_capacity: %zuB (%zu %%)",
                               capacity_after_gc, used_after_gc, _g1h->used(), minimum_desired_capacity, MinHeapFreeRatio);
 
     expand = true;
@@ -270,8 +280,8 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
     size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
 
     log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity). "
-                              "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "maximum_desired_capacity: " SIZE_FORMAT "B (%zu %%)",
+                              "Capacity: %zuB occupancy: %zuB live: %zuB "
+                              "maximum_desired_capacity: %zuB (%zu %%)",
                               capacity_after_gc, used_after_gc, _g1h->used(), maximum_desired_capacity, MaxHeapFreeRatio);
 
     expand = false;

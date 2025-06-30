@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -125,10 +125,13 @@ enum Ampere_CPU_Model {
     decl(SHA2,          sha256,        6)     \
     decl(CRC32,         crc32,         7)     \
     decl(LSE,           lse,           8)     \
+    decl(FPHP,          fphp,          9)     \
+    decl(ASIMDHP,       asimdhp,       10)    \
     decl(DCPOP,         dcpop,         16)    \
     decl(SHA3,          sha3,          17)    \
     decl(SHA512,        sha512,        21)    \
     decl(SVE,           sve,           22)    \
+    decl(SB,            sb,            29)    \
     decl(PACA,          paca,          30)    \
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \

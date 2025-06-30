@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "memory/universe.hpp"
 
-void MarkBitMap::print_on_error(outputStream* st, const char* prefix) const {
-  _bm.print_on_error(st, prefix);
+void MarkBitMap::print_on(outputStream* st, const char* prefix) const {
+  _bm.print_range_on(st, prefix);
 }
 
 size_t MarkBitMap::compute_size(size_t heap_size) {

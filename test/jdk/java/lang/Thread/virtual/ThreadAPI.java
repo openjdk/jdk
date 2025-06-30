@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,7 @@
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm --enable-native-access=ALL-UNNAMED ThreadAPI
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
 /*
@@ -36,8 +35,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
+ * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
@@ -70,7 +68,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -1112,7 +1109,6 @@ class ThreadAPI {
      * Test Thread.yield releases carrier thread when virtual thread holds a monitor.
      */
     @Test
-    @DisabledIf("LockingMode#isLegacy")
     void testYieldReleasesCarrierWhenHoldingMonitor() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();

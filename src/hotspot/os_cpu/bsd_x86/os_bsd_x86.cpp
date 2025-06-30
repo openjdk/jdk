@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -90,6 +89,7 @@
 #ifdef AMD64
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
+#define REG_BCP context_r13
 #else
 #define SPELL_REG_SP "esp"
 #define SPELL_REG_FP "ebp"
@@ -348,6 +348,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   // in compiled code, the stack banging is performed just after the return pc
   // has been pushed on the stack
   return frame(fr.sp() + 1, fr.fp(), (address)*(fr.sp()));
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
 }
 
 // By default, gcc always save frame pointer (%ebp/%rbp) on stack. It may get

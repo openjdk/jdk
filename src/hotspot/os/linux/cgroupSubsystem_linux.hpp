@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,18 @@ class CgroupCpuController: public CHeapObj<mtInternal> {
     virtual const char* cgroup_path() = 0;
 };
 
+// Pure virtual class representing version agnostic CPU accounting controllers
+class CgroupCpuacctController: public CHeapObj<mtInternal> {
+  public:
+    virtual jlong cpu_usage_in_micros() = 0;
+    virtual bool needs_hierarchy_adjustment() = 0;
+    virtual bool is_read_only() = 0;
+    virtual const char* subsystem_path() = 0;
+    virtual void set_subsystem_path(const char* cgroup_path) = 0;
+    virtual const char* mount_point() = 0;
+    virtual const char* cgroup_path() = 0;
+};
+
 // Pure virtual class representing version agnostic memory controllers
 class CgroupMemoryController: public CHeapObj<mtInternal> {
   public:
@@ -224,6 +236,7 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
     virtual jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) = 0;
     virtual jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) = 0;
     virtual jlong memory_soft_limit_in_bytes(julong upper_bound) = 0;
+    virtual jlong memory_throttle_limit_in_bytes() = 0;
     virtual jlong memory_max_usage_in_bytes() = 0;
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
@@ -250,15 +263,19 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual const char * container_type() = 0;
     virtual CachingCgroupController<CgroupMemoryController>* memory_controller() = 0;
     virtual CachingCgroupController<CgroupCpuController>* cpu_controller() = 0;
+    virtual CgroupCpuacctController* cpuacct_controller() = 0;
 
     int cpu_quota();
     int cpu_period();
     int cpu_shares();
 
+    jlong cpu_usage_in_micros();
+
     jlong memory_usage_in_bytes();
     jlong memory_and_swap_limit_in_bytes();
     jlong memory_and_swap_usage_in_bytes();
     jlong memory_soft_limit_in_bytes();
+    jlong memory_throttle_limit_in_bytes();
     jlong memory_max_usage_in_bytes();
     jlong rss_usage_in_bytes();
     jlong cache_usage_in_bytes();
@@ -324,7 +341,8 @@ class CgroupSubsystemFactory: AllStatic {
     // Determine the cgroup type (version 1 or version 2), given
     // relevant paths to files. Sets 'flags' accordingly.
     static bool determine_type(CgroupInfo* cg_infos,
-                               const char* proc_cgroups,
+                               bool cgroups_v2_enabled,
+                               const char* controllers_file,
                                const char* proc_self_cgroup,
                                const char* proc_self_mountinfo,
                                u1* flags);

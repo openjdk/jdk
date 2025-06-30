@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -53,7 +52,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     CHECK_BAILOUT();
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
-    debug_only(__ should_not_reach_here());
+    DEBUG_ONLY(__ should_not_reach_here());
     return;
   }
 
@@ -75,7 +74,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   CHECK_BAILOUT();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
@@ -89,7 +88,7 @@ void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   CHECK_BAILOUT();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
@@ -117,7 +116,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   ce->emit_call_c(Runtime1::entry_for (C1StubId::throw_div0_exception_id));
   CHECK_BAILOUT();
   ce->add_call_info_here(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
@@ -135,7 +134,7 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   CHECK_BAILOUT();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 // Note: pass object in Z_R1_scratch
@@ -148,7 +147,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   ce->emit_call_c(a);
   CHECK_BAILOUT();
   ce->add_call_info_here(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, C1StubId stub_id) {

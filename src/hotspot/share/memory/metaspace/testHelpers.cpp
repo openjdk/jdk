@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/memoryReserver.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
@@ -78,12 +77,12 @@ MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit
   _commit_limiter(commit_limit == 0 ? max_uintx : commit_limit), // commit_limit == 0 -> no limit
   _rs()
 {
-  assert(is_aligned(reserve_limit, Metaspace::reserve_alignment_words()), "reserve_limit (" SIZE_FORMAT ") "
-                    "not aligned to metaspace reserve alignment (" SIZE_FORMAT ")",
+  assert(is_aligned(reserve_limit, Metaspace::reserve_alignment_words()), "reserve_limit (%zu) "
+                    "not aligned to metaspace reserve alignment (%zu)",
                     reserve_limit, Metaspace::reserve_alignment_words());
   if (reserve_limit > 0) {
     // have reserve limit -> non-expandable context
-    _rs = MemoryReserver::reserve(reserve_limit * BytesPerWord, Metaspace::reserve_alignment(), os::vm_page_size());
+    _rs = MemoryReserver::reserve(reserve_limit * BytesPerWord, Metaspace::reserve_alignment(), os::vm_page_size(), mtTest);
     _context = MetaspaceContext::create_nonexpandable_context(name, _rs, &_commit_limiter);
   } else {
     // no reserve limit -> expandable vslist
@@ -143,4 +142,3 @@ size_t MetaspaceTestContext::reserved_words() const {
 }
 
 } // namespace metaspace
-

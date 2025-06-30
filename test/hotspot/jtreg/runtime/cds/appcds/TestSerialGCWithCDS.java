@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,14 +128,14 @@ public class TestSerialGCWithCDS {
                               "Hello");
         out.shouldNotContain(errMsg);
 
-        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode");
+        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode=0");
         out = TestCommon.exec(helloJar,
                               execGC,
                               small1,
                               small2,
                               coops,
                               "-Xlog:cds,cds+heap",
-                              "-XX:ArchiveRelocationMode=1", // always relocate shared metadata
+                              "-XX:ArchiveRelocationMode=0", // may relocate shared metadata
                               "Hello");
         out.shouldNotContain(errMsg);
 
@@ -163,12 +163,7 @@ public class TestSerialGCWithCDS {
                 if (out.getExitValue() == 0) {
                     out.shouldNotContain(errMsg);
                 } else {
-                    String output = out.getStdout() + out.getStderr();
-                    String exp1 = "Too small maximum heap";
-                    String exp2 = "GC triggered before VM initialization completed";
-                    if (!output.contains(exp1) && !output.contains(exp2)) {
-                        throw new RuntimeException("Either '" + exp1 + "' or '" + exp2 + "' must be in stdout/stderr \n");
-                    }
+                    out.shouldNotHaveFatalError();
                 }
                 n++;
             }

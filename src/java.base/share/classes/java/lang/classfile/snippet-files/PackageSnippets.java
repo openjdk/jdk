@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.lang.classfile.snippets;
 
 import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
@@ -185,10 +186,14 @@ class PackageSnippets {
         // @start region="fooToBarTransform"
         CodeTransform fooToBar = (b, e) -> {
             if (e instanceof InvokeInstruction i
-                    && i.owner().asInternalName().equals("Foo")
-                    && i.opcode() == Opcode.INVOKESTATIC)
-                        b.invoke(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
-            else b.with(e);
+                    && i.owner().name().equalsString("Foo")
+                    && i.opcode() == Opcode.INVOKESTATIC) {
+                // remove the old element i by doing nothing to the builder
+                // add a new invokestatic instruction to the builder
+                b.invokestatic(CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
+            } else {
+                b.with(e);  // leaves the element in place
+            }
         };
         // @end
     }
@@ -322,6 +327,14 @@ class PackageSnippets {
         // @start region="lookup-class-hierarchy-resolver"
         MethodHandles.Lookup lookup = MethodHandles.lookup(); // @replace regex="MethodHandles\.lookup\(\)" replacement="..."
         ClassHierarchyResolver resolver = ClassHierarchyResolver.ofClassLoading(lookup).cached();
+        // @end
+    }
+
+    void manualReuseStackMaps(CodeBuilder cob, MethodModel method) {
+        // @start region="manual-reuse-stack-maps"
+        CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+        // Note that StackMapTable may be absent, representing code with no branching
+        code.findAttribute(Attributes.stackMapTable()).ifPresent(cob);
         // @end
     }
 }

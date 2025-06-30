@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include <string.h>
 #include <math.h>
 #include <errno.h>
+#include <sys/vfs.h>
 #include "cgroupSubsystem_linux.hpp"
 #include "cgroupV1Subsystem_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
@@ -36,22 +37,55 @@
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+// Inlined from <linux/magic.h> for portability.
+#ifndef CGROUP2_SUPER_MAGIC
+#  define CGROUP2_SUPER_MAGIC 0x63677270
+#endif
+
 // controller names have to match the *_IDX indices
 static const char* cg_controller_name[] = { "cpuset", "cpu", "cpuacct", "memory", "pids" };
+static inline int cg_v2_controller_index(const char* name) {
+  if (strcmp(name, "cpuset") == 0) {
+    return CPUSET_IDX;
+  } else if (strcmp(name, "cpu") == 0) {
+    return CPU_IDX;
+  } else if (strcmp(name, "memory") == 0) {
+    return MEMORY_IDX;
+  } else if (strcmp(name, "pids") == 0) {
+    return PIDS_IDX;
+  } else {
+    return -1;
+  }
+}
 
 CgroupSubsystem* CgroupSubsystemFactory::create() {
   CgroupV1MemoryController* memory = nullptr;
   CgroupV1Controller* cpuset = nullptr;
   CgroupV1CpuController* cpu = nullptr;
-  CgroupV1Controller* cpuacct = nullptr;
+  CgroupV1CpuacctController* cpuacct = nullptr;
   CgroupV1Controller* pids = nullptr;
   CgroupInfo cg_infos[CG_INFO_LENGTH];
   u1 cg_type_flags = INVALID_CGROUPS_GENERIC;
   const char* proc_cgroups = "/proc/cgroups";
+  const char* sys_fs_cgroup_cgroup_controllers = "/sys/fs/cgroup/cgroup.controllers";
+  const char* controllers_file = proc_cgroups;
   const char* proc_self_cgroup = "/proc/self/cgroup";
   const char* proc_self_mountinfo = "/proc/self/mountinfo";
+  const char* sys_fs_cgroup = "/sys/fs/cgroup";
+  struct statfs fsstat = {};
+  bool cgroups_v2_enabled = false;
 
-  bool valid_cgroup = determine_type(cg_infos, proc_cgroups, proc_self_cgroup, proc_self_mountinfo, &cg_type_flags);
+  // Assume cgroups v2 is usable by the JDK iff /sys/fs/cgroup has the cgroup v2
+  // file system magic.  If it does not then heuristics are required to determine
+  // if cgroups v1 is usable or not.
+  if (statfs(sys_fs_cgroup, &fsstat) != -1) {
+    cgroups_v2_enabled = (fsstat.f_type == CGROUP2_SUPER_MAGIC);
+    if (cgroups_v2_enabled) {
+      controllers_file = sys_fs_cgroup_cgroup_controllers;
+    }
+  }
+
+  bool valid_cgroup = determine_type(cg_infos, cgroups_v2_enabled, controllers_file, proc_self_cgroup, proc_self_mountinfo, &cg_type_flags);
 
   if (!valid_cgroup) {
     // Could not detect cgroup type
@@ -71,9 +105,10 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
     CgroupV2CpuController* cpu = new CgroupV2CpuController(CgroupV2Controller(cg_infos[CPU_IDX]._mount_path,
                                                                               cg_infos[CPU_IDX]._cgroup_path,
                                                                               cg_infos[CPU_IDX]._read_only));
+    CgroupV2CpuacctController* cpuacct = new CgroupV2CpuacctController(cpu);
     log_debug(os, container)("Detected cgroups v2 unified hierarchy");
     cleanup(cg_infos);
-    return new CgroupV2Subsystem(memory, cpu, mem_other);
+    return new CgroupV2Subsystem(memory, cpu, cpuacct, mem_other);
   }
 
   /*
@@ -116,7 +151,7 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
         cpu = new CgroupV1CpuController(CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only));
         cpu->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuacct") == 0) {
-        cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
+        cpuacct = new CgroupV1CpuacctController(CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only));
         cpuacct->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "pids") == 0) {
         pids = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._read_only);
@@ -216,84 +251,119 @@ static inline bool match_mount_info_line(char* line,
 }
 
 bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
-                                            const char* proc_cgroups,
+                                            bool cgroups_v2_enabled,
+                                            const char* controllers_file,
                                             const char* proc_self_cgroup,
                                             const char* proc_self_mountinfo,
                                             u1* flags) {
   FILE *mntinfo = nullptr;
-  FILE *cgroups = nullptr;
+  FILE* controllers = nullptr;
   FILE *cgroup = nullptr;
   char buf[MAXPATHLEN+1];
   char *p;
-  bool is_cgroupsV2;
   // true iff all required controllers, memory, cpu, cpuacct are enabled
   // at the kernel level.
   // pids might not be enabled on older Linux distros (SLES 12.1, RHEL 7.1)
   // cpuset might not be enabled on newer Linux distros (Fedora 41)
-  bool all_required_controllers_enabled;
+  bool all_required_controllers_enabled = true;
 
-  /*
-   * Read /proc/cgroups so as to be able to distinguish cgroups v2 vs cgroups v1.
-   *
-   * For cgroups v1 hierarchy (hybrid or legacy), cpu, cpuacct, cpuset, memory controllers
-   * must have non-zero for the hierarchy ID field and relevant controllers mounted.
-   * Conversely, for cgroups v2 (unified hierarchy), cpu, cpuacct, cpuset, memory
-   * controllers must have hierarchy ID 0 and the unified controller mounted.
-   */
-  cgroups = os::fopen(proc_cgroups, "r");
-  if (cgroups == nullptr) {
-    log_debug(os, container)("Can't open %s, %s", proc_cgroups, os::strerror(errno));
+  // If cgroups v2 is enabled, open /sys/fs/cgroup/cgroup.controllers.  If not, open /proc/cgroups.
+  controllers = os::fopen(controllers_file, "r");
+  if (controllers == nullptr) {
+    log_debug(os, container)("Can't open %s, %s", controllers_file, os::strerror(errno));
     *flags = INVALID_CGROUPS_GENERIC;
     return false;
   }
 
-  while ((p = fgets(buf, MAXPATHLEN, cgroups)) != nullptr) {
-    char name[MAXPATHLEN+1];
-    int  hierarchy_id;
-    int  enabled;
-
-    // Format of /proc/cgroups documented via man 7 cgroups
-    if (sscanf(p, "%s %d %*d %d", name, &hierarchy_id, &enabled) != 3) {
-      continue;
+  if (cgroups_v2_enabled) {
+    /*
+     * cgroups v2 is enabled.  For cgroups v2 (unified hierarchy), the cpu and memory
+     * controllers must be enabled.
+     */
+    if ((p = fgets(buf, MAXPATHLEN, controllers)) != nullptr) {
+      char* controller = nullptr;
+      #define ISSPACE_CHARS " \n\t\r\f\v"
+      while ((controller = strsep(&p, ISSPACE_CHARS)) != nullptr) {
+        int i;
+        if ((i = cg_v2_controller_index(controller)) != -1) {
+          cg_infos[i]._name = os::strdup(controller);
+          cg_infos[i]._enabled = true;
+          if (i == PIDS_IDX || i == CPUSET_IDX) {
+            log_debug(os, container)("Detected optional %s controller entry in %s",
+                                     controller, controllers_file);
+          }
+        }
+      }
+      #undef ISSPACE_CHARS
+    } else {
+      log_debug(os, container)("Can't read %s, %s", controllers_file, os::strerror(errno));
+      *flags = INVALID_CGROUPS_V2;
+      fclose(controllers);
+      return false;
     }
-    if (strcmp(name, "memory") == 0) {
-      cg_infos[MEMORY_IDX]._name = os::strdup(name);
-      cg_infos[MEMORY_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[MEMORY_IDX]._enabled = (enabled == 1);
-    } else if (strcmp(name, "cpuset") == 0) {
-      log_debug(os, container)("Detected optional cpuset controller entry in %s", proc_cgroups);
-      cg_infos[CPUSET_IDX]._name = os::strdup(name);
-      cg_infos[CPUSET_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[CPUSET_IDX]._enabled = (enabled == 1);
-    } else if (strcmp(name, "cpu") == 0) {
-      cg_infos[CPU_IDX]._name = os::strdup(name);
-      cg_infos[CPU_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[CPU_IDX]._enabled = (enabled == 1);
-    } else if (strcmp(name, "cpuacct") == 0) {
-      cg_infos[CPUACCT_IDX]._name = os::strdup(name);
-      cg_infos[CPUACCT_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[CPUACCT_IDX]._enabled = (enabled == 1);
-    } else if (strcmp(name, "pids") == 0) {
-      log_debug(os, container)("Detected optional pids controller entry in %s", proc_cgroups);
-      cg_infos[PIDS_IDX]._name = os::strdup(name);
-      cg_infos[PIDS_IDX]._hierarchy_id = hierarchy_id;
-      cg_infos[PIDS_IDX]._enabled = (enabled == 1);
+    for (int i = 0; i < CG_INFO_LENGTH; i++) {
+      // cgroups v2 does not have cpuacct.
+      if (i == CPUACCT_IDX) {
+        continue;
+      }
+      // For cgroups v2, cpuacct is rolled into cpu, and the pids and cpuset controllers
+      // are optional; the remaining controllers, cpu and memory, are required.
+      if (i == CPU_IDX || i == MEMORY_IDX) {
+        all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
+      }
+      if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
+        log_debug(os, container)("controller %s is not enabled", cg_controller_name[i]);
+      }
+    }
+  } else {
+    /*
+     * The /sys/fs/cgroup filesystem magic hint suggests we have cg v1.  Read /proc/cgroups; for
+     * cgroups v1 hierarchy (hybrid or legacy), cpu, cpuacct, cpuset, and memory controllers must
+     * have non-zero for the hierarchy ID field and relevant controllers mounted.
+     */
+    while ((p = fgets(buf, MAXPATHLEN, controllers)) != nullptr) {
+      char name[MAXPATHLEN+1];
+      int  hierarchy_id;
+      int  enabled;
+
+      // Format of /proc/cgroups documented via man 7 cgroups
+      if (sscanf(p, "%s %d %*d %d", name, &hierarchy_id, &enabled) != 3) {
+        continue;
+      }
+      if (strcmp(name, "memory") == 0) {
+        cg_infos[MEMORY_IDX]._name = os::strdup(name);
+        cg_infos[MEMORY_IDX]._hierarchy_id = hierarchy_id;
+        cg_infos[MEMORY_IDX]._enabled = (enabled == 1);
+      } else if (strcmp(name, "cpuset") == 0) {
+        cg_infos[CPUSET_IDX]._name = os::strdup(name);
+        cg_infos[CPUSET_IDX]._hierarchy_id = hierarchy_id;
+        cg_infos[CPUSET_IDX]._enabled = (enabled == 1);
+      } else if (strcmp(name, "cpu") == 0) {
+        cg_infos[CPU_IDX]._name = os::strdup(name);
+        cg_infos[CPU_IDX]._hierarchy_id = hierarchy_id;
+        cg_infos[CPU_IDX]._enabled = (enabled == 1);
+      } else if (strcmp(name, "cpuacct") == 0) {
+        cg_infos[CPUACCT_IDX]._name = os::strdup(name);
+        cg_infos[CPUACCT_IDX]._hierarchy_id = hierarchy_id;
+        cg_infos[CPUACCT_IDX]._enabled = (enabled == 1);
+      } else if (strcmp(name, "pids") == 0) {
+        log_debug(os, container)("Detected optional pids controller entry in %s", controllers_file);
+        cg_infos[PIDS_IDX]._name = os::strdup(name);
+        cg_infos[PIDS_IDX]._hierarchy_id = hierarchy_id;
+        cg_infos[PIDS_IDX]._enabled = (enabled == 1);
+      }
+    }
+    for (int i = 0; i < CG_INFO_LENGTH; i++) {
+      // pids controller is optional. All other controllers are required
+      if (i != PIDS_IDX) {
+        all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
+      }
+      if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
+        log_debug(os, container)("controller %s is not enabled", cg_controller_name[i]);
+      }
     }
   }
-  fclose(cgroups);
-
-  is_cgroupsV2 = true;
-  all_required_controllers_enabled = true;
-  for (int i = 0; i < CG_INFO_LENGTH; i++) {
-    // pids and cpuset controllers are optional. All other controllers are required
-    if (i != PIDS_IDX && i != CPUSET_IDX) {
-      is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
-      all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
-    }
-    if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
-      log_debug(os, container)("controller %s is not enabled\n", cg_controller_name[i]);
-    }
-  }
+  fclose(controllers);
 
   if (!all_required_controllers_enabled) {
     // one or more required controllers disabled, disable container support
@@ -335,7 +405,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       continue;
     }
 
-    while (!is_cgroupsV2 && (token = strsep(&controllers, ",")) != nullptr) {
+    while (!cgroups_v2_enabled && (token = strsep(&controllers, ",")) != nullptr) {
       if (strcmp(token, "memory") == 0) {
         assert(hierarchy_id == cg_infos[MEMORY_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for memory");
         cg_infos[MEMORY_IDX]._cgroup_path = os::strdup(cgroup_path);
@@ -346,7 +416,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         assert(hierarchy_id == cg_infos[CPU_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for cpu");
         cg_infos[CPU_IDX]._cgroup_path = os::strdup(cgroup_path);
       } else if (strcmp(token, "cpuacct") == 0) {
-        assert(hierarchy_id == cg_infos[CPUACCT_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for cpuacc");
+        assert(hierarchy_id == cg_infos[CPUACCT_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for cpuacct");
         cg_infos[CPUACCT_IDX]._cgroup_path = os::strdup(cgroup_path);
       } else if (strcmp(token, "pids") == 0) {
         assert(hierarchy_id == cg_infos[PIDS_IDX]._hierarchy_id, "/proc/cgroups (%d) and /proc/self/cgroup (%d) hierarchy mismatch for pids",
@@ -354,7 +424,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         cg_infos[PIDS_IDX]._cgroup_path = os::strdup(cgroup_path);
       }
     }
-    if (is_cgroupsV2) {
+    if (cgroups_v2_enabled) {
       // On some systems we have mixed cgroups v1 and cgroups v2 controllers (e.g. freezer on cg1 and
       // all relevant controllers on cg2). Only set the cgroup path when we see a hierarchy id of 0.
       if (hierarchy_id != 0) {
@@ -390,14 +460,14 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     char *cptr = tmpcgroups;
     char *token;
 
-    /* Cgroup v2 relevant info. We only look for the _mount_path iff is_cgroupsV2 so
+    /* Cgroup v2 relevant info. We only look for the _mount_path iff cgroups_v2_enabled so
      * as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
      * block in the hybrid case.
      *
      * We collect the read only mount option in the cgroup infos so as to have that
      * info ready when determining is_containerized().
      */
-    if (is_cgroupsV2 && match_mount_info_line(p,
+    if (cgroups_v2_enabled && match_mount_info_line(p,
                                               tmproot,
                                               tmpmount,
                                               mount_opts,
@@ -476,7 +546,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     return false;
   }
 
-  if (is_cgroupsV2) {
+  if (cgroups_v2_enabled) {
     if (!cgroupv2_mount_point_found) {
       log_trace(os, container)("Mount point for cgroupv2 not found in /proc/self/mountinfo");
       cleanup(cg_infos);
@@ -787,6 +857,10 @@ jlong CgroupSubsystem::memory_soft_limit_in_bytes() {
   return memory_controller()->controller()->memory_soft_limit_in_bytes(phys_mem);
 }
 
+jlong CgroupSubsystem::memory_throttle_limit_in_bytes() {
+  return memory_controller()->controller()->memory_throttle_limit_in_bytes();
+}
+
 jlong CgroupSubsystem::memory_usage_in_bytes() {
   return memory_controller()->controller()->memory_usage_in_bytes();
 }
@@ -813,6 +887,10 @@ int CgroupSubsystem::cpu_period() {
 
 int CgroupSubsystem::cpu_shares() {
   return cpu_controller()->controller()->cpu_shares();
+}
+
+jlong CgroupSubsystem::cpu_usage_in_micros() {
+  return cpuacct_controller()->cpu_usage_in_micros();
 }
 
 void CgroupSubsystem::print_version_specific_info(outputStream* st) {

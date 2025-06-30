@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
@@ -241,6 +240,19 @@ void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
   srf(Rn, 5);
 }
 
+// This method is used to generate Advanced SIMD data processing instructions
+void Assembler::adv_simd_three_same(Instruction_aarch64 &current_insn, FloatRegister Vd,
+                                    SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm,
+                                    int op1, int op2, int op3) {
+  assert(T == T4H || T == T8H || T == T2S || T == T4S || T == T2D, "invalid arrangement");
+  int op22 = (T == T2S || T == T4S) ? 0b0 : 0b1;
+  int op21 = (T == T4H || T == T8H) ? 0b0 : 0b1;
+  int op14 = (T == T4H || T == T8H) ? 0b00 : 0b11;
+  f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);
+  f(op22, 22); f(op21, 21), rf(Vm, 16), f(op14, 15, 14), f(op3, 13, 10),
+  rf(Vn, 5), rf(Vd, 0);
+}
+
 #undef f
 #undef sf
 #undef rf
@@ -457,7 +469,7 @@ void Assembler::bang_stack_with_offset(int offset) { Unimplemented(); }
 
 bool asm_util::operand_valid_for_immediate_bits(int64_t imm, unsigned nbits) {
   guarantee(nbits == 8 || nbits == 12, "invalid nbits value");
-  uint64_t uimm = (uint64_t)uabs((jlong)imm);
+  uint64_t uimm = (uint64_t)g_uabs((jlong)imm);
   if (uimm < (UCONST64(1) << nbits))
     return true;
   if (uimm < (UCONST64(1) << (2 * nbits))

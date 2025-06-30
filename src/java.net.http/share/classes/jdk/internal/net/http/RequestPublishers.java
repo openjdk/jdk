@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.internal.net.http;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +34,7 @@ import java.net.http.HttpRequest.BodyPublisher;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,7 +48,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import jdk.internal.net.http.common.Demand;
@@ -228,29 +227,15 @@ public final class RequestPublishers {
 
         private final Path path;
         private final long length;
-        private final Function<Path, InputStream> inputStreamSupplier;
 
         /**
          * Factory for creating FilePublisher.
          */
         public static FilePublisher create(Path path)
                 throws FileNotFoundException {
-            boolean defaultFS = true;
 
-            try {
-                path.toFile().getPath();
-            } catch (UnsupportedOperationException uoe) {
-                // path not associated with the default file system provider
-                defaultFS = false;
-            }
-
-            // existence check must be after FS checks
             if (Files.notExists(path))
                 throw new FileNotFoundException(path + " not found");
-
-            boolean finalDefaultFS = defaultFS;
-            Function<Path, InputStream> inputStreamSupplier = (p) ->
-                    createInputStream(p, finalDefaultFS);
 
             long length;
             try {
@@ -259,26 +244,12 @@ public final class RequestPublishers {
                 length = -1;
             }
 
-            return new FilePublisher(path, length, inputStreamSupplier);
+            return new FilePublisher(path, length);
         }
 
-        private static InputStream createInputStream(Path path,
-                                                     boolean defaultFS) {
-            try {
-                return defaultFS
-                            ? new FileInputStream(path.toFile())
-                            : Files.newInputStream(path);
-            } catch (IOException io) {
-                throw new UncheckedIOException(io);
-            }
-        }
-
-        private FilePublisher(Path name,
-                              long length,
-                              Function<Path, InputStream> inputStreamSupplier) {
+        private FilePublisher(Path name, long length) {
             path = name;
             this.length = length;
-            this.inputStreamSupplier = inputStreamSupplier;
         }
 
         @Override
@@ -286,7 +257,14 @@ public final class RequestPublishers {
             InputStream is = null;
             Throwable t = null;
             try {
-                is = inputStreamSupplier.apply(path);
+                // Throw `FileNotFoundException` to match the specification of `BodyPublishers::ofFile
+                if (!Files.isRegularFile(path)) {
+                    throw new FileNotFoundException(path + " (Not a regular file)");
+                }
+                is = Files.newInputStream(path);
+            } catch (NoSuchFileException nsfe) {
+                // Throw `FileNotFoundException` to match the specification of `BodyPublishers::ofFile`
+                t = new FileNotFoundException(path + " (No such file or directory)");
             } catch (UncheckedIOException | UndeclaredThrowableException ue) {
                 t = ue.getCause();
             } catch (Throwable th) {
@@ -537,12 +515,20 @@ public final class RequestPublishers {
 
         @Override
         public void request(long n) {
-            if (cancelled || publisher == null && bodies.isEmpty()) {
-                return;
+            synchronized (this) {
+                // We are finished when publisher is null and bodies
+                // is empty. This means that the data from the last
+                // publisher in the list has been consumed.
+                // If we are finished or cancelled, do nothing.
+                if (cancelled || (publisher == null && bodies.isEmpty())) {
+                    return;
+                }
             }
             try {
                 demand.increase(n);
             } catch (IllegalArgumentException x) {
+                // request() should not throw - the scheduler will
+                // invoke onError on the subscriber.
                 illegalRequest = x;
             }
             scheduler.runOrSchedule();
@@ -554,35 +540,50 @@ public final class RequestPublishers {
             scheduler.runOrSchedule();
         }
 
-        private boolean cancelSubscription() {
-            Flow.Subscription subscription = this.subscription;
+        private boolean cancelSubscription(Flow.Subscription subscription) {
             if (subscription != null) {
-                this.subscription = null;
-                this.publisher = null;
+                synchronized (this) {
+                    if (this.subscription == subscription) {
+                        this.subscription = null;
+                        this.publisher = null;
+                    }
+                }
                 subscription.cancel();
             }
+            // This method is called when cancel is true, so
+            // we should always stop the scheduler here
             scheduler.stop();
             return subscription != null;
         }
 
         public void run() {
             try {
+                BodyPublisher publisher;
+                Flow.Subscription subscription = null;
                 while (error.get() == null
                         && (!demand.isFulfilled()
-                        || (publisher == null && !bodies.isEmpty()))) {
+                        || (this.publisher == null && !bodies.isEmpty()))) {
                     boolean cancelled = this.cancelled;
-                    BodyPublisher publisher = this.publisher;
-                    Flow.Subscription subscription = this.subscription;
+                    // make sure we see a consistent state.
+                    synchronized (this) {
+                        publisher = this.publisher;
+                        subscription = this.subscription;
+                    }
                     Throwable illegalRequest = this.illegalRequest;
                     if (cancelled) {
                         bodies.clear();
-                        cancelSubscription();
+                        cancelSubscription(subscription);
                         return;
                     }
                     if (publisher == null && !bodies.isEmpty()) {
-                        this.publisher = publisher = bodies.poll();
+                        // synchronize here to avoid race condition with
+                        // request(long) which could otherwise observe a
+                        // null publisher and an empty bodies list when
+                        // polling the last publisher.
+                        synchronized (this) {
+                            this.publisher = publisher = bodies.poll();
+                        }
                         publisher.subscribe(this);
-                        subscription = this.subscription;
                     } else if (publisher == null) {
                         return;
                     }
@@ -590,10 +591,17 @@ public final class RequestPublishers {
                         onError(illegalRequest);
                         return;
                     }
-                    if (subscription == null) return;
-                    if (!demand.isFulfilled()) {
-                        long n = demand.decreaseAndGet(demand.get());
-                        demanded.increase(n);
+                    long n = 0;
+                    // synchronize to avoid race condition with
+                    // publisherDone()
+                    synchronized (this) {
+                        if ((subscription = this.subscription) == null) return;
+                        if (!demand.isFulfilled()) {
+                            n = demand.decreaseAndGet(demand.get());
+                            demanded.increase(n);
+                        }
+                    }
+                    if (n > 0 && !cancelled) {
                         subscription.request(n);
                     }
                 }
@@ -602,20 +610,35 @@ public final class RequestPublishers {
             }
         }
 
+        // It is important to synchronize when setting
+        // publisher to null to avoid race conditions
+        // with request(long)
+        private synchronized void publisherDone() {
+            publisher = null;
+            subscription = null;
+        }
+
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            this.subscription = subscription;
+            // synchronize for asserting in a consistent state.
+            synchronized (this) {
+                // we shouldn't be able to observe a null publisher
+                // when onSubscribe is called, unless - possibly - if
+                // there was some error...
+                assert publisher != null || error.get() != null;
+                this.subscription = subscription;
+            }
             scheduler.runOrSchedule();
         }
 
         @Override
         public void onNext(ByteBuffer item) {
-            // make sure to cancel the subscription if we receive
-            // an item after the subscription was cancelled or
+            // make sure to cancel the downstream subscription if we receive
+            // an item after the aggregate subscription was cancelled or
             // an error was reported.
             if (cancelled || error.get() != null) {
-                cancelSubscription();
+                cancelSubscription(this.subscription);
                 return;
             }
             demanded.tryDecrement();
@@ -625,25 +648,30 @@ public final class RequestPublishers {
         @Override
         public void onError(Throwable throwable) {
             if (error.compareAndSet(null, throwable)) {
-                publisher = null;
-                subscription = null;
+                publisherDone();
                 subscriber.onError(throwable);
                 scheduler.stop();
             }
         }
 
-        @Override
-        public void onComplete() {
+        private synchronized boolean completeAndContinue() {
             if (publisher != null && !bodies.isEmpty()) {
                 while (!demanded.isFulfilled()) {
                     demand.increase(demanded.decreaseAndGet(demanded.get()));
                 }
-                publisher = null;
-                subscription = null;
+                publisherDone();
+                return true; // continue
+            } else {
+                publisherDone();
+                return false; // stop
+            }
+        }
+
+        @Override
+        public void onComplete() {
+            if (completeAndContinue()) {
                 scheduler.runOrSchedule();
             } else {
-                publisher = null;
-                subscription = null;
                 if (!cancelled) {
                     subscriber.onComplete();
                 }
@@ -651,4 +679,5 @@ public final class RequestPublishers {
             }
         }
     }
+
 }

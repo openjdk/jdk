@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +22,13 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/threadSMR.inline.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threadSMR.inline.hpp"
 
 ShenandoahEvacuationStats::ShenandoahEvacuationStats()
   : _evacuations_completed(0), _bytes_completed(0),
@@ -84,8 +84,8 @@ void ShenandoahEvacuationStats::print_on(outputStream* st) {
 #ifndef PRODUCT
   size_t abandoned_size = _bytes_attempted - _bytes_completed;
   size_t abandoned_count = _evacuations_attempted - _evacuations_completed;
-  st->print_cr("Evacuated " SIZE_FORMAT "%s across " SIZE_FORMAT " objects, "
-            "abandoned " SIZE_FORMAT "%s across " SIZE_FORMAT " objects.",
+  st->print_cr("Evacuated %zu%s across %zu objects, "
+            "abandoned %zu%s across %zu objects.",
             byte_size_in_proper_unit(_bytes_completed), proper_unit_for_byte_size(_bytes_completed),
             _evacuations_completed,
             byte_size_in_proper_unit(abandoned_size),   proper_unit_for_byte_size(abandoned_size),
@@ -154,7 +154,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
     // for use in the next cycle.
     // The first argument is used for any age 0 cohort population that we may otherwise have
     // missed during the census. This is non-zero only when census happens at marking.
-    ShenandoahGenerationalHeap::heap()->age_census()->update_census(0, _mutators_global.age_table(), _workers_global.age_table());
+    ShenandoahGenerationalHeap::heap()->age_census()->update_census(0, mutators.age_table(), workers.age_table());
   }
 
   return {workers, mutators};

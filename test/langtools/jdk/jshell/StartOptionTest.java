@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,17 @@
  */
 
  /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631
+ * @test
+ * @bug 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631 8341833 8344706
  * @summary Testing startExCe-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
+ *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
- * @run testng StartOptionTest
+ * @run testng/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch StartOptionTest
  */
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,13 +40,17 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import jdk.jshell.JShell;
 
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -64,6 +70,7 @@ public class StartOptionTest {
     protected ByteArrayOutputStream userout;
     protected ByteArrayOutputStream usererr;
     protected InputStream cmdInStream;
+    private Map<String, String> testPersistence;
 
     private JavaShellToolBuilder builder() {
         // turn on logging of launch failures
@@ -73,12 +80,23 @@ public class StartOptionTest {
                 .out(new PrintStream(cmdout), new PrintStream(console), new PrintStream(userout))
                 .err(new PrintStream(cmderr), new PrintStream(usererr))
                 .in(cmdInStream, null)
-                .persistence(new HashMap<>())
+                .persistence(getThisTestPersistence())
                 .env(new HashMap<>())
                 .locale(Locale.ROOT);
     }
 
+    protected Map<String, String> getThisTestPersistence() {
+        return testPersistence != null ? testPersistence
+                                       : new HashMap<>();
+    }
+
     protected int runShell(String... args) {
+        cmdout.reset();
+        cmderr.reset();
+        console.reset();
+        userout.reset();
+        usererr.reset();
+
         try {
             return builder()
                     .start(Presets.addExecutionIfMissing(args));
@@ -89,16 +107,32 @@ public class StartOptionTest {
     }
 
     protected void check(ByteArrayOutputStream str, Consumer<String> checkOut, String label) {
-        byte[] bytes = str.toByteArray();
-        str.reset();
-        String out = new String(bytes, StandardCharsets.UTF_8);
-        out = stripAnsi(out);
-        out = out.replaceAll("[\r\n]+", "\n");
-        if (checkOut != null) {
-            checkOut.accept(out);
-        } else {
-            assertEquals(out, "", label + ": Expected empty -- ");
+        try {
+            byte[] bytes = str.toByteArray();
+            str.reset();
+            String out = new String(bytes, StandardCharsets.UTF_8);
+            out = stripAnsi(out);
+            out = out.replaceAll("[\r\n]+", "\n");
+            if (checkOut != null) {
+                checkOut.accept(out);
+            } else {
+                assertEquals(out, "", label + ": Expected empty -- ");
+            }
+        } catch (Throwable t) {
+            logOutput("cmdout", cmdout);
+            logOutput("cmderr", cmderr);
+            logOutput("console", console);
+            logOutput("userout", userout);
+            logOutput("usererr", usererr);
+
+            throw t;
         }
+    }
+
+    private void logOutput(String outName, ByteArrayOutputStream out) {
+        System.err.println(outName + ": " +
+                           new String(out.toByteArray(),
+                                      StandardCharsets.UTF_8));
     }
 
     protected void checkExit(int ec, Consumer<Integer> checkCode) {
@@ -130,6 +164,25 @@ public class StartOptionTest {
             String... args) {
         runShell(args);
         check(userout, checkUserOutput, "userout");
+        check(cmderr, null, "cmderr");
+        check(usererr, null, "usererr");
+    }
+
+    protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
+            Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
+            String... args) {
+        runShell(args);
+        check(cmdout, checkCommandOutput, "cmdout");
+        check(userout, checkUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    protected void startCheckError(Consumer<String> checkError,
+            String... args) {
+        runShell(args);
+        check(cmderr, checkError, "userout");
+        check(userout, null, "userout");
         check(usererr, null, "usererr");
     }
 
@@ -198,8 +251,12 @@ public class StartOptionTest {
     }
 
     protected String writeToFile(String stuff) {
+        return writeToFile("doit.repl", stuff);
+    }
+
+    protected String writeToFile(String fileName, String stuff) {
         Compiler compiler = new Compiler();
-        Path p = compiler.getPath("doit.repl");
+        Path p = compiler.getPath(fileName);
         compiler.writeToFile(p, stuff);
         return p.toString();
     }
@@ -373,10 +430,19 @@ public class StartOptionTest {
                 System.out.println(\"suffix\");
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
-                             fn);
         startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
-                             "--enable-preview", fn);
+                             fn);
+        String fn24 = writeToFile(
+                """
+                System.out.println(\"test\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C--release", "-C24", fn24);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C--source", "-C24", fn24);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C-source", "-C24", fn24);
         //JDK-8341631:
         String fn2 = writeToFile(
                 """
@@ -385,11 +451,87 @@ public class StartOptionTest {
                 System.out.println(\"suffix\");
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
-                             fn2);
         startCheckUserOutput(s -> assertEquals(s, "prefix\ntest\nsuffix\n"),
-                             "--enable-preview", fn2);
+                             fn2);
+        //verify the correct resource is selected when --enable-preview, relies on
+        //--patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch
+        String fn2Preview = writeToFile(
+                """
+                System.out.println(\"prefix\");
+                sayHello();
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "prefix\nHello!\nsuffix\n"),
+                             "--enable-preview", fn2Preview,
+                             "-");
+
+        testPersistence = new HashMap<>();
+
+        String newStartupScript = writeToFile("test-startup.repl",
+                """
+                System.out.println("Custom start script");
+                """);
+        String setStartup = writeToFile(
+                """
+                /set start -retain {file}
+                /exit
+                """.replace("{file}", newStartupScript));
+        startCheckUserOutput(s -> {}, setStartup);
+        String exit = writeToFile(
+                """
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "Custom start script\n"),
+                             exit);
+        String clearStartup = writeToFile(
+                """
+                /set start -retain -default
+                /exit
+                """);
+        startCheckUserOutput(s -> {}, clearStartup);
+        String retainTest = writeToFile(
+                """
+                /set start
+                System.out.println(\"prefix\");
+                System.out.println(MethodHandle.class.getName());
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckCommandUserOutput(s -> assertEquals(s, "/set start -retain -default\n"),
+                                    s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    s -> assertEquals(s, "/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    retainTest);
+        String retainTest24 = writeToFile(
+                """
+                System.out.println(\"test\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "test\n"),
+                             "-C--release", "-C24", retainTest24);
+
+        String set24DefaultTest = writeToFile(
+                """
+                /set start -default -retain
+                /exit
+                """);
+        startCheckUserOutput(s -> {},
+                             "-C--release", "-C24", set24DefaultTest);
+
+        String checkDefaultAfterSet24Test = writeToFile(
+                """
+                /set start
+                System.out.println(\"prefix\");
+                System.out.println(MethodHandle.class.getName());
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckCommandUserOutput(s -> assertEquals(s, "/set start -retain -default\n"),
+                                    s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    s -> assertEquals(s, "/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    checkDefaultAfterSet24Test);
     }
+
     public void testInput() {
         //readLine(String):
         String readLinePrompt = writeToFile(
@@ -410,6 +552,25 @@ public class StartOptionTest {
         startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
                              readPasswordPrompt);
     }
+
+    public void testErroneousFile() {
+        String code = """
+                      var v = (
+                      System.console().readLine("prompt: ");
+                      /exit
+                      """;
+        String readLinePrompt = writeToFile(code);
+        String expectedErrorFormat =
+                ResourceBundle.getBundle("jdk.internal.jshell.tool.resources.l10n",
+                                         Locale.getDefault(),
+                                         JShell.class.getModule())
+                              .getString("jshell.err.incomplete.input");
+        String expectedError =
+                new MessageFormat(expectedErrorFormat).format(new Object[] {code});
+        startCheckError(s -> assertEquals(s, expectedError),
+                        readLinePrompt);
+    }
+
 
     @AfterMethod
     public void tearDown() {

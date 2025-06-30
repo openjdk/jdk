@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -321,9 +320,16 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   }
 }
 
+
+// Conversion
+static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
+  assert(java_lang_Class::is_primitive(basic_type_mirror),
+    "just checking");
+  return java_lang_Class::primitive_type(basic_type_mirror);
+}
+
 static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror), "just checking");
-  BasicType type = java_lang_Class::primitive_type(basic_type_mirror);
+  BasicType type = basic_type_mirror_to_basic_type(basic_type_mirror);
   if (type == T_VOID) {
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
@@ -340,8 +346,11 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
     THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
   if (java_lang_Class::is_primitive(element_mirror)) {
-    Klass* tak = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
-    return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
+    BasicType type = basic_type_mirror_to_basic_type(element_mirror);
+    if (type == T_VOID) {
+      THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
+    }
+    return oopFactory::new_typeArray(type, length, CHECK_NULL);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
     if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
@@ -549,7 +558,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in module %s) cannot access class %s (in unnamed module @" SIZE_FORMAT_X ") because module %s does not read unnamed module @" SIZE_FORMAT_X,
+          "class %s (in module %s) cannot access class %s (in unnamed module @0x%zx) because module %s does not read unnamed module @0x%zx",
           current_class_name, module_from_name, new_class_name, uintx(identity_hash),
           module_from_name, uintx(identity_hash));
       }
@@ -576,7 +585,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in unnamed module @" SIZE_FORMAT_X ") cannot access class %s (in module %s) because module %s does not export %s to unnamed module @" SIZE_FORMAT_X,
+          "class %s (in unnamed module @0x%zx) cannot access class %s (in module %s) because module %s does not export %s to unnamed module @0x%zx",
           current_class_name, uintx(identity_hash), new_class_name, module_to_name,
           module_to_name, package_name, uintx(identity_hash));
       }
@@ -906,13 +915,6 @@ static methodHandle resolve_interface_call(InstanceKlass* klass,
                                        true,
                                        CHECK_(methodHandle()));
   return methodHandle(THREAD, info.selected_method());
-}
-
-// Conversion
-static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror),
-    "just checking");
-  return java_lang_Class::primitive_type(basic_type_mirror);
 }
 
 // Narrowing of basic types. Used to create correct jvalues for

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -271,11 +270,11 @@ TEST(globalDefinitions, format_specifiers) {
   check_format("%+zd",                 (ssize_t)-2147483647, "-2147483647");
   check_format("%5zd",                 (ssize_t)123,      "  123");
   check_format("%-5zd",                (ssize_t)123,      "123  ");
-  check_format(SIZE_FORMAT,            (size_t)123u,      "123");
-  check_format(SIZE_FORMAT_X,          (size_t)0x123u,    "0x123");
+  check_format("%zu",                  (size_t)123u,      "123");
+  check_format("0x%zx",                (size_t)0x123u,    "0x123");
+  check_format("%5zu",                 (size_t)123u,      "  123");
+  check_format("%-5zu",                (size_t)123u,      "123  ");
   check_format(SIZE_FORMAT_X_0,        (size_t)0x123u,    "0x" LP64_ONLY("00000000") "00000123");
-  check_format(SIZE_FORMAT_W(5),       (size_t)123u,      "  123");
-  check_format(SIZE_FORMAT_W(-5),      (size_t)123u,      "123  ");
 
   check_format("%zd",                  (intx)123,         "123");
   check_format("%#zx",                 (intx)0x123,       "0x123");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  *
@@ -25,10 +25,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/arena.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
@@ -62,10 +62,10 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
 }
 
 void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
-  // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
+  // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
-  ThreadCritical tc;
+  ChunkPoolLocker lock;
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
@@ -231,6 +231,10 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
 
   address addr = (address)p;
 
+  if (p2u(addr) < MAX2(os::vm_min_address(), (size_t)16 * M)) {
+    return false; // bail out
+  }
+
   // Carefully feel your way upwards and try to find a malloc header. Then check if
   // we are within the block.
   // We give preference to found live blocks; but if no live block had been found,
@@ -239,13 +243,12 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   const MallocHeader* likely_live_block = nullptr;
   {
     const size_t smallest_possible_alignment = sizeof(void*);
-    const uint8_t* here = align_down(addr, smallest_possible_alignment);
-    const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
+    uintptr_t here = (uintptr_t)align_down(addr, smallest_possible_alignment);
+    uintptr_t end = MAX2(smallest_possible_alignment, here - (0x1000 + sizeof(MallocHeader))); // stop searching after 4k
     for (; here >= end; here -= smallest_possible_alignment) {
       // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
-      if (!os::is_readable_range(here, here + sizeof(MallocHeader))) {
-        // Probably OOB, give up
-        break;
+      if (!os::is_readable_range((void*)here, (void*)(here + sizeof(MallocHeader)))) {
+        break; // Probably OOB, give up
       }
       const MallocHeader* const candidate = (const MallocHeader*)here;
       if (!candidate->looks_valid()) {
@@ -292,7 +295,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     } else {
       where = "just outside of";
     }
-    st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size " SIZE_FORMAT ", tag %s",
+    st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size %zu, tag %s",
                  p2i(p), where,
                  (block->is_dead() ? "dead" : "live"),
                  p2i(block + 1), // lets print the payload start, not the header

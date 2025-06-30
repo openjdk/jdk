@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -226,7 +225,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       if (!ClearArrayNode::step_through(&mem, alloc->_idx, phase)) {
         // Can not bypass initialization of the instance
         // we are looking.
-        debug_only(intptr_t offset;)
+        DEBUG_ONLY(intptr_t offset;)
         assert(alloc == AllocateNode::Ideal_allocation(mem->in(3), phase, offset), "sanity");
         InitializeNode* init = alloc->as_Allocate()->initialization();
         // We are looking for stored value, return Initialize node
@@ -430,6 +429,10 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
           return nullptr;
         }
         values.at_put(j, res);
+      } else if (val->is_top()) {
+        // This indicates that this path into the phi is dead. Top will eventually also propagate into the Region.
+        // IGVN will clean this up later.
+        values.at_put(j, val);
       } else {
         DEBUG_ONLY( val->dump(); )
         assert(false, "unknown node on this path");
@@ -1325,7 +1328,7 @@ void PhaseMacroExpand::expand_allocate_common(
     // No initial test, just fall into next case
     assert(allocation_has_use || !expand_fast_path, "Should already have been handled");
     toobig_false = ctrl;
-    debug_only(slow_region = NodeSentinel);
+    DEBUG_ONLY(slow_region = NodeSentinel);
   }
 
   // If we are here there are several possibilities
@@ -2221,7 +2224,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   mem_phi->init_req(2, mem);
 
   // Make slow path call
-  CallNode *call = make_slow_call((CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(),
+  CallNode* call = make_slow_call(lock, OptoRuntime::complete_monitor_enter_Type(),
                                   OptoRuntime::complete_monitor_locking_Java(), nullptr, slow_path,
                                   obj, box, nullptr);
 
@@ -2335,7 +2338,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
       subklass = obj_or_subklass;
     } else {
       Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
-      subklass = _igvn.transform(LoadKlassNode::make(_igvn, nullptr, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
+      subklass = _igvn.transform(LoadKlassNode::make(_igvn, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
     }
 
     Node* not_subtype_ctrl = Phase::gen_subtype_check(subklass, superklass, &ctrl, nullptr, _igvn, check->method(), check->bci());
@@ -2345,6 +2348,16 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
     _igvn.replace_node(iffalse, ctrl);
   }
   _igvn.replace_node(check, C->top());
+}
+
+// Perform refining of strip mined loop nodes in the macro nodes list.
+void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
+   for (int i = C->macro_count(); i > 0; i--) {
+    Node* n = C->macro_node(i - 1);
+    if (n->is_OuterStripMinedLoop()) {
+      n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
+    }
+  }
 }
 
 //---------------------------eliminate_macro_nodes----------------------
@@ -2394,7 +2407,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     }
   }
   // Next, attempt to eliminate allocations
-  _has_locks = false;
   progress = true;
   while (progress) {
     progress = false;
@@ -2418,7 +2430,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Lock:
       case Node::Class_Unlock:
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
-        _has_locks = true;
         break;
       case Node::Class_ArrayCopy:
         break;
@@ -2430,6 +2441,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
+               n->Opcode() == Op_ModD ||
+               n->Opcode() == Op_ModF ||
                n->is_OpaqueNotNull()       ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
@@ -2452,6 +2465,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  refine_strip_mined_loop_macro_nodes();
   // Do not allow new macro nodes once we started to expand
   C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
@@ -2504,7 +2518,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, _igvn.intcon(1));
 #endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
-        n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
         success = true;
       } else if (n->Opcode() == Op_MaxL) {
@@ -2581,7 +2594,30 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       expand_subtypecheck_node(n->as_SubTypeCheck());
       break;
     default:
-      assert(false, "unknown node type in macro list");
+      switch (n->Opcode()) {
+      case Op_ModD:
+      case Op_ModF: {
+        bool is_drem = n->Opcode() == Op_ModD;
+        CallNode* mod_macro = n->as_Call();
+        CallNode* call = new CallLeafNode(mod_macro->tf(),
+                                          is_drem ? CAST_FROM_FN_PTR(address, SharedRuntime::drem)
+                                                  : CAST_FROM_FN_PTR(address, SharedRuntime::frem),
+                                          is_drem ? "drem" : "frem", TypeRawPtr::BOTTOM);
+        call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
+        call->init_req(TypeFunc::I_O, mod_macro->in(TypeFunc::I_O));
+        call->init_req(TypeFunc::Memory, mod_macro->in(TypeFunc::Memory));
+        call->init_req(TypeFunc::ReturnAdr, mod_macro->in(TypeFunc::ReturnAdr));
+        call->init_req(TypeFunc::FramePtr, mod_macro->in(TypeFunc::FramePtr));
+        for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
+          call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
+        }
+        _igvn.replace_node(mod_macro, call);
+        transform_later(call);
+        break;
+      }
+      default:
+        assert(false, "unknown node type in macro list");
+      }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;

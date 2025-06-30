@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,12 +25,11 @@
 
 #if defined(__APPLE__)
 
-#include "precompiled.hpp"
-
 #include "nmt/memMapPrinter.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #include <limits.h>
@@ -305,7 +304,7 @@ public:
     st->print_cr("vminfo:  VM information (requires NMT)");
     st->print_cr("file:    file mapped, if mapping is not anonymous");
     {
-      streamIndentor si(st, 16);
+      StreamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
     st->print_cr("file:            file mapped, if mapping is not anonymous");

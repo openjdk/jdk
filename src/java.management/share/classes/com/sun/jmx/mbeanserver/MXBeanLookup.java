@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,11 +144,8 @@ public class MXBeanLookup {
     throws InstanceAlreadyExistsException {
         ObjectName existing = mxbeanToObjectName.get(mxbean);
         if (existing != null) {
-            String multiname = System.getProperty("jmx.mxbean.multiname");
-            if (!"true".equalsIgnoreCase(multiname)) {
-                throw new InstanceAlreadyExistsException(
+            throw new InstanceAlreadyExistsException(
                         "MXBean already registered with name " + existing);
-            }
         }
         mxbeanToObjectName.put(mxbean, name);
     }

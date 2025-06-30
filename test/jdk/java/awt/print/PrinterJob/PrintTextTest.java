@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6425068 7157659 8132890
+ * @bug 6425068 7157659 8029204 8132890 8148334 8344637
  * @key printer
  * @summary Confirm that text prints where we expect to the length we expect.
  * @library /java/awt/regtesthelpers

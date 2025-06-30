@@ -63,7 +63,7 @@ class nmethodBucket: public CHeapObj<mtClass> {
 //
 // Utility class to manipulate nmethod dependency context.
 // Dependency context can be attached either to an InstanceKlass (_dep_context field)
-// or CallSiteContext oop for call_site_target dependencies (see javaClasses.hpp).
+// or CallSite oop for call_site_target dependencies (see javaClasses.hpp).
 // DependencyContext class operates on some location which holds a nmethodBucket* value
 // and uint64_t integer recording the safepoint counter at the last cleanup.
 //
@@ -92,7 +92,6 @@ class DependencyContext : public StackObj {
 #ifdef ASSERT
   // Safepoints are forbidden during DC lifetime. GC can invalidate
   // _dependency_context_addr if it relocates the holder
-  // (e.g. CallSiteContext Java object).
   SafepointStateTracker _safepoint_tracker;
 
   DependencyContext(nmethodBucket* volatile* bucket_addr, volatile uint64_t* last_cleanup_addr)
@@ -114,9 +113,7 @@ class DependencyContext : public StackObj {
   void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_all_dependents();
-  void remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope);
   void clean_unloading_dependents();
-  static nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
   static void purge_dependency_contexts();
   static void release(nmethodBucket* b);
   static void cleaning_start();

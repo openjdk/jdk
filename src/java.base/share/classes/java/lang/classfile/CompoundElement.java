@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,26 @@ import java.util.stream.StreamSupport;
 import jdk.internal.classfile.components.ClassPrinter;
 
 /**
- * A {@link ClassFileElement} that has complex structure defined in terms of
- * other classfile elements, such as a method, field, method body, or entire
- * class.  When encountering a {@linkplain CompoundElement}, clients have the
- * option to treat the element as a single entity (e.g., an entire method)
- * or to traverse the contents of that element with the methods in this class
- * (e.g., {@link #forEach(Consumer)}, etc.)
- * @param <E> the element type
+ * A {@code class} file structure that can be viewed as a composition of its
+ * member structures.  {@code CompoundElement} allows users to traverse these
+ * member elements with {@link #forEach(Consumer)} or {@link #elementStream()},
+ * or buffer the elements obtained from the traversal through {@link
+ * #iterator()} or {@link #elementList()}.
+ * <p>
+ * Unless otherwise specified, all member elements of compatible type will be
+ * presented during the traversal if they exist in this element.  Some member
+ * elements specify that they may appear at most once in this element; if such
+ * elements are presented multiple times, the latest occurrence is authentic and
+ * all previous occurrences should be ignored.
+ * <p>
+ * {@code CompoundElement}s can be constructed by {@link ClassFileBuilder}s.
+ * {@link ClassFileBuilder#transform(CompoundElement, ClassFileTransform)}
+ * provides an easy way to create a new structure by selectively processing
+ * the original member structures and directing the results to the builder.
  *
+ * @param <E> the member element type
+ * @see ClassFileElement##membership Membership Elements
+ * @see ClassFileBuilder
  * @sealedGraph
  * @since 24
  */
@@ -52,15 +64,16 @@ public sealed interface CompoundElement<E extends ClassFileElement>
         extends ClassFileElement, Iterable<E>
         permits ClassModel, CodeModel, FieldModel, MethodModel, jdk.internal.classfile.impl.AbstractUnboundModel {
     /**
-     * Invoke the provided handler with each element contained in this
-     * compound element
+     * Invokes the provided handler with each member element in this compound
+     * element.
+     *
      * @param consumer the handler
      */
     @Override
     void forEach(Consumer<? super E> consumer);
 
     /**
-     * {@return an {@link Iterator} describing all the elements contained in this
+     * {@return an {@link Iterator} describing all member elements in this
      * compound element}
      */
     @Override
@@ -69,8 +82,8 @@ public sealed interface CompoundElement<E extends ClassFileElement>
     }
 
     /**
-     * {@return a {@link Stream} containing all the elements contained in this
-     * compound element}
+     * {@return a {@link Stream} containing all member elements in this compound
+     * element}
      */
     default Stream<E> elementStream() {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
@@ -80,8 +93,8 @@ public sealed interface CompoundElement<E extends ClassFileElement>
     }
 
     /**
-     * {@return an {@link List} containing all the elements contained in this
-     * compound element}
+     * {@return a {@link List} containing all member elements in this compound
+     * element}
      */
     default List<E> elementList() {
         List<E> list = new ArrayList<>();
@@ -95,9 +108,11 @@ public sealed interface CompoundElement<E extends ClassFileElement>
     }
 
     /**
-     * {@return a text representation of the compound element and its contents for debugging purposes}
+     * {@return a text representation of the compound element and its contents
+     * for debugging purposes}
      *
-     * The format, structure and exact contents of the returned string are not specified and may change at any time in the future.
+     * The format, structure and exact contents of the returned string are not
+     * specified and may change at any time in the future.
      */
     default String toDebugString() {
         StringBuilder text = new StringBuilder();

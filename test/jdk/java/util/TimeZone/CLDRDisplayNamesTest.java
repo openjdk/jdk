@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8005471 8008577 8129881 8130845 8136518 8181157 8210490 8220037
  *      8234347 8236548 8317979
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
+ * @run main CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
  * if specified.
  */
@@ -130,7 +130,7 @@ public class CLDRDisplayNamesTest {
         String displayName = zi.getDisplayName(false, TimeZone.SHORT, Locale.US);
         Locale.setDefault(originalLocale);
         if (!displayName.equals("GMT+05:00")) {
-            System.err.printf("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
+            System.err.println("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
             errors++;
         }
 

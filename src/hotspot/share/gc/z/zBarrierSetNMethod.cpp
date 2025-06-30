@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/z/zAddress.hpp"
@@ -97,4 +96,45 @@ int* ZBarrierSetNMethod::disarmed_guard_value_address() const {
 
 ByteSize ZBarrierSetNMethod::thread_disarmed_guard_value_offset() const {
   return ZThreadLocalData::nmethod_disarmed_offset();
+}
+
+oop ZBarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return ZNMethod::oop_load_no_keepalive(nm, index);
+}
+
+oop ZBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return ZNMethod::oop_load_phantom(nm, index);
+}
+
+void ZBarrierSetNMethod::guard_with(nmethod* nm, int value) {
+  assert((value & not_entrant) == 0, "not_entrant bit is reserved");
+  ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
+  // Preserve the sticky bit
+  if (is_not_entrant(nm)) {
+    value |= not_entrant;
+  }
+  if (guard_value(nm) != value) {
+    // Patch the code only if needed.
+    set_guard_value(nm, value);
+  }
+}
+
+bool ZBarrierSetNMethod::is_armed(nmethod* nm) {
+  int value = guard_value(nm) & ~not_entrant;
+  return value != disarmed_guard_value();
+}
+
+void ZBarrierSetNMethod::make_not_entrant(nmethod* nm) {
+  ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
+  int value = guard_value(nm) | not_entrant; // permanent sticky value
+  set_guard_value(nm, value);
+}
+
+bool ZBarrierSetNMethod::is_not_entrant(nmethod* nm) {
+  return (guard_value(nm) & not_entrant) != 0;
+}
+
+uintptr_t ZBarrierSetNMethod::color(nmethod* nm) {
+  // color is stored at low order bits of int; conversion to uintptr_t is fine
+  return uintptr_t(guard_value(nm) & ~not_entrant);
 }

@@ -35,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @summary Tests that log responds to log level changes after JVM has
  *          started
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer

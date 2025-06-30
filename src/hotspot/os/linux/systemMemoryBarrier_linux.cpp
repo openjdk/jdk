@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "os_linux.hpp"
 #include "utilities/debug.hpp"
@@ -67,11 +66,11 @@ bool LinuxSystemMemoryBarrier::initialize() {
 // RISCV port was introduced in kernel 4.4.
 // 4.4 also made membar private expedited mandatory.
 // But RISCV actually don't support it until 6.9.
-  long major, minor;
-  os::Linux::kernel_version(&major, &minor);
-  if (!(major > 6 || (major == 6 && minor >= 9))) {
-    log_info(os)("Linux kernel %ld.%ld does not support MEMBARRIER PRIVATE_EXPEDITED on RISC-V.",
-                 major, minor);
+  long major, minor, patch;
+  os::Linux::kernel_version(&major, &minor, &patch);
+  if (os::Linux::kernel_version_compare(major, minor, patch, 6, 9, 0) == -1) {
+    log_info(os)("Linux kernel %ld.%ld.%ld does not support MEMBARRIER PRIVATE_EXPEDITED on RISC-V.",
+                 major, minor, patch);
     return false;
   }
 #endif

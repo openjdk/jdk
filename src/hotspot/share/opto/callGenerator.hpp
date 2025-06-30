@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ class CallGenerator : public ArenaObj {
   // same but for method handle calls
   virtual bool      is_mh_late_inline() const      { return false; }
   virtual bool      is_string_late_inline() const  { return false; }
+  virtual bool      is_boxing_late_inline() const  { return false; }
+  virtual bool      is_vector_reboxing_late_inline() const  { return false; }
   virtual bool      is_virtual_late_inline() const { return false; }
 
   // Replace the call with an inline version of the code
@@ -171,28 +173,14 @@ class CallGenerator : public ArenaObj {
                                                  CallGenerator* cg);
   virtual Node* generate_predicate(JVMState* jvms, int predicate) { return nullptr; };
 
-  virtual void print_inlining_late(InliningResult result, const char* msg) { ShouldNotReachHere(); }
-
-  static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    print_inlining_impl(C, callee, inline_level, bci, InliningResult::SUCCESS, msg);
-  }
-
-  static void print_inlining_failure(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    print_inlining_impl(C, callee, inline_level, bci, InliningResult::FAILURE, msg);
+  static void print_inlining_failure(Compile* C, ciMethod* callee, JVMState* jvms, const char* msg) {
+    C->inline_printer()->record(callee, jvms, InliningResult::FAILURE, msg);
     C->log_inline_failure(msg);
   }
 
   static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m);
-
-private:
-  static void print_inlining_impl(Compile* C, ciMethod* callee, int inline_level, int bci,
-                                  InliningResult result, const char* msg) {
-    if (C->print_inlining()) {
-      C->print_inlining(callee, inline_level, bci, result, msg);
-    }
-  }
 };
 
 

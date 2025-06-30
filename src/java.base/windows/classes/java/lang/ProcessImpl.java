@@ -204,13 +204,14 @@ final class ProcessImpl extends Process {
     private static final int VERIFICATION_LEGACY = 3;
     // See Command shell overview for documentation of special characters.
     // https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-xp/bb490954(v=technet.10)
-    private static final char ESCAPE_VERIFICATION[][] = {
+    private static final String ESCAPE_VERIFICATION[] = {
         // We guarantee the only command file execution for implicit [cmd.exe] run.
         //    http://technet.microsoft.com/en-us/library/bb490954.aspx
-        {' ', '\t', '\"', '<', '>', '&', '|', '^'},
-        {' ', '\t', '\"', '<', '>'},
-        {' ', '\t', '\"', '<', '>'},
-        {' ', '\t'}
+        // All space characters require quoting are checked in needsEscaping().
+        "\"<>&|^",
+        "\"<>",
+        "\"<>",
+        ""
     };
 
     private static String createCommandLine(int verificationType,
@@ -325,9 +326,14 @@ final class ProcessImpl extends Process {
         }
 
         if (!argIsQuoted) {
-            char testEscape[] = ESCAPE_VERIFICATION[verificationType];
-            for (int i = 0; i < testEscape.length; ++i) {
-                if (arg.indexOf(testEscape[i]) >= 0) {
+            for (int i = 0; i < arg.length(); i++) {
+                char ch = arg.charAt(i);
+                if (Character.isLetterOrDigit(ch))
+                    continue;   // skip over common characters
+                // All space chars require quotes and other mode specific characters
+                if (Character.isSpaceChar(ch) ||
+                        Character.isWhitespace(ch) ||
+                        ESCAPE_VERIFICATION[verificationType].indexOf(ch) >= 0) {
                     return true;
                 }
             }

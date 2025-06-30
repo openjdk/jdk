@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psGCAdaptivePolicyCounters.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcUtil.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
+#include "gc/shared/gcUtil.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
@@ -947,12 +946,10 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
   // Finally, increment or decrement the tenuring threshold, as decided above.
   // We test for decrementing first, as we might have hit the target size
   // limit.
-  if (decr_tenuring_threshold && !(AlwaysTenure || NeverTenure)) {
-    if (tenuring_threshold > 1) {
+  if (!(AlwaysTenure || NeverTenure)) {
+    if (decr_tenuring_threshold && tenuring_threshold > 1) {
       tenuring_threshold--;
-    }
-  } else if (incr_tenuring_threshold && !(AlwaysTenure || NeverTenure)) {
-    if (tenuring_threshold < MaxTenuringThreshold) {
+    } else if (incr_tenuring_threshold && tenuring_threshold < MaxTenuringThreshold) {
       tenuring_threshold++;
     }
   }

@@ -59,7 +59,8 @@ enum CompLevel : s1 {
   CompLevel_simple            = 1,         // C1
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
-  CompLevel_full_optimization = 4          // C2 or JVMCI
+  CompLevel_full_optimization = 4,         // C2 or JVMCI
+  CompLevel_count             = 5
 };
 
 class CompilationModeFlag : AllStatic {
@@ -147,6 +148,8 @@ public:
   inline static bool is_c2_enabled();
   inline static bool is_c2_or_jvmci_compiler_only();
   inline static bool is_c2_or_jvmci_compiler_enabled();
+
+  inline static CompilerType compiler_type();
 
 private:
   static bool is_compilation_mode_selected();

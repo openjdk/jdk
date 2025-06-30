@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @modules java.base/sun.security.provider.certpath:+open
  *          java.base/sun.security.x509
  *          java.base/sun.security.util
- * @library /test/lib ../../../../../java/security/testlibrary
- * @build CertificateBuilder
+ * @library /test/lib
  * @run main Order
  */
 
@@ -43,7 +42,7 @@ import javax.security.auth.x500.X500Principal;
 import sun.security.x509.X509CertImpl;
 
 import jdk.test.lib.Asserts;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.CertificateBuilder;
 
 public class Order {
 

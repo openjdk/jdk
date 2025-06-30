@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,20 @@
 # questions.
 #
 
+################################################################################
+
 include GensrcCommon.gmk
 
-include gensrc/GensrcCharacterData.gmk
-include gensrc/GensrcMisc.gmk
-include gensrc/GensrcCharsetMapping.gmk
-include gensrc/GensrcCharsetCoder.gmk
 include gensrc/GensrcBuffer.gmk
+include gensrc/GensrcCharacterData.gmk
+include gensrc/GensrcCharsetCoder.gmk
+include gensrc/GensrcCharsetMapping.gmk
 include gensrc/GensrcExceptions.gmk
-include gensrc/GensrcVarHandles.gmk
+include gensrc/GensrcMisc.gmk
 include gensrc/GensrcModuleLoaderMap.gmk
-include gensrc/GensrcScopedMemoryAccess.gmk
 include gensrc/GensrcRegex.gmk
+include gensrc/GensrcScopedMemoryAccess.gmk
+include gensrc/GensrcVarHandles.gmk
 
 ################################################################################
 
@@ -44,6 +46,8 @@ CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
 TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
 ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
 
+# The `-utf8` option is used even for US English, as some names
+# may contain non-ASCII characters, such as “Türkiye”.
 $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
     $(wildcard $(CLDR_DATA_DIR)/main/en*.xml) \
     $(wildcard $(CLDR_DATA_DIR)/supplemental/*.xml) \
@@ -59,7 +63,8 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -basemodule \
 	    -year $(COPYRIGHT_YEAR) \
 	    -zntempfile $(ZONENAME_TEMPLATE) \
-	    -tzdatadir $(TZ_DATA_DIR))
+	    -tzdatadir $(TZ_DATA_DIR) \
+	    -utf8)
 	$(TOUCH) $@
 
 TARGETS += $(CLDR_GEN_DONE)
@@ -78,16 +83,17 @@ $(eval $(call SetupCompileProperties, SUN_UTIL, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 
-TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
+$(eval $(call SetupCompileProperties, SECURITY_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/util/resources, \
+    CLASS := ListResourceBundle, \
+))
 
-# Some resources bundles are already present as java files but still need to be
-# copied to zh_HK locale.
-$(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
-    $(addprefix $(TOPDIR)/src/java.base/share/classes/, \
-        sun/security/util/AuthResources_zh_TW.java \
-        sun/security/util/Resources_zh_TW.java)))
+$(eval $(call SetupCompileProperties, KEYTOOL_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/tools/keytool/resources, \
+    CLASS := ListResourceBundle, \
+))
 
-TARGETS += $(COPY_ZH_HK)
+TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL) $(SECURITY_RESOURCES) $(KEYTOOL_RESOURCES)
 
 ################################################################################
 
@@ -113,3 +119,5 @@ $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 	$(TOUCH) $@
 
 TARGETS += $(INTPOLY_GEN_DONE)
+
+################################################################################

@@ -35,7 +35,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Verifies methods of RecordedClass
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordedClass

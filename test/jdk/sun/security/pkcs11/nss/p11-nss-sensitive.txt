@@ -49,10 +49,12 @@ attributes(*,CKO_PRIVATE_KEY,CKK_DH) = {
 # Make all private keys sensitive
 attributes(*,CKO_PRIVATE_KEY,*) = {
   CKA_SENSITIVE = true
+  CKA_EXTRACTABLE = false
 }
 
 
 # Make all secret keys sensitive
 attributes(*,CKO_SECRET_KEY,*) = {
   CKA_SENSITIVE = true
+  CKA_EXTRACTABLE = false
 }

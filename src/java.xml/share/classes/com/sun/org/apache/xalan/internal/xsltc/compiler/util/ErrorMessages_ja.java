@@ -24,7 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Nov 2024
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages_ja extends ListResourceBundle {
 
@@ -548,6 +548,12 @@ public class ErrorMessages_ja extends ListResourceBundle {
         {ErrorMsg.DATA_CONVERSION_ERR,
         "\u30C7\u30FC\u30BF\u578B''{0}''\u3092''{1}''\u306B\u5909\u63DB\u3067\u304D\u307E\u305B\u3093\u3002"},
 
+        /*
+         * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
+         * and value "true" should not be translated.
+         */
+        {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
+        "\u30BB\u30AD\u30E5\u30A2\u51E6\u7406\u6A5F\u80FD\u307E\u305F\u306F\u30D7\u30ED\u30D1\u30C6\u30A3''jdk.xml.enableExtensionFunctions''\u306B\u3088\u3063\u3066\u62E1\u5F35\u95A2\u6570\u304C\u7121\u52B9\u306B\u306A\u3063\u3066\u3044\u308B\u3068\u304D\u3001\u62E1\u5F35\u95A2\u6570''{0}''\u306E\u4F7F\u7528\u306F\u8A31\u53EF\u3055\u308C\u307E\u305B\u3093\u3002\u62E1\u5F35\u95A2\u6570\u3092\u6709\u52B9\u306B\u3059\u308B\u306B\u306F\u3001''jdk.xml.enableExtensionFunctions''\u3092''true''\u306B\u8A2D\u5B9A\u3057\u307E\u3059\u3002"},
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.

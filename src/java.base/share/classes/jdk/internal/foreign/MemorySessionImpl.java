@@ -261,24 +261,32 @@ public abstract sealed class MemorySessionImpl
         }
 
         static void cleanup(ResourceCleanup first) {
-            RuntimeException pendingException = null;
+            cleanup(first, null);
+        }
+
+        static void cleanup(ResourceCleanup first, RuntimeException pendingException) {
             ResourceCleanup current = first;
             while (current != null) {
-                try {
-                    current.cleanup();
-                } catch (RuntimeException ex) {
-                    if (pendingException == null) {
-                        pendingException = ex;
-                    } else if (ex != pendingException) {
-                        // note: self-suppression is not supported
-                        pendingException.addSuppressed(ex);
-                    }
-                }
+                pendingException = cleanupSingle(current, pendingException);
                 current = current.next;
             }
             if (pendingException != null) {
                 throw pendingException;
             }
+        }
+
+        static RuntimeException cleanupSingle(ResourceCleanup resource, RuntimeException pendingException) {
+            try {
+                resource.cleanup();
+            } catch (RuntimeException ex) {
+                if (pendingException == null) {
+                    pendingException = ex;
+                } else if (ex != pendingException) {
+                    // note: self-suppression is not supported
+                    pendingException.addSuppressed(ex);
+                }
+            }
+            return pendingException;
         }
 
         public abstract static class ResourceCleanup {

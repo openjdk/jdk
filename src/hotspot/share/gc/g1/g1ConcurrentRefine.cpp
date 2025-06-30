@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
@@ -39,6 +38,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <math.h>
 
 G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thread(uint worker_id, bool initializing) {
@@ -269,7 +269,7 @@ public:
   size_t sampled_code_root_rs_length() const { return _sampled_code_root_rs_length; }
 };
 
-// Adjust the target length (in regions) of the young gen, based on the the
+// Adjust the target length (in regions) of the young gen, based on the
 // current length of the remembered sets.
 //
 // At the end of the GC G1 determines the length of the young gen based on

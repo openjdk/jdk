@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -348,7 +348,7 @@ public:
   void add_block(MetaBlock block) {
     DEBUG_ONLY(zap_block(block);)
     const size_t word_size = block.word_size();
-    assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
+    assert(word_size >= MinWordSize, "invalid block size %zu", word_size);
     Node* n = new(block.base()) Node(word_size);
     if (_root == nullptr) {
       _root = n;
@@ -361,7 +361,7 @@ public:
   // Given a word_size, search and return the smallest block that is equal or
   //  larger than that size.
   MetaBlock remove_block(size_t word_size) {
-    assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
+    assert(word_size >= MinWordSize, "invalid block size %zu", word_size);
 
     MetaBlock result;
     Node* n = find_closest_fit(word_size);

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
@@ -230,7 +229,15 @@ void frame::set_pc(address newpc) {
   _deopt_state = unknown;
   _pc = newpc;
   _cb = CodeCache::find_blob(_pc);
+}
 
+// This is optimized for intra-blob pc adjustments only.
+void frame::adjust_pc(address newpc) {
+  assert(_cb != nullptr, "invariant");
+  assert(_cb == CodeCache::find_blob(newpc), "invariant");
+  // Unsafe to use the is_deoptimized tester after changing pc
+  _deopt_state = unknown;
+  _pc = newpc;
 }
 
 // type testers

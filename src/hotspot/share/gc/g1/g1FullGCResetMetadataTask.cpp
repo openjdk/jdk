@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCResetMetadataTask.hpp"
 #include "utilities/ticks.hpp"
@@ -37,7 +36,10 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1
 }
 
 bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(G1HeapRegion* hr) {
-  hr->uninstall_group_cardset();
+  if (!hr->is_humongous()) {
+    hr->uninstall_cset_group();
+  }
+
 
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {

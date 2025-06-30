@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <type_traits>
 
 // A Treap is a self-balanced binary tree where each node is equipped with a
 // priority. It adds the invariant that the priority of a parent P is strictly larger
@@ -54,6 +55,7 @@ template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
   friend class NMTVMATreeTest;
   friend class NMTTreapTest;
+  friend class VMTWithVMATreeTest;
 public:
   class TreapNode {
     friend Treap;
@@ -65,6 +67,8 @@ public:
     TreapNode* _right;
 
   public:
+    TreapNode(const K& k, uint64_t p) : _priority(p), _key(k), _left(nullptr), _right(nullptr) {}
+
     TreapNode(const K& k, const V& v, uint64_t p)
       : _priority(p),
         _key(k),
@@ -209,12 +213,13 @@ private:
       seen_count++;
       if (last_seen == nullptr) {
         last_seen = node;
-        return;
+        return true;
       }
       if (COMPARATOR::cmp(last_seen->key(), node->key()) > 0) {
         failed = false;
       }
       last_seen = node;
+      return true;
     });
     assert(seen_count == _node_count, "the number of visited nodes do not match with the number of stored nodes");
     assert(!failed, "keys was not monotonically strongly increasing when visiting in order");
@@ -228,7 +233,9 @@ public:
   : _allocator(),
     _root(nullptr),
     _prng_seed(_initial_seed),
-    _node_count(0) {}
+    _node_count(0) {
+    static_assert(std::is_trivially_destructible<K>::value, "must be");
+  }
 
   ~Treap() {
     this->remove_all();
@@ -266,6 +273,7 @@ public:
     if (second_split.right != nullptr) {
       // The key k existed, we delete it.
       _node_count--;
+      second_split.right->_value.~V();
       _allocator.free(second_split.right);
     }
     // Merge together everything
@@ -283,6 +291,7 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
+      head->_value.~V();
       _allocator.free(head);
     }
     _root = nullptr;
@@ -306,6 +315,30 @@ public:
       }
     }
     return candidate;
+  }
+
+  struct FindResult {
+    FindResult(TreapNode* node, bool new_node) : node(node), new_node(new_node) {}
+    TreapNode* const node;
+    bool const new_node;
+  };
+
+  // Finds the node for the given k in the tree or inserts a new node with the default constructed value.
+  FindResult find(const K& k) {
+    if (TreapNode* found = find(_root, k)) {
+      return FindResult(found, false);
+    }
+    _node_count++;
+    // Doesn't exist, make node
+    void* node_place = _allocator.allocate(sizeof(TreapNode));
+    uint64_t prio = prng_next();
+    TreapNode* node = new (node_place) TreapNode(k, prio);
+
+    // (LEQ_k, GT_k)
+    node_pair split_up = split(this->_root, k);
+    // merge(merge(LEQ_k, EQ_k), GT_k)
+    this->_root = merge(merge(split_up.left, node), split_up.right);
+    return FindResult(node, true);
   }
 
   TreapNode* closest_gt(const K& key) {
@@ -351,7 +384,9 @@ public:
         head = head->left();
       }
       head = to_visit.pop();
-      f(head);
+      if (!f(head)) {
+        return;
+      }
       head = head->right();
     }
   }
@@ -378,7 +413,9 @@ public:
       const int cmp_from = COMPARATOR::cmp(head->key(), from);
       const int cmp_to = COMPARATOR::cmp(head->key(), to);
       if (cmp_from >= 0 && cmp_to < 0) {
-        f(head);
+        if (!f(head)) {
+          return;
+        }
       }
       if (cmp_to < 0) {
         head = head->right();

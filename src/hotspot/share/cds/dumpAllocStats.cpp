@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -53,7 +53,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
   const char *sep = "--------------------+---------------------------+---------------------------+--------------------------";
   const char *hdr = "                        ro_cnt   ro_bytes     % |   rw_cnt   rw_bytes     % |  all_cnt  all_bytes     %";
 
-  LogMessage(cds) msg;
+  LogMessage(aot) msg;
 
   msg.debug("Detailed metadata info (excluding heap region):");
   msg.debug("%s", hdr);
@@ -119,8 +119,15 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
            _num_indy_cp_entries, _num_indy_cp_entries_archived,
            percent_of(_num_indy_cp_entries_archived, _num_indy_cp_entries),
            _num_indy_cp_entries_reverted);
-  msg.info("Platform loader initiated classes = %5d", AOTClassLinker::num_platform_initiated_classes());
-  msg.info("App      loader initiated classes = %5d", AOTClassLinker::num_app_initiated_classes());
+  msg.info("Platform loader initiated classes = %6d", AOTClassLinker::num_platform_initiated_classes());
+  msg.info("App      loader initiated classes = %6d", AOTClassLinker::num_app_initiated_classes());
+  msg.info("MethodCounters                    = %6d (%8d bytes)", _counts[RW][MethodCountersType],
+                                                                  _bytes [RW][MethodCountersType]);
+  msg.info("KlassTrainingData                 = %6d (%8d bytes)", _counts[RW][KlassTrainingDataType],
+                                                                  _bytes [RW][KlassTrainingDataType]);
+  msg.info("MethodTrainingData                = %6d (%8d bytes)", _counts[RW][MethodTrainingDataType],
+                                                                  _bytes [RW][MethodTrainingDataType]);
+
 }
 
 #ifdef ASSERT

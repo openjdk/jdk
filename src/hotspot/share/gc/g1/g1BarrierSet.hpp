@@ -27,9 +27,9 @@
 
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/bufferNode.hpp"
 
 class G1CardTable;
 
@@ -112,6 +112,11 @@ class G1BarrierSet: public CardTableBarrierSet {
     // Defensive: will catch weak oops at addresses in heap
     template <typename T>
     static oop oop_load_in_heap(T* addr);
+
+    template <typename T>
+    static oop oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value);
+    template <typename T>
+    static oop oop_atomic_xchg_not_in_heap(T* addr, oop new_value);
   };
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,13 +22,14 @@ package com.sun.org.apache.xerces.internal.parsers;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.Utils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -41,7 +42,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @LastModified: Nov 2023
+ * @LastModified: May 2025
  */
 public class SAXParser
     extends AbstractSAXParser {
@@ -153,7 +154,7 @@ public class SAXParser
         }
         if (name.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (value == null) {
-                securityPropertyManager = new XMLSecurityPropertyManager();
+                securityPropertyManager = config.getXMLSecurityPropertyManager(true);
             } else {
                 securityPropertyManager = (XMLSecurityPropertyManager)value;
             }
@@ -168,7 +169,7 @@ public class SAXParser
              * internally the support of this property is done through
              * XMLSecurityPropertyManager
              */
-            securityPropertyManager.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
+            securityPropertyManager.setValue(index, FeaturePropertyBase.State.APIPROPERTY, (String)value);
         } else {
             //check if the property is managed by security manager
             if (!securityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {

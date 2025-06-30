@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,12 +137,11 @@ private:
   void print_diagnostic_info(outputStream* st, const char* msg, ...) ATTRIBUTE_PRINTF(3, 0);
   void constant_pool_resolution_warning(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
   void error(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
+  GrowableArray<InstanceKlass*> get_specified_interfaces();
+  void check_supertype_obstruction(int specified_supertype_id, const InstanceKlass* specified_supertype, TRAPS);
 
 public:
-  static void parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
-    ClassListParser parser(classlist_path, parse_mode);
-    parser.parse(THREAD);
-  }
+  static void parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS);
 
   static bool is_parsing_thread();
   static ClassListParser* instance() {
@@ -201,12 +200,6 @@ public:
   }
 
   bool is_loading_from_source();
-
-  // Look up the super or interface of the current class being loaded
-  // (in this->load_current_class()).
-  InstanceKlass* lookup_super_for_current_class(Symbol* super_name);
-  InstanceKlass* lookup_interface_for_current_class(Symbol* interface_name);
-
   static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
 };
 #endif // SHARE_CDS_CLASSLISTPARSER_HPP

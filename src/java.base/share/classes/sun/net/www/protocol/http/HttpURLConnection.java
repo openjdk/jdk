@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,10 +621,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (port != -1 && port != url.getDefaultPort()) {
                 host += ":" + String.valueOf(port);
             }
-            String reqHost = requests.findValue("Host");
-            if (reqHost == null || !reqHost.equalsIgnoreCase(host)) {
-                requests.set("Host", host);
-            }
+            // if the "Host" header hasn't been explicitly set, then set its
+            // value to the one determined through the request URL
+            requests.setIfNotSet("Host", host);
+
             requests.setIfNotSet("Accept", acceptString);
 
             /*
@@ -2069,7 +2069,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * Gets the authentication for an HTTP proxy, and applies it to
      * the connection.
      */
-    @SuppressWarnings("fallthrough")
     private AuthenticationInfo getHttpProxyAuthentication(AuthenticationHeader authhdr)
         throws IOException {
 

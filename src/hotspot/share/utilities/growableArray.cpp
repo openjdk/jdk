@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
@@ -44,6 +43,11 @@ void* GrowableArrayArenaAllocator::allocate(int max, int element_size, Arena* ar
 
 void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MemTag mem_tag) {
   assert(max >= 0, "integer overflow");
+
+  if (max == 0) {
+    return nullptr;
+  }
+
   size_t byte_size = element_size * (size_t) max;
 
   // memory tag has to be specified for C heap allocation

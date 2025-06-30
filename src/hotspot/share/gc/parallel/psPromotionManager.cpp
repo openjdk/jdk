@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -167,7 +166,7 @@ PartialArrayTaskStats* PSPromotionManager::partial_array_task_stats() {
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads)
+  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads, ParGCArrayScanChunk)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());

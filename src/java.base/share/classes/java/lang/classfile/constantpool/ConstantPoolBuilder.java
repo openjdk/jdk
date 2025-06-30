@@ -36,6 +36,7 @@ import java.lang.invoke.MethodHandleInfo;
 import java.util.List;
 import java.util.function.Consumer;
 
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
@@ -385,11 +386,13 @@ public sealed interface ConstantPoolBuilder
     default MethodHandleEntry methodHandleEntry(DirectMethodHandleDesc descriptor) {
         var owner = classEntry(descriptor.owner());
         var nat = nameAndTypeEntry(utf8Entry(descriptor.methodName()), utf8Entry(descriptor.lookupDescriptor()));
-        return methodHandleEntry(descriptor.refKind(), switch (descriptor.kind()) {
+        var ret = methodHandleEntry(descriptor.refKind(), switch (descriptor.kind()) {
             case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER -> fieldRefEntry(owner, nat);
             case INTERFACE_STATIC, INTERFACE_VIRTUAL, INTERFACE_SPECIAL -> interfaceMethodRefEntry(owner, nat);
             case STATIC, VIRTUAL, SPECIAL, CONSTRUCTOR -> methodRefEntry(owner, nat);
         });
+        ((AbstractPoolEntry.MethodHandleEntryImpl) ret).sym = descriptor;
+        return ret;
     }
 
     /**
@@ -414,7 +417,9 @@ public sealed interface ConstantPoolBuilder
      * @see InvokeDynamicEntry#asSymbol() InvokeDynamicEntry::asSymbol
      */
     default InvokeDynamicEntry invokeDynamicEntry(DynamicCallSiteDesc dcsd) {
-        return invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
+        var ret = invokeDynamicEntry(bsmEntry((DirectMethodHandleDesc)dcsd.bootstrapMethod(), List.of(dcsd.bootstrapArgs())), nameAndTypeEntry(dcsd.invocationName(), dcsd.invocationType()));
+        ((AbstractPoolEntry.InvokeDynamicEntryImpl) ret).sym = dcsd;
+        return ret;
     }
 
     /**
@@ -440,7 +445,9 @@ public sealed interface ConstantPoolBuilder
      * @see ConstantDynamicEntry#asSymbol() ConstantDynamicEntry::asSymbol
      */
     default ConstantDynamicEntry constantDynamicEntry(DynamicConstantDesc<?> dcd) {
-        return constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), nameAndTypeEntry(dcd.constantName(), dcd.constantType()));
+        var ret = constantDynamicEntry(bsmEntry(dcd.bootstrapMethod(), List.of(dcd.bootstrapArgs())), nameAndTypeEntry(dcd.constantName(), dcd.constantType()));
+        ((AbstractPoolEntry.ConstantDynamicEntryImpl) ret).sym = dcd;
+        return ret;
     }
 
     /**
@@ -467,6 +474,9 @@ public sealed interface ConstantPoolBuilder
 
     /**
      * {@return a {@link FloatEntry} describing the provided value}
+     * <p>
+     * All NaN values of the {@code float} may or may not be collapsed into a
+     * single {@linkplain Float#NaN "canonical" NaN value}.
      *
      * @param value the value
      * @see FloatEntry#floatValue() FloatEntry::floatValue
@@ -483,6 +493,9 @@ public sealed interface ConstantPoolBuilder
 
     /**
      * {@return a {@link DoubleEntry} describing the provided value}
+     * <p>
+     * All NaN values of the {@code double} may or may not be collapsed into a
+     * single {@linkplain Double#NaN "canonical" NaN value}.
      *
      * @param value the value
      * @see DoubleEntry#doubleValue() DoubleEntry::doubleValue

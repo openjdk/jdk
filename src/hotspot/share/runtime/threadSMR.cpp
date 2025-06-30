@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -367,6 +366,7 @@ class ScanHazardPtrPrintMatchingThreadsClosure : public ThreadClosure {
   }
 };
 
+#ifdef ASSERT
 // Closure to validate hazard ptrs.
 //
 class ValidateHazardPtrsClosure : public ThreadClosure {
@@ -387,6 +387,7 @@ class ValidateHazardPtrsClosure : public ThreadClosure {
            p2i(thread));
   }
 };
+#endif
 
 // Closure to determine if the specified JavaThread is found by
 // threads_do().
@@ -951,8 +952,10 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
     log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is not freed.", os::current_thread_id(), p2i(threads));
   }
 
+#ifdef ASSERT
   ValidateHazardPtrsClosure validate_cl;
   threads_do(&validate_cl);
+#endif
 
   delete scan_table;
 }
@@ -1165,9 +1168,10 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
     // The count is only interesting if we have a _threads_list_ptr.
     st->print(", _nested_threads_hazard_ptr_cnt=%u", thread->_nested_threads_hazard_ptr_cnt);
   }
-  if (SafepointSynchronize::is_at_safepoint() || Thread::current() == thread) {
-    // It is only safe to walk the list if we're at a safepoint or the
-    // calling thread is walking its own list.
+  if ((SafepointSynchronize::is_at_safepoint() && thread->is_Java_thread()) ||
+      Thread::current() == thread) {
+    // It is only safe to walk the list if we're at a safepoint and processing a JavaThread,
+    // or the calling thread is walking its own list.
     SafeThreadsListPtr* current = thread->_threads_list_ptr;
     if (current != nullptr) {
       // Skip the top nesting level as it is always printed above.

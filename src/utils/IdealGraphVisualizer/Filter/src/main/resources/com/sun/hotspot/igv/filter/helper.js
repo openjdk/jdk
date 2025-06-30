@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,11 @@ function hasProperty(property) {
 // Select the nodes whose given property matches a given regular expression.
 function matches(property, regexp) {
     return new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp));
+}
+
+// Select the nodes for which the given property is defined.
+function hasProperty(property) {
+    return new MatcherSelector(new Properties.InvertPropertyMatcher(new Properties.RegexpPropertyMatcher(property, "")));
 }
 
 // Color the selected nodes.
@@ -224,4 +229,16 @@ function removeBlock(selector) {
     var f = new RemoveBlockFilter("");
     f.addRule(new RemoveBlockFilter.RemoveBlockRule(selector));
     f.apply(graph);
+}
+
+// Color the selected live ranges.
+function colorizeLiveRange(selector, color) {
+    var f = new ColorLiveRangeFilter("");
+    f.addRule(new ColorLiveRangeFilter.ColorRule(selector, color));
+    f.apply(graph);
+}
+
+// Select the live ranges whose given property matches a given regular expression.
+function matchesLiveRange(property, regexp) {
+    return new LiveRangeMatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp));
 }

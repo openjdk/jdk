@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -31,7 +30,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
@@ -82,7 +80,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
 
   log_info(gc, ergo)(
-          "Adaptive CSet Selection for YOUNG. Max Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+          "Adaptive CSet Selection for YOUNG. Max Evacuation: %zu%s, Actual Free: %zu%s.",
           byte_size_in_proper_unit(max_cset), proper_unit_for_byte_size(max_cset),
           byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
@@ -120,6 +118,9 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
+        // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
+        // to trigger at this time.
+        log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
         return false;
       }
     }
@@ -141,6 +142,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
     log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
+    accept_trigger();
     return true;
   }
 
@@ -150,10 +152,12 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // If concurrent weak root processing is in progress, it means the old cycle has chosen mixed collection
     // candidates, but has not completed. There is no point in trying to start the young cycle before the old
     // cycle completes.
-    log_trigger("Expedite mixed evacuation of " SIZE_FORMAT " regions", mixed_candidates);
+    log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
+    accept_trigger();
     return true;
   }
 
+  // Don't decline_trigger() here  That was done in ShenandoahAdaptiveHeuristics::should_start_gc()
   return false;
 }
 
@@ -221,4 +225,3 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   size_t evac_min_threshold = (anticipated_available > threshold)? anticipated_available - threshold: 0;
   return MIN3(evac_slack_spiking, evac_slack_avg, evac_min_threshold);
 }
-

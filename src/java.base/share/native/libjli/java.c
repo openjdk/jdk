@@ -666,7 +666,14 @@ JavaMain(void* _args)
         ret = 1;
     }
     LEAVE();
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
+#endif
 }
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 /*
  * Test if the given name is one of the class path options.

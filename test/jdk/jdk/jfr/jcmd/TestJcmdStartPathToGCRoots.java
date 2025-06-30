@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.test.lib.jfr.EventNames;
  * @summary Start a recording with or without path-to-gc-roots
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @key jfr
+ * @requires vm.flagless
  *
  * @run main/othervm jdk.jfr.jcmd.TestJcmdStartPathToGCRoots
  */

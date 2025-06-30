@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,11 +108,16 @@ public enum TypeKind {
      */
     LONG(2, 11),
     /**
-     * The primitive type {@code float}.
+     * The primitive type {@code float}.  All NaN values of {@code float} may or
+     * may not be collapsed into a single {@linkplain Float#NaN "canonical" NaN
+     * value} in loading and storing.
      */
     FLOAT(1, 6),
     /**
-     * The primitive type {@code double}. It is of {@linkplain #slotSize() category} 2.
+     * The primitive type {@code double}. It is of {@linkplain #slotSize()
+     * category} 2.  All NaN values of {@code double} may or may not be
+     * collapsed into a single {@linkplain Double#NaN "canonical" NaN value}
+     * in loading and storing.
      */
     DOUBLE(2, 7),
     // End primitive types

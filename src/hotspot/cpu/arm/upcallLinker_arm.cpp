@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "prims/upcallLinker.hpp"
 #include "utilities/debug.hpp"
 

@@ -934,7 +934,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
         /* If we reach here we have mapped all the glyphs back
          * one-to-one to simple unicode chars that we know are in the font.
-         * We can call "drawChars" on each one of them in turn, setting
+         * We can call "drawString" on each one of them in turn, setting
          * the position based on the glyph positions.
          * There's typically overhead in this. If numGlyphs is 'large',
          * it may even be better to try printGlyphVector() in this case.
@@ -942,15 +942,28 @@ public abstract class PathGraphics extends ProxyGraphics2D {
          * should be able to recover the text from simple glyph vectors
          * and we can avoid penalising the more common case - although
          * this is already a minority case.
+         * If we do use "drawString" on each character, we need to use a
+         * font without translation transform, since the font translation
+         * transform will already be reflected in the glyph positions, and
+         * we do not want to apply the translation twice.
          */
         if (numGlyphs > 10 && printGlyphVector(g, x, y)) {
             return true;
         }
 
+        Font font2 = font;
+        if (font.isTransformed()) {
+            AffineTransform t = font.getTransform();
+            if ((t.getType() & AffineTransform.TYPE_TRANSLATION) != 0) {
+                t.setTransform(t.getScaleX(), t.getShearY(), t.getShearX(), t.getScaleY(), 0, 0);
+                font2 = font.deriveFont(t);
+            }
+        }
+
         for (int i=0; i<numGlyphs; i++) {
             String s = new String(chars, i, 1);
             drawString(s, x+positions[i*2], y+positions[i*2+1],
-                       font, gvFrc, 0f);
+                       font2, gvFrc, 0f);
         }
         return true;
     }

@@ -30,6 +30,7 @@
 
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
@@ -40,7 +41,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -67,8 +67,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
 
   oop fwd = resolve_forwarded_not_null_mutator(obj);
   if (obj == fwd) {
-    assert(_heap->is_evacuation_in_progress(),
-           "evac should be in progress");
+    assert(_heap->is_evacuation_in_progress(), "evac should be in progress");
     Thread* const t = Thread::current();
     ShenandoahEvacOOMScope scope(t);
     fwd = _heap->evacuate_object(obj, t);
@@ -86,8 +85,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   if (!ShenandoahLoadRefBarrier) {
     return obj;
   }
-  if (_heap->has_forwarded_objects() &&
-      _heap->in_collection_set(obj)) { // Subsumes null-check
+  if (_heap->has_forwarded_objects() && _heap->in_collection_set(obj)) {
+    // Subsumes null-check
     assert(obj != nullptr, "cset check must have subsumed null-check");
     oop fwd = resolve_forwarded_not_null(obj);
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
@@ -122,10 +121,9 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
     return nullptr;
   }
 
-  // Prevent resurrection of unreachable objects that are visited during
-  // concurrent class-unloading.
+  // Allow runtime to see unreachable objects that are visited during concurrent class-unloading.
   if ((decorators & AS_NO_KEEPALIVE) != 0 &&
-      _heap->is_evacuation_in_progress() &&
+      _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
     return obj;
   }
@@ -154,10 +152,19 @@ inline void ShenandoahBarrierSet::enqueue(oop obj) {
 
 template <DecoratorSet decorators, typename T>
 inline void ShenandoahBarrierSet::satb_barrier(T *field) {
+  // Uninitialized and no-keepalive stores do not need barrier.
   if (HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value ||
       HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
     return;
   }
+
+  // Stores to weak/phantom require no barrier. The original references would
+  // have been enqueued in the SATB buffer by the load barrier if they were needed.
+  if (HasDecorator<decorators, ON_WEAK_OOP_REF>::value ||
+      HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value) {
+    return;
+  }
+
   if (ShenandoahSATBBarrier && _heap->is_concurrent_mark_in_progress()) {
     T heap_oop = RawAccess<>::oop_load(field);
     if (!CompressedOops::is_null(heap_oop)) {
@@ -262,6 +269,7 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
+  assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
   oop_store_common(addr, value);
 }
 
@@ -381,7 +389,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
   // this barrier will be called with ENQUEUE=true and HAS_FWD=false, even though the young generation
   // may have forwarded objects. In this case, the `arraycopy_work` is first called with HAS_FWD=true and
   // ENQUEUE=false.
-  assert(HAS_FWD == _heap->has_forwarded_objects() || (_heap->gc_state() & ShenandoahHeap::OLD_MARKING) != 0,
+  assert(HAS_FWD == _heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(),
          "Forwarded object status is sane");
   // This function cannot be called to handle marking and evacuation at the same time (they operate on
   // different sides of the copy).
@@ -418,10 +426,10 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
     return;
   }
 
-  int gc_state = _heap->gc_state();
+  char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
   if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     arraycopy_evacuation(src, count);
-  } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {
+  } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
     arraycopy_update(src, count);
   }
 

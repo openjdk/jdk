@@ -1,4 +1,4 @@
-﻿What is Unicode?
+What is Unicode?
 Unicode provides a unique number for every character,
 no matter what the platform,
 no matter what the program,

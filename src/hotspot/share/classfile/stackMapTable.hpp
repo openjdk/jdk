@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,14 @@ class StackMapTable : public StackObj {
   // Widening the type and making it signed will help detect these.
   int32_t              _code_length;
   int32_t              _frame_count;     // Stackmap frame count
-  StackMapFrame**       _frame_array;
+  GrowableArray<StackMapFrame*>* _frame_array;
 
  public:
-  StackMapTable(StackMapReader* reader, StackMapFrame* init_frame,
-                u2 max_locals, u2 max_stack,
-                char* code_data, int code_len, TRAPS);
+  StackMapTable(StackMapReader* reader, TRAPS);
 
   inline int32_t get_frame_count() const { return _frame_count; }
   inline int get_offset(int index) const {
-    return _frame_array[index]->offset();
+    return _frame_array->at(index)->offset();
   }
 
   // Match and/or update current_frame to the frame in stackmap table with
@@ -108,6 +106,7 @@ class StackMapStream : StackObj {
 };
 
 class StackMapReader : StackObj {
+  friend class VM_RedefineClasses;
  private:
   // information about the class and method
   constantPoolHandle  _cp;
@@ -116,9 +115,25 @@ class StackMapReader : StackObj {
   char* _code_data;
   int32_t _code_length;
 
-  // information get from the attribute
-  int32_t  _frame_count;       // frame count
+  // information from the attribute
+  int32_t  _frame_count;
 
+  // Number of frames parsed
+  int32_t  _parsed_frame_count;
+
+  // Previous frame buffer
+  StackMapFrame* _prev_frame;
+
+  // information from method
+  u2 _max_locals;
+  u2 _max_stack;
+
+  // Check if reading first entry
+  bool _first;
+
+  StackMapFrame* next_helper(TRAPS);
+  void check_offset(StackMapFrame* frame);
+  void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
   VerificationType parse_verification_type(u1* flags, TRAPS);
   void check_verification_type_array_size(
@@ -134,25 +149,36 @@ class StackMapReader : StackObj {
   }
 
   enum {
+    SAME_FRAME_START = 0,
+    SAME_FRAME_END = 63,
+    SAME_LOCALS_1_STACK_ITEM_FRAME_START = 64,
+    SAME_LOCALS_1_STACK_ITEM_FRAME_END = 127,
+    RESERVED_START = 128,
+    RESERVED_END = 246,
     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
-    SAME_EXTENDED = 251,
-    FULL = 255
+    CHOP_FRAME_START = 248,
+    CHOP_FRAME_END = 250,
+    SAME_FRAME_EXTENDED = 251,
+    APPEND_FRAME_START = 252,
+    APPEND_FRAME_END = 254,
+    FULL_FRAME = 255
   };
 
  public:
   // Constructor
-  StackMapReader(ClassVerifier* v, StackMapStream* stream, char* code_data,
-                 int32_t code_len, TRAPS);
+  StackMapReader(ClassVerifier* v, StackMapStream* stream,
+                 char* code_data, int32_t code_len,
+                 StackMapFrame* init_frame,
+                 u2 max_locals, u2 max_stack, TRAPS);
 
-  inline int32_t get_frame_count() const                { return _frame_count; }
-  StackMapFrame* next(StackMapFrame* pre_frame, bool first,
-                      u2 max_locals, u2 max_stack, TRAPS);
+  inline int32_t get_frame_count()   const { return _frame_count; }
+  inline StackMapFrame* prev_frame() const { return _prev_frame; }
+  inline char* code_data()           const { return _code_data; }
+  inline int32_t code_length()       const { return _code_length; }
+  inline bool at_end()               const { return _stream->at_end(); }
 
-  void check_end(TRAPS) {
-    if (!_stream->at_end()) {
-      StackMapStream::stackmap_format_error("wrong attribute size", CHECK);
-    }
-  }
+  StackMapFrame* next(TRAPS);
+  void check_end(TRAPS);
 };
 
 #endif // SHARE_CLASSFILE_STACKMAPTABLE_HPP

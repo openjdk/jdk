@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@
    <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-#include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/klass.inline.hpp"

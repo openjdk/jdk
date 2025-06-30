@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public class filter001 extends TestDebuggerType1 {
             switch (i) {
 
                 case 0:
-                thread1 = debuggee.threadByName(threadName1);
+                thread1 = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName1);
                 eventRequest1 = setting23StepRequest(thread1, "*" + testedClassName1,
                                          EventRequest.SUSPEND_NONE, property1);
 
@@ -131,7 +131,7 @@ public class filter001 extends TestDebuggerType1 {
                 break;
 
                 case 1:
-                thread2 = debuggee.threadByName(threadName2);
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName2);
                 eventRequest2 = setting23StepRequest(thread2, testedClassName2 + "*",
                                          EventRequest.SUSPEND_NONE, property2);
 

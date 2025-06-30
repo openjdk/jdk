@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
@@ -94,17 +93,17 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     void set(uint idx, G1HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
       assert(_data[idx]._r == nullptr, "Value must not have been set.");
-      _data[idx] = CandidateInfo(hr, 0.0);
+      _data[idx] = CandidateInfo(hr);
     }
 
-    void sort_by_reclaimable_bytes() {
+    void sort_by_gc_efficiency() {
       if (_cur_claim_idx == 0) {
         return;
       }
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionCandidateList::compare_reclaimble_bytes);
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionSetCandidateInfo::compare_region_gc_efficiency);
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
@@ -224,7 +223,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       num_pruned++;
     }
 
-    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
+    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving %zu bytes waste (allowed %zu)",
                               num_pruned,
                               num_candidates,
                               wasted_bytes,
@@ -248,7 +247,7 @@ public:
   }
 
   void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
-    _result.sort_by_reclaimable_bytes();
+    _result.sort_by_gc_efficiency();
     prune(_result.array());
     candidates->set_candidates_from_marking(_result.array(),
                                             _num_regions_added);

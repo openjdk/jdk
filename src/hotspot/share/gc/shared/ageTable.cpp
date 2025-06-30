@@ -22,18 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/ageTableTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/copy.hpp"
-#include "logging/logStream.hpp"
 
 /* Copyright (c) 1992, 2025, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
@@ -131,7 +130,7 @@ void AgeTable::print_on(outputStream* st) {
     size_t word_size = sizes[age];
     total += word_size;
     if (word_size > 0) {
-      st->print_cr("- age %3u: " SIZE_FORMAT_W(10) " bytes, " SIZE_FORMAT_W(10) " total",
+      st->print_cr("- age %3u: %10zu bytes, %10zu total",
                    age, word_size * oopSize, total * oopSize);
     }
     AgeTableTracer::send_tenuring_distribution_event(age, word_size * oopSize);

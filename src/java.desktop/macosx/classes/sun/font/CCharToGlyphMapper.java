@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package sun.font;
 
 import java.util.HashMap;
 
+import static sun.font.FontUtilities.isDefaultIgnorable;
+import static sun.font.FontUtilities.isIgnorableWhitespace;
+
 public class CCharToGlyphMapper extends CharToGlyphMapper {
     private static native int countGlyphs(final long nativeFontPtr);
 
@@ -47,12 +50,12 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
     }
 
     public boolean canDisplay(char ch) {
-        int glyph = charToGlyph(ch);
+        int glyph = charToGlyph(ch, false);
         return glyph != missingGlyph;
     }
 
     public boolean canDisplay(int cp) {
-        int glyph = charToGlyph(cp);
+        int glyph = charToGlyph(cp, false);
         return glyph != missingGlyph;
     }
 
@@ -89,39 +92,52 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
     }
 
     public synchronized int charToGlyph(char unicode) {
-        final int glyph = cache.get(unicode);
+        return charToGlyph(unicode, false);
+    }
+
+    private int charToGlyph(char unicode, boolean raw) {
+        int glyph = cache.get(unicode, raw);
         if (glyph != 0) return glyph;
 
         final char[] unicodeArray = new char[] { unicode };
         final int[] glyphArray = new int[1];
-
         nativeCharsToGlyphs(fFont.getNativeFontPtr(), 1, unicodeArray, glyphArray);
-        cache.put(unicode, glyphArray[0]);
+        glyph = glyphArray[0];
 
-        return glyphArray[0];
+        cache.put(unicode, glyph);
+
+        return glyph;
     }
 
     public synchronized int charToGlyph(int unicode) {
+        return charToGlyph(unicode, false);
+    }
+
+    public synchronized int charToGlyphRaw(int unicode) {
+        return charToGlyph(unicode, true);
+    }
+
+    private int charToGlyph(int unicode, boolean raw) {
         if (unicode >= 0x10000) {
             int[] glyphs = new int[2];
             char[] surrogates = new char[2];
             int base = unicode - 0x10000;
             surrogates[0] = (char)((base >>> 10) + HI_SURROGATE_START);
             surrogates[1] = (char)((base % 0x400) + LO_SURROGATE_START);
-            charsToGlyphs(2, surrogates, glyphs);
+            cache.get(2, surrogates, glyphs, raw);
             return glyphs[0];
          } else {
-             return charToGlyph((char)unicode);
+             return charToGlyph((char) unicode, raw);
          }
     }
 
     public synchronized void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
-        cache.get(count, unicodes, glyphs);
+        cache.get(count, unicodes, glyphs, false);
     }
 
     public synchronized void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
         for (int i = 0; i < count; i++) {
-            glyphs[i] = charToGlyph(unicodes[i]);
+            glyphs[i] = charToGlyph(unicodes[i], false);
         }
     }
 
@@ -148,7 +164,11 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             firstLayerCache[1] = 1;
         }
 
-        public synchronized int get(final int index) {
+        public synchronized int get(final int index, final boolean raw) {
+            if (isIgnorableWhitespace(index) || (isDefaultIgnorable(index) && !raw)) {
+                return INVISIBLE_GLYPH_ID;
+            }
+
             if (index < FIRST_LAYER_SIZE) {
                 // catch common glyphcodes
                 return firstLayerCache[index];
@@ -219,7 +239,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
             }
         }
 
-        public synchronized void get(int count, char[] indices, int[] values)
+        public synchronized void get(int count, char[] indices, int[] values, boolean raw)
         {
             // "missed" is the count of 'char' that are not mapped.
             // Surrogates count for 2.
@@ -241,7 +261,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                     }
                 }
 
-                final int value = get(code);
+                final int value = get(code, raw);
                 if (value != 0 && value != -1) {
                     values[i] = value;
                     if (code >= 0x10000) {
