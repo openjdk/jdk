@@ -15617,7 +15617,7 @@ void Assembler::precompute_instructions() {
   ResourceMark rm;
 
   // Make a temporary buffer big enough for the routines we're capturing
-  int size = UseAPX ? 512 : 256;
+  int size = UseAPX ? 1024 : 256;
   char* tmp_code = NEW_RESOURCE_ARRAY(char, size);
   CodeBuffer buffer((address)tmp_code, size);
   MacroAssembler masm(&buffer);
@@ -15672,32 +15672,41 @@ void Assembler::pusha() { // 64bit
 // The slot for rsp just contains an arbitrary value.
 void Assembler::pusha_uncached() { // 64bit
   if (UseAPX) {
-    // Data being pushed by PUSH2 must be 16B-aligned on the stack, for this push rax upfront
-    // and use it as a temporary register for stack alignment.
-    pushp(rax);
-    // Move original stack pointer to RAX and align stack pointer to 16B boundary.
-    movq(rax, rsp);
-    andq(rsp, -(StackAlignmentInBytes));
-    // Push pair of original stack pointer along with remaining registers
-    // at 16B aligned boundary.
-    push2p(rax, r31);
-    push2p(r30, r29);
-    push2p(r28, r27);
-    push2p(r26, r25);
-    push2p(r24, r23);
-    push2p(r22, r21);
-    push2p(r20, r19);
-    push2p(r18, r17);
-    push2p(r16, r15);
-    push2p(r14, r13);
-    push2p(r12, r11);
-    push2p(r10, r9);
-    push2p(r8, rdi);
-    push2p(rsi, rbp);
-    push2p(rbx, rdx);
-    // To maintain 16 byte alignment after rcx is pushed.
-    subq(rsp, 8);
-    pushp(rcx);
+    subq(rsp, 32 * wordSize);
+    movq(Address(rsp, 31 * wordSize), rax);
+    movq(Address(rsp, 30 * wordSize), rcx);
+    movq(Address(rsp, 29 * wordSize), rdx);
+    movq(Address(rsp, 28 * wordSize), rbx);
+    // Skip rsp as the value is normally not used. There are a few places where
+    // the original value of rsp needs to be known but that can be computed
+    // from the value of rsp immediately after pusha (rsp + 32 * wordSize).
+    movq(Address(rsp, 26 * wordSize), rbp);
+    movq(Address(rsp, 25 * wordSize), rsi);
+    movq(Address(rsp, 24 * wordSize), rdi);
+    movq(Address(rsp, 23 * wordSize), r8);
+    movq(Address(rsp, 22 * wordSize), r9);
+    movq(Address(rsp, 21 * wordSize), r10);
+    movq(Address(rsp, 20 * wordSize), r11);
+    movq(Address(rsp, 19 * wordSize), r12);
+    movq(Address(rsp, 18 * wordSize), r13);
+    movq(Address(rsp, 17 * wordSize), r14);
+    movq(Address(rsp, 16 * wordSize), r15);
+    movq(Address(rsp, 15 * wordSize), r16);
+    movq(Address(rsp, 14 * wordSize), r17);
+    movq(Address(rsp, 13 * wordSize), r18);
+    movq(Address(rsp, 12 * wordSize), r19);
+    movq(Address(rsp, 11 * wordSize), r20);
+    movq(Address(rsp, 10 * wordSize), r21);
+    movq(Address(rsp, 9 * wordSize), r22);
+    movq(Address(rsp, 8 * wordSize), r23);
+    movq(Address(rsp, 7 * wordSize), r24);
+    movq(Address(rsp, 6 * wordSize), r25);
+    movq(Address(rsp, 5 * wordSize), r26);
+    movq(Address(rsp, 4 * wordSize), r27);
+    movq(Address(rsp, 3 * wordSize), r28);
+    movq(Address(rsp, 2 * wordSize), r29);
+    movq(Address(rsp, wordSize), r30);
+    movq(Address(rsp, 0), r31);
   } else {
     subq(rsp, 16 * wordSize);
     movq(Address(rsp, 15 * wordSize), rax);
@@ -15729,28 +15738,40 @@ void Assembler::popa() { // 64bit
 
 void Assembler::popa_uncached() { // 64bit
   if (UseAPX) {
-    popp(rcx);
-    addq(rsp, 8);
-    // Data being popped by POP2 must be 16B-aligned on the stack.
-    pop2p(rdx, rbx);
-    pop2p(rbp, rsi);
-    pop2p(rdi, r8);
-    pop2p(r9, r10);
-    pop2p(r11, r12);
-    pop2p(r13, r14);
-    pop2p(r15, r16);
-    pop2p(r17, r18);
-    pop2p(r19, r20);
-    pop2p(r21, r22);
-    pop2p(r23, r24);
-    pop2p(r25, r26);
-    pop2p(r27, r28);
-    pop2p(r29, r30);
-    // Popped value in RAX holds original unaligned stack pointer.
-    pop2p(r31, rax);
-    // Reinstantiate original stack pointer.
-    movq(rsp, rax);
-    popp(rax);
+    movq(r31, Address(rsp, 0));
+    movq(r30, Address(rsp, wordSize));
+    movq(r29, Address(rsp, 2 * wordSize));
+    movq(r28, Address(rsp, 3 * wordSize));
+    movq(r27, Address(rsp, 4 * wordSize));
+    movq(r26, Address(rsp, 5 * wordSize));
+    movq(r25, Address(rsp, 6 * wordSize));
+    movq(r24, Address(rsp, 7 * wordSize));
+    movq(r23, Address(rsp, 8 * wordSize));
+    movq(r22, Address(rsp, 9 * wordSize));
+    movq(r21, Address(rsp, 10 * wordSize));
+    movq(r20, Address(rsp, 11 * wordSize));
+    movq(r19, Address(rsp, 12 * wordSize));
+    movq(r18, Address(rsp, 13 * wordSize));
+    movq(r17, Address(rsp, 14 * wordSize));
+    movq(r16, Address(rsp, 15 * wordSize));
+    movq(r15, Address(rsp, 16 * wordSize));
+    movq(r14, Address(rsp, 17 * wordSize));
+    movq(r13, Address(rsp, 18 * wordSize));
+    movq(r12, Address(rsp, 19 * wordSize));
+    movq(r11, Address(rsp, 20 * wordSize));
+    movq(r10, Address(rsp, 21 * wordSize));
+    movq(r9, Address(rsp, 22 * wordSize));
+    movq(r8, Address(rsp, 23 * wordSize));
+    movq(rdi, Address(rsp, 24 * wordSize));
+    movq(rsi, Address(rsp, 25 * wordSize));
+    movq(rbp, Address(rsp, 26 * wordSize));
+    // Skip rsp as it is restored automatically to the value
+    // before the corresponding pusha when popa is done.
+    movq(rbx, Address(rsp, 28 * wordSize));
+    movq(rdx, Address(rsp, 29 * wordSize));
+    movq(rcx, Address(rsp, 30 * wordSize));
+    movq(rax, Address(rsp, 31 * wordSize));
+    addq(rsp, 32 * wordSize);
   } else {
     movq(r15, Address(rsp, 0));
     movq(r14, Address(rsp, wordSize));
