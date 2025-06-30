@@ -4562,7 +4562,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
 instruct minD_avx10_reg(regD dst, regD a, regD b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinD a b));
-  format %{ "maxD $dst, $a, $b" %}
+  format %{ "minD $dst, $a, $b" %}
   ins_encode %{
     __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
   %}
