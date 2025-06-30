@@ -531,6 +531,7 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
 
 InstanceKlass::InstanceKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
+  NOT_PRODUCT(_token.set_as_instance_klass();)
 }
 
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
@@ -556,6 +557,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   assert(nullptr == _methods, "underlying memory not zeroed?");
   assert(is_instance_klass(), "is layout incorrect?");
   assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
+  NOT_PRODUCT(_token.set_as_instance_klass();)
 }
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
