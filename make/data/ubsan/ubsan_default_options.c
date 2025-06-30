@@ -63,9 +63,7 @@
 // variable UBSAN_OPTIONS.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __ubsan_default_options() {
   return "halt_on_error=1,"
-#if defined(__clang__)
-          "handle_segv=0,"
-          "handle_sigbus=0,"
-#endif
-          "print_stacktrace=1" _LLVM_SYMBOLIZER(LLVM_SYMBOLIZER);
+         "handle_segv=0,"
+         "handle_sigbus=0,"
+         "print_stacktrace=1" _LLVM_SYMBOLIZER(LLVM_SYMBOLIZER);
 }
