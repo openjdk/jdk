@@ -1042,7 +1042,7 @@ public class ArrayList<E> extends AbstractList<E>
         Itr() {}
 
         public boolean hasNext() {
-            return cursor != size;
+            return cursor < size;
         }
 
         @SuppressWarnings("unchecked")
@@ -1107,7 +1107,7 @@ public class ArrayList<E> extends AbstractList<E>
         }
 
         public boolean hasPrevious() {
-            return cursor != 0;
+            return cursor > 0;
         }
 
         public int nextIndex() {
@@ -1373,7 +1373,7 @@ public class ArrayList<E> extends AbstractList<E>
                 int expectedModCount = SubList.this.modCount;
 
                 public boolean hasNext() {
-                    return cursor != SubList.this.size;
+                    return cursor < SubList.this.size;
                 }
 
                 @SuppressWarnings("unchecked")
@@ -1390,7 +1390,7 @@ public class ArrayList<E> extends AbstractList<E>
                 }
 
                 public boolean hasPrevious() {
-                    return cursor != 0;
+                    return cursor > 0;
                 }
 
                 @SuppressWarnings("unchecked")
