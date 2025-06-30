@@ -31,7 +31,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /// Indicates a class or interface that should have its static initializer
-/// (`<clinit>`) executed whenever it is referenced in an AOT cache.
+/// (`<clinit>`) executed whenever it is referenced in an AOT cache, and may
+/// have custom runtime setup actions in a `private static void runtimeSetup()`
+/// method.  Note that classes with instances in the AOT cache are always
+/// initialized even without this annotation, but cannot define custom actions.
 ///
 /// In AOT assembly run, an object graph from metaspace to heap objects is
 /// constructed.  When an object is in the heap, its class must be initialized.

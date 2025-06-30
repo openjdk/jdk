@@ -26,9 +26,9 @@
 package jdk.internal.misc;
 
 import jdk.internal.ref.Cleaner;
+import jdk.internal.vm.annotation.AOTClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.RuntimeSetupRequired;
 import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
@@ -53,7 +53,7 @@ import static jdk.internal.misc.UnsafeConstants.*;
  * @author John R. Rose
  * @see #getUnsafe
  */
-@RuntimeSetupRequired
+@AOTClassInitializer
 public final class Unsafe {
 
     private static native void registerNatives();

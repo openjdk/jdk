@@ -36,7 +36,6 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.AOTClassInitializer;
-import jdk.internal.vm.annotation.RuntimeSetupRequired;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
@@ -76,7 +75,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * @author jrose
  */
 @AOTClassInitializer
-@RuntimeSetupRequired
 /*non-public*/
 abstract class MethodHandleImpl {
 

@@ -761,13 +761,12 @@ public:
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
+  // Does this class request explicit initialization in AOT archives when they are initialized in assembly phase,
+  // with explicit assembly phase assemblyCleanup() or production run runtimeSetup() access?
+  // Classes with instances are always initialized in AOT archive. This status is represented by has_aot_initialized_mirror().
+  // However, access to setup/cleanup functionality must be requested.
   bool has_aot_initialization() const { return _misc_flags.has_aot_initialization(); }
   void set_has_aot_initialization()   { _misc_flags.set_has_aot_initialization(true); }
-
-  // If this class has been aot-initialized, do we need to call its runtimeSetup()
-  // method during the production run?
-  bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
-  void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
 
   // for adding methods, ConstMethod::UNSET_IDNUM means no more ids available
   inline u2 next_method_idnum();
