@@ -2498,32 +2498,22 @@ jint AwtWindow::_GetScreenImOn(void *param)
 
     jobject self = (jobject)param;
 
-    // It's entirely possible that our native resources have been destroyed
-    // before our java peer - if we're dispose()d, for instance.
-    // Alert caller w/ IllegalComponentStateException.
-    if (self == NULL) {
-        JNU_ThrowByName(env, "java/awt/IllegalComponentStateException",
-                        "Peer null in JNI");
-        return 0;
-    }
-    PDATA pData = JNI_GET_PDATA(self);
-    if (pData == NULL) {
-        JNU_ThrowByName(env, "java/awt/IllegalComponentStateException",
-                        "Native resources unavailable");
-        env->DeleteGlobalRef(self);
-        return 0;
-    }
+    jint result = -1;
+    AwtWindow* window = NULL;
 
-    jint result = 0;
-    AwtWindow *w = (AwtWindow *)pData;
-    if (::IsWindow(w->GetHWnd()))
+    // Our native resources may have been destroyed before the Java peer,
+    // e.g., if dispose() was called. In that case, return the default screen.
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    window = (AwtWindow *)pData;
+    if (::IsWindow(window->GetHWnd()))
     {
-        result = (jint)w->GetScreenImOn();
+        result = (jint)window->GetScreenImOn();
     }
 
+  ret:
     env->DeleteGlobalRef(self);
-
-    return result;
+    return (result != -1) ? result : AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
 }
 
 void AwtWindow::_SetFocusableWindow(void *param)
