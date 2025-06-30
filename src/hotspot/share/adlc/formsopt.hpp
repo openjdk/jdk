@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,8 @@ public:
   Dict        _allocClass;         // Dictionary of allocation classes
 
   static int  _reg_ctr;         // Register counter
+  static int  words_for_regs(); // Compute the least number of words required for
+                                // registers in register masks.
   static int  RegMask_Size();   // Compute RegMask size
 
   // Public Methods
