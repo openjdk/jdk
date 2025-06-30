@@ -77,14 +77,14 @@ public class RedefineClassHelper {
     }
 
     /*
-     * Replace class name in bytecodes to the class we're trying to redefine, so that both
-     * old and new classes can be compiled with jtreg for the test.
+     * Copy the class defined by `bytes`, replacing the nameof the class with `newClassName`,
+     * so that both old and new classes can be compiled by jtreg for the test.
      *
-     * @param bytes in original class file.
-     * @param oldClassName old class name.
-     * @param newClassName new class name to replace the old class name.
+     * @param bytes read from the original class file.
+     * @param newClassName new class name for the returned class representation
+     * @return a copy of the class representated by `bytes` but with the name `newClassName`
      */
-    public static byte[] replaceClassName(byte[] bytes, String oldClassName, String newClassName) throws Exception {
+    public static byte[] replaceClassName(byte[] bytes, String newClassName) throws Exception {
         ClassModel classModel = ClassFile.of().parse(bytes);
         return ClassFile.of().build(ClassDesc.of(newClassName), classModel::forEach);
     }
@@ -93,13 +93,14 @@ public class RedefineClassHelper {
      * Replace class name in bytecodes to the class we're trying to redefine, so that both
      * old and new classes can be compiled with jtreg for the test.
      *
-     * @param loader ClassLoader to find the bytes for the class.
+     * @param loader ClassLoader to find the bytes for the old class.
      * @param oldClassName old class name.
      * @param newClassName new class name to replace with old class name.
+     * @return a copy of the class representated by `bytes` but with the name `newClassName`
      */
     public static byte[] replaceClassName(ClassLoader loader, String oldClassName, String newClassName) throws Exception {
         byte[] buf = getBytecodes(loader, oldClassName);
-        return replaceClassName(buf, oldClassName, newClassName);
+        return replaceClassName(buf, newClassName);
     }
 
     /**
