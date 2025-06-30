@@ -77,7 +77,7 @@ class G1HeapSizingPolicy: public CHeapObj<mtGC> {
   TruncatedSeq _recent_cpu_usage_deltas;
   uint _long_term_count;
 
-  // Clear GC CPU usage tracking data used by resize_amount().
+  // Clear GC CPU usage tracking data used by young_collection_resize_amount().
   void reset_cpu_usage_tracking_data();
   // Decay (move towards "no changes") GC CPU usage tracking data.
   void decay_cpu_usage_tracking_data();
