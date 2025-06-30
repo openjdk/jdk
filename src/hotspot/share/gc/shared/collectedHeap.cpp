@@ -623,7 +623,7 @@ void CollectedHeap::post_initialize() {
 }
 
 void CollectedHeap::log_gc_vtime() const {
-  LogTarget(Info, gc) out;
+  LogTarget(Info, gc, cpu) out;
   if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
     double process_vtime = os::elapsed_process_vtime();
     double gc_vtime = elapsed_gc_vtime();

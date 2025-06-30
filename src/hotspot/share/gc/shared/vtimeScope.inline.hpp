@@ -41,7 +41,9 @@ inline VTimeScope::VTimeScope(VMThread* thread, bool is_gc_operation)
 }
 
 inline VTimeScope::~VTimeScope() {
-  if (!_enabled) return;
+  if (!_enabled) {
+    return;
+  }
 
   jlong end = (_is_gc_operation || UsePerfData) ? os::thread_cpu_time(_thread) : 0;
 

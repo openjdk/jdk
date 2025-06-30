@@ -293,12 +293,6 @@ class os: AllStatic {
   static jlong elapsed_counter();
   static jlong elapsed_frequency();
 
-  // The "virtual time" of a thread is the amount of time a thread has
-  // actually run.  The first function indicates whether the OS supports
-  // this functionality for the current thread, and if so the second
-  // returns the elapsed virtual time for the current thread.
-  static bool supports_vtime();
-  static double elapsedVTime();
   static double elapsed_process_vtime();
 
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
