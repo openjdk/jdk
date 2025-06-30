@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #define SHARE_GC_G1_G1THREADLOCALDATA_HPP
 
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1RegionPinCache.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
@@ -36,7 +36,7 @@
 class G1ThreadLocalData {
 private:
   SATBMarkQueue _satb_mark_queue;
-  G1DirtyCardQueue _dirty_card_queue;
+  G1CardTable::CardValue* _byte_map_base;
 
   // Per-thread cache of pinned object count to reduce atomic operation traffic
   // due to region pinning. Holds the last region where the mutator pinned an
@@ -45,8 +45,8 @@ private:
 
   G1ThreadLocalData() :
       _satb_mark_queue(&G1BarrierSet::satb_mark_queue_set()),
-      _dirty_card_queue(&G1BarrierSet::dirty_card_queue_set()),
-      _pin_cache() {}
+      _byte_map_base(nullptr),
+      _pin_cache() { }
 
   static G1ThreadLocalData* data(Thread* thread) {
     assert(UseG1GC, "Sanity");
@@ -55,10 +55,6 @@ private:
 
   static ByteSize satb_mark_queue_offset() {
     return Thread::gc_data_offset() + byte_offset_of(G1ThreadLocalData, _satb_mark_queue);
-  }
-
-  static ByteSize dirty_card_queue_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(G1ThreadLocalData, _dirty_card_queue);
   }
 
 public:
@@ -74,10 +70,6 @@ public:
     return data(thread)->_satb_mark_queue;
   }
 
-  static G1DirtyCardQueue& dirty_card_queue(Thread* thread) {
-    return data(thread)->_dirty_card_queue;
-  }
-
   static ByteSize satb_mark_queue_active_offset() {
     return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active();
   }
@@ -90,13 +82,19 @@ public:
     return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf();
   }
 
-  static ByteSize dirty_card_queue_index_offset() {
-    return dirty_card_queue_offset() + G1DirtyCardQueue::byte_offset_of_index();
+  static ByteSize card_table_base_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(G1ThreadLocalData, _byte_map_base);
   }
 
-  static ByteSize dirty_card_queue_buffer_offset() {
-    return dirty_card_queue_offset() + G1DirtyCardQueue::byte_offset_of_buf();
+  static void set_byte_map_base(Thread* thread, G1CardTable::CardValue* new_byte_map_base) {
+    data(thread)->_byte_map_base = new_byte_map_base;
   }
+
+#ifndef PRODUCT
+  static G1CardTable::CardValue* get_byte_map_base(Thread* thread) {
+    return data(thread)->_byte_map_base;
+  }
+#endif
 
   static G1RegionPinCache& pin_count_cache(Thread* thread) {
     return data(thread)->_pin_cache;
