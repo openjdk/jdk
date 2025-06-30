@@ -1188,8 +1188,11 @@ public:
   // requires.
   static size_t humongous_obj_size_in_regions(size_t word_size);
 
-  // Print the maximum heap capacity.
+  // Returns the maximum heap capacity.
   size_t max_capacity() const override;
+
+  // Returns the soft maximum heap capacity.
+  size_t soft_max_capacity() const;
 
   Tickspan time_since_last_collection() const { return Ticks::now() - _collection_pause_end; }
 
