@@ -2546,17 +2546,8 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   int opc = in->Opcode();
 
   // If the node's base type is a subword type, check an additional set of nodes.
-  if (type == TypeInt::BYTE) {
-    switch (opc) {
-    case Op_ExtractB:
-      return true;
-    }
-  }
-
   if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
     switch (opc) {
-    case Op_ExtractS:
-    case Op_ExtractC:
     case Op_ReverseBytesS:
     case Op_ReverseBytesUS:
       return true;
@@ -2582,7 +2573,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   }
 
   // Vector nodes should not truncate.
-  if (type->isa_vect() || type->isa_vectmask()) {
+  if (type->isa_vect() || type->isa_vectmask() || in->isa_Reduction()) {
     return false;
   }
 
@@ -2603,13 +2594,9 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_CountTrailingZerosI:
   case Op_IsInfiniteF:
   case Op_IsInfiniteD:
-  case Op_AddReductionVI:
-  case Op_MulReductionVI:
-  case Op_AndReductionV:
-  case Op_OrReductionV:
-  case Op_XorReductionV:
-  case Op_MaxReductionV:
-  case Op_MinReductionV:
+  case Op_ExtractS:
+  case Op_ExtractC:
+  case Op_ExtractB:
     return false;
   default:
     // If this assert is hit, that means that we need to determine if the node can be safely truncated,
