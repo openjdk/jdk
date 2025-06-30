@@ -147,50 +147,31 @@ public class Lint {
 
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
-
-        // Already initialized?
-        if (values != null)
-            return;
-
-        // Initialize enabled categories based on "-Xlint" flags
-        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL)) {
-            // If -Xlint or -Xlint:all is given, enable all categories by default
-            values = EnumSet.allOf(LintCategory.class);
-        } else if (options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE)) {
-            // if -Xlint:none is given, disable all categories by default
-            values = LintCategory.newEmptySet();
-        } else {
-            // otherwise, enable on-by-default categories
-            values = LintCategory.newEmptySet();
-
-            Source source = Source.instance(context);
-            if (source.compareTo(Source.JDK9) >= 0) {
-                values.add(LintCategory.DEP_ANN);
-            }
-            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
-                values.add(LintCategory.STRICTFP);
-            }
-            values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
-            values.add(LintCategory.OPENS);
-            values.add(LintCategory.MODULE);
-            values.add(LintCategory.REMOVAL);
-            if (!options.isSet(Option.PREVIEW)) {
-                values.add(LintCategory.PREVIEW);
-            }
-            values.add(LintCategory.IDENTITY);
-            values.add(LintCategory.INCUBATING);
+        if (values == null) {
+            values = options.getLintCategoriesOf(Option.XLINT, this::getDefaults);
+            suppressedValues = LintCategory.newEmptySet();
         }
+    }
 
-        // Look for specific overrides
-        for (LintCategory lc : LintCategory.values()) {
-            if (options.isLintExplicitlyEnabled(lc)) {
-                values.add(lc);
-            } else if (options.isLintExplicitlyDisabled(lc)) {
-                values.remove(lc);
-            }
+    private EnumSet<LintCategory> getDefaults() {
+        Source source = Source.instance(context);
+        EnumSet<LintCategory> values = LintCategory.newEmptySet();
+        if (source.compareTo(Source.JDK9) >= 0) {
+            values.add(LintCategory.DEP_ANN);
         }
-
-        suppressedValues = LintCategory.newEmptySet();
+        if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
+            values.add(LintCategory.STRICTFP);
+        }
+        values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
+        values.add(LintCategory.OPENS);
+        values.add(LintCategory.MODULE);
+        values.add(LintCategory.REMOVAL);
+        if (!options.isSet(Option.PREVIEW)) {
+            values.add(LintCategory.PREVIEW);
+        }
+        values.add(LintCategory.IDENTITY);
+        values.add(LintCategory.INCUBATING);
+        return values;
     }
 
     @Override
