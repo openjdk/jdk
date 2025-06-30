@@ -498,7 +498,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
     SerialGCRefProcProxyTask task(is_alive, keep_alive, follow_stack_closure);
-    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = ref_processor()->process_discovered_references(task, nullptr, pt);
     pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
   }
