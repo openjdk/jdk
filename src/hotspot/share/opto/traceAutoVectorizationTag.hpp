@@ -46,6 +46,7 @@
   flags(SW_INFO,                    "Trace SuperWord info (equivalent to TraceSuperWord)") \
   flags(SW_VERBOSE,                 "Trace SuperWord verbose (all SW tags enabled)") \
   flags(ALIGN_VECTOR,               "Trace AlignVector") \
+  flags(SPECULATIVE_ALIASING_ANALYSIS, "Trace Speculative Aliasing Analysis") \
   flags(SPECULATIVE_RUNTIME_CHECKS, "Trace VTransform::apply_speculative_runtime_checks") \
   flags(VTRANSFORM,                 "Trace VTransform Graph") \
   flags(ALL,                        "Trace everything (very verbose)")
