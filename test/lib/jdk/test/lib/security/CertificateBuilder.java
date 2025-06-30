@@ -43,6 +43,7 @@ import sun.security.x509.AccessDescription;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.IPAddressName;
 import sun.security.x509.SubjectKeyIdentifierExtension;
 import sun.security.x509.BasicConstraintsExtension;
 import sun.security.x509.CertificateSerialNumber;
@@ -226,6 +227,26 @@ public class CertificateBuilder {
             GeneralNames gNames = new GeneralNames();
             for (String name : dnsNames) {
                 gNames.add(new GeneralName(new DNSName(name)));
+            }
+            addExtension(new SubjectAlternativeNameExtension(false,
+                    gNames));
+        }
+        return this;
+    }
+
+    /**
+     * Helper method to add IPAddress types for the SAN extension
+     *
+     * @param ipAddresses A {@code List} of names to add as IPAddress
+     *         types
+     * @throws IOException if an encoding error occurs.
+     */
+    public CertificateBuilder addSubjectAltNameIPExt(List<String> ipAddresses)
+            throws IOException {
+        if (!ipAddresses.isEmpty()) {
+            GeneralNames gNames = new GeneralNames();
+            for (String name : ipAddresses) {
+                gNames.add(new GeneralName(new IPAddressName(name)));
             }
             addExtension(new SubjectAlternativeNameExtension(false,
                     gNames));
