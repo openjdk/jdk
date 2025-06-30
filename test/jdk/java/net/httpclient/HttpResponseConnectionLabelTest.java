@@ -29,10 +29,13 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  *
- * @comment Use a higher idle timeout to increase the chances of the same connection being used for sequential HTTP requests
- * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120 HttpResponseConnectionLabelTest
+ * @comment Use a higher idle timeout to increase the chances of
+ *    the same connection being used for sequential HTTP requests
+ * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120
+ *                    HttpResponseConnectionLabelTest
  */
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.internal.net.http.common.Logger;
@@ -55,6 +58,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -64,6 +68,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -83,8 +89,12 @@ class HttpResponseConnectionLabelTest {
 
     private static final SSLContext SSL_CONTEXT = createSslContext();
 
-    // Start with a fresh client having no connections in the pool
-    private final HttpClient client = HttpClient.newBuilder().sslContext(SSL_CONTEXT).proxy(NO_PROXY).build();
+    // For each test instance, start with a fresh client having no connections in the pool
+    private final HttpClient client = HttpServerAdapters
+            .createClientBuilderForH3()
+            .sslContext(SSL_CONTEXT)
+            .proxy(NO_PROXY)
+            .build();
 
     // Primary server-client pairs
 
@@ -96,6 +106,8 @@ class HttpResponseConnectionLabelTest {
 
     private static final ServerRequestPair PRI_HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
 
+    private static final ServerRequestPair PRI_HTTP3 = ServerRequestPair.of(Version.HTTP_3, true);
+
     // Secondary server-client pairs
 
     private static final ServerRequestPair SEC_HTTP1 = ServerRequestPair.of(Version.HTTP_1_1, false);
@@ -105,6 +117,8 @@ class HttpResponseConnectionLabelTest {
     private static final ServerRequestPair SEC_HTTP2 = ServerRequestPair.of(Version.HTTP_2, false);
 
     private static final ServerRequestPair SEC_HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
+
+    private static final ServerRequestPair SEC_HTTP3 = ServerRequestPair.of(Version.HTTP_3, true);
 
     private static SSLContext createSslContext() {
         try {
@@ -140,8 +154,8 @@ class HttpResponseConnectionLabelTest {
             AtomicReference<CountDownLatch> serverResponseLatchRef = new AtomicReference<>();
             server.addHandler(createServerHandler(serverId, serverResponseLatchRef), handlerPath);
 
-            // Create the client and the request
-            HttpRequest request = HttpRequest.newBuilder(requestUri).version(version).build();
+            // Create the request
+            HttpRequest request = createRequest(version, requestUri);
 
             // Create the pair
             ServerRequestPair pair = new ServerRequestPair(
@@ -168,13 +182,15 @@ class HttpResponseConnectionLabelTest {
                 // - Only the HTTP/1.1 test server gets wedged when running
                 //   tests involving parallel request handling.
                 //
-                // - The HTTP/2 test server creates its own sufficiently sized
-                //   executor, and the thread names used there makes it easy to
-                //   find which server they belong to.
+                // - The HTTP/2 and HTTP/3 test servers create their own
+                //   sufficiently sized executor, and the thread names used
+                //   there makes it easy to find which server they belong to.
                 executorRef[0] = Version.HTTP_1_1.equals(version)
                         ? createExecutor(version, secure, serverId)
                         : null;
-                return HttpTestServer.create(version, sslContext, executorRef[0]);
+                return Version.HTTP_3.equals(version)
+                        ? HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, executorRef[0])
+                        : HttpTestServer.create(version, sslContext, executorRef[0]);
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
             }
@@ -196,7 +212,7 @@ class HttpResponseConnectionLabelTest {
             return (exchange) -> {
                 String responseBody = "" + SERVER_RESPONSE_COUNTER.getAndIncrement();
                 String connectionKey = exchange.getConnectionKey();
-                LOGGER.log("Server[%d] has received request (connectionKey=%s)", serverId, connectionKey);
+                LOGGER.log("Server[%s] has received request (connectionKey=%s)", serverId, connectionKey);
                 try (exchange) {
 
                     // Participate in the latch count down
@@ -232,6 +248,14 @@ class HttpResponseConnectionLabelTest {
             };
         }
 
+        private static HttpRequest createRequest(Version version, URI requestUri) {
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(requestUri).version(version);
+            if (Version.HTTP_3.equals(version)) {
+                requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+            }
+            return requestBuilder.build();
+        }
+
         @Override
         public String toString() {
             String version = server.getVersion().toString();
@@ -244,7 +268,9 @@ class HttpResponseConnectionLabelTest {
     static void closeServers() {
         Exception[] exceptionRef = {null};
         Stream
-                .of(PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2, SEC_HTTP1, SEC_HTTPS1, SEC_HTTP2, SEC_HTTPS2)
+                .of(
+                        PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2, PRI_HTTP3,
+                        SEC_HTTP1, SEC_HTTPS1, SEC_HTTP2, SEC_HTTPS2, SEC_HTTP3)
                 .flatMap(pair -> Stream.<Runnable>of(
                         pair.server::stop,
                         () -> { if (pair.executor != null) { pair.executor.shutdownNow(); } }))
@@ -274,7 +300,8 @@ class HttpResponseConnectionLabelTest {
                 PRI_HTTP1,
                 PRI_HTTPS1,
                 PRI_HTTP2,
-                PRI_HTTPS2
+                PRI_HTTPS2,
+                PRI_HTTP3
         };
     }
 
@@ -283,8 +310,9 @@ class HttpResponseConnectionLabelTest {
     void testParallelRequestsToSameServer(ServerRequestPair pair) throws Exception {
 
         // There is no implementation-agnostic reliable way to force admission
-        // of multiple connections targeting the same server to an HTTP/2 pool.
-        if (Version.HTTP_2.equals(pair.server.getVersion())) {
+        // of multiple connections targeting the same server to an HTTP/2 or
+        // HTTP/3 client connection pool.
+        if (Set.of(Version.HTTP_2, Version.HTTP_3).contains(pair.server.getVersion())) {
             return;
         }
 
@@ -359,9 +387,9 @@ class HttpResponseConnectionLabelTest {
 
     static Stream<Arguments> testParallelRequestsToDifferentServers() {
         return Stream
-                .of(PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2)
+                .of(PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2, PRI_HTTP3)
                 .flatMap(source -> Stream
-                        .of(SEC_HTTP1, SEC_HTTPS1, SEC_HTTP2, SEC_HTTPS2)
+                        .of(SEC_HTTP1, SEC_HTTPS1, SEC_HTTP2, SEC_HTTPS2, SEC_HTTP3)
                         .map(target -> Arguments.of(source, target)));
     }
 
@@ -440,7 +468,7 @@ class HttpResponseConnectionLabelTest {
     }
 
     static Stream<ServerRequestPair> testSerialRequestsToSameServer() {
-        return Stream.of(PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2);
+        return Stream.of(PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2, PRI_HTTP3);
     }
 
     @ParameterizedTest

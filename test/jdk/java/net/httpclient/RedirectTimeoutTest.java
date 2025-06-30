@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,8 @@
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors,trace -Djdk.internal.httpclient.debug=false RedirectTimeoutTest
  */
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestResponseHeaders;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.TestException;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -54,16 +52,24 @@ import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
+
+import javax.net.ssl.SSLContext;
 
 import static java.net.http.HttpClient.Redirect.ALWAYS;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.test.lib.Utils.adjustTimeout;
 
-public class RedirectTimeoutTest {
+public class RedirectTimeoutTest implements HttpServerAdapters {
 
-    static HttpTestServer h1TestServer, h2TestServer;
-    static URI h1Uri, h1RedirectUri, h2Uri, h2RedirectUri, h2WarmupUri, testRedirectURI;
+    static SSLContext sslContext;
+    static HttpTestServer h1TestServer, h2TestServer, h3TestServer;
+    static URI h1Uri, h1RedirectUri, h2Uri, h2RedirectUri,
+            h3Uri, h3RedirectUri, h2WarmupUri, h3WarmupUri, testRedirectURI;
     private static final long TIMEOUT_MILLIS =  3000L; // 3s
     private static final long SLEEP_TIME = 1500L; // 1.5s
     public static final int ITERATIONS = 4;
@@ -71,33 +77,47 @@ public class RedirectTimeoutTest {
 
     @BeforeTest
     public void setup() throws IOException {
+        sslContext = new SimpleSSLContext().get();
+        if (sslContext == null)
+            throw new AssertionError("Unexpected null sslContext");
+
         h1TestServer = HttpTestServer.create(HTTP_1_1);
         h2TestServer = HttpTestServer.create(HTTP_2);
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h1Uri = URI.create("http://" + h1TestServer.serverAuthority() + "/h1_test");
         h1RedirectUri = URI.create("http://" + h1TestServer.serverAuthority() + "/h1_redirect");
         h2Uri = URI.create("http://" + h2TestServer.serverAuthority() + "/h2_test");
         h2RedirectUri = URI.create("http://" + h2TestServer.serverAuthority() + "/h2_redirect");
+        h3Uri = URI.create("https://" + h3TestServer.serverAuthority() + "/h3_test");
+        h3RedirectUri = URI.create("https://" + h3TestServer.serverAuthority() + "/h3_redirect");
         h2WarmupUri = URI.create("http://" + h2TestServer.serverAuthority() + "/h2_warmup");
+        h3WarmupUri = URI.create("https://" + h3TestServer.serverAuthority() + "/h3_warmup");
         h1TestServer.addHandler(new GetHandler(), "/h1_test");
         h1TestServer.addHandler(new RedirectHandler(), "/h1_redirect");
         h2TestServer.addHandler(new GetHandler(), "/h2_test");
         h2TestServer.addHandler(new RedirectHandler(), "/h2_redirect");
-        h2TestServer.addHandler(new Http2Warmup(), "/h2_warmup");
+        h3TestServer.addHandler(new GetHandler(), "/h3_test");
+        h3TestServer.addHandler(new RedirectHandler(), "/h3_redirect");
+        h2TestServer.addHandler(new HttpWarmup(), "/h2_warmup");
+        h3TestServer.addHandler(new HttpWarmup(), "/h3_warmup");
         h1TestServer.start();
         h2TestServer.start();
+        h3TestServer.start();
     }
 
     @AfterTest
     public void teardown() {
         h1TestServer.stop();
         h2TestServer.stop();
+        h3TestServer.stop();
     }
 
     @DataProvider(name = "testData")
     public Object[][] testData() {
         return new Object[][] {
+                { HTTP_3, h3Uri, h3RedirectUri },
                 { HTTP_1_1, h1Uri, h1RedirectUri },
-                { HTTP_2, h2Uri, h2RedirectUri }
+                { HTTP_2, h2Uri, h2RedirectUri },
         };
     }
 
@@ -105,16 +125,31 @@ public class RedirectTimeoutTest {
     public void test(Version version, URI uri, URI redirectURI) throws InterruptedException {
         out.println("Testing for " + version);
         testRedirectURI = redirectURI;
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder().followRedirects(ALWAYS);
-        HttpRequest request = HttpRequest.newBuilder().uri(uri)
+        HttpClient.Builder clientBuilder = version == HTTP_3
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        clientBuilder = clientBuilder.followRedirects(ALWAYS).sslContext(sslContext);
+        HttpRequest.Builder reqBuilder = HttpRequest.newBuilder().uri(uri);
+        if (version == HTTP_3) {
+            reqBuilder = reqBuilder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        HttpRequest request = reqBuilder
                 .GET()
                 .version(version)
                 .timeout(Duration.ofMillis(adjustTimeout(TIMEOUT_MILLIS)))
                 .build();
 
         try (HttpClient client = clientBuilder.build()) {
-            if (version.equals(HTTP_2))
-                client.send(HttpRequest.newBuilder(h2WarmupUri).HEAD().build(), HttpResponse.BodyHandlers.discarding());
+            Optional<URI> warmupUri = switch (version) {
+                case HTTP_1_1 -> Optional.empty();
+                case HTTP_2 -> Optional.of(h2WarmupUri);
+                case HTTP_3 -> Optional.of(h3WarmupUri);
+            };
+            if (warmupUri.isPresent()) {
+                HttpRequest head = reqBuilder.copy().uri(warmupUri.get())
+                        .version(version).HEAD().build();
+                client.send(head, HttpResponse.BodyHandlers.discarding());
+            }
             /*
                 With TIMEOUT_MILLIS set to 1500ms and the server's RedirectHandler sleeping for 750ms before responding
                 to each request, 4 iterations will take a guaranteed minimum time of 3000ms which will ensure that any
@@ -135,7 +170,7 @@ public class RedirectTimeoutTest {
         }
     }
 
-    public static class Http2Warmup implements HttpTestHandler {
+    public static class HttpWarmup implements HttpTestHandler {
 
         @Override
         public void handle(HttpTestExchange t) throws IOException {
