@@ -95,3 +95,17 @@ $(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS_JDK) $(GENDATA_JAVA_SECURITY_SRC) $(REST
 TARGETS += $(GENDATA_JAVA_SECURITY)
 
 ################################################################################
+
+GENDATA_ICUBINARY_SRCDIR := $(MODULE_SRC)/share/classes/jdk/internal/icu/impl/data/icudt76b
+GENDATA_ICUBINARY_DIR := $(JDK_OUTPUTDIR)/modules/java.base/jdk/internal/icu/impl/data/icudt76b
+
+GENDATA_ICUBINARY_SRC := $(wildcard $(GENDATA_ICUBINARY_SRCDIR)/*)
+GENDATA_ICUBINARY := $(patsubst $(GENDATA_ICUBINARY_SRCDIR)/%, $(GENDATA_ICUBINARY_DIR)/%, $(GENDATA_ICUBINARY_SRC))
+
+$(GENDATA_ICUBINARY_DIR)/%: $(GENDATA_ICUBINARY_SRCDIR)/% $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(@D))
+	$(TOOL_BASE64CODER) -d -i $< -o $@
+
+TARGETS += $(GENDATA_ICUBINARY)
+
+################################################################################
