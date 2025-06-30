@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +24,8 @@
  */
 
 /**
- * @test SharedTrampolineTest id=C2
- * @summary Checks that trampolines can be shared for static method.
+ * @test SharedRuntimeCallTrampolineTest id=C2
+ * @summary Checks that trampolines can be shared between runtime calls.
  * @bug 8280152
  * @library /test/lib
  *
@@ -33,22 +34,24 @@
  * @requires os.arch=="aarch64"
  * @requires vm.debug
  *
- * @run driver compiler.sharedstubs.SharedTrampolineTest -XX:-TieredCompilation
+ * @run driver compiler.sharedstubs.SharedRuntimeCallTrampolineTest -XX:-TieredCompilation
  */
 
 package compiler.sharedstubs;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class SharedTrampolineTest {
+public class SharedRuntimeCallTrampolineTest {
     private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
 
     private static void runTest(String compiler, String test) throws Exception {
-        String testClassName = SharedTrampolineTest.class.getName() + "$" + test;
+        String testClassName = SharedRuntimeCallTrampolineTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
         command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
@@ -56,7 +59,6 @@ public class SharedTrampolineTest {
         command.add("-XX:+PrintRelocations");
         command.add("-XX:CompileCommand=compileonly," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "test");
-        command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log");
         command.add(testClassName);
         command.add("a");
 
@@ -72,38 +74,64 @@ public class SharedTrampolineTest {
     }
 
     public static void main(String[] args) throws Exception {
-        String[] tests = new String[] {"StaticMethodTest"};
+        String[] tests = new String[] { "RuntimeCallTest" };
         for (String test : tests) {
             runTest(args[0], test);
         }
     }
 
+    private static String getTestMethodStdout(OutputAnalyzer output) {
+        return Pattern.compile("Compiled method.*RuntimeCallTest::test").split(output.getStdout(), 2)[1];
+    }
+
     private static void checkOutput(OutputAnalyzer output) {
-        List<String> addrs = Pattern.compile("\\(trampoline_stub\\) addr=(\\w+) .*\\[trampoline owner")
-            .matcher(output.getStdout())
-            .results()
-            .map(m -> m.group(1))
-            .toList();
-        if (addrs.stream().distinct().count() >= addrs.size()) {
-            throw new RuntimeException("No runtime trampoline stubs reused: distinct " + addrs.stream().distinct().count() + ", in total " + addrs.size());
+        String testMethodStdout = getTestMethodStdout(output);
+        List<String> callAddrs = Pattern.compile("\\(runtime_call\\) addr=(\\w+) .*\\[destination")
+                .matcher(testMethodStdout)
+                .results()
+                .map(m -> m.group(1))
+                .toList();
+
+        record TrampolineReloc(String addr, String owner) {
+        }
+        List<TrampolineReloc> trampolineRelocs = Pattern
+                .compile("\\(trampoline_stub\\) addr=(\\w+) .*\\[trampoline owner=(\\w+)]")
+                .matcher(testMethodStdout)
+                .results()
+                .map(m -> new TrampolineReloc(m.group(1), m.group(2)))
+                .toList();
+
+        List<String> trampolineAddrs = trampolineRelocs.stream()
+                .filter(reloc -> callAddrs.contains(reloc.owner()))
+                .map(reloc -> new String(reloc.addr()))
+                .collect(Collectors.toList());
+        if (trampolineAddrs.stream().distinct().count() >= trampolineAddrs.size()) {
+            throw new RuntimeException("No runtime trampoline stubs reused: distinct "
+                    + trampolineAddrs.stream().distinct().count() + ", in total " + trampolineAddrs.size());
         }
     }
 
-    public static class StaticMethodTest {
-        private static void log(int i, String msg) {
+    public static class RuntimeCallTest {
+        private static volatile Object blackholeObj;
+
+        static class Dummy {
+            int x;
+
+            Dummy(int x) {
+                this.x = x;
+            }
         }
 
-        static void test(int i, String[] args) {
-            if (i % args.length == 0) {
-                log(i, "args[0] = " + args[0]);
-            } else {
-                log(i, "No args");
-            }
+        static void test(int i) {
+            Object obj = new Dummy(i);
+            blackholeObj = obj;
+            obj = new Dummy(i % 2);
+            blackholeObj = obj;
         }
 
         public static void main(String[] args) {
             for (int i = 1; i < ITERATIONS_TO_HEAT_LOOP; ++i) {
-                test(i, args);
+                test(i);
             }
         }
     }
