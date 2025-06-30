@@ -110,7 +110,7 @@ public:
     return _short_term_pause_time_ratio;
   }
 
-  uint number_of_recorded_pause_times() const {
+  static constexpr uint max_num_of_recorded_pause_times() {
     return NumPrevPausesForHeuristics;
   }
 
