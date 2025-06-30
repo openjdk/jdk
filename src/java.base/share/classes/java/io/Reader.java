@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Abstract class for reading character streams.  The only methods that a
@@ -450,76 +451,55 @@ public abstract class Reader implements Readable, Closeable {
      */
     public List<String> readAllLines() throws IOException {
         List<String> lines = new ArrayList<>();
-        char[] cb = new char[TRANSFER_BUFFER_SIZE];
+        char[] cb = new char[1024];
 
-        int writePos = 0;
-        boolean hasFrag = false;
-        int fragLen = 0;
+        int start = 0;
+        int pos = 0;
+        int limit = 0;
         boolean skipLF = false;
-
         int n;
-        while ((n = read(cb, writePos, cb.length - writePos)) != -1) {
-            int pos = writePos;
-            int limit = pos + n;
+        while ((n = read(cb, pos, cb.length - pos)) != -1) {
+            limit = pos + n;
             while (pos < limit) {
-                // find next line terminator
-                int term = pos;
-                while (term < limit) {
-                    char c = cb[term];
-                    if (c == '\n' || c == '\r')
-                        break;
-                    term++;
-                }
-
-                if (term < limit) { // line terminator
-                    boolean isCR = (cb[term] == '\r');
-                    if (isCR || !(skipLF && term == pos)) {
-                        // line terminator is a CR or an LF not just after a CR
-                        if (hasFrag) {
-                            lines.add(new String(cb, 0, term));
-                            hasFrag = false;
-                        } else {
-                            lines.add(new String(cb, pos, term - pos));
-                        }
-                    }
-                    pos = term + 1;
-                    if (pos == limit)
-                        writePos = 0;
-                    else if (isCR && cb[pos] == '\n') { // pos < limit
+                if (skipLF) {
+                    if (cb[pos] == '\n') {
                         pos++;
-                        isCR = false;
+                        start++;
                     }
-                    skipLF = isCR;
-                } else { // no line terminator before reaching end of buffer
-                    int len = limit - pos;
-                    int fragPos;
-                    if (hasFrag) {
-                        fragPos = 0;
-                        fragLen += len;
-                    } else {
-                        fragPos = pos;
-                        fragLen = len;
-                    }
-                    if (fragLen >= cb.length/2) {
-                        // allocate larger buffer and copy chars to beginning
-                        char[] tmp = new char[2*cb.length];
-                        System.arraycopy(cb, fragPos, tmp, 0, fragLen);
-                        cb = tmp;
-                    } else if (fragPos != 0) {
-                        // move fragment to beginning of buffer
-                        System.arraycopy(cb, fragPos, cb, 0, fragLen);
-                    }
-                    writePos = fragLen;
-                    hasFrag = true;
-                    pos = limit;
                     skipLF = false;
+                }
+                while (pos < limit) {
+                    char c = cb[pos++];
+                    if (c == '\n' || c == '\r') {
+                        lines.add(new String(cb, start, pos - 1 - start));
+                        skipLF = (c == '\r');
+                        start = pos;
+                        break;
+                    }
+                }
+                if (pos == limit) {
+                    int len = limit - start;
+                    if (len >= cb.length) {
+                        // allocate larger buffer and copy chars to beginning
+                        int newLength = ArraysSupport.newLength(cb.length,
+                                                                cb.length >>> 1,
+                                                                cb.length);
+                        char[] tmp = new char[newLength];
+                        System.arraycopy(cb, start, tmp, 0, len);
+                        cb = tmp;
+                    } else if (start != 0 && len != 0) {
+                        // move fragment to beginning of buffer
+                        System.arraycopy(cb, start, cb, 0, len);
+                    }
+                    pos = limit = len;
+                    start = 0;
+                    break;
                 }
             }
         }
-
         // add a string if EOS terminates the last line
-        if (hasFrag)
-            lines.add(new String(cb, 0, fragLen));
+        if (limit > start)
+            lines.add(new String(cb, start, limit - start));
 
         return Collections.unmodifiableList(lines);
     }
