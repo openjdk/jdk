@@ -240,9 +240,6 @@ import jdk.internal.vm.ScopedValueContainer;
  * @since 25
  */
 public final class ScopedValue<T> {
-    private static final JavaUtilConcurrentTLRAccess THREAD_LOCAL_RANDOM_ACCESS
-        = SharedSecrets.getJavaUtilConcurrentTLRAccess();
-
     private final int hash;
 
     @Override
@@ -769,6 +766,9 @@ public final class ScopedValue<T> {
             // or equal to 2.
             private static final int MAX_CACHE_SIZE = 16;
 
+            private static final JavaUtilConcurrentTLRAccess THREAD_LOCAL_RANDOM_ACCESS
+                = SharedSecrets.getJavaUtilConcurrentTLRAccess();
+
             static {
                 final String propertyName = "java.lang.ScopedValue.cacheSize";
                 var sizeString = System.getProperty(propertyName, "16");
@@ -871,7 +871,7 @@ public final class ScopedValue<T> {
         // primary slot is approximately twice as likely to be chosen as the
         // secondary one.
         private static boolean chooseVictim() {
-            int r = THREAD_LOCAL_RANDOM_ACCESS.nextSecondaryThreadLocalRandomSeed();
+            int r = Constants.THREAD_LOCAL_RANDOM_ACCESS.nextSecondaryThreadLocalRandomSeed();
             return (r & 15) >= 5;
         }
 
