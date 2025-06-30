@@ -142,7 +142,6 @@ tier1_common = \
   sources \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
-  gtest/LockStackGtests.java \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \
   gtest/NMTGtests.java \
@@ -416,6 +415,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
+ -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
@@ -517,6 +517,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
+ -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \

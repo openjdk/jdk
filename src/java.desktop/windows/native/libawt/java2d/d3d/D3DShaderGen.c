@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,8 @@ static char *strHeaderFile = "D3DShaders.h";
     (((flags) & (flagbit)) != 0)
 
 // REMIND
-//#define J2dTraceLn(a, b) fprintf(stderr, "%s\n", b);
-//#define J2dTraceLn1(a, b, c) fprintf(stderr, b, c);
-#define J2dTraceLn(a, b)
-#define J2dTraceLn1(a, b, c)
+//#define J2dTraceLn(level, ...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"));
+#define J2dTraceLn(level, ...)
 
 /************************* General shader support ***************************/
 
@@ -212,9 +210,9 @@ D3DShaderGen_GenerateConvolveShader(int flags)
     char *edge;
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateConvolveShader: flags=%d",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DShaderGen_GenerateConvolveShader: flags=%d",
+               flags);
 
     if (IS_SET(CONVOLVE_EDGE_ZERO_FILL)) {
         // EDGE_ZERO_FILL: fill in zero at the edges
@@ -273,9 +271,9 @@ D3DShaderGen_GenerateRescaleShader(int flags)
     char *postRescale = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateRescaleShader: flags=%d",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DShaderGen_GenerateRescaleShader: flags=%d",
+               flags);
 
     if (IS_SET(RESCALE_NON_PREMULT)) {
         preRescale  = "srcColor.rgb /= srcColor.a;";
@@ -338,9 +336,9 @@ D3DShaderGen_GenerateLookupShader(int flags)
     char *postLookup = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateLookupShader: flags=%d",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DShaderGen_GenerateLookupShader: flags=%d",
+               flags);
 
     if (IS_SET(LOOKUP_USE_SRC_ALPHA)) {
         // when numComps is 1 or 3, the alpha is not looked up in the table;
@@ -427,9 +425,9 @@ D3DShaderGen_GenerateBasicGradShader(int flags)
     char *maskCode = "";
     char finalSource[3000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateBasicGradShader",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DShaderGen_GenerateBasicGradShader",
+               flags);
 
     if (IS_SET(BASIC_GRAD_IS_CYCLIC)) {
         cycleCode =
@@ -689,9 +687,9 @@ D3DShaderGen_GenerateLinearGradShader(int flags)
     char *paintVars;
     char *distCode;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateLinearGradShader",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DShaderGen_GenerateLinearGradShader",
+               flags);
 
     /*
      * To simplify the code and to make it easier to upload a number of
@@ -720,9 +718,9 @@ D3DShaderGen_GenerateRadialGradShader(int flags)
     char *paintVars;
     char *distCode;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateRadialGradShader",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DShaderGen_GenerateRadialGradShader",
+               flags);
 
     /*
      * To simplify the code and to make it easier to upload a number of

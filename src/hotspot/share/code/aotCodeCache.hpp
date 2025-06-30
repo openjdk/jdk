@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,6 @@ protected:
     uint _compressedOopShift;
     uint _compressedKlassShift;
     uint _contendedPaddingWidth;
-    uint _objectAlignment;
     uint _gc;
     enum Flags {
       none                     = 0,
@@ -206,7 +205,7 @@ protected:
     uint   _C2_blobs_count;
     Config _config;
 
-public:
+  public:
     void init(uint cache_size,
               uint strings_count,  uint strings_offset,
               uint entries_count,  uint entries_offset,
@@ -236,8 +235,8 @@ public:
     uint C1_blobs_count() const { return _C1_blobs_count; }
     uint C2_blobs_count() const { return _C2_blobs_count; }
 
-    bool verify_config(uint load_size)  const;
-    bool verify_vm_config() const { // Called after Universe initialized
+    bool verify(uint load_size)  const;
+    bool verify_config() const { // Called after Universe initialized
       return _config.verify();
     }
   };
@@ -298,7 +297,6 @@ public:
   void load_strings();
   int store_strings();
 
-  static void init_extrs_table() NOT_CDS_RETURN;
   static void init_early_stubs_table() NOT_CDS_RETURN;
   static void init_shared_blobs_table() NOT_CDS_RETURN;
   static void init_early_c1_table() NOT_CDS_RETURN;
@@ -349,29 +347,31 @@ public:
 // Static access
 
 private:
-  static AOTCodeCache*  _cache;
+  static AOTCodeCache* _cache;
+  DEBUG_ONLY( static bool _passed_init2; )
 
   static bool open_cache(bool is_dumping, bool is_using);
-  static bool verify_vm_config() {
-    if (is_on_for_use()) {
-      return _cache->_load_header->verify_vm_config();
+  bool verify_config() {
+    if (for_use()) {
+      return _load_header->verify_config();
     }
     return true;
   }
 public:
-  static AOTCodeCache* cache() { return _cache; }
+  static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
   static void close() NOT_CDS_RETURN;
-  static bool is_on() CDS_ONLY({ return _cache != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
+  static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
   static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
-
-  static bool is_dumping_adapter() NOT_CDS_RETURN_(false);
-  static bool is_using_adapter() NOT_CDS_RETURN_(false);
-
   static bool is_dumping_stub() NOT_CDS_RETURN_(false);
+  static bool is_dumping_adapter() NOT_CDS_RETURN_(false);
   static bool is_using_stub() NOT_CDS_RETURN_(false);
+  static bool is_using_adapter() NOT_CDS_RETURN_(false);
+  static void enable_caching() NOT_CDS_RETURN;
+  static void disable_caching() NOT_CDS_RETURN;
+  static bool is_caching_enabled() NOT_CDS_RETURN_(false);
 
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 
