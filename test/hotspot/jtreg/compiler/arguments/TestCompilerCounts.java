@@ -192,7 +192,6 @@ public class TestCompilerCounts {
             case Tiered -> TieredBufSize;
         };
         return Math.max(Math.min(count, max_count), min_count);
-
     }
 
     public static int log2(int v) {
