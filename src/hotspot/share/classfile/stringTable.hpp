@@ -40,7 +40,7 @@ class StringTableConfig;
 
 class StringTable : AllStatic {
   friend class StringTableConfig;
-
+  class VerifyCompStrings;
   static volatile bool _has_work;
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
@@ -74,6 +74,7 @@ private:
 
   static void item_added();
   static void item_removed();
+  static size_t items_count_acquire();
 
   static oop intern(const StringWrapper& name, TRAPS);
   static oop do_intern(const StringWrapper& name, uintx hash, TRAPS);
