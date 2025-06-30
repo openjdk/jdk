@@ -839,7 +839,7 @@ public class SecureRandom extends java.util.Random {
     }
 
     @Override
-    public synchronized long nextLong() {
+    public long nextLong() {
         byte[] b = new byte[8];
         nextBytes(b); // Calls engineNextBytes internally
         return ByteArray.getLong(b, 0);
