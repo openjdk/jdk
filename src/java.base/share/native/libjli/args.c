@@ -149,6 +149,19 @@ static void checkArg(const char *arg) {
     }
 }
 
+static char *computeToken(JLI_List *parts, const char *anchor, const char *nextc) {
+    char *token;
+    if ((*parts)->size == 0) {
+        token = clone_substring(anchor, nextc - anchor);
+    } else {
+        JLI_List_addSubstring(*parts, anchor, nextc - anchor);
+        token = JLI_List_combine(*parts);
+        JLI_List_free(*parts);
+        *parts = JLI_List_new(4);
+    }
+    return token;
+}
+
 /*
        [\n\r]   +------------+                        +------------+ [\n\r]
       +---------+ IN_COMMENT +<------+                | IN_ESCAPE  +---------+
@@ -246,14 +259,7 @@ static char* nextToken(__ctx_args *pctx) {
                 // fall through
             case '\n':
             case '\r':
-                if (pctx->parts->size == 0) {
-                    token = clone_substring(anchor, nextc - anchor);
-                } else {
-                    JLI_List_addSubstring(pctx->parts, anchor, nextc - anchor);
-                    token = JLI_List_combine(pctx->parts);
-                    JLI_List_free(pctx->parts);
-                    pctx->parts = JLI_List_new(4);
-                }
+                token = computeToken(&pctx->parts, anchor, nextc);
                 pctx->cptr = nextc + 1;
                 pctx->state = FIND_NEXT;
                 return token;
@@ -262,6 +268,13 @@ static char* nextToken(__ctx_args *pctx) {
                     continue;
                 }
                 pctx->state = IN_COMMENT;
+                // return non-zero length token, terminated by the number sign
+                if (nextc - anchor > 0) {
+                    token = computeToken(&pctx->parts, anchor, nextc);
+                    pctx->cptr = nextc + 1;
+                    return token;
+                }
+                // anchor after number sign
                 anchor = nextc + 1;
                 break;
             case '\\':
