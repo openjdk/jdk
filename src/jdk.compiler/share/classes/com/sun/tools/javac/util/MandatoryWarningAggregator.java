@@ -214,7 +214,7 @@ class MandatoryWarningAggregator {
     }
 
     private void addNote(List<JCDiagnostic> list, JavaFileObject file, String msg, Object... args) {
-        list.add(log.diags.mandatoryNote(log.getSource(file), new Note("compiler", msg, args)));
+        list.add(log.diags.mandatoryNote(log.getSource(file), new Note(null, "compiler", msg, args)));
     }
 
     /**

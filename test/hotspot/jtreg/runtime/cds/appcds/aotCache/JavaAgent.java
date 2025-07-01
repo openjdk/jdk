@@ -28,8 +28,6 @@
  * @summary -javaagent should be allowed in AOT workflow. However, classes transformed/redefined by agents will not
  *          be cached.
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build JavaAgent JavaAgentTransformer Util
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp JavaAgentApp$ShouldBeTransformed

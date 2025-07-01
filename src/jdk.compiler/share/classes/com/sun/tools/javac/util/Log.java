@@ -160,7 +160,8 @@ public class Log extends AbstractLog {
 
             // Apply hackery for REQUIRES_TRANSITIVE_AUTOMATIC (see also Check.checkModuleRequires())
             if (diag.getCode().equals(RequiresTransitiveAutomatic.key()) && !lint.isEnabled(REQUIRES_TRANSITIVE_AUTOMATIC, true)) {
-                reportWithLint(diags.warning(diag.getDiagnosticSource(), diag.getDiagnosticPosition(), RequiresAutomatic), lint);
+                reportWithLint(
+                  diags.warning(null, diag.getDiagnosticSource(), diag.getDiagnosticPosition(), RequiresAutomatic), lint);
                 return;
             }
 
@@ -173,7 +174,7 @@ public class Log extends AbstractLog {
                   lint.isEnabled(category, false) :                     // then emit if the category is enabled
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
                     !lint.isSuppressed(category, false) :               // ...suppression happens via @SuppressWarnings
-                    !options.isDisabled(Option.XLINT, category);        // ...suppression happens via -Xlint:-category
+                    !options.isLintDisabled(category);                  // ...suppression happens via -Xlint:-category
                 if (!emit) {
                     validateSuppression(new SuppressionValidation(lint, diag));     // validate any suppression
                     return;
@@ -919,8 +920,7 @@ public class Log extends AbstractLog {
         return switch (lc) {
         case PREVIEW -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, Source.instance(context), c));
         case DEPRECATION -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c, "deprecated"));
-        case REMOVAL, UNCHECKED -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
-        case null, default -> null;
+        default -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
         };
     }
 
@@ -936,7 +936,7 @@ public class Log extends AbstractLog {
         nsuppressedwarns = 0;
         while (diagnosticHandler.prev != null)
             popDiagnosticHandler(diagnosticHandler);
-        aggregators.values().forEach(MandatoryWarningAggregator::clear);
+        aggregators.clear();
         suppressedDeferredMandatory.clear();
     }
 
