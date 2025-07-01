@@ -2285,16 +2285,16 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
     jboolean executed() const { return _executed; }
   };
 
-  ReadMonitorsHandshakeClosure rmc;
+  ReadMonitorsHandshakeClosure rmhc;
   if (thread_handle != nullptr) {
     ThreadsListHandle tlh;
     JavaThread* target = nullptr;
     bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, nullptr);
     if (is_alive) {
-      Handshake::execute(&rmc, &tlh, target);
+      Handshake::execute(&rmhc, &tlh, target);
     }
   }
-  return rmc.executed();
+  return rmhc.executed();
 WB_END
 
 WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle, jboolean all_threads))
@@ -2316,19 +2316,19 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
 
     jint num_threads_completed() const { return _num_threads_completed; }
   };
-  TraceSelfHandshakeClosure tsc(Thread::current());
+  TraceSelfHandshakeClosure tshc(Thread::current());
 
   if (all_threads) {
-    Handshake::execute(&tsc);
+    Handshake::execute(&tshc);
   } else if (thread_handle != nullptr) {
     ThreadsListHandle tlh;
     JavaThread* target = nullptr;
     bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, nullptr);
     if (is_alive) {
-      Handshake::execute(&tsc, &tlh, target);
+      Handshake::execute(&tshc, &tlh, target);
     }
   }
-  return tsc.num_threads_completed();
+  return tshc.num_threads_completed();
 WB_END
 
 WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle))
@@ -2354,8 +2354,8 @@ WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject threa
     JavaThread* target = nullptr;
     bool is_alive = tlh.cv_internal_thread_to_JavaThread(thread_handle, &target, nullptr);
     if (is_alive) {
-      TraceSelfHandshakeClosure* tsc = new TraceSelfHandshakeClosure(target);
-      Handshake::execute(tsc, target);
+      TraceSelfHandshakeClosure* tshc = new TraceSelfHandshakeClosure(target);
+      Handshake::execute(tshc, target);
     }
   }
 WB_END

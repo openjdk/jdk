@@ -1834,8 +1834,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // A JavaThread needs to handshake in order to safely free the
     // ObjectMonitors that were deflated in this cycle.
-    DeflationHandshakeClosure hfd_hc;
-    Handshake::execute(&hfd_hc);
+    DeflationHandshakeClosure dhc;
+    Handshake::execute(&dhc);
     // Also, we sync and desync GC threads around the handshake, so that they can
     // safely read the mark-word and look-through to the object-monitor, without
     // being afraid that the object-monitor is going away.

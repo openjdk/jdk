@@ -1124,16 +1124,16 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   }
 }
 
-void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aeh) {
+void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
-    delete aeh;
+    delete aehc;
     return;
   }
 
-  oop exception = aeh->exception();
-  Handshake::execute(aeh, this);  // Install asynchronous handshake
+  oop exception = aehc->exception();
+  Handshake::execute(aehc, this);  // Install asynchronous handshake
 
   ResourceMark rm;
   if (log_is_enabled(Info, exceptions)) {
@@ -1152,18 +1152,18 @@ void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aeh) {
 }
 
 class InstallAsyncExceptionHandshakeClosure : public HandshakeClosure {
-  AsyncExceptionHandshakeClosure* _aeh;
+  AsyncExceptionHandshakeClosure* _aehc;
 public:
-  InstallAsyncExceptionHandshakeClosure(AsyncExceptionHandshakeClosure* aeh) :
-    HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
+  InstallAsyncExceptionHandshakeClosure(AsyncExceptionHandshakeClosure* aehc) :
+    HandshakeClosure("InstallAsyncException"), _aehc(aehc) {}
   ~InstallAsyncExceptionHandshakeClosure() {
-    // If InstallAsyncExceptionHandshakeClosure was never executed we need to clean up _aeh.
-    delete _aeh;
+    // If InstallAsyncExceptionHandshakeClosure was never executed we need to clean up _aehc.
+    delete _aehc;
   }
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
-    target->install_async_exception(_aeh);
-    _aeh = nullptr;
+    target->install_async_exception(_aehc);
+    _aehc = nullptr;
   }
 };
 

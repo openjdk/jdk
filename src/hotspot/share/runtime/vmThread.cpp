@@ -453,8 +453,8 @@ void VMThread::wait_for_operation() {
     if (handshake_or_safepoint_alot()) {
       if (HandshakeALot) {
         MutexUnlocker mul(VMOperation_lock);
-        ALotOfHandshakeClosure hal_cl;
-        Handshake::execute(&hal_cl);
+        ALotOfHandshakeClosure aohc;
+        Handshake::execute(&aohc);
       }
       // When we unlocked above someone might have setup a new op.
       if (_next_vm_operation != nullptr) {
