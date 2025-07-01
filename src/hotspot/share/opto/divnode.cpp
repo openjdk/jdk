@@ -825,6 +825,17 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
 
   if (t1->base() == Type::HalfFloatCon &&
       t2->base() == Type::HalfFloatCon)  {
+    // IEEE 754 floating point comparison treats 0.0 and -0.0 as equals.
+    if (t1->getf() == 0.0f && t2->getf() == 0.0f) {
+      return TypeH::make(NAN);
+    }
+
+    if (g_isfinite(t1->getf()) && t2->getf() == 0.0) {
+      bool res_sign_neg = (jint_cast(t1->getf()) < 0) ^ (jint_cast(t2->getf()) < 0);
+      const TypeF* res = res_sign_neg ? TypeF::NEG_INF : TypeF::POS_INF;
+      return TypeH::make(res->getf());
+    }
+
     return TypeH::make(t1->getf() / t2->getf());
   }
 
