@@ -59,6 +59,7 @@ public class EdDSAPrivateKeyDestroyTest {
         Assert.assertFalse(priv2.isDestroyed());
         Assert.assertEquals(priv2, priv1);
         Assert.assertEquals(priv1, priv2);
+        Assert.assertEquals(priv2.hashCode(), priv1.hashCode());
 
         System.out.println("Past sanity checks");
 
