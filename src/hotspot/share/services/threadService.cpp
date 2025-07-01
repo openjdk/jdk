@@ -1447,7 +1447,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());  // Deals with null
 
   if (!has_javathread && !is_virtual) {
-    return nullptr; // thread terminated
+    return nullptr; // thread terminated so not of interest
   }
 
   // wrapper to auto delete JvmtiVTMSTransitionDisabler
