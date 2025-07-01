@@ -137,21 +137,6 @@ public class FramesDecoder {
     }
 
     /**
-     * {@return the current partial frame, if any}
-     * This method doesn't try to do any decoding.
-     */
-    public Http3Frame peek() {
-        lock.lock();
-        try {
-            if (partialFrame != null && partialFrame.remaining() != 0) {
-                return partialFrame;
-            } else return null;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
      * {@return an {@code Http3Frame}, possibly {@linkplain PartialFrame partial},
      * or {@code null} if not enough bytes have been receive to decode (at least
      * partially) a frame}
