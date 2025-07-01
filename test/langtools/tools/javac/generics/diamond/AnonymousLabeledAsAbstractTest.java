@@ -25,6 +25,7 @@
  * @test
  * @bug 8361214
  * @summary An anonymous class is erroneously being classify as an abstract class
+ * @compile AnonymousLabeledAsAbstractTest.java
  */
 
 class AnonymousLabeledAsAbstractTest {
@@ -34,7 +35,5 @@ class AnonymousLabeledAsAbstractTest {
         Derived2(Derived1<T> obj) {}
     }
 
-    Base<String> obj = new Derived2<>(
-                new Derived1<>() { /* not abstract */ }
-            ) { /* not abstract */ };
+    Base<String> obj = new Derived2<>(new Derived1<>() { /* not abstract */ }) { /* not abstract */ };
 }
