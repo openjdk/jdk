@@ -259,7 +259,7 @@ int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
     return JVMTI_ERROR_DUPLICATE;
   }
 
-  // ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit()
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
   methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
