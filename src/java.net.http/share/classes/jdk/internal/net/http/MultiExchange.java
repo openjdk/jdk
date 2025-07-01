@@ -679,7 +679,7 @@ class MultiExchange<T> implements Cancelable {
             }
             case StreamLimitException sle -> {
                 // make a note that the stream limit was reached for a particular HTTP version
-                exchg.streamLimitReached(false);
+                exchg.streamLimitReached(true);
                 // OK to retry. Since the failure is due to a connection/stream being unavailable
                 // we mark the retry context to not allow the connect timer to be reset
                 // when the retry is actually attempted.
