@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,37 +40,37 @@ public class Signatures {
     @State(Scope.Benchmark)
     public static class test01 {
         @Param({"64", "512", "2048", "16384"})
-        int messageLength;
+        private int messageLength;
         @Param({"secp256r1", "secp384r1", "secp521r1"})
-        String algorithm;
+        private String algorithm;
     }
     @State(Scope.Benchmark)
     public static class test02 {
         @Param({"64", "512", "2048", "16384"})
-        int messageLength;
+        private int messageLength;
         @Param({"Ed25519", "Ed448"})
-        String algorithm;
+        private String algorithm;
     }
     @State(Scope.Benchmark)
     public static class test03 {
         @Param({"64", "512", "2048", "16384"})
-        int messageLength;
+        private int messageLength;
         @Param({"SHA256withDSA", "SHA384withDSA", "SHA512withDSA"})
-        String algorithm;
+        private String algorithm;
     }
     @State(Scope.Benchmark)
     public static class test04 {
         @Param({"64", "512", "2048", "16384"})
-        int messageLength;
+        private int messageLength;
         @Param({"SHA256withRSA", "SHA384withRSA", "SHA512withRSA"})
-        String algorithm;
+        private String algorithm;
     }
     @State(Scope.Benchmark)
     public static class test05 {
         @Param({"64", "512", "2048", "16384"})
-        int messageLength;
+        private int messageLength;
         @Param({"SHA256", "SHA384", "SHA512"})
-        String algorithm;
+        private String algorithm;
     }
 
     @Benchmark
@@ -104,8 +105,8 @@ public class Signatures {
 
     @State(Scope.Thread)
     public static class s1 {
-        Signature signer;
-        byte[] message;
+        private Signature signer;
+        private byte[] message;
 
         @Setup
         public void setup(test01 test) throws Exception {
@@ -137,8 +138,8 @@ public class Signatures {
 
     @State(Scope.Thread)
     public static class s2 {
-        Signature signer;
-        byte[] message;
+        private Signature signer;
+        private byte[] message;
 
         @Setup
         public void setup(test02 test) throws Exception {
@@ -158,8 +159,8 @@ public class Signatures {
 
     @State(Scope.Thread)
     public static class s3 {
-        Signature signer;
-        byte[] message;
+        private Signature signer;
+        private byte[] message;
 
         @Setup
         public void setup(test03 test) throws Exception {
@@ -184,8 +185,8 @@ public class Signatures {
 
     @State(Scope.Thread)
     public static class s4 {
-        Signature signer;
-        byte[] message;
+        private Signature signer;
+        private byte[] message;
 
         @Setup
         public void setup(test04 test) throws Exception {
@@ -210,8 +211,8 @@ public class Signatures {
 
     @State(Scope.Thread)
     public static class s5 {
-        Signature signer;
-        byte[] message;
+        private Signature signer;
+        private byte[] message;
 
         @Setup
         public void setup(test05 test) throws Exception {
