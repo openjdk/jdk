@@ -411,10 +411,13 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
-  ShenandoahHeapRegion* allocate_new_shared_region(ShenandoahHeapRegion** shared_region, ShenandoahHeapRegion* original_shared_region);
+  bool try_refill_directly_allocatable_regions(uint probed_region_count, uint probed_indexes[], ShenandoahHeapRegion* probed_regions[]);
+
+  template<bool IS_MUTATOR, bool IS_OLD>
+  uint iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty);
 
   template<typename Iter>
-  ShenandoahHeapRegion* try_allocate_new_shared_region(ShenandoahHeapRegion** shared_region, ShenandoahHeapRegion* original_shared_region, Iter iterator);
+  uint iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionBreakableIterClosure* cl);
 
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
@@ -490,9 +493,10 @@ public:
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  template<bool IS_TLAB>
-  HeapWord* cas_allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
+  HeapWord* allocate_humongous(ShenandoahAllocRequest &req);
 
+  template<bool IS_TLAB>
+  HeapWord* par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
    *

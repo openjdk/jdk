@@ -118,6 +118,12 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
+class ShenandoahHeapRegionBreakableIterClosure : public StackObj {
+public:
+  // Return true to break the iteration loop.
+  virtual bool heap_region_do(ShenandoahHeapRegion* r) { return false; };
+};
+
 typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
@@ -691,6 +697,7 @@ protected:
 
 private:
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
+  HeapWord* allocate_memory_for_mutator(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
@@ -699,7 +706,6 @@ private:
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
-  HeapWord* allocate_memory_for_mutator(ShenandoahAllocRequest& request);
   HeapWord* mem_allocate(size_t size, bool* what) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,

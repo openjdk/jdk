@@ -564,6 +564,10 @@
          "to prevent starvation of the old collector. Setting this to "     \
          "0 will allow back to back young collections to run during old "   \
          "collections.")                                                    \
+  product(uintx, ShenandoahDirectlyAllocatableRegionCount, 7, EXPERIMENTAL, \
+         "Number of regions Shenandoah will pre-allocate for "              \
+         "direct allocation with CAS, the values should less than "         \
+         "number of CPU cores. Ideally it should be a prime number. ")      \
   // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

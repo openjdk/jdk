@@ -2081,71 +2081,148 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
   }
 }
 
+HeapWord* ShenandoahFreeSet::allocate_humongous(ShenandoahAllocRequest& req) {
+  assert(ShenandoahHeapRegion::requires_humongous(req.size()), "Must be humongous alloc");
+  ShenandoahHeapLocker locker(_heap->lock());
+  return allocate_contiguous(req);
+}
+
 template<bool IS_TLAB>
-HeapWord* ShenandoahFreeSet::cas_allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
+HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
   shenandoah_assert_not_heaplocked();
   assert(req.is_mutator_alloc(), "Must be mutator allocation");
+  assert(!ShenandoahHeapRegion::requires_humongous(req.size()), "Must not");
   assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
 
-  int seed = os::current_process_id();
-  idx_t idx = seed % 13;
-  HeapWord* obj = nullptr;
-  size_t actual_size = req.size();
-  int attempts = 0;
+  uint process_id = static_cast<uintx>(os::current_process_id());
+  constexpr uint max_probes = 3u;
   for (;;) {
-    attempts ++;
-    ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
-    if (r != nullptr) {
-      if (IS_TLAB) {
-        obj = r->allocate_lab_atomic(req, actual_size);
-      } else {
-        obj = r->allocate_atomic(req.size(), req);
-      }
-      if (obj != nullptr) {
-        assert(actual_size > 0, "Must be");
-        req.set_actual_size(actual_size);
-        if (pointer_delta(r->bottom(), obj) == actual_size) {
-          // Set to true if it is the first object/tlab allocated in the region.
-          in_new_region = true;
+    uint idx = process_id % ShenandoahDirectlyAllocatableRegionCount;
+    ShenandoahHeapRegion* probed_regions[max_probes];
+    uint probed_indexes[max_probes];
+    HeapWord* obj = nullptr;
+    size_t actual_size = req.size();
+    for (uint i = 0u; i < max_probes; i++) {
+      ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
+      if (r != nullptr) {
+        if (IS_TLAB) {
+          obj = r->allocate_lab_atomic(req, actual_size);
+        } else {
+          obj = r->allocate_atomic(req.size(), req);
         }
-        return obj;
+        if (obj != nullptr) {
+          assert(actual_size > 0, "Must be");
+          req.set_actual_size(actual_size);
+          if (pointer_delta(r->bottom(), obj) == actual_size) {
+            // Set to true if it is the first object/tlab allocated in the region.
+            in_new_region = true;
+          }
+          return obj;
+        }
       }
+      probed_indexes[i] = idx;
+      probed_regions[i] = r;
+      idx = (++idx) % ShenandoahDirectlyAllocatableRegionCount;
     }
-    idx = (idx + seed) % 13;
+    // Failed to allocate in 3 consecutive directly allocatable regions.
+    // Try to retire the region if the free size is less than minimal tlab size and try to replace with a new region.
+    if (!try_refill_directly_allocatable_regions(max_probes, probed_indexes, probed_regions)) {
+      return nullptr;
+    }
   }
 }
 
-ShenandoahHeapRegion* ShenandoahFreeSet::allocate_new_shared_region(
-  ShenandoahHeapRegion** shared_region,
-  ShenandoahHeapRegion* original_shared_region) {
-  assert(Thread::current()->is_Java_thread(), "Must be mutator");
-  {
-    ShenandoahHeapLocker locker(_heap->lock());
-    if (_partitions.is_empty(ShenandoahFreeSetPartitionId::Mutator)) {
-      return Atomic::load_acquire(shared_region);
-    } else {
-      if (_partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::Mutator)) {
-        ShenandoahLeftRightIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
-        try_allocate_new_shared_region(shared_region, original_shared_region, iterator);
-      } else {
-        ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
-        try_allocate_new_shared_region(shared_region, original_shared_region, iterator);
+// Explicit specializations
+template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<true>(ShenandoahAllocRequest &req, bool &in_new_region);
+template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<false>(ShenandoahAllocRequest &req, bool &in_new_region);
+
+
+class RefillDirectlyAllocatableRegionClosure : public  ShenandoahHeapRegionBreakableIterClosure {
+public:
+  ShenandoahHeapRegion** *_regions_to_refill;
+  uint _refill_count;
+  uint _refilled_count = 0u;
+
+  RefillDirectlyAllocatableRegionClosure(ShenandoahHeapRegion** *regions_to_refill, uint refill_count) :
+  _regions_to_refill(regions_to_refill), _refill_count(refill_count), _refilled_count(0) {};
+
+  bool heap_region_do(ShenandoahHeapRegion *r) override {
+    if (r->is_empty() && !r->reserved_for_direct_allocation()) {
+      if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) return false;
+      if (r->is_trash()) {
+        r->try_recycle_under_lock();
       }
+      r->reserve_for_direct_allocation();
+      Atomic::store(_regions_to_refill[_refilled_count], r);
+      _refilled_count++;
+      return _refilled_count == _refill_count;
     }
+    return false;
+  }
+};
+
+bool ShenandoahFreeSet::try_refill_directly_allocatable_regions(uint probed_region_count,
+                                                                uint probed_indexes[],
+                                                                ShenandoahHeapRegion* probed_regions[]
+                                                                ) {
+  assert(Thread::current()->is_Java_thread(), "Must be mutator");
+  assert(probed_region_count > 0u && probed_region_count <= ShenandoahDirectlyAllocatableRegionCount, "Must be");
+  shenandoah_assert_not_heaplocked();
+
+  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
+  ShenandoahHeapRegion** regions_to_refill[probed_region_count];
+  uint refill_count = 0u;
+  uint regions_refilled_by_others = 0u;
+  for (uint i = 0u; i < probed_region_count; i++) {
+    const ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + probed_indexes[i]);
+    if (r == nullptr || r == probed_regions[i]) {
+      if (r == nullptr) {
+        regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
+      } else if (r->free() < PLAB::min_size()) {
+        _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
+        regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
+        Atomic::store(_directly_allocatable_regions + probed_indexes[i] , static_cast<ShenandoahHeapRegion *>(nullptr));
+      }
+    } else {
+      regions_refilled_by_others++;
+    }
+  }
+
+  RefillDirectlyAllocatableRegionClosure cl(regions_to_refill, refill_count);
+  if (refill_count > 0u) {
+    iterate_regions_for_alloc<true, false>(&cl, true);
+  }
+  return cl._refilled_count > 0u || regions_refilled_by_others > 0u;;
+}
+
+template<bool IS_MUTATOR, bool IS_OLD>
+uint ShenandoahFreeSet::iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty) {
+  assert((IS_MUTATOR && !IS_OLD) || !IS_MUTATOR, "Sanity check");
+  ShenandoahFreeSetPartitionId partition = IS_MUTATOR ? ShenandoahFreeSetPartitionId::Mutator :
+                                           (IS_OLD ? ShenandoahFreeSetPartitionId::OldCollector : ShenandoahFreeSetPartitionId::Mutator);
+  if (_partitions.is_empty(partition)) {
+    return 0u;
+  }
+  if (_partitions.alloc_from_left_bias(partition)) {
+    ShenandoahLeftRightIterator iterator(&_partitions, partition, use_empty);
+    return iterate_regions_for_alloc(iterator, cl);
+  } else {
+    ShenandoahRightLeftIterator iterator(&_partitions, partition, use_empty);
+    return iterate_regions_for_alloc(iterator, cl);
   }
 }
 
 template<typename Iter>
-ShenandoahHeapRegion* ShenandoahFreeSet::try_allocate_new_shared_region(ShenandoahHeapRegion** shared_region, ShenandoahHeapRegion* original_shared_region, Iter iterator) {
+uint ShenandoahFreeSet::iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionBreakableIterClosure* cl) {
+  uint regions_iterated = 0u;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
+    regions_iterated++;
     ShenandoahHeapRegion* r = _heap->get_region(idx);
-    if (r->is_trash()) {
-      if (_heap->is_concurrent_weak_root_in_progress()) continue;
-      r->try_recycle_under_lock();
-    }
-    if (r->is_empty()) {
+    if (cl->heap_region_do(r)) {
+      break;
     }
   }
+  return regions_iterated;
 }
 
 void ShenandoahFreeSet::print_on(outputStream* out) const {

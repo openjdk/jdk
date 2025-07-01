@@ -976,7 +976,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     }
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
-      result = allocate_memory_under_lock(req, in_new_region);
+      result = allocate_memory_for_mutator(req, in_new_region);
     }
 
     // Check that gc overhead is not exceeded.
@@ -1008,7 +1008,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       const size_t original_count = shenandoah_policy()->full_gc_count();
       while (result == nullptr && should_retry_allocation(original_count)) {
         control_thread()->handle_alloc_failure(req, true);
-        result = allocate_memory_under_lock(req, in_new_region);
+        result = allocate_memory_for_mutator(req, in_new_region);
       }
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
@@ -1062,8 +1062,20 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   return result;
 }
 
-HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& req) {
+HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& req, bool& in_new_region) {
   assert(req.is_mutator_alloc(), "Sanity");
+  assert(!req.is_old(), "Sanity");
+  shenandoah_assert_not_heaplocked();
+  ShenandoahFreeSet* free_set = ShenandoahHeap::free_set();
+  if (ShenandoahHeapRegion::requires_humongous(req.size())) {
+    in_new_region = true;
+    return free_set->allocate_humongous(req);
+  }
+  if (req.is_lab_alloc()) {
+    return free_set->par_allocate_single_for_mutator<true>(req, in_new_region);
+  } else {
+    return free_set->par_allocate_single_for_mutator<false>(req, in_new_region);
+  }
 }
 
 inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_count) const {

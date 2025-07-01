@@ -89,6 +89,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
   _recycling.unset();
+  _direct_alloc_reserved.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {

@@ -268,6 +268,8 @@ private:
 
   bool _needs_bitmap_reset;
 
+  ShenandoahSharedFlag _direct_alloc_reserved; // Flag to indicate that whether the region is reserved for lock-free direct allocation
+
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
@@ -367,7 +369,7 @@ public:
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
   // Atomic allocation using CAS, return nullptr if full or no enough space for the req
-  inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req, size_t &actual_size);
+  inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req);
 
   inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size);
 
@@ -500,6 +502,20 @@ public:
 
   inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
+  }
+
+  inline void reserve_for_direct_allocation() {
+    assert(_direct_alloc_reserved.is_unset(), "Must be");
+    _direct_alloc_reserved.set();
+  }
+
+  inline void release_from_direct_allocation() {
+    assert(_direct_alloc_reserved.is_set(), "Must be");
+    _direct_alloc_reserved.unset();
+  }
+
+  inline bool reserved_for_direct_allocation() const {
+    return _direct_alloc_reserved.is_set();
   }
 
 private:
