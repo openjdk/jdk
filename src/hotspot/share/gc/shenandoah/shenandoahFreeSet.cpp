@@ -2174,12 +2174,13 @@ bool ShenandoahFreeSet::try_refill_directly_allocatable_regions(uint probed_regi
   uint refill_count = 0u;
   uint regions_refilled_by_others = 0u;
   for (uint i = 0u; i < probed_region_count; i++) {
-    const ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + probed_indexes[i]);
+    ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + probed_indexes[i]);
     if (r == nullptr || r == probed_regions[i]) {
       if (r == nullptr) {
         regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
       } else if (r->free() < PLAB::min_size()) {
         _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
+        r->release_from_direct_allocation();
         regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
         Atomic::store(_directly_allocatable_regions + probed_indexes[i] , static_cast<ShenandoahHeapRegion *>(nullptr));
       }
@@ -2202,6 +2203,9 @@ uint ShenandoahFreeSet::iterate_regions_for_alloc(ShenandoahHeapRegionBreakableI
                                            (IS_OLD ? ShenandoahFreeSetPartitionId::OldCollector : ShenandoahFreeSetPartitionId::Mutator);
   if (_partitions.is_empty(partition)) {
     return 0u;
+  }
+  if (IS_MUTATOR) {
+    update_allocation_bias();
   }
   if (_partitions.alloc_from_left_bias(partition)) {
     ShenandoahLeftRightIterator iterator(&_partitions, partition, use_empty);
