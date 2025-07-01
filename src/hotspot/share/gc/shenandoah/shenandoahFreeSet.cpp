@@ -751,7 +751,10 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _alloc_bias_weight(0)
 {
   clear_internal();
-  _directly_allocatable_regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, 13, mtGC);
+  _directly_allocatable_regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahDirectlyAllocatableRegionCount, mtGC);
+  for (uint i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
+    _directly_allocatable_regions[i] = nullptr;
+  }
 }
 
 void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region) {
@@ -2106,6 +2109,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
     size_t actual_size = req.size();
     for (uint i = 0u; i < max_probes; i++) {
       ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
+      log_info(gc)("Cas alloc from region " PTR_FORMAT "", p2i(r));
       if (r != nullptr) {
         if (IS_TLAB) {
           obj = r->allocate_lab_atomic(req, actual_size);
@@ -2155,6 +2159,8 @@ public:
         r->try_recycle_under_lock();
       }
       r->reserve_for_direct_allocation();
+      r->set_affiliation(YOUNG_GENERATION);
+      r->make_regular_allocation(YOUNG_GENERATION);
       Atomic::store(_regions_to_refill[_refilled_count], r);
       _refilled_count++;
       return _refilled_count == _refill_count;

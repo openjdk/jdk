@@ -128,7 +128,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
 }
 
 HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size) {
-  assert(req.type() == _tlab_allocs || req.type() == _gclab_allocs, "Only allow tlab or gclab");
+  assert(req.is_lab_alloc(), "Only lab alloc");
   assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
   assert(this->is_regular(), "must be a regular region");
   size_t adjusted_size = req.size();
