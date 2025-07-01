@@ -627,7 +627,7 @@ void CollectedHeap::log_gc_cpu_time() const {
   if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
     double process_cpu_time = os::elapsed_process_cpu_time();
     double gc_cpu_time = elapsed_gc_cpu_time();
-    double string_dedup_cpu_time = UseStringDeduplication ? os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
+    double string_dedup_cpu_time = UseStringDeduplication ? (double)os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
 
     if (process_cpu_time == -1 || gc_cpu_time == -1 || string_dedup_cpu_time == -1) {
       return;

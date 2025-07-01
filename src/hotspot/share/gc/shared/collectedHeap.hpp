@@ -208,6 +208,9 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Stop any onging concurrent work and prepare for exit.
+  virtual void stop() = 0;
+
  public:
 
   static inline size_t filler_array_max_size() {
@@ -241,16 +244,12 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() = 0;
-
   void before_exit();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
 
-  static jlong vm_cpu_time();
   static void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
