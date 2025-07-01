@@ -812,6 +812,7 @@ java/awt/font/GlyphVector/TestGlyphVectorLayout.java 8354987 generic-all
 java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all
+java/awt/FileDialog/DoubleActionESC.java 8356981 linux-all
 java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/TextComponent/CorrectTextComponentSelectionTest.java 8237220 macosx-all
@@ -832,6 +833,7 @@ java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
 java/awt/Menu/MenuVisibilityTest.java 8161110 macosx-all
 java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
+java/awt/Cursor/CursorDragTest/ListDragCursor.java 7177297 macosx-all
 
 ############################################################################
 
