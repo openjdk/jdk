@@ -1069,8 +1069,7 @@ public:
   static JavaThread* current() {
     auto result = JavaThread::cast(Thread::current());
 #if defined(__GNUC__) && !defined(__clang__) && !defined(PRODUCT)
-  if (result == nullptr) 
-  {
+  if (result == nullptr) {
     // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
     // GCC does believe that JavaThread::current() can return nullptr,
     // though it cannot.
