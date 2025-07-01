@@ -1444,7 +1444,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   oop thread_oop;
   bool has_javathread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
   Handle thread_h(THREAD, thread_oop);
-  bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());  // Deals with null
 
   if (!has_javathread && !is_virtual) {
     return nullptr; // thread terminated
