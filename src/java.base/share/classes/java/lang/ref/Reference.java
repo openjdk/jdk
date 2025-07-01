@@ -44,6 +44,7 @@ import jdk.internal.ref.Cleaner;
  * @since    1.2
  * @sealedGraph
  */
+
 public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     permits PhantomReference, SoftReference, WeakReference, FinalReference {
 

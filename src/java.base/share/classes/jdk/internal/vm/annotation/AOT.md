@@ -46,6 +46,12 @@ because the result of loading an AOT cache must look like a valid,
 standard-conformant execution of the JVM.  But a heap object with an
 uninitialized class is an impossibility within the JVMS.
 
+> This is not true in the current implementation - a "special object
+> graph" is tracked; currently we only ensure initialization is complete
+> before objects are returned. This double-initialization is risky but
+> apparently worked for simple cases before JEP 483. `heapShared.hpp`
+> has more details about this graph.
+
 For such reasons, one class often has an "initialization dependency"
 on another class.  Some class A cannot complete its initialization
 until some other class B has at least started its initialization.  For

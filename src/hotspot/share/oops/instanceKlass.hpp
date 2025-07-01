@@ -764,14 +764,11 @@ public:
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
   void set_has_final_method()           { _misc_flags.set_has_final_method(true); }
 
-  // Does this class request explicit initialization in AOT archives when they are initialized in assembly phase,
-  // with explicit production run runtimeSetup() access?
-  // Classes with instances are always initialized in AOT archive. This status is represented by has_aot_initialized_mirror().
-  // However, access to setup functionality must be requested.
+  // Indicates presence of @AOTSafeClassInitializer. Also see AOTClassInitializer for more details.
   bool has_aot_safe_initializer() const { return _misc_flags.has_aot_safe_initializer(); }
   void set_has_aot_safe_initializer()   { _misc_flags.set_has_aot_safe_initializer(true); }
 
-  // Indicates private static void runtimeSetup() presence; requires has_aot_safe_initializer() as above.
+  // Indicates @AOTRuntimeSetup private static void runtimeSetup() presence.
   bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
   void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
 

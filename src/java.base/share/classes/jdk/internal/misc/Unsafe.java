@@ -53,6 +53,7 @@ import static jdk.internal.misc.UnsafeConstants.*;
  * @author John R. Rose
  * @see #getUnsafe
  */
+
 public final class Unsafe {
 
     private static native void registerNatives();
