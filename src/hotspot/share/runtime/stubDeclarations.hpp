@@ -1232,5 +1232,4 @@
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  do_arch_entry, do_arch_entry_init)                     \
 
-
 #endif // SHARE_RUNTIME_STUBDECLARATIONS_HPP

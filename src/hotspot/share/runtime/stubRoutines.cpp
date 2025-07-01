@@ -230,96 +230,96 @@ void compiler_stubs_init(bool in_compiler_thread) {
 
 JRT_LEAF(void, StubRoutines::jbyte_copy(jbyte* src, jbyte* dest, size_t count))
 #ifndef PRODUCT
-SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
+  SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-Copy::conjoint_jbytes_atomic(src, dest, count);
+  Copy::conjoint_jbytes_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jshort_copy(jshort* src, jshort* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-Copy::conjoint_jshorts_atomic(src, dest, count);
+  Copy::conjoint_jshorts_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jint_copy(jint* src, jint* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-Copy::conjoint_jints_atomic(src, dest, count);
+  Copy::conjoint_jints_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jlong_copy(jlong* src, jlong* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;      // Slow-path long/double array copy
 #endif // !PRODUCT
-Copy::conjoint_jlongs_atomic(src, dest, count);
+  Copy::conjoint_jlongs_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::oop_copy(oop* src, oop* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-assert(count != 0, "count should be non-zero");
-ArrayAccess<>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
+  assert(count != 0, "count should be non-zero");
+  ArrayAccess<>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::oop_copy_uninit(oop* src, oop* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-assert(count != 0, "count should be non-zero");
-ArrayAccess<IS_DEST_UNINITIALIZED>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
+  assert(count != 0, "count should be non-zero");
+  ArrayAccess<IS_DEST_UNINITIALIZED>::oop_arraycopy_raw((HeapWord*)src, (HeapWord*)dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jbyte_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-Copy::arrayof_conjoint_jbytes(src, dest, count);
+  Copy::arrayof_conjoint_jbytes(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jshort_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-Copy::arrayof_conjoint_jshorts(src, dest, count);
+  Copy::arrayof_conjoint_jshorts(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jint_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-Copy::arrayof_conjoint_jints(src, dest, count);
+  Copy::arrayof_conjoint_jints(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jlong_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-Copy::arrayof_conjoint_jlongs(src, dest, count);
+  Copy::arrayof_conjoint_jlongs(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_oop_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-assert(count != 0, "count should be non-zero");
-ArrayAccess<ARRAYCOPY_ARRAYOF>::oop_arraycopy_raw(src, dest, count);
+  assert(count != 0, "count should be non-zero");
+  ArrayAccess<ARRAYCOPY_ARRAYOF>::oop_arraycopy_raw(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
-assert(count != 0, "count should be non-zero");
-ArrayAccess<ARRAYCOPY_ARRAYOF | IS_DEST_UNINITIALIZED>::oop_arraycopy_raw(src, dest, count);
+  assert(count != 0, "count should be non-zero");
+  ArrayAccess<ARRAYCOPY_ARRAYOF | IS_DEST_UNINITIALIZED>::oop_arraycopy_raw(src, dest, count);
 JRT_END
 
 address StubRoutines::select_fill_function(BasicType t, bool aligned, const char* &name) {
-#define RETURN_STUB(xxx_fill) {                 \
-    name = #xxx_fill;                           \
-    return StubRoutines::xxx_fill(); }
+#define RETURN_STUB(xxx_fill) { \
+  name = #xxx_fill; \
+  return StubRoutines::xxx_fill(); }
 
   switch (t) {
   case T_BYTE:
@@ -369,13 +369,13 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
     (aligned  ? COPYFUNC_ALIGNED  : COPYFUNC_UNALIGNED) +
     (disjoint ? COPYFUNC_DISJOINT : COPYFUNC_CONJOINT);
 
-#define RETURN_STUB(xxx_arraycopy) {            \
-    name = #xxx_arraycopy;                      \
-    return StubRoutines::xxx_arraycopy(); }
+#define RETURN_STUB(xxx_arraycopy) { \
+  name = #xxx_arraycopy; \
+  return StubRoutines::xxx_arraycopy(); }
 
-#define RETURN_STUB_PARM(xxx_arraycopy, parm) {                 \
-    name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy;     \
-    return StubRoutines::xxx_arraycopy(parm); }
+#define RETURN_STUB_PARM(xxx_arraycopy, parm) { \
+  name = parm ? #xxx_arraycopy "_uninit": #xxx_arraycopy; \
+  return StubRoutines::xxx_arraycopy(parm); }
 
   switch (t) {
   case T_BYTE:

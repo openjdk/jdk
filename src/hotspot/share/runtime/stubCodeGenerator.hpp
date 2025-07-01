@@ -106,7 +106,7 @@ class StubCodeGenerator: public StackObj {
  private:
   bool _print_code;
   BlobId _blob_id;
-protected:
+ protected:
   MacroAssembler*  _masm;
 
  public:
@@ -115,7 +115,7 @@ protected:
   ~StubCodeGenerator();
 
   MacroAssembler* assembler() const              { return _masm; }
-  BlobId blob_id()                        { return _blob_id; }
+  BlobId blob_id()                               { return _blob_id; }
 
   virtual void stub_prolog(StubCodeDesc* cdesc); // called by StubCodeMark constructor
   virtual void stub_epilog(StubCodeDesc* cdesc); // called by StubCodeMark destructor
