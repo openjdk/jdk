@@ -76,13 +76,13 @@ final class Exchange<T> {
     final String dbgTag;
 
     // Keeps track of the underlying connection when establishing an HTTP/2
-    // or HTTP/3 exchange so that it can be aborted/timed out mid setup.
+    // or HTTP/3 exchange so that it can be aborted/timed out mid-setup.
     final ConnectionAborter connectionAborter = new ConnectionAborter();
 
     final AtomicInteger nonFinalResponses = new AtomicInteger();
 
     // This will be set to true only when it is guaranteed that the server hasn't processed
-    // the request. Typically this happens when the server explicitly states (through a GOAWAY frame
+    // the request. Typically, this happens when the server explicitly states (through a GOAWAY frame
     // or a relevant error code in reset frame) that the corresponding stream (id) wasn't processed.
     // However, there can be cases where the client is certain that the request wasn't sent
     // to the server (and thus not processed). In such cases, the client can set this to true.
@@ -121,9 +121,9 @@ final class Exchange<T> {
     // Keeps track of the underlying connection when establishing an HTTP/2
     // or HTTP/3 exchange so that it can be aborted/timed out mid setup.
     final class ConnectionAborter {
-        // In case of HTTP/3 direct connection we may have
+        // In case of HTTP/3 requests we may have
         // two connections in parallel: a regular TCP connection
-        // and a quicConnection.
+        // and a QUIC connection.
         private volatile HttpConnection connection;
         private volatile HttpQuicConnection quicConnection;
         private volatile boolean closeRequested;
@@ -141,9 +141,6 @@ final class Exchange<T> {
                     } else {
                         this.connection = connection;
                     }
-                } else {
-                    // assert this.connection == null
-                    this.closeRequested = false;
                 }
             }
             if (closeRequested) closeConnection(connection, cause);

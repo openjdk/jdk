@@ -172,7 +172,7 @@ public final class AltServicesRegistry {
          *
          * @param scheme the scheme of the Origin
          * @param addr the address of the Origin
-         * @throws IllegalArgumentException if a Origin cannot be constructed from
+         * @throws IllegalArgumentException if an Origin cannot be constructed from
          *                                  the given {@code scheme} or {@code addr}
          */
         static Origin of(final String scheme, final InetSocketAddress addr)
