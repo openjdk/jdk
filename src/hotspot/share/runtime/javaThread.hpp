@@ -1068,7 +1068,7 @@ public:
   // Returns the running thread as a JavaThread
   static JavaThread* current() {
     auto result = JavaThread::cast(Thread::current());
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(PRODUCT)
   if (result == nullptr) 
   {
     // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
