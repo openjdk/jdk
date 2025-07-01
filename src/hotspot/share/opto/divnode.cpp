@@ -830,10 +830,14 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
       return TypeH::make(NAN);
     }
 
-    if (g_isfinite(t1->getf()) && t2->getf() == 0.0) {
-      bool res_sign_neg = (jint_cast(t1->getf()) < 0) ^ (jint_cast(t2->getf()) < 0);
-      const TypeF* res = res_sign_neg ? TypeF::NEG_INF : TypeF::POS_INF;
-      return TypeH::make(res->getf());
+    if (t2->getf() == 0.0) {
+      if (g_isnan(t1->getf())) {
+        return TypeH::make(NAN);
+      } else {
+        bool res_sign_neg = (jint_cast(t1->getf()) < 0) ^ (jint_cast(t2->getf()) < 0);
+        const TypeF* res = res_sign_neg ? TypeF::NEG_INF : TypeF::POS_INF;
+        return TypeH::make(res->getf());
+      }
     }
 
     return TypeH::make(t1->getf() / t2->getf());
