@@ -3122,6 +3122,15 @@ bool JvmtiTagMap::has_object_free_events_and_reset() {
 // Used by ServiceThread to clean up tagmaps.
 void JvmtiTagMap::flush_all_object_free_events() {
   JavaThread* thread = JavaThread::current();
+#if defined(__GNUC__) && !defined(__clang__)
+  if (thread == nullptr) 
+  {
+    // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
+    // GCC does believe that JavaThread::current() can return nullptr,
+    // though it cannot.
+    __builtin_unreachable();
+  }
+#endif
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     JvmtiTagMap* tag_map = env->tag_map_acquire();

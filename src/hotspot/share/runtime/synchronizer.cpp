@@ -1386,6 +1386,15 @@ void ObjectSynchronizer::request_deflate_idle_monitors() {
 
 bool ObjectSynchronizer::request_deflate_idle_monitors_from_wb() {
   JavaThread* current = JavaThread::current();
+#if defined(__GNUC__) && !defined(__clang__)
+  if (current == nullptr) 
+  {
+    // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
+    // GCC does believe that JavaThread::current() can return nullptr,
+    // though it cannot.
+    __builtin_unreachable();
+  }
+#endif
   bool ret_code = false;
 
   jlong last_time = last_async_deflation_time_ns();
