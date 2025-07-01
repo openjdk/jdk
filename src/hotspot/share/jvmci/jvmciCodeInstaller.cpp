@@ -923,6 +923,15 @@ int CodeInstaller::estimate_stubs_size(HotSpotCompiledCodeStream* stream, JVMCI_
 // perform data and call relocation on the CodeBuffer
 JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(JVMCIObject compiled_code, CodeBuffer& buffer, HotSpotCompiledCodeStream* stream, u1 code_flags, JVMCI_TRAPS) {
   JavaThread* thread = stream->thread();
+#if defined(__GNUC__) && !defined(__clang__) && !defined(PRODUCT)
+  if (thread == nullptr) 
+  {
+    // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
+    // GCC does believe that JavaThread::current() can return nullptr,
+    // though it cannot.
+    __builtin_unreachable();
+  }
+#endif
   HandleMark hm(thread);
   int locs_buffer_size = _sites_count * (relocInfo::length_limit + sizeof(relocInfo));
 
