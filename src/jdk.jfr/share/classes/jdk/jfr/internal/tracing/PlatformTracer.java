@@ -144,6 +144,7 @@ public final class PlatformTracer {
     public static void addObjectTiming(long duration) {
         OBJECT.invocations().getAndIncrement();
         OBJECT.time().addAndGet(duration);
+        OBJECT.updateMinMax(duration);
     }
 
     public static void addTiming(long id, long duration) {
@@ -151,11 +152,8 @@ public final class PlatformTracer {
         if (entry != null) {
             entry.invocations().getAndIncrement();
             entry.time().addAndGet(duration);
+            entry.updateMinMax(duration);
         }
-    }
-
-    public static boolean isValidFilter(String text) {
-        return Filter.of(text, null) != null;
     }
 
     public static void setFilters(Modification modification, List<String> filters) {
@@ -250,6 +248,7 @@ public final class PlatformTracer {
         timedMethods.clear();
         timedClasses.clear();
     }
+
 
     // This method has three purposes:
     //

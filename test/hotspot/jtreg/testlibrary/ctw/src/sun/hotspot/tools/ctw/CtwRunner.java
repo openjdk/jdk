@@ -308,6 +308,8 @@ public class CtwRunner {
                 // Do not pay extra stack trace generation cost for normally thrown exceptions
                 "-XX:-StackTraceInThrowable",
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                // Do not pay extra for verifying inline caches during nmethod cleanups
+                "-XX:-VerifyInlineCaches",
                 // Do not pay extra zapping cost for explicit GC invocations
                 "-XX:-ZapUnusedHeapArea",
                 // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,16 @@
 #include "gc/g1/g1ConcurrentMarkThread.hpp"
 
 #include "gc/g1/g1ConcurrentMark.hpp"
+#include "runtime/os.hpp"
 
   // Total virtual time so far.
-inline double G1ConcurrentMarkThread::vtime_accum() {
-  return _vtime_accum + _cm->all_task_accum_vtime();
+inline double G1ConcurrentMarkThread::total_mark_cpu_time_s() {
+  return os::thread_cpu_time(this) + worker_threads_cpu_time_s();
 }
 
 // Marking virtual time so far
-inline double G1ConcurrentMarkThread::vtime_mark_accum() {
-  return _cm->all_task_accum_vtime();
+inline double G1ConcurrentMarkThread::worker_threads_cpu_time_s() {
+  return _cm->worker_threads_cpu_time_s();
 }
 
 inline void G1ConcurrentMarkThread::set_idle() {

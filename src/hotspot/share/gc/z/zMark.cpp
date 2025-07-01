@@ -578,6 +578,10 @@ public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkFlushOperation;
   }
+
+  virtual bool is_gc_operation() const {
+    return true;
+  }
 };
 
 bool ZMark::flush() {
@@ -769,7 +773,7 @@ public:
         ZNMethod::nmethod_patch_barriers(nm);
       }
 
-      _bs_nm->set_guard_value(nm, (int)untype(new_disarm_value_ptr));
+      _bs_nm->guard_with(nm, (int)untype(new_disarm_value_ptr));
 
       if (complete_disarm) {
         log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
