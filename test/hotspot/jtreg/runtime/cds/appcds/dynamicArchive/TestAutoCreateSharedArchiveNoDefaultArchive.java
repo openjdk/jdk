@@ -27,8 +27,8 @@
  * @summary Test -XX:+AutoCreateSharedArchive on a copied JDK without default shared archive
  * @bug 8261455
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.flagless
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @comment This test doesn't work on Windows because it depends on symlinks
  * @requires os.family != "windows"
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds

@@ -26,9 +26,9 @@
  * @test id=nocoops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -39,9 +39,9 @@
  * @test id=nocoops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -52,9 +52,9 @@
  * @test id=coops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -65,9 +65,9 @@
  * @test id=coops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

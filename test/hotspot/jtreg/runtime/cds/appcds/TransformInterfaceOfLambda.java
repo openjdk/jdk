@@ -28,9 +28,9 @@
  * @summary Transforming an interface of an archived lambda proxy class should not
  *          crash the VM. The lambda proxy class should be regenerated during runtime.
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.jvmti
  * @requires vm.flagless
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @compile test-classes/SimpleTest.java
  * @compile test-classes/TransformBootClass.java
