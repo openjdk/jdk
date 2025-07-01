@@ -46,7 +46,7 @@ final class KeyShareExtension {
             new CHKeyShareProducer();
     static final ExtensionConsumer chOnLoadConsumer =
             new CHKeyShareConsumer();
-    static final HandshakeAbsence chOnTradAbsence =
+    static final HandshakeAbsence chOnTradeAbsence =
             new CHKeyShareOnTradeAbsence();
     static final SSLStringizer chStringizer =
             new CHKeyShareStringizer();

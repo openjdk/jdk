@@ -47,7 +47,7 @@ final class SupportedGroupsExtension {
             new CHSupportedGroupsProducer();
     static final ExtensionConsumer chOnLoadConsumer =
             new CHSupportedGroupsConsumer();
-    static final HandshakeAbsence chOnTradAbsence =
+    static final HandshakeAbsence chOnTradeAbsence =
             new CHSupportedGroupsOnTradeAbsence();
     static final SSLStringizer sgsStringizer =
             new SupportedGroupsStringizer();
