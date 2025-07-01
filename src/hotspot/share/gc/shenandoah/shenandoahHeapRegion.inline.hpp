@@ -147,6 +147,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
     } else {
       log_trace(gc, free)("Failed to shrink TLAB or GCLAB request (%zu) in region %zu to %zu"
                           " because min_size() is %zu", req.size(), index(), adjusted_size, req.min_size());
+      return nullptr;
     }
   }
 }

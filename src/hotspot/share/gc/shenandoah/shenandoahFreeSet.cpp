@@ -2123,6 +2123,8 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
             // Set to true if it is the first object/tlab allocated in the region.
             in_new_region = true;
           }
+          assert(req.is_young(), "Mutator allocations always come from young generation.");
+          _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
           return obj;
         }
       }
