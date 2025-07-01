@@ -114,12 +114,14 @@ public class MixingPanelsResizing {
                 awtPanel.add(jbutton);
                 jbutton.setForeground(jbColor);
                 jbutton.setBackground(jbColor);
+                jbutton.setOpaque(true);
 
                 JPanel jPanel = new JPanel();
                 jbutton2 = new JButton("SwingButton2");
                 jPanel.add(jbutton2);
                 jbutton2.setForeground(jb2Color);
                 jbutton2.setBackground(jb2Color);
+                jbutton2.setOpaque(true);
                 awtButton2 = new Button("AWT Button2");
                 jPanel.add(awtButton2);
                 awtButton2.setForeground(awt2Color);
@@ -163,19 +165,19 @@ public class MixingPanelsResizing {
 
                 btnLoc = awtButton.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(awtColor)) {
+                if (!isAlmostEqualColor(c, awtColor)) {
                     fail("AWT Button was not redrawn properly on AWT Panel during move");
                 }
 
                 btnLoc = jbutton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(jb2Color)) {
+                if (!isAlmostEqualColor(c, jb2Color)) {
                     fail("JButton was not redrawn properly on JPanel during move");
                 }
 
                 btnLoc = awtButton2.getLocationOnScreen();
                 c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
-                if (!c.equals(awt2Color)) {
+                if (!isAlmostEqualColor(c, awt2Color)) {
                     fail("ATW Button was not redrawn properly on JPanel during move");
                 }
             }
@@ -298,6 +300,19 @@ public class MixingPanelsResizing {
         failureMessage = whyFailed;
         mainThread.interrupt();
     }//fail()
+    private static boolean isAlmostEqualColor(Color color, Color refColor) {
+        final int COLOR_TOLERANCE_MACOSX = 10;
+        if(color.equals(refColor)){
+            return true;
+        } else {
+            return Math.abs(color.getRed() - refColor.getRed()) <
+                    COLOR_TOLERANCE_MACOSX &&
+                    Math.abs(color.getGreen() - refColor.getGreen()) <
+                            COLOR_TOLERANCE_MACOSX &&
+                    Math.abs(color.getBlue() - refColor.getBlue()) <
+                            COLOR_TOLERANCE_MACOSX;
+        }
+    }
 }// class JButtonInGlassPane
 class TestPassedException extends RuntimeException {
 }
