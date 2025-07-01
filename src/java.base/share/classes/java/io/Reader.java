@@ -479,7 +479,7 @@ public abstract class Reader implements Readable, Closeable {
                 }
                 if (pos == limit) {
                     int len = limit - start;
-                    if (len >= cb.length) {
+                    if (len >= cb.length/2) {
                         // allocate larger buffer and copy chars to beginning
                         int newLength = ArraysSupport.newLength(cb.length,
                                                                 cb.length >>> 1,
