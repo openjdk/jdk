@@ -38,7 +38,7 @@ class G1CollectedHeap;
 // change the heap so that the GC CPU usage stays approximately close to the target
 // GC CPU usage set by the user.
 //
-// The heuristics track both short and long term GC behavior to effect heap resizing.
+// The heuristics track both short and long term GC behavior to affect heap resizing.
 //
 // Short term tracking is based on the short-term GC CPU usage i.e we count events
 // for which short-term GC CPU usage is outside the range:

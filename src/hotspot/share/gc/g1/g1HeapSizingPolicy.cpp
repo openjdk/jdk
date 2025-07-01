@@ -172,8 +172,8 @@ size_t G1HeapSizingPolicy::young_collection_expand_amount(double cpu_usage_delta
 size_t G1HeapSizingPolicy::young_collection_shrink_amount(double cpu_usage_delta, size_t allocation_word_size) const {
   assert(cpu_usage_delta >= 0.0, "must be");
 
-  const double min_scale_factor = G1ShrinkByPercentOfAvailable / 1000.0;
   const double max_scale_factor = G1ShrinkByPercentOfAvailable / 100.0;
+  const double min_scale_factor = max_scale_factor / 10.0;
 
   double scale_factor = scale_cpu_usage_delta(cpu_usage_delta,
                                               min_scale_factor,

@@ -1450,6 +1450,10 @@ void G1ConcurrentMark::remark() {
     // GC pause.
     _g1h->increment_total_collections();
 
+    // For Remark Pauses that may have been triggered by PeriodicGCs, we maintain
+    // resizing based on MinHeapFreeRatio or MaxHeapFreeRatio. If a PeriodicGC is
+    // triggered, it likely means there are very few regular GCs, making resizing
+    // based on gc heuristics less effective.
     if (_g1h->last_gc_was_periodic()) {
       _g1h->resize_heap_after_full_collection(0 /* allocation_word_size */);
     }
