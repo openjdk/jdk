@@ -270,11 +270,6 @@ endif
 # Since debug symbols are not included in the jmod files, they need to be copied
 # in manually after generating the images.
 
-ALL_JDK_MODULES := $(JDK_MODULES)
-ALL_JRE_MODULES := $(sort $(JRE_MODULES), $(foreach m, $(JRE_MODULES), \
-    $(call FindTransitiveDepsForModule, $m)))
-ALL_SYMBOLS_MODULES := $(JDK_MODULES)
-
 ifeq ($(call isTargetOs, windows), true)
   LIBS_TARGET_SUBDIR := bin
 else
