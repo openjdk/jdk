@@ -36,7 +36,6 @@ import static jdk.internal.net.http.http3.frames.Http3FrameType.asString;
 /**
  * Super class for all HTTP/3 frames.
  */
-
 public abstract non-sealed class AbstractHttp3Frame implements Http3Frame {
     public static final Random RANDOM = new Random();
     final long type;

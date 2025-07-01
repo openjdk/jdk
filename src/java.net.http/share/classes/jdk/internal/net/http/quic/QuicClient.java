@@ -192,7 +192,6 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
     }
 
     /**
-     *
      * {@return the versions that are available for use on this instance, in the descending order
      * of their preference}
      */

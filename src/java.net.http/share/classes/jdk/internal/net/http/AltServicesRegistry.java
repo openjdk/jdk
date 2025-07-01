@@ -94,7 +94,6 @@ public final class AltServicesRegistry {
         }
 
         /**
-         *
          * {@return true if the Origin's scheme is considered secure, else returns false}
          */
         boolean isSecure() {
