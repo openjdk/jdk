@@ -1443,11 +1443,12 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   JavaThread* java_thread = nullptr;
   oop thread_oop;
   bool has_javathread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
+  assert((has_javathread && thread_oop != nullptr) || !has_javathread, "Missing Thread oop");
   Handle thread_h(THREAD, thread_oop);
-  bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());  // Deals with null
 
   if (!has_javathread && !is_virtual) {
-    return nullptr; // thread terminated
+    return nullptr; // thread terminated so not of interest
   }
 
   // wrapper to auto delete JvmtiVTMSTransitionDisabler
