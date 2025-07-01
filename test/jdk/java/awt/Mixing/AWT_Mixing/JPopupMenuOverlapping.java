@@ -74,6 +74,7 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
 
             public void actionPerformed(ActionEvent event) {
                 lwClicked = true;
+                frame.setVisible(false);
             }
         };
         JMenuItem item;
