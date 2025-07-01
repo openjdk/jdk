@@ -116,7 +116,7 @@ OopStorage*   StringTable::_oop_storage;
 
 static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
-DEBUG_ONLY(static int _disable_interning_during_cds_dump = 0);
+DEBUG_ONLY(static bool _disable_interning_during_cds_dump = false);
 
 volatile bool _alt_hash = false;
 
@@ -967,7 +967,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
 
   // This flag will be cleared after intern table dumping has completed, so we can run the
   // compiler again (for future AOT method compilation, etc).
-  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, 1));
+  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, true));
 
   if (items_count_acquire() > (size_t)max_jint) {
     fatal("Too many strings to be archived: %zu", items_count_acquire());
@@ -1106,7 +1106,7 @@ void StringTable::write_shared_table() {
   _local_table->do_safepoint_scan(copy_into_shared_table);
   writer.dump(&_shared_table, "string");
 
-  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, 0));
+  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, false));
 }
 
 void StringTable::set_shared_strings_array_index(int root_index) {
