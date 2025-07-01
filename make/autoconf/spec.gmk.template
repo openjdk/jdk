@@ -393,9 +393,8 @@ EXTERNAL_BUILDJDK := @EXTERNAL_BUILDJDK@
 # Whether the boot jdk jar supports --date=TIMESTAMP
 BOOT_JDK_JAR_SUPPORTS_DATE := @BOOT_JDK_JAR_SUPPORTS_DATE@
 
-# When compiling Java source to be run by the boot jdk
-# use these extra flags, eg -source 6 -target 6
-BOOT_JDK_SOURCETARGET := @BOOT_JDK_SOURCETARGET@
+# The oldest supported boot jdk version
+OLDEST_BOOT_JDK_VERSION := @OLDEST_BOOT_JDK_VERSION@
 
 # Information about the build system
 NUM_CORES := @NUM_CORES@
