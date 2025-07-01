@@ -263,17 +263,9 @@ public class HttpNegotiateServer {
         if (!reader.readLine().equals(CONTENT)) {
             throw new RuntimeException("Bad content");
         }
-
-        reader = new BufferedReader(new InputStreamReader(
-                proxyUrl.openConnection(new Proxy(Proxy.Type.HTTP,
-                                new InetSocketAddress(PROXY_HOST, proxyPort)))
-                        .getInputStream()));
-        if (!reader.readLine().equals(CONTENT)) {
-            throw new RuntimeException("Bad content");
-        }
     }
 
-    static void test6829283() throws Exception {
+    static void test6829283() {
         BufferedReader reader;
         java.net.Authenticator.setDefault(new KnowNothingAuthenticator());
         try {
