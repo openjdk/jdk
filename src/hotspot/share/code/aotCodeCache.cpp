@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,7 @@ static void report_load_failure() {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
   log_info(aot, codecache, init)("Unable to use AOT Code Cache.");
-  AOTAdapterCaching = false;
-  AOTStubCaching = false;
+  AOTCodeCache::disable_caching();
 }
 
 static void report_store_failure() {
@@ -84,9 +83,29 @@ static void report_store_failure() {
     vm_abort(false);
   }
   log_info(aot, codecache, exit)("Unable to create AOT Code Cache.");
-  AOTAdapterCaching = false;
-  AOTStubCaching = false;
+  AOTCodeCache::disable_caching();
 }
+
+// The sequence of AOT code caching flags and parametters settings.
+//
+// 1. The initial AOT code caching flags setting is done
+// during call to CDSConfig::check_vm_args_consistency().
+//
+// 2. The earliest AOT code state check done in compilationPolicy_init()
+// where we set number of compiler threads for AOT assembly phase.
+//
+// 3. We determine presence of AOT code in AOT Cache in
+// MetaspaceShared::open_static_archive() which is calles
+// after compilationPolicy_init() but before codeCache_init().
+//
+// 4. AOTCodeCache::initialize() is called during universe_init()
+// and does final AOT state and flags settings.
+//
+// 5. Finally AOTCodeCache::init2() is called after universe_init()
+// when all GC settings are finalized.
+
+// Next methods determine which action we do with AOT code depending
+// on phase of AOT process: assembly or production.
 
 bool AOTCodeCache::is_dumping_adapter() {
   return AOTAdapterCaching && is_on_for_dump();
@@ -102,6 +121,23 @@ bool AOTCodeCache::is_dumping_stub() {
 
 bool AOTCodeCache::is_using_stub()   {
   return AOTStubCaching && is_on_for_use();
+}
+
+// Next methods could be called regardless AOT code cache status.
+// Initially they are called during flags parsing and finilized
+// in AOTCodeCache::initialize().
+void AOTCodeCache::enable_caching() {
+  FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
+  FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
+}
+
+void AOTCodeCache::disable_caching() {
+  FLAG_SET_ERGO(AOTStubCaching, false);
+  FLAG_SET_ERGO(AOTAdapterCaching, false);
+}
+
+bool AOTCodeCache::is_caching_enabled() {
+  return AOTStubCaching || AOTAdapterCaching;
 }
 
 static uint32_t encode_id(AOTCodeEntry::Kind kind, int id) {
@@ -125,19 +161,19 @@ uint AOTCodeCache::max_aot_code_size() {
   return _max_aot_code_size;
 }
 
-// This method is called during universe_init()
-// and does final AOT state and flags settings.
+// It is called from MetaspaceShared::initialize_shared_spaces()
+// which is called from universe_init().
+// At this point all AOT class linking seetings are finilized
+// and AOT cache is open so we can map AOT code region.
 void AOTCodeCache::initialize() {
 #if defined(ZERO) || !(defined(AMD64) || defined(AARCH64))
   log_info(aot, codecache, init)("AOT Code Cache is not supported on this platform.");
-  AOTAdapterCaching = false;
-  AOTStubCaching = false;
+  disable_caching();
   return;
 #else
   if (FLAG_IS_DEFAULT(AOTCache)) {
     log_info(aot, codecache, init)("AOT Code Cache is not used: AOTCache is not specified.");
-    AOTAdapterCaching = false;
-    AOTStubCaching = false;
+    disable_caching();
     return; // AOTCache must be specified to dump and use AOT code
   }
 
@@ -158,18 +194,19 @@ void AOTCodeCache::initialize() {
   bool is_dumping = false;
   bool is_using   = false;
   if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes()) {
-    FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
-    FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
     is_dumping = true;
+    enable_caching();
+    is_dumping = is_caching_enabled();
   } else if (CDSConfig::is_using_archive() && CDSConfig::is_using_aot_linked_classes()) {
-    FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
-    FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
-    is_using = true;
+    enable_caching();
+    is_using = is_caching_enabled();
   } else {
     log_info(aot, codecache, init)("AOT Code Cache is not used: AOT Class Linking is not used.");
+    disable_caching();
     return; // nothing to do
   }
-  if (!AOTAdapterCaching && !AOTStubCaching) {
+  if (!(is_dumping || is_using)) {
+    disable_caching();
     return; // AOT code caching disabled on command line
   }
   _max_aot_code_size = AOTCodeMaxSize;
@@ -182,6 +219,7 @@ void AOTCodeCache::initialize() {
   size_t aot_code_size = is_using ? AOTCacheAccess::get_aot_code_region_size() : 0;
   if (is_using && aot_code_size == 0) {
     log_info(aot, codecache, init)("AOT Code Cache is empty");
+    disable_caching();
     return;
   }
   if (!open_cache(is_dumping, is_using)) {
@@ -201,10 +239,11 @@ void AOTCodeCache::initialize() {
 
 static AOTCodeCache*  opened_cache = nullptr; // Use this until we verify the cache
 AOTCodeCache* AOTCodeCache::_cache = nullptr;
+DEBUG_ONLY( bool AOTCodeCache::_passed_init2 = false; )
 
-// This method is called after universe_init()
-// when all GC settings are finalized.
+// It is called after universe_init() when all GC settings are finalized.
 void AOTCodeCache::init2() {
+  DEBUG_ONLY( _passed_init2 = true; )
   if (opened_cache == nullptr) {
     return;
   }
@@ -220,7 +259,6 @@ void AOTCodeCache::init2() {
   AOTCodeAddressTable* table = opened_cache->_table;
   assert(table != nullptr, "should be initialized already");
   table->init_extrs();
-  table->init_early_stubs();
 
   // Now cache and address table are ready for AOT code generation
   _cache = opened_cache;
@@ -312,6 +350,13 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _table = new AOTCodeAddressTable();
 }
 
+void AOTCodeCache::init_early_stubs_table() {
+  AOTCodeAddressTable* table = addr_table();
+  if (table != nullptr) {
+    table->init_early_stubs();
+  }
+}
+
 void AOTCodeCache::init_shared_blobs_table() {
   AOTCodeAddressTable* table = addr_table();
   if (table != nullptr) {
@@ -344,6 +389,7 @@ AOTCodeCache::~AOTCodeCache() {
     _store_buffer = nullptr;
   }
   if (_table != nullptr) {
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     delete _table;
     _table = nullptr;
   }
@@ -774,6 +820,9 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   // we need to take a lock to prevent race between compiler threads generating AOT code
   // and the main thread generating adapter
   MutexLocker ml(Compile_lock);
+  if (!is_on()) {
+    return false; // AOT code cache was already dumped and closed.
+  }
   if (!cache->align_write()) {
     return false;
   }
@@ -1485,6 +1534,7 @@ void AOTCodeCache::load_strings() {
 
 int AOTCodeCache::store_strings() {
   if (_C_strings_used > 0) {
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     uint offset = _write_position;
     uint length = 0;
     uint* lengths = (uint *)reserve_bytes(sizeof(uint) * _C_strings_used);
@@ -1510,15 +1560,17 @@ int AOTCodeCache::store_strings() {
 
 const char* AOTCodeCache::add_C_string(const char* str) {
   if (is_on_for_dump() && str != nullptr) {
-    return _cache->_table->add_C_string(str);
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
+    AOTCodeAddressTable* table = addr_table();
+    if (table != nullptr) {
+      return table->add_C_string(str);
+    }
   }
   return str;
 }
 
 const char* AOTCodeAddressTable::add_C_string(const char* str) {
   if (_extrs_complete) {
-    LogStreamHandle(Trace, aot, codecache, stringtable) log; // ctor outside lock
-    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
     // Check previous strings address
     for (int i = 0; i < _C_strings_count; i++) {
       if (_C_strings_in[i] == str) {
@@ -1535,9 +1587,7 @@ const char* AOTCodeAddressTable::add_C_string(const char* str) {
       _C_strings_in[_C_strings_count] = str;
       const char* dup = os::strdup(str);
       _C_strings[_C_strings_count++] = dup;
-      if (log.is_enabled()) {
-        log.print_cr("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
-      }
+      log_trace(aot, codecache, stringtable)("add_C_string: [%d] " INTPTR_FORMAT " '%s'", _C_strings_count, p2i(dup), dup);
       return dup;
     } else {
       assert(false, "Number of C strings >= MAX_STR_COUNT");
@@ -1691,11 +1741,13 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   return id;
 }
 
+// This is called after initialize() but before init2()
+// and _cache is not set yet.
 void AOTCodeCache::print_on(outputStream* st) {
-  AOTCodeCache* cache = open_for_use();
-  if (cache != nullptr) {
-    uint count = cache->_load_header->entries_count();
-    uint* search_entries = (uint*)cache->addr(cache->_load_header->entries_offset()); // [id, index]
+  if (opened_cache != nullptr && opened_cache->for_use()) {
+    st->print_cr("\nAOT Code Cache");
+    uint count = opened_cache->_load_header->entries_count();
+    uint* search_entries = (uint*)opened_cache->addr(opened_cache->_load_header->entries_offset()); // [id, index]
     AOTCodeEntry* load_entries = (AOTCodeEntry*)(search_entries + 2 * count);
 
     for (uint i = 0; i < count; i++) {
@@ -1705,12 +1757,10 @@ void AOTCodeCache::print_on(outputStream* st) {
 
       uint entry_position = entry->offset();
       uint name_offset = entry->name_offset() + entry_position;
-      const char* saved_name = cache->addr(name_offset);
+      const char* saved_name = opened_cache->addr(name_offset);
 
-      st->print_cr("%4u: entry_idx:%4u Kind:%u Id:%u size=%u '%s'",
-                   i, index, entry->kind(), entry->id(), entry->size(), saved_name);
+      st->print_cr("%4u: %10s idx:%4u Id:%u size=%u '%s'",
+                   i, aot_code_entry_kind_name[entry->kind()], index, entry->id(), entry->size(), saved_name);
     }
-  } else {
-    st->print_cr("failed to map code cache");
   }
 }

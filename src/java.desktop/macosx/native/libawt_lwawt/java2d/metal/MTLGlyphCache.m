@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,8 +269,8 @@ MTLGlyphCache_AddCellInfo(GlyphInfo *glyph, MTLCacheCellInfo *cellInfo)
 {
     // assert (glyph != NULL && cellInfo != NULL)
     J2dTraceLn(J2D_TRACE_INFO, "MTLGlyphCache_AddCellInfo");
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  glyph 0x%x: adding cell 0x%x to the list",
-                glyph, cellInfo);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  glyph 0x%x: adding cell 0x%x to the list",
+               glyph, cellInfo);
 
     cellInfo->glyphInfo = glyph;
     cellInfo->nextGCI = glyph->cellInfo;
@@ -290,9 +290,9 @@ MTLGlyphCache_RemoveCellInfo(GlyphInfo *glyph, MTLCacheCellInfo *cellInfo)
     J2dTraceLn(J2D_TRACE_INFO, "MTLGlyphCache_RemoveCellInfo");
     do {
         if (currCellInfo == cellInfo) {
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
-                        "  glyph 0x%x: removing cell 0x%x from glyph's list",
-                        glyph, currCellInfo);
+            J2dTraceLn(J2D_TRACE_VERBOSE,
+                       "  glyph 0x%x: removing cell 0x%x from glyph's list",
+                       glyph, currCellInfo);
             if (prevInfo == NULL) { // it's the head, chop-chop
                 glyph->cellInfo = currCellInfo->nextGCI;
             } else {
@@ -305,9 +305,9 @@ MTLGlyphCache_RemoveCellInfo(GlyphInfo *glyph, MTLCacheCellInfo *cellInfo)
         prevInfo = currCellInfo;
         currCellInfo = currCellInfo->nextGCI;
     } while (currCellInfo != NULL);
-    J2dTraceLn2(J2D_TRACE_WARNING, "MTLGlyphCache_RemoveCellInfo: "\
-                "no cell 0x%x in glyph 0x%x's cell list",
-                cellInfo, glyph);
+    J2dTraceLn(J2D_TRACE_WARNING, "MTLGlyphCache_RemoveCellInfo: "\
+               "no cell 0x%x in glyph 0x%x's cell list",
+               cellInfo, glyph);
 }
 
 /**
@@ -350,15 +350,15 @@ MTLGlyphCache_GetCellInfoForCache(GlyphInfo *glyph, MTLGlyphCacheInfo *cache)
         MTLCacheCellInfo *cellInfo = glyph->cellInfo;
         do {
             if (cellInfo->cacheInfo == cache) {
-                J2dTraceLn3(J2D_TRACE_VERBOSE2,
-                            "  glyph 0x%x: found cell 0x%x for cache 0x%x",
-                            glyph, cellInfo, cache);
+                J2dTraceLn(J2D_TRACE_VERBOSE2,
+                           "  glyph 0x%x: found cell 0x%x for cache 0x%x",
+                           glyph, cellInfo, cache);
                 return cellInfo;
             }
             cellInfo = cellInfo->nextGCI;
         } while (cellInfo != NULL);
     }
-    J2dTraceLn2(J2D_TRACE_VERBOSE2, "  glyph 0x%x: no cell for cache 0x%x",
-                glyph, cache);
+    J2dTraceLn(J2D_TRACE_VERBOSE2, "  glyph 0x%x: no cell for cache 0x%x",
+               glyph, cache);
     return NULL;
 }
