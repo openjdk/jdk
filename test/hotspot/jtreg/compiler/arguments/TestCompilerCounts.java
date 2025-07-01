@@ -156,7 +156,7 @@ public class TestCompilerCounts {
 
             // Tiered modes
             int tieredCount = heuristicCount(cpus, Compilation.Tiered, debug);
-            pass(tieredCount, opt, "-XX:NonNMethodCodeHeapSize="  +  NonNMethodCodeHeapSize);
+            pass(tieredCount, opt, "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
             pass(tieredCount, opt, "-XX:TieredStopAtLevel=4", "-XX:NonNMethodCodeHeapSize=" + NonNMethodCodeHeapSize);
 
             // Also check that heuristics did not set up more threads than CPUs available
