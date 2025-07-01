@@ -22,7 +22,8 @@
  */
 
  /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631 8341833
+ * @test
+ * @bug 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631 8341833 8344706
  * @summary Testing startExCe-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -31,7 +32,7 @@
  *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
- * @run testng StartOptionTest
+ * @run testng/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch StartOptionTest
  */
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -421,7 +422,7 @@ public class StartOptionTest {
                 "--show-version");
     }
 
-    public void testSourceLevel() {
+    public void testPreviewEnabled() {
         String fn = writeToFile(
                 """
                 System.out.println(\"prefix\");
@@ -431,8 +432,6 @@ public class StartOptionTest {
                 """);
         startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
                              fn);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
-                             "--enable-preview", fn);
         String fn24 = writeToFile(
                 """
                 System.out.println(\"test\");
@@ -447,20 +446,25 @@ public class StartOptionTest {
         //JDK-8341631:
         String fn2 = writeToFile(
                 """
-                System.out.println(\"test\");
-                /exit
-                """);
-        startCheckUserOutput(s -> assertEquals(s, "test\n"),
-                             fn2);
-        String fn2Preview = writeToFile(
-                """
                 System.out.println(\"prefix\");
                 IO.println(\"test\");
                 System.out.println(\"suffix\");
                 /exit
                 """);
         startCheckUserOutput(s -> assertEquals(s, "prefix\ntest\nsuffix\n"),
-                             "--enable-preview", fn2Preview);
+                             fn2);
+        //verify the correct resource is selected when --enable-preview, relies on
+        //--patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch
+        String fn2Preview = writeToFile(
+                """
+                System.out.println(\"prefix\");
+                sayHello();
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "prefix\nHello!\nsuffix\n"),
+                             "--enable-preview", fn2Preview,
+                             "-");
 
         testPersistence = new HashMap<>();
 

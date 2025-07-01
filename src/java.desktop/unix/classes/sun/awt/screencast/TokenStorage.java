@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,15 @@ final class TokenStorage {
     private static final String REL_NAME_SECONDARY =
             ".awt/robot/screencast-tokens.properties";
 
+    private static final String REL_RD_NAME =
+            ".java/robot/remote-desktop-tokens.properties";
+
     private static final Properties PROPS = new Properties();
     private static final Path PROPS_PATH;
     private static final Path PROP_FILENAME;
 
     static {
-        Path propsPath = setupPath();
-
-        PROPS_PATH = propsPath;
+        PROPS_PATH = setupPath();
 
         if (PROPS_PATH != null) {
             PROP_FILENAME = PROPS_PATH.getFileName();
@@ -95,11 +96,18 @@ final class TokenStorage {
             return null;
         }
 
-        Path path = Path.of(userHome, REL_NAME);
-        Path secondaryPath = Path.of(userHome, REL_NAME_SECONDARY);
+        Path path;
+        Path secondaryPath = null;
+
+        if (XdgDesktopPortal.isRemoteDesktop()) {
+            path = Path.of(userHome, REL_RD_NAME);
+        } else {
+            path = Path.of(userHome, REL_NAME);
+            secondaryPath = Path.of(userHome, REL_NAME_SECONDARY);
+        }
 
         boolean copyFromSecondary = !Files.isWritable(path)
-                && Files.isWritable(secondaryPath);
+                && secondaryPath != null && Files.isWritable(secondaryPath);
 
         Path workdir = path.getParent();
 
@@ -176,7 +184,7 @@ final class TokenStorage {
         return false;
     }
 
-    private static class WatcherThread extends Thread {
+    private static final class WatcherThread extends Thread {
         private final WatchService watcher;
 
         public WatcherThread(WatchService watchService) {

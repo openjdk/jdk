@@ -36,7 +36,7 @@
 #include "utilities/ostream.hpp"
 
 #define INDENT_BY(num_chars, CODE) { \
-  streamIndentor si(out, num_chars); \
+  StreamIndentor si(out, num_chars); \
   { CODE }                           \
 }
 
@@ -51,7 +51,7 @@ static ssize_t counter_diff(size_t c1, size_t c2) {
 }
 
 MemReporterBase::MemReporterBase(outputStream* out, size_t scale) :
-  _scale(scale), _output(out), _auto_indentor(out) {}
+  _scale(scale), _output(out) {}
 
 size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
@@ -230,7 +230,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
 #endif
   out->print_cr(")");
 
-  streamIndentor si(out, indent);
+  StreamIndentor si(out, indent);
 
   if (mem_tag == mtClass) {
     // report class count
@@ -641,7 +641,7 @@ void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
       early_reserved_amount, early_committed_amount);
     out->print_cr(")");
 
-    streamIndentor si(out, indent);
+    StreamIndentor si(out, indent);
 
     // detail lines
     if (mem_tag == mtClass) {

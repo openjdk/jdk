@@ -154,6 +154,7 @@ final class GtkFileDialogPeer extends XDialogPeer implements FileDialogPeer {
         // have delegated to FileDialog#setFile
     }
 
+    @Override
     protected void requestXFocus(long time, boolean timeProvided) {
         if(standaloneWindow == 0) {
             super.requestXFocus(time, timeProvided);

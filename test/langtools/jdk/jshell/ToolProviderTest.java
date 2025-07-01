@@ -43,7 +43,7 @@ import static org.testng.Assert.assertTrue;
  *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
- * @run testng ToolProviderTest
+ * @run testng/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch ToolProviderTest
  */
 @Test
 public class ToolProviderTest extends StartOptionTest {

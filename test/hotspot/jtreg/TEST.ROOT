@@ -81,6 +81,7 @@ requires.properties= \
     vm.cds \
     vm.cds.custom.loaders \
     vm.cds.supports.aot.class.linking \
+    vm.cds.supports.aot.code.caching \
     vm.cds.write.archived.java.heap \
     vm.continuations \
     vm.jvmti \
@@ -90,6 +91,8 @@ requires.properties= \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.musl \
+    vm.asan \
+    vm.ubsan \
     vm.flagless \
     container.support \
     systemd.support \
@@ -99,7 +102,7 @@ requires.properties= \
     jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.5.1+1
+requiredVersion=7.5.2+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

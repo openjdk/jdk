@@ -133,6 +133,10 @@ public:
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
   float profile_trip_cnt()             { return _profile_trip_cnt; }
 
+#ifndef PRODUCT
+  uint _stress_peeling_attempts = 0;
+#endif
+
   LoopNode(Node *entry, Node *backedge)
     : RegionNode(3), _loop_flags(0), _unswitch_count(0),
       _profile_trip_cnt(COUNT_UNKNOWN) {
@@ -300,11 +304,14 @@ public:
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(uint tc) { _trip_count = tc; }
+  // We use max_juint for the default value of _trip_count to signal it wasn't set.
+  // We shouldn't set _trip_count to max_juint explicitly.
+  void set_trip_count(uint tc) { assert(tc < max_juint, "Cannot set trip count to max_juint"); _trip_count = tc; }
   uint trip_count()            { return _trip_count; }
 
   bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
   void set_exact_trip_count(uint tc) {
+    assert(tc < max_juint, "Cannot set trip count to max_juint");
     _trip_count = tc;
     _loop_flags |= HasExactTripCount;
   }
@@ -1273,8 +1280,8 @@ public:
   Node* loop_exit_control(Node* x, IdealLoopTree* loop);
   Node* loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);
   Node* loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Node*& phi_incr);
-  Node* loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi);
-  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
+  Node* loop_iv_stride(Node* incr, Node*& xphi);
+  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x);
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
