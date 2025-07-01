@@ -61,10 +61,9 @@ public class Test12 extends Test {
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         HttpsServer s2 = null;
-        ExecutorService executor=null;
         Path smallFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
         Path largeFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 2730088);
-        try {
+        try (final ExecutorService executor = Executors.newCachedThreadPool()) {
             System.out.print ("Test12: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
@@ -75,7 +74,6 @@ public class Test12 extends Test {
             HttpHandler h = new FileServerHandler(smallFilePath.getParent().toString());
             HttpContext c1 = s1.createContext ("/", h);
             HttpContext c2 = s2.createContext ("/", h);
-            executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
             ctx = new SimpleSSLContext().get();
@@ -109,9 +107,11 @@ public class Test12 extends Test {
                 s1.stop(0);
             if (s2 != null)
                 s2.stop(0);
-            if (executor != null)
-                executor.shutdown();
+            // it's OK to delete these files since the server side handlers
+            // serving these files have completed (guaranteed by the completion of Executor.close())
+            System.out.println("deleting " + smallFilePath);
             Files.delete(smallFilePath);
+            System.out.println("deleting " + largeFilePath);
             Files.delete(largeFilePath);
         }
     }
