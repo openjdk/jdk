@@ -73,7 +73,7 @@ public class ListTypeCheckTest {
     }
 
     private static void test0(ArrayList al, Object o) throws Exception {
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 7; i++) {
             try {
                 switch (i) {
                     case 0:
@@ -97,6 +97,12 @@ public class ListTypeCheckTest {
                         ListIterator iter = al.listIterator();
                         Object x = iter.next();
                         iter.set("blah"); // Should fail like the others
+                        break;
+                    case 6:
+                        al.add(o);
+                        ListIterator iter2 = al.listIterator();
+                        Object x2 = iter2.next();
+                        iter2.add("blah");
                         break;
                     default:
                         throw new Exception("test wrong");
