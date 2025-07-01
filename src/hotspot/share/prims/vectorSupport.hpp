@@ -38,8 +38,8 @@ extern "C" {
 
 class VectorSupport : AllStatic {
  private:
-  static Handle allocate_vector_payload(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, ScopeValue* payload, TRAPS);
-  static Handle allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, RegisterMap* reg_map, Location location, TRAPS);
+  static Handle allocate_vector_payload(InstanceKlass* ik, frame* fr, const RegisterMap* reg_map, ScopeValue* payload, TRAPS);
+  static Handle allocate_vector_payload_helper(InstanceKlass* ik, frame* fr, const RegisterMap* reg_map, Location location, TRAPS);
 
   static void init_payload_element(typeArrayOop arr, BasicType elem_bt, int index, address addr);
 
@@ -127,7 +127,7 @@ class VectorSupport : AllStatic {
   static bool has_scalar_op(jint id);
   static bool is_unsigned_op(jint id);
 
-  static instanceOop allocate_vector(InstanceKlass* holder, frame* fr, RegisterMap* reg_map, ObjectValue* sv, TRAPS);
+  static instanceOop allocate_vector(InstanceKlass* holder, frame* fr, const RegisterMap* reg_map, ObjectValue* sv, TRAPS);
 
   static bool is_vector(Klass* klass);
   static bool is_vector_mask(Klass* klass);

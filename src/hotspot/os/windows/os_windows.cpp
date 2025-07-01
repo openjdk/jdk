@@ -2797,7 +2797,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             nm->deopt_mh_handler_begin() :
             nm->deopt_handler_begin();
           assert(nm->insts_contains_inclusive(pc), "");
-          nm->set_original_pc(&fr, pc);
+          fr.set_original_pc(nullptr, nm, pc);
           // Set pc to handler
           exceptionInfo->ContextRecord->PC_NAME = (DWORD64)deopt;
           return EXCEPTION_CONTINUE_EXECUTION;

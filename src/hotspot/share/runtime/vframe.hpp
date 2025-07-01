@@ -30,6 +30,7 @@
 #include "code/location.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stackValue.hpp"
@@ -300,11 +301,12 @@ class vframeStreamCommon : StackObj {
   }
 
   const RegisterMap* reg_map() { return &_reg_map; }
+  frame* current() { return &_frame; }
 
   javaVFrame* asJavaVFrame();
-
   // Frame type
   inline bool is_interpreted_frame() const;
+  inline bool is_compiled_frame() const;
 
   // Iteration
   inline void next();

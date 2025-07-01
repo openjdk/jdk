@@ -370,7 +370,7 @@ public:
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 
 #define DO_THROW(name) \
-  void throw_##name(const char* msg = nullptr);
+  void throw_##name(const char* msg, const char* file, int line);
 
   DO_THROW(InternalError)
   DO_THROW(ArrayIndexOutOfBoundsException)

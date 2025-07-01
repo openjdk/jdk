@@ -2426,7 +2426,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
       return;
     }
     is_interpreted[frame_count] = vfs.is_interpreted_frame();
-    frame_sp[frame_count] = vfs.frame_id();
+    frame_sp[frame_count] = vfs.current()->id();
     if (++frame_count > 1) break;
   }
   if (frame_count < 2)  {

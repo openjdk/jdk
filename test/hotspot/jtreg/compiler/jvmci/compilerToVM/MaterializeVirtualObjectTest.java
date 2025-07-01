@@ -157,11 +157,7 @@ public class MaterializeVirtualObjectTest {
             throw new SkippedException("Test needs compilation level 4");
         }
 
-        try {
-            new MaterializeVirtualObjectTest().test();
-        } catch (MaterializationNotSupported e) {
-            Asserts.assertTrue(Thread.currentThread().isVirtual());
-        }
+        new MaterializeVirtualObjectTest().test();
     }
 
     private static String getName() {
@@ -233,14 +229,6 @@ public class MaterializeVirtualObjectTest {
         }
     }
 
-    private static void materializeVirtualObjects(InspectedFrame f, boolean invalidateCode) {
-        try {
-            f.materializeVirtualObjects(invalidateCode);
-        } catch (IllegalArgumentException e) {
-            throw new MaterializationNotSupported(e);
-        }
-    }
-
     private void checkStructure(boolean materialize) {
         boolean[] framesSeen = new boolean[2];
         Object[] helpers = new Object[1];
@@ -259,8 +247,9 @@ public class MaterializeVirtualObjectTest {
                     Asserts.assertEQ(((Helper) f.getLocal(3)).string, "foo", "innerHelper.string should be foo");
                     helpers[0] = f.getLocal(1);
                     if (materialize) {
-                        materializeVirtualObjects(f, false);
+                        f.materializeVirtualObjects(false);
                     }
+                    System.err.println(f);
                     return null; //continue
                 } else {
                     Asserts.assertFalse(framesSeen[0], "frame3 can not have been seen");
@@ -273,10 +262,11 @@ public class MaterializeVirtualObjectTest {
                     Asserts.assertTrue(f.getLocal(4) != null, "helper2 should not be null");
                     Asserts.assertEQ(((Helper) f.getLocal(3)).string, f.getLocal(1), "helper.string should be the same as str");
                     Asserts.assertEQ(((Helper) f.getLocal(4)).string, "bar", "helper2.string should be foo");
+                    System.err.println(f);
                     if (!materialize) {
                         Asserts.assertEQ(f.getLocal(3), helpers[0], "helper should be the same as frame3's outerHelper");
                     }
-                    return f; // stop
+                    return false; // stop
                 }
             });
         Asserts.assertTrue(framesSeen[1], "frame3 should have been seen");
@@ -287,48 +277,54 @@ public class MaterializeVirtualObjectTest {
         // Materialize virtual objects on last invocation
         if (iteration == COMPILE_THRESHOLD) {
             // get frames and check not-null
-            HotSpotStackFrameReference materialized = CompilerToVMHelper.iterateFrames(
+            CompilerToVMHelper.iterateFrames(
                 new ResolvedJavaMethod[] {MATERIALIZED_RESOLVED},
                 null /* any */,
                 0,
-                f -> (HotSpotStackFrameReference) f);
-            Asserts.assertNotNull(materialized, getName()
-                    + " : got null frame for materialized method");
-            Asserts.assertTrue(materialized.isMethod(MATERIALIZED_RESOLVED),
-                "Expected materialized method but got " + materialized);
-            InspectedFrame notMaterialized = CompilerToVMHelper.iterateFrames(
-                new ResolvedJavaMethod[] {NOT_MATERIALIZED_RESOLVED},
-                null /* any */,
-                0,
-                f -> f);
-            Asserts.assertNE(materialized, notMaterialized,
-                    "Got same frame pointer for both tested frames");
-            Asserts.assertTrue(notMaterialized.isMethod(NOT_MATERIALIZED_RESOLVED),
-                "Expected notMaterialized method but got " + notMaterialized);
-            Asserts.assertNotNull(notMaterialized, getName()
-                    + " : got null frame for not materialized method");
-            Asserts.assertTrue(WB.isMethodCompiled(MATERIALIZED_METHOD), getName()
-                + " : materialized method not compiled");
-            Asserts.assertTrue(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD),
-                getName() + " : not materialized method not compiled");
-            // check that frames has virtual objects before materialization stage
-            Asserts.assertTrue(materialized.hasVirtualObjects(), getName()
-                    + ": materialized frame has no virtual object before materialization");
-            Asserts.assertTrue(notMaterialized.hasVirtualObjects(), getName()
-                    + ": notMaterialized frame has no virtual object before materialization");
-            // materialize
-            materializeVirtualObjects(materialized, INVALIDATE);
-            // check that only not materialized frame has virtual objects
-            Asserts.assertFalse(materialized.hasVirtualObjects(), getName()
-                    + " : materialized has virtual object after materialization");
-            Asserts.assertTrue(notMaterialized.hasVirtualObjects(), getName()
-                    + " : notMaterialized has no virtual object after materialization");
-            // check that materialized frame was deoptimized in case invalidate=true
-            Asserts.assertEQ(WB.isMethodCompiled(MATERIALIZED_METHOD), !INVALIDATE, getName()
-                    + " : materialized method has unexpected compiled status");
-            // check that not materialized frame wasn't deoptimized
-            Asserts.assertTrue(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD), getName()
-                    + " : not materialized method has unexpected compiled status");
+                materialized -> {
+                    System.err.println("materialized: " + materialized);
+                    Asserts.assertNotNull(materialized, getName()
+                                          + " : got null frame for materialized method");
+                    Asserts.assertTrue(materialized.isMethod(MATERIALIZED_RESOLVED),
+                                       "Expected materialized method but got " + materialized);
+                    CompilerToVMHelper.iterateFrames(
+                        new ResolvedJavaMethod[] {NOT_MATERIALIZED_RESOLVED},
+                        null /* any */,
+                        0,
+                        notMaterialized -> {
+                            System.err.println("notMaterialized: " + notMaterialized);
+                            Asserts.assertNE(materialized, notMaterialized,
+                                             "Got same frame pointer for both tested frames");
+                            Asserts.assertTrue(notMaterialized.isMethod(NOT_MATERIALIZED_RESOLVED),
+                                               "Expected notMaterialized method " + NOT_MATERIALIZED_RESOLVED + "but got " + notMaterialized.getMethod());
+                            Asserts.assertNotNull(notMaterialized, getName()
+                                                  + " : got null frame for not materialized method");
+                            Asserts.assertTrue(WB.isMethodCompiled(MATERIALIZED_METHOD), getName()
+                                               + " : materialized method not compiled");
+                            Asserts.assertTrue(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD),
+                                               getName() + " : not materialized method not compiled");
+                            // check that frames has virtual objects before materialization stage
+                            Asserts.assertTrue(materialized.hasVirtualObjects(), getName()
+                                               + ": materialized frame has no virtual object before materialization");
+                            Asserts.assertTrue(notMaterialized.hasVirtualObjects(), getName()
+                                               + ": notMaterialized frame has no virtual object before materialization");
+                            // materialize
+                            materialized.materializeVirtualObjects(INVALIDATE);
+                            // check that only not materialized frame has virtual objects
+                            Asserts.assertFalse(materialized.hasVirtualObjects(), getName()
+                                                + " : materialized has virtual object after materialization");
+                            Asserts.assertTrue(notMaterialized.hasVirtualObjects(), getName()
+                                               + " : notMaterialized has no virtual object after materialization");
+                            // check that materialized frame was deoptimized in case invalidate=true
+                            Asserts.assertEQ(WB.isMethodCompiled(MATERIALIZED_METHOD), !INVALIDATE, getName()
+                                             + " : materialized method has unexpected compiled status");
+                            // check that not materialized frame wasn't deoptimized
+                            Asserts.assertTrue(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD), getName()
+                                               + " : not materialized method has unexpected compiled status");
+                            return true;
+                        });
+                    return true;
+                });
         } else if (iteration == COMPILE_THRESHOLD + 1) {
             checkStructure(false);
             checkStructure(true);
@@ -341,11 +337,9 @@ public class MaterializeVirtualObjectTest {
         public Helper(String s) {
             this.string = s;
         }
-    }
 
-    static class MaterializationNotSupported extends RuntimeException {
-        public MaterializationNotSupported(Throwable cause) {
-            super(cause);
+        public String toString() {
+            return "Helper@" + System.identityHashCode(this) + ":" + string;
         }
     }
 }

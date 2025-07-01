@@ -445,7 +445,7 @@ class ExceptionTranslation: public StackObj {
       } else {
         decode(THREAD, _encoded_ok, buffer);
         if (!_to_env->has_pending_exception()) {
-          _to_env->throw_InternalError("decodeAndThrowThrowable should have thrown an exception");
+          _to_env->throw_InternalError("decodeAndThrowThrowable should have thrown an exception", __FILE__, __LINE__);
         }
         return;
       }
@@ -905,15 +905,15 @@ const char* JVMCIEnv::as_utf8_string(JVMCIObject str) {
   }
 }
 
-#define DO_THROW(name)                             \
-void JVMCIEnv::throw_##name(const char* msg) {     \
-  if (is_hotspot()) {                              \
-    JavaThread* THREAD = JavaThread::current();    \
-    THROW_MSG(HotSpotJVMCI::name::symbol(), msg);  \
-  } else {                                         \
-    JNIAccessMark jni(this);                       \
-    jni()->ThrowNew(JNIJVMCI::name::clazz(), msg); \
-  }                                                \
+#define DO_THROW(name)                                                             \
+void JVMCIEnv::throw_##name(const char* msg, const char* file, int line) {         \
+  if (is_hotspot()) {                                                              \
+    JavaThread* THREAD = JavaThread::current();                                    \
+    Exceptions::_throw_msg(THREAD, file, line, HotSpotJVMCI::name::symbol(), msg); \
+  } else {                                                                         \
+    JNIAccessMark jni(this);                                                       \
+    jni()->ThrowNew(JNIJVMCI::name::clazz(), msg);                                 \
+  }                                                                                \
 }
 
 DO_THROW(InternalError)

@@ -331,16 +331,19 @@ static void print_objects(JavaThread* deoptee_thread,
 }
 
 static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* compiled_method,
-                                  frame& deoptee, RegisterMap& map, GrowableArray<compiledVFrame*>* chunk,
+                                  GrowableArray<compiledVFrame*>* vframes,
                                   bool& deoptimized_objects) {
   bool realloc_failures = false;
-  assert (chunk->at(0)->scope() != nullptr,"expect only compiled java frames");
+  assert (vframes->at(0)->scope() != nullptr,"expect only compiled java frames");
 
-  JavaThread* deoptee_thread = chunk->at(0)->thread();
+  frame deoptee = vframes->at(0)->fr();
+  RegisterMap map(vframes->at(0)->register_map());
+
+  JavaThread* deoptee_thread = vframes->at(0)->thread();
   assert(exec_mode == Deoptimization::Unpack_none || (deoptee_thread == thread),
          "a frame can only be deoptimized by the owner thread");
 
-  GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects_to_rematerialize(deoptee, map);
+  GrowableArray<ScopeValue*>* objects = vframes->at(0)->scope()->objects_to_rematerialize(deoptee, map);
 
   // The flag return_oop() indicates call sites which return oop
   // in compiled code. Such sites include java method calls,
@@ -351,7 +354,7 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
   // is set during method compilation (see Compile::Process_OopMap_Node()).
   // If the previous frame was popped or if we are dispatching an exception,
   // we don't have an oop result.
-  bool save_oop_result = chunk->at(0)->scope()->return_oop() && !thread->popframe_forcing_deopt_reexecution() && (exec_mode == Deoptimization::Unpack_deopt);
+  bool save_oop_result = vframes->at(0)->scope()->return_oop() && !thread->popframe_forcing_deopt_reexecution() && (exec_mode == Deoptimization::Unpack_deopt);
   Handle return_value;
   if (save_oop_result) {
     // Reallocation may trigger GC. If deoptimization happened on return from
@@ -381,9 +384,6 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
     guarantee(compiled_method != nullptr, "deopt must be associated with an nmethod");
     bool is_jvmci = compiled_method->is_compiled_by_jvmci();
     Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, is_jvmci);
-    if (TraceDeoptimization) {
-      print_objects(deoptee_thread, objects, realloc_failures);
-    }
   }
   if (save_oop_result) {
     // Restore result.
@@ -392,22 +392,23 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
   return realloc_failures;
 }
 
-static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
-                                     frame& deoptee, int exec_mode, bool& deoptimized_objects) {
-  JavaThread* deoptee_thread = chunk->at(0)->thread();
-  assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
+static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* vframes, bool realloc_failures,
+                                     compiledVFrame* initial_cvf, int exec_mode, bool& deoptimized_objects) {
+  JavaThread* deoptee_thread = vframes->at(0)->thread();
+  assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, initial_cvf), "must relock just once");
   assert(thread == Thread::current(), "should be");
   HandleMark hm(thread);
 #ifndef PRODUCT
   bool first = true;
 #endif // !PRODUCT
   // Start locking from outermost/oldest frame
-  for (int i = (chunk->length() - 1); i >= 0; i--) {
-    compiledVFrame* cvf = chunk->at(i);
+  for (int i = (vframes->length() - 1); i >= 0; i--) {
+    compiledVFrame* cvf = vframes->at(i);
     assert (cvf->scope() != nullptr,"expect only compiled java frames");
     GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
     if (monitors->is_nonempty()) {
-      bool relocked = Deoptimization::relock_objects(thread, monitors, deoptee_thread, deoptee,
+      frame fr = cvf->fr();
+      bool relocked = Deoptimization::relock_objects(thread, monitors, deoptee_thread, fr,
                                                      exec_mode, realloc_failures);
       deoptimized_objects = deoptimized_objects || relocked;
 #ifndef PRODUCT
@@ -445,12 +446,11 @@ static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledV
 
 // Deoptimize objects, that is reallocate and relock them, just before they escape through JVMTI.
 // The given vframes cover one physical frame.
-bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk,
+bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* vframes,
                                                  bool& realloc_failures) {
-  frame deoptee = chunk->at(0)->fr();
-  JavaThread* deoptee_thread = chunk->at(0)->thread();
-  nmethod* nm = deoptee.cb()->as_nmethod_or_null();
-  RegisterMap map(chunk->at(0)->register_map());
+  compiledVFrame* cvf = vframes->at(0);
+  JavaThread* deoptee_thread = vframes->at(0)->thread();
+  nmethod* nm = cvf->code();
   bool deoptimized_objects = false;
 
   bool const jvmci_enabled = JVMCI_ONLY(EnableJVMCI) NOT_JVMCI(false);
@@ -458,7 +458,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
   // Reallocate the non-escaping objects and restore their fields.
   if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations)
                                       || EliminateAutoBox || EnableVectorAggressiveReboxing)) {
-    realloc_failures = rematerialize_objects(thread, Unpack_none, nm, deoptee, map, chunk, deoptimized_objects);
+    realloc_failures = rematerialize_objects(thread, Unpack_none, nm, vframes, deoptimized_objects);
   }
 
   // MonitorInfo structures used in eliminate_locks are not GC safe.
@@ -466,7 +466,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
 
   // Now relock objects if synchronization on them was eliminated.
   if (jvmci_enabled COMPILER2_PRESENT(|| ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks))) {
-    restore_eliminated_locks(thread, chunk, realloc_failures, deoptee, Unpack_none, deoptimized_objects);
+    restore_eliminated_locks(thread, vframes, realloc_failures, cvf, Unpack_none, deoptimized_objects);
   }
   return deoptimized_objects;
 }
@@ -513,15 +513,15 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Create a growable array of VFrames where each VFrame represents an inlined
   // Java frame.  This storage is allocated with the usual system arena.
   assert(deoptee.is_compiled_frame(), "Wrong frame type");
-  GrowableArray<compiledVFrame*>* chunk = new GrowableArray<compiledVFrame*>(10);
+  GrowableArray<compiledVFrame*>* vframes = new GrowableArray<compiledVFrame*>(10);
   vframe* vf = vframe::new_vframe(&deoptee, &map, current);
   while (!vf->is_top()) {
     assert(vf->is_compiled_frame(), "Wrong frame type");
-    chunk->push(compiledVFrame::cast(vf));
+    vframes->push(compiledVFrame::cast(vf));
     vf = vf->sender();
   }
   assert(vf->is_compiled_frame(), "Wrong frame type");
-  chunk->push(compiledVFrame::cast(vf));
+  vframes->push(compiledVFrame::cast(vf));
 
   bool realloc_failures = false;
 
@@ -533,7 +533,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (jvmci_enabled COMPILER2_PRESENT( || (DoEscapeAnalysis && EliminateAllocations)
                                        || EliminateAutoBox || EnableVectorAggressiveReboxing )) {
     bool unused;
-    realloc_failures = rematerialize_objects(current, exec_mode, nm, deoptee, map, chunk, unused);
+    realloc_failures = rematerialize_objects(current, exec_mode, nm, vframes, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -545,13 +545,13 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
 #if COMPILER2_OR_JVMCI
   if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
-      && !EscapeBarrier::objs_are_deoptimized(current, deoptee.id())) {
+      && !EscapeBarrier::objs_are_deoptimized(current, vframes->at(0))) {
     bool unused = false;
-    restore_eliminated_locks(current, chunk, realloc_failures, deoptee, exec_mode, unused);
+    restore_eliminated_locks(current, vframes, realloc_failures, vframes->at(0), exec_mode, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
-  ScopeDesc* trap_scope = chunk->at(0)->scope();
+  ScopeDesc* trap_scope = vframes->at(0)->scope();
   Handle exceptionObject;
   if (trap_scope->rethrow_exception()) {
 #ifndef PRODUCT
@@ -567,7 +567,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
     guarantee(exceptionObject() != nullptr, "exception oop can not be null");
   }
 
-  vframeArray* array = create_vframeArray(current, deoptee, &map, chunk, realloc_failures);
+  vframeArray* array = create_vframeArray(current, deoptee, &map, vframes, realloc_failures);
 #if COMPILER2_OR_JVMCI
   if (realloc_failures) {
     // This destroys all ScopedValue bindings.
@@ -582,8 +582,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Now that the vframeArray has been created if we have any deferred local writes
   // added by jvmti then we can free up that structure as the data is now in the
   // vframeArray
-
-  JvmtiDeferredUpdates::delete_updates_for_frame(current, array->original().id());
+  deoptee.clear_deferred_locals(nullptr);
 
   // Compute the caller frame based on the sender sp of stub_frame and stored frame sizes info.
   CodeBlob* cb = stub_frame.cb();
@@ -1207,7 +1206,7 @@ public:
 
 BooleanBoxCache* BooleanBoxCache::_singleton = nullptr;
 
-oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS) {
+oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, const RegisterMap* reg_map, bool& cache_init_error, TRAPS) {
    Klass* k = java_lang_Class::as_Klass(bv->klass()->as_ConstantOopReadValue()->value()());
    BasicType box_type = vmClasses::box_klass_type(k);
    if (box_type != T_OBJECT) {
@@ -1227,7 +1226,7 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
 #endif // INCLUDE_JVMCI
 
 #if COMPILER2_OR_JVMCI
-bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
+bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, const RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
   Handle pending_exception(THREAD, thread->pending_exception());
   const char* exception_file = thread->exception_file();
   int exception_line = thread->exception_line();
@@ -1361,7 +1360,7 @@ static void byte_array_put(typeArrayOop obj, StackValue* value, int index, int b
 
 
 // restore elements of an eliminated type array
-void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type) {
+void Deoptimization::reassign_type_array_elements(frame* fr, const RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type) {
   int index = 0;
 
   for (int i = 0; i < sv->field_size(); i++) {
@@ -1453,7 +1452,7 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 }
 
 // restore fields of an eliminated object array
-void Deoptimization::reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj) {
+void Deoptimization::reassign_object_array_elements(frame* fr, const RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj) {
   for (int i = 0; i < sv->field_size(); i++) {
     StackValue* value = StackValue::create_stack_value(fr, reg_map, sv->field_at(i));
     assert(value->type() == T_OBJECT, "object element expected");
@@ -1490,7 +1489,7 @@ static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klas
 }
 
 // Restore fields of an eliminated instance object employing the same field order used by the compiler.
-static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool is_jvmci) {
+static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, const RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool is_jvmci) {
   GrowableArray<ReassignedField>* fields = get_reassigned_fields(klass, new GrowableArray<ReassignedField>(), is_jvmci);
   for (int i = 0; i < fields->length(); i++) {
     ScopeValue* scope_field = sv->field_at(svIndex);
@@ -1573,7 +1572,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 }
 
 // restore fields of all eliminated objects and arrays
-void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool is_jvmci) {
+void Deoptimization::reassign_fields(frame* fr, const RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool is_jvmci) {
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
@@ -1629,6 +1628,10 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
   // We need barrier so that stores that initialize these objects can't be reordered
   // with subsequent stores that make these objects accessible by other threads.
   OrderAccess::storestore();
+
+  if (TraceDeoptimization) {
+    print_objects(reg_map->thread(), objects, realloc_failures);
+  }
 }
 
 
@@ -1668,7 +1671,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
                 mon_info->lock()->set_bad_metadata_deopt();
               }
 #endif
-              JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
+              deoptee_thread->inc_relock_count_after_wait();
               continue;
             }
           }
@@ -1704,7 +1707,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
 }
 #endif // COMPILER2_OR_JVMCI
 
-vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures) {
+vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* vframes, bool realloc_failures) {
   Events::log_deopt_message(thread, "DEOPT PACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT, p2i(fr.pc()), p2i(fr.sp()));
 
   // Register map for next frame (used for stack crawl).  We capture
@@ -1719,10 +1722,10 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   // Since the Java thread being deoptimized will eventually adjust it's own stack,
   // the vframeArray containing the unpacking information is allocated in the C heap.
   // For Compiler1, the caller of the deoptimized frame is saved for use by unpack_frames().
-  vframeArray* array = vframeArray::allocate(thread, frame_size, chunk, reg_map, sender, caller, fr, realloc_failures);
+  vframeArray* array = vframeArray::allocate(thread, frame_size, vframes, reg_map, sender, caller, fr, realloc_failures);
 
   // Compare the vframeArray to the collected vframes
-  assert(array->structural_compare(thread, chunk), "just checking");
+  assert(array->structural_compare(thread, vframes), "just checking");
 
   if (TraceDeoptimization) {
     ResourceMark rm;
@@ -1731,8 +1734,8 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
     st.print("   ");
     fr.print_on(&st);
     st.print_cr("   Virtual frames (innermost/newest first):");
-    for (int index = 0; index < chunk->length(); index++) {
-      compiledVFrame* vf = chunk->at(index);
+    for (int index = 0; index < vframes->length(); index++) {
+      compiledVFrame* vf = vframes->at(index);
       int bci = vf->raw_bci();
       const char* code_name;
       if (bci == SynchronizationEntryBCI) {
@@ -1783,7 +1786,7 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
 }
 #endif
 
-void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deoptimization::DeoptReason reason) {
+void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, const RegisterMap* reg_map, Deoptimization::DeoptReason reason) {
   assert(fr.can_be_deoptimized(), "checking frame type");
 
   gather_statistics(reason, Action_none, Bytecodes::_illegal);
@@ -1809,10 +1812,10 @@ void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deopt
 
   // Patch the compiled method so that when execution returns to it we will
   // deopt the execution state and return to the interpreter.
-  fr.deoptimize(thread);
+  fr.deoptimize(thread, nullptr);
 }
 
-void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason) {
+void Deoptimization::deoptimize(JavaThread* thread, frame fr, const RegisterMap* reg_map, DeoptReason reason) {
   // Deoptimize only if the frame comes from compile code.
   // Do not deoptimize the frame which is already patched
   // during the execution of the loops below.
@@ -1820,7 +1823,7 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
     return;
   }
   ResourceMark rm;
-  deoptimize_single_frame(thread, fr, reason);
+  deoptimize_single_frame(thread, fr, reg_map, reason);
 }
 
 #if INCLUDE_JVMCI
@@ -1855,7 +1858,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
     }
   }
 
-  Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
+  Deoptimization::deoptimize(thread, caller_frame, &reg_map, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, nm->method()), true);
   if (trap_mdo != nullptr) {
@@ -1880,7 +1883,7 @@ void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id,
   while (fr.id() != id) {
     fr = fr.sender(&reg_map);
   }
-  deoptimize(thread, fr, reason);
+  deoptimize(thread, fr, &reg_map, reason);
 }
 
 
@@ -1896,6 +1899,10 @@ void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id, DeoptRea
 
 void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
   deoptimize_frame(thread, id, Reason_constraint);
+}
+
+void Deoptimization::deoptimize_frame(JavaThread* thread, compiledVFrame* cvf) {
+  deoptimize_frame(thread, cvf->fr().id(), Reason_constraint);
 }
 
 // JVMTI PopFrame support

@@ -277,7 +277,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = get_deopt_original_pc();
+  address original_pc = get_deopt_original_pc(nullptr);
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -434,15 +434,10 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 // given unextended SP.
 #ifdef ASSERT
 void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
-  frame fr;
-
-  // This is ugly but it's better than to change {get,set}_original_pc
-  // to take an SP value as argument.  And it's only a debugging
-  // method anyway.
-  fr._unextended_sp = unextended_sp;
+  assert(unextended_sp == _unextended_sp, "expected to be the same frame");
 
   assert_cond(nm != nullptr);
-  address original_pc = nm->get_original_pc(&fr);
+  address original_pc = get_original_pc(nullptr, nm);
   assert(nm->insts_contains_inclusive(original_pc),
          "original PC must be in the main code section of the compiled method (or must be immediately following it)");
 }

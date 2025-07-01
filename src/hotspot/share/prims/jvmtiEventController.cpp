@@ -239,7 +239,7 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
       ResourceMark resMark;
       for (StackFrameStream fst(jt, false /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
         if (fst.current()->can_be_deoptimized()) {
-          Deoptimization::deoptimize(jt, *fst.current());
+          Deoptimization::deoptimize(jt, *fst.current(), fst.register_map());
         }
       }
     }

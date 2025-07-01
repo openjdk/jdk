@@ -2076,7 +2076,7 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
       // The caller of the runtime stub when the continuation is preempted is not at a
       // Java call instruction, and so cannot rely on nmethod patching for deopt.
       log_develop_trace(continuations)("Deoptimizing runtime stub caller");
-      f.to_frame().deoptimize(nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
+      f.to_frame().deoptimize(nullptr, nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
     }
   }
 
@@ -2632,7 +2632,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     log_develop_trace(continuations)("Deoptimizing thawed frame");
     DEBUG_ONLY(ContinuationHelper::Frame::patch_pc(f, nullptr));
 
-    f.deoptimize(nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
+    f.deoptimize(nullptr, nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
     assert(f.is_deoptimized_frame(), "");
     assert(ContinuationHelper::Frame::is_deopt_return(f.raw_pc(), f), "");
     maybe_set_fastpath(f.sp());
@@ -2905,7 +2905,7 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
   for (; !fst.is_done() && !Continuation::is_continuation_enterSpecial(*fst.current()); fst.next()) {
     if (fst.current()->cb()->is_nmethod() && fst.current()->cb()->as_nmethod()->is_marked_for_deoptimization()) {
       st->print_cr(">>> do_verify_after_thaw deopt");
-      fst.current()->deoptimize(nullptr);
+      fst.current()->deoptimize(nullptr, nullptr);
       fst.current()->print_on(st);
     }
 
