@@ -52,7 +52,7 @@ class ThreadSnapshot {
 
     /**
      * Take a snapshot of a Thread to get all information about the thread.
-     * Return null if a ThreadSnapshot cannot be created, for example if the
+     * Return null if a ThreadSnapshot is not created, for example if the
      * thread has terminated.
      * @throws UnsupportedOperationException if not supported by VM
      */

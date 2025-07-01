@@ -308,6 +308,7 @@ public class ThreadDumper {
 
     /**
      * Write a thread to the given JSON writer.
+     * @return true if the thread dump was written, false otherwise
      * @throws UncheckedIOException if an I/O error occurs
      */
     private static boolean dumpThread(Thread thread, JsonWriter jsonWriter) {

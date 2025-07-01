@@ -169,4 +169,3 @@ public class DumpThreadsWithEliminatedLock {
         return file;
     }
 }
-
