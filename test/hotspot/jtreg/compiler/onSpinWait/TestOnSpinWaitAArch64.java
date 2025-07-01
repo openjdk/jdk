@@ -29,6 +29,7 @@
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
+ * @requires vm.debug==true
  *
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
