@@ -1820,7 +1820,6 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   uint old_unique = C->unique();
   uint old_hash = n->hash();
   Node* i = n->Ideal(this, can_reshape);
-
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
     if (old_unique < C->unique()) {
