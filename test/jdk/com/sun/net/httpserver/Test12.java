@@ -63,7 +63,8 @@ public class Test12 extends Test {
         HttpsServer s2 = null;
         Path smallFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
         Path largeFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 2730088);
-        try (final ExecutorService executor = Executors.newCachedThreadPool()) {
+        final ExecutorService executor = Executors.newCachedThreadPool();
+        try {
             System.out.print ("Test12: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
@@ -103,10 +104,13 @@ public class Test12 extends Test {
             }
             System.out.println ("All " + futures.size() + " tasks completed successfully");
         } finally {
-            if (s1 != null)
+            if (s1 != null) {
                 s1.stop(0);
-            if (s2 != null)
+            }
+            if (s2 != null) {
                 s2.stop(0);
+            }
+            executor.close();
             // it's OK to delete these files since the server side handlers
             // serving these files have completed (guaranteed by the completion of Executor.close())
             System.out.println("deleting " + smallFilePath);
