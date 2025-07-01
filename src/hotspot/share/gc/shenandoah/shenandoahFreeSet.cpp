@@ -2109,7 +2109,6 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
     size_t actual_size = req.size();
     for (uint i = 0u; i < max_probes; i++) {
       ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
-      log_info(gc)("Cas alloc from region " PTR_FORMAT "", p2i(r));
       if (r != nullptr) {
         if (IS_TLAB) {
           obj = r->allocate_lab_atomic(req, actual_size);
@@ -2119,12 +2118,15 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
         if (obj != nullptr) {
           assert(actual_size > 0, "Must be");
           req.set_actual_size(actual_size);
-          if (pointer_delta(r->bottom(), obj) == actual_size) {
+          if (pointer_delta(obj, r->bottom()) == actual_size) {
             // Set to true if it is the first object/tlab allocated in the region.
             in_new_region = true;
           }
           assert(req.is_young(), "Mutator allocations always come from young generation.");
-          _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
+          {
+            ShenandoahHeapLocker locker(_heap->lock());
+            _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
+          }
           return obj;
         }
       }
