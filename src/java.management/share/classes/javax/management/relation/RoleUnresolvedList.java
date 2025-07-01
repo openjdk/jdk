@@ -35,6 +35,10 @@ import java.util.List;
  * representing roles not retrieved from a relation due to a problem
  * encountered when trying to access (read or write) the roles.
  *
+ * <p>It is not permitted to add objects to a {@code RoleUnresolvedList} that are
+ * not instances of {@code RoleUnresolved}.  This will produce an {@code IllegalArgumentException}
+ * when calling methods in this class, or when using {@code listIterator} and {@code add} or {@code set}.</p>
+ *
  * @since 1.5
  */
 /* We cannot extend ArrayList<RoleUnresolved> because our legacy

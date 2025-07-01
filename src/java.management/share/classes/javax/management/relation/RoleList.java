@@ -35,6 +35,10 @@ import java.util.List;
  * parameter when creating a relation, and when trying to set several roles in
  * a relation (via 'setRoles()' method). It is returned as part of a
  * RoleResult, to provide roles successfully retrieved.
+
+ * <p>It is not permitted to add objects to a {@code RoleList} that are
+ * not instances of {@code Role}.  This will produce an {@code IllegalArgumentException}
+ * when calling methods in this class, or when using {@code listIterator} and {@code add} or {@code set}.</p>
  *
  * @since 1.5
  */

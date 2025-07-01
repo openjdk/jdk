@@ -38,8 +38,8 @@ import java.util.Map;
  * {@link MBeanServer} and {@link MBeanServerConnection}.</p>
  *
  * <p>It is not permitted to add objects to an {@code AttributeList} that are
- * not instances of {@code Attribute}.  This will produce an {@code
- * IllegalArgumentException}.</p>
+ * not instances of {@code Attribute}.  This will produce an {@code IllegalArgumentException}
+ * when calling methods in this class, or when using {@code listIterator} and {@code add} or {@code set}.</p>
  *
  * @since 1.5
  */
