@@ -28,14 +28,12 @@ package sun.nio.cs;
 
 import java.nio.*;
 import java.nio.charset.*;
-import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * Base class for different flavors of UTF-16 encoders
  */
 public abstract class UnicodeEncoder extends CharsetEncoder {
     protected static final char BYTE_ORDER_MARK = '\uFEFF';
-    protected static final char REVERSED_MARK = '\uFFFE';
 
     protected static final int BIG = 0;
     protected static final int LITTLE = 1;
