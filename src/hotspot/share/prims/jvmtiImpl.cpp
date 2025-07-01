@@ -190,7 +190,7 @@ void JvmtiBreakpoint::print_on(outputStream* out) const {
 void VM_ChangeBreakpoints::doit() {
   if (_bp->method()->is_old()) {
     // The bp->_method became old because VMOp with class redefinition happened for this class
-    // fter JvmtBreakpoint was created but before JVM_ChangeBreakpoints started.
+    // after JvmtiBreakpoint was created but before JVM_ChangeBreakpoints started.
     // All class breakpoints are cleared during redefinition, so don't set/clear this breakpoint.
    return;
   }
