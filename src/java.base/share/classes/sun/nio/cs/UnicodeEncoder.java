@@ -67,10 +67,13 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
-        if (!src.hasArray() || !dst.hasArray()) {
-            return encodeLoopBuffer(src, dst);
+        if (src.hasArray() && dst.hasArray()) {
+            return encodeArrayLoop(src, dst);
         }
+        return encodeBufferLoop(src, dst);
+    }
 
+    private CoderResult encodeArrayLoop(CharBuffer src, ByteBuffer dst) {
         char[] sa = src.array();
         int soff = src.arrayOffset();
         int sp = soff + src.position();
@@ -123,7 +126,7 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
         return nativeOrder ? c : Character.reverseBytes(c);
     }
 
-    private CoderResult encodeLoopBuffer(CharBuffer src, ByteBuffer dst) {
+    private CoderResult encodeBufferLoop(CharBuffer src, ByteBuffer dst) {
         int mark = src.position();
         boolean nativeOrder = (byteOrder == BIG) == (dst.order() == ByteOrder.BIG_ENDIAN);
 
