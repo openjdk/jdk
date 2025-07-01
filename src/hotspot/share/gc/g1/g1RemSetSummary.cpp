@@ -96,7 +96,7 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   }
 }
 
-class RegionTypeCounter {
+class G1PerRegionTypeRemSetCounters {
 private:
   const char* _name;
 
@@ -130,7 +130,7 @@ private:
 
 public:
 
-  RegionTypeCounter(const char* name) : _name(name), _rs_unused_mem_size(0), _rs_mem_size(0), _cards_occupied(0),
+  G1PerRegionTypeRemSetCounters(const char* name) : _name(name), _rs_unused_mem_size(0), _rs_mem_size(0), _cards_occupied(0),
     _amount(0), _amount_tracked(0), _code_root_mem_size(0), _code_root_elems(0) { }
 
   void add(size_t rs_unused_mem_size, size_t rs_mem_size, size_t cards_occupied,
@@ -180,13 +180,12 @@ public:
 };
 
 
-class HRRSStatsIter: public G1HeapRegionClosure {
-private:
-  RegionTypeCounter _young;
-  RegionTypeCounter _humongous;
-  RegionTypeCounter _free;
-  RegionTypeCounter _old;
-  RegionTypeCounter _all;
+class G1HeapRegionStatsClosure: public G1HeapRegionClosure {
+  G1PerRegionTypeRemSetCounters _young;
+  G1PerRegionTypeRemSetCounters _humongous;
+  G1PerRegionTypeRemSetCounters _free;
+  G1PerRegionTypeRemSetCounters _old;
+  G1PerRegionTypeRemSetCounters _all;
 
   size_t _max_rs_mem_sz;
   G1HeapRegion* _max_rs_mem_sz_region;
@@ -214,7 +213,7 @@ private:
   G1HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
 
 public:
-  HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
+  G1HeapRegionStatsClosure() : _young("Young"), _humongous("Humongous"),
     _free("Free"), _old("Old"), _all("All"),
     _max_rs_mem_sz(0), _max_rs_mem_sz_region(nullptr),
     _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr),
@@ -249,7 +248,7 @@ public:
     }
     size_t code_root_elems = hrrs->code_roots_list_length();
 
-    RegionTypeCounter* current = nullptr;
+    G1PerRegionTypeRemSetCounters* current = nullptr;
     if (r->is_free()) {
       current = &_free;
     } else if (r->is_young()) {
@@ -290,7 +289,7 @@ public:
     }
 
 
-    RegionTypeCounter* current = &_old;
+    G1PerRegionTypeRemSetCounters* current = &_old;
     for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
       if (group->length() > 1) {
         G1CardSet* group_card_set = group->card_set();
@@ -311,7 +310,7 @@ public:
   }
 
   void print_summary_on(outputStream* out) {
-    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
+    G1PerRegionTypeRemSetCounters* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
 
     out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = %zu"
@@ -319,13 +318,13 @@ public:
                   total_rs_mem_sz(),
                   max_rs_mem_sz(),
                   total_rs_unused_mem_sz());
-    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
+    for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
     }
 
     out->print_cr("    %zu occupied cards represented.",
                   total_cards_occupied());
-    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
+    for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_cards_occupied_info_on(out, total_cards_occupied());
     }
 
@@ -360,13 +359,13 @@ public:
                   proper_unit_for_byte_size(total_code_root_mem_sz()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()));
-    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
+    for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
 
     out->print_cr("    %zu code roots represented.",
                   total_code_root_elems());
-    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
+    for (G1PerRegionTypeRemSetCounters** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_elems_info_on(out, total_code_root_elems());
     }
 
@@ -388,7 +387,7 @@ void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
     }
     out->cr();
   }
-  HRRSStatsIter blk;
+  G1HeapRegionStatsClosure blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);
   blk.do_cset_groups();
   blk.print_summary_on(out);
