@@ -26,13 +26,26 @@
 package sun.security.pkcs;
 
 import jdk.internal.access.SharedSecrets;
-import sun.security.util.*;
+import jdk.internal.ref.CleanerFactory;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.InternalPrivateKey;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 
+import javax.security.auth.Destroyable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.security.*;
+import java.lang.ref.Cleaner.Cleanable;
+import java.lang.ref.Reference;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyRep;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
@@ -82,6 +95,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     public static final int V1 = 0;
     public static final int V2 = 1;
 
+    private transient Cleanable cleanable;
+
     /**
      * Default constructor. Constructors in subclasses that create a new key
      * from its components require this. These constructors must initialize
@@ -96,12 +111,22 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      *
      * This method is also used by {@link #parseKey} to create a raw key.
      */
+    @SuppressWarnings("this-escape")
     public PKCS8Key(byte[] input) throws InvalidKeyException {
         try {
             decode(new DerValue(input));
         } catch (IOException e) {
             throw new InvalidKeyException("Unable to decode key", e);
         }
+        final byte[] eK = this.encodedKey;
+        final byte[] pK = this.privKeyMaterial;
+        // this-escape is suppressed because the cleaner needs to hold a reference to the object
+        cleanable = CleanerFactory.cleaner().register(this,
+                                                      () -> {
+            if(eK != null)
+                Arrays.fill(eK, (byte) 0x00);
+            Arrays.fill(pK, (byte) 0x00);
+        });
     }
 
     private PKCS8Key(byte[] privEncoding, byte[] pubEncoding)
@@ -109,6 +134,23 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         this(privEncoding);
         pubKeyEncoded = pubEncoding;
         version = V2;
+    }
+
+    /**
+     * Clears the internal copy of the key.
+     *
+     */
+    @Override
+    public void destroy() {
+        if (cleanable != null) {
+            cleanable.clean();
+            cleanable = null;
+        }
+    }
+
+    @Override
+    public boolean isDestroyed() {
+        return (cleanable == null);
     }
 
     public int getVersion() {
@@ -256,8 +298,16 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * or {@code null} if an encoding error occurs.
      */
     public byte[] getEncoded() {
-        byte[] b = getEncodedInternal();
-        return (b != null) ? b.clone() : null;
+        try {
+            if (isDestroyed()) {
+                throw new IllegalStateException("key is destroyed");
+            }
+            byte[] b = getEncodedInternal();
+            return (b != null) ? b.clone() : null;
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -373,28 +423,45 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      */
     @Override
     public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object instanceof PKCS8Key) {
-            // time-constant comparison
-            return MessageDigest.isEqual(
-                    getEncodedInternal(),
-                    ((PKCS8Key)object).getEncodedInternal());
-        } else if (object instanceof Key) {
-            // time-constant comparison
-            byte[] otherEncoded = ((Key)object).getEncoded();
-            try {
+        try {
+            if (this == object) {
+                return true;
+            }
+            if (object instanceof PKCS8Key pkcs8Key) {
+                // destroyed keys are considered different
+                if (isDestroyed() || pkcs8Key.isDestroyed()) {
+                    return false;
+                }
+                // time-constant comparison
                 return MessageDigest.isEqual(
                         getEncodedInternal(),
-                        otherEncoded);
-            } finally {
-                if (otherEncoded != null) {
-                    Arrays.fill(otherEncoded, (byte) 0);
+                        pkcs8Key.getEncodedInternal());
+            } else if (object instanceof Key keyHandle) {
+
+                if (keyHandle instanceof Destroyable destKeyHandle) {
+                    // destroyed keys are considered different
+                    if (isDestroyed() || destKeyHandle.isDestroyed()) {
+                        return false;
+                    }
+                }
+
+                // time-constant comparison
+                byte[] otherEncoded = ((Key) object).getEncoded();
+                try {
+                    return MessageDigest.isEqual(
+                            getEncodedInternal(),
+                            otherEncoded);
+                } finally {
+                    if (otherEncoded != null) {
+                        Arrays.fill(otherEncoded, (byte) 0);
+                    }
                 }
             }
+            return false;
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
         }
-        return false;
     }
 
     /**
@@ -403,13 +470,15 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      */
     @Override
     public int hashCode() {
-        return Arrays.hashCode(getEncodedInternal());
+        try {
+            return Arrays.hashCode(getEncodedInternal());
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     public void clear() {
-        if (encodedKey != null) {
-            Arrays.fill(encodedKey, (byte)0);
-        }
-        Arrays.fill(privKeyMaterial, (byte)0);
+        destroy();
     }
 }
