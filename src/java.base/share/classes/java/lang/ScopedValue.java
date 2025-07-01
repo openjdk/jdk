@@ -26,18 +26,19 @@
 
 package java.lang;
 
+import java.lang.ref.Reference;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.lang.ref.Reference;
-import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.StructureViolationException;
+import java.util.concurrent.StructuredTaskScope;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.ScopedValueContainer;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A value that may be safely and efficiently shared to methods without using method
@@ -244,6 +245,9 @@ public final class ScopedValue<T> {
 
     @Override
     public int hashCode() { return hash; }
+
+    @Stable
+    static IntSupplier hashGenerator;
 
     /**
      * An immutable map from {@code ScopedValue} to values.
@@ -527,7 +531,7 @@ public final class ScopedValue<T> {
     }
 
     private ScopedValue() {
-        this.hash = hashGenerator.getAsInt();
+        this.hash = hashGenerator != null ? hashGenerator.getAsInt() : generateKey();
     }
 
     /**
@@ -703,16 +707,6 @@ public final class ScopedValue<T> {
         return (nextKey = x);
     }
 
-    // This method exists only so that we can generate keys early in
-    // the boot cycle, before the class j.u.c.ThreadLocalRandom has
-    // been initialized.
-    private static IntSupplier hashGenerator = new IntSupplier() {
-        @Override
-        public int getAsInt() {
-            return generateKey();
-        }
-    };
-
     /**
      * Return a bit mask that may be used to determine if this ScopedValue is
      * bound in the current context. Each Carrier holds a bit mask which is
@@ -756,7 +750,7 @@ public final class ScopedValue<T> {
         // used) without invoking either System.getProperty or
         // ThreadLocalRandom. To do this we defer querying System.getProperty
         // until the first reference to CACHE_TABLE_SIZE, and we define a local
-        // hashGenerator which is used until CACHE_TABLE_SIZE is initialized.
+        // hash generator which is used until CACHE_TABLE_SIZE is initialized.
 
         private static class Constants {
             // The number of elements in the cache array, and a bit mask used to
@@ -785,10 +779,10 @@ public final class ScopedValue<T> {
                 SLOT_MASK = cacheSize - 1;
 
                 // hashGenerator is set here in order not to initialize
-                // j.u.c.ThreadLocalRandom early in the JDK boot
-                // process. After this static initialization block,
-                // new instances of ScopedValue will be initialized by a
-                // thread-local random generator.
+                // j.u.c.ThreadLocalRandom early in the JDK boot process.
+                // After this static initialization, new instances of
+                // ScopedValue will be initialized by a thread-local
+                // random generator.
                 hashGenerator = new IntSupplier() {
                     @Override
                     public int getAsInt() {
