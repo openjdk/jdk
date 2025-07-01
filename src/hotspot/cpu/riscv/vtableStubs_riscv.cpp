@@ -26,7 +26,6 @@
 
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_riscv.hpp"
