@@ -115,6 +115,9 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
   assert(this->is_regular(), "must be a regular region");
 
   for (;;) {
+    if (!reserved_for_direct_allocation()) {
+      return nullptr;
+    }
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
       if (try_allocate(obj, size)) {
@@ -133,6 +136,9 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
   assert(this->is_regular(), "must be a regular region");
   size_t adjusted_size = req.size();
   for (;;) {
+    if (!reserved_for_direct_allocation()) {
+      return nullptr;
+    }
     HeapWord* obj = top();
     size_t free_words = align_down(byte_size(obj, end()) >> LogHeapWordSize, MinObjAlignment);
     if (adjusted_size > free_words) {

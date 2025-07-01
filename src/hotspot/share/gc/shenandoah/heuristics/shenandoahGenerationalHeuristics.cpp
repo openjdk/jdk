@@ -94,6 +94,9 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
         immediate_regions++;
         immediate_garbage += garbage;
         region->make_trash_immediate();
+        if (region->reserved_for_direct_allocation()) {
+          region->release_from_direct_allocation();
+        }
       } else {
         bool is_candidate;
         // This is our candidate for later consideration.

@@ -111,6 +111,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         immediate_regions++;
         immediate_garbage += garbage;
         region->make_trash_immediate();
+        if (region->reserved_for_direct_allocation()) {
+          region->release_from_direct_allocation();
+        }
       } else {
         // This is our candidate for later consideration.
         candidates[cand_idx].set_region_and_garbage(region, garbage);
