@@ -386,9 +386,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         console.log(themeButton.firstElementChild.href);
     }
     var theme = localStorage.getItem("theme");
-    if (theme) {
-        setTheme(theme || "theme-light");
-    }
+    setTheme(theme || "theme-light");
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         navbar.appendChild(tocMenu);
