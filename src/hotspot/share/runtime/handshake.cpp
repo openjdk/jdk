@@ -369,7 +369,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
     // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
     // GCC does believe that JavaThread::current() can return nullptr,
     // though it cannot.
-    __builtin_unreachable();
+    //__builtin_unreachable();
   }
 #endif
   HandshakeOperation op(hs_cl, target, Thread::current());
