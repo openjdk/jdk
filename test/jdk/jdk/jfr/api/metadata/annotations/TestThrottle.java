@@ -52,7 +52,7 @@ import jdk.jfr.consumer.RecordingStream;
  */
 public class TestThrottle {
 
-    public static class UnthrottledEvent extends Event  {
+    public static class UnthrottledEvent extends Event {
     }
 
     @Throttle("off")
