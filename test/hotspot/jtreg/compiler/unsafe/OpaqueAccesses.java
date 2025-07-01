@@ -277,30 +277,28 @@ public class OpaqueAccesses {
             "testOpaqueArray",
     })
     public static void runMethod() {
-        /* for (int i = 0; i < 20_000; i++) */ {
-            // Instance
-            testFixedOffsetField(INSTANCE);
-            testFixedOffsetHeader0(INSTANCE);
-            testFixedOffsetHeader4(INSTANCE);
-            testFixedOffsetHeader8(INSTANCE);
-            testFixedOffsetHeader12(INSTANCE);
-            testFixedOffsetHeader16(INSTANCE);
-            testFixedOffsetHeader17(INSTANCE);
-            testFixedBase(F_OFFSET);
-            testOpaque(INSTANCE, F_OFFSET);
-            testMixedAccess();
+        // Instance
+        testFixedOffsetField(INSTANCE);
+        testFixedOffsetHeader0(INSTANCE);
+        testFixedOffsetHeader4(INSTANCE);
+        testFixedOffsetHeader8(INSTANCE);
+        testFixedOffsetHeader12(INSTANCE);
+        testFixedOffsetHeader16(INSTANCE);
+        testFixedOffsetHeader17(INSTANCE);
+        testFixedBase(F_OFFSET);
+        testOpaque(INSTANCE, F_OFFSET);
+        testMixedAccess();
 
-            // Array
-            testFixedOffsetHeaderArray0(ARRAY);
-            testFixedOffsetHeaderArray4(ARRAY);
-            testFixedOffsetHeaderArray8(ARRAY);
-            testFixedOffsetHeaderArray12(ARRAY);
-            testFixedOffsetHeaderArray16(ARRAY);
-            testFixedOffsetHeaderArray17(ARRAY);
-            testFixedOffsetArray(ARRAY);
-            testFixedBaseArray(E_OFFSET);
-            testOpaqueArray(ARRAY, E_OFFSET);
-        }
+        // Array
+        testFixedOffsetHeaderArray0(ARRAY);
+        testFixedOffsetHeaderArray4(ARRAY);
+        testFixedOffsetHeaderArray8(ARRAY);
+        testFixedOffsetHeaderArray12(ARRAY);
+        testFixedOffsetHeaderArray16(ARRAY);
+        testFixedOffsetHeaderArray17(ARRAY);
+        testFixedOffsetArray(ARRAY);
+        testFixedBaseArray(E_OFFSET);
+        testOpaqueArray(ARRAY, E_OFFSET);
         System.out.println("TEST PASSED");
     }
 
