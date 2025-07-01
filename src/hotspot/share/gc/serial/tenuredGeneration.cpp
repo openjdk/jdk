@@ -368,7 +368,7 @@ void TenuredGeneration::update_promote_stats() {
 void TenuredGeneration::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
 

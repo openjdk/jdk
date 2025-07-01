@@ -262,7 +262,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
-  void update_parallel_gc_threads_cpu_time();
+  void update_perf_counter_cpu_time();
 private:
 
   // Return true if an explicit GC should start a concurrent cycle instead
@@ -572,7 +572,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a G1HeapRegion boundary.)
-  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers = nullptr, double* expand_time_ms = nullptr);
+  bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers);
   bool expand_single_region(uint node_index);
 
   // Returns the PLAB statistics for a given destination.

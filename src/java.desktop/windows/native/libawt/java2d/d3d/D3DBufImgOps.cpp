@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,9 @@ D3DBufImgOps_EnableConvolveOp(D3DContext *d3dc, jlong pSrcOps,
     jint i, j, kIndex;
     jint flags = 0;
 
-    J2dTraceLn2(J2D_TRACE_INFO,
-                "D3DBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
-                kernelWidth, kernelHeight);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
+               kernelWidth, kernelHeight);
 
     RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
     RETURN_STATUS_IF_NULL(srcOps, E_FAIL);
@@ -204,9 +204,9 @@ D3DBufImgOps_EnableLookupOp(D3DContext *d3dc,
     for (i = 0; i < 4; i++) {
         bands[i] = NULL;
     }
-    J2dTraceLn4(J2D_TRACE_INFO,
-                "D3DBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
-                shortData, numBands, bandLength, offset);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
+               shortData, numBands, bandLength, offset);
 
     RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
 

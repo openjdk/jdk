@@ -570,6 +570,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   if (StubRoutines::returns_to_call_stub(return_address)) {
     // The deferred StackWatermarkSet::after_unwind check will be performed in
     // JavaCallWrapper::~JavaCallWrapper
+    assert (StubRoutines::catch_exception_entry() != nullptr, "must be generated before");
     return StubRoutines::catch_exception_entry();
   }
   if (blob != nullptr && blob->is_upcall_stub()) {
