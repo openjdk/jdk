@@ -34,6 +34,8 @@
 
 import java.awt.*;
 import java.awt.event.*;
+import java.lang.reflect.InvocationTargetException;
+
 
 public class ExtraButtonDrag extends Frame {
     static String tk = Toolkit.getDefaultToolkit().getClass().getName();
@@ -43,13 +45,14 @@ public class ExtraButtonDrag extends Frame {
     static int [] buttonsClicked;
     volatile static boolean dragged = false;
     volatile static boolean moved = false;
+    private static Frame frame;
 
     public ExtraButtonDrag(){
         super("ExtraButtonDrag");
     }
 
-    public static void main(String []s){
-        Frame frame = new ExtraButtonDrag();
+    public static void main(String []s) throws InvocationTargetException, InterruptedException, AWTException{
+        frame = new ExtraButtonDrag();
 
         MouseAdapter ma = new MouseAdapter() {
                 public void mouseDragged(MouseEvent e) {
@@ -120,14 +123,9 @@ public class ExtraButtonDrag extends Frame {
                     }
                 }
             }
-        } catch (Exception e){
-            throw new RuntimeException("", e);
         }
         finally {
-            if (frame != null) {
-                frame.dispose();
-                frame = null;
-            }
+            EventQueue.invokeAndWait(ExtraButtonDrag::disposeFrame);
         }
     }
 
@@ -157,4 +155,10 @@ public class ExtraButtonDrag extends Frame {
         robot.mouseRelease(button);
     }
 
+    public static void disposeFrame() {
+        if (frame != null) {
+            frame.dispose();
+            frame = null;
+        }
+    }
 }
