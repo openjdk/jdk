@@ -363,15 +363,6 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
 
 void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
   JavaThread* self = JavaThread::current();
-#if defined(__GNUC__) && !defined(__clang__)
-  if (self == nullptr) 
-  {
-    // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
-    // GCC does believe that JavaThread::current() can return nullptr,
-    // though it cannot.
-    //__builtin_unreachable();
-  }
-#endif
   HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
