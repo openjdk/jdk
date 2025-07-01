@@ -225,6 +225,13 @@ public class ImageReaderBenchmark {
                         errors, INIT_CLASSES.size(), String.join("\n\t", missing)));
     }
 
+    // Note: This list is inherently a little fragile and may end up being more
+    // trouble than it's worth to maintain. If it turns out that it needs to be
+    // regenerated often when this benchmark is run, then a new approach should
+    // be considered, such as:
+    // * Limit the list of classes to non-internal ones.
+    // * Calculate the list dynamically based on the running JVM.
+    //
     // Created by running "java -verbose:class", throwing away anonymous inner
     // classes and anything without a reliable name, and grouping by the stated
     // source. It's not perfect, but it's representative.
