@@ -32,9 +32,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import jdk.internal.net.http.Http3Connection;
@@ -83,9 +81,6 @@ public class UniStreamPair {
     // The QuicStreamWriter for the local control stream
     private volatile QuicStreamWriter localWriter;
     private final CompletableFuture<QuicStreamWriter> streamWriterCF;
-    // a queue of ByteBuffers submitted for writing.
-    // might be null if not used. Only used in QueuingStreamPair.
-    protected final ConcurrentLinkedQueue<ByteBuffer> writerQueue;
     // A completable future that will be completed when the local sender
     // stream is opened and the stream type has been queued to the
     // writer queue.
@@ -140,7 +135,6 @@ public class UniStreamPair {
         this(local(streamType), remote(streamType),
                 Objects.requireNonNull(quicConnection),
                 Objects.requireNonNull(receiver),
-                Optional.empty(),
                 Optional.of(writerLoop),
                 Objects.requireNonNull(errorHandler),
                 Objects.requireNonNull(logger));
@@ -158,13 +152,11 @@ public class UniStreamPair {
     UniStreamPair(StreamType streamType,
                   QuicConnection quicConnection,
                   Consumer<ByteBuffer> receiver,
-                  ConcurrentLinkedQueue<ByteBuffer> writerQueue,
                   StreamErrorHandler errorHandler,
                   Logger logger) {
         this(local(streamType), remote(streamType),
                 Objects.requireNonNull(quicConnection),
                 Objects.requireNonNull(receiver),
-                Optional.ofNullable(writerQueue),
                 Optional.empty(),
                 errorHandler,
                 Objects.requireNonNull(logger));
@@ -175,7 +167,6 @@ public class UniStreamPair {
                           StreamType remoteStreamType,
                           QuicConnection quicConnection,
                           Consumer<ByteBuffer> receiver,
-                          Optional<ConcurrentLinkedQueue<ByteBuffer>> writerQueue,
                           Optional<Runnable> writerLoop,
                           StreamErrorHandler errorHandler,
                           Logger logger) {
@@ -187,7 +178,6 @@ public class UniStreamPair {
         this.quicConnection   = quicConnection;
         this.receiver         = receiver;
         this.errorHandler     = errorHandler;
-        this.writerQueue = writerQueue.orElse(null);
         var localWriterLoop = writerLoop.orElse(this::localWriterLoop);
         this.localWriteScheduler =
                 SequentialScheduler.lockingScheduler(localWriterLoop);

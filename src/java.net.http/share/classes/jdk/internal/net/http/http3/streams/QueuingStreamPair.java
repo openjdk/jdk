@@ -45,6 +45,9 @@ import jdk.internal.net.http.quic.streams.QuicStreamWriter;
  */
 public class QueuingStreamPair extends UniStreamPair {
 
+    // a queue of ByteBuffers submitted for writing.
+    protected final ConcurrentLinkedQueue<ByteBuffer> writerQueue = new ConcurrentLinkedQueue<>();
+
     /**
      * Creates a new {@code QueuingStreamPair} for the given HTTP/3 {@code streamType}.
      * Valid values for {@code streamType} are {@link StreamType#CONTROL},
@@ -73,11 +76,7 @@ public class QueuingStreamPair extends UniStreamPair {
                              Consumer<ByteBuffer> receiver,
                              StreamErrorHandler errorHandler,
                              Logger logger) {
-        super(streamType, quicConnection, receiver, newWriterQueue(), errorHandler, logger);
-    }
-
-    private static final ConcurrentLinkedQueue<ByteBuffer> newWriterQueue() {
-        return new ConcurrentLinkedQueue<>();
+        super(streamType, quicConnection, receiver, errorHandler, logger);
     }
 
     /**
