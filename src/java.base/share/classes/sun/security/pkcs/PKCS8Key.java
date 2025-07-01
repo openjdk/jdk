@@ -300,7 +300,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     public byte[] getEncoded() {
         try {
             if (isDestroyed()) {
-                throw new IllegalStateException("key is destroyed");
+                throw new IllegalStateException("Key is destroyed");
             }
             byte[] b = getEncodedInternal();
             return (b != null) ? b.clone() : null;
