@@ -64,7 +64,7 @@ void ZeroInterpreterGenerator::generate_all() {
     method_entry(java_lang_math_exp );
     method_entry(java_lang_math_fmaD );
     method_entry(java_lang_math_fmaF );
-    method_entry(java_lang_ref_reference_get);
+    method_entry(java_lang_ref_reference_get0);
 
     AbstractInterpreter::initialize_method_handle_entries();
 
@@ -107,7 +107,7 @@ address ZeroInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_exp     : // fall thru
   case Interpreter::java_lang_math_fmaD    : // fall thru
   case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
-  case Interpreter::java_lang_ref_reference_get
+  case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
   default:
     fatal("unexpected method kind: %d", kind);

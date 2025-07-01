@@ -36,6 +36,7 @@
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
 Mutex*   NMethodState_lock            = nullptr;
+Mutex*   NMethodEntryBarrier_lock     = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
 Monitor* InvokeMethodIntrinsicTable_lock = nullptr;
@@ -205,6 +206,8 @@ void assert_lock_strong(const Mutex* lock) {
 void mutex_init() {
   MUTEX_DEFN(tty_lock                        , PaddedMutex  , tty);      // allow to lock in VM
 
+  MUTEX_DEFN(NMethodEntryBarrier_lock        , PaddedMutex  , service-1);
+
   MUTEX_DEFN(STS_lock                        , PaddedMonitor, nosafepoint);
 
   if (UseG1GC) {
@@ -233,7 +236,7 @@ void mutex_init() {
   MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
   MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations
 
-  MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
+  MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-1);    // used for creating jmethodIDs can also lock HandshakeState_lock
   MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
   MUTEX_DEFN(InvokeMethodIntrinsicTable_lock , PaddedMonitor, safepoint);
   MUTEX_DEFN(AdapterHandlerLibrary_lock      , PaddedMutex  , safepoint);
