@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 
 /**
  * {@code Process} provides control of native processes started by
- * ProcessBuilder.start and Runtime.exec.
+ * {@code ProcessBuilder.start} and {@code Runtime.exec}.
  * The class provides methods for performing input from the process, performing
  * output to the process, waiting for the process to complete,
  * checking the exit status of the process, and destroying (killing)
@@ -126,13 +126,13 @@ import java.util.stream.Stream;
  *     }
  * }
  * }
- * <p>Stream resources (file descriptord or handled) are always paired; one in the invoking process
+ * <p>Stream resources (file descriptor or handled) are always paired; one in the invoking process
  * and the other end of that connection in the invoked process.
  * Closing a stream at either end terminates communication but does not have any direct effect
  * on the other Process. The closing of the stream typically results in the other process exiting.
  *
  * <p> {@linkplain #destroy Destroying a process} signals the operating system to terminate the process.
- * It is up to the operating system to cleanup and release the resources of that process.
+ * It is up to the operating system to clean up and release the resources of that process.
  * Typically, file descriptors and handles are closed. When they are closed, any connections to
  * other processes are terminated and file descriptors and handles in the invoking process signal
  * end-of-file or closed. Usually, that is seen as an end-of-file or an exception.
@@ -430,7 +430,7 @@ public abstract class Process {
     /**
      * Returns a {@code BufferedWriter} connected to the normal input of the process
      * using the native encoding.
-     * Writes text to a character-output stream, buffering characters so as to provide
+     * Writes text to a character-output stream, buffering characters to provide
      * for the efficient writing of single characters, arrays, and strings.
      *
      * <p>This method delegates to {@link #outputWriter(Charset)} using the
@@ -452,7 +452,7 @@ public abstract class Process {
     /**
      * Returns a {@code BufferedWriter} connected to the normal input of the process
      * using a Charset.
-     * Writes text to a character-output stream, buffering characters so as to provide
+     * Writes text to a character-output stream, buffering characters to provide
      * for the efficient writing of single characters, arrays, and strings.
      *
      * <p>Characters written by the writer are encoded to bytes using {@link OutputStreamWriter}
