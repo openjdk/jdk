@@ -24,7 +24,7 @@
  */
 package jdk.internal.constant;
 
-import jdk.internal.vm.annotation.AOTClassInitializer;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -42,7 +42,7 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.*;
 /**
  * Helper methods for the implementation of {@code java.lang.constant}.
  */
-@AOTClassInitializer
+@AOTSafeClassInitializer // initialization dependency of PrimitiveClassDescImpl
 public final class ConstantUtils {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 

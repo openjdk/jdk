@@ -30,8 +30,6 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
-import jdk.internal.vm.annotation.AOTClassInitializer;
-
 /**
  * This class provides a skeletal implementation of the {@code Map}
  * interface, to minimize the effort required to implement this interface.
@@ -70,7 +68,6 @@ import jdk.internal.vm.annotation.AOTClassInitializer;
  * @see Collection
  * @since 1.2
  */
-@AOTClassInitializer
 public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically

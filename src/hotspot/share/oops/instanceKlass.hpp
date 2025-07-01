@@ -768,10 +768,10 @@ public:
   // with explicit production run runtimeSetup() access?
   // Classes with instances are always initialized in AOT archive. This status is represented by has_aot_initialized_mirror().
   // However, access to setup functionality must be requested.
-  bool has_aot_initialization() const { return _misc_flags.has_aot_initialization(); }
-  void set_has_aot_initialization()   { _misc_flags.set_has_aot_initialization(true); }
+  bool has_aot_safe_initializer() const { return _misc_flags.has_aot_safe_initializer(); }
+  void set_has_aot_safe_initializer()   { _misc_flags.set_has_aot_safe_initializer(true); }
 
-  // Indicates private static void runtimeSetup() presence; requires has_aot_initialization() as above.
+  // Indicates private static void runtimeSetup() presence; requires has_aot_safe_initializer() as above.
   bool is_runtime_setup_required() const { return _misc_flags.is_runtime_setup_required(); }
   void set_is_runtime_setup_required()   { _misc_flags.set_is_runtime_setup_required(true); }
 

@@ -26,10 +26,10 @@
 package java.lang.invoke;
 
 import jdk.internal.invoke.MhUtil;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.annotation.AOTClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Arrays;
@@ -44,7 +44,7 @@ import static java.lang.invoke.LambdaForm.Kind.*;
  * Construction and caching of often-used invokers.
  * @author jrose
  */
-@AOTClassInitializer
+@AOTSafeClassInitializer
 class Invokers {
     // exact type (sans leading target MH) for the outgoing call
     private final MethodType targetType;
@@ -698,6 +698,6 @@ class Invokers {
     }
 
     /* Placeholder class for Invokers generated ahead of time */
-    @AOTClassInitializer
+    @AOTSafeClassInitializer
     final class Holder {}
 }

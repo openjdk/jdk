@@ -25,7 +25,7 @@
 
 package java.lang.invoke;
 
-import jdk.internal.vm.annotation.AOTClassInitializer;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -34,7 +34,7 @@ import jdk.internal.vm.annotation.Stable;
  * first.
  * @author jrose
  */
-@AOTClassInitializer
+@AOTSafeClassInitializer
 final class SimpleMethodHandle extends BoundMethodHandle {
 
     private SimpleMethodHandle(MethodType type, LambdaForm form) {

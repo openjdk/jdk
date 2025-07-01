@@ -57,7 +57,7 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.vm.annotation.AOTClassInitializer;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * Implementations of {@link Collector} that implement various useful reduction
@@ -104,7 +104,7 @@ import jdk.internal.vm.annotation.AOTClassInitializer;
  *
  * @since 1.8
  */
-@AOTClassInitializer
+@AOTSafeClassInitializer
 public final class Collectors {
 
     static final Set<Collector.Characteristics> CH_CONCURRENT_ID

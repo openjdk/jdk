@@ -36,7 +36,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import jdk.internal.vm.annotation.AOTClassInitializer;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_VarHandle;
@@ -58,7 +58,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  *
  * @since 12
  */
-@AOTClassInitializer
+@AOTSafeClassInitializer // for PrimitiveClassDescImpl
 public abstract non-sealed class DynamicConstantDesc<T>
         implements ConstantDesc {
 

@@ -31,14 +31,13 @@
 class InstanceKlass;
 
 class AOTClassInitializer : AllStatic {
-  static bool has_aot_initialization(InstanceKlass* ik);
+  static bool allows_aot_initialization(InstanceKlass* ik);
 
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
   // the initialized state.
   static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
 
-  static bool has_runtime_setup(InstanceKlass* ik);
   static void call_runtime_setup(JavaThread* current, InstanceKlass* ik);
 
   // Support for regression testing. Available in debug builds only.

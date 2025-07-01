@@ -37,9 +37,9 @@
 
 DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
-// Tell if ik is marked as AOT initialized via an annotation.
-bool AOTClassInitializer::has_aot_initialization(InstanceKlass* ik) {
-  if (ik->has_aot_initialization()) {
+// Tell if ik is marked as AOT initialization safe via @jdk.internal.vm.annotation.AOTSafeClassInitializer.
+bool AOTClassInitializer::allows_aot_initialization(InstanceKlass* ik) {
+  if (ik->has_aot_safe_initializer()) {
     // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
     //   - all super classes must be included
     //   - all super interfaces that have <clinit> must be included.
@@ -65,7 +65,7 @@ bool AOTClassInitializer::has_aot_initialization(InstanceKlass* ik) {
 
     if (log_is_enabled(Info, aot, init)) {
       ResourceMark rm;
-      log_info(aot, init)("Found @AOTClassInitializer class %s", ik->external_name());
+      log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
     }
 
     return true;
@@ -244,7 +244,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   }
 
   if (CDSConfig::is_dumping_method_handles()) {
-    // The list of @AOTClassInitializer was created with the help of CDSHeapVerifier.
+    // The minimal list of @AOTSafeClassInitializer was created with the help of CDSHeapVerifier.
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
     // at runtime, we need to make sure Invokers$Holder is also aot-inited.
@@ -253,7 +253,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     // environment dependencies (on system properties, etc).
     // MethodHandleStatics is an example of a class that must NOT get the aot-init treatment,
     // because of its strong reliance on (a) final fields which are (b) environmentally determined.
-    if (has_aot_initialization(ik)) {
+    if (allows_aot_initialization(ik)) {
       return true;
     }
   }
@@ -264,18 +264,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   }
 #endif
 
-  return false;
-}
-
-bool AOTClassInitializer::has_runtime_setup(InstanceKlass* ik) {
-  if (ik->has_aot_initialization()) {
-    Method* runtime_setup_method = ik->find_method(vmSymbols::runtimeSetup(), vmSymbols::void_method_signature());
-    if (runtime_setup_method != nullptr) {
-      assert(runtime_setup_method->access_flags().is_private() && runtime_setup_method->access_flags().is_static(),
-             "%s::runtimeSetup() not private static", ik->external_name());
-      return true;
-    }
-  }
   return false;
 }
 

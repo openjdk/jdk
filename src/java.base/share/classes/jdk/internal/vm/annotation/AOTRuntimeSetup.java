@@ -30,26 +30,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/// Indicates a class or interface that should have its static initializer
-/// (`<clinit>`) executed whenever it is referenced in an AOT cache, and may
-/// have custom runtime setup actions in a `private static void runtimeSetup()`
-/// method.  Note that classes with instances in the AOT cache are always
-/// initialized even without this annotation, but cannot define custom actions.
+/// Indicates that if this class or interface is stored in the AOT cache in the
+/// "initialized" state, the `private static void runtimeSetup()` method will
+/// be executed instead of the static initializer in the production run.  In
+/// contrast, other "initialized" classes skip initialization methods altogether.
 ///
-/// In AOT assembly run, an object graph from metaspace to heap objects is
-/// constructed.  When an object is in the heap, its class must be initialized.
-/// However, class initialization may have dependencies on other classes in the
-/// initializer that won't be initialized because they do not have live objects.
-/// For example, `MethodHandles.IMPL_NAMES` is copied to
-/// `DirectMethodHandle.IMPL_NAMES`, but there is no object relationship from
-/// DMH to MHs, therefore we need to mark MethodHandles as AOTCI so it is
-/// consistently initialized when it is ever referenced.
+/// `classFileParser.cpp` performs checks on the annotated method - if the
+/// annotated method's signature differs from that described above, a
+/// [ClassFormatError] will be thrown.
 ///
-/// This annotation is only recognized on privileged code and is ignored
-/// elsewhere.
+/// This annotation is only recognized on privileged code and is ignored elsewhere.
 ///
 /// @since 26
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface AOTClassInitializer {
+@Target(ElementType.METHOD)
+public @interface AOTRuntimeSetup {
 }
