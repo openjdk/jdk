@@ -641,7 +641,7 @@ void CollectedHeap::log_gc_cpu_time() const {
     } else {
       usage = 100 * (gc_cpu_time + string_dedup_cpu_time) / process_cpu_time;
     }
-    out.print("GC CPU usage: %.2f%%", usage);
+    out.print("GC CPU usage: %.2f%% (Process: %.4fs GC: %.4fs)", usage, process_cpu_time, gc_cpu_time + string_dedup_cpu_time);
   }
 }
 
