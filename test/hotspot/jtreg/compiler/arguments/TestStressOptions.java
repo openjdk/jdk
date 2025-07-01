@@ -56,7 +56,7 @@
  *      compiler.arguments.TestStressOptions
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressUnstableIfTraps -XX:StressSeed=42
  *      compiler.arguments.TestStressOptions
- *  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressMacroElimination
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressMacroElimination
  *      compiler.arguments.TestStressOptions
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressMacroElimination -XX:StressSeed=42
  *      compiler.arguments.TestStressOptions
