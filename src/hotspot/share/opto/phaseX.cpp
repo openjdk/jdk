@@ -1818,8 +1818,11 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
 
   // The number of nodes shoud not increase.
   uint old_unique = C->unique();
-
+  uint hash_before = n->hash();
   Node* i = n->Ideal(this, can_reshape);
+  uint hash_after = n->hash();
+  assert(hash_before == hash_after, "node hash should not change after calling Ideal for verification");
+
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
     if (old_unique < C->unique()) {
