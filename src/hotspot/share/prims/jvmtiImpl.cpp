@@ -271,7 +271,7 @@ int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
     return JVMTI_ERROR_NOT_FOUND;
   }
 
-  // ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit()
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
   methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints clear_breakpoint(VM_ChangeBreakpoints::CLEAR_BREAKPOINT, &bp);
   VMThread::execute(&clear_breakpoint);
