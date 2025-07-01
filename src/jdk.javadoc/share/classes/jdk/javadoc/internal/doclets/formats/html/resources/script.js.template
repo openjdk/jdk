@@ -351,6 +351,44 @@ document.addEventListener("DOMContentLoaded", function(e) {
     const mainnav = navbar.querySelector("ul.nav-list");
     const toggleButton = document.querySelector("button#navbar-toggle-button");
     const tocMenu = sidebar ? sidebar.cloneNode(true) : null;
+    const themeButton = document.querySelector("button#theme-button");
+    const themePanel = document.querySelector("div#theme-panel");
+    var themePanelVisible = false;
+    themeButton.addEventListener("click", e => {
+        if (!themePanel.style.display) {
+            themePanel.style.display = "block";
+            themeButton.setAttribute("aria-expanded", "true");
+            themePanelVisible = true;
+        } else {
+            themePanel.style.removeProperty("display");
+            themeButton.setAttribute("aria-expanded", "false");
+            themePanelVisible = false;
+        }
+    });
+    themePanel.querySelectorAll("input").forEach(input => {
+        input.removeAttribute("disabled");
+        input.addEventListener("change", e => {
+            setTheme(e.target.value);
+        })
+    });
+    function setTheme(theme) {
+        if (theme === "theme-os") {
+            document.body.classList.remove("theme-light", "theme-dark");
+        } else if (theme === "theme-light") {
+            document.body.classList.remove("theme-dark");
+            document.body.classList.add("theme-light");
+        } else if (theme === "theme-dark") {
+            document.body.classList.remove("theme-light");
+            document.body.classList.add("theme-dark");
+        }
+        localStorage.setItem("theme", theme);
+        document.getElementById(theme).checked = true;
+        console.log(themeButton.firstElementChild.href);
+    }
+    var theme = localStorage.getItem("theme");
+    if (theme) {
+        setTheme(theme || "theme-light");
+    }
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         navbar.appendChild(tocMenu);
@@ -400,6 +438,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
             toggleButton.classList.remove("expanded")
             toggleButton.setAttribute("aria-expanded", "false");
             expanded = false;
+        }
+        if (themePanelVisible) {
+            themePanel.style.removeProperty("display");
+            themeButton.setAttribute("aria-expanded", "false");
+            themePanelVisible = false;
         }
     }
     function expand() {

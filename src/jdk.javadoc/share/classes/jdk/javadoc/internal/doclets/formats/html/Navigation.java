@@ -543,7 +543,27 @@ public class Navigation {
         navContent.add(navList);
         var aboutDiv = HtmlTree.DIV(HtmlStyles.aboutLanguage, aboutContent);
         navContent.add(aboutDiv);
+        var selectTheme = contents.getContent("doclet.theme.select_theme");
+        navContent.add(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
+                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SUN_SVG),
+                        selectTheme.toString()))
+                .put(HtmlAttr.ARIA_LABEL, selectTheme.toString()));
+        navContent.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
+                .add(HtmlTree.DIV(selectTheme))
+                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.light"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_DARK.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_DARK)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_DARK.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.dark"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
         navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
+
 
         var subNavContent = HtmlTree.DIV(HtmlStyles.navContent);
         List<Content> subNavLinks = new ArrayList<>();

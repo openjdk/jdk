@@ -115,6 +115,12 @@ public class DocPaths {
     /** The name of the right pointing angle icon. */
     public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
 
+    /** The name of the moon icon for the dark theme. */
+    public static final DocPath MOON_SVG = DocPath.create("moon.svg");
+
+    /** The name of the sun icon for the light theme. */
+    public static final DocPath SUN_SVG = DocPath.create("sun.svg");
+
     /** The name of the syntax highlighting style sheet. */
     public static final DocPath HIGHLIGHT_CSS = DocPath.create("highlight.css");
 
