@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,11 +66,7 @@ import java.util.stream.Stream;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -80,22 +76,27 @@ import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
 public class UserCookieTest implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 6 servers ]
+    HttpTestServer httpTestServer;        // HTTP/1.1    [ 7 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
     DummyServer httpDummyServer;
     DummyServer httpsDummyServer;
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
     String httpDummy;
     String httpsDummy;
 
@@ -113,6 +114,7 @@ public class UserCookieTest implements HttpServerAdapters {
     @DataProvider(name = "positive")
     public Object[][] positive() {
         return new Object[][] {
+                { http3URI, HTTP_3  },
                 { httpURI, HTTP_1_1  },
                 { httpsURI, HTTP_1_1  },
                 { httpDummy, HTTP_1_1 },
@@ -134,7 +136,10 @@ public class UserCookieTest implements HttpServerAdapters {
         ConcurrentHashMap<String, List<String>> cookieHeaders
                 = new ConcurrentHashMap<>();
         CookieHandler cookieManager = new TestCookieHandler(cookieHeaders);
-        HttpClient client = HttpClient.newBuilder()
+        var builder = version == HTTP_3
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        HttpClient client = builder
                 .followRedirects(Redirect.ALWAYS)
                 .cookieHandler(cookieManager)
                 .sslContext(sslContext)
@@ -159,6 +164,9 @@ public class UserCookieTest implements HttpServerAdapters {
                 .header("Cookie", userCookie);
         if (version != null) {
             requestBuilder.version(version);
+            if (version == HTTP_3) {
+                requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+            }
         }
         HttpRequest request = requestBuilder.build();
         out.println("Initial request: " + request.uri());
@@ -181,9 +189,13 @@ public class UserCookieTest implements HttpServerAdapters {
                     .header("Cookie", userCookie);
             if (version != null) {
                 requestBuilder.version(version);
+                if (version == HTTP_3) {
+                    requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+                }
             }
             request = requestBuilder.build();
         }
+        client.close();
     }
 
     // -- Infrastructure
@@ -208,6 +220,10 @@ public class UserCookieTest implements HttpServerAdapters {
         https2TestServer.addHandler(new CookieValidationHandler(), "/https2/cookie/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/cookie/retry";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new CookieValidationHandler(), "/http3/cookie/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/cookie/retry";
+
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         // DummyServer
         httpDummyServer = DummyServer.create(sa);
@@ -219,6 +235,7 @@ public class UserCookieTest implements HttpServerAdapters {
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
         httpDummyServer.start();
         httpsDummyServer.start();
     }
@@ -229,6 +246,7 @@ public class UserCookieTest implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
         httpsDummyServer.stopServer();
         httpsDummyServer.stopServer();
     }

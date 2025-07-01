@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -30,6 +31,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpOption;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
@@ -47,20 +50,29 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8316580
- * @library /test/lib
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build HttpGetInCancelledFuture ReferenceTracker
  * @run junit/othervm -DuseReferenceTracker=false
  *                   HttpGetInCancelledFuture
  * @run junit/othervm -DuseReferenceTracker=true
@@ -82,7 +94,9 @@ public class HttpGetInCancelledFuture {
     static ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     HttpClient makeClient(URI uri, Version version, Executor executor) {
-        var builder = HttpClient.newBuilder();
+        var builder = version == HTTP_3
+                ? HttpServerAdapters.createClientBuilderForH3()
+                : HttpClient.newBuilder();
         if (uri.getScheme().equalsIgnoreCase("https")) {
             try {
                 builder.sslContext(new SimpleSSLContext().get());
@@ -96,9 +110,19 @@ public class HttpGetInCancelledFuture {
                 .build();
     }
 
-    record TestCase(String url, int reqCount, Version version) {}
+    record TestCase(String url, int reqCount, Version version, Http3DiscoveryMode config) {
+        TestCase(String url, int reqCount, Version version) {
+            this(url, reqCount, version, null);
+        }
+        TestCase(String url, int reqCount, Http3DiscoveryMode config) {
+            this(url, reqCount, HTTP_3, null);
+        }
+    }
+
+
     // A server that doesn't accept
-    static volatile ServerSocket NOT_ACCEPTING;
+    static volatile ServerSocket   NOT_ACCEPTING;
+    static volatile DatagramSocket NOT_RESPONDING;
 
     static List<TestCase> parameters() {
         ServerSocket ss = NOT_ACCEPTING;
@@ -116,6 +140,28 @@ public class HttpGetInCancelledFuture {
                 }
             }
         }
+
+        DatagramSocket ds = NOT_RESPONDING;
+        boolean sameport = false;
+        if (ds == null) {
+            synchronized (HttpGetInCancelledFuture.class) {
+                if ((ds = NOT_RESPONDING) == null) {
+                    try {
+                        var loopback = InetAddress.getLoopbackAddress();
+                        try {
+                            ds = new DatagramSocket(new InetSocketAddress(loopback, ss.getLocalPort()));
+                            sameport = true;
+                        } catch (IOException io) {
+                            ds = new DatagramSocket(new InetSocketAddress(loopback,0));
+                        }
+                        NOT_RESPONDING = ds;
+                    } catch (IOException io) {
+                        throw new UncheckedIOException(io);
+                    }
+                }
+            }
+        }
+
         URI http = URIBuilder.newBuilder()
                 .loopback()
                 .scheme("http")
@@ -128,13 +174,25 @@ public class HttpGetInCancelledFuture {
                 .port(ss.getLocalPort())
                 .path("/not-accepting/")
                 .buildUnchecked();
+        URI https3 = URIBuilder.newBuilder()
+                .loopback()
+                .scheme("https")
+                .port(ds.getLocalPort())
+                .path("/not-responding/")
+                .buildUnchecked();
         // use all HTTP versions, without and with TLS
-        return List.of(
-                new TestCase(http.toString(), 200, Version.HTTP_2),
-                new TestCase(http.toString(), 200, Version.HTTP_1_1),
-                new TestCase(https.toString(), 200, Version.HTTP_2),
-                new TestCase(https.toString(), 200, Version.HTTP_1_1)
+        var def = Stream.of(
+                new TestCase(https3.toString(), 200, HTTP_3_URI_ONLY),
+                new TestCase(http.toString(), 200, HTTP_2),
+                new TestCase(http.toString(), 200, HTTP_1_1),
+                new TestCase(https.toString(), 200, HTTP_2),
+                new TestCase(https.toString(), 200, HTTP_1_1)
                 );
+        var first = sameport
+                ? Stream.of(new TestCase(https3.toString(), 200, ANY))
+                : Stream.<TestCase>empty();
+        var cases= Stream.concat(first, def);
+        return cases.toList();
     }
 
     @ParameterizedTest
@@ -251,7 +309,7 @@ public class HttpGetInCancelledFuture {
             Throwable failed = null;
             try {
                 try (final var scope = new TestTaskScope.ShutdownOnFailure()) {
-                    launchAndProcessRequests(scope, httpClient, reqCount, dest);
+                    launchAndProcessRequests(scope, httpClient, reqCount, version, dest);
                 } finally {
                     System.out.printf("StructuredTaskScope closed: STARTED=%s, SUCCESS=%s, INTERRUPT=%s, FAILED=%s%n",
                             STARTED.get(), SUCCESS.get(), INTERRUPT.get(), FAILED.get());
@@ -311,10 +369,11 @@ public class HttpGetInCancelledFuture {
             TestTaskScope.ShutdownOnFailure scope,
             HttpClient httpClient,
             int reqCount,
+            Version version,
             URI dest) {
         for (int counter = 0; counter < reqCount; counter++) {
             scope.fork(() ->
-                    getAndCheck(httpClient, dest)
+                    getAndCheck(httpClient, dest, version)
             );
         }
         try {
@@ -335,19 +394,21 @@ public class HttpGetInCancelledFuture {
     final AtomicLong FAILED = new AtomicLong();
     final AtomicLong STARTED = new AtomicLong();
     final CopyOnWriteArrayList<Exception> EXCEPTIONS = new CopyOnWriteArrayList<>();
-    private String getAndCheck(HttpClient httpClient, URI url) {
+    private String getAndCheck(HttpClient httpClient, URI url, Version version) {
         STARTED.incrementAndGet();
-        final var response = sendRequest(httpClient, url);
+        final var response = sendRequest(httpClient, url, version);
         String res = response.body();
         int statusCode = response.statusCode();
         assertEquals(200, statusCode);
         return res;
     }
 
-    private HttpResponse<String> sendRequest(HttpClient httpClient, URI url) {
+    private HttpResponse<String> sendRequest(HttpClient httpClient, URI url, Version version) {
         var id = ID.incrementAndGet();
         try {
-            var request = HttpRequest.newBuilder(url).GET().build();
+            var builder = HttpRequest.newBuilder(url).version(version).GET();
+            if (version == HTTP_3) builder.setOption(HttpOption.H3_DISCOVERY, HTTP_3_URI_ONLY);
+            var request = builder.build();
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             // System.out.println("Got response for " + id + ": " + response);
             SUCCESS.incrementAndGet();
@@ -372,16 +433,18 @@ public class HttpGetInCancelledFuture {
             if (error != null) throw error;
         } finally {
             ServerSocket ss;
+            DatagramSocket ds;
             synchronized (HttpGetInCancelledFuture.class) {
                 ss = NOT_ACCEPTING;
                 NOT_ACCEPTING = null;
+                ds = NOT_RESPONDING;
+                NOT_RESPONDING = null;
             }
-            if (ss != null) {
-                try {
-                    ss.close();
-                } catch (IOException io) {
-                    throw new UncheckedIOException(io);
-                }
+            try (var ss1 = ss; var ds1 = ds;) {
+                System.out.printf("Cleaning up: ss=%s, ds=%s%n",
+                        ss1.getLocalSocketAddress(), ds1.getLocalSocketAddress());
+            } catch (IOException io) {
+                throw new UncheckedIOException(io);
             }
         }
     }

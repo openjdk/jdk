@@ -59,6 +59,8 @@ import jdk.internal.net.http.common.*;
 import jdk.internal.net.http.frame.*;
 import jdk.internal.net.http.hpack.DecodingCallback;
 
+import static jdk.internal.net.http.AltSvcProcessor.processAltSvcFrame;
+
 import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
 
 /**
@@ -96,8 +98,8 @@ import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
  *               placed on the stream's inputQ which is consumed by the stream's
  *               reader thread.
  *
- * PushedStream sub class
- * ======================
+ * PushedStream subclass
+ * =====================
  * Sending side methods are not used because the request comes from a PUSH_PROMISE
  * frame sent by the server. When a PUSH_PROMISE is received the PushedStream
  * is created. PushedStream does not use responseCF list as there can be only
@@ -151,7 +153,7 @@ class Stream<T> extends ExchangeImpl<T> {
     // Indicates the first reason that was invoked when sending a ResetFrame
     // to the server. A streamState of 0 indicates that no reset was sent.
     // (see markStream(int code)
-    private volatile int streamState; // assigned using STREAM_STATE varhandle.
+    private volatile int streamState; // assigned while holding the sendLock.
     private volatile boolean deRegistered; // assigned using DEREGISTERED varhandle.
 
     // state flags
@@ -219,7 +221,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
                 List<ByteBuffer> buffers = df.getData();
                 List<ByteBuffer> dsts = Collections.unmodifiableList(buffers);
-                int size = Utils.remaining(dsts, Integer.MAX_VALUE);
+                long size = Utils.remaining(dsts, Long.MAX_VALUE);
                 if (size == 0 && finished) {
                     inputQ.remove();
                     // consumed will not be called
@@ -478,7 +480,9 @@ class Stream<T> extends ExchangeImpl<T> {
         if (code == 0) return streamState;
         sendLock.lock();
         try {
-            return (int) STREAM_STATE.compareAndExchange(this, 0, code);
+            var state = streamState;
+            if (state == 0) streamState = code;
+            return state;
         } finally {
             sendLock.unlock();
         }
@@ -534,7 +538,7 @@ class Stream<T> extends ExchangeImpl<T> {
         this.requestPublisher = request.requestPublisher;  // may be null
         this.responseHeadersBuilder = new HttpHeadersBuilder();
         this.rspHeadersConsumer = new HeadersConsumer();
-        this.requestPseudoHeaders = createPseudoHeaders(request);
+        this.requestPseudoHeaders = Utils.createPseudoHeaders(request);
         this.streamWindowUpdater = new StreamWindowUpdateSender(connection);
     }
 
@@ -587,6 +591,7 @@ class Stream<T> extends ExchangeImpl<T> {
             case WindowUpdateFrame.TYPE ->  incoming_windowUpdate((WindowUpdateFrame) frame);
             case ResetFrame.TYPE        ->  incoming_reset((ResetFrame) frame);
             case PriorityFrame.TYPE     ->  incoming_priority((PriorityFrame) frame);
+            case AltSvcFrame.TYPE       ->  handleAltSvcFrame(streamid, (AltSvcFrame) frame);
 
             default -> throw new IOException("Unexpected frame: " + frame);
         }
@@ -745,6 +750,10 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
+    void handleAltSvcFrame(int streamid, AltSvcFrame asf) {
+        processAltSvcFrame(streamid, asf, connection.connection, connection.client());
+    }
+
     void handleReset(ResetFrame frame, Flow.Subscriber<?> subscriber) {
         Log.logTrace("Handling RST_STREAM on stream {0}", streamid);
         if (!closed) {
@@ -763,12 +772,16 @@ class Stream<T> extends ExchangeImpl<T> {
                 // A REFUSED_STREAM error code implies that the stream wasn't processed by the
                 // peer and the client is free to retry the request afresh.
                 if (error == ErrorFrame.REFUSED_STREAM) {
+                    // null exchange implies a PUSH stream and those aren't
+                    // initiated by the client, so we don't expect them to be
+                    // considered unprocessed.
+                    assert this.exchange != null : "PUSH streams aren't expected to be marked as unprocessed";
                     // Here we arrange for the request to be retried. Note that we don't call
                     // closeAsUnprocessed() method here because the "closed" state is already set
                     // to true a few lines above and calling close() from within
                     // closeAsUnprocessed() will end up being a no-op. We instead do the additional
                     // bookkeeping here.
-                    markUnprocessedByPeer();
+                    this.exchange.markUnprocessedByPeer();
                     errorRef.compareAndSet(null, new IOException("request not processed by peer"));
                     if (debug.on()) {
                         debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
@@ -1216,6 +1229,7 @@ class Stream<T> extends ExchangeImpl<T> {
                             assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         }
                         if ((state = streamState) != 0) {
+                            t = errorRef.get();
                             if (debug.on()) debug.log("trySend: cancelled: %s", String.valueOf(t));
                             break;
                         }
@@ -1521,7 +1535,7 @@ class Stream<T> extends ExchangeImpl<T> {
         } else cancelImpl(cause);
     }
 
-    // This method sends a RST_STREAM frame
+    // This method sends an RST_STREAM frame
     void cancelImpl(Throwable e) {
         cancelImpl(e, ResetFrame.CANCEL);
     }
@@ -1856,8 +1870,12 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     void closeAsUnprocessed() {
         try {
+            // null exchange implies a PUSH stream and those aren't
+            // initiated by the client, so we don't expect them to be
+            // considered unprocessed.
+            assert this.exchange != null : "PUSH streams aren't expected to be closed as unprocessed";
             // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
-            markUnprocessedByPeer();
+            this.exchange.markUnprocessedByPeer();
             this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
             if (debug.on()) {
                 debug.log("closing " + this.request + " as unprocessed by peer");
@@ -1905,7 +1923,7 @@ class Stream<T> extends ExchangeImpl<T> {
                             streamid, n, v);
                 }
             } catch (UncheckedIOException uio) {
-                // reset stream: From RFC 9113, section 8.1
+                // reset stream: From RFC 7540, section-8.1.2.6
                 // Malformed requests or responses that are detected MUST be
                 // treated as a stream error (Section 5.4.2) of type
                 // PROTOCOL_ERROR.
@@ -1953,13 +1971,10 @@ class Stream<T> extends ExchangeImpl<T> {
 
     }
 
-    private static final VarHandle STREAM_STATE;
     private static final VarHandle DEREGISTERED;
     static {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
-            STREAM_STATE = lookup
-                    .findVarHandle(Stream.class, "streamState", int.class);
             DEREGISTERED = lookup
                     .findVarHandle(Stream.class, "deRegistered", boolean.class);
         } catch (Exception x) {
