@@ -1975,7 +1975,9 @@ void MetaspaceShared::initialize_shared_spaces() {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
-    DynamicArchive::setup_array_klasses();
+    if (!CDSConfig::is_using_preloaded_classes()) {
+      DynamicArchive::setup_array_klasses();
+    }
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }

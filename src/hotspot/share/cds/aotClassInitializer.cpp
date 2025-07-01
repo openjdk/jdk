@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
@@ -349,7 +350,9 @@ bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
          ik == vmClasses::internal_Unsafe_klass() ||
          ik == vmClasses::ConcurrentHashMap_klass() ||
          ik == vmClasses::MethodHandleImpl_klass() ||
-         ik == vmClasses::Reference_klass();
+         ik == vmClasses::Reference_klass() ||
+         ik->name()->equals("java/net/URI") ||
+         ik->name()->equals("java/lang/module/ModuleDescriptor");
 }
 
 void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {

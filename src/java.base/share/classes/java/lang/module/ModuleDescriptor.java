@@ -2669,6 +2669,11 @@ public final class ModuleDescriptor
     }
 
     static {
+        runtimeSetup();
+    }
+
+    // Also called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         /**
          * Setup the shared secret to allow code in other packages access
          * private package methods in java.lang.module.

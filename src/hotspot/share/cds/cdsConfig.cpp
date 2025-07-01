@@ -50,6 +50,7 @@ bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
+bool CDSConfig::_has_preloaded_classes = false;
 bool CDSConfig::_is_single_command_training = false;
 bool CDSConfig::_has_temp_aot_config_file = false;
 bool CDSConfig::_old_cds_flags_used = false;
@@ -65,7 +66,8 @@ JavaThread* CDSConfig::_dumper_thread = nullptr;
 
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
-  return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+  return (is_dumping_aot_linked_classes()   ? IS_DUMPING_AOT_LINKED_CLASSES : 0) |
+         (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
          (is_dumping_method_handles()       ? IS_DUMPING_METHOD_HANDLES : 0) |
          (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
@@ -979,6 +981,14 @@ bool CDSConfig::is_using_aot_linked_classes() {
 
 void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
   _has_aot_linked_classes |= has_aot_linked_classes;
+}
+
+bool CDSConfig::is_using_preloaded_classes() {
+  return is_using_full_module_graph() && _has_preloaded_classes;
+}
+
+void CDSConfig::set_has_preloaded_classes(bool has_preloaded_classes) {
+  _has_preloaded_classes |= has_preloaded_classes;
 }
 
 bool CDSConfig::is_initing_classes_at_dump_time() {

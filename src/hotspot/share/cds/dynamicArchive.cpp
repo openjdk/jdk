@@ -432,8 +432,6 @@ void DynamicArchive::setup_array_klasses() {
   if (_dynamic_archive_array_klasses != nullptr) {
     for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
       ObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
-      assert(!oak->is_typeArray_klass(), "all type array classes must be in static archive");
-
       Klass* elm = oak->element_klass();
       assert(MetaspaceShared::is_shared_static((void*)elm), "must be");
 
@@ -447,6 +445,21 @@ void DynamicArchive::setup_array_klasses() {
       }
     }
     log_debug(aot)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
+  }
+}
+
+void DynamicArchive::setup_and_restore_array_klasses(TRAPS) {
+  precond(CDSConfig::is_using_preloaded_classes());
+
+  if (_dynamic_archive_array_klasses != nullptr) {
+    setup_array_klasses();
+    for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
+      ObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
+      Klass* elm = oak->element_klass();
+      assert(MetaspaceShared::is_shared_static((void*)elm), "must be");
+      RecursiveLocker rl(MultiArray_lock, THREAD);
+      oak->restore_unshareable_info(elm->class_loader_data(), Handle(), CHECK);
+    }
   }
 }
 
