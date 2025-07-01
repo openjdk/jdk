@@ -949,7 +949,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_from_mutator(ShenandoahAllocRequest& r
   ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
-    if (can_allocate_from(r)) {
+    if (can_allocate_from(r) && !r->reserved_for_direct_allocation()) {
       if (req.is_old()) {
         if (!flip_to_old_gc(r)) {
           continue;
@@ -1203,7 +1203,8 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     // We've confirmed num contiguous regions belonging to Mutator partition, so no need to confirm membership.
     // If region is not completely free, the current [beg; end] is useless, and we may fast-forward.  If we can extend
     // the existing range, we can exploit that certain regions are already known to be in the Mutator free set.
-    while (!can_allocate_from(_heap->get_region(end))) {
+    ShenandoahHeapRegion* region = _heap->get_region(end);
+    while (!can_allocate_from(region) || region->reserved_for_direct_allocation()) {
       // region[end] is not empty, so we restart our search after region[end]
       idx_t slide_delta = end + 1 - beg;
       if (beg + slide_delta > last_possible_start) {
@@ -1234,6 +1235,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     }
 
     end++;
+    region = _heap->get_region(end);
   }
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
