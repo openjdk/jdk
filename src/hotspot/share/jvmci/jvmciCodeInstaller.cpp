@@ -928,6 +928,9 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(JVMCIObject compiled_c
     // This is to prevent --stringop-overflow warning from GCC on linux/fastdebug.
     // GCC does believe that JavaThread::current() can return nullptr,
     // though it cannot.
+    // GCC seems to not remember that this hint has been given to it when initializing
+    // HotSpotCompiledCodeStream object with a thread returned by JavaThread::current(),
+    // therefore 2nd hint is needed.
     __builtin_unreachable();
   }
 #endif
