@@ -30,8 +30,32 @@ import common.TmTool;
  */
 public class JstatGcCauseTool extends TmTool<JstatGcCauseResults> {
 
+    private static final int TRIES = 3;
+
     public JstatGcCauseTool(long pid) {
         super(JstatGcCauseResults.class, "jstat", "-gc " + pid);
     }
 
+    /**
+      * Measure, and call assertConsistency() on the results,
+      * tolerating a set number of failures to account for inconsistency in PerfData.
+      */
+    public JstatGcCauseResults measureAndAssertConsistency() throws Exception {
+        JstatGcCauseResults results = null;
+        for (int i = 1; i <= TRIES; i++) {
+            try {
+                results = measure();
+                results.assertConsistency();
+                break;
+            } catch (RuntimeException e) {
+                System.out.println("Attempt " + i + ": " + e);
+                if (i == TRIES) {
+                    System.out.println("Too many failures.");
+                    throw(e);
+                }
+                // Inconsistent, will retry.
+            }
+        }
+        return results;
+    }
 }
