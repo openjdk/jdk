@@ -111,6 +111,8 @@ public class Test12 extends Test {
                 s2.stop(0);
             if (executor != null)
                 executor.shutdown();
+            Files.delete(smallFilePath);
+            Files.delete(largeFilePath);
         }
     }
 
