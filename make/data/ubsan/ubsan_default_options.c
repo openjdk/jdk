@@ -62,5 +62,8 @@
 // thread so it is easier to track down. You can override these options by setting the environment
 // variable UBSAN_OPTIONS.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __ubsan_default_options() {
-  return "halt_on_error=1,print_stacktrace=1" _LLVM_SYMBOLIZER(LLVM_SYMBOLIZER);
+  return "halt_on_error=1,"
+         "handle_segv=0,"
+         "handle_sigbus=0,"
+         "print_stacktrace=1" _LLVM_SYMBOLIZER(LLVM_SYMBOLIZER);
 }
