@@ -1,4 +1,4 @@
-AOTClassInitializer
+AOT Class Initialization
 ------
 
 Normally, static initializers, if not triggered by an AOT cache, are

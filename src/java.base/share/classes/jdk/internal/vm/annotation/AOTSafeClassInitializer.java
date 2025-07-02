@@ -50,7 +50,7 @@ import java.lang.annotation.Target;
 /// 2. During linking of these classes, we resolve constant pool
 ///    entries when it's safe and beneficial to do so.
 ///
-/// An AOT-resolved constant pool entry for an invokedynamic or invokehandle bytecodes can
+/// An AOT-resolved constant pool entry for an invokedynamic or invokehandle bytecode can
 /// have direct or indirect references to Java objects. To ensure the correctness
 /// of the AOT-resolved constant pool entrties, we store the classes of such Java objects
 /// in the AOT cache in the initialized state (as described above).

@@ -5146,8 +5146,36 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   check_methods_for_intrinsics(ik, methods);
 
   // Fill in field values obtained by parse_classfile_attributes
-  if (_parsed_annotations->has_any_annotations()) {
+  if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
+
+  // Check the aot initialization safe status
+  if (ik->has_aot_safe_initializer()) {
+    // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
+    //   - all super classes must be included
+    //   - all super interfaces that have <clinit> must be included.
+    // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
+    // ik's <clinit>.
+    if (_super_klass != nullptr) {
+      if (!_super_klass->has_aot_safe_initializer()) {
+        classfile_parse_error("aot-initialization safe %s requires an aot-initialization safe super class", CHECK);
+      }
+    }
+
+    int len = _transitive_interfaces->length();
+    for (int i = 0; i < len; i++) {
+      InstanceKlass* intf = _transitive_interfaces->at(i);
+      if (intf->class_initializer() != nullptr) {
+        if (!intf->has_aot_safe_initializer()) {
+          classfile_parse_error("superinterface %s not aot-initialization safe for %s", intf->external_name(), CHECK);
+        }
+      }
+    }
+
+    if (log_is_enabled(Info, aot, init)) {
+      ResourceMark rm;
+      log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
+    }
   }
 
   apply_parsed_class_attributes(ik);

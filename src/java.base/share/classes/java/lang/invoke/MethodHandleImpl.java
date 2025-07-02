@@ -75,7 +75,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * @author jrose
  */
 @AOTSafeClassInitializer
-/*non-public*/
 abstract class MethodHandleImpl {
 
     /// Factory methods to create method handles:

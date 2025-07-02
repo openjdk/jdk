@@ -31,8 +31,6 @@
 class InstanceKlass;
 
 class AOTClassInitializer : AllStatic {
-  static bool allows_aot_initialization(InstanceKlass* ik);
-
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
   // the initialized state.

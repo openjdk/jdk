@@ -37,43 +37,6 @@
 
 DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
-// Tell if ik is marked as AOT initialization safe via @jdk.internal.vm.annotation.AOTSafeClassInitializer.
-bool AOTClassInitializer::allows_aot_initialization(InstanceKlass* ik) {
-  if (ik->has_aot_safe_initializer()) {
-    // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
-    //   - all super classes must be included
-    //   - all super interfaces that have <clinit> must be included.
-    // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
-    // ik's <clinit>.
-    if (ik->java_super() != nullptr) {
-      DEBUG_ONLY(ResourceMark rm);
-      assert(AOTClassInitializer::can_archive_initialized_mirror(ik->java_super()),
-             "super class %s of %s must be aot-initialized", ik->java_super()->external_name(),
-             ik->external_name());
-    }
-
-    Array<InstanceKlass*>* interfaces = ik->local_interfaces();
-    int len = interfaces->length();
-    for (int i = 0; i < len; i++) {
-      InstanceKlass* intf = interfaces->at(i);
-      if (intf->class_initializer() != nullptr) {
-        assert(AOTClassInitializer::can_archive_initialized_mirror(intf),
-               "super interface %s (which has <clinit>) of %s must be aot-initialized", intf->external_name(),
-               ik->external_name());
-      }
-    }
-
-    if (log_is_enabled(Info, aot, init)) {
-      ResourceMark rm;
-      log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
-    }
-
-    return true;
-  }
-  return false;
-}
-
-
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
@@ -253,7 +216,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     // environment dependencies (on system properties, etc).
     // MethodHandleStatics is an example of a class that must NOT get the aot-init treatment,
     // because of its strong reliance on (a) final fields which are (b) environmentally determined.
-    if (allows_aot_initialization(ik)) {
+    if (ik->has_aot_safe_initializer()) {
       return true;
     }
   }
