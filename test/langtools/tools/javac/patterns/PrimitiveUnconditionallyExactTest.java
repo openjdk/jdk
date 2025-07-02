@@ -29,15 +29,19 @@ import java.util.BitSet;
 import java.util.Map;
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @bug 8357185
- * @summary Record pattern extracting unconditionally exact primitive component
+ * @summary Behaviors with unconditionally exact primitive patterns
  * @library /test/lib
- * @run main RecordPatternPrimitiveComponent
+ * @run junit PrimitiveUnconditionallyExactTest
  */
-public class RecordPatternPrimitiveComponent {
+public class PrimitiveUnconditionallyExactTest {
 
     private static final String SOURCE = """
             public class Test {
@@ -51,7 +55,8 @@ public class RecordPatternPrimitiveComponent {
             }
             """;
 
-    public static void main(String... args) {
+    @Test
+    public void testInRecordPattern() {
         var testBytes = InMemoryJavaCompiler.compile(Map.of("Test", SOURCE)).get("Test");
         var code = ClassFile.of().parse(testBytes).methods().stream()
                 .filter(m -> m.methodName().equalsString("get")).findFirst()
@@ -72,7 +77,18 @@ public class RecordPatternPrimitiveComponent {
             System.err.println("Loads: " + loads);
             System.err.println("Stores: " + stores);
             System.err.println(code.toDebugString());
-            throw new RuntimeException("Store and load mismatch, see stderr");
+            fail("Store and load mismatch, see stderr");
         }
+    }
+
+    @Test
+    public void testExpressionExecution() {
+        int a = 0;
+        boolean b = (a = 5) instanceof int;
+        assertEquals(5, a);
+        b = (a = 42) instanceof long;
+        assertEquals(42, a);
+        b = (a = -28) instanceof double;
+        assertEquals(-28, a);
     }
 }
