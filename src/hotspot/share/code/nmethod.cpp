@@ -1545,7 +1545,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   CodeBuffer dst(nm_copy);
   while (iter.next()) {
 #ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
-  // Let the trampoline stub relocation fix the owner if it exists
+    // Direct calls may no longer be in range and the use of a trampoline may now be required.
+    // Instead allow the trapoline relocations to update their owner and perform the necessary checks.
     if (iter.reloc()->is_call()) {
       address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), nm_copy);
       if (trampoline != nullptr) {
