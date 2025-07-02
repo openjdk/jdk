@@ -876,7 +876,7 @@ public class BasicFloat16ArithTests {
      */
     private static Float16 valueOfExact(float f) {
         Float16 f16 = valueOf(f);
-        if (Float.compare(f16.floatValue(), f) != 0 ) {
+        if (Float.compare(f16.floatValue(), f) != 0) {
             throw new ArithmeticException("Inexact conversion to Float16 of float value " + f);
         }
         return f16;
