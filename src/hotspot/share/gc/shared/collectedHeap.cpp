@@ -208,7 +208,10 @@ private:
 
 public:
   virtual void do_thread(Thread* thread) {
-    Atomic::add(&_cpu_time, os::thread_cpu_time(thread));
+    jlong cpu_time = os::thread_cpu_time(thread);
+    if (cpu_time != -1) {
+      Atomic::add(&_cpu_time, cpu_time);
+    }
   }
   jlong cpu_time() { return _cpu_time; };
 };
@@ -630,6 +633,7 @@ void CollectedHeap::log_gc_cpu_time() const {
     double string_dedup_cpu_time = UseStringDeduplication ? (double)os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
 
     if (process_cpu_time == -1 || gc_cpu_time == -1 || string_dedup_cpu_time == -1) {
+      log_warning(gc, cpu)("Could not sample CPU time");
       return;
     }
 
