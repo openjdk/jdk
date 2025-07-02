@@ -5149,7 +5149,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
 
-  // Check the aot initialization safe status
+  // Check the aot initialization safe status.
+  // @AOTSafeClassInitializer is used only to support ahead-of-time initialization of classes
+  // in the AOT assembly phase.
   if (ik->has_aot_safe_initializer() && CDSConfig::is_initing_classes_at_dump_time()) {
     // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
     //   - all super classes must be included
