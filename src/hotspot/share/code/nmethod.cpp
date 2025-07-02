@@ -1936,9 +1936,9 @@ void nmethod::inc_decompile_count() {
   if (!is_compiled_by_c2() && !is_compiled_by_jvmci()) return;
   // Could be gated by ProfileTraps, but do not bother...
 #if INCLUDE_JVMCI
-  // Deoptimizations from non-default (non-CompileBroker) compilations should not
-  // affect the Java method's profile, as they could block it from being compiled
-  // at the highest tier.
+  // Deoptimization count is used by the CompileBroker to reason about compilations
+  // it requests so do not pollute the count for deoptimizations in non-default (i.e.
+  // non-CompilerBroker) compilations.
   if (is_jvmci_hosted()) {
     return;
   }

@@ -2364,9 +2364,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     }
 
 #if INCLUDE_JVMCI
-    // Deoptimizations from non-default (non-CompileBroker) compilations should not
-    // affect the Java method's profile, as they could block it from being compiled
-    // at the highest tier.
+    // Deoptimization count is used by the CompileBroker to reason about compilations
+    // it requests so do not pollute the count for deoptimizations in non-default (i.e.
+    // non-CompilerBroker) compilations.
     if (nm->is_jvmci_hosted()) {
       update_trap_state = false;
     }
