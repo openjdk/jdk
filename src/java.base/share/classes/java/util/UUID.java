@@ -206,6 +206,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @spec https://www.rfc-editor.org/rfc/rfc9562.html
      *       RFC 9562 Universally Unique IDentifiers (UUIDs)
+     *
+     * @since 26
      */
     public static UUID unixEpochTimeMillis() {
         long timestamp = monotonicMS();
@@ -233,6 +235,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @spec https://www.rfc-editor.org/rfc/rfc9562.html
      *       RFC 9562 Universally Unique IDentifiers (UUIDs)
+     *       
+     * @since 26
      */
     public static UUID unixEpochTimeMillis(long timestamp) {
         if ((timestamp >> 48) != 0) {
@@ -404,7 +408,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * <li>2    DCE security UUID
      * <li>3    Name-based UUID
      * <li>4    Randomly generated UUID
-     * <li>7    Unix timestamp-based UUID
+     * <li>7    Unix Epoch time-based UUID
      * </ul>
      *
      * @return  The version number of this {@code UUID}
