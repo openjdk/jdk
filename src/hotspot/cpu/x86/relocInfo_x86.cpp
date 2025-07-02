@@ -113,7 +113,7 @@ address Relocation::pd_call_destination(address orig_addr) {
 }
 
 
-void Relocation::pd_set_call_destination(address x, bool be_safe) {
+void Relocation::pd_set_call_destination(address x) {
   NativeInstruction* ni = nativeInstruction_at(addr());
   if (ni->is_call()) {
     nativeCall_at(addr())->set_destination(x);
@@ -186,7 +186,7 @@ address Relocation::pd_get_address_from_code() {
   return *pd_address_in_code();
 }
 
-void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) {
+void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 }
 
 void metadata_Relocation::pd_fix_value(address x) {

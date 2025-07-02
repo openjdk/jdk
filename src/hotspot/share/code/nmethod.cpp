@@ -1544,7 +1544,17 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   CodeBuffer src(this);
   CodeBuffer dst(nm_copy);
   while (iter.next()) {
-    iter.reloc()->fix_relocation_after_move(&src, &dst, true);
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+  // Let the trampoline stub relocation fix the owner if it exists
+    if (iter.reloc()->is_call()) {
+      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), nm_copy);
+      if (trampoline != nullptr) {
+        continue;
+      }
+    }
+#endif
+
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
   nm_copy->clear_inline_caches();

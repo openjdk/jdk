@@ -90,7 +90,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   return MacroAssembler::pd_call_destination(addr());
 }
 
-void Relocation::pd_set_call_destination(address x, bool be_safe) {
+void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be an address instruction here");
   if (NativeCall::is_at(addr())) {
     NativeCall* nc = nativeCall_at(addr());
@@ -112,7 +112,7 @@ address Relocation::pd_get_address_from_code() {
   return MacroAssembler::pd_call_destination(addr());
 }
 
-void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) {
+void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
   if (NativeInstruction::maybe_cpool_ref(addr())) {
     address old_addr = old_addr_for(addr(), src, dest);
     MacroAssembler::pd_patch_instruction_size(addr(), MacroAssembler::target_addr_for_insn(old_addr));

@@ -804,7 +804,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
     { // Repair the pc relative information in the code after the move
       RelocIterator iter(dest_cs);
       while (iter.next()) {
-        iter.reloc()->fix_relocation_after_move(this, dest, false);
+        iter.reloc()->fix_relocation_after_move(this, dest);
       }
     }
   }

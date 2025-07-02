@@ -785,7 +785,7 @@ class Relocation {
   void       pd_set_data_value       (address x, bool verify_only = false); // a set or mem-ref
   void       pd_verify_data_value    (address x) { pd_set_data_value(x, true); }
   address    pd_call_destination     (address orig_addr = nullptr);
-  void       pd_set_call_destination (address x, bool be_safe);
+  void       pd_set_call_destination (address x);
 
   // this extracts the address of an address in the code stream instead of the reloc data
   address* pd_address_in_code       ();
@@ -860,7 +860,7 @@ class Relocation {
   // This method assumes that all virtual/static (inline) caches are cleared (since for static_call_type and
   // ic_call_type is not always position dependent (depending on the state of the cache)). However, this is
   // probably a reasonable assumption, since empty caches simplifies code reloacation.
-  virtual void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) { }
+  virtual void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) { }
 };
 
 
@@ -950,7 +950,7 @@ class CallRelocation : public Relocation {
   address  destination()                    { return pd_call_destination(); }
   void     set_destination(address x); // pd_set_call_destination
 
-  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) override;
+  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
   address  value() override                 { return destination();  }
   void     set_value(address x) override    { set_destination(x); }
 };
@@ -1262,7 +1262,7 @@ class runtime_call_w_cp_Relocation : public CallRelocation {
 class trampoline_stub_Relocation : public Relocation {
 #ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
   void pd_fix_owner_after_move();
-  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) override;
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
 #endif
 
  public:
@@ -1334,7 +1334,7 @@ class external_word_Relocation : public DataRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) override;
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
   address  target();        // if _target==nullptr, fetch addr from code stream
   address  value() override { return target(); }
 };
@@ -1378,7 +1378,7 @@ class internal_word_Relocation : public DataRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) override;
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
   void fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr);
 
   address  target();        // if _target==nullptr, fetch addr from code stream
@@ -1411,7 +1411,7 @@ class section_word_Relocation : public internal_word_Relocation {
 
 class poll_Relocation : public Relocation {
   bool is_data() override { return true; }
-  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest, bool is_nmethod_relocation) override;
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
  public:
   poll_Relocation(relocInfo::relocType type = relocInfo::poll_type) : Relocation(type) { }
 

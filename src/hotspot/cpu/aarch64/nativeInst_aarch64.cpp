@@ -87,7 +87,7 @@ void NativeCall::set_destination_mt_safe(address dest) {
 
   // Patch the constant in the call's trampoline stub.
   address trampoline_stub_addr = get_trampoline();
-  if (trampoline_stub_addr != nullptr && dest != trampoline_stub_addr) {
+  if (trampoline_stub_addr != nullptr) {
     assert (! is_NativeCallTrampolineStub_at(dest), "chained trampolines");
     nativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(dest);
   }
