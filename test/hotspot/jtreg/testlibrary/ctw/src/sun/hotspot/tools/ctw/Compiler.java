@@ -81,34 +81,34 @@ public class Compiler {
             preloadClasses(aClass.getName(), id, constantPool);
         }
 
-        // Make sure the class is initialized.
+        // Attempt to initialize the class. If initialization is not possible
+        // due to NCDFE, accept this, and try compile anyway.
         try {
             UNSAFE.ensureClassInitialized(aClass);
-        } catch (NoClassDefFoundError t) {
-            // Accept this.
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING class init failed : %s",
-                                 id, aClass.getName(), t));
+        } catch (NoClassDefFoundError e) {
+            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to init class : %s",
+                                 id, aClass.getName(), e));
         }
-        compileClinit(aClass, id);
 
-        //
+        // Getting constructor/methods with unresolvable signatures would fail with NCDFE.
+        // Try to get as much as possible, and compile everything else.
+        // TODO: Would be good to have a Whitebox method that returns the subset of resolvable
+        // constructors/methods without throwing NCDFE. This would extend the testing scope.
         Constructor[] constructors = new Constructor[0];
         Method[] methods = new Method[0];
 
         try {
-             constructors = aClass.getDeclaredConstructors();
-        } catch (NoClassDefFoundError t) {
-            // Accept this.
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING getting constructors failed : %s",
-                                 id, aClass.getName(), t));
+            constructors = aClass.getDeclaredConstructors();
+        } catch (NoClassDefFoundError e) {
+            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to get constructors : %s",
+                                 id, aClass.getName(), e));
         }
 
         try {
             methods = aClass.getDeclaredMethods();
-        } catch (NoClassDefFoundError t) {
-            // Accept this.
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING getting methods failed : %s",
-                                 id, aClass.getName(), t));
+        } catch (NoClassDefFoundError e) {
+            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to get methods : %s",
+                                 id, aClass.getName(), e));
         }
 
         // Populate profile for all methods to expand the scope of
@@ -121,6 +121,7 @@ public class Compiler {
         }
 
         // Now schedule the compilations.
+        compileClinit(aClass, id);
         long methodCount = 0;
         for (Executable e : constructors) {
             ++methodCount;
@@ -155,9 +156,9 @@ public class Compiler {
                 if (constantPool.getTagAt(i) == ConstantPool.Tag.CLASS) {
                     constantPool.getClassAt(i);
                 }
-            } catch (NoClassDefFoundError t) {
-                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
-                         id, className, t));
+            } catch (NoClassDefFoundError e) {
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to preload : %s",
+                         id, className, e));
             } catch (Throwable t) {
                 CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
                          id, className, t));
