@@ -1835,7 +1835,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     if (old_hash != n->hash()) {
       stringStream ss; // Print as a block without tty lock.
       ss.cr();
-      ss.print_cr("Ideal optimization did not make progress but hash node changed.");
+      ss.print_cr("Ideal optimization did not make progress but node hash changed.");
       ss.print_cr("  old_hash = %d, hash = %d", old_hash, n->hash());
       n->dump_bfs(1, nullptr, "", &ss);
       tty->print_cr("%s", ss.as_string());
