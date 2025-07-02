@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /*
  * @test
  * @bug 8357185
+ * @enablePreview
  * @summary Behaviors with unconditionally exact primitive patterns
  * @library /test/lib
  * @run junit PrimitiveUnconditionallyExactTest
