@@ -367,10 +367,10 @@ public:
 // a subset (e.g. the young generation or old generation) of the total heap.
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
 private:
-  size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions;
+  size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
 public:
   ShenandoahCalculateRegionStatsClosure() :
-      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0) {};
+     _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0) {};
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
     _used += r->used();
@@ -381,6 +381,7 @@ public:
     }
     if (r->is_trash()) {
       _trashed_regions++;
+      _trashed_used += r->used();
     }
     _regions++;
     log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding %zu for %s Region %zu, yielding: %zu",
@@ -388,9 +389,11 @@ public:
   }
 
   size_t used() const { return _used; }
+  size_t used_after_recycle() const { return _used - _trashed_used; }
   size_t committed() const { return _committed; }
   size_t garbage() const { return _garbage; }
   size_t regions() const { return _regions; }
+  size_t trashed_regions() const { return _trashed_regions; }
   size_t waste() const { return _humongous_waste; }
 
   // span is the total memory affiliated with these stats (some of which is in use and other is available)
@@ -405,6 +408,11 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
   ShenandoahCalculateRegionStatsClosure global;
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
+#define KELVIN_STATS
+#ifdef KELVIN_STATS
+    log_info(gc)("StatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
+                 r->affiliation_name(), r->index(), r->used(), r->is_trash()? "yes": "no");
+#endif
     switch (r->affiliation()) {
       case FREE:
         return;
@@ -438,13 +446,22 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
       generation_used += pad;
     }
 
+#define KELVIN_EXTRA_NOISE
+#ifdef KELVIN_EXTRA_NOISE
+    log_info(gc)("%s: generation (%s) used size must be consistent: generation-used: %zu, regions-used from stats: %zu, stats.used_after_recycle: %zu",
+                 label, generation->name(), generation_used, stats.used(), stats.used_after_recycle());
+    // kelvin once thought he needed to use stats.used_after_recycle()
+    // in the following assertion, but maybe not...
+#endif
+
     guarantee(stats.used() == generation_used,
               "%s: generation (%s) used size must be consistent: generation-used: " PROPERFMT ", regions-used: " PROPERFMT,
               label, generation->name(), PROPERFMTARGS(generation_used), PROPERFMTARGS(stats.used()));
 
-    guarantee(stats.regions() == generation_used_regions,
-              "%s: generation (%s) used regions (%zu) must equal regions that are in use (%zu)",
-              label, generation->name(), generation->used_regions(), stats.regions());
+    size_t stats_regions = stats.regions() - stats.trashed_regions();
+    guarantee(stats_regions == generation_used_regions,
+              "%s: generation (%s) used regions (%zu) must equal regions that are in use (%zu) - trashed regions (%zu)",
+              label, generation->name(), generation->used_regions(), stats.regions(), stats.trashed_regions());
 
     size_t generation_capacity = generation->max_capacity();
     guarantee(stats.non_trashed_span() <= generation_capacity,

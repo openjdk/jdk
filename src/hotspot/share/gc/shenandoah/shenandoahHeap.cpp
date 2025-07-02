@@ -746,7 +746,7 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
     notify_mutator_alloc_words(req.actual_size(), req.waste());
 
     if (wasted_bytes > 0 && ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
-      increase_humongous_waste(generation,wasted_bytes);
+      increase_humongous_waste(generation, wasted_bytes);
     }
   }
 }

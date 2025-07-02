@@ -907,6 +907,19 @@ void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes,
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
   Atomic::add(&_used, bytes);
+#define KELVIN_MONITOR_USED
+#ifdef KELVIN_MONITOR_USED
+  log_info(gc)("Generation %s increase_used(%zu) to %zu", shenandoah_generation_name(_type), bytes, _used);
+#endif
+}
+
+void ShenandoahGeneration::decrease_used(size_t bytes) {
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_used >= bytes), "cannot reduce bytes used by generation below zero");
+  Atomic::sub(&_used, bytes);
+#ifdef KELVIN_MONITOR_USED
+  log_info(gc)("Generation %s decrease_used(%zu) to %zu", shenandoah_generation_name(_type), bytes, _used);
+#endif
 }
 
 void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
@@ -929,12 +942,6 @@ void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
                  shenandoah_generation_name(_type), bytes, _humongous_waste);
 #endif
   }
-}
-
-void ShenandoahGeneration::decrease_used(size_t bytes) {
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used >= bytes), "cannot reduce bytes used by generation below zero");
-  Atomic::sub(&_used, bytes);
 }
 
 size_t ShenandoahGeneration::used_regions() const {

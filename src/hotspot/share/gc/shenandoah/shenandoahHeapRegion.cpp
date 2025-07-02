@@ -592,12 +592,10 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
   shenandoah_assert_heaplocked();
   if (is_trash() && _recycling.try_set()) {
     if (is_trash()) {
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      ShenandoahGeneration* generation = heap->generation_for(affiliation());
-
-      heap->decrease_used(generation, used());
-      generation->decrement_affiliated_region_count();
-
+      // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
+      // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
+      // for triggering and pacing heuristics.  It greatly simplifies and reduces the locking overhead required
+      // by more time-precise accounting of these details.
       recycle_internal();
     }
     _recycling.unset();
@@ -618,11 +616,10 @@ void ShenandoahHeapRegion::try_recycle() {
   if (is_trash() && _recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      ShenandoahGeneration* generation = heap->generation_for(affiliation());
-      heap->decrease_used(generation, used());
-      generation->decrement_affiliated_region_count_without_lock();
-
+      // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
+      // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
+      // for triggering and pacing heuristics.  It greatly simplifies and reduces the locking overhead required
+      // by more time-precise accounting of these details.
       recycle_internal();
     }
     _recycling.unset();

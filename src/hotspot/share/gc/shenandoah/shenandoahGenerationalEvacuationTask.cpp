@@ -241,6 +241,14 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     // However, if we do not transfer the capacities, we end up reducing the amount of memory that would have
     // otherwise been available to hold old evacuations, because old available is max_capacity - used and now
     // we would be trading a fully empty region for a partially used region.
+
+    size_t available_in_region = region->free();
+    size_t plab_min_size_in_bytes = _heap->plab_min_size() * HeapWordSize;
+    if (available_in_region < plab_min_size_in_bytes) {
+      // The available memory in young had been retired.  Retire it in old also.
+      region_used += available_in_region;
+    }
+
     young_gen->decrease_used(region_used);
     young_gen->decrement_affiliated_region_count();
 

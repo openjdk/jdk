@@ -50,6 +50,8 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   }
 }
 
+#define KELVIN_USED
+
 class ShenandoahLeftRightIterator {
 private:
   idx_t _idx;
@@ -167,6 +169,7 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
     _free_set(free_set),
     _membership{ ShenandoahSimpleBitMap(max_regions), ShenandoahSimpleBitMap(max_regions) , ShenandoahSimpleBitMap(max_regions) }
 {
+  initialize_old_collector();
   make_all_regions_unavailable();
 }
 
@@ -219,6 +222,12 @@ inline idx_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId 
   return idx;
 }
 
+void ShenandoahRegionPartitions::initialize_old_collector() {
+  _total_region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = 0;
+  _region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = 0;
+  _empty_region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = 0;
+}
+
 void ShenandoahRegionPartitions::make_all_regions_unavailable() {
   shenandoah_assert_heaplocked();
   for (size_t partition_id = 0; partition_id < IntNumPartitions; partition_id++) {
@@ -232,6 +241,9 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
     _humongous_waste[partition_id] = 0;
     _available[partition_id] = FreeSetUnderConstruction;
   }
+#ifdef KELVIN_USED
+  log_info(gc)("make_all_regions_unavailable() setting _used[] to 0 for all partitions");
+#endif
 #define KELVIN_REGION_COUNTS
 #ifdef KELVIN_REGION_COUNTS
   log_info(gc)("Setting Mutator and Collector total_region_counts to zero, OldCollector is %zu",
@@ -248,11 +260,11 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
                                                              idx_t mutator_leftmost_empty, idx_t mutator_rightmost_empty,
                                                              size_t total_mutator_regions, size_t empty_mutator_regions,
                                                              size_t mutator_region_count, size_t mutator_used,
-                                                             size_t mutator_humongous_waste_words) {
+                                                             size_t mutator_humongous_waste_bytes) {
   shenandoah_assert_heaplocked();
 
 #ifdef KELVIN_HUMONGOUS_WASTE
-  log_info(gc)("FreeSet mutator humongous waste set to %zu, collector to zero", mutator_humongous_waste_words);
+  log_info(gc)("FreeSet mutator humongous waste set to %zu, collector to zero", mutator_humongous_waste_bytes);
 #endif
 
   _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_leftmost;
@@ -262,8 +274,8 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
 
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_region_count;
   _used[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_used;
-  _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_region_count * _region_size_bytes;
-  _humongous_waste[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_humongous_waste_words;
+  _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] = total_mutator_regions * _region_size_bytes;
+  _humongous_waste[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_humongous_waste_bytes;
   _available[int(ShenandoahFreeSetPartitionId::Mutator)] =
     _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] - _used[int(ShenandoahFreeSetPartitionId::Mutator)];
 
@@ -283,6 +295,14 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
 
   _total_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
   _empty_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
+#define KELVIN_CAPACITY
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("establish_mutator_intervals() sets Mutator capacity: %zu", _capacity[int(ShenandoahFreeSetPartitionId::Mutator)]);
+  log_info(gc)("establish_mutator_intervals() sets Collector capacity: %zu", _capacity[int(ShenandoahFreeSetPartitionId::Collector)]);
+#endif
+#ifdef KELVIN_USED
+  log_info(gc)("Setting Mutator used to %zu Collector to 0", mutator_used);
+#endif
 #ifdef KELVIN_REGION_COUNTS
   log_info(gc)("Setting Mutator total_region_counts to %zu Collector to 0", total_mutator_regions);
 #endif
@@ -294,11 +314,11 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
                                                                    size_t total_old_collector_region_count,
                                                                    size_t old_collector_empty, size_t old_collector_regions,
                                                                    size_t old_collector_used,
-                                                                   size_t old_collector_humongous_waste_words) {
+                                                                   size_t old_collector_humongous_waste_bytes) {
   shenandoah_assert_heaplocked();
 
 #ifdef KELVIN_HUMONGOUS_WASTE
-  log_info(gc)("FreeSet old_collector humongous waste set to %zu", old_collector_humongous_waste_words);
+  log_info(gc)("FreeSet old_collector humongous waste set to %zu", old_collector_humongous_waste_bytes);
 #endif
   _leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_leftmost;
   _rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_rightmost;
@@ -307,13 +327,20 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
 
   _region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_regions;
   _used[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_used;
-  _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_regions * _region_size_bytes;
-  _humongous_waste[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_humongous_waste_words;
+  _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)] = total_old_collector_region_count * _region_size_bytes;
+  _humongous_waste[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_humongous_waste_bytes;
   _available[int(ShenandoahFreeSetPartitionId::OldCollector)] =
     _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)] - _used[int(ShenandoahFreeSetPartitionId::OldCollector)];
 
   _total_region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = total_old_collector_region_count;
   _empty_region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_empty;
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("establish_old_collector_intervals() sets OldCollector capacity: %zu",
+               _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)]);
+#endif
+#ifdef KELVIN_USED
+  log_info(gc)("Setting OldCollector used to %zu", old_collector_used);
+#endif
 #ifdef KELVIN_REGION_COUNTS
   log_info(gc)("Setting OldCollector total_region_counts to %zu", total_old_collector_region_count);
 #endif
@@ -325,26 +352,126 @@ void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId whic
 
   _used[int(which_partition)] += bytes;
   _available[int(which_partition)] -= bytes;
+#ifdef KELVIN_USED
+  log_info(gc)("ShenRegionPartitions %s increase_used(%zu) to %zu, available shrinks to %zu",
+               partition_name(which_partition), bytes, _used[int(which_partition)], _available[int(which_partition)]);
+#endif
   assert (_used[int(which_partition)] <= _capacity[int(which_partition)],
           "Must not use (%zu) more than capacity (%zu) after increase by %zu",
           _used[int(which_partition)], _capacity[int(which_partition)], bytes);
 }
 
-void ShenandoahRegionPartitions::increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words) {
-  _humongous_waste[int(which_partition)] += words;
-#ifdef KELVIN_HUMONGOUS_WASTE
-  log_info(gc)("FreeSet<%s>::increase_humongous_waste(%zu) yields: %zu", partition_name(which_partition),
-               words, _humongous_waste[int(which_partition)]);
+void ShenandoahRegionPartitions::decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  assert (_used[int(which_partition)] >= bytes,
+          "Must not use (%zu) less than zero after decrease by %zu",
+          _used[int(which_partition)], bytes);
+
+  _used[int(which_partition)] -= bytes;
+  _available[int(which_partition)] += bytes;
+#ifdef KELVIN_USED
+  log_info(gc)("ShenRegionPartitions %s decrease_used(%zu) to %zu, available grows to %zu",
+               partition_name(which_partition), bytes, _used[int(which_partition)], _available[int(which_partition)]);
 #endif
 }
 
-void ShenandoahRegionPartitions::decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t words) {
-  assert(_humongous_waste[int(which_partition)] >= words, "Cannot decrease waste beyond what is there");
-  _humongous_waste[int(which_partition)] -= words;
+size_t ShenandoahRegionPartitions::get_used(ShenandoahFreeSetPartitionId which_partition) {
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  return _used[int(which_partition)];;
+}
+
+void ShenandoahRegionPartitions::increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "Partition must be valid");
+
+  _humongous_waste[int(which_partition)] += bytes;
+#ifdef KELVIN_HUMONGOUS_WASTE
+  log_info(gc)("FreeSet<%s>::increase_humongous_waste(%zu) yields: %zu", partition_name(which_partition),
+               bytes, _humongous_waste[int(which_partition)]);
+#endif
+}
+
+void ShenandoahRegionPartitions::decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  assert(_humongous_waste[int(which_partition)] >= bytes, "Cannot decrease waste beyond what is there");
+
+  _humongous_waste[int(which_partition)] -= bytes;
 #ifdef KELVIN_HUMONGOUS_WASTE
   log_info(gc)("FreeSet<%s>::decrease_humongous_waste(%zu) yields: %zu", partition_name(which_partition),
-               words, _humongous_waste[int(which_partition)]);
+               bytes, _humongous_waste[int(which_partition)]);
 #endif
+}
+
+size_t ShenandoahRegionPartitions::get_humongous_waste(ShenandoahFreeSetPartitionId which_partition) {
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  return _humongous_waste[int(which_partition)];;
+}
+
+void ShenandoahRegionPartitions::set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "selected free set must be valid");
+  _capacity[int(which_partition)] = value;
+  _available[int(which_partition)] = value - _used[int(which_partition)];
+#define KELVIN_CAPACITY
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("set_capacity of %s to %zu", partition_name(which_partition), _capacity[int(which_partition)]);
+#endif
+}
+
+
+void ShenandoahRegionPartitions::increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  _capacity[int(which_partition)] += bytes;
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("FreeSet<%s>::increase_capacity(%zu) yields: %zu", partition_name(which_partition),
+               bytes, _capacity[int(which_partition)]);
+#endif
+}
+
+void ShenandoahRegionPartitions::decrease_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  assert(_capacity[int(which_partition)] >= bytes, "Cannot remove more capacity bytes than are present");
+  _capacity[int(which_partition)] -= bytes;
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("FreeSet<%s>::decrease_capacity(%zu) yields: %zu", partition_name(which_partition),
+               bytes, _capacity[int(which_partition)]);
+#endif
+}
+
+size_t ShenandoahRegionPartitions::get_capacity(ShenandoahFreeSetPartitionId which_partition) {
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  return _capacity[int(which_partition)];;
+}
+
+void ShenandoahRegionPartitions::increase_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  _available[int(which_partition)] += bytes;
+#define KELVIN_AVAILABLE
+#ifdef KELVIN_AVAILABLE
+  log_info(gc)("FreeSet<%s>::increase_available(%zu) yields: %zu", partition_name(which_partition),
+               bytes, _available[int(which_partition)]);
+#endif
+}
+
+void ShenandoahRegionPartitions::decrease_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked();
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  assert(_available[int(which_partition)] >= bytes, "Cannot remove more available bytes than are present");
+  _available[int(which_partition)] -= bytes;
+#ifdef KELVIN_AVAILABLE
+  log_info(gc)("FreeSet<%s>::decrease_available(%zu) yields: %zu", partition_name(which_partition),
+               bytes, _available[int(which_partition)]);
+#endif
+}
+
+size_t ShenandoahRegionPartitions::get_available(ShenandoahFreeSetPartitionId which_partition) {
+  assert (which_partition < NumPartitions, "Partition must be valid");
+  return _available[int(which_partition)];;
 }
 
 void ShenandoahRegionPartitions::increase_total_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
@@ -364,9 +491,48 @@ void ShenandoahRegionPartitions::decrease_total_region_counts(ShenandoahFreeSetP
   _total_region_counts[int(which_partition)] -= regions;
 }
 
-inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
+void ShenandoahRegionPartitions::increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+  _region_counts[int(which_partition)] += regions;
+#ifdef KELVIN_REGION_COUNTS
+  log_info(gc)("Increase region counts[%s] by %zu to %zu", partition_name(which_partition), regions, 
+               _region_counts[int(which_partition)]);
+#endif
+}
+
+void ShenandoahRegionPartitions::decrease_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+#ifdef KELVIN_REGION_COUNTS
+  log_info(gc)("Decreasing region counts[%s] by %zu from %zu", partition_name(which_partition), regions, 
+               _region_counts[int(which_partition)]);
+#endif
+  assert(_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
+  _region_counts[int(which_partition)] -= regions;
+}
+
+void ShenandoahRegionPartitions::increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+  _empty_region_counts[int(which_partition)] += regions;
+#ifdef KELVIN_REGION_COUNTS
+  log_info(gc)("Increase empty region counts[%s] by %zu to %zu", partition_name(which_partition), regions, 
+               _empty_region_counts[int(which_partition)]);
+#endif
+}
+
+void ShenandoahRegionPartitions::decrease_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+#ifdef KELVIN_REGION_COUNTS
+  log_info(gc)("Decreasing empty_region counts[%s] by %zu from %zu", partition_name(which_partition), regions, 
+               _empty_region_counts[int(which_partition)]);
+#endif
+  assert(_empty_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
+  _empty_region_counts[int(which_partition)] -= regions;
+}
+
+// All members of partition between low_idx and high_idx inclusive have been removed.
+void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
   ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx) {
   assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
+#define KELVIN_INTERVALS
+#ifdef KELVIN_INTERVALS
+  log_info(gc)("shrink_interval_if_range_modifies_either_boundary(%s, %zd, %zd)", partition_name(partition), low_idx, high_idx);
+#endif
   if (low_idx == leftmost(partition)) {
     assert (!_membership[int(partition)].is_set(low_idx), "Do not shrink interval if region not removed");
     if (high_idx + 1 == _max) {
@@ -397,14 +563,78 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either
     _leftmosts_empty[int(partition)] = _max;
     _rightmosts_empty[int(partition)] = -1;
   }
+#ifdef KELVIN_INTERVALS
+  log_info(gc)("shrink_interval_if_range_modifies_either_boundary ends with range [%zd, %zd], empty range [%zd, %zd]",
+               _leftmosts[int(partition)], _rightmosts[int(partition)],
+               _leftmosts_empty[int(partition)], _rightmosts_empty[int(partition)]);
+#endif
+}
+
+void ShenandoahRegionPartitions::establish_interval(ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx,
+                                                    idx_t low_empty_idx, idx_t high_empty_idx) {
+#ifdef ASSERT
+  assert (partition < NumPartitions, "invalid partition");
+  if (low_idx != max()) {
+    assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
+    assert (in_free_set(partition, low_idx), "Must be in partition of established interval");
+    assert (in_free_set(partition, high_idx), "Must be in partition of established interval");
+  }
+  if (low_empty_idx != max()) {
+    ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(low_empty_idx);
+    assert (in_free_set(partition, low_empty_idx) && r->is_empty(), "Must be empty and in partition of established interval");
+    r = ShenandoahHeap::heap()->get_region(high_empty_idx);
+    assert (in_free_set(partition, high_empty_idx), "Must be in partition of established interval");
+  }
+#endif
+
+  _leftmosts[int(partition)] = low_idx;
+  _rightmosts[int(partition)] = high_idx;
+  _leftmosts_empty[int(partition)] = low_empty_idx;
+  _rightmosts_empty[int(partition)] = high_empty_idx;
+
+#ifdef KELVIN_INTERVALS
+  log_info(gc)("%s: establish_interval ends with [%zd, %zd], empty range [%zd, %zd]",
+               partition_name(partition), _leftmosts[int(partition)], _rightmosts[int(partition)],
+               _leftmosts_empty[int(partition)], _rightmosts_empty[int(partition)]);
+#endif
 }
 
 inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, idx_t idx) {
   shrink_interval_if_range_modifies_either_boundary(partition, idx, idx);
 }
 
-inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
-                                                                             idx_t idx, size_t region_available) {
+// Some members of partition between low_idx and high_idx inclusive have been added.
+void ShenandoahRegionPartitions::
+expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx,
+                                                  idx_t low_empty_idx, idx_t high_empty_idx) {
+#ifdef KELVIN_INTERVALS
+  log_info(gc)("expand_interval_if_range_modifies_either_boundary(%s, %zd, %zd, %zd, %zd)",
+               partition_name(partition), low_idx, high_idx, low_empty_idx, high_empty_idx);
+#endif
+  if (_leftmosts[int(partition)] > low_idx) {
+    _leftmosts[int(partition)] = low_idx;
+  }
+  if (_rightmosts[int(partition)] < high_idx) {
+    _rightmosts[int(partition)] = high_idx;
+  }
+  if (_leftmosts_empty[int(partition)] > low_empty_idx) {
+    _leftmosts_empty[int(partition)] = low_empty_idx;
+  }
+  if (_rightmosts_empty[int(partition)] < high_empty_idx) {
+    _rightmosts_empty[int(partition)] = high_empty_idx;
+  }
+#ifdef KELVIN_INTERVALS
+  log_info(gc)("expand_interval_if_range_modifies_either_boundary ends with range [%zd, %zd], empty range [%zd, %zd]",
+               _leftmosts[int(partition)], _rightmosts[int(partition)],
+               _leftmosts_empty[int(partition)], _rightmosts_empty[int(partition)]);
+#endif
+}
+
+void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition,
+                                                                      idx_t idx, size_t region_available) {
+#ifdef KELVIN_INTERVALS
+  log_info(gc)("expand_interval_if_boundary_modified(%s, %zd, %zu)", partition_name(partition), idx, region_available);
+#endif
   if (_leftmosts[int(partition)] > idx) {
     _leftmosts[int(partition)] = idx;
   }
@@ -419,6 +649,11 @@ inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(She
       _rightmosts_empty[int(partition)] = idx;
     }
   }
+#ifdef KELVIN_INTERVALS
+  log_info(gc)("expand_interval_if_boundary_modified ends with range [%zd, %zd], empty range [%zd, %zd]",
+               _leftmosts[int(partition)], _rightmosts[int(partition)],
+               _leftmosts_empty[int(partition)], _rightmosts_empty[int(partition)]);
+#endif
 }
 
 void ShenandoahRegionPartitions::retire_range_from_partition(
@@ -455,6 +690,8 @@ void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitio
   _region_counts[int(partition)]--;
 }
 
+// The caller is responsible for increasing capacity and available and used in which_partition, and decreasing the
+// same quantities for the original partition
 void ShenandoahRegionPartitions::make_free(idx_t idx, ShenandoahFreeSetPartitionId which_partition, size_t available) {
   shenandoah_assert_heaplocked();
   assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
@@ -463,19 +700,7 @@ void ShenandoahRegionPartitions::make_free(idx_t idx, ShenandoahFreeSetPartition
   assert (available <= _region_size_bytes, "Available cannot exceed region size");
 
   _membership[int(which_partition)].set_bit(idx);
-  _capacity[int(which_partition)] += _region_size_bytes;
-  _used[int(which_partition)] += _region_size_bytes - available;
-  _available[int(which_partition)] += available;
   expand_interval_if_boundary_modified(which_partition, idx, available);
-  _region_counts[int(which_partition)]++;
-  _total_region_counts[int(which_partition)]++;
-#ifdef KELVIN_REGION_COUNTS
-  log_info(gc)("Incrementing _total_region_counts[%s] to %zu in make_free",
-               partition_name(which_partition), _total_region_counts[int(which_partition)]);
-#endif
-  if (available == _region_size_bytes) {
-    _empty_region_counts[int(which_partition)]++;
-  }
 }
 
 bool ShenandoahRegionPartitions::is_mutator_partition(ShenandoahFreeSetPartitionId p) {
@@ -494,9 +719,10 @@ bool ShenandoahRegionPartitions::available_implies_empty(size_t available_in_reg
   return (available_in_region == _region_size_bytes);
 }
 
-
-void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, ShenandoahFreeSetPartitionId orig_partition,
-                                                                  ShenandoahFreeSetPartitionId new_partition, size_t available) {
+// Do not adjust capacities, available, or used.  Return used delta.
+size_t ShenandoahRegionPartitions::
+move_from_partition_to_partition_with_deferred_accounting(idx_t idx, ShenandoahFreeSetPartitionId orig_partition,
+                                                          ShenandoahFreeSetPartitionId new_partition, size_t available) {
   ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(idx);
   shenandoah_assert_heaplocked();
   assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
@@ -534,22 +760,32 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, She
 
   _membership[int(orig_partition)].clear_bit(idx);
   _membership[int(new_partition)].set_bit(idx);
+  return used;
+}
 
-  _capacity[int(orig_partition)] -= _region_size_bytes;
-  _used[int(orig_partition)] -= used;
-  _available[int(orig_partition)] -= available;
-  shrink_interval_if_boundary_modified(orig_partition, idx);
+void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, ShenandoahFreeSetPartitionId orig_partition,
+                                                                  ShenandoahFreeSetPartitionId new_partition, size_t available) {
+  size_t used = move_from_partition_to_partition_with_deferred_accounting(idx, orig_partition, new_partition, available);
 
-  _capacity[int(new_partition)] += _region_size_bytes;;
-  _used[int(new_partition)] += used;
-  _available[int(new_partition)] += available;
-  expand_interval_if_boundary_modified(new_partition, idx, available);
-
+  decrease_used(orig_partition, used);
   _total_region_counts[int(orig_partition)]--;
   _region_counts[int(orig_partition)]--;
+  _capacity[int(orig_partition)] -= _region_size_bytes;
+  _available[int(orig_partition)] -= _region_size_bytes;
+  shrink_interval_if_boundary_modified(orig_partition, idx);
 
+  _capacity[int(new_partition)] += _region_size_bytes;
+  _available[int(new_partition)] += _region_size_bytes;
   _total_region_counts[int(new_partition)]++;
   _region_counts[int(new_partition)]++;
+  increase_used(new_partition, used);
+  expand_interval_if_boundary_modified(new_partition, idx, available);
+
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("Moving one region from %s to %s, adjusting capacities to %zu and %zu",
+               partition_name(orig_partition), partition_name(new_partition),
+               _capacity[int(orig_partition)], _capacity[int(new_partition)]);
+#endif
 
 #ifdef KELVIN_REGION_COUNTS
   log_info(gc)("Moving one region from %s to %s, adjusting region counts to %zu and %zu",
@@ -758,19 +994,19 @@ void ShenandoahRegionPartitions::assert_bounds() {
   idx_t beg_off = leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
   idx_t end_off = rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
   assert (beg_off >= leftmost(ShenandoahFreeSetPartitionId::Mutator),
-          "free regions before the leftmost: %zd, bound %zd",
+          "Mutator free regions before the leftmost: %zd, bound %zd",
           beg_off, leftmost(ShenandoahFreeSetPartitionId::Mutator));
   assert (end_off <= rightmost(ShenandoahFreeSetPartitionId::Mutator),
-          "free regions past the rightmost: %zd, bound %zd",
+          "Mutator free regions past the rightmost: %zd, bound %zd",
           end_off, rightmost(ShenandoahFreeSetPartitionId::Mutator));
 
   beg_off = empty_leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
   end_off = empty_rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)];
   assert (beg_off >= leftmost_empty(ShenandoahFreeSetPartitionId::Mutator),
-          "free empty regions before the leftmost: %zd, bound %zd",
+          "Mutator free empty regions before the leftmost: %zd, bound %zd",
           beg_off, leftmost_empty(ShenandoahFreeSetPartitionId::Mutator));
   assert (end_off <= rightmost_empty(ShenandoahFreeSetPartitionId::Mutator),
-          "free empty regions past the rightmost: %zd, bound %zd",
+          "Mutator free empty regions past the rightmost: %zd, bound %zd",
           end_off, rightmost_empty(ShenandoahFreeSetPartitionId::Mutator));
 
   // Performance invariants. Failing these would not break the free partition, but performance would suffer.
@@ -781,64 +1017,64 @@ void ShenandoahRegionPartitions::assert_bounds() {
 
   assert (leftmost(ShenandoahFreeSetPartitionId::Collector) == _max
           || partition_id_matches(leftmost(ShenandoahFreeSetPartitionId::Collector), ShenandoahFreeSetPartitionId::Collector),
-          "leftmost region should be free: %zd",  leftmost(ShenandoahFreeSetPartitionId::Collector));
+          "Collector leftmost region should be free: %zd",  leftmost(ShenandoahFreeSetPartitionId::Collector));
   assert (leftmost(ShenandoahFreeSetPartitionId::Collector) == _max
           || partition_id_matches(rightmost(ShenandoahFreeSetPartitionId::Collector), ShenandoahFreeSetPartitionId::Collector),
-          "rightmost region should be free: %zd", rightmost(ShenandoahFreeSetPartitionId::Collector));
+          "Collector rightmost region should be free: %zd", rightmost(ShenandoahFreeSetPartitionId::Collector));
 
   // If Collector partition is empty, leftmosts will both equal max, rightmosts will both equal zero.
   // Likewise for empty region partitions.
   beg_off = leftmosts[int(ShenandoahFreeSetPartitionId::Collector)];
   end_off = rightmosts[int(ShenandoahFreeSetPartitionId::Collector)];
   assert (beg_off >= leftmost(ShenandoahFreeSetPartitionId::Collector),
-          "free regions before the leftmost: %zd, bound %zd",
+          "Collector free regions before the leftmost: %zd, bound %zd",
           beg_off, leftmost(ShenandoahFreeSetPartitionId::Collector));
   assert (end_off <= rightmost(ShenandoahFreeSetPartitionId::Collector),
-          "free regions past the rightmost: %zd, bound %zd",
+          "Collector free regions past the rightmost: %zd, bound %zd",
           end_off, rightmost(ShenandoahFreeSetPartitionId::Collector));
 
   beg_off = empty_leftmosts[int(ShenandoahFreeSetPartitionId::Collector)];
   end_off = empty_rightmosts[int(ShenandoahFreeSetPartitionId::Collector)];
   assert (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
-          "free empty regions before the leftmost: %zd, bound %zd",
+          "Collector free empty regions before the leftmost: %zd, bound %zd",
           beg_off, leftmost_empty(ShenandoahFreeSetPartitionId::Collector));
   assert (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
-          "free empty regions past the rightmost: %zd, bound %zd",
+          "Collector free empty regions past the rightmost: %zd, bound %zd",
           end_off, rightmost_empty(ShenandoahFreeSetPartitionId::Collector));
 
   // Performance invariants. Failing these would not break the free partition, but performance would suffer.
-  assert (leftmost(ShenandoahFreeSetPartitionId::OldCollector) <= _max, "leftmost in bounds: %zd < %zd",
+  assert (leftmost(ShenandoahFreeSetPartitionId::OldCollector) <= _max, "OldCollector leftmost in bounds: %zd < %zd",
           leftmost(ShenandoahFreeSetPartitionId::OldCollector),  _max);
-  assert (rightmost(ShenandoahFreeSetPartitionId::OldCollector) < _max, "rightmost in bounds: %zd < %zd",
+  assert (rightmost(ShenandoahFreeSetPartitionId::OldCollector) < _max, "OldCollector rightmost in bounds: %zd < %zd",
           rightmost(ShenandoahFreeSetPartitionId::OldCollector),  _max);
 
   assert (leftmost(ShenandoahFreeSetPartitionId::OldCollector) == _max
           || partition_id_matches(leftmost(ShenandoahFreeSetPartitionId::OldCollector),
                                   ShenandoahFreeSetPartitionId::OldCollector),
-          "leftmost region should be free: %zd",  leftmost(ShenandoahFreeSetPartitionId::OldCollector));
+          "OldCollector leftmost region should be free: %zd",  leftmost(ShenandoahFreeSetPartitionId::OldCollector));
   assert (leftmost(ShenandoahFreeSetPartitionId::OldCollector) == _max
           || partition_id_matches(rightmost(ShenandoahFreeSetPartitionId::OldCollector),
                                   ShenandoahFreeSetPartitionId::OldCollector),
-          "rightmost region should be free: %zd", rightmost(ShenandoahFreeSetPartitionId::OldCollector));
+          "OldCollector rightmost region should be free: %zd", rightmost(ShenandoahFreeSetPartitionId::OldCollector));
 
   // If OldCollector partition is empty, leftmosts will both equal max, rightmosts will both equal zero.
   // Likewise for empty region partitions.
   beg_off = leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   end_off = rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   assert (beg_off >= leftmost(ShenandoahFreeSetPartitionId::OldCollector),
-          "free regions before the leftmost: %zd, bound %zd",
+          "OldCollector free regions before the leftmost: %zd, bound %zd",
           beg_off, leftmost(ShenandoahFreeSetPartitionId::OldCollector));
   assert (end_off <= rightmost(ShenandoahFreeSetPartitionId::OldCollector),
-          "free regions past the rightmost: %zd, bound %zd",
+          "OldCollector free regions past the rightmost: %zd, bound %zd",
           end_off, rightmost(ShenandoahFreeSetPartitionId::OldCollector));
 
   beg_off = empty_leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   end_off = empty_rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   assert (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty regions before the leftmost: %zd, bound %zd",
+          "OldCollector free empty regions before the leftmost: %zd, bound %zd",
           beg_off, leftmost_empty(ShenandoahFreeSetPartitionId::OldCollector));
   assert (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty regions past the rightmost: %zd, bound %zd",
+          "OldCollector free empty regions past the rightmost: %zd, bound %zd",
           end_off, rightmost_empty(ShenandoahFreeSetPartitionId::OldCollector));
 }
 #endif
@@ -846,7 +1082,10 @@ void ShenandoahRegionPartitions::assert_bounds() {
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
-  _alloc_bias_weight(0)
+  _alloc_bias_weight(0),
+  _total_young_used(0),
+  _total_old_used(0),
+  _total_global_used(0)
 {
   clear_internal();
 }
@@ -854,14 +1093,53 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
 void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region) {
   shenandoah_assert_heaplocked();
   size_t plab_min_size_in_bytes = ShenandoahGenerationalHeap::heap()->plab_min_size() * HeapWordSize;
+  size_t region_size_bytes =  ShenandoahHeapRegion::region_size_bytes();
+  size_t available_in_region = alloc_capacity(region);
+  size_t used_in_region = region->used();
+#ifdef ASSERT
   size_t idx = region->index();
-  size_t capacity = alloc_capacity(region);
   assert(_partitions.membership(idx) == ShenandoahFreeSetPartitionId::NotFree,
          "Regions promoted in place should have been excluded from Mutator partition");
-  if (capacity >= plab_min_size_in_bytes) {
-    _partitions.make_free(idx, ShenandoahFreeSetPartitionId::OldCollector, capacity);
-    _heap->old_generation()->augment_promoted_reserve(capacity);
+#endif
+  if (available_in_region < plab_min_size_in_bytes) {
+    // If region had been retired, its end-of-region alignment pad is counted as used
+    used_in_region += available_in_region;
   }
+  
+  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_in_region);
+  _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator, region_size_bytes);
+  _partitions.decrease_available(ShenandoahFreeSetPartitionId::Mutator, region_size_bytes);
+  _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, 1);
+
+  _partitions.increase_available(ShenandoahFreeSetPartitionId::OldCollector, region_size_bytes);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, region_size_bytes);
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, used_in_region);
+  _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, 1);
+
+  if (available_in_region >= plab_min_size_in_bytes) {
+    // region counts represents regions from which we are currently allocating.
+    _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, 1);
+    _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, 1);
+    _partitions.make_free(idx, ShenandoahFreeSetPartitionId::OldCollector, available_in_region);
+    _heap->old_generation()->augment_promoted_reserve(available_in_region);
+    assert(available_in_region != region_size_bytes, "Nothing to promote in place");
+  }
+  recompute_total_used();
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("Ater add_pip_to_old(%zu), Mutate used: %zu, capacity: %zu, available: %zu, region_counts: %zu, total_regions: %zu",
+               region->index(),
+               _partitions.get_used(ShenandoahFreeSetPartitionId::Mutator),
+               _partitions.get_capacity(ShenandoahFreeSetPartitionId::Mutator),
+               _partitions.get_available(ShenandoahFreeSetPartitionId::Mutator),
+               _partitions.get_region_counts(ShenandoahFreeSetPartitionId::Mutator),
+               _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator));
+  log_info(gc)("                      OldCollect used: %zu, capacity: %zu, available: %zu, region_counts: %zu, total_regions: %zu",
+               _partitions.get_used(ShenandoahFreeSetPartitionId::OldCollector),
+               _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector),
+               _partitions.get_available(ShenandoahFreeSetPartitionId::OldCollector),
+               _partitions.get_region_counts(ShenandoahFreeSetPartitionId::OldCollector),
+               _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
+#endif
 }
 
 HeapWord* ShenandoahFreeSet::allocate_from_partition_with_affiliation(ShenandoahAffiliation affiliation,
@@ -1265,6 +1543,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   } else if ((result != nullptr) && in_new_region) {
     _partitions.one_region_is_no_longer_empty(orig_partition);
   }
+  recompute_total_used();
   return result;
 }
 
@@ -1369,7 +1648,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
   // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate
   _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
-
   size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_humongous_size);
   _partitions.assert_bounds();
@@ -1379,22 +1657,180 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     req.set_waste(waste);
 
 #ifdef KELVIN_HUMONGOUS_WASTE
-    log_info(gc)("FreeSet alloc_contiguous increasing mutator humongous waste by %zu", waste);
+    log_info(gc)("FreeSet alloc_contiguous increasing mutator humongous waste by %zu bytes", waste * HeapWordSize);
 #endif
 
-    _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, waste);
+    _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, waste * HeapWordSize);
   }
 
 #ifdef KELVIN_REGION_COUNTS
   log_info(gc)("Allocating humongous to span %zu regions", num);
 #endif
 
+  recompute_total_young_used();
+  recompute_total_global_used();
   return _heap->get_region(beg)->bottom();
 }
 
 class ShenandoahRecycleTrashedRegionClosure final : public ShenandoahHeapRegionClosure {
+private:
+  static const ssize_t SentinelUsed = -1;
+  static const ssize_t SentinelIndex = -1;
+  static const size_t MaxSavedRegions = 128;
+
+  ShenandoahRegionPartitions* _partitions;
+  volatile size_t _recycled_region_count;
+  ssize_t _region_indices[MaxSavedRegions];
+  ssize_t _region_used[MaxSavedRegions];
+
+  void get_lock_and_flush_buffer(size_t region_count, size_t overflow_region_used, size_t overflow_region_index) {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahHeapLocker locker(heap->lock());
+#define KELVIN_RECYCLE
+#ifdef KELVIN_RECYCLE
+    Thread* t = Thread::current();
+    size_t p2i = (size_t) t;
+    size_t recycled_regions = Atomic::load(&_recycled_region_count);
+    log_info(gc)("%zx: got lock, will flush buffer with %zu entries plus (used: %zu, index: %zu)",
+                 p2i, recycled_regions, overflow_region_used, overflow_region_index);
+#endif
+    size_t region_tallies[int(ShenandoahRegionPartitions::NumPartitions)];
+    size_t used_byte_tallies[int(ShenandoahRegionPartitions::NumPartitions)];
+    for (int p = 0; p < int(ShenandoahRegionPartitions::NumPartitions); p++) {
+      region_tallies[p] = 0;
+      used_byte_tallies[p] = 0;
+    }
+    ShenandoahFreeSetPartitionId p = _partitions->membership(overflow_region_index);
+    used_byte_tallies[int(p)] += overflow_region_used;
+    if (region_count <= recycled_regions) {
+      // _recycled_region_count has not been decremented after I incremented it to obtain region_count, so I will
+      // try to flush the buffer.
+
+      // Multiple worker threads may attempt to flush this buffer.  The first thread to acquire the lock does the work.
+      // _recycled_region_count is only decreased while holding the heap lock.
+      if (region_count > recycled_regions) {
+        region_count = recycled_regions;
+      }
+      for (size_t i = 0; i < region_count; i++) {
+        ssize_t used;
+        // wait for other threads to finish updating their entries within the region buffer before processing entry
+#ifdef KELVIN_RECYCLE
+        size_t retry_count = 0;
+#endif
+        do {
+          used = _region_used[i];
+#ifdef KELVIN_RECYCLE
+          if (retry_count++ == 1024 * 1024) {
+            log_info(gc)("Too many used retries at index %zu", i);
+            retry_count = 0;
+          }
+#endif
+        } while (used == SentinelUsed);
+        ssize_t index;
+#ifdef KELVIN_RECYCLE
+        retry_count = 0;
+#endif
+        do {
+          index = _region_indices[i];
+#ifdef KELVIN_RECYCLE
+          if (retry_count++ == 1024 * 1024) {
+            log_info(gc)("Too many index retries at index %zu", i);
+            retry_count = 0;
+          }
+#endif
+        } while (index == SentinelIndex);
+        ShenandoahFreeSetPartitionId p = _partitions->membership(index);
+
+        
+
+        assert(p != ShenandoahFreeSetPartitionId::NotFree, "Trashed regions should be in a free partition");
+        used_byte_tallies[int(p)] += used;
+        region_tallies[int(p)]++;
+#ifdef KELVIN_RECYCLE
+        log_info(gc)("flushing bufffer[%zu], index: %zu, used: %zu, partition: %s, used_tally: %zu, region_tally: %zu",
+                     i, index, used, partition_name(p), used_byte_tallies[int(p)], region_tallies[int(p)]);
+#endif
+      }
+      if (region_count > 0) {
+        for (size_t i = 0; i < MaxSavedRegions; i++) {
+          _region_indices[i] = SentinelIndex;
+          _region_used[i] = SentinelUsed;
+        }
+#ifdef KELVIN_RECYCLE
+        log_info(gc)("overwrote buffer to all sentinel values");
+#endif
+      }
+
+      // The almost last thing we do before releasing the lock is to set the _recycled_region_count to 0.  What happens next?
+      // 
+      //  1. Any worker thread that attempted to buffer a new region while we were flushing the buffer will have seen
+      //     that _recycled_region_count > MaxSavedRegions. All such worker threads will first wait for the lock, then
+      //     discover that the _recycled_region_count is zero, then, while holding the lock, they will process the
+      //     region so it doesn't have to be placed into the buffer.  This handles the large majority of cases.
+      //
+      //  2. However, there's a race that can happen, which will result in someewhat different behavior.  Suppose
+      //     this thread resets _recycled_region_count to 0.  Then some other worker thread increments _recycled_region_count
+      //     in order to stores its region into the buffer and suppose this happens before all of the other worker threads
+      //     which are waiting to acquire the heap lock have finished their efforts to flush the buffer.  If this happens,
+      //     then the workers who are waiting to acquire the heap lock and flush the buffer will find that _recycled_region_count
+      //     has decreased from the value it held when they last tried to increment its value.  In this case, these worker
+      //     threads will process their overflow region while holding the lock, but they will not attempt to process regions
+      //     newly placed into the buffer.  Otherwise, confusion could result.
+      //
+      // Assumption: all worker threads who are attempting to acquire lock and flush buffer will finish their efforts before
+      //             the buffer once again overflows.
+      // How could we avoid depending on this assumption?
+      //   1. Let MaxSavedRegions be as large as number of regions, or at least as large as the collection set.
+      //   2. Keep a count of how many times the buffer has been flushed per instantation of the
+      //      ShenandoahRecycleTrashedRegionClosure object, and only consult/update this value while holding the heap lock.
+      //      Need to think about how this helps resolve the race.
+      _recycled_region_count = 0;
+    } else {
+      // Some other thread has already processed the buffer, resetting _recycled_region_count to zero. Its current value
+      // may be greater than zero because other workers may have accumulated entries into the buffer. But it is "extremely"
+      // unlikely that it will overflow again before all waiting workers have had a chance to clear their state. While I've
+      // got the heap lock, I'll go ahead and update the global state for my overflow region. I'll let other heap regions
+      // accumulate in the buffer to be processed when the buffer is once again full.
+#ifdef KELVIN_RECYCLE
+      log_info(gc)("Not flushing buffer because other thread did it");
+#endif
+      region_count = 0;
+    }
+#ifdef KELVIN_RECYCLE
+    log_info(gc)("Recycling %zu regions [M, C, O]: used: [%zu, %zu, %zu], regions [%zu, %zu, %zu]",
+                 region_count + 1,
+                 used_byte_tallies[int(ShenandoahFreeSetPartitionId::Mutator)],
+                 used_byte_tallies[int(ShenandoahFreeSetPartitionId::Collector)],
+                 used_byte_tallies[int(ShenandoahFreeSetPartitionId::OldCollector)],
+                 region_tallies[int(ShenandoahFreeSetPartitionId::Mutator)],
+                 region_tallies[int(ShenandoahFreeSetPartitionId::Collector)],
+                 region_tallies[int(ShenandoahFreeSetPartitionId::OldCollector)]);
+#endif
+    for (size_t p = 0; p < int(ShenandoahRegionPartitions::NumPartitions); p++) {
+      _partitions->decrease_used(ShenandoahFreeSetPartitionId(p), used_byte_tallies[p]);
+    }
+    ShenandoahYoungGeneration* young_gen = heap->young_generation();
+    ShenandoahOldGeneration* old_gen = heap->old_generation();
+    young_gen->decrease_used(used_byte_tallies[int(ShenandoahFreeSetPartitionId::Mutator)]
+                             + used_byte_tallies[int(ShenandoahFreeSetPartitionId::Collector)]);
+    young_gen->decrease_affiliated_region_count(region_tallies[int(ShenandoahFreeSetPartitionId::Mutator)]
+                                                + region_tallies[int(ShenandoahFreeSetPartitionId::Collector)]);
+    old_gen->decrease_used(used_byte_tallies[int(ShenandoahFreeSetPartitionId::OldCollector)]);
+    old_gen->decrease_affiliated_region_count(region_tallies[int(ShenandoahFreeSetPartitionId::OldCollector)]);
+#ifdef KELVIN_RECYCLE
+    log_info(gc)("Done with flush buffer, releasing global heap lock");
+#endif
+  }
+
 public:
-  ShenandoahRecycleTrashedRegionClosure(): ShenandoahHeapRegionClosure() {}
+  ShenandoahRecycleTrashedRegionClosure(ShenandoahRegionPartitions* p): ShenandoahHeapRegionClosure() {
+    _partitions = p;
+    _recycled_region_count = 0;
+    for (size_t i = 0; i < MaxSavedRegions; i++) {
+      _region_indices[i] = SentinelIndex;
+      _region_used[i] = SentinelUsed;
+    }
+  }
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     r->try_recycle();
@@ -1412,7 +1848,7 @@ void ShenandoahFreeSet::recycle_trash() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
-  ShenandoahRecycleTrashedRegionClosure closure;
+  ShenandoahRecycleTrashedRegionClosure closure(&_partitions);
   heap->parallel_heap_region_iterate(&closure);
 }
 
@@ -1431,6 +1867,7 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
                                                  ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
     _partitions.assert_bounds();
     _heap->old_generation()->augment_evacuation_reserve(region_capacity);
+    recompute_total_used();
     return true;
   }
 
@@ -1461,8 +1898,8 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
       _partitions.move_from_partition_to_partition(idx,
                                                    ShenandoahFreeSetPartitionId::Mutator,
                                                    ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
-
       _partitions.assert_bounds();
+      recompute_total_used();
 
       // 4. Do not adjust capacities for generations, we just swapped the regions that have already
       // been accounted for. However, we should adjust the evacuation reserves as those may have changed.
@@ -1487,6 +1924,7 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
   _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                ShenandoahFreeSetPartitionId::Collector, ac);
   _partitions.assert_bounds();
+  recompute_total_used();
 
   // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
   // to recycle trash before attempting to allocate anything in the region.
@@ -1499,6 +1937,7 @@ void ShenandoahFreeSet::clear() {
 void ShenandoahFreeSet::clear_internal() {
   shenandoah_assert_heaplocked();
   _partitions.make_all_regions_unavailable();
+  recompute_total_used();
 
   _alloc_bias_weight = 0;
   _partitions.set_bias_from_left_to_right(ShenandoahFreeSetPartitionId::Mutator, true);
@@ -1548,16 +1987,28 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
     ShenandoahHeapRegion* region = _heap->get_region(idx);
     if (region->is_trash()) {
       // Trashed regions represent regions that had been in the collection partition but have not yet been "cleaned up".
-      // The cset regions are not "trashed" until we have finished update refs.
+      // The cset regions are not recycled until we have finished update refs.
       if (region->is_old()) {
+#define KELVIN_PUZZLE
+#ifdef KELVIN_PUZZLE
+        log_info(gc)("find_alloc_capacity sees old trashed region %zu, with %zu used bytes", region->index(), region->used());
+#endif
+        assert(region->used() == region_size_bytes, "Expect cset regions to be fully used");
         old_cset_regions++;
       } else {
         assert(region->is_young(), "Trashed region should be old or young");
+#ifdef KELVIN_PUZZLE
+        log_info(gc)("find_alloc_capacity sees young trashed region %zu, with %zu used bytes", region->index(), region->used());
+#endif
+        assert(region->used() == region_size_bytes, "Expect cset regions to be fully used");
         young_cset_regions++;
       }
     } else if (region->is_old()) {
       // count both humongous and regular regions, but don't count trash (cset) regions.
       old_region_count++;
+#ifdef KELVIN_PUZZLE
+      log_info(gc)("find_alloc_capacity sees old non-trashed region %zu, with %zu used bytes", region->index(), region->used());
+#endif
       if (first_old_region > idx) {
         first_old_region = idx;
       }
@@ -1608,7 +2059,13 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
             }
           }
           old_collector_regions++;
-          old_collector_used += (region_size_bytes - ac);
+          old_collector_used += region_size_bytes - ac;
+        }
+      } else {
+        if (region->is_old()) {
+          old_collector_used += region_size_bytes - ac;
+        } else {
+          mutator_used += region_size_bytes - ac;
         }
       }
       if (region->is_trash() || !region->is_old()) {
@@ -1619,24 +2076,39 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
     } else {
       if (region->is_humongous_start()) {
         oop obj = cast_to_oop(region->bottom());
-        size_t word_size = obj->size();
-        size_t region_span = ShenandoahHeapRegion::required_regions(word_size * HeapWordSize);
-        size_t humongous_waste_words = region_span * ShenandoahHeapRegion::region_size_words() - word_size;
+        size_t byte_size = obj->size() * HeapWordSize;
+        size_t region_span = ShenandoahHeapRegion::required_regions(byte_size);
+        size_t humongous_waste_bytes = region_span * ShenandoahHeapRegion::region_size_words() - byte_size;
         if (is_generational) {
           if (region->is_young()) {
             total_mutator_regions += region_span;
-            mutator_humongous_waste += humongous_waste_words;
+            mutator_humongous_waste += humongous_waste_bytes;
           } else {
             total_old_collector_regions += region_span;
-            old_collector_humongous_waste += humongous_waste_words;
+            old_collector_humongous_waste += humongous_waste_bytes;
           }
         } else {
           total_mutator_regions += region_span;
-          mutator_humongous_waste += humongous_waste_words;;
+          mutator_humongous_waste += humongous_waste_bytes;
         }
       }
     }
   }
+  // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
+  // part of capacity, as fully used, as affiliated.  Computations performed after prepare_to_rebuild()
+  // assume the cset regions are part of used regions within each generation.  These same computations make use
+  // of the number of cset regions, with the understanding that cset regions will become unaffiliated and available
+  // after finish_rebuild.
+  //
+  // Partition ranges and empty ranges do not include trash regions as of the end of finish_rebuild.  Region ranges
+  // will be adjusted after we finish recycling the trash.
+  total_mutator_regions += young_cset_regions;
+  mutator_used += young_cset_regions * region_size_bytes;
+  total_old_collector_regions += old_cset_regions;
+  old_collector_used += old_cset_regions * region_size_bytes;
+  // No need to update generation sizes here.  These are the sizes already recognized by the generations.  Theses
+  // adjustments allow the freeset tallies to match the generation tallies.
+
 #ifdef KELVIN_ENHANCEMENTS
   log_info(gc, free)("  At end of prep_to_rebuild, mutator_leftmost: %zu"
                       ", mutator_rightmost: %zu"
@@ -1695,6 +2167,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
                                                 old_collector_leftmost_empty, rightmost_empty_idx, total_old_collector_regions,
                                                 old_collector_empty, old_collector_regions, old_collector_used,
                                                 old_collector_humongous_waste);
+  recompute_total_used();
   log_debug(gc, free)("  After find_regions_with_alloc_capacity(), Mutator range [%zd, %zd],"
                       "  Old Collector range [%zd, %zd]",
                       _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
@@ -1704,11 +2177,11 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
 }
 
 void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector(size_t xfer_regions,
-                                                                                   size_t humongous_waste_words) {
+                                                                                   size_t humongous_waste_bytes) {
   shenandoah_assert_heaplocked();
 
 #ifdef KELVIN_HUMONGOUS_WASTE
-  log_info(gc)("FreeSet humongous promotion, with waste %zu", humongous_waste_words);
+  log_info(gc)("FreeSet humongous promotion, with waste %zu", humongous_waste_bytes);
 #endif
 
 #ifdef KELVIN_REGION_COUNTS
@@ -1716,10 +2189,14 @@ void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector
 #endif
 
   _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, xfer_regions);
-  _partitions.decrease_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, humongous_waste_words);
+  _partitions.decrease_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, humongous_waste_bytes);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, xfer_regions);
-  _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::OldCollector, humongous_waste_words);
+  _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::OldCollector, humongous_waste_bytes);
+
+  recompute_total_young_used();
+  recompute_total_old_used();
+  // global_used is unaffected by this transfer
 
   // No need to adjust ranges because humongous regions are not allocatable
 }
@@ -1731,33 +2208,104 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
   shenandoah_assert_heaplocked();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t transferred_regions = 0;
+  size_t used_transfer = 0;
+  idx_t collector_low_idx = _partitions.max();
+  idx_t collector_high_idx = -1;
+  idx_t mutator_low_idx = _partitions.max();
+  idx_t mutator_high_idx = -1;
   ShenandoahLeftRightIterator iterator(&_partitions, which_collector, true);
   for (idx_t idx = iterator.current(); transferred_regions < max_xfer_regions && iterator.has_next(); idx = iterator.next()) {
     // Note: can_allocate_from() denotes that region is entirely empty
     if (can_allocate_from(idx)) {
-      _partitions.move_from_partition_to_partition(idx, which_collector, ShenandoahFreeSetPartitionId::Mutator, region_size_bytes);
+      if (idx < collector_low_idx) {
+        collector_low_idx = idx;
+      }
+      if (idx > collector_high_idx) {
+        collector_high_idx = idx;
+      }
+      if (idx < mutator_low_idx) {
+        mutator_low_idx = idx;
+      }
+      if (idx > mutator_high_idx) {
+        mutator_high_idx = idx;
+      }
+      used_transfer = _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, which_collector,
+                                                                                            ShenandoahFreeSetPartitionId::Mutator,
+                                                                                            region_size_bytes);
       transferred_regions++;
       bytes_transferred += region_size_bytes;
     }
   }
+  // All transferred regions are empty.
+  assert(used_transfer == 0, "empty regions should have no used");
+  _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator, mutator_low_idx,
+                                                                mutator_high_idx, mutator_low_idx, mutator_high_idx);
+  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx);
+
+  _partitions.decrease_total_region_counts(which_collector, transferred_regions);
+  _partitions.decrease_region_counts(which_collector, transferred_regions);
+  _partitions.decrease_empty_region_counts(which_collector, transferred_regions);
+
+  _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+
+  recompute_total_used();
   return transferred_regions;
 }
 
 // Returns number of regions transferred, adds transferred bytes to var argument bytes_transferred
-size_t ShenandoahFreeSet::transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId which_collector,
-                                                                                       size_t max_xfer_regions,
-                                                                                       size_t& bytes_transferred) {
+size_t ShenandoahFreeSet::
+transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId which_collector,
+                                                             size_t max_xfer_regions, size_t& bytes_transferred) {
   shenandoah_assert_heaplocked();
+  size_t region_size_bytes = _partitions.region_size_bytes();
   size_t transferred_regions = 0;
+  size_t used_transfer = 0;
+  idx_t collector_low_idx = _partitions.max();
+  idx_t collector_high_idx = -1;
+  idx_t mutator_low_idx = _partitions.max();
+  idx_t mutator_high_idx = -1;
+
   ShenandoahLeftRightIterator iterator(&_partitions, which_collector, false);
   for (idx_t idx = iterator.current(); transferred_regions < max_xfer_regions && iterator.has_next(); idx = iterator.next()) {
     size_t ac = alloc_capacity(idx);
     if (ac > 0) {
-      _partitions.move_from_partition_to_partition(idx, which_collector, ShenandoahFreeSetPartitionId::Mutator, ac);
+      if (idx < collector_low_idx) {
+        collector_low_idx = idx;
+      }
+      if (idx > collector_high_idx) {
+        collector_high_idx = idx;
+      }
+      if (idx < mutator_low_idx) {
+        mutator_low_idx = idx;
+      }
+      if (idx > mutator_high_idx) {
+        mutator_high_idx = idx;
+      }
+      assert (ac < region_size_bytes, "Move empty regions with different function");
+      used_transfer += _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, which_collector,
+                                                                                             ShenandoahFreeSetPartitionId::Mutator,
+                                                                                             ac);
       transferred_regions++;
       bytes_transferred += ac;
     }
   }
+  // _empty_region_counts is unaffected, because we transfer only non-empty regions here.
+  
+  _partitions.decrease_used(which_collector, used_transfer);
+  _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
+                                                                mutator_low_idx, mutator_high_idx, _partitions.max(), -1);
+  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx);
+
+  _partitions.decrease_total_region_counts(which_collector, transferred_regions);
+  _partitions.decrease_region_counts(which_collector, transferred_regions);
+
+  _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, used_transfer);
+
+  recompute_total_used();
   return transferred_regions;
 }
 
@@ -1806,7 +2354,6 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
                      byte_size_in_proper_unit(old_collector_xfer), proper_unit_for_byte_size(old_collector_xfer));
 }
 
-
 // Overwrite arguments to represent the amount of memory in each generation that is about to be recycled
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_cset_regions, size_t &old_cset_regions,
                                            size_t &first_old_region, size_t &last_old_region, size_t &old_region_count) {
@@ -1820,19 +2367,36 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_cset_regions, size_t &o
   find_regions_with_alloc_capacity(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
 }
 
-void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, size_t old_region_count) {
+// The totals reported here anticipate the recycling of trash regions.  Their memory is counted as unused and fully
+// available at this moment in time, even though the memory cannot be re-allocated until after it is recycled.
+void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, size_t old_region_count,
+                                                   size_t young_used_regions, size_t old_used_regions,
+                                                   size_t young_used_bytes, size_t old_used_bytes) {
   assert(young_region_count + old_region_count == ShenandoahHeap::heap()->num_regions(), "Sanity");
+#define KELVIN_RESERVE
+#ifdef KELVIN_RESERVE
+  log_info(gc)("establish_generation_sizes(young_region_count: %zu, old_region_count: %zu, young_used_regions: %zu,",
+               young_region_count, old_region_count, young_used_regions);
+  log_info(gc)("                           old_used_regions: %zu, young_used_bytes: %zu, old_used_bytes: %zu)",
+               old_used_regions, young_used_bytes, old_used_bytes);
+#endif
   if (ShenandoahHeap::heap()->mode()->is_generational()) {
     ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = heap->old_generation();
     ShenandoahYoungGeneration* young_gen = heap->young_generation();
+    ShenandoahGeneration* global_gen = heap->global_generation();
+
     size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
     size_t original_old_capacity = old_gen->max_capacity();
     size_t new_old_capacity = old_region_count * region_size_bytes;
     size_t new_young_capacity = young_region_count * region_size_bytes;
     old_gen->set_capacity(new_old_capacity);
+    old_gen->set_used(old_used_regions, old_used_bytes);
     young_gen->set_capacity(new_young_capacity);
+    young_gen->set_used(young_used_regions, young_used_bytes);
+    global_gen->set_capacity(new_young_capacity + new_old_capacity);
+    global_gen->set_used(young_used_regions + old_used_regions, young_used_bytes + old_used_bytes);
 
     if (new_old_capacity > original_old_capacity) {
       size_t region_count = (new_old_capacity - original_old_capacity) / region_size_bytes;
@@ -1861,11 +2425,14 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_cset_regions, size_t old_cse
     old_reserve = 0;
   }
 
-  // Move some of the mutator regions in the Collector and OldCollector partitions in order to satisfy
+  // Move some of the mutator regions into the Collector and OldCollector partitions in order to satisfy
   // young_reserve and old_reserve.
-  reserve_regions(young_reserve, old_reserve, old_region_count);
+  size_t young_used_regions, old_used_regions, young_used_bytes, old_used_bytes;
+  reserve_regions(young_reserve, old_reserve, old_region_count,
+                  young_used_regions, old_used_regions, young_used_bytes, old_used_bytes);
   size_t young_region_count = _heap->num_regions() - old_region_count;
-  establish_generation_sizes(young_region_count, old_region_count);
+  establish_generation_sizes(young_region_count, old_region_count, 
+                             young_used_regions, old_used_regions, young_used_bytes, old_used_bytes);
   establish_old_collector_alloc_bias();
   _partitions.assert_bounds();
   log_status();
@@ -1950,69 +2517,303 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_cset_regions
 // into the collector set or old collector set in order to assure that the memory available for allocations within
 // the collector set is at least to_reserve and the memory available for allocations within the old collector set
 // is at least to_reserve_old.
-void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old, size_t &old_region_count) {
+void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old, size_t &old_region_count,
+                                        size_t &young_used_regions, size_t &old_used_regions,
+                                        size_t &young_used_bytes, size_t &old_used_bytes) {
+  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+
+  young_used_regions = 0;
+  old_used_regions = 0;
+  young_used_bytes = 0;
+  old_used_bytes = 0;
+
+#ifdef KELVIN_RESERVE
+  log_info(gc)("reserve_regions(to_reserve: %zu, to_reserve_old: %zu", to_reserve, to_reserve_old);
+#endif
+#undef KELVIN_RESERVE
+
+  idx_t mutator_low_idx = _partitions.max();
+  idx_t mutator_high_idx = -1;
+  idx_t mutator_empty_low_idx = _partitions.max();
+  idx_t mutator_empty_high_idx = -1;
+
+  idx_t collector_low_idx = _partitions.max();
+  idx_t collector_high_idx = -1;
+  idx_t collector_empty_low_idx = _partitions.max();
+  idx_t collector_empty_high_idx = -1;
+
+  idx_t old_collector_low_idx = _partitions.max();
+  idx_t old_collector_high_idx = -1;
+  idx_t old_collector_empty_low_idx = _partitions.max();
+  idx_t old_collector_empty_high_idx = -1;
+  
+  size_t used_to_collector = 0;
+  size_t used_to_old_collector = 0;
+  size_t regions_to_collector = 0;
+  size_t regions_to_old_collector = 0;
+  size_t empty_regions_to_collector = 0;
+  size_t empty_regions_to_old_collector = 0;
+
+  size_t old_collector_available = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);;
+  size_t collector_available = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
+
+  size_t trashed_mutator_used = 0;
+  size_t trashed_collector_used = 0;
+  size_t trashed_old_collector_used = 0;
+
+#define KELVIN_RESERVE
+#ifdef KELVIN_RESERVE
+  log_info(gc)("reserve_regions() seeks to_reserve: %zu and to_reserve_old: %zu", to_reserve, to_reserve_old);
+#endif
+#undef KELVIN_RESERVE
+
   for (size_t i = _heap->num_regions(); i > 0; i--) {
-    size_t idx = i - 1;
+    idx_t idx = i - 1;
     ShenandoahHeapRegion* r = _heap->get_region(idx);
-    if (!_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
-      continue;
-    }
+    if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, idx)) {
+      // Note: trashed regions have region_size_bytes alloc capacity.
+      size_t ac = alloc_capacity(r);
+      assert (ac > 0, "Membership in free set implies has capacity");
+      assert (!r->is_old() || r->is_trash(), "Except for trash, mutator_is_free regions should not be affiliated OLD");
 
-    size_t ac = alloc_capacity(r);
-    assert (ac > 0, "Membership in free set implies has capacity");
-    assert (!r->is_old() || r->is_trash(), "Except for trash, mutator_is_free regions should not be affiliated OLD");
+      bool move_to_old_collector = old_collector_available < to_reserve_old;
+      bool move_to_collector = collector_available < to_reserve;
 
-    bool move_to_old_collector = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector) < to_reserve_old;
-    bool move_to_collector = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector) < to_reserve;
+#ifdef KELVIN_RESERVE
+      log_info(gc)("reserve_regions() region %zu, has ac: %zu, old_avail: %zu, collector_avail: %zu, move old: %s, move young: %s",
+                   idx, ac, old_collector_available, collector_available, move_to_old_collector? "yes": "no",
+                   move_to_collector? "yes": "no");
+#endif
 
-    if (!move_to_collector && !move_to_old_collector) {
-      // We've satisfied both to_reserve and to_reserved_old
-      break;
-    }
+#ifdef KELVIN_DEPRECATE
+      // We have to iterate through all regions in order to update generation accounting
+      if (!move_to_collector && !move_to_old_collector) {
+        // We've satisfied both to_reserve and to_reserved_old
+        break;
+      }
+#endif
 
-    if (move_to_old_collector) {
-      // We give priority to OldCollector partition because we desire to pack OldCollector regions into higher
-      // addresses than Collector regions.  Presumably, OldCollector regions are more "stable" and less likely to
-      // be collected in the near future.
-      if (r->is_trash() || !r->is_affiliated()) {
-        // OLD regions that have available memory are already in the old_collector free set.
-        _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
-                                                     ShenandoahFreeSetPartitionId::OldCollector, ac);
-        log_trace(gc, free)("  Shifting region %zu from mutator_free to old_collector_free", idx);
+      if (move_to_old_collector) {
+        // We give priority to OldCollector partition because we desire to pack OldCollector regions into higher
+        // addresses than Collector regions.  Presumably, OldCollector regions are more "stable" and less likely to
+        // be collected in the near future.
+        if (r->is_trash() || !r->is_affiliated()) {
+          // OLD regions that have available memory are already in the old_collector free set.
+          assert(r->is_empty(), "Not affiliated implies region %zu is empty", r->index());
+          if (idx < old_collector_low_idx) {
+            old_collector_low_idx = idx;
+          }
+          if (idx > old_collector_high_idx) {
+            old_collector_high_idx = idx;
+          }
+          if (idx < old_collector_empty_low_idx) {
+            old_collector_empty_low_idx = idx;
+          }
+          if (idx > old_collector_empty_high_idx) {
+            old_collector_empty_high_idx = idx;
+          }
+          used_to_old_collector +=
+            _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, ShenandoahFreeSetPartitionId::Mutator,
+                                                                                  ShenandoahFreeSetPartitionId::OldCollector, ac);
+          old_collector_available += ac;
+          regions_to_old_collector++;
+          empty_regions_to_old_collector++;
+          if (r->is_trash()) {
+            trashed_old_collector_used += ac;
+          }
+
+          log_trace(gc, free)("  Shifting region %zu from mutator_free to old_collector_free", idx);
+          log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
+                              "  Old Collector range [%zd, %zd]",
+                              _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
+                              _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
+                              _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
+                              _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
+          old_region_count++;
+          continue;
+        }
+      }
+
+      if (move_to_collector) {
+        // Note: In a previous implementation, regions were only placed into the survivor space (collector_is_free) if
+        // they were entirely empty.  This has the effect of causing new Mutator allocation to reside next to objects
+        // that have already survived at least one GC, mixing ephemeral with longer-lived objects in the same region.
+        // Any objects that have survived a GC are less likely to immediately become garbage, so a region that contains
+        // survivor objects is less likely to be selected for the collection set.  This alternative implementation allows
+        // survivor regions to continue accumulating other survivor objects, and makes it more likely that ephemeral objects
+        // occupy regions comprised entirely of ephemeral objects.  These regions are highly likely to be included in the next
+        // collection set, and they are easily evacuated because they have low density of live objects.
+        if (idx < collector_low_idx) {
+          collector_low_idx = idx;
+        }
+        if (idx > collector_high_idx) {
+          collector_high_idx = idx;
+        }
+        if (ac == region_size_bytes) {
+          if (idx < collector_empty_low_idx) {
+            collector_empty_low_idx = idx;
+          }
+          if (idx > collector_empty_high_idx) {
+            collector_empty_high_idx = idx;
+          }
+          empty_regions_to_collector++;
+        }
+        used_to_collector += 
+          _partitions.move_from_partition_to_partition_with_deferred_accounting(idx, ShenandoahFreeSetPartitionId::Mutator,
+                                                                                ShenandoahFreeSetPartitionId::Collector, ac);
+        collector_available += ac;
+        regions_to_collector++;
+        if (r->is_trash()) {
+          trashed_collector_used += ac;
+        } else if (ac != region_size_bytes) {
+          young_used_regions++;
+          young_used_bytes = region_size_bytes - ac;
+        }
+
+        old_used_bytes += region_size_bytes - ac;
+        log_trace(gc, free)("  Shifting region %zu from mutator_free to collector_free", idx);
         log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
-                            "  Old Collector range [%zd, %zd]",
+                            "  Collector range [%zd, %zd]",
                             _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
                             _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
-                            _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
-                            _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
-
-        old_region_count++;
+                            _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector),
+                            _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector));
         continue;
       }
-    }
 
-    if (move_to_collector) {
-      // Note: In a previous implementation, regions were only placed into the survivor space (collector_is_free) if
-      // they were entirely empty.  This has the effect of causing new Mutator allocation to reside next to objects
-      // that have already survived at least one GC, mixing ephemeral with longer-lived objects in the same region.
-      // Any objects that have survived a GC are less likely to immediately become garbage, so a region that contains
-      // survivor objects is less likely to be selected for the collection set.  This alternative implementation allows
-      // survivor regions to continue accumulating other survivor objects, and makes it more likely that ephemeral objects
-      // occupy regions comprised entirely of ephemeral objects.  These regions are highly likely to be included in the next
-      // collection set, and they are easily evacuated because they have low density of live objects.
-      _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
-                                                   ShenandoahFreeSetPartitionId::Collector, ac);
-      log_trace(gc, free)("  Shifting region %zu from mutator_free to collector_free", idx);
-      log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
-                          "  Collector range [%zd, %zd]",
-                          _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
-                          _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
-                          _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector),
-                          _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector));
+      // Mutator region is not moved to Collector or OldCollector. Still, do the accounting.
+      if (idx < mutator_low_idx) {
+        mutator_low_idx = idx;
+      }
+      if (idx > mutator_high_idx) {
+        mutator_high_idx = idx;
+      }
+      if ((ac == region_size_bytes) && (idx < mutator_empty_low_idx)) {
+        mutator_empty_low_idx = idx;
+      }
+      if ((ac == region_size_bytes) && (idx > mutator_empty_high_idx)) {
+        mutator_empty_high_idx = idx;
+      }
+      if (r->is_trash()) {
+        trashed_mutator_used += ac;
+      } else if (ac != region_size_bytes) {
+        young_used_regions++;
+        young_used_bytes += region_size_bytes - ac;
 
+#ifdef KELVIN_RESERVE
+        log_info(gc)(" region is not moved:, young_used_regions increments to: %zu, young_used_bytes becomes: %zu",
+                     young_used_regions, young_used_bytes);
+#endif
+      }
+    } else {
+      // Region is not in Mutator partition. Do the accounting.
+      ShenandoahFreeSetPartitionId p = _partitions.membership(idx);
+      size_t ac = alloc_capacity(r);
+      assert(ac != region_size_bytes, "Empty regions should be in Mutator partion at entry to reserve_regions");
+      if (p == ShenandoahFreeSetPartitionId::Collector) {
+        if (ac != region_size_bytes) {
+          young_used_regions++;
+          young_used_bytes = region_size_bytes - ac;
+#ifdef KELVIN_RESERVE
+          log_info(gc)(" Collector Region %zu not in Mutator, ac: %zu, incr young regions to: %zu, young_used_bytes: %zu",
+                       idx, ac, young_used_regions, young_used_bytes);
+#endif
+        }
+        // else, unaffiliated region has no used
+      } else if (p == ShenandoahFreeSetPartitionId::OldCollector) {
+        if (ac != region_size_bytes) {
+          old_used_regions++;
+          old_used_bytes = region_size_bytes - ac;
+#ifdef KELVIN_RESERVE
+          log_info(gc)(" OldCollector Region %zu not in Mutator, ac: %zu, incr old regions to: %zu, old_used_bytes: %zu",
+                       idx, ac, old_used_regions, old_used_bytes);
+#endif
+        }
+        // else, unaffiliated region has no used
+      } else if (p == ShenandoahFreeSetPartitionId::NotFree) {
+        // This region has been retired
+        if (r->is_old()) {
+          old_used_regions++;
+          old_used_bytes += region_size_bytes - ac;
+#ifdef KELVIN_RESERVE
+          log_info(gc)(" Retired old region %zu not in Mutator, ac: %zu, incr old regions to: %zu, old_used_bytes: %zu",
+                       idx, ac, old_used_regions, old_used_bytes);
+#endif
+
+          // KELVIN TODO: do we add alignment padding into old_used_bytes?
+        } else {
+          assert(r->is_young(), "Retired region should be old or young");
+          young_used_regions++;
+          young_used_bytes += region_size_bytes - ac;
+#ifdef KELVIN_RESERVE
+          log_info(gc)(" Retired young region %zu not in Mutator, ac: %zu, incr young regions to: %zu, young_used_bytes: %zu",
+                       idx, ac, young_used_regions, young_used_bytes);
+#endif
+        }
+      } else {
+        assert(p == ShenandoahFreeSetPartitionId::OldCollector, "Not mutator and not NotFree, so must be OldCollector");
+        assert(!r->is_empty(), "Empty regions should be in Mutator partition at entry to reserve_regions");
+        if (idx < old_collector_low_idx) {
+          old_collector_low_idx = idx;
+        }
+        if (idx > old_collector_high_idx) {
+          old_collector_high_idx = idx;
+        }
+        if (idx < old_collector_empty_low_idx) {
+          old_collector_empty_low_idx = idx;
+        }
+        if (idx > old_collector_empty_high_idx) {
+          old_collector_empty_high_idx = idx;
+        }
+      }
     }
   }
 
+  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_to_old_collector + used_to_collector + trashed_mutator_used);
+  _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator,
+                                           regions_to_old_collector + regions_to_collector);
+  _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, regions_to_old_collector + regions_to_collector);
+  _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator,
+                                           empty_regions_to_old_collector + empty_regions_to_collector);
+  _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator,
+                                (regions_to_old_collector + regions_to_collector) * region_size_bytes);
+  _partitions.decrease_available(ShenandoahFreeSetPartitionId::Mutator,
+                                 (regions_to_old_collector + regions_to_collector) * region_size_bytes);
+
+  _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
+  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
+  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, empty_regions_to_collector);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Collector, regions_to_collector * region_size_bytes);
+  _partitions.increase_available(ShenandoahFreeSetPartitionId::Collector, regions_to_collector * region_size_bytes);
+
+  _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
+  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
+  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, empty_regions_to_old_collector);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector * region_size_bytes);
+  _partitions.increase_available(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector * region_size_bytes);
+
+  if (used_to_collector > trashed_collector_used) {
+    _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, used_to_collector - trashed_collector_used);
+  } else {
+    _partitions.decrease_used(ShenandoahFreeSetPartitionId::Collector, trashed_collector_used - used_to_collector);
+  }
+
+  if (used_to_old_collector > trashed_old_collector_used) {
+    _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, used_to_old_collector - trashed_old_collector_used);
+  } else {
+    _partitions.decrease_used(ShenandoahFreeSetPartitionId::OldCollector, trashed_old_collector_used - used_to_old_collector);
+  }
+
+  _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Collector,
+                                                                collector_low_idx, collector_high_idx,
+                                                                collector_empty_low_idx, collector_empty_high_idx);
+  _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::OldCollector,
+                                                                old_collector_low_idx, old_collector_high_idx,
+                                                                old_collector_empty_low_idx, old_collector_empty_high_idx);
+  _partitions.establish_interval(ShenandoahFreeSetPartitionId::Mutator,
+                                 mutator_low_idx, mutator_high_idx, mutator_empty_low_idx, mutator_empty_high_idx);
+
+  recompute_total_used();
   if (LogTarget(Info, gc, free)::is_enabled()) {
     size_t old_reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
     if (old_reserve < to_reserve_old) {
@@ -2025,6 +2826,11 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
                           PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
     }
   }
+#ifdef KELVIN_RESERVE
+  log_info(gc)("reserve_regions end: old_region_count: %zu, young_used_regions: %zu,"
+               " old_used_regions: %zu, young_used_bytes: %zu, old_used_bytes: %zu",
+               old_region_count, young_used_regions, old_used_regions, young_used_bytes, old_used_bytes);
+#endif
 }
 
 void ShenandoahFreeSet::establish_old_collector_alloc_bias() {
@@ -2153,6 +2959,7 @@ void ShenandoahFreeSet::log_status() {
       size_t total_used = 0;
       size_t total_free = 0;
       size_t total_free_ext = 0;
+      size_t total_trashed_free = 0;
 
       for (idx_t idx = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator);
            idx <= _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator); idx++) {
@@ -2160,7 +2967,9 @@ void ShenandoahFreeSet::log_status() {
           ShenandoahHeapRegion *r = _heap->get_region(idx);
           size_t free = alloc_capacity(r);
           max = MAX2(max, free);
-          if (r->is_empty()) {
+          size_t used_in_region = r->used();
+          if (r->is_empty() || r->is_trash()) {
+            used_in_region = 0;
             total_free_ext += free;
             if (last_idx + 1 == idx) {
               empty_contig++;
@@ -2170,20 +2979,49 @@ void ShenandoahFreeSet::log_status() {
           } else {
             empty_contig = 0;
           }
-          total_used += r->used();
+          total_used += used_in_region;
           total_free += free;
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+          log_info(gc)("%sMutator region %zu has free: %zu, used: %zu, total_free: %zu, total_used: %zu",
+                       r->is_trash()? "Trashed ": "", r->index(), free, used_in_region, total_free, total_used);
+#endif
           max_contig = MAX2(max_contig, empty_contig);
           last_idx = idx;
         }
       }
 
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
+      // capacity() is capacity of mutator
+      // used() is used of mutator
       size_t free = capacity() - used();
+#ifdef KELVIN_DEBUG
+      // kelvin problem: trashed regions should not count as used,
+      // because this gets subtracted from capacity to wrongly compute free.
+      log_info(gc)("capacity(): %zu, used: %zu", capacity(), used());
+      log_info(gc)("capacity_of(Mutator): %zu, used_by(Mutator): %zu",
+                   _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator),
+                   _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator));
+      log_info(gc)("capacity_of(Collector): %zu, used_by(Collector): %zu",
+                   _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector),
+                   _partitions.used_by(ShenandoahFreeSetPartitionId::Collector));
+      log_info(gc)("capacity_of(OldCollector): %zu, used_by(OldCollector): %zu",
+                   _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector),
+                   _partitions.used_by(ShenandoahFreeSetPartitionId::OldCollector));
+
+      ShenandoahYoungGeneration* young_gen = ShenandoahHeap::heap()->young_generation();
+      size_t total_capacity = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator)
+                               * ShenandoahHeapRegion::region_size_bytes());
+      assert(total_capacity = capacity(), "Total capacity (%zu) does not match capacity (%zu)",
+             total_capacity, capacity());
+      assert(used() == young_gen->used() - _partitions.used_by(ShenandoahFreeSetPartitionId::Collector),
+             "Used by Mutator is young used minus Collector used");
+#endif
 
       // Since certain regions that belonged to the Mutator free partition at the time of most recent rebuild may have been
       // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
       // my internally tracked values of used() and free().
-      assert(free == total_free, "Free memory should match");
+      assert(free == total_free, "Free memory (%zu) should match calculated memory (%zu)", free, total_free);
       ls.print("Free: %zu%s, Max: %zu%s regular, %zu%s humongous, ",
                byte_size_in_proper_unit(total_free),    proper_unit_for_byte_size(total_free),
                byte_size_in_proper_unit(max),           proper_unit_for_byte_size(max),

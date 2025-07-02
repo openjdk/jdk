@@ -135,7 +135,44 @@ private:
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override { return Atomic::load(&_used); }
+  size_t used() const override {
+    size_t result;
+    switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->old_used();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->young_used();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->global_used();
+      break;
+    }
+
+    size_t original_result = Atomic::load(&_used);
+#define KELVIN_SCAFFOLDING
+#ifdef KELVIN_SCAFFOLDING
+    static int problem_count = 0;
+    if (result != original_result) {
+      if (problem_count++ > 6) {
+        assert(result == original_result, "Problem with used for generation %s, freeset thinks %zu, generation thinks: %zu",
+               shenandoah_generation_name(_type), result, original_result);
+      } else {
+        log_info(gc)("Problem with used for generation %s, freeset thinks %zu, generation thinks: %zu",
+                     shenandoah_generation_name(_type), result, original_result);
+      }
+    } else {
+      problem_count = 0;
+    }
+#endif
+
+
+    return result;
+  }
+
+
   size_t available() const override;
   size_t available_with_reserve() const;
   size_t used_including_humongous_waste() const {
@@ -159,6 +196,14 @@ private:
 
   // Set the capacity of the generation, returning the value set
   size_t set_capacity(size_t byte_size);
+
+  void set_used(size_t region_count, size_t byte_count) {
+    Atomic::store(&_used, byte_count);
+    Atomic::store(&_affiliated_region_count, region_count);
+#ifdef KELVIN_SCAFFOLDING
+    log_info(gc)("%s:set_used(regions: %zu, bytes: %zu)", shenandoah_generation_name(_type), region_count, byte_count);
+#endif
+  }
 
   void log_status(const char* msg) const;
 
@@ -255,8 +300,6 @@ private:
       result = _free_set->humongous_waste_in_mutator() + _free_set->humongous_waste_in_old();
       break;
     }
-    result *= HeapWordSize;
-
 #define KELVIN_MONITOR_HUMONGOUS
 #ifdef KELVIN_MONITOR_HUMONGOUS
     if (result != _humongous_waste) {
