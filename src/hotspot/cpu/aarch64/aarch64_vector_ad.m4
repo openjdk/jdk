@@ -186,7 +186,7 @@ source %{
       case Op_MinReductionV:
       case Op_MaxReductionV:
         // Reductions with less than 8 bytes vector length are
-        // not supported for now.
+        // not supported.
         if (length_in_bytes < 8) {
           return false;
         }

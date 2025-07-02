@@ -2368,22 +2368,22 @@ int Matcher::min_vector_size(const BasicType bt) {
   int size;
   switch(bt) {
     case T_BOOLEAN:
-      // It needs to load/store a vector mask with only 2 elements
-      // for vector types such as "2I/2F/2L/2D".
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
       size = 2;
       break;
     case T_BYTE:
-      // It needs to generate a "4B" vector, to support vector cast
-      // between "8B/16B" and "4S/4I/4L/4F/4D".
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
       size = 4;
       break;
     case T_SHORT:
-      // It needs to generate a "2S" vector, to support vector cast
-      // between "4S/8S" and "2I/2L/2F/2D".
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
       size = 2;
       break;
     default:
-      // Limit the min vector length to 64-bit normally.
+      // Limit the min vector length to 64-bit.
       size = 8 / type2aelembytes(bt);
       // The number of elements in a vector should be at least 2.
       size = MAX2(size, 2);
