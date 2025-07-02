@@ -136,6 +136,7 @@ private:
 public:
   AOTCodeAddressTable() :
     _extrs_addr(nullptr),
+    _stubs_addr(nullptr),
     _shared_blobs_addr(nullptr),
     _C1_blobs_addr(nullptr),
     _extrs_length(0),
