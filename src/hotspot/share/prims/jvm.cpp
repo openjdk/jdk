@@ -2966,7 +2966,7 @@ JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
   oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, THREAD);
   return JNIHandles::make_local(THREAD, snapshot);
 #else
-  return nullptr;
+  THROW_NULL(vmSymbols::java_lang_UnsupportedOperationException());
 #endif
 JVM_END
 
