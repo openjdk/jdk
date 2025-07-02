@@ -89,6 +89,7 @@ public class Compiler {
             CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to init class : %s",
                                  id, aClass.getName(), e));
         }
+        compileClinit(aClass, id);
 
         // Getting constructor/methods with unresolvable signatures would fail with NCDFE.
         // Try to get as much as possible, and compile everything else.
@@ -121,7 +122,6 @@ public class Compiler {
         }
 
         // Now schedule the compilations.
-        compileClinit(aClass, id);
         long methodCount = 0;
         for (Executable e : constructors) {
             ++methodCount;
