@@ -1230,6 +1230,21 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   }
 }
 
+void C2_MacroAssembler::vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                                   XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  assert(opc == Op_MinV || opc == Op_MinReductionV ||
+         opc == Op_MaxV || opc == Op_MaxReductionV, "sanity");
+
+  int imm8 = (opc == Op_MinV || opc == Op_MinReductionV) ? AVX10_MINMAX_MIN_COMPARE_SIGN
+                                                         : AVX10_MINMAX_MAX_COMPARE_SIGN;
+  if (elem_bt == T_FLOAT) {
+    evminmaxps(dst, mask, src1, src2, true, imm8, vlen_enc);
+  } else {
+    assert(elem_bt == T_DOUBLE, "");
+    evminmaxpd(dst, mask, src1, src2, true, imm8, vlen_enc);
+  }
+}
+
 // Float/Double signum
 void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero, XMMRegister one) {
   assert(opcode == Op_SignumF || opcode == Op_SignumD, "sanity");
@@ -2537,12 +2552,21 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
     } else { // i = [0,1]
       vpermilps(wtmp, wsrc, permconst[i], vlen_enc);
     }
-    vminmax_fp(opcode, T_FLOAT, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_FLOAT, wdst, k0, wtmp, wsrc, vlen_enc);
+    } else {
+      vminmax_fp(opcode, T_FLOAT, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+    }
     wsrc = wdst;
     vlen_enc = Assembler::AVX_128bit;
   }
   if (is_dst_valid) {
-    vminmax_fp(opcode, T_FLOAT, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_FLOAT, dst, k0, wdst, dst, Assembler::AVX_128bit);
+    } else {
+      vminmax_fp(opcode, T_FLOAT, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    }
   }
 }
 
@@ -2568,12 +2592,23 @@ void C2_MacroAssembler::reduceDoubleMinMax(int opcode, int vlen, bool is_dst_val
       assert(i == 0, "%d", i);
       vpermilpd(wtmp, wsrc, 1, vlen_enc);
     }
-    vminmax_fp(opcode, T_DOUBLE, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_DOUBLE, wdst, k0, wtmp, wsrc, vlen_enc);
+    } else {
+      vminmax_fp(opcode, T_DOUBLE, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
+    }
+
     wsrc = wdst;
     vlen_enc = Assembler::AVX_128bit;
   }
+
   if (is_dst_valid) {
-    vminmax_fp(opcode, T_DOUBLE, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    if (VM_Version::supports_avx10_2()) {
+      vminmax_fp(opcode, T_DOUBLE, dst, k0, wdst, dst, Assembler::AVX_128bit);
+    } else {
+      vminmax_fp(opcode, T_DOUBLE, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
+    }
   }
 }
 
