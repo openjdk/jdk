@@ -169,7 +169,7 @@ class nmethod : public CodeBlob {
   friend class JVMCINMethodData;
   friend class DeoptimizationScope;
 
-  #define ImmutableDataReferencesCounterSize (int)sizeof(int)
+  #define ImmutableDataReferencesCounterSize ((int)sizeof(int))
 
  private:
 
