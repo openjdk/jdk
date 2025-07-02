@@ -29,7 +29,7 @@
  * @summary Check whether a non-modal Dialog receives focus; check
  *          if its components receive focus and respond to key events
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

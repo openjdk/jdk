@@ -48,7 +48,6 @@ import java.awt.image.BufferedImage;
  * @library
  *          /java/awt/patchlib
  *          /java/awt/TrayIcon
- *          /lib/client
  *          /test/lib
  * @build
  *          java.desktop/java.awt.Helper

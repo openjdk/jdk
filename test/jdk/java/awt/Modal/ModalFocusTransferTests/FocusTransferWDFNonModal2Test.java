@@ -32,7 +32,7 @@ import java.awt.Dialog;
  *          a non-modal dialog having a null dialog owner is shown;
  *          a frame is shown.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

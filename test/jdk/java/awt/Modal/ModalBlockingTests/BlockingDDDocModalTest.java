@@ -32,7 +32,7 @@ import java.awt.Dialog;
  *          and respond to key events. Check also the correctness
  *          of blocking behavior for the parent Dialog.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

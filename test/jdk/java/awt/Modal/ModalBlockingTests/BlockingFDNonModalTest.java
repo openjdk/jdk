@@ -31,7 +31,7 @@
  *          and respond to key events. Check also the correctness
  *          of the blocking behavior for the parent Frame.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

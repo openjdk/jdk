@@ -30,7 +30,7 @@ import java.awt.Dialog;
  * @summary Check whether a document modal Dialog created with null Dialog
  *          constructor follows normal Z order.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

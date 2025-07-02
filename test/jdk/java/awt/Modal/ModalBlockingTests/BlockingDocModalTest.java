@@ -34,7 +34,7 @@ import static jdk.test.lib.Asserts.*;
  *          whether all the windows lying down the document root
  *          (Frame) get blocked.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

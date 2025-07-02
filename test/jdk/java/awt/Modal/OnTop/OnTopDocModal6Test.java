@@ -30,7 +30,7 @@ import java.awt.Dialog;
  * @summary Check whether a document modal Dialog created with visible
  *          Dialog constructor stays on top of the windows it blocks.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

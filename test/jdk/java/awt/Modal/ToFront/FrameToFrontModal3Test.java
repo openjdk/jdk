@@ -30,7 +30,7 @@
  *          blocking modal dialog having a hidden Frame parent
  *          does not bring the frame to the top of the modal dialog.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

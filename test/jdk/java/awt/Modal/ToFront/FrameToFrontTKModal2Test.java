@@ -31,7 +31,7 @@ import java.awt.Dialog;
  *          blocking toolkit modal dialog having a null Dialog parent
  *          does not bring the frame to the top of the modal dialog.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

@@ -122,7 +122,7 @@ public class MouseEventsDuringDrag {
         Point endDragLocation =
                 new Point(moveToBound.x + 10, moveToBound.y + moveToBound.height / 2);
 
-        robot.mouseMove(startDragLocation);
+        robot.mouseMove(startDragLocation.x, startDragLocation.y);
         robot.waitForIdle();
         robot.delay(200);
         mouseHandler.reset();

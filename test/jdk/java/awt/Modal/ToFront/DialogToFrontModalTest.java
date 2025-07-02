@@ -29,7 +29,7 @@
  *          blocking modal dialog does not bring it to the top
  *          of the modal dialog.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog

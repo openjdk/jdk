@@ -31,7 +31,7 @@ import java.awt.Dialog;
  *          the following happens: a window having a frame (F) owner is shown;
  *          a document modal dialog having F owner is shown; F is shown.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
  * @build Flag
  * @build TestDialog
