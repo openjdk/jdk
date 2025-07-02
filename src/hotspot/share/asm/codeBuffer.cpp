@@ -141,11 +141,8 @@ CodeBuffer::~CodeBuffer() {
     // free any overflow storage
     delete _overflow_arena;
   }
-  if (_shared_rc_trampoline_requests != nullptr) {
-    delete _shared_rc_trampoline_requests;
-  }
-  if (_shared_sc_trampoline_requests != nullptr) {
-    delete _shared_sc_trampoline_requests;
+  if (_shared_trampoline_requests != nullptr) {
+    delete _shared_trampoline_requests;
   }
 
   NOT_PRODUCT(clear_strings());

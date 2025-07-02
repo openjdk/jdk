@@ -33,6 +33,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
+#include "utilities/pair.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
@@ -541,10 +542,14 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedRCTrampolineRequests;
-  typedef ResizeableResourceHashtable<const ciMethod*, Offsets, AnyObj::C_HEAP, mtCompiler> SharedSCTrampolineRequests;
 
  private:
+  enum class TrampolineCallKind { Runtime, Static };
+  typedef Pair<TrampolineCallKind, address> SharedTrampolineRequestKey;
+  typedef ResizeableResourceHashtable<SharedTrampolineRequestKey, Offsets, AnyObj::C_HEAP,
+                                      mtCompiler>
+      SharedTrampolineRequests;
+
   enum {
     sect_bits = 2,      // assert (SECT_LIMIT <= (1<<sect_bits))
     sect_mask = (1<<sect_bits)-1
@@ -571,8 +576,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _last_label;     // record last bind label address, it's also the start of current bb.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
-  SharedRCTrampolineRequests*   _shared_rc_trampoline_requests;     // requests for shared trampolines owned by runtime calls
-  SharedSCTrampolineRequests*   _shared_sc_trampoline_requests;     // requests for shared trampolines owned by static calls
+  SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
   bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
 
   int          _const_section_alignment;
@@ -599,8 +603,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _last_label      = nullptr;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = nullptr;
-    _shared_rc_trampoline_requests = nullptr;
-    _shared_sc_trampoline_requests = nullptr;
+    _shared_trampoline_requests = nullptr;
 
     _consts.initialize_outer(this, SECT_CONSTS);
     _insts.initialize_outer(this,  SECT_INSTS);

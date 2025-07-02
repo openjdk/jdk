@@ -34,7 +34,16 @@ public:
   void flush_bundle(bool start_new_bundle) {}
   static constexpr bool supports_shared_stubs() { return true; }
 
-  void share_rc_trampoline_for(address dest, int caller_offset);
-  void share_sc_trampoline_for(const ciMethod* callee, int caller_offset);
+ private:
+  void share_trampoline_for(TrampolineCallKind kind, address dest, int caller_offset);
+  bool emit_shared_trampolines();
+
+ public:
+  void share_rc_trampoline_for(address dest, int caller_offset) {
+    share_trampoline_for(TrampolineCallKind::Runtime, dest, caller_offset);
+  }
+  void share_sc_trampoline_for(const ciMethod *callee, int caller_offset) {
+    share_trampoline_for(TrampolineCallKind::Static, (address)callee, caller_offset);
+  }
 
 #endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP
