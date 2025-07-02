@@ -466,17 +466,15 @@ public class Cipher {
 
         if (parts.length == 1) {
             // Algorithm only
-            Transform tr = new Transform(parts[0], "", null, null);
-            return Collections.singletonList(tr);
+            return List.of(new Transform(parts[0], "", null, null));
         } else {
             // Algorithm w/ both mode and padding
-            List<Transform> list = new ArrayList<>(4);
-            list.add(new Transform(parts[0], "/" + parts[1] + "/" + parts[2],
-                    null, null));
-            list.add(new Transform(parts[0], "/" + parts[1], null, parts[2]));
-            list.add(new Transform(parts[0], "//" + parts[2], parts[1], null));
-            list.add(new Transform(parts[0], "", parts[1], parts[2]));
-            return list;
+            return List.of(
+                    new Transform(parts[0], "/" + parts[1] + "/" + parts[2],
+                    null, null),
+                    new Transform(parts[0], "/" + parts[1], null, parts[2]),
+                    new Transform(parts[0], "//" + parts[2], parts[1], null),
+                    new Transform(parts[0], "", parts[1], parts[2]));
         }
     }
 
