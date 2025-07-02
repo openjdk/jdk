@@ -70,7 +70,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        ReferenceTracker
  *        jdk.httpclient.test.lib.quic.QuicStandaloneServer
- * @run testng/othervm/timeout=600 -Djdk.internal.httpclient.debug=true
+ * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                      -Djavax.net.debug=all
  *                     BasicHTTP3Test
