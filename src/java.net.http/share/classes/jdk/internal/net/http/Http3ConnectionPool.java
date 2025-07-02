@@ -91,10 +91,11 @@ class Http3ConnectionPool {
         var discoveryMode = request.http3Discovery();
         var key = connectionKey(request);
 
+        Http3Connection unadvertisedConn = null;
         // If not ALT_SVC, we can use unadvertised connections
         if (discoveryMode != ALT_SVC) {
-            var unadvertisedConn = lookupUnadvertised(key, discoveryMode);
-            if (unadvertisedConn != null) {
+            unadvertisedConn = lookupUnadvertised(key, discoveryMode);
+            if (unadvertisedConn != null && discoveryMode == HTTP_3_URI_ONLY) {
                 if (debug.on()) {
                     debug.log("Direct HTTP/3 connection found for %s in connection pool %s",
                             discoveryMode, unadvertisedConn.connection().label());
@@ -131,6 +132,15 @@ class Http3ConnectionPool {
                     }
                 }
             }
+        }
+
+        if (unadvertisedConn != null) {
+            assert discoveryMode != ALT_SVC;
+            if (debug.on()) {
+                debug.log("Direct HTTP/3 connection found for %s in connection pool %s",
+                        discoveryMode, unadvertisedConn.connection().label());
+            }
+            return unadvertisedConn;
         }
 
         // do not log here: this produces confusing logs as this method
