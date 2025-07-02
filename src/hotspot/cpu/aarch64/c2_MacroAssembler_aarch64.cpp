@@ -2453,7 +2453,7 @@ void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src,
   // vtmp2 = {4 3 2 1 0 -1 -2 -3}
   sve_index(vtmp2, H, rscratch1, 1);
   // vtmp1 = 0000 0000 0000 8888 5555 0000 0000 0000
-  sve_tbl(vtmp1, H, vtmp1, 1, vtmp2);
+  sve_tbl(vtmp1, H, vtmp1, vtmp2);
 
   // Combine the compressed high(after shifted) with the compressed low.
   // dst = 0000 0000 0000 8888 5555 4444 2222 1111
@@ -2510,7 +2510,7 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   // vtmp2 = {4 3 2 1 0 -1 -2 -3}
   sve_index(vtmp2, B, rscratch2, 1);
   // vtmp1 = 00 00 00 88 55 00 00 00
-  sve_tbl(vtmp1, B, vtmp1, 1, vtmp2);
+  sve_tbl(vtmp1, B, vtmp1, vtmp2);
   // Combine the compressed high(after shifted) with the compressed low.
   // dst = 00 00 00 88 55 44 22 11
   sve_orr(dst, dst, vtmp1);
@@ -2861,7 +2861,7 @@ void C2_MacroAssembler::select_from_two_vectors_Neon(FloatRegister dst, FloatReg
   assert_different_registers(dst, src1, src2, index, tmp);
 
   // The only BasicTypes that can reach here are T_SHORT, T_BYTE, T_INT and T_FLOAT
-  assert(bt != T_DOUBLE || bt != T_LONG, "unsupported basic type");
+  assert(bt != T_DOUBLE && bt != T_LONG, "unsupported basic type");
 
   assert(UseSVE < 2, "must be either 0 or 1");
 
@@ -2932,9 +2932,9 @@ void C2_MacroAssembler::select_from_two_vectors_SVE(FloatRegister dst, FloatRegi
     assert(UseSVE >= 1, "sve must be >= 1");
     ins(tmp, D, src1, 0, 0);
     ins(tmp, D, src2, 1, 0);
-    sve_tbl(dst, size, tmp, 1, index);
+    sve_tbl(dst, size, tmp, index);
   } else {  // UseSVE == 2 and vector_length_in_bytes > 8
     assert(UseSVE == 2, "must be sve2");
-    sve_tbl(dst, size, src1, 2, index);
+    sve_tbl(dst, size, src1, src2, index);
   }
 }

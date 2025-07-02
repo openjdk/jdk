@@ -1099,11 +1099,11 @@
     __ sve_index(z6, __ S, r5, 4);                     //       index   z6.s, w5, #4
     __ sve_index(z7, __ D, r5, 5);                     //       index   z7.d, x5, #5
     __ sve_cpy(z7, __ H, p3, r5);                      //       cpy     z7.h, p3/m, w5
-    __ sve_tbl(z16, __ S, z17, 1, z18);                //       tbl     z16.s, {z17.s}, z18.s
-    __ sve_tbl(z16, __ B, z17, 2, z16);                //       tbl     z16.b, {z17.b, z18.b}, z16.b
-    __ sve_tbl(z16, __ H, z17, 2, z16);                //       tbl     z16.h, {z17.h, z18.h}, z16.h
-    __ sve_tbl(z16, __ S, z17, 2, z16);                //       tbl     z16.s, {z17.s, z18.s}, z16.s
-    __ sve_tbl(z16, __ D, z17, 2, z16);                //       tbl     z16.d, {z17.d, z18.d}, z16.d
+    __ sve_tbl(z16, __ S, z17, z18);                   //       tbl     z16.s, {z17.s}, z18.s
+    __ sve_tbl(z16, __ B, z17, z18, z16);              //       tbl     z16.b, {z17.b, z18.b}, z16.b
+    __ sve_tbl(z16, __ H, z17, z18, z16);              //       tbl     z16.h, {z17.h, z18.h}, z16.h
+    __ sve_tbl(z16, __ S, z17, z18, z16);              //       tbl     z16.s, {z17.s, z18.s}, z16.s
+    __ sve_tbl(z16, __ D, z17, z18, z16);              //       tbl     z16.d, {z17.d, z18.d}, z16.d
     __ sve_ld1w_gather(z15, p0, r5, z16);              //       ld1w    {z15.s}, p0/z, [x5, z16.s, uxtw #2]
     __ sve_ld1d_gather(z15, p0, r5, z16);              //       ld1d    {z15.d}, p0/z, [x5, z16.d, uxtw #3]
     __ sve_st1w_scatter(z15, p0, r5, z16);             //       st1w    {z15.s}, p0, [x5, z16.s, uxtw #2]
