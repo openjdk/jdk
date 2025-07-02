@@ -83,6 +83,17 @@ class Http3PendingConnections {
             recovered = pendingAdvertised.remove(connectionKey);
         }
         if (discovery == ALT_SVC || recovered != null) return recovered;
+        if (altSvc == null) {
+            // for instance, there was an exception, so we don't
+            // know if there was an altSvc because conn == null
+            recovered = pendingAdvertised.get(connectionKey);
+            if (recovered instanceof PendingConnection pending) {
+                if (pending.exchange() == origExchange) {
+                    pendingAdvertised.remove(connectionKey, recovered);
+                    return recovered;
+                }
+            }
+        }
         recovered = pendingUnadvertised.get(connectionKey);
         if (recovered instanceof PendingConnection pending) {
             if (pending.exchange() == origExchange) {
