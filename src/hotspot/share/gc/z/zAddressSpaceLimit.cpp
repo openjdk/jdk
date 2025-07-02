@@ -33,7 +33,7 @@
 static size_t address_space_limit() {
   size_t limit = 0;
 
-  if (os::has_allocatable_memory_limit(&limit)) {
+  if (os::has_limited_virtual_address_space(&limit)) {
     return limit;
   }
 
