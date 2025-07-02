@@ -552,7 +552,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           module_to_name, module_from_name, module_to_name);
       } else {
         oop module_oop = module_to->module_oop();
-        precond(module_oop != nullptr);
+        assert(module_oop != nullptr, "should have been initialized");
         intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 160 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*sizeof(uintx);
@@ -579,7 +579,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           module_to_name, module_to_name, package_name, module_from_name);
       } else {
         oop module_oop = module_from->module_oop();
-        precond(module_oop != nullptr);
+        assert(module_oop != nullptr, "should have been initialized");
         intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 170 + strlen(current_class_name) + strlen(new_class_name) +
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
