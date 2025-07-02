@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.event.tracing;
 
-import java.lang.management.ManagementFactory;
-import com.sun.management.HotSpotDiagnosticMXBean;
+import jdk.internal.misc.Unsafe;
+import jdk.jfr.FlightRecorder;
+import jdk.jfr.Recording;
+/**
+* @test
+* @summary Tests that PlatformTracer is not initialized if a method filter has not been set.
+* @requires vm.flagless
+* @requires vm.hasJFR
+* @modules java.base/jdk.internal.misc jdk.jfr/jdk.jfr.internal.tracing
+* @library /test/lib
+* @run main/othervm -XX:StartFlightRecording jdk.jfr.event.tracing.TestLazyPlatformTracer
+*/
+public class TestLazyPlatformTracer {
 
-class LockingMode {
-    private LockingMode() { }
-
-    /**
-     * Returns true if using legacy locking mode.
-     */
-    static boolean isLegacy() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                .getVMOption("LockingMode")
-                .getValue()
-                .equals("1");
+    public static void main(String... args) throws Exception {
+        // Stop recording so end chunk events are emitted
+        FlightRecorder.getFlightRecorder().getRecordings().getFirst().stop();
+        if (!Unsafe.getUnsafe().shouldBeInitialized(jdk.jfr.internal.tracing.PlatformTracer.class)) {
+            throw new AssertionError("PlatformTracer should not have been initialized");
+        }
     }
 }

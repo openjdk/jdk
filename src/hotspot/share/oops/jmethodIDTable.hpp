@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,34 @@
  *
  */
 
-package sun.jvm.hotspot.runtime;
+#ifndef SHARE_OOPS_JMETHODIDTABLE_HPP
+#define SHARE_OOPS_JMETHODIDTABLE_HPP
 
-import sun.jvm.hotspot.types.TypeDataBase;
+#include "jni.h"
+#include "memory/allocation.hpp"
 
+// Class for associating Method with jmethodID
+class Method;
 
-/** Encapsulates the LockingMode enum in globalDefinitions.hpp in
-    the VM. */
+class JmethodIDTable : public AllStatic {
+ public:
+  static void initialize();
 
-public class LockingMode {
-  private static int monitor;
-  private static int legacy;
-  private static int lightweight;
+  // Given a Method return a jmethodID.
+  static jmethodID make_jmethod_id(Method* m);
 
-  static {
-    VM.registerVMInitializedObserver(
-        (o, d) -> initialize(VM.getVM().getTypeDataBase()));
-  }
+  // Given a jmethodID, return a Method.
+  static Method* resolve_jmethod_id(jmethodID mid);
 
-  private static synchronized void initialize(TypeDataBase db) {
-    monitor     = db.lookupIntConstant("LM_MONITOR").intValue();
-    legacy      = db.lookupIntConstant("LM_LEGACY").intValue();
-    lightweight = db.lookupIntConstant("LM_LIGHTWEIGHT").intValue();
-  }
+  // Class unloading support, remove the associations from the tables.  Stale jmethodID will
+  // not be found and return null.
+  static void remove(jmethodID mid);
 
-  public static int getMonitor() {
-    return monitor;
-  }
+  // RedefineClasses support
+  static void change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method);
+  static void clear_jmethod_id(jmethodID jmid, Method* m);
 
-  public static int getLegacy() {
-    return legacy;
-  }
+  static uint64_t get_entry_count();
+};
 
-  public static int getLightweight() {
-    return lightweight;
-  }
-}
+#endif // SHARE_OOPS_JMETHODIDTABLE_HPP

@@ -564,7 +564,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_getCallerClass:           return inline_native_Reflection_getCallerClass();
 
-  case vmIntrinsics::_Reference_get:            return inline_reference_get();
+  case vmIntrinsics::_Reference_get0:           return inline_reference_get0();
   case vmIntrinsics::_Reference_refersTo0:      return inline_reference_refersTo0(false);
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
@@ -6923,9 +6923,9 @@ bool LibraryCallKit::inline_updateByteBufferAdler32() {
   return true;
 }
 
-//----------------------------inline_reference_get----------------------------
+//----------------------------inline_reference_get0----------------------------
 // public T java.lang.ref.Reference.get();
-bool LibraryCallKit::inline_reference_get() {
+bool LibraryCallKit::inline_reference_get0() {
   const int referent_offset = java_lang_ref_Reference::referent_offset();
 
   // Get the argument:

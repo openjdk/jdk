@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,25 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @summary Verify ThreadStart JVMTI event with can_generate_early_vmstart capability
- * @requires vm.jvmti
- * @run main/othervm/native -agentlib:MAAThreadStart MAAThreadStart
+ * @bug 8360045
+ * @summary Verify StringTokenizer.nextToken(null) does not alter the
+ *      existing delimiter
+ * @run junit NextTokenWithNullDelimTest
  */
 
-public class MAAThreadStart {
+import java.util.StringTokenizer;
+import org.junit.jupiter.api.Test;
 
-    static {
-        try {
-            System.loadLibrary("MAAThreadStart");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load MAAThreadStart library");
-            System.err.println("java.library.path: "
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
-    }
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-    native static int check();
-
-    public static void main(String args[]) {
-        int status = check();
-        if (status != 0) {
-            throw new RuntimeException("Non-zero status returned from the agent: " + status);
-        }
+public class NextTokenWithNullDelimTest {
+    @Test
+    void testNextTokenWithNullDelim() {
+        StringTokenizer st = new StringTokenizer("test");
+        assertThrows(NullPointerException.class, () -> st.nextToken(null));
+        assertDoesNotThrow(st::hasMoreTokens);
     }
 }

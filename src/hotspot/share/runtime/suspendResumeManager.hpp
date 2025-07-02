@@ -25,12 +25,12 @@
 #ifndef SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
 #define SHARE_RUNTIME_SUSPENDRESUMEMANAGER_HPP
 
-class SuspendThreadHandshake;
-class ThreadSelfSuspensionHandshake;
+class SuspendThreadHandshakeClosure;
+class ThreadSelfSuspensionHandshakeClosure;
 
 class SuspendResumeManager {
-  friend SuspendThreadHandshake;
-  friend ThreadSelfSuspensionHandshake;
+  friend SuspendThreadHandshakeClosure;
+  friend ThreadSelfSuspensionHandshakeClosure;
   friend JavaThread;
 
   JavaThread* _target;
