@@ -442,6 +442,10 @@ public:
     OopMapCache::try_trigger_cleanup();
   }
 
+  virtual bool is_gc_operation() const {
+    return true;
+  }
+
   bool success() const {
     return _success;
   }
@@ -1305,6 +1309,10 @@ class ZRendezvousGCThreads: public VM_Operation {
 
   virtual bool skip_thread_oop_barriers() const {
     fatal("Concurrent VMOps should not call this");
+    return true;
+  }
+
+  virtual bool is_gc_operation() const {
     return true;
   }
 

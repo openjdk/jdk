@@ -26,88 +26,35 @@
  * @summary Test virtual thread with monitor enter/exit
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
  * @run junit/othervm/native --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
- * @test id=LM_LEGACY
+ * @test id=Xint
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native -Xint --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
- * @test id=LM_LIGHTWEIGHT
+ * @test id=Xcomp
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native -Xcomp --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
- * @test id=Xint-LM_LEGACY
+ * @test id=Xcomp-TieredStopAtLevel1
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xint -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
- * @test id=Xint-LM_LIGHTWEIGHT
+ * @test id=Xcomp-noTieredCompilation
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xint -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
- */
-
-/*
- * @test id=Xcomp-LM_LEGACY
- * @modules java.base/java.lang:+open jdk.management
- * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
- */
-
-/*
- * @test id=Xcomp-LM_LIGHTWEIGHT
- * @modules java.base/java.lang:+open jdk.management
- * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
- */
-
-/*
- * @test id=Xcomp-TieredStopAtLevel1-LM_LEGACY
- * @modules java.base/java.lang:+open jdk.management
- * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
- */
-
-/*
- * @test id=Xcomp-TieredStopAtLevel1-LM_LIGHTWEIGHT
- * @modules java.base/java.lang:+open jdk.management
- * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
- */
-
-/*
- * @test id=Xcomp-noTieredCompilation-LM_LEGACY
- * @modules java.base/java.lang:+open jdk.management
- * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
- */
-
-/*
- * @test id=Xcomp-noTieredCompilation-LM_LIGHTWEIGHT
- * @modules java.base/java.lang:+open jdk.management
- * @library /test/lib
- * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 import java.time.Duration;
@@ -129,7 +76,6 @@ import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -234,7 +180,6 @@ class MonitorEnterExit {
      * Test monitor reenter when there are other threads blocked trying to enter.
      */
     @Test
-    @DisabledIf("LockingMode#isLegacy")
     void testReenterWithContention() throws Exception {
         var lock = new Object();
         VThreadRunner.run(() -> {
@@ -359,7 +304,6 @@ class MonitorEnterExit {
      * Test that blocking waiting to enter a monitor releases the carrier.
      */
     @Test
-    @DisabledIf("LockingMode#isLegacy")
     void testReleaseWhenBlocked() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
@@ -403,7 +347,6 @@ class MonitorEnterExit {
      * carriers aren't released.
      */
     @Test
-    @DisabledIf("LockingMode#isLegacy")
     void testManyBlockedThreads() throws Exception {
         Thread[] vthreads = new Thread[MAX_VTHREAD_COUNT];
         var lock = new Object();

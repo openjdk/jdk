@@ -31,7 +31,8 @@ public:
     NONE = -1,
     NOP,
     ISB,
-    YIELD
+    YIELD,
+    SB
   };
 
 private:
