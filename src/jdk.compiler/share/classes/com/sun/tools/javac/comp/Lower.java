@@ -2834,6 +2834,11 @@ public class Lower extends TreeTranslator {
             JCExpression exactnessCheck = null;
             JCExpression instanceOfExpr = translate(tree.expr);
 
+            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
+                result = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
+                return;
+            }
+
             // preserving the side effects of the value
             VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
                     names.fromString("tmp" + variableIndex++ + this.target.syntheticNameChar()),
@@ -2842,10 +2847,7 @@ public class Lower extends TreeTranslator {
             JCStatement var = make.at(tree.pos())
                     .VarDef(dollar_s, instanceOfExpr);
 
-            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
-                exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
-            }
-            else if (tree.expr.type.isReference()) {
+            if (tree.expr.type.isReference()) {
                 JCExpression nullCheck =
                         makeBinary(NE,
                             make.Ident(dollar_s),
