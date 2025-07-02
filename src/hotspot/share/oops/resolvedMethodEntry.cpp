@@ -40,12 +40,12 @@ void ResolvedMethodEntry::reset_entry() {
   if (has_resolved_references_index()) {
     u2 saved_resolved_references_index = _entry_specific._resolved_references_index;
     u2 saved_cpool_index = _cpool_index;
-    memset(this, 0, sizeof(*this));
+    memset((void *) this, 0, sizeof(*this));
     set_resolved_references_index(saved_resolved_references_index);
     _cpool_index = saved_cpool_index;
   } else {
     u2 saved_cpool_index = _cpool_index;
-    memset(this, 0, sizeof(*this));
+    memset((void *) this, 0, sizeof(*this));
     _cpool_index = saved_cpool_index;
   }
 }
