@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class GenerationCounters: public CHeapObj<mtGC> {
 
   ~GenerationCounters();
 
-  void update_all(size_t curr_capacity);
+  void update_capacity(size_t curr_capacity);
 
   const char* name_space() const        { return _name_space; }
 };

@@ -74,7 +74,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     s = (*env)->NewStringUTF(env, "java.net.preferIPv4Stack");
     CHECK_NULL_RETURN(s, JNI_VERSION_1_2);
     preferIPv4Stack = (*env)->CallStaticBooleanMethod(env, iCls, mid, s);
-
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_VERSION_1_2);
     /*
      * Since we have initialized and loaded the socket library we will
      * check now whether we have IPv6 on this platform and if the
@@ -91,14 +91,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 }
 
 static int enhancedExceptionsInitialized = 0;
-static int enhancedExceptionsAllowed = -1;
-
-#define CHECK_NULL_THROW_ERROR(X) \
-    if (X == NULL) {                                        \
-        JNU_ThrowByName(env, "java/lang/InternalError",     \
-            "can't initialize enhanced exceptions");        \
-        return -1;                                          \
-    }
+static int enhancedExceptionsAllowed = 0;
 
 int getEnhancedExceptionsAllowed(JNIEnv *env) {
     jclass cls;
@@ -108,9 +101,9 @@ int getEnhancedExceptionsAllowed(JNIEnv *env) {
         return enhancedExceptionsAllowed;
     }
     cls = (*env)->FindClass(env, "jdk/internal/util/Exceptions");
-    CHECK_NULL_THROW_ERROR(cls);
+    CHECK_NULL_RETURN(cls, ENH_INIT_ERROR);
     fid = (*env)->GetStaticFieldID(env, cls, "enhancedNonSocketExceptionText", "Z");
-    CHECK_NULL_THROW_ERROR(fid);
+    CHECK_NULL_RETURN(fid, ENH_INIT_ERROR);
     enhancedExceptionsAllowed = (*env)->GetStaticBooleanField(env, cls, fid);
     enhancedExceptionsInitialized = 1;
     return enhancedExceptionsAllowed;

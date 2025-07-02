@@ -606,6 +606,29 @@ public final class Generators {
     }
 
     /**
+     * Fills the memory segments with shorts obtained by calling next on the generator.
+     *
+     * @param generator The generator from which to source the values.
+     * @param ms Memory segment to be filled with random values.
+     */
+    public void fillShort(Generator<Short> generator, MemorySegment ms) {
+        var layout = ValueLayout.JAVA_SHORT_UNALIGNED;
+        for (long i = 0; i < ms.byteSize() / layout.byteSize(); i++) {
+            ms.setAtIndex(layout, i, generator.next());
+        }
+    }
+
+    /**
+     * Fill the array with shorts using the distribution of the generator.
+     *
+     * @param a Array to be filled with random values.
+     */
+    public void fill(Generator<Short> generator, short[] a) {
+        fillShort(generator, MemorySegment.ofArray(a));
+    }
+
+
+    /**
      * Fills the memory segments with ints obtained by calling next on the generator.
      *
      * @param generator The generator from which to source the values.
