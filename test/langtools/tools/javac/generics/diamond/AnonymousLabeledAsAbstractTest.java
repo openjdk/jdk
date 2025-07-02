@@ -32,8 +32,13 @@ class AnonymousLabeledAsAbstractTest {
     abstract class Base<T> {}
     abstract class Derived1<T> extends Base<T> {}
     abstract class Derived2<T> extends Base<T> {
-        Derived2(Derived1<T> obj) {}
+        Derived2(Derived1<T> obj){}
+    }
+    abstract class Derived3<T> extends Base<T> {
+        Derived3(Derived2<T> obj){}
     }
 
-    Base<String> obj = new Derived2<>(new Derived1<>() { /* not abstract */ }) { /* not abstract */ };
+    Base<String> obj = new Derived2<>(new Derived1<>(){}){};
+    Base<String> obj2 = new Derived3<String>(new Derived2<>(new Derived1<>(){}){}){};
+    Base<String> obj3 = new Derived3<>(new Derived2<>(new Derived1<>(){}){}){};
 }
