@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,6 +75,18 @@ public class SecurityProperties {
             }
         }
         return false;
+    }
+
+    /**
+     * Convenience method for fetching the "jdk.crypto.supportPKCS1Padding"
+     * security property value as boolean.
+     *
+     * @return true unless the security property
+     *         "jdk.crypto.supportPKCS1Padding" is explicitly set to "false".
+     */
+    public static boolean getPKCS1PaddingSecurityProp() {
+        String value = Security.getProperty("jdk.crypto.supportPKCS1Padding");
+        return (value == null || !value.equalsIgnoreCase("false"));
     }
 
     /**

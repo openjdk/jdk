@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.ProviderException;
 import java.util.HashMap;
 import java.util.List;
 
+import sun.security.util.SecurityProperties;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 import static sun.security.util.SecurityProviderConstants.getAliases;
 
@@ -244,15 +245,14 @@ public final class SunMSCAPI extends Provider {
         /*
          * Cipher engines
          */
-        attrs.clear();
-        attrs.put("SupportedModes", "ECB");
-        attrs.put("SupportedPaddings", "PKCS1PADDING");
-        attrs.put("SupportedKeyClasses", "sun.security.mscapi.CKey");
-        putService(new ProviderService(p, "Cipher",
-                   "RSA", "sun.security.mscapi.CRSACipher",
-                   null, attrs));
-        putService(new ProviderService(p, "Cipher",
-                   "RSA/ECB/PKCS1Padding", "sun.security.mscapi.CRSACipher",
-                   null, attrs));
+        if (SecurityProperties.getPKCS1PaddingSecurityProp()) {
+            attrs.clear();
+            attrs.put("SupportedModes", "ECB");
+            attrs.put("SupportedPaddings", "PKCS1PADDING");
+            attrs.put("SupportedKeyClasses", "sun.security.mscapi.CKey");
+            putService(new ProviderService(p, "Cipher",
+                       "RSA", "sun.security.mscapi.CRSACipher",
+                       null, attrs));
+        }
     }
 }

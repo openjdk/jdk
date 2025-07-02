@@ -1575,3 +1575,14 @@ jdk.tls.alpnCharset=ISO_8859_1
 # withEncryption method.
 #
 jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128
+
+#
+# Whether to support the PKCS#1 Padding for RSA encryption/decryption
+#
+# This property defines whether the JDK providers support the
+# RSA/ECB/PKCS1Padding cipher. Note that "RSA" is an alias of
+# RSA/ECB/PKCS1Padding and will not be available either if this property is
+# set to false, i.e. disabling PKCS1Padding support.
+#
+#jdk.crypto.supportPKCS1Padding=false
+
