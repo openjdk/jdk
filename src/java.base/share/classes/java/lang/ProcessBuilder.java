@@ -541,7 +541,7 @@ public final class ProcessBuilder
          *
          * <p>It will always be true that
          * {@snippet lang = "java" :
-         *     Redirect.DISCARD.file(); // is the filename appropriate for the operating system
+         *     Redirect.DISCARD.file() != null && // is the filename appropriate for the operating system
          *     Redirect.DISCARD.type() == Redirect.Type.WRITE;
          * }
          * @since 9

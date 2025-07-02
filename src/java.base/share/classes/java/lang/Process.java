@@ -126,7 +126,7 @@ import java.util.stream.Stream;
  *     }
  * }
  * }
- * <p>Stream resources (file descriptor or handled) are always paired; one in the invoking process
+ * <p>Stream resources (file descriptor or handle) are always paired; one in the invoking process
  * and the other end of that connection in the invoked process.
  * Closing a stream at either end terminates communication but does not have any direct effect
  * on the other Process. The closing of the stream typically results in the other process exiting.
@@ -205,7 +205,7 @@ public abstract class Process {
      * when it is no longer needed.
      *
      * @apiNote
-     * Use either this method or an {@linkplain #inputReader(Charset) input reader}
+     * Use either this method or an {@linkplain #inputReader() input reader}
      * but not both on the same {@code Process}.
      * The input reader consumes and buffers bytes from the input stream.
      * Bytes read from the input stream would not be seen by the reader and
@@ -237,7 +237,7 @@ public abstract class Process {
      * when it is no longer needed.
      *
      * @apiNote
-     * Use either this method or an {@linkplain #errorReader(Charset) error reader}
+     * Use either this method or an {@linkplain #errorReader() error reader}
      * but not both on the same {@code Process}.
      * The error reader consumes and buffers bytes from the error stream.
      * Bytes read from the error stream would not be seen by the reader and the
