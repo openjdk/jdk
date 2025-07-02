@@ -29,6 +29,8 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 
+import sun.net.util.IPAddressUtil;
+
 /**
  * Represents an origin server to which a HTTP request is targeted.
  *
@@ -36,22 +38,27 @@ import java.util.Objects;
  *               protocol (which can be a finer grained protocol like h2, h3 etc...),
  *               this is actually a scheme. Only {@code http} and {@code https} literals are
  *               supported. Cannot be null.
- * @param host   The host of the origin. If the host is an IPv6 address, then it must not be
- *               enclosed in square brackets ({@code '['} and {@code ']'}). Cannot be null.
+ * @param host   The host of the origin, cannot be null. If the host is an IPv6 address,
+ *               then it must not be enclosed in square brackets ({@code '['} and {@code ']'}).
+ *               If the host is a DNS hostname, then it must be passed as a lower case String.
  * @param port   The port of the origin. Must be greater than 0.
  */
 public record Origin(String scheme, String host, int port) {
     public Origin {
         Objects.requireNonNull(scheme);
         Objects.requireNonNull(host);
+        if (!isValidScheme(scheme)) {
+            throw new IllegalArgumentException("Unsupported scheme: " + scheme);
+        }
         if (host.startsWith("[") && host.endsWith("]")) {
             throw new IllegalArgumentException("Invalid host: " + host);
         }
+        // expect DNS hostname to be passed as lower case
+        if (isDNSHostName(host) && !host.toLowerCase(Locale.ROOT).equals(host)) {
+            throw new IllegalArgumentException("non-lowercase hostname: " + host);
+        }
         if (port <= 0) {
             throw new IllegalArgumentException("Invalid port: " + port);
-        }
-        if (!isValidScheme(scheme)) {
-            throw new IllegalArgumentException("Unsupported scheme: " + scheme);
         }
     }
 
@@ -81,7 +88,7 @@ public record Origin(String scheme, String host, int port) {
         if (host == null) {
             throw new IllegalArgumentException("missing host in URI");
         }
-        final String effectiveHost;
+        String effectiveHost;
         if (host.startsWith("[") && host.endsWith("]")) {
             // strip the square brackets from IPv6 host
             effectiveHost = host.substring(1, host.length() - 1);
@@ -89,6 +96,17 @@ public record Origin(String scheme, String host, int port) {
             effectiveHost = host;
         }
         assert !effectiveHost.isEmpty() : "unexpected URI host: " + host;
+        // If the host is a DNS hostname, then convert the host to lower case.
+        // The DNS hostname is expected to be ASCII characters and is case-insensitive.
+        //
+        // Its usage in areas like SNI too match this expectation - RFC-6066, section 3:
+        // "HostName" contains the fully qualified DNS hostname of the server,
+        // as understood by the client.  The hostname is represented as a byte
+        // string using ASCII encoding without a trailing dot. ... DNS hostnames
+        // are case-insensitive.
+        if (isDNSHostName(effectiveHost)) {
+            effectiveHost = effectiveHost.toLowerCase(Locale.ROOT);
+        }
         int port = uri.getPort();
         if (port == -1) {
             port = switch (lcaseScheme) {
@@ -117,5 +135,12 @@ public record Origin(String scheme, String host, int port) {
     private static boolean isValidScheme(final String scheme) {
         // only "http" and "https" literals allowed
         return "http".equals(scheme) || "https".equals(scheme);
+    }
+
+    private static boolean isDNSHostName(final String host) {
+        final boolean isLiteral = IPAddressUtil.isIPv4LiteralAddress(host)
+                || IPAddressUtil.isIPv6LiteralAddress(host);
+
+        return !isLiteral;
     }
 }
