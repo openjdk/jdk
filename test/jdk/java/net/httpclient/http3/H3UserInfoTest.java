@@ -48,8 +48,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-
-
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -136,6 +135,7 @@ public class H3UserInfoTest implements HttpServerAdapters {
                     .build();
             var config = server.h3DiscoveryConfig();
 
+            int numRetries = 0;
             while (true) {
                 if (config == ALT_SVC) {
                     // send head request
@@ -170,12 +170,16 @@ public class H3UserInfoTest implements HttpServerAdapters {
                 } else if (response.version() != HTTP_3) {
                     // the request went through HTTP/2 - the next
                     // should go through HTTP/3
-                    System.out.printf("Received GET response (%s) to %s with version %s: " +
-                            "repeating request once more%n", config, origURI, response.version());
-                    System.err.printf("Received GET response (%s) to %s with version %s: " +
-                            "repeating request once more%n", config, origURI, response.version());
-                    assertEquals(HTTP_2, response.version());
-                    continue;
+                    if (numRetries++ < 3) {
+                        System.out.printf("Received GET response (%s) to %s with version %s: " +
+                                "repeating request once more%n", config, origURI, response.version());
+                        System.err.printf("Received GET response (%s) to %s with version %s: " +
+                                "repeating request once more%n", config, origURI, response.version());
+                        assertEquals(HTTP_2, response.version());
+                        continue;
+                    } else {
+                        fail("Did not receive the expected HTTP3 response");
+                    }
                 }
                 break;
             }
