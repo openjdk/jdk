@@ -59,7 +59,6 @@ struct small_cache;
 //------------------------------LoopNode---------------------------------------
 // Simple loop header.  Fall in path on left, loop-back path on right.
 class LoopNode : public RegionNode {
-private:
   // Size is bigger to hold the flags.  However, the flags do not change
   // the semantics so it does not appear in the hash & cmp functions.
   virtual uint size_of() const { return sizeof(*this); }
