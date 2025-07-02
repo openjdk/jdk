@@ -28,7 +28,9 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.ConstantPool;
 import jdk.test.whitebox.WhiteBox;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -80,25 +82,51 @@ public class Compiler {
         }
 
         // Make sure the class is initialized.
-        UNSAFE.ensureClassInitialized(aClass);
+        try {
+            UNSAFE.ensureClassInitialized(aClass);
+        } catch (NoClassDefFoundError t) {
+            // Accept this.
+            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING class init failed : %s",
+                                 id, aClass.getName(), t));
+        }
         compileClinit(aClass, id);
+
+        //
+        Constructor[] constructors = new Constructor[0];
+        Method[] methods = new Method[0];
+
+        try {
+             constructors = aClass.getDeclaredConstructors();
+        } catch (NoClassDefFoundError t) {
+            // Accept this.
+            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING getting constructors failed : %s",
+                                 id, aClass.getName(), t));
+        }
+
+        try {
+            methods = aClass.getDeclaredMethods();
+        } catch (NoClassDefFoundError t) {
+            // Accept this.
+            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING getting methods failed : %s",
+                                 id, aClass.getName(), t));
+        }
 
         // Populate profile for all methods to expand the scope of
         // compiler optimizations. Do this before compilations start.
-        for (Executable e : aClass.getDeclaredConstructors()) {
+        for (Executable e : constructors) {
             WHITE_BOX.markMethodProfiled(e);
         }
-        for (Executable e : aClass.getDeclaredMethods()) {
+        for (Executable e : methods) {
             WHITE_BOX.markMethodProfiled(e);
         }
 
         // Now schedule the compilations.
         long methodCount = 0;
-        for (Executable e : aClass.getDeclaredConstructors()) {
+        for (Executable e : constructors) {
             ++methodCount;
             executor.execute(new CompileMethodCommand(id, e));
         }
-        for (Executable e : aClass.getDeclaredMethods()) {
+        for (Executable e : methods) {
             ++methodCount;
             executor.execute(new CompileMethodCommand(id, e));
         }
@@ -127,6 +155,9 @@ public class Compiler {
                 if (constantPool.getTagAt(i) == ConstantPool.Tag.CLASS) {
                     constantPool.getClassAt(i);
                 }
+            } catch (NoClassDefFoundError t) {
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
+                         id, className, t));
             } catch (Throwable t) {
                 CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
                          id, className, t));

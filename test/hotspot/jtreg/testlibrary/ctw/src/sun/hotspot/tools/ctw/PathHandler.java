@@ -245,6 +245,9 @@ public class PathHandler implements Closeable {
                 CompileTheWorld.OUT.println(String.format("[%d]\t%s", id, name));
                 aClass = entry.loader().loadClass(name);
                 Compiler.compileClass(aClass, id, executor);
+            } catch (NoClassDefFoundError e) {
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING skipped: %s",
+                        id, name, e));
             } catch (Throwable e) {
                 CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING skipped: %s",
                         id, name, e));
