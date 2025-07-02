@@ -482,8 +482,7 @@ public abstract class Reader implements Readable, Closeable {
                     if (len >= cb.length/2) {
                         // allocate larger buffer and copy chars to beginning
                         int newLength = ArraysSupport.newLength(cb.length,
-                                                                cb.length >>> 1,
-                                                                cb.length);
+                                            TRANSFER_BUFFER_SIZE, cb.length);
                         char[] tmp = new char[newLength];
                         System.arraycopy(cb, start, tmp, 0, len);
                         cb = tmp;
