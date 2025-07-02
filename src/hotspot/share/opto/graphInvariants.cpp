@@ -28,30 +28,61 @@
 
 #ifndef PRODUCT
 
-#define OUTPUT_STEP (-1)
+void LocalGraphInvariant::LazyReachableCFGNodes::fill() {
+  precond(live_nodes.size() == 0);
 
-void print_path(const Node* center, const Node_List& steps, const GrowableArray<int>& path, stringStream& ss) {
-  assert(steps.size() == static_cast<uint>(path.length()) + 1, "sanity");
-  assert(steps.at(steps.size() - 1) == center, "sanity");
+  // We should have at least root, so we are sure it's not filled yet.
+  live_nodes.push(Compile::current()->root());
+  for (uint i = 0; i < live_nodes.size(); ++i) {
+    Node* n = live_nodes.at(i);
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* out = n->fast_out(j);
+      if (out->is_CFG()) {
+        live_nodes.push(out);
+      }
+    }
+  }
+
+  postcond(live_nodes.size() > 0);
+}
+
+bool LocalGraphInvariant::LazyReachableCFGNodes::is_node_dead(const Node* n) {
+  if (live_nodes.size() == 0) {
+    fill();
+  }
+  assert(live_nodes.size() > 0, "filling failed");
+  return !live_nodes.member(n);
+}
+
+void print_path(const Node_List& steps, const GrowableArray<int>& path, stringStream& ss) {
+  const int path_len = path.length();
+  precond(steps.size() == static_cast<uint>(path_len) + 1);
   if (path.is_empty()) {
     ss.print_cr("At center node");
-    center->dump("\n", false, &ss);
+    steps.at(0)->dump("\n", false, &ss);
     return;
   }
-  ss.print("At node\n    ");
-  center->dump("\n", false, &ss);
+  ss.print("At node\n   ");
+  steps.at(0)->dump("\n", false, &ss);
   ss.print_cr("  From path:");
   ss.print("    [center]");
-  steps.at(0)->dump("\n", false, &ss);
-  for (int i = 0; i < path.length(); ++i) {
-    if (path.at(i) >= 0) {
+  steps.at(path_len)->dump("\n", false, &ss);
+  for (int i = 0; i < path_len; ++i) {
+    if (path.at(path_len - i - 1) >= 0) {
       // It's an input
-      ss.print("      <-(%d)-", path.at(i));
-    } else {
+      int input_nb = path.at(path_len - i - 1);
+      if (input_nb <= 9) {
+        ss.print(" ");
+      }
+      ss.print("     <-(%d)-", input_nb);
+
+    } else if (path.at(path_len - i - 1) == LocalGraphInvariant::OutputStep) {
       // It's an output
       ss.print("         -->");
+    } else {
+      ss.print("         ???");
     }
-    steps.at(i + 1)->dump("\n", false, &ss);
+    steps.at(path_len - i - 1)->dump("\n", false, &ss);
   }
 }
 
@@ -106,7 +137,6 @@ struct HasExactlyNInputs : Pattern {
   explicit HasExactlyNInputs(uint expect_req) : _expect_req(expect_req) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (center->req() != _expect_req) {
-      print_path(center, steps, path, ss);
       ss.print_cr("Unexpected number of input. Expected: %d. Found: %d", _expect_req, center->req());
       for (uint i = 0; i < center->req(); ++i) {
         Node* in = center->in(i);
@@ -128,7 +158,6 @@ struct HasAtLeastNInputs : Pattern {
   explicit HasAtLeastNInputs(uint expect_req) : _expect_req(expect_req) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (center->req() < _expect_req) {
-      print_path(center, steps, path, ss);
       ss.print_cr("Too small number of input. Expected: %d. Found: %d", _expect_req, center->req());
       for (uint i = 0; i < center->req(); ++i) {
         Node* in = center->in(i);
@@ -151,15 +180,14 @@ struct AtInput : Pattern {
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     assert(_which_input < center->req(), "First check the input number");
     if (center->in(_which_input) == nullptr) {
-      print_path(center, steps, path, ss);
       ss.print_cr("Input at index %d is nullptr.", _which_input);
       return false;
     }
-    steps.push(center->in(_which_input));
-    path.push(static_cast<int>(_which_input));
     bool result = _pattern->check(center->in(_which_input), steps, path, ss);
-    path.pop();
-    steps.pop();
+    if (!result) {
+      steps.push(center->in(_which_input));
+      path.push(static_cast<int>(_which_input));
+    }
     return result;
   }
   const uint _which_input;
@@ -170,7 +198,6 @@ struct HasType : Pattern {
   explicit HasType(bool (Node::*type_check)() const) : _type_check(type_check) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!(center->*_type_check)()) {
-      print_path(center, steps, path, ss);
       ss.print_cr("Unexpected type: %s.", center->Name());
       return false;
     }
@@ -183,7 +210,6 @@ struct HasNOutputs : Pattern {
   explicit HasNOutputs(uint expect_outcnt) : _expect_outcnt(expect_outcnt) {}
   bool check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (center->outcnt() != _expect_outcnt) {
-      print_path(center, steps, path, ss);
       ss.print_cr("Unexpected number of outputs. Expected: %d, found: %d.", _expect_outcnt, center->outcnt());
       for (DUIterator_Fast imax, i = center->fast_outs(imax); i < imax; i++) {
         Node* out = center->fast_out(i);
@@ -210,18 +236,17 @@ struct AtSingleOutputOfType : Pattern {
       }
     }
     if (outputs_of_correct_type.size() != 1) {
-      print_path(center, steps, path, ss);
       ss.print_cr("Non-unique output of expected type. Found: %d.", outputs_of_correct_type.size());
       for (uint i = 0; i < outputs_of_correct_type.size(); ++i) {
         outputs_of_correct_type.at(i)->dump("\n", false, &ss);
       }
       return false;
     }
-    steps.push(outputs_of_correct_type.at(0));
-    path.push(OUTPUT_STEP);
     bool result = _pattern->check(outputs_of_correct_type.at(0), steps, path, ss);
-    path.pop();
-    steps.pop();
+    if (!result) {
+      steps.push(outputs_of_correct_type.at(0));
+      path.push(LocalGraphInvariant::OutputStep);
+    }
     return result;
   }
   bool (Node::*_type_check)() const;
@@ -231,7 +256,7 @@ struct AtSingleOutputOfType : Pattern {
 struct PatternBasedCheck : LocalGraphInvariant {
   const Pattern* const _pattern;
   explicit PatternBasedCheck(const Pattern* pattern) : _pattern(pattern) {}
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     return _pattern->check(center, steps, path, ss) ? CheckResult::VALID : CheckResult::FAILED;
   }
 };
@@ -247,11 +272,19 @@ struct IfProjections : PatternBasedCheck {
   const char* name() const override {
     return "IfProjections";
   }
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!center->is_If()) {
       return CheckResult::NOT_APPLICABLE;
     }
-    return PatternBasedCheck::check(center, steps, path, ss);
+    CheckResult r = PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
+    if (r == CheckResult::FAILED) {
+      if (reachable_cfg_nodes.is_node_dead(center)) {
+        // That's ok for dead nodes right now. It might be too expensive to collect for IGVN, but it will be removed in loop opts.
+        ss.reset();
+        return CheckResult::VALID;
+      }
+    }
+    return r;
   }
 };
 
@@ -270,17 +303,16 @@ struct PhiArity : PatternBasedCheck {
   const char* name() const override {
     return "PhiArity";
   }
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!center->is_Phi()) {
       return CheckResult::NOT_APPLICABLE;
     }
-    CheckResult result = PatternBasedCheck::check(center, steps, path, ss);
+    CheckResult result = PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
     if (result != CheckResult::VALID) {
       return result;
     }
     assert(region_node != nullptr, "sanity");
     if (region_node->req() != center->req()) {
-      print_path(center, steps, path, ss);
       ss.print_cr("Phi nodes must have the same arity as their Region node. Phi arity: %d; Region arity: %d.", center->req(), region_node->req());
       return CheckResult::FAILED;
     }
@@ -292,7 +324,7 @@ struct ControlSuccessor : LocalGraphInvariant {
   const char* name() const override {
     return "ControlSuccessor";
   }
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!center->is_CFG()) {
       return CheckResult::NOT_APPLICABLE;
     }
@@ -309,7 +341,10 @@ struct ControlSuccessor : LocalGraphInvariant {
 
     if (center->is_If() || center->is_Start() || center->is_Root() || center->is_Region() || center->is_NeverBranch()) {
       if (cfg_out != 2) {
-        print_path(center, steps, path, ss);
+        if (reachable_cfg_nodes.is_node_dead(center)) {
+          // That's ok for dead nodes right now. It might be too expensive to collect for IGVN, but it will be removed in loop opts.
+          return CheckResult::VALID;
+        }
         ss.print_cr("%s node must have exactly two control successors. Found %d.", center->Name(), cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
           ss.print("  ");
@@ -319,7 +354,6 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
     } else if (center->Opcode() == Op_SafePoint) {
       if (cfg_out < 1 || cfg_out > 2) {
-        print_path(center, steps, path, ss);
         ss.print_cr("%s node must have one or two control successors. Found %d.", center->Name(), cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
           ss.print("  ");
@@ -329,7 +363,6 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
       if (cfg_out == 2) {
         if (!ctrl_succ.at(0)->is_Root() && !ctrl_succ.at(1)->is_Root()) {
-          print_path(center, steps, path, ss);
           ss.print_cr("One of the two control outputs of a %s node must be Root.", center->Name());
           for (uint i = 0; i < ctrl_succ.size(); ++i) {
             ss.print("  ");
@@ -340,13 +373,11 @@ struct ControlSuccessor : LocalGraphInvariant {
       }
     } else if (center->is_Catch() || center->is_Jump()) {
       if (cfg_out < 1) {
-        print_path(center, steps, path, ss);
         ss.print_cr("%s node must have at least one control successors. Found %d.", center->Name(), cfg_out);
         return CheckResult::FAILED;
       }
     } else {
       if (cfg_out != 1) {
-        print_path(center, steps, path, ss);
         ss.print_cr("Ordinary CFG nodes must have exactly one successor. Found %d.", cfg_out);
         for (uint i = 0; i < ctrl_succ.size(); ++i) {
           ss.print("  ");
@@ -364,13 +395,12 @@ struct RegionSelfLoop : LocalGraphInvariant {
   const char* name() const override {
     return "RegionSelfLoop";
   }
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!center->is_Region() && !center->is_Start() && !center->is_Root()) {
       return CheckResult::NOT_APPLICABLE;
     }
 
     if (center->req() == 0) {
-      print_path(center, steps, path, ss);
       ss.print_cr("%s nodes must have at least one input.", center->Name());
       return CheckResult::FAILED;
     }
@@ -378,7 +408,6 @@ struct RegionSelfLoop : LocalGraphInvariant {
     Node* self = center->in(LoopNode::Self);
 
     if (center != self || (center->is_Region() && self == nullptr)) {
-      print_path(center, steps, path, ss);
       ss.print_cr("%s nodes' 0-th input must be itself or nullptr (for a copy Region).", center->Name());
       return CheckResult::FAILED;
     }
@@ -392,7 +421,6 @@ struct RegionSelfLoop : LocalGraphInvariant {
         }
       }
       if (non_null_inputs.size() != 1) {
-        print_path(center, steps, path, ss);
         ss.print_cr("%s copy nodes must have exactly one non-null input. Found: %d.", center->Name(), non_null_inputs.size());
         for (uint i = 0; i < non_null_inputs.size(); ++i) {
           non_null_inputs.at(i)->dump("\n", false, &ss);
@@ -425,27 +453,25 @@ struct CountedLoopInvariants : PatternBasedCheck {
   const char* name() const override {
     return "CountedLoopInvariants";
   }
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!center->is_CountedLoop() && !center->is_LongCountedLoop()) {
       return CheckResult::NOT_APPLICABLE;
     }
 
     bool is_long = center->is_LongCountedLoop();
 
-    CheckResult result = PatternBasedCheck::check(center, steps, path, ss);
+    CheckResult result = PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
     if (result != CheckResult::VALID) {
       return result;
     }
     assert(counted_loop != nullptr, "sanity");
     if (is_long) {
       if (counted_loop->is_CountedLoopEnd()) {
-        print_path(center, steps, path, ss);
         ss.print_cr("A CountedLoopEnd is the backedge of a LongCountedLoop.");
         return CheckResult::FAILED;
       }
     } else {
       if (counted_loop->is_LongCountedLoopEnd()) {
-        print_path(center, steps, path, ss);
         ss.print_cr("A LongCountedLoopEnd is the backedge of a CountedLoop.");
         return CheckResult::FAILED;
       }
@@ -483,12 +509,12 @@ struct OuterStripMinedLoopInvariants : PatternBasedCheck {
   const char* name() const override {
     return "OuterStripMinedLoopInvariants";
   }
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!center->is_OuterStripMinedLoopEnd()) {
       return CheckResult::NOT_APPLICABLE;
     }
 
-    return PatternBasedCheck::check(center, steps, path, ss);
+    return PatternBasedCheck::check(center, reachable_cfg_nodes, steps, path, ss);
   }
 };
 
@@ -496,14 +522,13 @@ struct MultiBranchNodeOut : LocalGraphInvariant {
   const char* name() const override {
     return "MultiBranchNodeOut";
   }
-  CheckResult check(const Node* center, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
+  CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, Node_List& steps, GrowableArray<int>& path, stringStream& ss) const override {
     if (!center->is_MultiBranch()) {
       return CheckResult::NOT_APPLICABLE;
     }
 
     MultiBranchNode* mb = center->as_MultiBranch();
     if (mb->required_outcnt() < static_cast<int>(mb->outcnt())) {
-      print_path(center, steps, path, ss);
       ss.print_cr("The required_outcnt of a MultiBranch node must be smaller than or equal to its outcnt. But required_outcnt=%d vs. outcnt=%d", mb->required_outcnt(), mb->outcnt());
       return CheckResult::FAILED;
     }
@@ -530,7 +555,7 @@ GraphInvariantChecker* GraphInvariantChecker::make_default() {
   return checker;
 }
 
-bool GraphInvariantChecker::run(const Compile* C) const {
+bool GraphInvariantChecker::run() const {
 #ifdef PRODUCT
   return true;
 #else
@@ -542,14 +567,23 @@ bool GraphInvariantChecker::run(const Compile* C) const {
 
   VectorSet enqueued;
   Node_List worklist;
-  worklist.push(C->root());
+  worklist.push(Compile::current()->root());
   Node_List steps;
   GrowableArray<int> path;
+  stringStream ss;
+  stringStream ss2;
+  // Sometimes, we get weird structure in dead code that will be cleaned up later. It typically happens
+  // when data dies, but control is not cleanup right away, possibly kept alive by un unreachable loop.
+  // Since we don't want to eagerly traverse the whole graph to remove dead code in IGVN, we can accept
+  // weird structure in dead code.
+  // For CFG-related errors, we will compute the set of reachable CFG nodes and decide whether to keep
+  // the issue if the problematic node is reachable. This set of reachable node is thus computed lazily
+  // (and it seems not to happen often in practice), and shared across checks.
+  LocalGraphInvariant::LazyReachableCFGNodes reachable_cfg_nodes;
   bool success = true;
 
   while (worklist.size() > 0) {
     Node* center = worklist.pop();
-    stringStream ss;
     for (uint i = 0; i < center->req(); i++) {
       Node* in = center->in(i);
       if (in != nullptr && !enqueued.test_set(in->_idx)) {
@@ -558,15 +592,16 @@ bool GraphInvariantChecker::run(const Compile* C) const {
     }
     uint failures = 0;
     for (int i = 0; i < _checks.length(); ++i) {
-      stringStream ss2;
-      path.clear();
-      steps.clear();
-      steps.push(center);
-      switch (_checks.at(i)->check(center, steps, path, ss2)) {
+      switch (_checks.at(i)->check(center, reachable_cfg_nodes, steps, path, ss2)) {
       case LocalGraphInvariant::CheckResult::FAILED:
         failures++;
+        steps.push(center);
+        print_path(steps, path, ss);
         ss.print_cr("# %s:", _checks.at(i)->name());
-        ss.print_cr("%s", ss2.freeze());
+        ss.print_cr("%s", ss2.base());
+        path.clear();
+        steps.clear();
+        ss2.reset();
         break;
       case LocalGraphInvariant::CheckResult::NOT_APPLICABLE:
       case LocalGraphInvariant::CheckResult::VALID:
@@ -578,7 +613,8 @@ bool GraphInvariantChecker::run(const Compile* C) const {
       ttyLocker ttyl;
       tty->print("%d failure%s for node\n", failures, failures == 1 ? "" : "s");
       center->dump();
-      tty->print_cr("%s", ss.freeze());
+      tty->print_cr("%s", ss.base());
+      ss.reset();
     }
   }
 

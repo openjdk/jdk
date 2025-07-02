@@ -993,7 +993,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
   verify_optimize();
 #endif
   if (VerifyIdealStructuralInvariants) {
-    assert(_invariant_checker->run(C), "Ideal graph doesn't verify structural invariants.");
+    assert(_invariant_checker->run(), "Ideal graph doesn't verify structural invariants.");
   }
 }
 #endif /* PRODUCT */
