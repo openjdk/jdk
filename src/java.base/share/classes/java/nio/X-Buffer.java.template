@@ -1900,10 +1900,11 @@ public abstract sealed class $Type$Buffer
      * Relative bulk <i>get</i> method.
      *
      * <p> This method transfers {@code srcEnd-srcBegin} characters from this
-     * buffer into the given array, starting at index {@code position() + srcBegin} in this
-     * buffer and at offset {@code dstBegin} in the array.
+     * buffer into the given array, starting at index
+     * {@code position() + srcBegin} in this buffer and at offset
+     * {@code dstBegin} in the array. The position of this buffer is unchanged.
      *
-     * <p> An invocation of this method behaves exaclty the same was as the
+     * <p> An invocation of this method behaves exactly the same was as the
      * invocation
      *
      * {@snippet lang=java :
