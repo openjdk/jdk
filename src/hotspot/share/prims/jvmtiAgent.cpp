@@ -31,6 +31,7 @@
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -82,11 +83,11 @@ JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_p
   _xrun(false) {}
 
 JvmtiAgent* JvmtiAgent::next() const {
-  return _next;
+  return Atomic::load(&_next);
 }
 
 void JvmtiAgent::set_next(JvmtiAgent* agent) {
-  _next = agent;
+  return Atomic::store(&_next, agent);
 }
 
 const char* JvmtiAgent::name() const {

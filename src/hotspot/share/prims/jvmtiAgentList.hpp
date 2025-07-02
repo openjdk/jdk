@@ -25,15 +25,14 @@
 #ifndef SHARE_PRIMS_JVMTIAGENTLIST_HPP
 #define SHARE_PRIMS_JVMTIAGENTLIST_HPP
 
-#include "nmt/memTag.hpp"
+//#include "nmt/memTag.hpp"
 #include "prims/jvmtiAgent.hpp"
-#include "utilities/growableArray.hpp"
+//#include "utilities/growableArray.hpp"
 
 class JvmtiEnv;
 
-// Maintains a single cas linked-list of JvmtiAgents.
+// Maintains thread-safe linked list of JvmtiAgents.
 class JvmtiAgentList : AllStatic {
-  friend class Iterator;
   friend class JvmtiExport;
  public:
   class Iterator {
@@ -46,20 +45,21 @@ class JvmtiAgentList : AllStatic {
       NOT_XRUN,
       ALL
     };
-    GrowableArrayCHeap<JvmtiAgent*, mtServiceability>* _stack;
     const Filter _filter;
-    Iterator() : _stack(nullptr), _filter(ALL) {}
-    Iterator(JvmtiAgent** list, Filter filter);
+    JvmtiAgent* _next;
+    Iterator(JvmtiAgent* head, Filter filter);
     JvmtiAgent* select(JvmtiAgent* agent) const;
    public:
     bool has_next() const NOT_JVMTI_RETURN_(false);
     JvmtiAgent* next() NOT_JVMTI_RETURN_(nullptr);
-    const JvmtiAgent* next() const NOT_JVMTI_RETURN_(nullptr);
-    ~Iterator() { delete _stack; }
   };
 
  private:
-  static JvmtiAgent* _list;
+  static JvmtiAgent* _head;
+  // address of the last JvmtiAgent::_next (nullptr when the list is empty)
+  static JvmtiAgent** _tail;
+
+  static JvmtiAgent* head();
 
   static void initialize();
   static void convert_xrun_agents();
