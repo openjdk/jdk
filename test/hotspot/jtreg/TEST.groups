@@ -416,6 +416,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/aotFlags \
+ -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
@@ -510,14 +511,17 @@ hotspot_cds_epsilongc = \
   runtime/cds/appcds/jigsaw \
   runtime/cds/appcds/loaderConstraints
 
-# Run CDS tests with -XX:+AOTClassLinking. This should include most CDS tests, except for
+# Run "old" CDS tests with -XX:+AOTClassLinking. This should include most CDS tests, except for
 # those that rely on redefining classes that are already archived.
+# Note that appcds/aotXXX directories are excluded -- those tests already specifically
+# test AOT class linking, so there's no need to run them again with -XX:+AOTClassLinking.
 hotspot_aot_classlinking = \
   runtime/cds \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/aotFlags \
+ -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
