@@ -36,7 +36,7 @@ import static org.testng.Assert.assertEquals;
 
 /**
  * @test
- * @bug 8343110
+ * @bug 8343110 8361299
  * @summary Check for expected behavior of CharBuffer.getChars().
  * @run testng GetChars
  * @key randomness
@@ -200,7 +200,7 @@ public class GetChars {
         System.out.format("%s position=%d, limit=%d%n", type, cb.position(), cb.limit());
         int expected = intSum(cb);
         var dst = new char[cb.remaining()];
-        cb.getChars(cb.position(), cb.limit(), dst, 0);
+        cb.getChars(0, cb.remaining(), dst, 0);
         int actual = intSum(dst);
         assertEquals(actual, expected);
     }
