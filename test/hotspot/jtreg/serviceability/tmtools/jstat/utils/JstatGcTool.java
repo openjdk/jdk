@@ -28,34 +28,9 @@ import common.TmTool;
  * This tool executes "jstat -gc <pid>" and returns the results as
  * JstatGcToolResults
  */
-public class JstatGcTool extends TmTool<JstatGcResults> {
-
-    private static final int TRIES = 3;
+public class JstatGcTool extends JstatTool<JstatGcResults> {
 
     public JstatGcTool(long pid) {
         super(JstatGcResults.class, "jstat", "-gc " + pid);
-    }
-
-    /**
-      * Measure, and call assertConsistency() on the results,
-      * tolerating a set number of failures to account for inconsistency in PerfData.
-      */
-    public JstatGcResults measureAndAssertConsistency() throws Exception {
-        JstatGcResults results = null;
-        for (int i = 1; i <= TRIES; i++) {
-            try {
-                results = measure();
-                results.assertConsistency();
-                break;
-            } catch (RuntimeException e) {
-                System.out.println("Attempt " + i + ": " + e);
-                if (i == TRIES) {
-                    System.out.println("Too many failures.");
-                    throw(e);
-                }
-                // Inconsistent, will retry.
-            }
-        }
-        return results;
     }
 }

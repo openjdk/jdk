@@ -44,15 +44,13 @@ public class GcNewTest {
         JstatGcNewTool jstatGcTool = new JstatGcNewTool(ProcessHandle.current().pid());
 
         // Run once and get the  results asserting that they are reasonable
-        JstatGcNewResults measurement1 = jstatGcTool.measure();
-        measurement1.assertConsistency();
+        JstatGcNewResults measurement1 = jstatGcTool.measureAndAssertConsistency();
 
         GcProvoker gcProvoker = new GcProvoker();
 
         // Provoke GC and run the tool again
         gcProvoker.provokeGc();
-        JstatGcNewResults measurement2 = jstatGcTool.measure();
-        measurement2.assertConsistency();
+        JstatGcNewResults measurement2 = jstatGcTool.measureAndAssertConsistency();
 
         // Assert the increase in GC events and time between the measurements
         assertThat(measurement2.getFloatValue("YGC") > measurement1.getFloatValue("YGC"), "YGC didn't increase between measurements 1 and 2");
@@ -60,8 +58,7 @@ public class GcNewTest {
 
         // Provoke GC and run the tool again
         gcProvoker.provokeGc();
-        JstatGcNewResults measurement3 = jstatGcTool.measure();
-        measurement3.assertConsistency();
+        JstatGcNewResults measurement3 = jstatGcTool.measureAndAssertConsistency();
 
         // Assert the increase in GC events and time between the measurements
         assertThat(measurement3.getFloatValue("YGC") > measurement2.getFloatValue("YGC"), "YGC didn't increase between measurements 1 and 2");

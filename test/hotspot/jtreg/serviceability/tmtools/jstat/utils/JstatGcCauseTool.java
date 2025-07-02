@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,34 +28,9 @@ import common.TmTool;
  * This tool executes "jstat -gc <pid>" and returns the results as
  * JstatGcToolResults
  */
-public class JstatGcCauseTool extends TmTool<JstatGcCauseResults> {
-
-    private static final int TRIES = 3;
+public class JstatGcCauseTool extends JstatTool<JstatGcCauseResults> {
 
     public JstatGcCauseTool(long pid) {
         super(JstatGcCauseResults.class, "jstat", "-gc " + pid);
-    }
-
-    /**
-      * Measure, and call assertConsistency() on the results,
-      * tolerating a set number of failures to account for inconsistency in PerfData.
-      */
-    public JstatGcCauseResults measureAndAssertConsistency() throws Exception {
-        JstatGcCauseResults results = null;
-        for (int i = 1; i <= TRIES; i++) {
-            try {
-                results = measure();
-                results.assertConsistency();
-                break;
-            } catch (RuntimeException e) {
-                System.out.println("Attempt " + i + ": " + e);
-                if (i == TRIES) {
-                    System.out.println("Too many failures.");
-                    throw(e);
-                }
-                // Inconsistent, will retry.
-            }
-        }
-        return results;
     }
 }
