@@ -5150,7 +5150,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     _parsed_annotations->apply_to(ik);
 
   // Check the aot initialization safe status
-  if (ik->has_aot_safe_initializer()) {
+  if (ik->has_aot_safe_initializer() && CDSConfig::is_initing_classes_at_dump_time()) {
     // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
     //   - all super classes must be included
     //   - all super interfaces that have <clinit> must be included.
