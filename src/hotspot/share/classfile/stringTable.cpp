@@ -948,7 +948,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
   return _shared_table.lookup(wrapped_name, java_lang_String::hash_code(name, len), 0);
 }
 
-// This is called BEFORE we enter the CDS safepoint. We can allocate still Java object arrays to
+// This is called BEFORE we enter the CDS safepoint. We can still allocate Java object arrays to
 // be used by the shared strings table.
 void StringTable::allocate_shared_strings_array(TRAPS) {
   if (!CDSConfig::is_dumping_heap()) {
@@ -957,7 +957,6 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
 
   CompileBroker::wait_for_no_active_tasks();
 
-  precond(THREAD->is_Java_thread());
   precond(CDSConfig::allow_only_single_java_thread());
 
   // At this point, no more strings will be added:
