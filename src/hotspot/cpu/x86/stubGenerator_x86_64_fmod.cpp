@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2023, 2025, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
