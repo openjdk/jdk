@@ -47,6 +47,7 @@ class JvmtiAgentList : AllStatic {
     };
     const Filter _filter;
     JvmtiAgent* _next;
+    Iterator(): _filter(ALL), _next(nullptr) {}
     Iterator(JvmtiAgent* head, Filter filter);
     JvmtiAgent* select(JvmtiAgent* agent) const;
    public:
@@ -56,8 +57,6 @@ class JvmtiAgentList : AllStatic {
 
  private:
   static JvmtiAgent* _head;
-  // address of the last JvmtiAgent::_next (nullptr when the list is empty)
-  static JvmtiAgent** _tail;
 
   static JvmtiAgent* head();
 

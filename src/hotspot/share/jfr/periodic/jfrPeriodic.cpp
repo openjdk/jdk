@@ -291,7 +291,7 @@ static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
 }
 
 TRACE_REQUEST_FUNC(JavaAgent) {
-  JvmtiAgentList::Iterator it =JvmtiAgentList::java_agents();
+  JvmtiAgentList::Iterator it = JvmtiAgentList::java_agents();
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     assert(agent->is_jplis(), "invariant");

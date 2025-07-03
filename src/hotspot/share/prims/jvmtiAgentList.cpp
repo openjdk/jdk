@@ -32,7 +32,6 @@
 #include "runtime/os.inline.hpp"
 
 JvmtiAgent* JvmtiAgentList::_head = nullptr;
-JvmtiAgent** JvmtiAgentList::_tail = nullptr;
 
 // Selection as a function of the filter.
 JvmtiAgent* JvmtiAgentList::Iterator::select(JvmtiAgent* agent) const {
@@ -100,22 +99,20 @@ JvmtiAgentList::Iterator JvmtiAgentList::all() {
 void JvmtiAgentList::add(JvmtiAgent* agent) {
   assert(agent != nullptr, "invariant");
 
+  // address of the pointer to add new agent (&_head when the list is empty or &agent->_next of the last agent in the list)
+  JvmtiAgent** tail_ptr = &_head;
   while (true) {
-    // set _tail to address of agent->_next
-    JvmtiAgent** tail = Atomic::load_acquire(&_tail);
-    if (Atomic::cmpxchg(&_tail, tail, &agent->_next) != tail) {
-      // _tail has been updated by another thread, retry
-      continue;
+    JvmtiAgent* next = Atomic::load(tail_ptr);
+    if (next == nullptr) {
+      // *tail_ptr == nullptr here
+      if (Atomic::cmpxchg(tail_ptr, (JvmtiAgent*)nullptr, agent) != nullptr) {
+        // another thread added an agent, reload next from tail_ptr
+        continue;
+      }
+      // successfully set, exit
+      break;
     }
-
-    if (tail == nullptr) {
-      // the list was empty, set _head
-      Atomic::release_store(&_head, agent);
-    } else {
-      // set "_next" of the last element to point to agent
-      Atomic::store(tail, agent); // *tail = agent;
-    }
-    return;
+    tail_ptr = &next->_next;
   }
 }
 
