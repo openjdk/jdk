@@ -513,7 +513,6 @@ void before_exit(JavaThread* thread, bool halt) {
   os::terminate_signal_thread();
 
   print_statistics();
-  Universe::heap()->print_tracing_info();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;
