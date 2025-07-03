@@ -215,8 +215,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Creates an ImageIcon from an image object.
-     * Setting a {@code null} image means
-     * no image will be rendered.
+     * If the image is {@code null}, no icon will be rendered.
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
      * @param image the image
@@ -373,14 +372,13 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     /**
      * Sets the image displayed by this icon.
      * Setting a {@code null} image means
-     * any existing image will be removed
-     * and no image will be rendered.
+     * any existing icon will be removed
+     * and no icon will be rendered.
      * @param image the image
      */
     public void setImage(Image image) {
         this.image = image;
         if (image == null) {
-            this.description = null;
             width = -1;
             height = -1;
             return;
