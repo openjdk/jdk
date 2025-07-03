@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_CPUTIMESCOPE_HPP
-#define SHARE_GC_SHARED_CPUTIMESCOPE_HPP
+#ifndef SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP
+#define SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP
 
 #include "memory/allocation.hpp"
 
 class VMThread;
 
-class CPUTimeScope : public StackObj {
+class VMThreadCPUTimeScope : public StackObj {
 private:
   jlong   _start;
   bool    _enabled;
@@ -37,8 +37,8 @@ private:
   Thread* _thread;
 
 public:
-  CPUTimeScope(VMThread* thread, bool is_gc_operation);
-  ~CPUTimeScope();
+  VMThreadCPUTimeScope(VMThread* thread, bool is_gc_operation);
+  ~VMThreadCPUTimeScope();
 };
 
-#endif // SHARE_GC_SHARED_CPUTIMESCOPE_HPP
+#endif // SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP

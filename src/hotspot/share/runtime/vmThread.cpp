@@ -24,7 +24,7 @@
 
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/cpuTimeScope.inline.hpp"
+#include "gc/shared/vmThreadCpuTimeScope.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
@@ -280,7 +280,7 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      op->evaluate_at_safepoint() ? 0 : 1);
 
     EventExecuteVMOperation event;
-    CPUTimeScope CPUTimeScope(this, op->is_gc_operation());
+    VMThreadCPUTimeScope CPUTimeScope(this, op->is_gc_operation());
     op->evaluate();
     if (event.should_commit()) {
       post_vm_operation_event(&event, op);

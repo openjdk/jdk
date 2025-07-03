@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/shared/cpuTimeScope.hpp"
+#include "gc/shared/vmThreadCpuTimeScope.hpp"
 
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/universe.hpp"
@@ -30,7 +30,7 @@
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
 
-inline CPUTimeScope::CPUTimeScope(VMThread* thread, bool is_gc_operation)
+inline VMThreadCPUTimeScope::VMThreadCPUTimeScope(VMThread* thread, bool is_gc_operation)
   : _start(0),
     _enabled(os::is_thread_cpu_time_supported()),
     _is_gc_operation(is_gc_operation),
@@ -40,7 +40,7 @@ inline CPUTimeScope::CPUTimeScope(VMThread* thread, bool is_gc_operation)
   }
 }
 
-inline CPUTimeScope::~CPUTimeScope() {
+inline VMThreadCPUTimeScope::~VMThreadCPUTimeScope() {
   if (!_enabled) {
     return;
   }

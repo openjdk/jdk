@@ -203,27 +203,28 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
 
 class CPUTimeThreadClosure : public ThreadClosure {
 private:
-  volatile jlong _cpu_time = 0;
+  jlong _cpu_time = 0;
 
 public:
   virtual void do_thread(Thread* thread) {
     jlong cpu_time = os::thread_cpu_time(thread);
     if (cpu_time != -1) {
-      Atomic::add(&_cpu_time, cpu_time);
+      _cpu_time += cpu_time;
     }
   }
   jlong cpu_time() { return _cpu_time; };
 };
 
 double CollectedHeap::elapsed_gc_cpu_time() const {
-  CPUTimeThreadClosure cl;
-  gc_threads_do(&cl);
   double string_dedup_cpu_time = UseStringDeduplication ?
     os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) : 0;
 
   if (string_dedup_cpu_time == -1) {
     return -1;
   }
+
+  CPUTimeThreadClosure cl;
+  gc_threads_do(&cl);
 
   return (double)(cl.cpu_time() + _vmthread_cpu_time + string_dedup_cpu_time) / NANOSECS_PER_SEC;
 }
