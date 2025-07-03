@@ -2163,7 +2163,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
       }
       probed_indexes[i] = idx;
       probed_regions[i] = r;
-      idx = (++idx) % ShenandoahDirectlyAllocatableRegionCount;
+      idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
     }
     // Failed to allocate in 3 consecutive directly allocatable regions.
     // Try to retire the region if the free size is less than minimal tlab size and try to replace with a new region.
