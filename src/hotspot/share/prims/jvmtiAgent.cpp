@@ -83,11 +83,7 @@ JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_p
   _xrun(false) {}
 
 JvmtiAgent* JvmtiAgent::next() const {
-  return Atomic::load(&_next);
-}
-
-void JvmtiAgent::set_next(JvmtiAgent* agent) {
-  return Atomic::store(&_next, agent);
+  return Atomic::load_acquire(&_next);
 }
 
 const char* JvmtiAgent::name() const {

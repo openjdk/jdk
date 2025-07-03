@@ -71,7 +71,7 @@ bool JvmtiAgentList::Iterator::has_next() const {
 JvmtiAgent* JvmtiAgentList::Iterator::next() {
   assert(_next != nullptr, "must be");
   JvmtiAgent* result = _next;
-  _next = select(_next->_next);
+  _next = select(_next->next());
   return result;
 
 }
