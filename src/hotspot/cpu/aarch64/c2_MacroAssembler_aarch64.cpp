@@ -2083,7 +2083,6 @@ void C2_MacroAssembler::reduce_mul_integral_gt128b(Register dst, BasicType bt, R
                                                    unsigned vector_length_in_bytes,
                                                    FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
-  assert(vector_length_in_bytes <= FloatRegister::sve_vl_max, "unsupported vector length");
   assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
 
   BLOCK_COMMENT("reduce_mul_integral_gt128b {");
@@ -2147,7 +2146,6 @@ void C2_MacroAssembler::reduce_mul_fp_gt128b(FloatRegister dst, BasicType bt, Fl
                                              FloatRegister vsrc, unsigned vector_length_in_bytes,
                                              FloatRegister vtmp) {
   assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
-  assert(vector_length_in_bytes <= FloatRegister::sve_vl_max, "unsupported vector length");
   assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
 
   BLOCK_COMMENT("reduce_mul_fp_gt128b {");
@@ -2190,7 +2188,6 @@ void C2_MacroAssembler::reduce_non_strict_order_mul_fp_gt128b(
     FloatRegister dst, BasicType bt, FloatRegister fsrc, FloatRegister vsrc,
     unsigned vector_length_in_bytes, FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
-  assert(vector_length_in_bytes <= FloatRegister::sve_vl_max, "unsupported vector length");
   assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
 
   // Handle the first iteration separately to preserve the original values in vsrc

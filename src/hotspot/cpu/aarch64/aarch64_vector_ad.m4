@@ -2108,6 +2108,7 @@ instruct reduce_mulI_gt128b(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
     assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_mul_integral_gt128b($dst$$Register, bt, $isrc$$Register,
                                   $vsrc$$FloatRegister, length_in_bytes,
                                   $tmp1$$FloatRegister, $tmp2$$FloatRegister);
@@ -2135,6 +2136,7 @@ instruct reduce_mulL_gt128b(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_mul_integral_gt128b($dst$$Register, T_LONG, $isrc$$Register,
                                   $vsrc$$FloatRegister, length_in_bytes,
                                   $tmp$$FloatRegister, fnoreg);
@@ -2164,6 +2166,7 @@ instruct reduce_mulF_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_mul_fp_gt128b($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
                             $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
   %}
@@ -2178,6 +2181,7 @@ instruct reduce_non_strict_order_mulF_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, v
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_non_strict_order_mul_fp_gt128b($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
                                              $vsrc$$FloatRegister, length_in_bytes, $tmp1$$FloatRegister,
                                              $tmp2$$FloatRegister);
@@ -2205,6 +2209,7 @@ instruct reduce_mulD_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_mul_fp_gt128b($dst$$FloatRegister, T_DOUBLE, $fsrc$$FloatRegister,
                             $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
   %}
@@ -2219,6 +2224,7 @@ instruct reduce_non_strict_order_mulD_gt128b(vRegD dst, vRegD dsrc, vReg vsrc, v
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_non_strict_order_mul_fp_gt128b($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
                                              $vsrc$$FloatRegister, length_in_bytes, $tmp1$$FloatRegister,
                                              $tmp2$$FloatRegister);
