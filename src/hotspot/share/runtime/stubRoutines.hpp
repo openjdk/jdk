@@ -275,7 +275,7 @@ public:
 #undef DEFINE_BLOB_GETTER
 
 #ifdef ASSERT
-  static BlobId stub_to_blob(StubId stubId);
+  static BlobId stub_to_blob(StubId id);
 #endif
 
   // Debugging
