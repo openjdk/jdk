@@ -546,7 +546,11 @@ public class Navigation {
         var selectTheme = contents.getContent("doclet.theme.select_theme");
         navContent.add(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
                 .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SUN_SVG),
-                        selectTheme.toString()))
+                        selectTheme.toString()).addStyle(HtmlIds.THEME_LIGHT.name()))
+                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.MOON_SVG),
+                        selectTheme.toString()).addStyle(HtmlIds.THEME_DARK.name()))
+                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SYSTEM_SVG),
+                        selectTheme.toString()).addStyle(HtmlIds.THEME_OS.name()))
                 .put(HtmlAttr.ARIA_LABEL, selectTheme.toString()));
         navContent.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
                 .add(HtmlTree.DIV(selectTheme))

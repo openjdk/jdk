@@ -355,38 +355,36 @@ document.addEventListener("DOMContentLoaded", function(e) {
     const themePanel = document.querySelector("div#theme-panel");
     var themePanelVisible = false;
     themeButton.addEventListener("click", e => {
-        if (!themePanel.style.display) {
+        if (!themePanelVisible) {
             themePanel.style.display = "block";
             themeButton.setAttribute("aria-expanded", "true");
             themePanelVisible = true;
-        } else {
+            e.stopPropagation();
+        }
+    });
+    function closeThemePanel(e) {
+        if (themePanelVisible && (!e || !themePanel.contains(e.target))) {
             themePanel.style.removeProperty("display");
             themeButton.setAttribute("aria-expanded", "false");
             themePanelVisible = false;
         }
-    });
+    }
     themePanel.querySelectorAll("input").forEach(input => {
         input.removeAttribute("disabled");
         input.addEventListener("change", e => {
             setTheme(e.target.value);
         })
     });
+    const THEMES = ["theme-light", "theme-dark", "theme-os"];
     function setTheme(theme) {
-        if (theme === "theme-os") {
-            document.body.classList.remove("theme-light", "theme-dark");
-        } else if (theme === "theme-light") {
-            document.body.classList.remove("theme-dark");
-            document.body.classList.add("theme-light");
-        } else if (theme === "theme-dark") {
-            document.body.classList.remove("theme-light");
-            document.body.classList.add("theme-dark");
-        }
+        THEMES.forEach(t => {
+            if (t !== theme) document.body.classList.remove(t);
+        });
+        document.body.classList.add(theme);
         localStorage.setItem("theme", theme);
         document.getElementById(theme).checked = true;
-        console.log(themeButton.firstElementChild.href);
     }
-    var theme = localStorage.getItem("theme");
-    setTheme(theme || "theme-light");
+    setTheme(localStorage.getItem("theme") || THEMES[0]);
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         navbar.appendChild(tocMenu);
@@ -406,6 +404,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             elem.select();
             e.preventDefault();
         } else if (e.key === "Escape") {
+            closeThemePanel();
             if (expanded) {
                 collapse();
                 e.preventDefault();
@@ -436,11 +435,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
             toggleButton.classList.remove("expanded")
             toggleButton.setAttribute("aria-expanded", "false");
             expanded = false;
-        }
-        if (themePanelVisible) {
-            themePanel.style.removeProperty("display");
-            themeButton.setAttribute("aria-expanded", "false");
-            themePanelVisible = false;
         }
     }
     function expand() {
@@ -498,6 +492,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         });
     }
     document.querySelector("main").addEventListener("click", collapse);
+    document.querySelector("body").addEventListener("click", closeThemePanel);
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute

@@ -102,39 +102,39 @@ body.theme-dark {
     --body-background-color: #292f35;
     --section-background-color: var(--body-background-color);
     --detail-background-color: var(--body-background-color);
-    --code-background-color: #414c57;
-    --mark-background-color: #8e8d8d;
+    --code-background-color: #353f46;
+    --mark-background-color: #313131;
     --detail-block-color: #f4f4f4;
-    --navbar-background-color: #3d5c77;
+    --navbar-background-color: #37546c;
     --navbar-text-color: #ffffff;
-    --subnav-background-color: #43505b;
-    --subnav-link-color: #f4b336;
+    --subnav-background-color: #404d57;
+    --subnav-link-color: #f5ae29;
     --member-heading-background-color: var(--subnav-background-color);
     --selected-background-color: #f8981d;
     --selected-text-color: #253441;
     --selected-link-color: #4a698a;
-    --table-header-color: #202c35;
-    --even-row-color: #293540;
-    --odd-row-color: #1c2126;
+    --table-header-color: #38444d;
+    --even-row-color: #292f35;
+    --odd-row-color: #21262d;
     --title-color: #fff;
-    --link-color: #f4b336;
-    --link-color-active: #ffc886;
-    --toc-background-color: #373f46;
+    --link-color: #d99a23;
+    --link-color-active: #ffb45b;
+    --toc-background-color: #343b42;
     --toc-highlight-color: var(--subnav-background-color);
-    --toc-hover-color: #333639;
-    --snippet-background-color: #232F37;
+    --toc-hover-color: #323538;
+    --snippet-background-color: #364148;
     --snippet-text-color: var(--block-text-color);
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
-    --border-color: /* #1E282F; */ #334551;
-    --table-border-color: #1E282F;
+    --border-color: #444444;
+    --table-border-color: #717171;
     --tab-border-radius: 2px 2px 0 0;
     --search-input-background-color: #303030;
     --search-input-text-color: #d0d0d0;
     --search-input-placeholder-color: #909090;
     --search-tag-highlight-color: #ffff66;
-    --button-border-color: #626870;
+    --button-border-color: #909090;
     --button-active-filter: brightness(96%);
     --button-focus-filter: brightness(104%);
     --invalid-tag-background-color: #ffe6e6;
@@ -154,39 +154,39 @@ body.theme-dark {
         --body-background-color: #292f35;
         --section-background-color: var(--body-background-color);
         --detail-background-color: var(--body-background-color);
-        --code-background-color: #414c57;
-        --mark-background-color: #8e8d8d;
+        --code-background-color: #353f46;
+        --mark-background-color: #313131;
         --detail-block-color: #f4f4f4;
-        --navbar-background-color: #3d5c77;
+        --navbar-background-color: #37546c;
         --navbar-text-color: #ffffff;
         --subnav-background-color: #43505b;
-        --subnav-link-color: #f4b336;
+        --subnav-link-color: #f5ae29;
         --member-heading-background-color: var(--subnav-background-color);
         --selected-background-color: #f8981d;
         --selected-text-color: #253441;
         --selected-link-color: #4a698a;
-        --table-header-color: #202c35;
+        --table-header-color: var(--subnav-background-color);
         --even-row-color: #293540;
-        --odd-row-color: #1c2126;
+        --odd-row-color: #21262d;
         --title-color: #fff;
-        --link-color: #f4b336;
+        --link-color: #d99a23;
         --link-color-active: #ffc886;
         --toc-background-color: #373f46;
         --toc-highlight-color: var(--subnav-background-color);
         --toc-hover-color: #333639;
-        --snippet-background-color: #232F37;
+        --snippet-background-color: #364148;
         --snippet-text-color: var(--block-text-color);
         --snippet-highlight-color: #f7c590;
         --pre-background-color: var(--snippet-background-color);
         --pre-text-color: var(--snippet-text-color);
-        --border-color: /* #1E282F; */ #334551;
-        --table-border-color: #1E282F;
+        --border-color: #444444;
+        --table-border-color: #717171;
         --tab-border-radius: 2px 2px 0 0;
         --search-input-background-color: #303030;
         --search-input-text-color: #d0d0d0;
         --search-input-placeholder-color: #909090;
         --search-tag-highlight-color: #ffff66;
-        --button-border-color: #626870;
+        --button-border-color: #909090;
         --button-active-filter: brightness(96%);
         --button-focus-filter: brightness(104%);
         --invalid-tag-background-color: #ffe6e6;
@@ -197,62 +197,46 @@ body.theme-dark {
     }
 
     body.theme-light {
-        /* Text colors for body and block elements */
         --body-text-color: #282828;
         --block-text-color: #282828;
-        /* Background colors for various elements */
         --body-background-color: #ffffff;
         --section-background-color: var(--body-background-color);
         --detail-background-color: var(--body-background-color);
         --code-background-color: #f5f5f5;
         --mark-background-color: #f7f7f7;
         --detail-block-color: #f4f4f4;
-        /* Colors for navigation bar and table captions */
         --navbar-background-color: #4D7A97;
         --navbar-text-color: #ffffff;
-        /* Background color for subnavigation and various headers */
         --subnav-background-color: #dee3e9;
         --subnav-link-color: #47688a;
         --member-heading-background-color: var(--subnav-background-color);
-        /* Background and text colors for selected tabs and navigation items */
         --selected-background-color: #f8981d;
         --selected-text-color: #253441;
         --selected-link-color: #4a698a;
-        /* Background colors for generated tables */
         --table-header-color: #ebeff4;
         --even-row-color: #ffffff;
         --odd-row-color: #f0f0f2;
-        /* Text color for page title */
         --title-color: #2c4557;
-        /* Text colors for links */
         --link-color: #437291;
         --link-color-active: #bb7a2a;
-        /* Table of contents */
         --toc-background-color: #f8f8f8;
         --toc-highlight-color: var(--subnav-background-color);
         --toc-hover-color: #e9ecf0;
-        /* Snippet and pre colors */
         --snippet-background-color: #f2f2f4;
         --snippet-text-color: var(--block-text-color);
         --snippet-highlight-color: #f7c590;
         --pre-background-color: var(--snippet-background-color);
         --pre-text-color: var(--snippet-text-color);
-        /* Border colors for structural elements and user defined tables */
         --border-color: #e6e6e6;
         --table-border-color: #000000;
-        /* Styles for table tabs */
         --tab-border-radius: 2px 2px 0 0;
-        /* Search input colors */
         --search-input-background-color: #ffffff;
         --search-input-text-color: #000000;
         --search-input-placeholder-color: #909090;
-        /* Highlight color for active search tag target */
         --search-tag-highlight-color: #ffff66;
-        /* Copy button colors and filters */
         --button-border-color: #b0b8c8;
         --button-active-filter: brightness(96%);
         --button-focus-filter: brightness(104%);
-        /* Colors for invalid tag notifications */
         --invalid-tag-background-color: #ffe6e6;
         --invalid-tag-text-color: #000000;
         div.main-grid img {
@@ -353,7 +337,7 @@ hr {
  */
 .about-language {
     flex: 0 0 auto;
-    padding:0 20px;
+    padding:0 15px;
     margin:0;
     font-size:0.915em;
     max-width: 50%;
@@ -405,8 +389,8 @@ button#navbar-toggle-button {
     display:none;
 }
 button#theme-button {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     padding: 5px;
     margin-right: 4px;
     background-color: transparent;
@@ -416,7 +400,19 @@ button#theme-button {
 }
 button#theme-button:hover,
 button#theme-button:focus-visible {
-    border: 1px solid var(--navbar-text-color);
+    border: 1px solid var(--button-border-color);
+}
+button#theme-button img {
+    display: none;
+}
+body.theme-light button#theme-button img.theme-light {
+    display: inline;
+}
+body.theme-dark button#theme-button img.theme-dark {
+    display: inline;
+}
+body.theme-os button#theme-button img.theme-os {
+    display: inline;
 }
 div#theme-panel {
     display: none;
@@ -492,6 +488,13 @@ ol.sub-nav-list li:not(:first-child) {
     background-size: 10px;
     padding-left: 17px;
     list-style: none;
+}
+body.theme-dark ol.sub-nav-list li:not(:first-child) {
+    background-image: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"> \
+    <path d="m35.763 5.058 38.675 36.885a12.596 12.596 90 0 1 0 18.23L35.763 97.058v-18.32l27.055-25.431a2.975 2.975 90.09 0 0 .007-4.33L35.763 23.38Z" \
+    style="fill:%23fff;stroke-width:.285806" transform="translate(-5.292 -1.058)"/> \
+    </svg>');
 }
 ol.sub-nav-list a {
     padding: 3px;
@@ -1815,7 +1818,6 @@ table.striped > tbody > tr > th {
 }
 @media screen and (max-width: 800px) {
     .about-language {
-        padding: 0 16px;
         max-width: 90%;
     }
     ul.nav-list li {
