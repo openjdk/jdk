@@ -973,7 +973,9 @@ Compile::Compile(ciEnv* ci_env,
 
   // try to reuse an existing stub
   {
-    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, _stub_id, stub_name);
+    StubId stub_id = static_cast<StubId>(_stub_id);
+    BlobId blob_id = StubInfo::blob(stub_id);
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
       RuntimeStub* rs = blob->as_runtime_stub();
       _stub_entry_point = rs->entry_point();

@@ -196,7 +196,7 @@ class C1StubAssemblerCodeGenClosure: public StubAssemblerCodeGenClosure {
 
 CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure* cl) {
   if (id != StubId::NO_STUBID) {
-    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C1Blob, StubInfo::blob(id));
     if (blob != nullptr) {
       return blob;
     }
@@ -236,7 +236,7 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, StubId id, const char
                                                  must_gc_arguments,
                                                  false /* alloc_fail_is_fatal */ );
   if (blob != nullptr && (int)id >= 0) {
-    AOTCodeCache::store_code_blob(*blob, AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+    AOTCodeCache::store_code_blob(*blob, AOTCodeEntry::C1Blob, StubInfo::blob(id));
   }
   return blob;
 }

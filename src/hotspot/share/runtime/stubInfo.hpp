@@ -665,6 +665,10 @@ public:
   static bool is_c1(StubId id);
   static bool is_c2(StubId id);
   static bool is_stubgen(StubId id);
+
+  static bool is_shared(BlobId id);
+  static bool is_c1(BlobId id);
+  static bool is_c2(BlobId id);
   static bool is_stubgen(BlobId id);
 
   // Convert a stub id to a unique, zero-based offset in the range of

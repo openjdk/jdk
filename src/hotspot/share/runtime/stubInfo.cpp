@@ -1029,6 +1029,20 @@ bool StubInfo::is_stubgen(StubId id) {
   return has_group(id, StubGroup::STUBGEN);
 }
 
+// check that a stub belongs to an expected stub group
+
+bool StubInfo::is_shared(BlobId id) {
+  return has_group(id, StubGroup::SHARED);
+}
+
+bool StubInfo::is_c1(BlobId id) {
+  return has_group(id, StubGroup::C1);
+}
+
+bool StubInfo::is_c2(BlobId id) {
+  return has_group(id, StubGroup::C2);
+}
+
 bool StubInfo::is_stubgen(BlobId id) {
   return has_group(id, StubGroup::STUBGEN);
 }

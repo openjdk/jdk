@@ -62,7 +62,7 @@ class SimpleRuntimeFrame {
 //------------------------------generate_uncommon_trap_blob--------------------
 UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)StubId::c2_uncommon_trap_id, name);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
   if (blob != nullptr) {
     return blob->as_uncommon_trap_blob();
   }
@@ -254,7 +254,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 
   UncommonTrapBlob *ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
                                                        SimpleRuntimeFrame::framesize >> 1);
-  AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, (uint)StubId::c2_uncommon_trap_id, name);
+  AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
   return ut_blob;
 }
 
@@ -292,7 +292,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
   const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)StubId::c2_exception_id, name);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)BlobId::c2_exception_id, name);
   if (blob != nullptr) {
     return blob->as_exception_blob();
   }
@@ -398,7 +398,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // Set exception blob
   ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
-  AOTCodeCache::store_code_blob(*ex_blob, AOTCodeEntry::C2Blob, (uint)StubId::c2_exception_id, name);
+  AOTCodeCache::store_code_blob(*ex_blob, AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
   return ex_blob;
 }
 #endif // COMPILER2
