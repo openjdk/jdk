@@ -2362,9 +2362,9 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  // Theoretically, the minimal vector length supported by AArch64
-  // ISA and Vector API species is 64-bit. However, 32-bit or 16-bit
-  // vector length is also allowed for special Vector API usages.
+  // Usually, the shortest vector length supported by AArch64 ISA and
+  // Vector API species is 64 bits. However, we allow 32-bit or 16-bit
+  // vectors in a few special cases.
   int size;
   switch(bt) {
     case T_BOOLEAN:
