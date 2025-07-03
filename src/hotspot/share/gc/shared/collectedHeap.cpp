@@ -657,6 +657,8 @@ void CollectedHeap::log_gc_cpu_time() const {
 }
 
 void CollectedHeap::before_exit() {
+  print_tracing_info();
+
   // Log GC CPU usage.
   log_gc_cpu_time();
 
