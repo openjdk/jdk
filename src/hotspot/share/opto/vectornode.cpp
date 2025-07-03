@@ -1919,7 +1919,7 @@ Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 // This function does the following optimization:
-//   toLong(maskAll(true))  => (-1ULL >> (64 -vlen))
+//   toLong(maskAll(true))  => (-1ULL >> (64 - vlen))
 //   toLong(maskAll(false)) => 0
 Node* VectorMaskToLongNode::Identity_MaskAll(PhaseGVN* phase) {
   Node* in1 = in(1);

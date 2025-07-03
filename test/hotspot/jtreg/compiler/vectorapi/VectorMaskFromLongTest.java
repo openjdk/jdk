@@ -63,6 +63,26 @@ public class VectorMaskFromLongTest {
         }
     }
 
+    @ForceInline
+    public static void testMaskFromLong(VectorSpecies<?> species) {
+        int vlen = species.length();
+        long inputLong = 0L;
+        maskFromLongKernel(species, inputLong);
+        verifyMaskFromLong(species, inputLong, false);
+
+        inputLong = vlen >= 64 ? 0L : (0x1L << vlen);
+        maskFromLongKernel(species, inputLong);
+        verifyMaskFromLong(species, inputLong, false);
+
+        inputLong = -1L;
+        maskFromLongKernel(species, inputLong);
+        verifyMaskFromLong(species, inputLong, true);
+
+        inputLong = (-1L >>> (64 - vlen));
+        maskFromLongKernel(species, inputLong);
+        verifyMaskFromLong(species, inputLong, true);
+    }
+
     @Test
     @IR(counts = { IRNode.MASK_ALL, "> 0",
                    IRNode.VECTOR_LONG_TO_MASK, "= 0" },
@@ -73,22 +93,7 @@ public class VectorMaskFromLongTest {
                    IRNode.VECTOR_LONG_TO_MASK, "= 0" },
         applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     public static void testMaskFromLongByte() {
-        int vlen = B_SPECIES.length();
-        long inputLong = 0L;
-        maskFromLongKernel(B_SPECIES, inputLong);
-        verifyMaskFromLong(B_SPECIES, inputLong, false);
-
-        inputLong = vlen >= 64 ? 0 : (0x1L << vlen);
-        maskFromLongKernel(B_SPECIES, inputLong);
-        verifyMaskFromLong(B_SPECIES, inputLong, false);
-
-        inputLong = -1L;
-        maskFromLongKernel(B_SPECIES, inputLong);
-        verifyMaskFromLong(B_SPECIES, inputLong, true);
-
-        inputLong = (0xFFFFFFFFFFFFFFFFL >>> (64 - vlen));
-        maskFromLongKernel(B_SPECIES, inputLong);
-        verifyMaskFromLong(B_SPECIES, inputLong, true);
+        testMaskFromLong(B_SPECIES);
     }
 
     @Test
@@ -101,22 +106,7 @@ public class VectorMaskFromLongTest {
                    IRNode.VECTOR_LONG_TO_MASK, "= 0" },
         applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     public static void testMaskFromLongShort() {
-        int vlen = S_SPECIES.length();
-        long inputLong = 0L;
-        maskFromLongKernel(S_SPECIES, inputLong);
-        verifyMaskFromLong(S_SPECIES, inputLong, false);
-
-        inputLong = vlen >= 64 ? 0 : (0x1L << vlen);
-        maskFromLongKernel(S_SPECIES, inputLong);
-        verifyMaskFromLong(S_SPECIES, inputLong, false);
-
-        inputLong = -1L;
-        maskFromLongKernel(S_SPECIES, inputLong);
-        verifyMaskFromLong(S_SPECIES, inputLong, true);
-
-        inputLong = (0xFFFFFFFFFFFFFFFFL >>> (64 - vlen));
-        maskFromLongKernel(S_SPECIES, inputLong);
-        verifyMaskFromLong(S_SPECIES, inputLong, true);
+        testMaskFromLong(S_SPECIES);
     }
 
     @Test
@@ -129,22 +119,7 @@ public class VectorMaskFromLongTest {
                    IRNode.VECTOR_LONG_TO_MASK, "= 0" },
         applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     public static void testMaskFromLongInt() {
-        int vlen = I_SPECIES.length();
-        long inputLong = 0L;
-        maskFromLongKernel(I_SPECIES, inputLong);
-        verifyMaskFromLong(I_SPECIES, inputLong, false);
-
-        inputLong = vlen >= 64 ? 0 : (0x1L << vlen);
-        maskFromLongKernel(I_SPECIES, inputLong);
-        verifyMaskFromLong(I_SPECIES, inputLong, false);
-
-        inputLong = -1L;
-        maskFromLongKernel(I_SPECIES, inputLong);
-        verifyMaskFromLong(I_SPECIES, inputLong, true);
-
-        inputLong = (0xFFFFFFFFFFFFFFFFL >>> (64 - vlen));
-        maskFromLongKernel(I_SPECIES, inputLong);
-        verifyMaskFromLong(I_SPECIES, inputLong, true);
+        testMaskFromLong(I_SPECIES);
     }
 
     @Test
@@ -157,22 +132,7 @@ public class VectorMaskFromLongTest {
                    IRNode.VECTOR_LONG_TO_MASK, "= 0" },
         applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     public static void testMaskFromLongLong() {
-        int vlen = L_SPECIES.length();
-        long inputLong = 0L;
-        maskFromLongKernel(L_SPECIES, inputLong);
-        verifyMaskFromLong(L_SPECIES, inputLong, false);
-
-        inputLong = vlen >= 64 ? 0 : (0x1L << vlen);
-        maskFromLongKernel(L_SPECIES, inputLong);
-        verifyMaskFromLong(L_SPECIES, inputLong, false);
-
-        inputLong = -1L;
-        maskFromLongKernel(L_SPECIES, inputLong);
-        verifyMaskFromLong(L_SPECIES, inputLong, true);
-
-        inputLong = (0xFFFFFFFFFFFFFFFFL >>> (64 - vlen));
-        maskFromLongKernel(L_SPECIES, inputLong);
-        verifyMaskFromLong(L_SPECIES, inputLong, true);
+        testMaskFromLong(L_SPECIES);
     }
 
     @Test
@@ -185,22 +145,7 @@ public class VectorMaskFromLongTest {
                    IRNode.VECTOR_LONG_TO_MASK, "= 0" },
         applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     public static void testMaskFromLongFloat() {
-        int vlen = F_SPECIES.length();
-        long inputLong = 0L;
-        maskFromLongKernel(F_SPECIES, inputLong);
-        verifyMaskFromLong(F_SPECIES, inputLong, false);
-
-        inputLong = vlen >= 64 ? 0 : (0x1L << vlen);
-        maskFromLongKernel(F_SPECIES, inputLong);
-        verifyMaskFromLong(F_SPECIES, inputLong, false);
-
-        inputLong = -1L;
-        maskFromLongKernel(F_SPECIES, inputLong);
-        verifyMaskFromLong(F_SPECIES, inputLong, true);
-
-        inputLong = (0xFFFFFFFFFFFFFFFFL >>> (64 - vlen));
-        maskFromLongKernel(F_SPECIES, inputLong);
-        verifyMaskFromLong(F_SPECIES, inputLong, true);
+        testMaskFromLong(F_SPECIES);
     }
 
     @Test
@@ -213,22 +158,7 @@ public class VectorMaskFromLongTest {
                    IRNode.VECTOR_LONG_TO_MASK, "= 0" },
         applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     public static void testMaskFromLongDouble() {
-        int vlen = D_SPECIES.length();
-        long inputLong = 0L;
-        maskFromLongKernel(D_SPECIES, inputLong);
-        verifyMaskFromLong(D_SPECIES, inputLong, false);
-
-        inputLong = vlen >= 64 ? 0 : (0x1L << vlen);
-        maskFromLongKernel(D_SPECIES, inputLong);
-        verifyMaskFromLong(D_SPECIES, inputLong, false);
-
-        inputLong = -1L;
-        maskFromLongKernel(D_SPECIES, inputLong);
-        verifyMaskFromLong(D_SPECIES, inputLong, true);
-
-        inputLong = (0xFFFFFFFFFFFFFFFFL >>> (64 - vlen));
-        maskFromLongKernel(D_SPECIES, inputLong);
-        verifyMaskFromLong(D_SPECIES, inputLong, true);
+        testMaskFromLong(D_SPECIES);
     }
 
     public static void main(String[] args) {
