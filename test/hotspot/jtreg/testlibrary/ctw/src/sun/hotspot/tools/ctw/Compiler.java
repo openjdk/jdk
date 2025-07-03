@@ -86,8 +86,8 @@ public class Compiler {
         try {
             UNSAFE.ensureClassInitialized(aClass);
         } catch (NoClassDefFoundError e) {
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to init class : %s",
-                                 id, aClass.getName(), e));
+            CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to init class : %s%n",
+                id, aClass.getName(), e);
         }
         compileClinit(aClass, id);
 
@@ -101,15 +101,15 @@ public class Compiler {
         try {
             constructors = aClass.getDeclaredConstructors();
         } catch (NoClassDefFoundError e) {
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to get constructors : %s",
-                                 id, aClass.getName(), e));
+            CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to get constructors : %s%n",
+                id, aClass.getName(), e);
         }
 
         try {
             methods = aClass.getDeclaredMethods();
         } catch (NoClassDefFoundError e) {
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to get methods : %s",
-                                 id, aClass.getName(), e));
+            CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to get methods : %s%n",
+                id, aClass.getName(), e);
         }
 
         // Populate profile for all methods to expand the scope of
@@ -157,11 +157,11 @@ public class Compiler {
                     constantPool.getClassAt(i);
                 }
             } catch (NoClassDefFoundError e) {
-                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tNOTE unable to preload : %s",
-                         id, className, e));
+                CompileTheWorld.OUT.printf("[%d]\t%s\tNOTE unable to preload : %s%n",
+                    id, className, e);
             } catch (Throwable t) {
-                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
-                         id, className, t));
+                CompileTheWorld.OUT.printf("[%d]\t%s\tWARNING preloading failed : %s%n",
+                    id, className, t);
                 t.printStackTrace(CompileTheWorld.ERR);
             }
         }
