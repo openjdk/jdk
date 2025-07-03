@@ -211,11 +211,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
     // at runtime, we need to make sure Invokers$Holder is also aot-inited.
-
-    // Can't include InvokerBytecodeGenerator, as it will pull in MethodHandleStatics which has many
-    // environment dependencies (on system properties, etc).
-    // MethodHandleStatics is an example of a class that must NOT get the aot-init treatment,
-    // because of its strong reliance on (a) final fields which are (b) environmentally determined.
     if (ik->has_aot_safe_initializer()) {
       return true;
     }

@@ -2681,7 +2681,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   if (parsed_annotations.has_aot_runtime_setup()) {
     if (name != vmSymbols::runtimeSetup() || signature != vmSymbols::void_method_signature() ||
         !access_flags.is_private() || !access_flags.is_static()) {
-      classfile_parse_error("Incorrect runtimeSetup method declaration in class file %s", CHECK_NULL);
+      classfile_parse_error("@AOTRuntimeSetup method must be declared private static void runtimeSetup() for class %s", CHECK_NULL);
     }
     _has_aot_runtime_setup_method = true;
   }
@@ -5158,20 +5158,18 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     //   - all super interfaces that have <clinit> must be included.
     // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
     // ik's <clinit>.
-    if (_super_klass != nullptr) {
-      if (!_super_klass->has_aot_safe_initializer()) {
-        classfile_parse_error("aot-initialization safe %s requires an aot-initialization safe super class", CHECK);
-      }
-    }
+    guarantee_property(_super_klass == nullptr || _super_klass->has_aot_safe_initializer(),
+                       "Missing @AOTSafeClassInitializer in superclass %s for class %s",
+                       _super_klass->external_name(),
+                       CHECK);
 
-    int len = _transitive_interfaces->length();
+    int len = _local_interfaces->length();
     for (int i = 0; i < len; i++) {
-      InstanceKlass* intf = _transitive_interfaces->at(i);
-      if (intf->class_initializer() != nullptr) {
-        if (!intf->has_aot_safe_initializer()) {
-          classfile_parse_error("superinterface %s not aot-initialization safe for %s", intf->external_name(), CHECK);
-        }
-      }
+      InstanceKlass* intf = _local_interfaces->at(i);
+      guarantee_property(intf->class_initializer() == nullptr || intf->has_aot_safe_initializer(),
+                         "Missing @AOTSafeClassInitializer in superinterface %s for class %s",
+                         intf->external_name(),
+                         CHECK);
     }
 
     if (log_is_enabled(Info, aot, init)) {
