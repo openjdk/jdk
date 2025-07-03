@@ -214,7 +214,8 @@ void Parse::do_monitor_enter() {
 //------------------------------do_monitor_exit--------------------------------
 void Parse::do_monitor_exit() {
   kill_dead_locals();
-
+  if( !GenerateSynchronizationCode )
+    return;
   pop();                        // Pop oop to unlock
   // Because monitors are guaranteed paired (else we bail out), we know
   // the matching Lock for this Unlock.  Hence we know there is no need
