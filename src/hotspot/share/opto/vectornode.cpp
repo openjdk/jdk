@@ -1918,11 +1918,33 @@ Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+// This function does the following optimization:
+//   toLong(maskAll(true))  => (-1ULL >> (64 -vlen))
+//   toLong(maskAll(false)) => 0
+Node* VectorMaskToLongNode::Identity_MaskAll(PhaseGVN* phase) {
+  Node* in1 = in(1);
+  if (in1->Opcode() == Op_VectorStoreMask) {
+    in1 = in1->in(1);
+  }
+  if (in1->bottom_type()->isa_vect() == nullptr) {
+    return nullptr;
+  }
+  int vlen = in1->bottom_type()->is_vect()->length();
+  if (VectorNode::is_all_ones_vector(in1)) {
+    return phase->longcon((-1ULL >> (64 - vlen)));
+  }
+  if (VectorNode::is_all_zeros_vector(in1)) {
+    return phase->longcon(0L);
+  }
+  return nullptr;
+}
+
 Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_VectorLongToMask) {
     return in(1)->in(1);
   }
-  return this;
+  Node* res = Identity_MaskAll(phase);
+  return res == nullptr ? this : res;
 }
 
 Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {

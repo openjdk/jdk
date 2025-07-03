@@ -1396,6 +1396,7 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
   virtual int Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegL; }
   virtual Node* Identity(PhaseGVN* phase);
+  Node* Identity_MaskAll(PhaseGVN* phase);
 };
 
 class VectorLongToMaskNode : public VectorNode {

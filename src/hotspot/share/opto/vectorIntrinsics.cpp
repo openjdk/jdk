@@ -77,7 +77,7 @@ static bool is_maskall_type(const TypeLong* type, int vlen) {
   if (!type->is_con()) {
     return false;
   }
-  long mask = (0xFFFFFFFFFFFFFFFFULL >> (64 - vlen));
+  long mask = (-1ULL >> (64 - vlen));
   long bit  = type->get_con() & mask;
   return bit == 0 || bit == mask;
 }
@@ -701,9 +701,9 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   if (opc == Op_VectorLongToMask &&
       is_maskall_type(bits_type, num_elem) &&
       arch_supports_vector(Op_Replicate, num_elem, converted_elem_bt, checkFlags, true /*has_scalar_args*/)) {
-        opc = Op_Replicate;
-        elem_bt = converted_elem_bt;
-        bits = gvn().longcon(bits_type->get_con() == 0L ? 0L : -1L);
+    opc = Op_Replicate;
+    elem_bt = converted_elem_bt;
+    bits = gvn().longcon((bits_type->get_con() & 1L) == 0L ? 0L : -1L);
   } else if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
     log_if_needed("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
                     num_elem, type2name(elem_bt),
