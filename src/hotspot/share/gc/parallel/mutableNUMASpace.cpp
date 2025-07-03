@@ -92,18 +92,9 @@ void MutableNUMASpace::ensure_parsability() {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
     if (s->top() < top()) { // For all spaces preceding the one containing top()
-      if (s->free_in_words() > 0) {
-        HeapWord* cur_top = s->top();
-        size_t words_left_to_fill = pointer_delta(s->end(), s->top());;
-        while (words_left_to_fill > 0) {
-          size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
-          assert(words_to_fill >= CollectedHeap::min_fill_size(),
-                 "Remaining size (%zu) is too small to fill (based on %zu and %zu)",
-                 words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size());
-          CollectedHeap::fill_with_object(cur_top, words_to_fill);
-          cur_top += words_to_fill;
-          words_left_to_fill -= words_to_fill;
-        }
+      size_t free_words = s->free_in_words();
+      if (free_words > 0) {
+        CollectedHeap::fill_with_objects(s->top(), free_words);
       }
     } else {
       return;
@@ -421,7 +412,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
     MutableSpace *s = ls->space();
     old_region = s->region();
 
-    size_t chunk_byte_size = 0, old_chunk_byte_size = 0;
+    size_t chunk_byte_size = 0;
     if (i < lgrp_spaces()->length() - 1) {
       if (!UseAdaptiveNUMAChunkSizing                                ||
           (UseAdaptiveNUMAChunkSizing && NUMAChunkResizeWeight == 0) ||
@@ -498,7 +489,6 @@ void MutableNUMASpace::set_top(HeapWord* value) {
   for (int i = 0; i < lgrp_spaces()->length();) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
-    HeapWord *top = MAX2(align_down(s->top(), page_size()), s->bottom());
 
     if (s->contains(value)) {
       // Check if setting the chunk's top to a given value would create a hole less than
