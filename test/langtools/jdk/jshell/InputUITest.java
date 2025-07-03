@@ -70,12 +70,12 @@ public class InputUITest extends UITesting {
 
     public void testCloseInputSinkWhileReadingUserInputSimulatingCtrlD() throws Exception {
         var snippets = Map.of(
-                "System.in.read()",                 " ==> 110",
-                "System.console().reader().read()", " ==> 110",
+                "System.in.read()",                 " ==> -1",
+                "System.console().reader().read()", " ==> -1",
                 "System.console().readLine()",      " ==> null",
                 "System.console().readPassword()",  " ==> null",
-                "IO.readln()",                      " ==> \"null\""
-                // TODO , "System.in.readAllBytes()", " ==> " // ... hangs forever
+                "IO.readln()",                      " ==> null",
+                "System.in.readAllBytes()",         " ==> byte[0] {  }"
             );
         for (var snippet : snippets.entrySet()) {
             doRunTest((inputSink, out) -> {
