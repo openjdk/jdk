@@ -2113,37 +2113,29 @@ template<bool IS_TLAB>
 HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
   shenandoah_assert_not_heaplocked();
   assert(req.is_mutator_alloc(), "Must be mutator allocation");
+  assert(req.is_young(), "Mutator allocations always come from young generation.");
   assert(!ShenandoahHeapRegion::requires_humongous(req.size()), "Must not");
   assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
 
   size_t actual_size = req.size();
   size_t min_requested_size = IS_TLAB ? req.min_size() : actual_size;
-  const uint hash = (reinterpret_cast<size_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount;
-
+#if  defined(__APPLE__) && defined(__aarch64__)
+  const uint hash = abs(os::random()) % ShenandoahDirectlyAllocatableRegionCount;
+#else
+  const uint hash = (os::is_MP() ? os::processor_id() : abs(os::random())) % ShenandoahDirectlyAllocatableRegionCount;
+#endif
   for (;;) {
     uint idx = hash % ShenandoahDirectlyAllocatableRegionCount;
-    ShenandoahHeapRegion* retirable_regions[ShenandoahDirectlyAllocatableRegionCount];
-    ShenandoahHeapRegion** retirable_shared_regions_addresses[ShenandoahDirectlyAllocatableRegionCount];
+    ShenandoahHeapRegion* retirable_regions[3];
+    ShenandoahHeapRegion** retirable_shared_regions_addresses[3];
     HeapWord* obj = nullptr;
     uint count = 0u;
-    for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
+    for (uint i = 0u; i < 3; i++) {
       ShenandoahHeapRegion** shared_region_address = _directly_allocatable_regions + idx;
       ShenandoahHeapRegion* r = Atomic::load_acquire(shared_region_address);
       if (r != nullptr && r->reserved_for_direct_allocation()) {
-        if (IS_TLAB) {
-          obj = r->allocate_lab_atomic(req, actual_size);
-        } else {
-          obj = r->allocate_atomic(req.size(), req);
-        }
+        obj = par_allocate_in<IS_TLAB>(r, req, in_new_region);
         if (obj != nullptr) {
-          assert(actual_size > 0, "Must be");
-          req.set_actual_size(actual_size);
-          if (pointer_delta(obj, r->bottom()) == actual_size) {
-            // Set to true if it is the first object/tlab allocated in the region.
-            in_new_region = true;
-          }
-          assert(req.is_young(), "Mutator allocations always come from young generation.");
-          _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
           return obj;
         }
       }
@@ -2161,10 +2153,20 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
     if (count == 0u) {
       ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
       return allocate_for_mutator(req, in_new_region);
-    } else {
-      if (!try_allocate_directly_allocatable_regions(count, retirable_shared_regions_addresses, retirable_regions, min_requested_size)) {
-        return nullptr;
+    }
+
+    if (!try_allocate_directly_allocatable_regions(count, retirable_shared_regions_addresses, retirable_regions, min_requested_size)) {
+      //only tried 3 shared regions, try to steal from other shared regions before OOM
+      for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
+        ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + i);
+        if (r != nullptr) {
+          obj = par_allocate_in<IS_TLAB>(r, req, in_new_region);
+          if (obj != nullptr) {
+            return obj;
+          }
+        }
       }
+      return nullptr;
     }
   }
 }
@@ -2173,6 +2175,26 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
 template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<true>(ShenandoahAllocRequest &req, bool &in_new_region);
 template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<false>(ShenandoahAllocRequest &req, bool &in_new_region);
 
+template<bool IS_TLAB>
+HeapWord* ShenandoahFreeSet::par_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region) {
+  HeapWord* obj = nullptr;
+  size_t actual_size = req.size();
+  if (IS_TLAB) {
+    obj = region->allocate_lab_atomic(req, actual_size);
+  } else {
+    obj = region->allocate_atomic(actual_size, req);
+  }
+  if (obj != nullptr) {
+    assert(actual_size > 0, "Must be");
+    req.set_actual_size(actual_size);
+    if (pointer_delta(obj, region->bottom()) == actual_size) {
+      // Set to true if it is the first object/tlab allocated in the region.
+      in_new_region = true;
+    }
+    _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
+  }
+  return obj;
+}
 
 class DirectlyAllocatableRegionAllocationClosure : public ShenandoahHeapRegionBreakableIterClosure {
 public:

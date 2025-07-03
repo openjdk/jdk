@@ -394,6 +394,9 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
+  template<bool IS_TLAB>
+  HeapWord* par_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
+
   bool try_allocate_directly_allocatable_regions(uint probed_region_count,
                                                  ShenandoahHeapRegion** shared_region_address[],
                                                  ShenandoahHeapRegion* original_shared_regions[],
