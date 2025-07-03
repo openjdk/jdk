@@ -524,12 +524,6 @@ class WindowsPath implements Path {
                     continue;
                 }
 
-                // skip empty names
-                if (name.isEmpty()) {
-                    ignore[i] = true;
-                    continue;
-                }
-
                 // not ".."
                 if (name.charAt(0) != '.' || name.charAt(1) != '.') {
                     prevName = i;
