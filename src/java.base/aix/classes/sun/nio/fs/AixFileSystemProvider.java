@@ -52,9 +52,9 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
         return new AixFileStore(path);
     }
 
-    static boolean supportsUserDefinedFileAttributeView(Path obj) {
+    private static boolean supportsUserDefinedFileAttributeView(UnixPath file) {
         try {
-            FileStore store = Files.getFileStore(obj);
+            FileStore store = new AixFileStore(file);
             return store.supportsFileAttributeView(UserDefinedFileAttributeView.class);
         } catch (IOException e) {
             return false;
@@ -68,8 +68,10 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
                                                                 LinkOption... options)
     {
         if (type == UserDefinedFileAttributeView.class) {
-            return !supportsUserDefinedFileAttributeView(obj) ? null :
-                (V) new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj), Util.followLinks(options));
+            UnixPath file = UnixPath.toUnixPath(obj);
+            return supportsUserDefinedFileAttributeView(file) ?
+                (V) new AixUserDefinedFileAttributeView(file, Util.followLinks(options))
+                : null;
         }
         return super.getFileAttributeView(obj, type, options);
     }
@@ -80,8 +82,10 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
                                                          LinkOption... options)
     {
         if (name.equals("user")) {
-            return !supportsUserDefinedFileAttributeView(obj) ? null :
-                new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj), Util.followLinks(options));
+            UnixPath file = UnixPath.toUnixPath(obj);
+            return supportsUserDefinedFileAttributeView(file) ?
+                new AixUserDefinedFileAttributeView(file, Util.followLinks(options))
+                : null;
         }
         return super.getFileAttributeView(obj, name, options);
     }
