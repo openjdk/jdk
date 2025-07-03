@@ -596,10 +596,6 @@ Modules::ArchivedProperty& Modules::archived_prop(size_t i) {
   return _archived_props[i];
 }
 
-int Modules::compare_module_names(const char** p1, const char** p2) {
-  return strcmp(*p1, *p2);
-}
-
 void Modules::ArchivedProperty::runtime_check() const {
   ResourceMark rm;
   const char* runtime_value = get_flattened_value();
@@ -626,6 +622,11 @@ void Modules::ArchivedProperty::runtime_check() const {
     MetaspaceShared::report_loading_error("Disabling optimized module handling");
     CDSConfig::stop_using_optimized_module_handling();
   }
+}
+
+
+static int compare_module_names(const char** p1, const char** p2) {
+  return strcmp(*p1, *p2);
 }
 
 // Caller needs ResourceMark
@@ -668,7 +669,7 @@ const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() 
   // list[2] = "java.base"
   // list[3] = ""
   // list[4] = ""
-  list.sort(Modules::compare_module_names);
+  list.sort(compare_module_names);
 
   const char* prefix = "";
   stringStream st;
