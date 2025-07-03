@@ -100,7 +100,6 @@
 // For additional information on string deduplication, please see JEP 192,
 // https://openjdk.org/jeps/192
 
-#include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"

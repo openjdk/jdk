@@ -33,8 +33,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/perfDataTypes.hpp"
 
-class VMThreadCPUTimeScope;
-
 class CPUTimeGroups : public AllStatic {
 public:
   enum class CPUTimeType {

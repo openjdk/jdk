@@ -425,6 +425,8 @@ protected:
 
   void print_relative_to_gc(GCWhen::Type when) const;
 
+  void log_gc_cpu_time() const;
+
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -462,7 +464,6 @@ protected:
   virtual void print_tracing_info() const = 0;
 
   double elapsed_gc_cpu_time() const;
-  void log_gc_cpu_time() const;
 
   void print_before_gc() const;
   void print_after_gc() const;

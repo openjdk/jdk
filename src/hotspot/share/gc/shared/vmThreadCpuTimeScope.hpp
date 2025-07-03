@@ -34,7 +34,7 @@ private:
   jlong   _start;
   bool    _enabled;
   bool    _is_gc_operation;
-  Thread* _thread;
+  VMThread* _thread;
 
 public:
   VMThreadCPUTimeScope(VMThread* thread, bool is_gc_operation);
