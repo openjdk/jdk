@@ -53,8 +53,6 @@ public:
 };
 
 class CPUTimeCounters: public CHeapObj<mtServiceability> {
-  friend class VMThreadCPUTimeScope;
-
 private:
   // CPUTimeCounters is a singleton instance.
   CPUTimeCounters();

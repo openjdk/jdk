@@ -53,6 +53,6 @@ inline VMThreadCPUTimeScope::~VMThreadCPUTimeScope() {
   }
 
   if (UsePerfData) {
-    CPUTimeCounters::get_instance()->update_counter(CPUTimeGroups::CPUTimeType::vm, end);
+    CPUTimeCounters::update_counter(CPUTimeGroups::CPUTimeType::vm, end);
   }
 }
