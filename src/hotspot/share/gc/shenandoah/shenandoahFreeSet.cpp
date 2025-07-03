@@ -888,7 +888,7 @@ HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAll
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     size_t min_size = (req.type() == ShenandoahAllocRequest::_alloc_tlab) ? req.min_size() : req.size();
-    if (alloc_capacity(r) >= min_size) {
+    if (!r->reserved_for_direct_allocation() && alloc_capacity(r) >= min_size) {
       HeapWord* result = try_allocate_in(r, req, in_new_region);
       if (result != nullptr) {
         return result;
@@ -2115,15 +2115,17 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
   assert(!ShenandoahHeapRegion::requires_humongous(req.size()), "Must not");
   assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
 
+  size_t actual_size = req.size();
+  size_t min_requested_size = IS_TLAB ? req.min_size() : actual_size;
   uint hash = (reinterpret_cast<size_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount;
   const uint max_probes = ShenandoahDirectlyAllocatableRegionCount;
+
   for (;;) {
     uint idx = hash % ShenandoahDirectlyAllocatableRegionCount;
     ShenandoahHeapRegion* probed_regions[max_probes];
     uint probed_indexes[max_probes];
     HeapWord* obj = nullptr;
-    size_t actual_size = req.size();
-    size_t min_requested_size = IS_TLAB ? req.min_size() : actual_size;
+    uint count = 0;
     for (uint i = 0u; i < max_probes; i++) {
       ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
       if (r != nullptr && r->reserved_for_direct_allocation()) {
@@ -2144,14 +2146,23 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
           return obj;
         }
       }
-      probed_indexes[i] = idx;
-      probed_regions[i] = r;
+
+      if (r == nullptr || r->free() < PLAB::min_size()) {
+        probed_indexes[count] = idx;
+        probed_regions[count] = r;
+        count++;
+      }
       idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
     }
     // Failed to allocate in 3 consecutive directly allocatable regions.
     // Try to retire the region if the free size is less than minimal tlab size and try to replace with a new region.
-    if (!try_refill_directly_allocatable_regions(max_probes, probed_indexes, probed_regions, min_requested_size)) {
-      return nullptr;
+    if (count == 0u) {
+      ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
+      return allocate_for_mutator(req, in_new_region);
+    } else {
+      if (!try_refill_directly_allocatable_regions(count, probed_indexes, probed_regions, min_requested_size)) {
+        return nullptr;
+      }
     }
   }
 }
@@ -2192,26 +2203,23 @@ public:
   }
 };
 
-bool ShenandoahFreeSet::try_refill_directly_allocatable_regions(uint probed_region_count,
+bool ShenandoahFreeSet::try_refill_directly_allocatable_regions(const uint region_count,
                                                                 uint probed_indexes[],
                                                                 ShenandoahHeapRegion* probed_regions[],
                                                                 size_t min_req_size) {
   assert(Thread::current()->is_Java_thread(), "Must be mutator");
-  assert(probed_region_count > 0u && probed_region_count <= ShenandoahDirectlyAllocatableRegionCount, "Must be");
+  assert(region_count > 0u && region_count <= ShenandoahDirectlyAllocatableRegionCount, "Must be");
   shenandoah_assert_not_heaplocked();
 
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
-  ShenandoahHeapRegion** regions_to_refill[probed_region_count];
+  ShenandoahHeapRegion** regions_to_refill[region_count];
   uint refill_count = 0u;
   uint regions_refilled_by_others = 0u;
-  for (uint i = 0u; i < probed_region_count; i++) {
+  for (uint i = 0u; i < region_count; i++) {
     ShenandoahHeapRegion* r = Atomic::load(_directly_allocatable_regions + probed_indexes[i]);
     if (r == nullptr || r == probed_regions[i]) {
       if (r == nullptr) {
         regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
-      } else if (!r->reserved_for_direct_allocation()) {
-        regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
-        Atomic::store(_directly_allocatable_regions + probed_indexes[i] , static_cast<ShenandoahHeapRegion*>(nullptr));
       } else {
         r->release_from_direct_allocation();
         OrderAccess::fence();
