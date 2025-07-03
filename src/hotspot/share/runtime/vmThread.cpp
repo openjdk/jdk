@@ -297,9 +297,9 @@ void VMThread::evaluate_operation(VM_Operation* op) {
   }
 }
 
-class HandshakeALotClosure : public HandshakeClosure {
+class ALotOfHandshakeClosure : public HandshakeClosure {
  public:
-  HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
+  ALotOfHandshakeClosure() : HandshakeClosure("ALotOfHandshakeClosure") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
     JavaThread::cast(thread)->verify_states_for_handshake();
@@ -453,8 +453,8 @@ void VMThread::wait_for_operation() {
     if (handshake_or_safepoint_alot()) {
       if (HandshakeALot) {
         MutexUnlocker mul(VMOperation_lock);
-        HandshakeALotClosure hal_cl;
-        Handshake::execute(&hal_cl);
+        ALotOfHandshakeClosure aohc;
+        Handshake::execute(&aohc);
       }
       // When we unlocked above someone might have setup a new op.
       if (_next_vm_operation != nullptr) {

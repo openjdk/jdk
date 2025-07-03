@@ -2768,8 +2768,10 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
   int result_length = ik->methods()->length();
   jmethodID* result_list = (jmethodID*)jvmtiMalloc(result_length * sizeof(jmethodID));
   int index;
-  bool jmethodids_found = true;
   int skipped = 0;  // skip overpass methods
+
+  // Make jmethodIDs for all non-overpass methods.
+  ik->make_methods_jmethod_ids();
 
   for (index = 0; index < result_length; index++) {
     Method* m = ik->methods()->at(index);
@@ -2783,20 +2785,8 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
       skipped++;
       continue;
     }
-    jmethodID id;
-    if (jmethodids_found) {
-      id = m->find_jmethod_id_or_null();
-      if (id == nullptr) {
-        // If we find an uninitialized value, make sure there is
-        // enough space for all the uninitialized values we might
-        // find.
-        ik->ensure_space_for_methodids(index);
-        jmethodids_found = false;
-        id = m->jmethod_id();
-      }
-    } else {
-      id = m->jmethod_id();
-    }
+    jmethodID id = m->find_jmethod_id_or_null();
+    assert(id != nullptr, "should be created above");
     result_list[result_index] = id;
   }
 
