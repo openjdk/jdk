@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary A simple smoke test which checks URLPermission implies,
  *          and verify that HttpURLConnection either succeeds or throws
@@ -38,17 +38,21 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetPermission;
+import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketPermission;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLPermission;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.Permissions;
+import java.util.List;
+
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class LookupTest {
@@ -59,7 +63,7 @@ public class LookupTest {
     static void test(String url,
                      boolean throwsSecException,
                      boolean throwsIOException) {
-        ProxySelector.setDefault(null);
+        configureSystemWideNoProxy();
         URL u;
         InputStream is = null;
         try {
@@ -98,6 +102,23 @@ public class LookupTest {
             System.err.printf("was expecting a %s\n", "IOException");
             throw new RuntimeException("was expecting an exception");
         }
+    }
+
+    private static void configureSystemWideNoProxy() {
+        ProxySelector.setDefault(new ProxySelector() {
+
+            @Override
+            public List<Proxy> select(URI uri) {
+                return List.of(Proxy.NO_PROXY);
+            }
+
+            @Override
+            public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+                System.err.printf("Unexpected connection failure to the proxy: uri=`%s`, socketAddress=`%s`%n", uri, sa);
+                ioe.printStackTrace(System.err);
+            }
+
+        });
     }
 
     static final String HOSTS_FILE_NAME = System.getProperty("jdk.net.hosts.file");
