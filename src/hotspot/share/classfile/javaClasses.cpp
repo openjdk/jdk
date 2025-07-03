@@ -1978,7 +1978,6 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   // Handshake with target
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-
   GetStackTraceHandshakeClosure gsthc(Handle(THREAD, thread_oop));
   do {
    Handshake::execute(&gsthc, &tlh, java_thread);
