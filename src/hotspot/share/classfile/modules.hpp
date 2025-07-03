@@ -68,6 +68,7 @@ private:
   static ArchivedProperty _archived_props[];
   static constexpr size_t num_archived_props();
   static ArchivedProperty& archived_prop(size_t i);
+  static int compare_module_names(const char** p1, const char** p2);
 public:
 #endif
 

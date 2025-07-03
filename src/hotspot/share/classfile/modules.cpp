@@ -30,7 +30,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -597,6 +596,10 @@ Modules::ArchivedProperty& Modules::archived_prop(size_t i) {
   return _archived_props[i];
 }
 
+int Modules::compare_module_names(const char** p1, const char** p2) {
+  return strcmp(*p1, *p2);
+}
+
 void Modules::ArchivedProperty::runtime_check() const {
   ResourceMark rm;
   const char* runtime_value = get_flattened_value();
@@ -665,7 +668,7 @@ const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() 
   // list[2] = "java.base"
   // list[3] = ""
   // list[4] = ""
-  list.sort(ClassLoaderExt::compare_module_names);
+  list.sort(Modules::compare_module_names);
 
   const char* prefix = "";
   stringStream st;
