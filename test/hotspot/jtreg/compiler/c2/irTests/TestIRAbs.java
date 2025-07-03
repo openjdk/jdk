@@ -25,7 +25,7 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
-import compiler.lib.generators.Generators;
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 
 /*
@@ -38,6 +38,29 @@ import compiler.lib.ir_framework.*;
  */
 
 public class TestIRAbs {
+    private static final RestrictableGenerator<Integer> INTS = Generators.G.ints();
+    private static final RestrictableGenerator<Long> LONGS = Generators.G.longs();
+
+    private static final IntRange INT_RANGE = IntRange.generate(INTS);
+    private static final LongRange LONG_RANGE = LongRange.generate(LONGS);
+
+    private static final int INT_1 = INTS.next();
+    private static final int INT_2 = INTS.next();
+    private static final int INT_3 = INTS.next();
+    private static final int INT_4 = INTS.next();
+    private static final int INT_5 = INTS.next();
+    private static final int INT_6 = INTS.next();
+    private static final int INT_7 = INTS.next();
+    private static final int INT_8 = INTS.next();
+
+    private static final long LONG_1 = LONGS.next();
+    private static final long LONG_2 = LONGS.next();
+    private static final long LONG_3 = LONGS.next();
+    private static final long LONG_4 = LONGS.next();
+    private static final long LONG_5 = LONGS.next();
+    private static final long LONG_6 = LONGS.next();
+    private static final long LONG_7 = LONGS.next();
+    private static final long LONG_8 = LONGS.next();
 
     public static char [] cspecial = {
         0, 42, 128, 256, 1024, 4096, 65535
@@ -232,14 +255,14 @@ public class TestIRAbs {
         }
     }
 
-    @Run(test = {"testIntRange1", "testIntRange2", "testIntRange3", "testIntRange4"})
+    @Run(test = {"testIntRange1", "testIntRange2", "testIntRange3", "testIntRange4", "testIntRangeFolding"})
     public void checkIntRanges(RunInfo info) {
         for (int i : ispecial) {
             checkIntRange(i);
         }
 
         for (int j = 0; j < 20; j++) {
-            int i = Generators.G.ints().next();
+            int i = INTS.next();
             checkIntRange(i);
         }
     }
@@ -250,16 +273,17 @@ public class TestIRAbs {
         Asserts.assertEquals(Math.abs((i & 7) - 4) < 0, testIntRange2(i));
         Asserts.assertEquals(Math.abs(-((i & 7) + 2)) < 2, testIntRange3(i));
         Asserts.assertEquals(Math.abs(-((i & 7) + 2)) > 9, testIntRange4(i));
+        Asserts.assertEquals(testIntRangeFoldingInterpreter(i), testIntRangeFolding(i));
     }
 
-    @Run(test = {"testLongRange1", "testLongRange2", "testLongRange3", "testLongRange4"})
+    @Run(test = {"testLongRange1", "testLongRange2", "testLongRange3", "testLongRange4", "testLongRangeFolding"})
     public void checkLongRanges(RunInfo info) {
         for (long l : lspecial) {
           checkLongRange(l);
         }
 
         for (int j = 0; j < 20; j++) {
-            long l = Generators.G.longs().next();
+            long l = LONGS.next();
             checkLongRange(l);
         }
     }
@@ -270,6 +294,7 @@ public class TestIRAbs {
         Asserts.assertEquals(Math.abs((l & 7) - 4) < 0, testLongRange2(l));
         Asserts.assertEquals(Math.abs(-((l & 7) + 2)) < 2, testLongRange3(l));
         Asserts.assertEquals(Math.abs(-((l & 7) + 2)) > 9, testLongRange4(l));
+        Asserts.assertEquals(testLongRangeFoldingInterpreter(l), testLongRangeFolding(l));
     }
 
     // Int ranges
@@ -302,6 +327,42 @@ public class TestIRAbs {
         return Math.abs(-((in & 7) + 2)) > 9;
     }
 
+    @Test
+    public int testIntRangeFolding(int in) {
+        int c = INT_RANGE.clamp(in);
+        int v = Math.abs(c);
+
+        int sum = 0;
+        if (v > INT_1) { sum += 1; }
+        if (v > INT_2) { sum += 2; }
+        if (v > INT_3) { sum += 4; }
+        if (v > INT_4) { sum += 8; }
+        if (v > INT_5) { sum += 16; }
+        if (v > INT_6) { sum += 32; }
+        if (v > INT_7) { sum += 64; }
+        if (v > INT_8) { sum += 128; }
+
+        return sum;
+    }
+
+    @DontCompile
+    public int testIntRangeFoldingInterpreter(int in) {
+        int c = INT_RANGE.clamp(in);
+        int v = Math.abs(c);
+
+        int sum = 0;
+        if (v > INT_1) { sum += 1; }
+        if (v > INT_2) { sum += 2; }
+        if (v > INT_3) { sum += 4; }
+        if (v > INT_4) { sum += 8; }
+        if (v > INT_5) { sum += 16; }
+        if (v > INT_6) { sum += 32; }
+        if (v > INT_7) { sum += 64; }
+        if (v > INT_8) { sum += 128; }
+
+        return sum;
+    }
+
     // Long ranges
 
     @Test
@@ -330,5 +391,87 @@ public class TestIRAbs {
     public boolean testLongRange4(long in) {
         // [-9, -2] => [2, 9]
         return Math.abs(-((in & 7) + 2)) > 9;
+    }
+
+    @Test
+    public int testLongRangeFolding(long in) {
+        long c = LONG_RANGE.clamp(in);
+        long v = Math.abs(c);
+
+        int sum = 0;
+        if (v > LONG_1) { sum += 1; }
+        if (v > LONG_2) { sum += 2; }
+        if (v > LONG_3) { sum += 4; }
+        if (v > LONG_4) { sum += 8; }
+        if (v > LONG_5) { sum += 16; }
+        if (v > LONG_6) { sum += 32; }
+        if (v > LONG_7) { sum += 64; }
+        if (v > LONG_8) { sum += 128; }
+
+        return sum;
+    }
+
+    @DontCompile
+    public int testLongRangeFoldingInterpreter(long in) {
+        long c = LONG_RANGE.clamp(in);
+        long v = Math.abs(c);
+
+        int sum = 0;
+        if (v > LONG_1) { sum += 1; }
+        if (v > LONG_2) { sum += 2; }
+        if (v > LONG_3) { sum += 4; }
+        if (v > LONG_4) { sum += 8; }
+        if (v > LONG_5) { sum += 16; }
+        if (v > LONG_6) { sum += 32; }
+        if (v > LONG_7) { sum += 64; }
+        if (v > LONG_8) { sum += 128; }
+
+        return sum;
+    }
+
+    record IntRange(int lo, int hi) {
+        IntRange {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        int clamp(int v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static IntRange generate(Generator<Integer> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new IntRange(a, b);
+        }
+    }
+
+    record LongRange(long lo, long hi) {
+        LongRange {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        long clamp(long v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static LongRange generate(Generator<Long> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new LongRange(a, b);
+        }
     }
 }

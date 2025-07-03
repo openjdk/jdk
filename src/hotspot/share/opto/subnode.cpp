@@ -1956,6 +1956,7 @@ static const IntegerType* integral_abs_value(const IntegerType* t) {
     return IntegerType::TYPE_DOMAIN;
   }
 
+  // Knowing that min_type is not in t, we know there is no overflow.
   NativeType lo_abs = ABS(t->_lo);
   NativeType hi_abs = ABS(t->_hi);
 
