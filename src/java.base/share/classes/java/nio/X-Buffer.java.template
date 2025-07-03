@@ -1938,7 +1938,12 @@ public abstract sealed class $Type$Buffer
      */
     @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        get(position() + srcBegin, dst, dstBegin, srcEnd - srcBegin);
+        // Check [srcBegin,srcEnd) is a subset of [0,limit()-position)
+        int pos = position();
+        int lim = limit();
+        Objects.checkFromToIndex(srcBegin, srcEnd, lim - pos);
+
+        get(pos + srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     /**

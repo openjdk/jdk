@@ -72,6 +72,19 @@ public class GetChars {
     }
 
     @Test
+    public void testSrcBeginIsNegationOfPosition() {
+        CB.position(1);
+        Assert.assertThrows(IndexOutOfBoundsException.class,
+                            () -> {
+                                try {
+                                    CB.getChars(-1, 3, new char[4], 0);
+                                } finally {
+                                    CB.position(0);
+                                }
+                            });
+    }
+
+    @Test
     public void testDstBeginIsNegative() {
         Assert.assertThrows(IndexOutOfBoundsException.class,
                 () -> CB.getChars(0, 4, new char[4], -1));
