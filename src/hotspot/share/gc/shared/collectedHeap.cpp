@@ -220,7 +220,7 @@ double CollectedHeap::elapsed_gc_cpu_time() const {
     os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) : 0;
 
   if (string_dedup_cpu_time == -1) {
-    return -1;
+    string_dedup_cpu_time = 0;
   }
 
   CPUTimeThreadClosure cl;
