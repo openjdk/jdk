@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -94,7 +95,8 @@ public class ClassGenerator {
         WILDCARDS_EXTENDS("wildcards.extends"),
         SUPPRESS_WARNINGS("suppress.warnings"),
         LINT_CATEGORY("lint.category"),
-        DIAGNOSTIC_FLAGS("diagnostic.flags");
+        DIAGNOSTIC_FLAGS_EMPTY("diagnostic.flags.empty"),
+        DIAGNOSTIC_FLAGS_NON_EMPTY("diagnostic.flags.non-empty");
 
         /** stub key (as it appears in the property file) */
         String key;
@@ -264,7 +266,8 @@ public class ClassGenerator {
                 .filter(MessageLine::isDiagnosticFlags)
                 .map(MessageLine::diagnosticFlags)
                 .flatMap(Stream::of)
-                .map(s -> "\"" + s + "\"")
+                .map(s -> s.replace('-', '_'))
+                .map(s -> s.toUpperCase(Locale.ROOT))
                 .collect(Collectors.joining(", "));
         String factoryName = factoryName(key);
         if (msgInfo.getTypes().isEmpty()) {
@@ -272,13 +275,17 @@ public class ClassGenerator {
             String factoryField;
             if (lintCategory == null) {
                 factoryField = StubKind.FACTORY_FIELD.format(k.keyClazz, factoryName,
-                        !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
+                        diagnosticFlags.isEmpty() ?
+                          StubKind.DIAGNOSTIC_FLAGS_EMPTY.format() :
+                          StubKind.DIAGNOSTIC_FLAGS_NON_EMPTY.format(diagnosticFlags),
                         "\"" + keyParts[0] + "\"",
                         "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
                         javadoc);
             } else {
                 factoryField = StubKind.FACTORY_FIELD_LINT.format(k.keyClazz, factoryName,
-                        !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
+                        diagnosticFlags.isEmpty() ?
+                          StubKind.DIAGNOSTIC_FLAGS_EMPTY.format() :
+                          StubKind.DIAGNOSTIC_FLAGS_NON_EMPTY.format(diagnosticFlags),
                         StubKind.LINT_CATEGORY.format("\"" + lintCategory + "\""),
                         "\"" + keyParts[0] + "\"",
                         "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
@@ -296,13 +303,17 @@ public class ClassGenerator {
                 String methodBody;
                 if (lintCategory == null) {
                     methodBody = StubKind.FACTORY_METHOD_BODY.format(k.keyClazz,
-                            !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
+                            diagnosticFlags.isEmpty() ?
+                              StubKind.DIAGNOSTIC_FLAGS_EMPTY.format() :
+                              StubKind.DIAGNOSTIC_FLAGS_NON_EMPTY.format(diagnosticFlags),
                             "\"" + keyParts[0] + "\"",
                             "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
                             argNames.stream().collect(Collectors.joining(", ")));
                 } else {
                     methodBody = StubKind.FACTORY_METHOD_BODY_LINT.format(k.keyClazz,
-                            !diagnosticFlags.isEmpty() ? StubKind.DIAGNOSTIC_FLAGS.format(diagnosticFlags) : "null",
+                            diagnosticFlags.isEmpty() ?
+                              StubKind.DIAGNOSTIC_FLAGS_EMPTY.format() :
+                              StubKind.DIAGNOSTIC_FLAGS_NON_EMPTY.format(diagnosticFlags),
                             StubKind.LINT_CATEGORY.format("\"" + lintCategory + "\""),
                             "\"" + keyParts[0] + "\"",
                             "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
