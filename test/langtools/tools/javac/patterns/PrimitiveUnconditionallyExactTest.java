@@ -31,8 +31,7 @@ import java.util.Map;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
@@ -57,7 +56,7 @@ public class PrimitiveUnconditionallyExactTest {
             """;
 
     @Test
-    public void testInRecordPattern() {
+    public void testNoUnusedVarInRecordPattern() {
         var testBytes = InMemoryJavaCompiler.compile(Map.of("Test", SOURCE)).get("Test");
         var code = ClassFile.of().parse(testBytes).methods().stream()
                 .filter(m -> m.methodName().equalsString("get")).findFirst()
@@ -86,10 +85,16 @@ public class PrimitiveUnconditionallyExactTest {
     public void testExpressionExecution() {
         int a = 0;
         boolean b = (a = 5) instanceof int;
+        assertTrue(b);
         assertEquals(5, a);
+        b = (a = -24) instanceof int cap;
+        assertTrue(b);
+        assertEquals(-24, a);
         b = (a = 42) instanceof long;
+        assertTrue(b);
         assertEquals(42, a);
-        b = (a = -28) instanceof double;
+        b = (a = -28) instanceof double cap2;
+        assertTrue(b);
         assertEquals(-28, a);
     }
 }
