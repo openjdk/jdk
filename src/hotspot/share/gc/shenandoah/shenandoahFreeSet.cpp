@@ -2098,12 +2098,13 @@ HeapWord* ShenandoahFreeSet::allocate_humongous(ShenandoahAllocRequest& req) {
 
 void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
   for (uint i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
-    ShenandoahHeapRegion* r = Atomic::load(_directly_allocatable_regions + i);
+    ShenandoahHeapRegion** address = _directly_allocatable_regions + i;
+    ShenandoahHeapRegion* r = Atomic::load_acquire(address);
     if (r != nullptr) {
       if (r->reserved_for_direct_allocation()) {
         r->release_from_direct_allocation();
       }
-      Atomic::release_store(_directly_allocatable_regions + i, static_cast<ShenandoahHeapRegion*>(nullptr));
+      Atomic::release_store(address, static_cast<ShenandoahHeapRegion*>(nullptr));
     }
   }
 }
@@ -2117,17 +2118,17 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
 
   size_t actual_size = req.size();
   size_t min_requested_size = IS_TLAB ? req.min_size() : actual_size;
-  uint hash = (reinterpret_cast<size_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount;
-  const uint max_probes = ShenandoahDirectlyAllocatableRegionCount;
+  const uint hash = (reinterpret_cast<size_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount;
 
   for (;;) {
     uint idx = hash % ShenandoahDirectlyAllocatableRegionCount;
-    ShenandoahHeapRegion* probed_regions[max_probes];
-    uint probed_indexes[max_probes];
+    ShenandoahHeapRegion* retirable_regions[ShenandoahDirectlyAllocatableRegionCount];
+    ShenandoahHeapRegion** retirable_shared_regions_addresses[ShenandoahDirectlyAllocatableRegionCount];
     HeapWord* obj = nullptr;
-    uint count = 0;
-    for (uint i = 0u; i < max_probes; i++) {
-      ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
+    uint count = 0u;
+    for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
+      ShenandoahHeapRegion** shared_region_address = _directly_allocatable_regions + idx;
+      ShenandoahHeapRegion* r = Atomic::load_acquire(shared_region_address);
       if (r != nullptr && r->reserved_for_direct_allocation()) {
         if (IS_TLAB) {
           obj = r->allocate_lab_atomic(req, actual_size);
@@ -2148,8 +2149,9 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
       }
 
       if (r == nullptr || r->free() < PLAB::min_size()) {
-        probed_indexes[count] = idx;
-        probed_regions[count] = r;
+        // Region is ready to retire
+        retirable_regions[count] = r;
+        retirable_shared_regions_addresses[count] = shared_region_address;
         count++;
       }
       idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
@@ -2160,7 +2162,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
       ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
       return allocate_for_mutator(req, in_new_region);
     } else {
-      if (!try_refill_directly_allocatable_regions(count, probed_indexes, probed_regions, min_requested_size)) {
+      if (!try_allocate_directly_allocatable_regions(count, retirable_shared_regions_addresses, retirable_regions, min_requested_size)) {
         return nullptr;
       }
     }
@@ -2172,15 +2174,26 @@ template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<true>(Shen
 template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<false>(ShenandoahAllocRequest &req, bool &in_new_region);
 
 
-class RefillDirectlyAllocatableRegionClosure : public  ShenandoahHeapRegionBreakableIterClosure {
+class DirectlyAllocatableRegionAllocationClosure : public ShenandoahHeapRegionBreakableIterClosure {
 public:
-  ShenandoahHeapRegion** *_regions_to_refill;
-  uint _refill_count;
-  uint _refilled_count;
-  size_t _min_req_byte_size;
+  ShenandoahHeapRegion*** _shared_region_addresses;
+  const uint _shared_region_address_count;
+  uint _current_index = 0u;
+  const uint _request_count;
+  uint _fulfilled_count = 0u;
+  const size_t _min_req_byte_size;
 
-  RefillDirectlyAllocatableRegionClosure(ShenandoahHeapRegion** *regions_to_refill, uint refill_count, size_t min_req_size) :
-  _regions_to_refill(regions_to_refill), _refill_count(refill_count), _refilled_count(0u), _min_req_byte_size(min_req_size * HeapWordSize) {}
+  DirectlyAllocatableRegionAllocationClosure(
+    ShenandoahHeapRegion*** shared_region_addresses, const uint shared_region_address_count, const uint request_count, const size_t min_req_size)
+  : _shared_region_addresses(shared_region_addresses), _shared_region_address_count(shared_region_address_count), _request_count(request_count), _min_req_byte_size(min_req_size * HeapWordSize) {
+    skip_invalid_address();
+  }
+
+  void skip_invalid_address() {
+    while (_current_index < _shared_region_address_count && _shared_region_addresses[_current_index] == nullptr) {
+      _current_index++;
+    }
+  }
 
   bool heap_region_do(ShenandoahHeapRegion *r) override {
     if (r->reserved_for_direct_allocation()) return false;
@@ -2194,60 +2207,70 @@ public:
       r->set_affiliation(YOUNG_GENERATION);
       r->make_regular_allocation(YOUNG_GENERATION);
       ShenandoahHeap::heap()->generation_for(r->affiliation())->increment_affiliated_region_count();
-      Atomic::store(_regions_to_refill[_refilled_count++], r);
+      Atomic::store(_shared_region_addresses[_current_index++], r);
+      skip_invalid_address();
+      _fulfilled_count++;
     } else if (r->affiliation() == YOUNG_GENERATION && r->is_regular() && r->free() >= _min_req_byte_size) {
       r->reserve_for_direct_allocation();
-      Atomic::store(_regions_to_refill[_refilled_count++], r);
+      Atomic::store(_shared_region_addresses[_current_index++], r);
+      skip_invalid_address();
+      _fulfilled_count++;
     }
-    return _refilled_count == _refill_count;
+    return _fulfilled_count == _request_count || _current_index == _shared_region_address_count;
   }
 };
 
-bool ShenandoahFreeSet::try_refill_directly_allocatable_regions(const uint region_count,
-                                                                uint probed_indexes[],
-                                                                ShenandoahHeapRegion* probed_regions[],
-                                                                size_t min_req_size) {
+bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(const uint region_count,
+                                                                  ShenandoahHeapRegion** shared_region_address[],
+                                                                  ShenandoahHeapRegion* original_shared_regions[],
+                                                                  size_t min_req_size) {
   assert(Thread::current()->is_Java_thread(), "Must be mutator");
   assert(region_count > 0u && region_count <= ShenandoahDirectlyAllocatableRegionCount, "Must be");
   shenandoah_assert_not_heaplocked();
 
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
-  ShenandoahHeapRegion** regions_to_refill[region_count];
-  uint refill_count = 0u;
-  uint regions_refilled_by_others = 0u;
+  uint request_count = 0u;
+  uint fulfilled_by_others = 0u;
   for (uint i = 0u; i < region_count; i++) {
-    ShenandoahHeapRegion* r = Atomic::load(_directly_allocatable_regions + probed_indexes[i]);
-    if (r == nullptr || r == probed_regions[i]) {
-      if (r == nullptr) {
-        regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
-      } else {
-        r->release_from_direct_allocation();
-        OrderAccess::fence();
-        if (r->free() < PLAB::min_size() && _partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, r->index())) {
-          _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
-        }
-        regions_to_refill[refill_count++] = _directly_allocatable_regions + probed_indexes[i];
-        Atomic::store(_directly_allocatable_regions + probed_indexes[i] , static_cast<ShenandoahHeapRegion *>(nullptr));
-      }
+    ShenandoahHeapRegion* r = Atomic::load_acquire(shared_region_address[i]);
+    if (r != original_shared_regions[i]) {
+      fulfilled_by_others++;
+      shared_region_address[i] = nullptr;
+      original_shared_regions[i] = nullptr;
     } else {
-      regions_refilled_by_others++;
+      request_count++;
+      if (r != nullptr) {
+        if (r->free() < PLAB::min_size()) {
+          r->release_from_direct_allocation();
+          Atomic::release_store(shared_region_address[i], static_cast<ShenandoahHeapRegion*>(nullptr));
+          if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, r->index())) {
+            _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
+          }
+        } else {
+          // Although r is same as original one when tried CAS allocation, but it has more free space.
+          fulfilled_by_others++;
+          shared_region_address[i] = nullptr;
+          original_shared_regions[i] = nullptr;
+          request_count--;
+        }
+      }
     }
   }
 
-  RefillDirectlyAllocatableRegionClosure cl(regions_to_refill, refill_count, min_req_size);
-  if (refill_count > 0u) {
+  DirectlyAllocatableRegionAllocationClosure cl(shared_region_address, region_count, request_count, min_req_size);
+  if (request_count > 0u) {
     iterate_regions_for_alloc<true, false>(&cl, true);
   }
-  return cl._refilled_count > 0u || regions_refilled_by_others > 0u;
+  return cl._fulfilled_count > 0u || fulfilled_by_others > 0u;
 }
 
 void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion* region) {
   shenandoah_assert_heaplocked();
   region->release_from_direct_allocation();
   for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
-    ShenandoahHeapRegion** shared_region = _directly_allocatable_regions + i;
-    if (Atomic::load(shared_region) == region) {
-      Atomic::release_store(shared_region, static_cast<ShenandoahHeapRegion *>(nullptr));
+    ShenandoahHeapRegion** shared_region_address = _directly_allocatable_regions + i;
+    if (Atomic::load_acquire(shared_region_address) == region) {
+      Atomic::release_store(shared_region_address, static_cast<ShenandoahHeapRegion *>(nullptr));
       break;
     }
   }

@@ -394,10 +394,10 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
-  bool try_refill_directly_allocatable_regions(uint probed_region_count,
-                                               uint probed_indexes[],
-                                               ShenandoahHeapRegion* probed_regions[],
-                                               size_t min_req_size);
+  bool try_allocate_directly_allocatable_regions(uint probed_region_count,
+                                                 ShenandoahHeapRegion** shared_region_address[],
+                                                 ShenandoahHeapRegion* original_shared_regions[],
+                                                 size_t min_req_size);
   template<bool IS_MUTATOR, bool IS_OLD>
   uint iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty);
 
