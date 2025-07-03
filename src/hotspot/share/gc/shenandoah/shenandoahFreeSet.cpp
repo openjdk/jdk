@@ -2243,6 +2243,7 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(const uint reg
         if (r->free() < PLAB::min_size()) {
           r->release_from_direct_allocation();
           Atomic::release_store(shared_region_address[i], static_cast<ShenandoahHeapRegion*>(nullptr));
+          // TODO confirm when&why the region is moved out of Mutator partition?
           if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, r->index())) {
             _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
           }
