@@ -27,6 +27,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "logging/log.hpp"
@@ -112,7 +113,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         immediate_garbage += garbage;
         region->make_trash_immediate();
         if (region->reserved_for_direct_allocation()) {
-          region->release_from_direct_allocation();
+          heap->free_set()->release_directly_allocatable_region(region);
         }
       } else {
         // This is our candidate for later consideration.

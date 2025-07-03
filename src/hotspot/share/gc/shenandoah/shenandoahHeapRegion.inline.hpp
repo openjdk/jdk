@@ -112,7 +112,7 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocReque
 HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAllocRequest& req) {
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
   assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
-  assert(this->is_regular(), "must be a regular region");
+  assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
   for (;;) {
     if (!reserved_for_direct_allocation()) {
@@ -133,7 +133,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
 HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size) {
   assert(req.is_lab_alloc(), "Only lab alloc");
   assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
-  assert(this->is_regular(), "must be a regular region");
+  assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
   size_t adjusted_size = req.size();
   for (;;) {
     if (!reserved_for_direct_allocation()) {

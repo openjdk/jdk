@@ -415,7 +415,6 @@ private:
                                                uint probed_indexes[],
                                                ShenandoahHeapRegion* probed_regions[],
                                                size_t min_req_size);
-
   template<bool IS_MUTATOR, bool IS_OLD>
   uint iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty);
 
@@ -499,6 +498,8 @@ public:
   HeapWord* allocate_humongous(ShenandoahAllocRequest &req);
 
   void release_all_directly_allocatable_regions();
+
+  void release_directly_allocatable_region(ShenandoahHeapRegion *region);
 
   template<bool IS_TLAB>
   HeapWord* par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);

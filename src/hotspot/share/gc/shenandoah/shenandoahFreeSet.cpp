@@ -449,7 +449,7 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, She
           _used[int(orig_partition)], used, idx);
 
   if (orig_partition == ShenandoahFreeSetPartitionId::Mutator && r->reserved_for_direct_allocation()) {
-    r->release_from_direct_allocation();
+    ShenandoahHeap::heap()->free_set()->release_directly_allocatable_region(r);
   }
 
   _membership[int(orig_partition)].clear_bit(idx);
@@ -2117,7 +2117,7 @@ void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
       if (r->reserved_for_direct_allocation()) {
         r->release_from_direct_allocation();
       }
-      Atomic::store(_directly_allocatable_regions + i, static_cast<ShenandoahHeapRegion*>(nullptr));
+      Atomic::release_store(_directly_allocatable_regions + i, static_cast<ShenandoahHeapRegion*>(nullptr));
     }
   }
 }
@@ -2248,6 +2248,18 @@ bool ShenandoahFreeSet::try_refill_directly_allocatable_regions(uint probed_regi
     iterate_regions_for_alloc<true, false>(&cl, true);
   }
   return cl._refilled_count > 0u || regions_refilled_by_others > 0u;
+}
+
+void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion* region) {
+  shenandoah_assert_heaplocked();
+  region->release_from_direct_allocation();
+  for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
+    ShenandoahHeapRegion** shared_region = _directly_allocatable_regions + i;
+    if (Atomic::load(shared_region) == region) {
+      Atomic::release_store(shared_region, static_cast<ShenandoahHeapRegion *>(nullptr));
+      break;
+    }
+  }
 }
 
 template<bool IS_MUTATOR, bool IS_OLD>
