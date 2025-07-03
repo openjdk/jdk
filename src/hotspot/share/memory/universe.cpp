@@ -29,6 +29,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -897,13 +898,19 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
-  ClassLoaderData::init_null_class_loader_data();
-
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
+  }
+#endif
+
+  ClassLoaderData::init_null_class_loader_data();
+
+#if INCLUDE_CDS
+  if (CDSConfig::is_using_full_module_graph()) {
+    ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data();
   }
   if (CDSConfig::is_dumping_archive()) {
     CDSConfig::prepare_for_dumping();
