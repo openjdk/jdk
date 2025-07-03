@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -563,6 +564,29 @@ public class ReplToolTesting {
     public void assertOutput(String got, String expected, String display) {
         if (expected != null) {
             assertEquals(got, expected, display + ".\n");
+        }
+    }
+
+    public void assertCompletions(boolean after, String cmd, String out, String err,
+            String print, String usererr, String terminalOut) {
+        if (!after) {
+            try {
+                Class<?> sourceCodeAnalysisImpl = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
+                Method waitBackgroundTaskFinished = sourceCodeAnalysisImpl.getDeclaredMethod("waitCurrentBackgroundTasksFinished");
+
+                waitBackgroundTaskFinished.setAccessible(true);
+                waitBackgroundTaskFinished.invoke(null);
+            } catch (ReflectiveOperationException ex) {
+                throw new AssertionError(ex.getMessage(), ex);
+            }
+
+            setCommandInput(cmd + "\t");
+        } else {
+            assertOutput(getCommandOutput().trim(), out==null? out : out.trim(), "command output: " + cmd);
+            assertOutput(getCommandErrorOutput(), err, "command error: " + cmd);
+            assertOutput(getUserOutput(), print, "user output: " + cmd);
+            assertOutput(getUserErrorOutput(), usererr, "user error: " + cmd);
+            assertOutput(getTerminalOutput(), terminalOut, "terminal output: " + cmd);
         }
     }
 

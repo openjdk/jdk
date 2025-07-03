@@ -1998,11 +1998,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private void refreshIndexes(int version) {
         try {
             Collection<Path> paths = new ArrayList<>();
-            MemoryFileManager fm = proc.taskFactory.fileManager();
+            MemoryFileManager fm = proc.taskFactory.configuredFileManager();
 
             appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, paths);
             appendPaths(fm, StandardLocation.CLASS_PATH, paths);
             appendPaths(fm, StandardLocation.SOURCE_PATH, paths);
+            appendPaths(fm, StandardLocation.MODULE_PATH, paths);
 
             Map<Path, ClassIndex> newIndexes = new HashMap<>();
 
@@ -2195,11 +2196,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             upToDate = classpathVersion == indexVersion;
         }
         while (!upToDate) {
-            INDEXER.submit(() -> {}).get();
+            waitCurrentBackgroundTasksFinished();
             synchronized (currentIndexes) {
                 upToDate = classpathVersion == indexVersion;
             }
         }
+    }
+
+    public static void waitCurrentBackgroundTasksFinished() throws Exception {
+        INDEXER.submit(() -> {}).get();
     }
 
     /**

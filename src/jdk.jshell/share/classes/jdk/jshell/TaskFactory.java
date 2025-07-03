@@ -138,6 +138,11 @@ class TaskFactory {
         return fileManager;
     }
 
+    MemoryFileManager configuredFileManager() {
+        parse("", _ -> null);
+        return fileManager;
+    }
+
     public <Z> Z parse(String source,
                        boolean forceExpression,
                        Worker<ParseTask, Z> worker) {
