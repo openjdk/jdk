@@ -132,7 +132,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
 
-  static jlong _vmthread_cpu_time;
+  jlong _vmthread_cpu_time;
 
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
@@ -250,7 +250,7 @@ protected:
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
 
-  static void add_vmthread_cpu_time(jlong time);
+  void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 

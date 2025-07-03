@@ -67,7 +67,6 @@ size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
-jlong  CollectedHeap::_vmthread_cpu_time = 0;
 
 class GCLogMessage : public FormatBuffer<512> {};
 
@@ -219,7 +218,14 @@ public:
 double CollectedHeap::elapsed_gc_cpu_time() const {
   CPUTimeThreadClosure cl;
   gc_threads_do(&cl);
-  return (double)(cl.cpu_time() + _vmthread_cpu_time) / NANOSECS_PER_SEC;
+  double string_dedup_cpu_time = UseStringDeduplication ?
+    os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) : 0;
+
+  if (string_dedup_cpu_time == -1) {
+    return -1;
+  }
+
+  return (double)(cl.cpu_time() + _vmthread_cpu_time + string_dedup_cpu_time) / NANOSECS_PER_SEC;
 }
 
 void CollectedHeap::print_before_gc() const {
@@ -303,6 +309,7 @@ CollectedHeap::CollectedHeap() :
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),
+  _vmthread_cpu_time(0),
   _gc_cause(GCCause::_no_gc),
   _gc_lastcause(GCCause::_no_gc)
 {
@@ -630,22 +637,22 @@ void CollectedHeap::log_gc_cpu_time() const {
   if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
     double process_cpu_time = os::elapsed_process_cpu_time();
     double gc_cpu_time = elapsed_gc_cpu_time();
-    double string_dedup_cpu_time = UseStringDeduplication ? (double)os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) / NANOSECS_PER_SEC : 0;
 
-    if (process_cpu_time == -1 || gc_cpu_time == -1 || string_dedup_cpu_time == -1) {
+    if (process_cpu_time == -1 || gc_cpu_time == -1) {
       log_warning(gc, cpu)("Could not sample CPU time");
       return;
     }
 
     double usage;
-    if (gc_cpu_time > process_cpu_time || process_cpu_time == 0 || gc_cpu_time == 0) {
+    if (gc_cpu_time > process_cpu_time ||
+        process_cpu_time == 0 || gc_cpu_time == 0) {
       // This can happen e.g. for short running processes with
       // low CPU utilization
       usage = 0;
     } else {
-      usage = 100 * (gc_cpu_time + string_dedup_cpu_time) / process_cpu_time;
+      usage = 100 * gc_cpu_time / process_cpu_time;
     }
-    out.print("GC CPU usage: %.2f%% (Process: %.4fs GC: %.4fs)", usage, process_cpu_time, gc_cpu_time + string_dedup_cpu_time);
+    out.print("GC CPU usage: %.2f%% (Process: %.4fs GC: %.4fs)", usage, process_cpu_time, gc_cpu_time);
   }
 }
 
