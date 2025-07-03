@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
  *      8179071 8202537 8221432 8222098 8251317 8258794 8265315
- *      8296248 8306116 8174269 8347146
+ *      8296248 8306116 8174269 8347146 8346948
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -138,15 +138,15 @@ public class IncludeLocalesPluginTest {
                 List.of(
                         "(root)", "en", "en_001", "en_150", "en_AG", "en_AI",
                         "en_AT", "en_AU", "en_BB", "en_BE", "en_BM", "en_BS", "en_BW", "en_BZ",
-                        "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
-                        "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
-                        "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GY", "en_HK", "en_ID",
-                        "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM", "en_KE",
+                        "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_CZ", "en_DE",
+                        "en_DG", "en_DK", "en_DM", "en_ER", "en_ES", "en_FI", "en_FJ", "en_FK", "en_FM", "en_FR",
+                        "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GS", "en_GY", "en_HK", "en_HU", "en_ID",
+                        "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_IT", "en_JE", "en_JM", "en_KE",
                         "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG", "en_MO",
                         "en_MS", "en_MT", "en_MU", "en_MV", "en_MW", "en_MY", "en_NA", "en_NF", "en_NG",
-                        "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG", "en_PK", "en_PN",
-                        "en_PW", "en_RW", "en_SB", "en_SC", "en_SD", "en_SE", "en_SG", "en_SH",
-                        "en_SI", "en_SL", "en_SS", "en_SX", "en_SZ", "en_TC", "en_TK", "en_TO",
+                        "en_NL", "en_NO", "en_NR", "en_NU", "en_NZ", "en_PG", "en_PK", "en_PL", "en_PN", "en_PT",
+                        "en_PW", "en_RO", "en_RW", "en_SB", "en_SC", "en_SD", "en_SE", "en_SG", "en_SH",
+                        "en_SI", "en_SK", "en_SL", "en_SS", "en_SX", "en_SZ", "en_TC", "en_TK", "en_TO",
                         "en_TT", "en_TV", "en_TZ", "en_UG", "en_US", "en_US_#Latn", "en_US_POSIX", "en_VC", "en_VG", "en_VU", "en_WS",
                         "en_ZA", "en_ZM", "en_ZW", "es", "es_419", "es_AR", "es_BO", "es_BR", "es_BZ",
                         "es_CL", "es_CO", "es_CR", "es_CU", "es_DO", "es_EC", "es_GT", "es_HN",
@@ -175,15 +175,15 @@ public class IncludeLocalesPluginTest {
                 List.of(
                         "(root)", "en", "en_001", "en_150", "en_AE", "en_AG", "en_AI", "en_AS", "en_AT",
                         "en_AU", "en_BB", "en_BE", "en_BI", "en_BM", "en_BS", "en_BW", "en_BZ",
-                        "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
-                        "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
-                        "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GU", "en_GY",
-                        "en_HK", "en_ID", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM",
+                        "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_CZ", "en_DE",
+                        "en_DG", "en_DK", "en_DM", "en_ER", "en_ES", "en_FI", "en_FJ", "en_FK", "en_FM", "en_FR",
+                        "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GS", "en_GU", "en_GY",
+                        "en_HK", "en_HU", "en_ID", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_IT", "en_JE", "en_JM",
                         "en_KE", "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG",
                         "en_MH", "en_MO", "en_MP", "en_MS", "en_MT", "en_MU", "en_MV", "en_MW", "en_MY",
-                        "en_NA", "en_NF", "en_NG", "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG",
-                        "en_PH", "en_PK", "en_PN", "en_PR", "en_PW", "en_RW", "en_SB", "en_SC",
-                        "en_SD", "en_SE", "en_SG", "en_SH", "en_SI", "en_SL", "en_SS", "en_SX",
+                        "en_NA", "en_NF", "en_NG", "en_NL", "en_NO", "en_NR", "en_NU", "en_NZ", "en_PG",
+                        "en_PH", "en_PK", "en_PL", "en_PN", "en_PR", "en_PT", "en_PW", "en_RO", "en_RW", "en_SB", "en_SC",
+                        "en_SD", "en_SE", "en_SG", "en_SH", "en_SI", "en_SK", "en_SL", "en_SS", "en_SX",
                         "en_SZ", "en_TC", "en_TK", "en_TO", "en_TT", "en_TV", "en_TZ", "en_UG",
                         "en_UM", "en_US", "en_US_#Latn", "en_US_POSIX", "en_VC", "en_VG", "en_VI", "en_VU",
                         "en_WS", "en_ZA", "en_ZM", "en_ZW", "ja", "ja_JP", "ja_JP_#Jpan",
@@ -355,15 +355,15 @@ public class IncludeLocalesPluginTest {
                 List.of(
                         "(root)", "en", "en_001", "en_150", "en_AE", "en_AG", "en_AI", "en_AS", "en_AT",
                         "en_AU", "en_BB", "en_BE", "en_BI", "en_BM", "en_BS", "en_BW", "en_BZ",
-                        "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_DE",
-                        "en_DG", "en_DK", "en_DM", "en_ER", "en_FI", "en_FJ", "en_FK", "en_FM",
-                        "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GU", "en_GY",
-                        "en_HK", "en_ID", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_JE", "en_JM",
+                        "en_CA", "en_CC", "en_CH", "en_CK", "en_CM", "en_CX", "en_CY", "en_CZ", "en_DE",
+                        "en_DG", "en_DK", "en_DM", "en_ER", "en_ES", "en_FI", "en_FJ", "en_FK", "en_FM", "en_FR",
+                        "en_GB", "en_GD", "en_GG", "en_GH", "en_GI", "en_GM", "en_GS", "en_GU", "en_GY",
+                        "en_HK", "en_HU", "en_ID", "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_IT", "en_JE", "en_JM",
                         "en_KE", "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG",
                         "en_MH", "en_MO", "en_MP", "en_MS", "en_MT", "en_MU", "en_MV", "en_MW", "en_MY",
-                        "en_NA", "en_NF", "en_NG", "en_NL", "en_NR", "en_NU", "en_NZ", "en_PG",
-                        "en_PH", "en_PK", "en_PN", "en_PR", "en_PW", "en_RW", "en_SB", "en_SC",
-                        "en_SD", "en_SE", "en_SG", "en_SH", "en_SI", "en_SL", "en_SS", "en_SX",
+                        "en_NA", "en_NF", "en_NG", "en_NL", "en_NO", "en_NR", "en_NU", "en_NZ", "en_PG",
+                        "en_PH", "en_PK", "en_PL", "en_PN", "en_PR", "en_PT", "en_PW", "en_RO", "en_RW", "en_SB", "en_SC",
+                        "en_SD", "en_SE", "en_SG", "en_SH", "en_SI", "en_SK", "en_SL", "en_SS", "en_SX",
                         "en_SZ", "en_TC", "en_TK", "en_TO", "en_TT", "en_TV", "en_TZ", "en_UG",
                         "en_UM", "en_US", "en_US_#Latn", "en_US_POSIX", "en_VC", "en_VG", "en_VI", "en_VU",
                         "en_WS", "en_ZA", "en_ZM", "en_ZW"),

@@ -21,10 +21,10 @@
  * questions.
  */
 
-#include "opto/vtransform.hpp"
-#include "opto/vectornode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/vectornode.hpp"
+#include "opto/vtransform.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
@@ -576,6 +576,10 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     assert(first->req() == 2 && req() == 2, "only one input expected");
     int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
+  } else if (VectorNode::is_reinterpret_opcode(opc)) {
+    assert(first->req() == 2 && req() == 2, "only one input expected");
+    const TypeVect* vt = TypeVect::make(bt, vlen);
+    vn = new VectorReinterpretNode(in1, vt, in1->bottom_type()->is_vect());
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     opc = Op_RShiftI;
     vn = VectorNode::make(opc, in1, in2, vlen, bt);
@@ -592,8 +596,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
   } else {
     assert(req() == 4, "three inputs expected");
-    assert(opc == Op_FmaD ||
-           opc == Op_FmaF ||
+    assert(opc == Op_FmaD  ||
+           opc == Op_FmaF  ||
+           opc == Op_FmaHF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "element wise operation must be from this list");

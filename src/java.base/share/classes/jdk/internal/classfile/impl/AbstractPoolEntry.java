@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
 
@@ -71,11 +73,6 @@ public abstract sealed class AbstractPoolEntry {
 
     static int hashClassFromDescriptor(int descriptorHash) {
         return hash1(PoolEntry.TAG_CLASS, descriptorHash);
-    }
-
-    static boolean isArrayDescriptor(Utf8EntryImpl cs) {
-        // Do not throw out-of-bounds for empty strings
-        return !cs.isEmpty() && cs.charAt(0) == '[';
     }
 
     @SuppressWarnings("unchecked")
@@ -298,9 +295,13 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public Utf8EntryImpl clone(ConstantPoolBuilder cp) {
-            return (state == State.STRING && rawBytes == null)
+            var ret = (state == State.STRING && rawBytes == null)
                    ? (Utf8EntryImpl) cp.utf8Entry(stringValue)
                    : ((SplitConstantPool) cp).maybeCloneUtf8Entry(this);
+            var mySym = this.typeSym;
+            if (ret.typeSym == null && mySym != null)
+                ret.typeSym = mySym;
+            return ret;
         }
 
         @Override
@@ -438,6 +439,79 @@ public abstract sealed class AbstractPoolEntry {
             typeSym = ret;
             return ret;
         }
+
+        @Override
+        public boolean isFieldType(ClassDesc desc) {
+            var sym = typeSym;
+            if (sym != null) {
+                return sym instanceof ClassDesc cd && cd.equals(desc);
+            }
+
+            // In parsing, Utf8Entry is not even inflated by this point
+            // We can operate on the raw byte arrays, as all ascii are compatible
+            var ret = state == State.RAW
+                    ? rawEqualsSym(desc)
+                    : equalsString(desc.descriptorString());
+            if (ret)
+                this.typeSym = desc;
+            return ret;
+        }
+
+        private boolean rawEqualsSym(ClassDesc desc) {
+            int len = rawLen;
+            if (len < 1) {
+                return false;
+            }
+            int c = rawBytes[offset];
+            if (len == 1) {
+                return desc instanceof PrimitiveClassDescImpl pd && pd.wrapper().basicTypeChar() == c;
+            } else if (c == 'L') {
+                return desc.isClassOrInterface() && equalsString(desc.descriptorString());
+            } else if (c == '[') {
+                return desc.isArray() && equalsString(desc.descriptorString());
+            } else {
+                return false;
+            }
+        }
+
+        boolean mayBeArrayDescriptor() {
+            if (state == State.RAW) {
+                return rawLen > 0 && rawBytes[offset] == '[';
+            } else {
+                return charLen > 0 && charAt(0) == '[';
+            }
+        }
+
+        @Override
+        public boolean isMethodType(MethodTypeDesc desc) {
+            var sym = typeSym;
+            if (sym != null) {
+                return sym instanceof MethodTypeDesc mtd && mtd.equals(desc);
+            }
+
+            // In parsing, Utf8Entry is not even inflated by this point
+            // We can operate on the raw byte arrays, as all ascii are compatible
+            var ret = state == State.RAW
+                    ? rawEqualsSym(desc)
+                    : equalsString(desc.descriptorString());
+            if (ret)
+                this.typeSym = desc;
+            return ret;
+        }
+
+        private boolean rawEqualsSym(MethodTypeDesc desc) {
+            if (rawLen < 3) {
+                return false;
+            }
+            var bytes = rawBytes;
+            int index = offset;
+            int c = bytes[index] | (bytes[index + 1] << Byte.SIZE);
+            if ((desc.parameterCount() == 0) != (c == ('(' | (')' << Byte.SIZE)))) {
+                // heuristic - avoid inflation for no-arg status mismatch
+                return false;
+            }
+            return (c & 0xFF) == '(' && equalsString(desc.descriptorString());
+        }
     }
 
     abstract static sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
@@ -538,12 +612,34 @@ public abstract sealed class AbstractPoolEntry {
                 return sym;
             }
 
-            if (isArrayDescriptor(ref1)) {
+            if (ref1.mayBeArrayDescriptor()) {
                 sym = ref1.fieldTypeSymbol(); // array, symbol already available
             } else {
                 sym = ClassDesc.ofInternalName(asInternalName()); // class or interface
             }
             return this.sym = sym;
+        }
+
+        @Override
+        public boolean matches(ClassDesc desc) {
+            var sym = this.sym;
+            if (sym != null) {
+                return sym.equals(desc);
+            }
+
+            var ret = rawEqualsSymbol(desc);
+            if (ret)
+                this.sym = desc;
+            return ret;
+        }
+
+        private boolean rawEqualsSymbol(ClassDesc desc) {
+            if (ref1.mayBeArrayDescriptor()) {
+                return desc.isArray() && ref1.isFieldType(desc);
+            } else {
+                return desc instanceof ClassOrInterfaceDescImpl coid
+                        && ref1.equalsString(coid.internalName());
+            }
         }
 
         @Override
@@ -571,7 +667,7 @@ public abstract sealed class AbstractPoolEntry {
             if (hash != 0)
                 return hash;
 
-            return this.hash = hashClassFromUtf8(isArrayDescriptor(ref1), ref1);
+            return this.hash = hashClassFromUtf8(ref1.mayBeArrayDescriptor(), ref1);
         }
     }
 
@@ -594,6 +690,11 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public PackageDesc asSymbol() {
             return PackageDesc.ofInternalName(asInternalName());
+        }
+
+        @Override
+        public boolean matches(PackageDesc desc) {
+            return ref1.equalsString(desc.internalName());
         }
 
         @Override
@@ -625,6 +726,11 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public ModuleDesc asSymbol() {
             return ModuleDesc.of(asInternalName());
+        }
+
+        @Override
+        public boolean matches(ModuleDesc desc) {
+            return ref1.equalsString(desc.name());
         }
 
         @Override
@@ -837,6 +943,8 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractDynamicConstantPoolEntry
             implements InvokeDynamicEntry {
 
+        public @Stable DynamicCallSiteDesc sym;
+
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                    NameAndTypeEntryImpl nameAndType) {
             super(cpm, index, hash, bootstrapMethod, nameAndType);
@@ -855,12 +963,26 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public InvokeDynamicEntry clone(ConstantPoolBuilder cp) {
-            return cp.invokeDynamicEntry(bootstrap(), nameAndType());
+            var ret = (InvokeDynamicEntryImpl) cp.invokeDynamicEntry(bootstrap(), nameAndType());
+            var mySym = this.sym;
+            if (ret.sym == null && mySym != null)
+                ret.sym = mySym;
+            return ret;
+        }
+
+        @Override
+        public DynamicCallSiteDesc asSymbol() {
+            var cache = this.sym;
+            if (cache != null)
+                return cache;
+            return this.sym = InvokeDynamicEntry.super.asSymbol();
         }
     }
 
     public static final class ConstantDynamicEntryImpl extends AbstractDynamicConstantPoolEntry
             implements ConstantDynamicEntry {
+
+        public @Stable DynamicConstantDesc<?> sym;
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                      NameAndTypeEntryImpl nameAndType) {
@@ -880,7 +1002,19 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public ConstantDynamicEntry clone(ConstantPoolBuilder cp) {
-            return cp.constantDynamicEntry(bootstrap(), nameAndType());
+            var ret = (ConstantDynamicEntryImpl) cp.constantDynamicEntry(bootstrap(), nameAndType());
+            var mySym = this.sym;
+            if (ret.sym == null && mySym != null)
+                ret.sym = mySym;
+            return ret;
+        }
+
+        @Override
+        public DynamicConstantDesc<?> asSymbol() {
+            var cache = this.sym;
+            if (cache != null)
+                return cache;
+            return this.sym = ConstantDynamicEntry.super.asSymbol();
         }
     }
 
@@ -889,6 +1023,7 @@ public abstract sealed class AbstractPoolEntry {
 
         private final int refKind;
         private final AbstractPoolEntry.AbstractMemberRefEntry reference;
+        public @Stable DirectMethodHandleDesc sym;
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
@@ -921,7 +1056,14 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public DirectMethodHandleDesc asSymbol() {
-            return MethodHandleDesc.of(
+            var cache = this.sym;
+            if (cache != null)
+                return cache;
+            return computeSymbol();
+        }
+
+        private DirectMethodHandleDesc computeSymbol() {
+            return this.sym = MethodHandleDesc.of(
                     DirectMethodHandleDesc.Kind.valueOf(kind(), reference() instanceof InterfaceMethodRefEntry),
                     ((MemberRefEntry) reference()).owner().asSymbol(),
                     ((MemberRefEntry) reference()).nameAndType().name().stringValue(),
@@ -935,7 +1077,11 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public MethodHandleEntry clone(ConstantPoolBuilder cp) {
-            return cp.methodHandleEntry(refKind, reference);
+            var ret = (MethodHandleEntryImpl) cp.methodHandleEntry(refKind, reference);
+            var mySym = this.sym;
+            if (ret.sym == null && mySym != null)
+                ret.sym = mySym;
+            return ret;
         }
 
         @Override
@@ -984,6 +1130,11 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
+        public boolean matches(MethodTypeDesc desc) {
+            return ref1.isMethodType(desc);
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (o == this) return true;
             if (o instanceof MethodTypeEntryImpl m) {
@@ -1014,6 +1165,11 @@ public abstract sealed class AbstractPoolEntry {
         @Override
         public String stringValue() {
             return ref1.toString();
+        }
+
+        @Override
+        public boolean equalsString(String value) {
+            return ref1.equalsString(value);
         }
 
         @Override

@@ -3126,6 +3126,10 @@ class StubGenerator: public StubCodeGenerator {
   //---------------------------------------------------------------------------
   // Initialization
 
+  void generate_preuniverse_stubs() {
+    // preuniverse stubs are not needed for arm
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
@@ -3176,11 +3180,7 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-    }
-
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
   }
 
   void generate_compiler_stubs() {
@@ -3205,6 +3205,9 @@ class StubGenerator: public StubCodeGenerator {
  public:
   StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
+    case preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
     case initial_id:
       generate_initial_stubs();
       break;

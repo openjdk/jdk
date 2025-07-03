@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -297,19 +298,52 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
   return outer_ilt;
 }
 
-// Create a skeleton strip mined outer loop: a Loop head before the
-// inner strip mined loop, a safepoint and an exit condition guarded
-// by an opaque node after the inner strip mined loop with a backedge
-// to the loop head. The inner strip mined loop is left as it is. Only
-// once loop optimizations are over, do we adjust the inner loop exit
-// condition to limit its number of iterations, set the outer loop
-// exit condition and add Phis to the outer loop head. Some loop
-// optimizations that operate on the inner strip mined loop need to be
-// aware of the outer strip mined loop: loop unswitching needs to
-// clone the outer loop as well as the inner, unrolling needs to only
-// clone the inner loop etc. No optimizations need to change the outer
-// strip mined loop as it is only a skeleton.
-IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+// Create a skeleton strip mined outer loop: an OuterStripMinedLoop head before the inner strip mined CountedLoop, a
+// SafePoint on exit of the inner CountedLoopEnd and an OuterStripMinedLoopEnd test that can't constant fold until loop
+// optimizations are over. The inner strip mined loop is left as it is. Only once loop optimizations are over, do we
+// adjust the inner loop exit condition to limit its number of iterations, set the outer loop exit condition and add
+// Phis to the outer loop head. Some loop optimizations that operate on the inner strip mined loop need to be aware of
+// the outer strip mined loop: loop unswitching needs to clone the outer loop as well as the inner, unrolling needs to
+// only clone the inner loop etc. No optimizations need to change the outer strip mined loop as it is only a skeleton.
+//
+// Schematically:
+//
+// OuterStripMinedLoop -------|
+//       |                    |
+// CountedLoop ----------- |  |
+//     \- Phi (iv) -|      |  |
+//       /  \       |      |  |
+//     CmpI  AddI --|      |  |
+//       \                 |  |
+//        Bool             |  |
+//         \               |  |
+// CountedLoopEnd          |  |
+//       /  \              |  |
+// IfFalse   IfTrue--------|  |
+//      |                     |
+// SafePoint                  |
+//      |                     |
+// OuterStripMinedLoopEnd     |
+//       /   \                |
+// IfFalse   IfTrue-----------|
+//      |
+//
+//
+// As loop optimizations transform the inner loop, the outer strip mined loop stays mostly unchanged. The only exception
+// is nodes referenced from the SafePoint and sunk from the inner loop: they end up in the outer strip mined loop.
+//
+// Not adding Phis to the outer loop head from the beginning, and only adding them after loop optimizations does not
+// conform to C2's IR rules: any variable or memory slice that is mutated in a loop should have a Phi. The main
+// motivation for such a design that doesn't conform to C2's IR rules is to allow existing loop optimizations to be
+// mostly unaffected by the outer strip mined loop: the only extra step needed in most cases is to step over the
+// OuterStripMinedLoop. The main drawback is that once loop optimizations are over, an extra step is needed to finish
+// constructing the outer loop. This is handled by OuterStripMinedLoopNode::adjust_strip_mined_loop().
+//
+// Adding Phis to the outer loop is largely straightforward: there needs to be one Phi in the outer loop for every Phi
+// in the inner loop. Things may be more complicated for sunk Store nodes: there may not be any inner loop Phi left
+// after sinking for a particular memory slice but the outer loop needs a Phi. See
+// OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction()
+IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(Node* init_control,
                                                              IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                              Node*& entry_control, Node*& iffalse) {
   Node* outer_test = intcon(0);
@@ -358,7 +392,7 @@ void PhaseIdealLoop::insert_loop_limit_check_predicate(ParsePredicateSuccessProj
   // for this loop
   if (TraceLoopLimitCheck) {
     tty->print_cr("Counted Loop Limit Check generated:");
-    debug_only( bol->dump(2); )
+    DEBUG_ONLY( bol->dump(2); )
   }
 #endif
 }
@@ -457,7 +491,7 @@ Node* PhaseIdealLoop::loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Nod
   return incr;
 }
 
-Node* PhaseIdealLoop::loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi) {
+Node* PhaseIdealLoop::loop_iv_stride(Node* incr, Node*& xphi) {
   assert(incr->Opcode() == Op_AddI || incr->Opcode() == Op_AddL, "caller resp.");
   // Get merge point
   xphi = incr->in(1);
@@ -473,7 +507,7 @@ Node* PhaseIdealLoop::loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xph
   return stride;
 }
 
-PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop) {
+PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x) {
   if (!xphi->is_Phi()) {
     return nullptr; // Too much math on the trip counter
   }
@@ -1086,9 +1120,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
     if (UseLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
-    }
-    if (UseProfiledLoopPredicate) {
-      add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      if (UseProfiledLoopPredicate) {
+        add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      }
     }
 
     // We only want to use the auto-vectorization check as a trap once per bci. And
@@ -1480,11 +1514,11 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   assert(incr != nullptr && incr->Opcode() == Op_Add(bt), "no incr");
 
   Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, loop, xphi);
+  Node* stride = loop_iv_stride(incr, xphi);
 
   assert(stride != nullptr, "no stride");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
 
   assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == incr, "No phi");
 
@@ -1649,13 +1683,15 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   assert(incr->Opcode() == Op_Add(iv_bt), "wrong increment code");
 
   Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, loop, xphi);
+  Node* stride = loop_iv_stride(incr, xphi);
 
   if (stride == nullptr) {
     return false;
   }
 
-  if (xphi->Opcode() == Op_Cast(iv_bt)) {
+  // Iteratively uncast the loop induction variable
+  // until no more CastII/CastLL nodes are found.
+  while (xphi->Opcode() == Op_Cast(iv_bt)) {
     xphi = xphi->in(1);
   }
 
@@ -1663,7 +1699,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   jlong stride_con = stride->get_integer_as_long(iv_bt);
   assert(stride_con != 0, "missed some peephole opt");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
 
   if (phi == nullptr ||
       (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
@@ -2254,9 +2290,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
                          is_deleteable_safept(sfpt);
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
-    outer_ilt = create_outer_strip_mined_loop(test, cmp, init_control, loop,
-                                              cl_prob, le->_fcnt, entry_control,
-                                              iffalse);
+    outer_ilt = create_outer_strip_mined_loop(init_control, loop, cl_prob, le->_fcnt,
+                                              entry_control, iffalse);
   }
 
   // Now setup a new CountedLoopNode to replace the existing LoopNode
@@ -2731,6 +2766,20 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** tr
   return nullptr;
 }
 
+IfNode* CountedLoopNode::find_multiversion_if_from_multiversion_fast_main_loop() {
+  assert(is_main_loop() && is_multiversion_fast_loop(), "must be multiversion fast main loop");
+  CountedLoopEndNode* pre_end = find_pre_loop_end();
+  if (pre_end == nullptr) { return nullptr; }
+  Node* pre_entry = pre_end->loopnode()->in(LoopNode::EntryControl);
+  const Predicates predicates(pre_entry);
+  IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
+  if (before_predicates != nullptr &&
+      before_predicates->in(0)->in(1)->is_OpaqueMultiversioning()) {
+    return before_predicates->in(0)->as_If();
+  }
+  return nullptr;
+}
+
 LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
   if (is_strip_mined() && in(EntryControl) != nullptr && in(EntryControl)->is_OuterStripMinedLoop()) {
     verify_strip_mined(expect_skeleton);
@@ -2855,10 +2904,11 @@ BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, Basi
   return new LongCountedLoopNode(entry, backedge);
 }
 
-void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn,
-                                              PhaseIdealLoop* iloop) {
-  Node* cle_out = inner_cle->proj_out(false);
-  Node* cle_tail = inner_cle->proj_out(true);
+void OuterStripMinedLoopNode::fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn,
+                                                                        PhaseIdealLoop* iloop) const {
+  CountedLoopNode* inner_cl = inner_counted_loop();
+  IfFalseNode* cle_out = inner_loop_exit();
+
   if (cle_out->outcnt() > 1) {
     // Look for chains of stores that were sunk
     // out of the inner loop and are in the outer loop
@@ -2973,11 +3023,90 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
   }
 }
 
+// The outer strip mined loop is initially only partially constructed. In particular Phis are omitted.
+// See comment above: PhaseIdealLoop::create_outer_strip_mined_loop()
+// We're now in the process of finishing the construction of the outer loop. For each Phi in the inner loop, a Phi in
+// the outer loop was just now created. However, Sunk Stores cause an extra challenge:
+// 1) If all Stores in the inner loop were sunk for a particular memory slice, there's no Phi left for that memory slice
+//    in the inner loop anymore, and hence we did not yet add a Phi for the outer loop. So an extra Phi must now be
+//    added for each chain of sunk Stores for a particular memory slice.
+// 2) If some Stores were sunk and some left in the inner loop, a Phi was already created in the outer loop but
+//    its backedge input wasn't wired correctly to the last Store of the chain: the backedge input was set to the
+//    backedge of the inner loop Phi instead, but it needs to be the last Store of the chain in the outer loop. We now
+//    have to fix that too.
+void OuterStripMinedLoopNode::handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn) {
+  IfFalseNode* cle_exit_proj = inner_loop_exit();
+
+  // Find Sunk stores: Sunk stores are pinned on the loop exit projection of the inner loop. Indeed, because Sunk Stores
+  // modify the memory state captured by the SafePoint in the outer strip mined loop, they must be above it. The
+  // SafePoint's control input is the loop exit projection. It's also the only control out of the inner loop above the
+  // SafePoint.
+#ifdef ASSERT
+  int stores_in_outer_loop_cnt = 0;
+  for (DUIterator_Fast imax, i = cle_exit_proj->fast_outs(imax); i < imax; i++) {
+    Node* u = cle_exit_proj->fast_out(i);
+    if (u->is_Store()) {
+      stores_in_outer_loop_cnt++;
+    }
+  }
+#endif
+
+  // Sunk stores are reachable from the memory state of the outer loop safepoint
+  SafePointNode* safepoint = outer_safepoint();
+  MergeMemNode* mm = safepoint->in(TypeFunc::Memory)->isa_MergeMem();
+  if (mm == nullptr) {
+    // There is no MergeMem, which should only happen if there was no memory node
+    // sunk out of the loop.
+    assert(stores_in_outer_loop_cnt == 0, "inconsistent");
+    return;
+  }
+  DEBUG_ONLY(int stores_in_outer_loop_cnt2 = 0);
+  for (MergeMemStream mms(mm); mms.next_non_empty();) {
+    Node* mem = mms.memory();
+    // Traverse up the chain of stores to find the first store pinned
+    // at the loop exit projection.
+    Node* last = mem;
+    Node* first = nullptr;
+    while (mem->is_Store() && mem->in(0) == cle_exit_proj) {
+      DEBUG_ONLY(stores_in_outer_loop_cnt2++);
+      first = mem;
+      mem = mem->in(MemNode::Memory);
+    }
+    if (first != nullptr) {
+      // Found a chain of Stores that were sunk
+      // Do we already have a memory Phi for that slice on the outer loop? If that is the case, that Phi was created
+      // by cloning an inner loop Phi. The inner loop Phi should have mem, the memory state of the first Store out of
+      // the inner loop, as input on the backedge. So does the outer loop Phi given it's a clone.
+      Node* phi = nullptr;
+      for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+        Node* u = mem->fast_out(i);
+        if (u->is_Phi() && u->in(0) == this && u->in(LoopBackControl) == mem) {
+          assert(phi == nullptr, "there should be only one");
+          phi = u;
+          PRODUCT_ONLY(break);
+        }
+      }
+      if (phi == nullptr) {
+        // No outer loop Phi? create one
+        phi = PhiNode::make(this, last);
+        phi->set_req(EntryControl, mem);
+        phi = igvn->transform(phi);
+        igvn->replace_input_of(first, MemNode::Memory, phi);
+      } else {
+        // Fix memory state along the backedge: it should be the last sunk Store of the chain
+        igvn->replace_input_of(phi, LoopBackControl, last);
+      }
+    }
+  }
+  assert(stores_in_outer_loop_cnt == stores_in_outer_loop_cnt2, "inconsistent");
+}
+
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
+  verify_strip_mined(1);
   // Look for the outer & inner strip mined loop, reduce number of
   // iterations of the inner loop, set exit condition of outer loop,
   // construct required phi nodes for outer loop.
-  CountedLoopNode* inner_cl = unique_ctrl_out()->as_CountedLoop();
+  CountedLoopNode* inner_cl = inner_counted_loop();
   assert(inner_cl->is_strip_mined(), "inner loop should be strip mined");
   if (LoopStripMiningIter == 0) {
     remove_outer_loop_and_safepoint(igvn);
@@ -2995,7 +3124,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     inner_cl->clear_strip_mined();
     return;
   }
-  CountedLoopEndNode* inner_cle = inner_cl->loopexit();
+  CountedLoopEndNode* inner_cle = inner_counted_loop_end();
 
   int stride = inner_cl->stride_con();
   // For a min int stride, LoopStripMiningIter * stride overflows the int range for all values of LoopStripMiningIter
@@ -3076,8 +3205,9 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   }
 
   Node* iv_phi = nullptr;
-  // Make a clone of each phi in the inner loop
-  // for the outer loop
+  // Make a clone of each phi in the inner loop for the outer loop
+  // When Stores were Sunk, after this step, a Phi may still be missing or its backedge incorrectly wired. See
+  // handle_sunk_stores_when_finishing_construction()
   for (uint i = 0; i < inner_cl->outcnt(); i++) {
     Node* u = inner_cl->raw_out(i);
     if (u->is_Phi()) {
@@ -3095,6 +3225,8 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
       }
     }
   }
+
+  handle_sunk_stores_when_finishing_construction(igvn);
 
   if (iv_phi != nullptr) {
     // Now adjust the inner loop's exit condition
@@ -3151,7 +3283,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   CountedLoopEndNode* inner_cle = inner_cl->loopexit();
   Node* safepoint = outer_safepoint();
 
-  fix_sunk_stores(inner_cle, inner_cl, igvn, iloop);
+  fix_sunk_stores_when_back_to_counted_loop(igvn, iloop);
 
   // make counted loop exit test always fail
   ConINode* zero = igvn->intcon(0);
@@ -3194,10 +3326,10 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
         if (iloop->get_loop(iloop->get_ctrl(in)) != outer_loop_ilt) {
           continue;
         }
-        assert(!loop->_body.contains(in), "");
-        loop->_body.push(in);
         wq.push(in);
       }
+      assert(!loop->_body.contains(n), "Shouldn't append node to body twice");
+      loop->_body.push(n);
     }
     iloop->set_loop(safepoint, loop);
     loop->_body.push(safepoint);
@@ -4283,11 +4415,13 @@ void IdealLoopTree::dump_head() {
   if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
-  if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
-    tty->print(" profile_predicated");
-  }
-  if (UseLoopPredicate && predicates.loop_predicate_block()->is_non_empty()) {
-    tty->print(" predicated");
+  if (UseLoopPredicate) {
+    if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
+      tty->print(" profile_predicated");
+    }
+    if (predicates.loop_predicate_block()->is_non_empty()) {
+      tty->print(" predicated");
+    }
   }
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
@@ -4384,117 +4518,13 @@ void PhaseIdealLoop::log_loop_tree() {
 
 // Eliminate all Parse and Template Assertion Predicates that are not associated with a loop anymore. The eliminated
 // predicates will be removed during the next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_predicates() {
+void PhaseIdealLoop::eliminate_useless_predicates() const {
   if (C->parse_predicate_count() == 0 && C->template_assertion_predicate_count() == 0) {
     return; // No predicates left.
   }
 
-  eliminate_useless_parse_predicates();
-  eliminate_useless_template_assertion_predicates();
-}
-
-// Eliminate all Parse Predicates that do not belong to a loop anymore by marking them useless. These will be removed
-// during the next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_parse_predicates() {
-  mark_all_parse_predicates_useless();
-  if (C->has_loops()) {
-    mark_loop_associated_parse_predicates_useful();
-  }
-  add_useless_parse_predicates_to_igvn_worklist();
-}
-
-void PhaseIdealLoop::mark_all_parse_predicates_useless() const {
-  for (int i = 0; i < C->parse_predicate_count(); i++) {
-    C->parse_predicate(i)->mark_useless();
-  }
-}
-
-void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
-  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
-    IdealLoopTree* loop = iterator.current();
-    if (loop->can_apply_loop_predication()) {
-      mark_useful_parse_predicates_for_loop(loop);
-    }
-  }
-}
-
-// This visitor marks all visited Parse Predicates useful.
-class ParsePredicateUsefulMarker : public PredicateVisitor {
- public:
-  using PredicateVisitor::visit;
-
-  void visit(const ParsePredicate& parse_predicate) override {
-    parse_predicate.head()->mark_useful();
-  }
-};
-
-void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
-  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const PredicateIterator predicate_iterator(entry);
-  ParsePredicateUsefulMarker useful_marker;
-  predicate_iterator.for_each(useful_marker);
-}
-
-void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
-  for (int i = 0; i < C->parse_predicate_count(); i++) {
-    ParsePredicateNode* parse_predicate_node = C->parse_predicate(i);
-    if (parse_predicate_node->is_useless()) {
-      _igvn._worklist.push(parse_predicate_node);
-    }
-  }
-}
-
-
-// Eliminate all Template Assertion Predicates that do not belong to their originally associated loop anymore by
-// replacing the OpaqueTemplateAssertionPredicate node of the If node with true. These nodes will be removed during the
-// next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_template_assertion_predicates() {
-  Unique_Node_List useful_predicates;
-  if (C->has_loops()) {
-    collect_useful_template_assertion_predicates(useful_predicates);
-  }
-  eliminate_useless_template_assertion_predicates(useful_predicates);
-}
-
-void PhaseIdealLoop::collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
-    IdealLoopTree* loop = iterator.current();
-    if (loop->can_apply_loop_predication()) {
-      collect_useful_template_assertion_predicates_for_loop(loop, useful_predicates);
-    }
-  }
-}
-
-void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop,
-                                                                           Unique_Node_List &useful_predicates) {
-  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const Predicates predicates(entry);
-  if (UseProfiledLoopPredicate) {
-    const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
-    if (profiled_loop_predicate_block->has_parse_predicate()) {
-      ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
-    }
-  }
-
-  if (UseLoopPredicate) {
-    const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
-    if (loop_predicate_block->has_parse_predicate()) {
-      ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
-    }
-  }
-}
-
-void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    OpaqueTemplateAssertionPredicateNode* opaque_node =
-        C->template_assertion_predicate_opaq_node(i - 1)->as_OpaqueTemplateAssertionPredicate();
-    if (!useful_predicates.member(opaque_node)) { // not in the useful list
-      ConINode* one = intcon(1);
-      _igvn.replace_node(opaque_node, one);
-    }
-  }
+  EliminateUselessPredicates eliminate_useless_predicates(_igvn, _ltree_root);
+  eliminate_useless_predicates.eliminate();
 }
 
 // If a post or main loop is removed due to an assert predicate, the opaque that guards the loop is not needed anymore
@@ -4532,6 +4562,52 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
       }
     } else {
       assert(guarded_loop != nullptr, "");
+    }
+  }
+}
+
+void PhaseIdealLoop::eliminate_useless_multiversion_if() {
+  if (_multiversion_opaque_nodes.size() == 0) {
+    return;
+  }
+
+  ResourceMark rm;
+  Unique_Node_List useful_multiversioning_opaque_nodes;
+
+  // The OpaqueMultiversioning is only used from the fast main loop in AutoVectorization, to add
+  // speculative runtime-checks to the multiversion_if. Thus, a OpaqueMultiversioning is only
+  // useful if it can be found from a fast main loop. If it can not be found from a fast main loop,
+  // then we cannot ever use that multiversion_if to add more speculative runtime-checks, and hence
+  // it is useless. If it is still in delayed mode, i.e. has not yet had any runtime-checks added,
+  // then we can let it constant fold towards the fast loop.
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->_child == nullptr && lpt->is_counted()) {
+      CountedLoopNode* head = lpt->_head->as_CountedLoop();
+      if (head->is_main_loop() && head->is_multiversion_fast_loop()) {
+        // There are fast_loop pre/main/post loops, but the finding traversal starts at the main
+        // loop, and traverses via the fast pre loop to the multiversion_if.
+        IfNode* multiversion_if = head->find_multiversion_if_from_multiversion_fast_main_loop();
+        if (multiversion_if != nullptr) {
+            useful_multiversioning_opaque_nodes.push(multiversion_if->in(1)->as_OpaqueMultiversioning());
+        } else {
+          // We could not find the multiversion_if, and would never find it again. Remove the
+          // multiversion marking for consistency.
+          head->set_no_multiversion();
+        }
+      }
+    }
+  }
+
+  for (uint i = 0; i < _multiversion_opaque_nodes.size(); i++) {
+    OpaqueMultiversioningNode* opaque = _multiversion_opaque_nodes.at(i)->as_OpaqueMultiversioning();
+    if (!useful_multiversioning_opaque_nodes.member(opaque)) {
+      if (opaque->is_delayed_slow_loop()) {
+        // We cannot hack the node directly, otherwise the slow_loop will complain that it cannot
+        // find the multiversioning opaque node. Instead, we mark the opaque node as useless, and
+        // it can be constant folded during IGVN.
+        opaque->mark_useless(_igvn);
+      }
     }
   }
 }
@@ -4805,6 +4881,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   eliminate_useless_zero_trip_guard();
+  eliminate_useless_multiversion_if();
 
   if (stop_early) {
     assert(do_expensive_nodes, "why are we here?");
@@ -6098,6 +6175,24 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
   return pre_end;
 }
 
+Node* CountedLoopNode::uncasted_init_trip(bool uncast) {
+  Node* init = init_trip();
+  if (uncast && init->is_CastII()) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation. For instance, the index tested by an Assertion Predicate, if the cast
+    // is not skipped over, could be (1):
+    // (AddI (CastII (AddI pre_loop_iv -2) int) 1)
+    // while without the cast, it is (2):
+    // (AddI (AddI pre_loop_iv -2) 1)
+    // which is be transformed to (3):
+    // (AddI pre_loop_iv -1)
+    // The compiler may be able to constant fold the Assertion Predicate condition for (3) but not (1)
+    assert(init->as_CastII()->carry_dependency() && skip_assertion_predicates_with_halt() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
+  return init;
+}
+
 //------------------------------get_late_ctrl----------------------------------
 // Compute latest legal control.
 Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
@@ -6596,6 +6691,9 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     _zero_trip_guard_opaque_nodes.push(n);
   }
 
+  if (!_verify_only && n->Opcode() == Op_OpaqueMultiversioning) {
+    _multiversion_opaque_nodes.push(n);
+  }
 }
 
 #ifdef ASSERT

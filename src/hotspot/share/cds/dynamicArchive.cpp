@@ -25,12 +25,16 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -94,13 +98,11 @@ public:
   void gather_array_klasses();
 
 public:
-  DynamicArchiveBuilder() : ArchiveBuilder() { }
-
   // Do this before and after the archive dump to see if any corruption
   // is caused by dynamic dumping.
   void verify_universe(const char* info) {
     if (VerifyBeforeExit) {
-      log_info(cds)("Verify %s", info);
+      log_info(aot)("Verify %s", info);
       // Among other things, this ensures that Eden top is correct.
       Universe::heap()->prepare_for_verify();
       Universe::verify(info);
@@ -119,8 +121,8 @@ public:
       return;
     }
 
-    log_info(cds,dynamic)("CDS dynamic dump: clinit = " JLONG_FORMAT "ms)",
-                          ClassLoader::class_init_time_ms());
+    log_info(cds, dynamic)("CDS dynamic dump: clinit = " JLONG_FORMAT "ms)",
+                           ClassLoader::class_init_time_ms());
 
     init_header();
     gather_source_objs();
@@ -135,7 +137,7 @@ public:
 
     sort_methods();
 
-    log_info(cds)("Make classes shareable");
+    log_info(aot)("Make classes shareable");
     make_klasses_shareable();
 
     char* serialized_data;
@@ -159,8 +161,10 @@ public:
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
-    log_info(cds)("Adjust lambda proxy class dictionary");
-    SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+    if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+      log_info(aot)("Adjust lambda proxy class dictionary");
+      LambdaProxyClassDictionary::adjust_dumptime_table();
+    }
 
     relocate_to_requested();
 
@@ -170,7 +174,6 @@ public:
 
     post_dump();
 
-    assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
   }
 
@@ -344,7 +347,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocatio
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != nullptr, "Sanity");
 
-  dynamic_info->open_for_write();
+  dynamic_info->open_as_output();
   ArchiveHeapInfo no_heap_for_dynamic_dump;
   ArchiveBuilder::write_archive(dynamic_info, &no_heap_for_dynamic_dump);
 
@@ -376,19 +379,19 @@ void DynamicArchiveBuilder::gather_array_klasses() {
       }
     }
   }
-  log_debug(cds)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
+  log_debug(aot)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
 }
 
-class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
+class VM_PopulateDynamicDumpSharedSpace: public VM_Heap_Sync_Operation {
   DynamicArchiveBuilder _builder;
 public:
   VM_PopulateDynamicDumpSharedSpace(const char* archive_name)
-  : VM_GC_Sync_Operation(), _builder(archive_name) {}
+  : VM_Heap_Sync_Operation(), _builder(archive_name) {}
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
     if (AllowArchivingWithJavaAgent) {
-      log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+      aot_log_warning(aot)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
                        "for testing purposes only and should not be used in a production environment",
                        CDSConfig::type_of_archive_being_loaded());
     }
@@ -443,7 +446,7 @@ void DynamicArchive::setup_array_klasses() {
         ArrayKlass::cast(elm)->set_higher_dimension(oak);
       }
     }
-    log_debug(cds)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
+    log_debug(aot)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
   }
 }
 
@@ -472,32 +475,22 @@ int DynamicArchive::num_array_klasses() {
   return _array_klasses != nullptr ? _array_klasses->length() : 0;
 }
 
-void DynamicArchive::check_for_dynamic_dump() {
-  if (CDSConfig::is_dumping_dynamic_archive() && !CDSConfig::is_using_archive()) {
-    // This could happen if SharedArchiveFile has failed to load:
-    // - -Xshare:off was specified
-    // - SharedArchiveFile points to an non-existent file.
-    // - SharedArchiveFile points to an archive that has failed CRC check
-    // - SharedArchiveFile is not specified and the VM doesn't have a compatible default archive
-
-#define __THEMSG " is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info."
-    if (RecordDynamicDumpInfo) {
-      log_error(cds)("-XX:+RecordDynamicDumpInfo%s", __THEMSG);
-      MetaspaceShared::unrecoverable_loading_error();
-    } else {
-      assert(ArchiveClassesAtExit != nullptr, "sanity");
-      log_warning(cds)("-XX:ArchiveClassesAtExit" __THEMSG);
-    }
-#undef __THEMSG
-    CDSConfig::disable_dumping_dynamic_archive();
+void DynamicArchive::dump_impl(bool jcmd_request, const char* archive_name, TRAPS) {
+  MetaspaceShared::link_shared_classes(CHECK);
+  if (!jcmd_request && CDSConfig::is_dumping_regenerated_lambdaform_invokers()) {
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
   }
+
+  VM_PopulateDynamicDumpSharedSpace op(archive_name);
+  VMThread::execute(&op);
 }
 
-void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name) {
+void DynamicArchive::dump_at_exit(JavaThread* current) {
   ExceptionMark em(current);
   ResourceMark rm(current);
   CDSConfig::DumperThreadMark dumper_thread_mark(current);
 
+  const char* archive_name = CDSConfig::output_archive_path();
   if (!CDSConfig::is_dumping_dynamic_archive() || archive_name == nullptr) {
     return;
   }
@@ -505,20 +498,16 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   log_info(cds, dynamic)("Preparing for dynamic dump at exit in thread %s", current->name());
 
   JavaThread* THREAD = current; // For TRAPS processing related to link_shared_classes
-  MetaspaceShared::link_shared_classes(false/*not from jcmd*/, THREAD);
-  if (!HAS_PENDING_EXCEPTION) {
-    VM_PopulateDynamicDumpSharedSpace op(archive_name);
-    VMThread::execute(&op);
-    return;
+  dump_impl(/*jcmd_request=*/false, archive_name, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    // One of the prepatory steps failed
+    oop ex = current->pending_exception();
+    aot_log_error(aot)("Dynamic dump has failed");
+    aot_log_error(aot)("%s: %s", ex->klass()->external_name(),
+                   java_lang_String::as_utf8_string(java_lang_Throwable::message(ex)));
+    CLEAR_PENDING_EXCEPTION;
+    CDSConfig::disable_dumping_dynamic_archive();  // Just for good measure
   }
-
-  // One of the prepatory steps failed
-  oop ex = current->pending_exception();
-  log_error(cds)("Dynamic dump has failed");
-  log_error(cds)("%s: %s", ex->klass()->external_name(),
-                 java_lang_String::as_utf8_string(java_lang_Throwable::message(ex)));
-  CLEAR_PENDING_EXCEPTION;
-  CDSConfig::disable_dumping_dynamic_archive();  // Just for good measure
 }
 
 // This is called by "jcmd VM.cds dynamic_dump"
@@ -527,10 +516,7 @@ void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
   assert(CDSConfig::is_using_archive() && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
   assert(CDSConfig::is_dumping_dynamic_archive(), "already checked by check_for_dynamic_dump() during VM startup");
-  MetaspaceShared::link_shared_classes(true/*from jcmd*/, CHECK);
-  // copy shared path table to saved.
-  VM_PopulateDynamicDumpSharedSpace op(archive_name);
-  VMThread::execute(&op);
+  dump_impl(/*jcmd_request=*/true, archive_name, CHECK);
 }
 
 bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
@@ -541,14 +527,14 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
 
   // Check the header crc
   if (dynamic_header->base_header_crc() != base_info->crc()) {
-    log_warning(cds)("Dynamic archive cannot be used: static archive header checksum verification failed.");
+    aot_log_warning(aot)("Dynamic archive cannot be used: static archive header checksum verification failed.");
     return false;
   }
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     if (dynamic_header->base_region_crc(i) != base_info->region_crc(i)) {
-      log_warning(cds)("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
+      aot_log_warning(aot)("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
       return false;
     }
   }

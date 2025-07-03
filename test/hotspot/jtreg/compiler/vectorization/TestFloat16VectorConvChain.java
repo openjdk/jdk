@@ -45,7 +45,7 @@ public class TestFloat16VectorConvChain {
         counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
     @IR(applyIfCPUFeatureAnd = {"avx512_fp16", "false", "f16c", "true"},
         counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
-    @IR(applyIfCPUFeature = {"zvfh", "true"},
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "fphp", "false", "asimdhp", "false"},
         counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
     public static void test(short [] res, short [] src1, short [] src2) {
         for (int i = 0; i < res.length; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3369,7 +3369,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Parses the second part of inlined match flags and turns off
      * flags appropriately.
      */
-    @SuppressWarnings("fallthrough")
     private void subFlag() {
         int ch = peek();
         for (;;) {
@@ -4155,7 +4154,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     if (predicate.is(ch0))
                         return next.match(matcher, j, seq);
                 } else {
-                    while (i + n < j) {
+                    while (i + n <= j) {
                         String nfc = Normalizer.normalize(
                             seq.toString().substring(i, j), Normalizer.Form.NFC);
                         if (nfc.codePointCount(0, nfc.length()) == 1) {
@@ -4164,13 +4163,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                 return true;
                             }
                         }
-
                         ch0 = Character.codePointBefore(seq, j);
                         j -= Character.charCount(ch0);
                     }
                 }
-                if (j < matcher.to)
-                    return false;
             } else {
                 matcher.hitEnd = true;
             }

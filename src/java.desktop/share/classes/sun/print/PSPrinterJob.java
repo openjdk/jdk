@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,24 +127,6 @@ public class PSPrinterJob extends RasterPrinterJob {
      */
     private static final int MAX_PSSTR = (1024 * 64 - 1);
 
-    private static final int RED_MASK = 0x00ff0000;
-    private static final int GREEN_MASK = 0x0000ff00;
-    private static final int BLUE_MASK = 0x000000ff;
-
-    private static final int RED_SHIFT = 16;
-    private static final int GREEN_SHIFT = 8;
-    private static final int BLUE_SHIFT = 0;
-
-    private static final int LOWNIBBLE_MASK = 0x0000000f;
-    private static final int HINIBBLE_MASK =  0x000000f0;
-    private static final int HINIBBLE_SHIFT = 4;
-    private static final byte[] hexDigits = {
-        (byte)'0', (byte)'1', (byte)'2', (byte)'3',
-        (byte)'4', (byte)'5', (byte)'6', (byte)'7',
-        (byte)'8', (byte)'9', (byte)'A', (byte)'B',
-        (byte)'C', (byte)'D', (byte)'E', (byte)'F'
-    };
-
     private static final int PS_XRES = 300;
     private static final int PS_YRES = 300;
 
@@ -266,14 +248,6 @@ public class PSPrinterJob extends RasterPrinterJob {
 
    private double xres = PS_XRES;
    private double yres = PS_YRES;
-
-   /* non-null if printing EPS for Java Plugin */
-   private EPSPrinter epsPrinter = null;
-
-   /**
-    * The metrics for the font currently set.
-    */
-   FontMetrics mCurMetrics;
 
    /**
     * The output stream to which the generated PostScript
@@ -513,46 +487,43 @@ public class PSPrinterJob extends RasterPrinterJob {
 
         OutputStream output = null;
 
-        if (epsPrinter == null) {
-            if (getPrintService() instanceof PSStreamPrintService) {
-                StreamPrintService sps = (StreamPrintService)getPrintService();
-                mDestType = RasterPrinterJob.STREAM;
-                if (sps.isDisposed()) {
-                    throw new PrinterException("service is disposed");
-                }
-                output = sps.getOutputStream();
-                if (output == null) {
-                    throw new PrinterException("Null output stream");
+        if (getPrintService() instanceof PSStreamPrintService) {
+            StreamPrintService sps = (StreamPrintService)getPrintService();
+            mDestType = RasterPrinterJob.STREAM;
+            if (sps.isDisposed()) {
+                throw new PrinterException("service is disposed");
+            }
+            output = sps.getOutputStream();
+            if (output == null) {
+                throw new PrinterException("Null output stream");
+            }
+        } else {
+            /* REMIND: This needs to be more maintainable */
+            mNoJobSheet = super.noJobSheet;
+            if (super.destinationAttr != null) {
+                mDestType = RasterPrinterJob.FILE;
+                mDestination = super.destinationAttr;
+            }
+            if (mDestType == RasterPrinterJob.FILE) {
+                try {
+                    spoolFile = new File(mDestination);
+                    output = new FileOutputStream(spoolFile);
+                } catch (IOException ex) {
+                    abortDoc();
+                    throw new PrinterIOException(ex);
                 }
             } else {
-                /* REMIND: This needs to be more maintainable */
-                mNoJobSheet = super.noJobSheet;
-                if (super.destinationAttr != null) {
-                    mDestType = RasterPrinterJob.FILE;
-                    mDestination = super.destinationAttr;
+                PrinterOpener po = new PrinterOpener();
+                po.run();
+                if (po.pex != null) {
+                    throw po.pex;
                 }
-                if (mDestType == RasterPrinterJob.FILE) {
-                    try {
-                        spoolFile = new File(mDestination);
-                        output =  new FileOutputStream(spoolFile);
-                    } catch (IOException ex) {
-                        abortDoc();
-                        throw new PrinterIOException(ex);
-                    }
-                } else {
-                    PrinterOpener po = new PrinterOpener();
-                    po.run();
-                    if (po.pex != null) {
-                        throw po.pex;
-                    }
-                    output = po.result;
-                }
+                output = po.result;
             }
-
-            mPSStream = new PrintStream(new BufferedOutputStream(output));
-            mPSStream.println(ADOBE_PS_STR);
         }
 
+        mPSStream = new PrintStream(new BufferedOutputStream(output));
+        mPSStream.println(ADOBE_PS_STR);
         mPSStream.println("%%BeginProlog");
         mPSStream.println(READIMAGEPROC);
         mPSStream.println("/BD {bind def} bind def");
@@ -619,45 +590,43 @@ public class PSPrinterJob extends RasterPrinterJob {
         mPSStream.println("%%EndProlog");
 
         mPSStream.println("%%BeginSetup");
-        if (epsPrinter == null) {
-            // Set Page Size using first page's format.
-            PageFormat pageFormat = getPageable().getPageFormat(0);
-            double paperHeight = pageFormat.getPaper().getHeight();
-            double paperWidth = pageFormat.getPaper().getWidth();
+        // Set Page Size using first page's format.
+        PageFormat pageFormat = getPageable().getPageFormat(0);
+        double paperHeight = pageFormat.getPaper().getHeight();
+        double paperWidth = pageFormat.getPaper().getWidth();
 
-            /* PostScript printers can always generate uncollated copies.
-             */
-            mPSStream.print("<< /PageSize [" +
-                                           paperWidth + " "+ paperHeight+"]");
+        /* PostScript printers can always generate uncollated copies.
+         */
+        mPSStream.print("<< /PageSize [" +
+                                       paperWidth + " "+ paperHeight+"]");
 
-            final PrintService pservice = getPrintService();
-            Boolean isPS = Boolean.TRUE;
-            try {
-                Class<?> psClass = Class.forName("sun.print.IPPPrintService");
-                if (psClass.isInstance(pservice)) {
-                    Method isPSMethod = psClass.getMethod("isPostscript",
-                                                          (Class[])null);
-                    isPS = (Boolean)isPSMethod.invoke(pservice, (Object[])null);
-                }
-            } catch (Throwable t) {
+        final PrintService pservice = getPrintService();
+        Boolean isPS = Boolean.TRUE;
+        try {
+            Class<?> psClass = Class.forName("sun.print.IPPPrintService");
+            if (psClass.isInstance(pservice)) {
+                Method isPSMethod = psClass.getMethod("isPostscript",
+                                                      (Class[])null);
+                isPS = (Boolean)isPSMethod.invoke(pservice, (Object[])null);
             }
-            if (isPS) {
-                mPSStream.print(" /DeferredMediaSelection true");
-            }
-
-            mPSStream.print(" /ImagingBBox null /ManualFeed false");
-            mPSStream.print(isCollated() ? " /Collate true":"");
-            mPSStream.print(" /NumCopies " +getCopiesInt());
-
-            if (sidesAttr != Sides.ONE_SIDED) {
-                if (sidesAttr == Sides.TWO_SIDED_LONG_EDGE) {
-                    mPSStream.print(" /Duplex true ");
-                } else if (sidesAttr == Sides.TWO_SIDED_SHORT_EDGE) {
-                    mPSStream.print(" /Duplex true /Tumble true ");
-                }
-            }
-            mPSStream.println(" >> setpagedevice ");
+        } catch (Throwable t) {
         }
+        if (isPS) {
+            mPSStream.print(" /DeferredMediaSelection true");
+        }
+
+        mPSStream.print(" /ImagingBBox null /ManualFeed false");
+        mPSStream.print(isCollated() ? " /Collate true":"");
+        mPSStream.print(" /NumCopies " +getCopiesInt());
+
+        if (sidesAttr != Sides.ONE_SIDED) {
+            if (sidesAttr == Sides.TWO_SIDED_LONG_EDGE) {
+                mPSStream.print(" /Duplex true ");
+            } else if (sidesAttr == Sides.TWO_SIDED_SHORT_EDGE) {
+                mPSStream.print(" /Duplex true /Tumble true ");
+            }
+        }
+        mPSStream.println(" >> setpagedevice ");
         mPSStream.println("%%EndSetup");
     }
 
@@ -1175,36 +1144,6 @@ public class PSPrinterJob extends RasterPrinterJob {
          return psFont;
      }
 
-
-    private static String escapeParens(String str) {
-        if (str.indexOf('(') == -1 && str.indexOf(')') == -1 ) {
-            return str;
-        } else {
-            int count = 0;
-            int pos = 0;
-            while ((pos = str.indexOf('(', pos)) != -1) {
-                count++;
-                pos++;
-            }
-            pos = 0;
-            while ((pos = str.indexOf(')', pos)) != -1) {
-                count++;
-                pos++;
-            }
-            char []inArr = str.toCharArray();
-            char []outArr = new char[inArr.length+count];
-            pos = 0;
-            for (int i=0;i<inArr.length;i++) {
-                if (inArr[i] == '(' || inArr[i] == ')') {
-                    outArr[pos++] = '\\';
-                }
-                outArr[pos++] = inArr[i];
-            }
-            return new String(outArr);
-
-        }
-    }
-
     /* return of 0 means unsupported. Other return indicates the number
      * of distinct PS fonts needed to draw this text. This saves us
      * doing this processing one extra time.
@@ -1224,120 +1163,123 @@ public class PSPrinterJob extends RasterPrinterJob {
         return (psFonts == null) ? 0 : psFonts.length;
     }
 
-     protected boolean textOut(Graphics g, String str, float x, float y,
-                               Font mLastFont, FontRenderContext frc,
-                               float width) {
-        boolean didText = true;
-
+    protected boolean textOut(Graphics g, String str, float x, float y,
+                              Font mLastFont, FontRenderContext frc,
+                              float width) {
+        /* If we don't have fonts, use 2D path instead. */
         if (mFontProps == null) {
             return false;
-        } else {
-            prepDrawing();
+        }
 
-            /* On-screen drawString renders most control chars as the missing
-             * glyph and have the non-zero advance of that glyph.
-             * Exceptions are \t, \n and \r which are considered zero-width.
-             * Postscript handles control chars mostly as a missing glyph.
-             * But we use 'ashow' specifying a width for the string which
-             * assumes zero-width for those three exceptions, and Postscript
-             * tries to squeeze the extra char in, with the result that the
-             * glyphs look compressed or even overlap.
-             * So exclude those control chars from the string sent to PS.
+        /* On-screen drawString renders most control chars as the missing
+         * glyph and have the non-zero advance of that glyph.
+         * Exceptions are \t, \n and \r which are considered zero-width.
+         * Postscript handles control chars mostly as a missing glyph.
+         * But we use 'ashow' specifying a width for the string which
+         * assumes zero-width for those three exceptions, and Postscript
+         * tries to squeeze the extra char in, with the result that the
+         * glyphs look compressed or even overlap.
+         * So exclude those control chars from the string sent to PS.
+         */
+        str = removeControlChars(str);
+        if (str.isEmpty()) {
+            return true;
+        }
+
+        /* If AWT can't convert all chars, use 2D path instead. */
+        FontAccess access = FontAccess.getFontAccess();
+        PlatformFont peer = (PlatformFont) access.getFontPeer(mLastFont);
+        CharsetString[] acs = peer.makeMultiCharsetString(str, false);
+        if (acs == null) {
+            return false;
+        }
+
+        /* Get an array of indices into our PostScript name
+         * table. If all of the runs can not be converted
+         * to PostScript fonts then null is returned and
+         * we'll want to fall back to printing the text
+         * as shapes.
+         */
+        int[] psFonts = getPSFontIndexArray(mLastFont, acs);
+        if (psFonts == null) {
+            return false;
+        }
+
+        /* Prepare graphics context, now that we know we can handle the text. */
+        prepDrawing();
+
+        /* Draw each string segment. */
+        for (int i = 0; i < acs.length; i++){
+            CharsetString cs = acs[i];
+            CharsetEncoder fontCS = cs.fontDescriptor.encoder;
+
+            StringBuilder nativeStr = new StringBuilder();
+            byte[] strSeg = new byte[cs.length * 2];
+            int len = 0;
+            try {
+                ByteBuffer bb = ByteBuffer.wrap(strSeg);
+                fontCS.encode(CharBuffer.wrap(cs.charsetChars,
+                                              cs.offset,
+                                              cs.length),
+                                              bb, true);
+                bb.flip();
+                len = bb.limit();
+            } catch (IllegalStateException | CoderMalfunctionError xx){
+                continue;
+            }
+            /* The width to fit to may either be specified,
+             * or calculated. Specifying by the caller is only
+             * valid if the text does not need to be decomposed
+             * into multiple calls.
              */
-            str = removeControlChars(str);
-            if (str.length() == 0) {
+            float desiredWidth;
+            if (acs.length == 1 && width != 0f) {
+                desiredWidth = width;
+            } else {
+                Rectangle2D r2d =
+                    mLastFont.getStringBounds(cs.charsetChars,
+                                              cs.offset,
+                                              cs.offset+cs.length,
+                                              frc);
+                desiredWidth = (float)r2d.getWidth();
+            }
+            /* unprintable chars had width of 0, causing a PS error
+             */
+            if (desiredWidth == 0) {
                 return true;
             }
-            PlatformFont peer = (PlatformFont) FontAccess.getFontAccess()
-                                                         .getFontPeer(mLastFont);
-            CharsetString[] acs = peer.makeMultiCharsetString(str, false);
-            if (acs == null) {
-                /* AWT can't convert all chars so use 2D path */
-                return false;
+            nativeStr.append('<');
+            for (int j = 0; j < len; j++){
+                byte b = strSeg[j];
+                // to avoid encoding conversion with println()
+                String hexS = Integer.toHexString(b);
+                int length = hexS.length();
+                if (length > 2) {
+                    hexS = hexS.substring(length - 2, length);
+                } else if (length == 1) {
+                    hexS = "0" + hexS;
+                } else if (length == 0) {
+                    hexS = "00";
+                }
+                nativeStr.append(hexS);
             }
-            /* Get an array of indices into our PostScript name
-             * table. If all of the runs can not be converted
-             * to PostScript fonts then null is returned and
-             * we'll want to fall back to printing the text
-             * as shapes.
-             */
-            int[] psFonts = getPSFontIndexArray(mLastFont, acs);
-            if (psFonts != null) {
-
-                for (int i = 0; i < acs.length; i++){
-                    CharsetString cs = acs[i];
-                    CharsetEncoder fontCS = cs.fontDescriptor.encoder;
-
-                    StringBuilder nativeStr = new StringBuilder();
-                    byte[] strSeg = new byte[cs.length * 2];
-                    int len = 0;
-                    try {
-                        ByteBuffer bb = ByteBuffer.wrap(strSeg);
-                        fontCS.encode(CharBuffer.wrap(cs.charsetChars,
-                                                      cs.offset,
-                                                      cs.length),
-                                      bb, true);
-                        bb.flip();
-                        len = bb.limit();
-                    } catch (IllegalStateException | CoderMalfunctionError xx){
-                        continue;
-                    }
-                    /* The width to fit to may either be specified,
-                     * or calculated. Specifying by the caller is only
-                     * valid if the text does not need to be decomposed
-                     * into multiple calls.
-                     */
-                    float desiredWidth;
-                    if (acs.length == 1 && width != 0f) {
-                        desiredWidth = width;
-                    } else {
-                        Rectangle2D r2d =
-                            mLastFont.getStringBounds(cs.charsetChars,
-                                                      cs.offset,
-                                                      cs.offset+cs.length,
-                                                      frc);
-                        desiredWidth = (float)r2d.getWidth();
-                    }
-                    /* unprintable chars had width of 0, causing a PS error
-                     */
-                    if (desiredWidth == 0) {
-                        return didText;
-                    }
-                    nativeStr.append('<');
-                    for (int j = 0; j < len; j++){
-                        byte b = strSeg[j];
-                        // to avoid encoding conversion with println()
-                        String hexS = Integer.toHexString(b);
-                        int length = hexS.length();
-                        if (length > 2) {
-                            hexS = hexS.substring(length - 2, length);
-                        } else if (length == 1) {
-                            hexS = "0" + hexS;
-                        } else if (length == 0) {
-                            hexS = "00";
-                        }
-                        nativeStr.append(hexS);
-                    }
-                    nativeStr.append('>');
-                    /* This comment costs too much in output file size */
+            nativeStr.append('>');
+            /* This comment costs too much in output file size */
 //                  mPSStream.println("% Font[" + mLastFont.getName() + ", " +
 //                             FontConfiguration.getStyleString(mLastFont.getStyle()) + ", "
 //                             + mLastFont.getSize2D() + "]");
-                    getGState().emitPSFont(psFonts[i], mLastFont.getSize2D());
+            getGState().emitPSFont(psFonts[i], mLastFont.getSize2D());
 
-                    // out String
-                    mPSStream.println(nativeStr.toString() + " " +
-                                      desiredWidth + " " + x + " " + y + " " +
-                                      DrawStringName);
-                    x += desiredWidth;
-                }
-            } else {
-                didText = false;
-            }
+            // out String
+            mPSStream.println(nativeStr.toString() + " " +
+                              desiredWidth + " " + x + " " + y + " " +
+                              DrawStringName);
+            x += desiredWidth;
         }
 
-        return didText;
-     }
+        return true;
+    }
+
     /**
      * Set the current path rule to be either
      * {@code FILL_EVEN_ODD} (using the
@@ -1576,7 +1518,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
         if (options != null && !options.isEmpty()) {
             pFlags |= OPTIONS;
-            ncomps+=1;
+            ncomps+=options.trim().split(" ").length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
             pFlags |= JOBTITLE;
@@ -1802,7 +1744,6 @@ public class PSPrinterJob extends RasterPrinterJob {
             return mClip == null || mClip.equals(clip);
         }
 
-
         void emitPSClip(Shape clip) {
             if (clip != null
                 && (mClip == null || mClip.equals(clip) == false)) {
@@ -1937,7 +1878,8 @@ public class PSPrinterJob extends RasterPrinterJob {
     protected void deviceFill(PathIterator pathIter, Color color,
                               AffineTransform tx, Shape clip) {
 
-        if (Double.isNaN(tx.getScaleX()) ||
+        if (pathIter.isDone() ||
+            Double.isNaN(tx.getScaleX()) ||
             Double.isNaN(tx.getScaleY()) ||
             Double.isNaN(tx.getShearX()) ||
             Double.isNaN(tx.getShearY()) ||
@@ -2094,200 +2036,6 @@ public class PSPrinterJob extends RasterPrinterJob {
         byte[] retArr = new byte[olen];
         System.arraycopy(outArr, 0, retArr, 0, olen);
         return retArr;
-
-    }
-
-    /**
-     * PluginPrinter generates EPSF wrapped with a header and trailer
-     * comment. This conforms to the new requirements of Mozilla 1.7
-     * and FireFox 1.5 and later. Earlier versions of these browsers
-     * did not support plugin printing in the general sense (not just Java).
-     * A notable limitation of these browsers is that they handle plugins
-     * which would span page boundaries by scaling plugin content to fit on a
-     * single page. This means white space is left at the bottom of the
-     * previous page and its impossible to print these cases as they appear on
-     * the web page. This is contrast to how the same browsers behave on
-     * Windows where it renders as on-screen.
-     * Cases where the content fits on a single page do work fine, and they
-     * are the majority of cases.
-     * The scaling that the browser specifies to make the plugin content fit
-     * when it is larger than a single page can hold is non-uniform. It
-     * scales the axis in which the content is too large just enough to
-     * ensure it fits. For content which is extremely long this could lead
-     * to noticeable distortion. However that is probably rare enough that
-     * its not worth compensating for that here, but we can revisit that if
-     * needed, and compensate by making the scale for the other axis the
-     * same.
-     */
-    public static class PluginPrinter implements Printable {
-
-        private EPSPrinter epsPrinter;
-        private Component applet;
-        private PrintStream stream;
-        private String epsTitle;
-        private int bx, by, bw, bh;
-        private int width, height;
-
-        /**
-         * This is called from the Java Plug-in to print an Applet's
-         * contents as EPS to a postscript stream provided by the browser.
-         * @param applet the applet component to print.
-         * @param stream the print stream provided by the plug-in
-         * @param x the x location of the applet panel in the browser window
-         * @param y the y location of the applet panel in the browser window
-         * @param w the width of the applet panel in the browser window
-         * @param h the width of the applet panel in the browser window
-         */
-        @SuppressWarnings("deprecation")
-        public PluginPrinter(Component applet,
-                             PrintStream stream,
-                             int x, int y, int w, int h) {
-
-            this.applet = applet;
-            this.epsTitle = "Java Plugin Applet";
-            this.stream = stream;
-            bx = x;
-            by = y;
-            bw = w;
-            bh = h;
-            width = applet.size().width;
-            height = applet.size().height;
-            epsPrinter = new EPSPrinter(this, epsTitle, stream,
-                                        0, 0, width, height);
-        }
-
-        public void printPluginPSHeader() {
-            stream.println("%%BeginDocument: JavaPluginApplet");
-        }
-
-        public void printPluginApplet() {
-            try {
-                epsPrinter.print();
-            } catch (PrinterException e) {
-            }
-        }
-
-        public void printPluginPSTrailer() {
-            stream.println("%%EndDocument: JavaPluginApplet");
-            stream.flush();
-        }
-
-        public void printAll() {
-            printPluginPSHeader();
-            printPluginApplet();
-            printPluginPSTrailer();
-        }
-
-        public int print(Graphics g, PageFormat pf, int pgIndex) {
-            if (pgIndex > 0) {
-                return Printable.NO_SUCH_PAGE;
-            } else {
-                // "aware" client code can detect that its been passed a
-                // PrinterGraphics and could theoretically print
-                // differently. I think this is more likely useful than
-                // a problem.
-                applet.printAll(g);
-                return Printable.PAGE_EXISTS;
-            }
-        }
-
-    }
-
-    /*
-     * This class can take an application-client supplied printable object
-     * and send the result to a stream.
-     * The application does not need to send any postscript to this stream
-     * unless it needs to specify a translation etc.
-     * It assumes that its importing application obeys all the conventions
-     * for importation of EPS. See Appendix H - Encapsulated Postscript File
-     * Format - of the Adobe Postscript Language Reference Manual, 2nd edition.
-     * This class could be used as the basis for exposing the ability to
-     * generate EPSF from 2D graphics as a StreamPrintService.
-     * In that case a MediaPrintableArea attribute could be used to
-     * communicate the bounding box.
-     */
-    public static class EPSPrinter implements Pageable {
-
-        private PageFormat pf;
-        private PSPrinterJob job;
-        private int llx, lly, urx, ury;
-        private Printable printable;
-        private PrintStream stream;
-        private String epsTitle;
-
-        public EPSPrinter(Printable printable, String title,
-                          PrintStream stream,
-                          int x, int y, int wid, int hgt) {
-
-            this.printable = printable;
-            this.epsTitle = title;
-            this.stream = stream;
-            llx = x;
-            lly = y;
-            urx = llx+wid;
-            ury = lly+hgt;
-            // construct a PageFormat with zero margins representing the
-            // exact bounds of the applet. ie construct a theoretical
-            // paper which happens to exactly match applet panel size.
-            Paper p = new Paper();
-            p.setSize((double)wid, (double)hgt);
-            p.setImageableArea(0.0,0.0, (double)wid, (double)hgt);
-            pf = new PageFormat();
-            pf.setPaper(p);
-        }
-
-        public void print() throws PrinterException {
-            stream.println("%!PS-Adobe-3.0 EPSF-3.0");
-            stream.println("%%BoundingBox: " +
-                           llx + " " + lly + " " + urx + " " + ury);
-            stream.println("%%Title: " + epsTitle);
-            stream.println("%%Creator: Java Printing");
-            stream.println("%%CreationDate: " + new java.util.Date());
-            stream.println("%%EndComments");
-            stream.println("/pluginSave save def");
-            stream.println("mark"); // for restoring stack state on return
-
-            job = new PSPrinterJob();
-            job.epsPrinter = this; // modifies the behaviour of PSPrinterJob
-            job.mPSStream = stream;
-            job.mDestType = RasterPrinterJob.STREAM; // prevents closure
-
-            job.startDoc();
-            try {
-                job.printPage(this, 0);
-            } catch (Throwable t) {
-                if (t instanceof PrinterException) {
-                    throw (PrinterException)t;
-                } else {
-                    throw new PrinterException(t.toString());
-                }
-            } finally {
-                stream.println("cleartomark"); // restore stack state
-                stream.println("pluginSave restore");
-                job.endDoc();
-            }
-            stream.flush();
-        }
-
-        public int getNumberOfPages() {
-            return 1;
-        }
-
-        public PageFormat getPageFormat(int pgIndex) {
-            if (pgIndex > 0) {
-                throw new IndexOutOfBoundsException("pgIndex");
-            } else {
-                return pf;
-            }
-        }
-
-        public Printable getPrintable(int pgIndex) {
-            if (pgIndex > 0) {
-                throw new IndexOutOfBoundsException("pgIndex");
-            } else {
-            return printable;
-            }
-        }
 
     }
 }

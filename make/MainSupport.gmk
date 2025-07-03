@@ -58,76 +58,76 @@ endef
 
 define CleanDocs
 	@$(PRINTF) "Cleaning docs ..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/docs
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/javadoc
 	$(RM) -r $(IMAGES_OUTPUTDIR)/docs
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 # Cleans the dir given as $1
 define CleanDir
-	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning %s build artifacts ..." "$(strip $1)"
+	@$(ECHO) "" $(LOG_DEBUG)
 	($(CD) $(OUTPUTDIR) && $(RM) -r $1)
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define CleanSupportDir
-	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning %s build artifacts ..." "$(strip $1)"
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/$(strip $1)
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define CleanMakeSupportDir
-	@$(PRINTF) "Cleaning $(strip $1) make support artifacts ..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning %s make support artifacts ..." "$(strip $1)"
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/$(strip $1)
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define CleanTest
-	@$(PRINTF) "Cleaning test $(strip $1) ..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning test %s ..." "$(strip $1)"
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))
         # Remove as much of the test directory structure as is empty
 	$(RMDIR) -p $(dir $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))) 2> /dev/null || true
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define Clean-gensrc
-	@$(PRINTF) "Cleaning gensrc $(if $1,for $(strip $1) )..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning gensrc %s..." "$(if $1,for $(strip $1) )"
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define Clean-java
-	@$(PRINTF) "Cleaning java $(if $1,for $(strip $1) )..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning java %s..." "$(if $1,for $(strip $1) )"
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(JDK_OUTPUTDIR)/modules/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/special_classes/$(strip $1)
-	$(PRINTF) " done\n"
-	$(PRINTF) "Cleaning headers $(if $1,for $(strip $1)) ..."
+	$(ECHO) " done"
+	$(PRINTF) "Cleaning headers %s..." "$(if $1,for $(strip $1) )"
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define Clean-native
-	@$(PRINTF) "Cleaning native $(if $1,for $(strip $1) )..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning native %s..." "$(if $1,for $(strip $1) )"
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/native/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define Clean-include
-	@$(PRINTF) "Cleaning include $(if $1,for $(strip $1) )..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
+	@$(PRINTF) "Cleaning include %s..." "$(if $1,for $(strip $1) )"
+	@$(ECHO) "" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_include/$(strip $1)
-	@$(PRINTF) " done\n"
+	@$(ECHO) " done"
 endef
 
 define CleanModule

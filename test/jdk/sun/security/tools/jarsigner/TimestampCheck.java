@@ -905,7 +905,7 @@ public class TimestampCheck {
         }
 
         gencert("tsold", "-ext eku:critical=ts -startdate -40d -validity 500");
-        gencert("tsbefore2019", "-ext eku:critical=ts -startdate 2018/01/01 -validity 3000");
+        gencert("tsbefore2019", "-ext eku:critical=ts -startdate 2018/01/01 -validity 5000");
 
         gencert("tsweak", "-ext eku:critical=ts");
         gencert("tsdisabled", "-ext eku:critical=ts");

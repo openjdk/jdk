@@ -35,9 +35,9 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
-#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -83,7 +83,7 @@ uint G1FullCollector::calc_active_workers() {
 
   // Consider G1HeapWastePercent to decide max number of workers. Each worker
   // will in average cause half a region waste.
-  uint max_wasted_regions_allowed = ((heap->num_regions() * G1HeapWastePercent) / 100);
+  uint max_wasted_regions_allowed = ((heap->num_committed_regions() * G1HeapWastePercent) / 100);
   uint waste_worker_count = MAX2((max_wasted_regions_allowed * 2) , 1u);
   uint heap_waste_worker_limit = MIN2(waste_worker_count, max_worker_count);
 
@@ -133,9 +133,9 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _markers = NEW_C_HEAP_ARRAY(G1FullGCMarker*, _num_workers, mtGC);
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
-  _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
-  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_regions(), mtGC);
-  for (uint j = 0; j < heap->max_regions(); j++) {
+  _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_num_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_num_regions(), mtGC);
+  for (uint j = 0; j < heap->max_num_regions(); j++) {
     _live_stats[j].clear();
     _compaction_tops[j] = nullptr;
   }
@@ -228,7 +228,7 @@ void G1FullCollector::collect() {
   G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
-void G1FullCollector::complete_collection() {
+void G1FullCollector::complete_collection(size_t allocation_word_size) {
   // Restore all marks.
   restore_marks();
 
@@ -242,7 +242,7 @@ void G1FullCollector::complete_collection() {
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_bitmap(_heap->workers());
 
-  _heap->prepare_for_mutator_after_full_collection();
+  _heap->prepare_for_mutator_after_full_collection(allocation_word_size);
 
   _heap->resize_all_tlabs();
 
@@ -299,18 +299,14 @@ void G1FullCollector::phase1_mark_live_objects() {
   }
 
   {
-    uint old_active_mt_degree = reference_processor()->num_queues();
-    reference_processor()->set_active_mt_degree(workers());
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Reference Processing", scope()->timer());
     // Process reference objects found during marking.
     ReferenceProcessorPhaseTimes pt(scope()->timer(), reference_processor()->max_num_queues());
     G1FullGCRefProcProxyTask task(*this, reference_processor()->max_num_queues());
-    const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = reference_processor()->process_discovered_references(task, _heap->workers(), pt);
     scope()->tracer()->report_gc_reference_stats(stats);
     pt.print_all_references();
     assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
-
-    reference_processor()->set_active_mt_degree(old_active_mt_degree);
   }
 
   {
@@ -415,7 +411,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   // lowest and the highest region in the tails of the compaction points.
 
   uint start_serial = truncate_parallel_cps();
-  assert(start_serial < _heap->max_reserved_regions(), "Called on empty parallel compaction queues");
+  assert(start_serial < _heap->max_num_regions(), "Called on empty parallel compaction queues");
 
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
@@ -427,7 +423,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   HeapWord* dense_prefix_top = compaction_top(start_hr);
   G1SerialRePrepareClosure re_prepare(serial_cp, dense_prefix_top);
 
-  for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
+  for (uint i = start_serial + 1; i < _heap->max_num_regions(); i++) {
     if (is_compaction_target(i)) {
       G1HeapRegion* current = _heap->region_at(i);
       set_compaction_top(current, current->bottom());
@@ -445,11 +441,11 @@ void G1FullCollector::phase2d_prepare_humongous_compaction() {
 
   uint last_serial_target = serial_cp->current_region()->hrm_index();
   uint region_index = last_serial_target + 1;
-  uint max_reserved_regions = _heap->max_reserved_regions();
+  uint max_num_regions = _heap->max_num_regions();
 
   G1FullGCCompactionPoint* humongous_cp = humongous_compaction_point();
 
-  while (region_index < max_reserved_regions) {
+  while (region_index < max_num_regions) {
     G1HeapRegion* hr = _heap->region_at_or_null(region_index);
 
     if (hr == nullptr) {

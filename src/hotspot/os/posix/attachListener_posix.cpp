@@ -114,6 +114,7 @@ public:
 
   void close() {
     if (opened()) {
+      ::shutdown(_socket, SHUT_RDWR);
       ::close(_socket);
       _socket = -1;
     }
@@ -132,9 +133,8 @@ public:
     RESTARTABLE(::write(_socket, buffer, size), n);
     return checked_cast<int>(n);
   }
-  // called after writing all data
+
   void flush() override {
-    ::shutdown(_socket, SHUT_RDWR);
   }
 };
 
@@ -144,13 +144,16 @@ class PosixAttachOperation: public AttachOperation {
   SocketChannel _socket_channel;
 
  public:
+  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {}
+
   void complete(jint res, bufferedStream* st) override;
 
-  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {
+  ReplyWriter* get_reply_writer() override {
+    return &_socket_channel;
   }
 
   bool read_request() {
-    return AttachOperation::read_request(&_socket_channel, &_socket_channel);
+    return _socket_channel.read_request(this, &_socket_channel);
   }
 };
 
@@ -318,11 +321,6 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
 // socket could be made non-blocking and a timeout could be used.
 
 void PosixAttachOperation::complete(jint result, bufferedStream* st) {
-  JavaThread* thread = JavaThread::current();
-  ThreadBlockInVM tbivm(thread);
-
-  write_reply(&_socket_channel, result, st);
-
   delete this;
 }
 

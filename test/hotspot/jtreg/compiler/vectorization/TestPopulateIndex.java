@@ -27,7 +27,8 @@
 * @summary Test vectorization of loop induction variable usage in the loop
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
-*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*")
+*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*") |
+*           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
 * @library /test/lib /
 * @run driver compiler.vectorization.TestPopulateIndex
 */

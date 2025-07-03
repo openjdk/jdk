@@ -2262,7 +2262,7 @@ public final class Float16
          * &lt; 10<sup><i>k</i>+1</sup>.
          * <p>
          * The result is correct when |{@code e}| &le; 6_432_162.
-         * Otherwise the result is undefined.
+         * Otherwise, the result is undefined.
          *
          * @param e The exponent of 2, which should meet
          *          |{@code e}| &le; 6_432_162 for safe results.
@@ -2279,7 +2279,7 @@ public final class Float16
          * <p>
          * The result is correct when
          * -3_606_689 &le; {@code e} &le; 3_150_619.
-         * Otherwise the result is undefined.
+         * Otherwise, the result is undefined.
          *
          * @param e The exponent of 2, which should meet
          *          -3_606_689 &le; {@code e} &le; 3_150_619 for safe results.
@@ -2296,7 +2296,7 @@ public final class Float16
          * &lt; 2<sup><i>k</i>+1</sup>.
          * <p>
          * The result is correct when |{@code e}| &le; 1_838_394.
-         * Otherwise the result is undefined.
+         * Otherwise, the result is undefined.
          *
          * @param e The exponent of 10, which should meet
          *          |{@code e}| &le; 1_838_394 for safe results.

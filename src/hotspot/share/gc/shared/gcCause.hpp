@@ -55,7 +55,6 @@ class GCCause : public AllStatic {
 
     /* implementation independent, but reserved for GC use */
     _no_gc,
-    _no_cause_specified,
     _allocation_failure,
 
     /* implementation specific */
@@ -74,6 +73,7 @@ class GCCause : public AllStatic {
 
     _shenandoah_stop_vm,
     _shenandoah_allocation_failure_evac,
+    _shenandoah_humongous_allocation_failure,
     _shenandoah_concurrent_gc,
     _shenandoah_upgrade_to_full_gc,
 
@@ -98,14 +98,13 @@ class GCCause : public AllStatic {
             cause == GCCause::_wb_full_gc);
   }
 
-  inline static bool is_serviceability_requested_gc(GCCause::Cause
-                                                             cause) {
+  inline static bool is_serviceability_requested_gc(GCCause::Cause cause) {
     return (cause == GCCause::_jvmti_force_gc ||
             cause == GCCause::_heap_inspection ||
             cause == GCCause::_heap_dump);
   }
 
-  // Causes for collection of the tenured gernation
+  // Causes for collection of the tenured generation
   inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
     // _allocation_failure is the generic cause a collection which could result
     // in the collection of the tenured generation if there is not enough space
@@ -116,8 +115,7 @@ class GCCause : public AllStatic {
   // Causes for collection of the young generation
   inline static bool is_allocation_failure_gc(GCCause::Cause cause) {
     // _allocation_failure is the generic cause a collection for allocation failure
-    return (cause == GCCause::_allocation_failure ||
-            cause == GCCause::_shenandoah_allocation_failure_evac);
+    return cause == GCCause::_allocation_failure;
   }
 
   // Return a string describing the GCCause.

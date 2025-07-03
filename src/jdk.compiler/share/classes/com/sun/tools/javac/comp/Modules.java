@@ -205,7 +205,7 @@ public class Modules extends JCTree.Visitor {
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);
 
-        lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
+        lintOptions = !options.isLintDisabled(LintCategory.OPTIONS);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
         ClassWriter classWriter = ClassWriter.instance(context);

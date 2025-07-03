@@ -26,9 +26,9 @@
 
 
 #include "gc/shared/gcCause.hpp"
+#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -241,6 +241,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                 ", allocated: %zu", available, capacity, allocated);
 
   if (_start_gc_is_pending) {
+    log_trigger("GC start is already pending");
     return true;
   }
 

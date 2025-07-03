@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.vm.ci.hotspot;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
@@ -41,7 +40,7 @@ public abstract class Cleaner extends WeakReference<Object> {
     /**
      * Head of linked list of cleaners.
      */
-    @NativeImageReinitialize private static Cleaner first;
+    private static Cleaner first;
 
     /**
      * Linked list pointers.

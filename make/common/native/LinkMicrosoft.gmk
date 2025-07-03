@@ -117,6 +117,10 @@ define CreateDynamicLibraryOrExecutableMicrosoft
 	      -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" \
 	      -outputresource:$$@;#1
         endif
+        ifneq ($(SIGNING_HOOK), )
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_call_signing_hook, \
+	      $(SIGNING_HOOK) $$($1_TARGET))
+        endif
 endef
 
 ################################################################################

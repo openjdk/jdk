@@ -305,10 +305,6 @@ public:
 
   /* special case: stub employs array of entries */
 
-  // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
   // generate code to implement method contains
@@ -343,7 +339,7 @@ public:
   // a subroutine for debugging the GC
   static address verify_oop_subroutine_entry_address()     { return (address)&_verify_oop_subroutine_entry; }
 
-  static CallStub call_stub()                              { return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
+  static CallStub call_stub()                              { assert(_call_stub_entry != nullptr, ""); return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
 

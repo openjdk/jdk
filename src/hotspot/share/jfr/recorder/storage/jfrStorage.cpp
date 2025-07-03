@@ -398,7 +398,7 @@ static void assert_flush_large_precondition(ConstBufferPtr cur, const u1* const 
 #endif // ASSERT
 
 BufferPtr JfrStorage::flush(BufferPtr cur, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_precondition(cur, used, native, t);)
+  DEBUG_ONLY(assert_flush_precondition(cur, used, native, t);)
   const u1* const cur_pos = cur->pos();
   req += used;
   // requested size now encompass the outstanding used size
@@ -407,7 +407,7 @@ BufferPtr JfrStorage::flush(BufferPtr cur, size_t used, size_t req, bool native,
 }
 
 BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_regular_precondition(cur, cur_pos, used, req, t);)
+  DEBUG_ONLY(assert_flush_regular_precondition(cur, cur_pos, used, req, t);)
   // A flush is needed before memmove since a non-large buffer is thread stable
   // (thread local). The flush will not modify memory in addresses above pos()
   // which is where the "used / uncommitted" data resides. It is therefore both
@@ -450,7 +450,7 @@ static BufferPtr restore_shelved_buffer(bool native, Thread* t) {
 }
 
 BufferPtr JfrStorage::flush_large(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_flush_large_precondition(cur, cur_pos, used, req, native, t);)
+  DEBUG_ONLY(assert_flush_large_precondition(cur, cur_pos, used, req, native, t);)
   // Can the "regular" buffer (now shelved) accommodate the requested size?
   BufferPtr shelved = t->jfr_thread_local()->shelved_buffer();
   assert(shelved != nullptr, "invariant");
@@ -480,7 +480,7 @@ static BufferPtr large_fail(BufferPtr cur, bool native, JfrStorage& storage_inst
 // even though it might be smaller than the requested size.
 // Caller needs to ensure if the size was successfully accommodated.
 BufferPtr JfrStorage::provision_large(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
-  debug_only(assert_provision_large_precondition(cur, used, req, t);)
+  DEBUG_ONLY(assert_provision_large_precondition(cur, used, req, t);)
   assert(t->jfr_thread_local()->shelved_buffer() != nullptr, "invariant");
   BufferPtr const buffer = acquire_large(req, t);
   if (buffer == nullptr) {

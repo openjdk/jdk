@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
  * @test id=nocoops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -37,6 +39,8 @@
  * @test id=nocoops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -48,6 +52,8 @@
  * @test id=coops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -59,6 +65,8 @@
  * @test id=coops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -131,8 +139,7 @@ public class TestDefaultArchiveLoading {
             default: throw new RuntimeException("Invalid argument " + args[0]);
         }
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+UnlockExperimentalVMOptions",
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:" + coh + "UseCompactObjectHeaders",
                 "-XX:" + coops + "UseCompressedOops",
                 "-Xlog:cds",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -764,7 +764,7 @@ public final class Files {
      * is identified by its {@link FileAttribute#name name}. If more than one
      * attribute of the same name is included in the array then all but the last
      * occurrence is ignored. When no file attributes are specified, then the
-     * resulting file may have more restrictive access permissions to files
+     * resulting file may have more restrictive access permissions than files
      * created by the {@link java.io.File#createTempFile(String,String,File)}
      * method.
      *
@@ -860,7 +860,10 @@ public final class Files {
      * file-attributes} to set atomically when creating the directory. Each
      * attribute is identified by its {@link FileAttribute#name name}. If more
      * than one attribute of the same name is included in the array then all but
-     * the last occurrence is ignored.
+     * the last occurrence is ignored. When no file attributes are specified,
+     * then the resulting directory may have more restrictive access
+     * permissions than directories created by the
+     * {@linkplain Files#createDirectory(Path, FileAttribute<?>...)} method.
      *
      * @param   dir
      *          the path to directory in which to create the directory
@@ -3040,7 +3043,7 @@ public final class Files {
         byte[] ba = readAllBytes(path);
         if (path.getClass().getModule() != Object.class.getModule())
             ba = ba.clone();
-        return JLA.newStringNoRepl(ba, cs);
+        return JLA.uncheckedNewStringNoRepl(ba, cs);
     }
 
     /**
@@ -3359,7 +3362,7 @@ public final class Files {
         Objects.requireNonNull(csq);
         Objects.requireNonNull(cs);
 
-        byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
+        byte[] bytes = JLA.uncheckedGetBytesNoRepl(String.valueOf(csq), cs);
         if (path.getClass().getModule() != Object.class.getModule())
             bytes = bytes.clone();
         write(path, bytes, options);

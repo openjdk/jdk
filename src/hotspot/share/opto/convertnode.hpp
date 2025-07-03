@@ -79,7 +79,6 @@ class ConvD2INode : public ConvertNode {
   virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvD2LNode------------------------------------
@@ -91,7 +90,6 @@ class ConvD2LNode : public ConvertNode {
   virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2DNode------------------------------------
@@ -124,7 +122,6 @@ public:
   virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2LNode------------------------------------
@@ -136,7 +133,6 @@ public:
   virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvHF2FNode------------------------------------
@@ -254,28 +250,6 @@ public:
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
-//-----------------------------RoundFloatNode----------------------------------
-class RoundFloatNode: public Node {
-  public:
-  RoundFloatNode(Node* c, Node *in1): Node(c, in1) {}
-  virtual int   Opcode() const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
-  virtual uint  ideal_reg() const { return Op_RegF; }
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual const Type* Value(PhaseGVN* phase) const;
-};
-
-
-//-----------------------------RoundDoubleNode---------------------------------
-class RoundDoubleNode: public Node {
-  public:
-  RoundDoubleNode(Node* c, Node *in1): Node(c, in1) {}
-  virtual int   Opcode() const;
-  virtual const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint  ideal_reg() const { return Op_RegD; }
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual const Type* Value(PhaseGVN* phase) const;
-};
 
 //-----------------------------RoundDoubleModeNode-----------------------------
 class RoundDoubleModeNode: public Node {

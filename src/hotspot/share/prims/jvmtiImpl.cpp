@@ -120,6 +120,7 @@ address JvmtiBreakpoint::getBcp() const {
 }
 
 void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
+  assert(!_method->is_old(), "the breakpoint method shouldn't be old");
   ((Method*)_method->*meth_act)(_bci);
 
   // add/remove breakpoint to/from versions of the method that are EMCP.
@@ -183,8 +184,16 @@ void JvmtiBreakpoint::print_on(outputStream* out) const {
 //
 // Modify the Breakpoints data structure at a safepoint
 //
+// The caller of VM_ChangeBreakpoints operation should ensure that
+// _bp.method is preserved until VM_ChangeBreakpoints is processed.
 
 void VM_ChangeBreakpoints::doit() {
+  if (_bp->method()->is_old()) {
+    // The bp->_method became old because VMOp with class redefinition happened for this class
+    // after JvmtiBreakpoint was created but before JVM_ChangeBreakpoints started.
+    // All class breakpoints are cleared during redefinition, so don't set/clear this breakpoint.
+   return;
+  }
   switch (_operation) {
   case SET_BREAKPOINT:
     _breakpoints->set_at_safepoint(*_bp);
@@ -249,6 +258,9 @@ int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
   if (find(bp) != -1) {
     return JVMTI_ERROR_DUPLICATE;
   }
+
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
+  methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
   return JVMTI_ERROR_NONE;
@@ -259,6 +271,8 @@ int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
     return JVMTI_ERROR_NOT_FOUND;
   }
 
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
+  methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints clear_breakpoint(VM_ChangeBreakpoints::CLEAR_BREAKPOINT, &bp);
   VMThread::execute(&clear_breakpoint);
   return JVMTI_ERROR_NONE;
@@ -658,7 +672,7 @@ vframe *VM_GetOrSetLocal::get_vframe() {
 
 javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
   vframe* vf = get_vframe();
-  if (!(_self || _thread->is_carrier_thread_suspended())) {
+  if (!_self && !_thread->is_suspended() && !_thread->is_carrier_thread_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return nullptr;
   }
@@ -744,40 +758,6 @@ VM_VirtualThreadGetReceiver::VM_VirtualThreadGetReceiver(
     JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth, bool self)
     : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0, self) {}
 
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-// class JvmtiSuspendControl - see comments in jvmtiImpl.hpp
-//
-
-bool JvmtiSuspendControl::suspend(JavaThread *java_thread) {
-  return java_thread->java_suspend();
-}
-
-bool JvmtiSuspendControl::resume(JavaThread *java_thread) {
-  return java_thread->java_resume();
-}
-
-void JvmtiSuspendControl::print() {
-#ifndef PRODUCT
-  ResourceMark rm;
-  LogStreamHandle(Trace, jvmti) log_stream;
-  log_stream.print("Suspended Threads: [");
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-#ifdef JVMTI_TRACE
-    const char *name   = JvmtiTrace::safe_get_thread_name(thread);
-#else
-    const char *name   = "";
-#endif /*JVMTI_TRACE */
-    log_stream.print("%s(%c ", name, thread->is_suspended() ? 'S' : '_');
-    if (!thread->has_last_Java_frame()) {
-      log_stream.print("no stack");
-    }
-    log_stream.print(") ");
-  }
-  log_stream.print_cr("]");
-#endif
-}
 
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
     nmethod* nm) {

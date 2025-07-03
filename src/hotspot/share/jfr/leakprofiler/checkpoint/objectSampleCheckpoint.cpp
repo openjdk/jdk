@@ -34,12 +34,12 @@
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTraceRepository.inline.hpp"
 #include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "jfr/utilities/jfrHashtable.hpp"
-#include "jfr/utilities/jfrPredicate.hpp"
+#include "jfr/utilities/jfrSet.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -48,14 +48,13 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
-const int initial_array_size = 64;
+const unsigned int initial_size = 431;
 
-template <typename T>
-static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (mtTracing) GrowableArray<T>(size, mtTracing);
+static JfrCHeapTraceIdSet* c_heap_allocate_set(int size = initial_size) {
+  return new JfrCHeapTraceIdSet(size);
 }
 
-static GrowableArray<traceid>* unloaded_thread_id_set = nullptr;
+static JfrCHeapTraceIdSet* unloaded_thread_id_set = nullptr;
 
 class ThreadIdExclusiveAccess : public StackObj {
  private:
@@ -73,15 +72,15 @@ static bool has_thread_exited(traceid tid) {
     return false;
   }
   ThreadIdExclusiveAccess lock;
-  return JfrPredicate<traceid, compare_traceid>::test(unloaded_thread_id_set, tid);
+  return unloaded_thread_id_set->contains(tid);
 }
 
 static void add_to_unloaded_thread_set(traceid tid) {
   ThreadIdExclusiveAccess lock;
   if (unloaded_thread_id_set == nullptr) {
-    unloaded_thread_id_set = c_heap_allocate_array<traceid>();
+    unloaded_thread_id_set = c_heap_allocate_set();
   }
-  JfrMutablePredicate<traceid, compare_traceid>::test(unloaded_thread_id_set, tid);
+  unloaded_thread_id_set->add(tid);
 }
 
 void ObjectSampleCheckpoint::on_thread_exit(traceid tid) {
@@ -194,10 +193,10 @@ inline void BlobCache::on_unlink(BlobEntry* entry) const {
   assert(entry != nullptr, "invariant");
 }
 
-static GrowableArray<traceid>* id_set = nullptr;
+static JfrResourceAreaTraceIdSet* id_set = nullptr;
 
 static void prepare_for_resolution() {
-  id_set = new GrowableArray<traceid>(JfrOptionSet::old_object_queue_size());
+  id_set = new JfrResourceAreaTraceIdSet(initial_size);
 }
 
 static bool stack_trace_precondition(const ObjectSample* sample) {
@@ -256,7 +255,7 @@ void StackTraceBlobInstaller::install(ObjectSample* sample) {
   writer.write_type(TYPE_STACKTRACE);
   writer.write_count(1);
   ObjectSampleCheckpoint::write_stacktrace(stack_trace, writer);
-  blob = writer.copy();
+  blob = stack_trace->should_write() ? writer.copy() : writer.move();
   _cache.put(sample, blob);
   sample->set_stacktrace(blob);
 }
@@ -267,7 +266,6 @@ static void install_stack_traces(const ObjectSampler* sampler) {
   assert(last != nullptr, "invariant");
   assert(last != sampler->last_resolved(), "invariant");
   ResourceMark rm;
-  JfrKlassUnloading::sort();
   StackTraceBlobInstaller installer;
   iterate_samples(installer);
 }
@@ -317,7 +315,7 @@ static bool is_klass_unloaded(traceid klass_id) {
 static bool is_processed(traceid method_id) {
   assert(method_id != 0, "invariant");
   assert(id_set != nullptr, "invariant");
-  return JfrMutablePredicate<traceid, compare_traceid>::test(id_set, method_id);
+  return !id_set->add(method_id);
 }
 
 void ObjectSampleCheckpoint::add_to_leakp_set(const InstanceKlass* ik, traceid method_id) {
@@ -336,10 +334,11 @@ void ObjectSampleCheckpoint::write_stacktrace(const JfrStackTrace* trace, JfrChe
   // JfrStackTrace
   writer.write(trace->id());
   writer.write((u1)!trace->_reached_root);
-  writer.write(trace->_nr_of_frames);
+  const int number_of_frames = trace->number_of_frames();
+  writer.write<u4>(number_of_frames);
   // JfrStackFrames
-  for (u4 i = 0; i < trace->_nr_of_frames; ++i) {
-    const JfrStackFrame& frame = trace->_frames[i];
+  for (int i = 0; i < number_of_frames; ++i) {
+    const JfrStackFrame& frame = trace->_frames->at(i);
     frame.write(writer);
     add_to_leakp_set(frame._klass, frame._methodid);
   }
@@ -362,9 +361,57 @@ static void write_thread_blob(const ObjectSample* sample, JfrCheckpointWriter& w
   }
 }
 
+static JfrResourceAreaTraceIdSet* _stacktrace_id_set = nullptr;
+
+static inline bool should_write(const JfrStackTrace* stacktrace) {
+  assert(stacktrace != nullptr, "invariant");
+  assert(_stacktrace_id_set != nullptr, "invariant");
+  return stacktrace->should_write() && _stacktrace_id_set->contains(stacktrace->id());
+}
+
+class LeakProfilerStackTraceWriter {
+ private:
+  JfrCheckpointWriter& _writer;
+  int _count;
+ public:
+  LeakProfilerStackTraceWriter(JfrCheckpointWriter& writer) : _writer(writer), _count(0) {
+    assert(_stacktrace_id_set != nullptr, "invariant");
+  }
+
+  int count() const { return _count; }
+
+  void operator()(const JfrStackTrace* stacktrace) {
+    if (should_write(stacktrace)) {
+      stacktrace->write(_writer);
+      ++_count;
+    }
+  }
+};
+
+void ObjectSampleCheckpoint::write_stacktraces(Thread* thread) {
+  assert(_stacktrace_id_set != nullptr, "invariant");
+  assert(_stacktrace_id_set->is_nonempty(), "invariant");
+
+  JfrCheckpointWriter writer(thread);
+  writer.write_type(TYPE_STACKTRACE);
+  const int64_t count_offset = writer.reserve(sizeof(u4)); // Don't know how many yet
+
+  LeakProfilerStackTraceWriter lpstw(writer);
+  JfrStackTraceRepository::iterate_leakprofiler(lpstw);
+  assert(lpstw.count() == _stacktrace_id_set->size(), "invariant");
+  writer.write_count(lpstw.count(), count_offset);
+}
+
 static void write_stacktrace_blob(const ObjectSample* sample, JfrCheckpointWriter& writer) {
+  assert(sample != nullptr, "invariant");
+  assert(_stacktrace_id_set != nullptr, "invariant");
   if (sample->has_stacktrace()) {
     write_blob(sample->stacktrace(), writer);
+    return;
+  }
+  const traceid stacktrace_id = sample->stack_trace_id();
+  if (stacktrace_id != 0) {
+    _stacktrace_id_set->add(stacktrace_id);
   }
 }
 
@@ -398,11 +445,23 @@ static void write_sample_blobs(const ObjectSampler* sampler, bool emit_all, Thre
   iterate_samples(cbw, true);
 }
 
+static inline unsigned int set_size() {
+  const unsigned int queue_size = static_cast<unsigned int>(JfrOptionSet::old_object_queue_size());
+  return queue_size > initial_size ? queue_size : initial_size;
+}
+
 void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge_store, bool emit_all, Thread* thread) {
   assert(sampler != nullptr, "invariant");
   assert(edge_store != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
-  write_sample_blobs(sampler, emit_all, thread);
+  {
+    ResourceMark rm(thread);
+    _stacktrace_id_set = new JfrResourceAreaTraceIdSet(set_size());
+    write_sample_blobs(sampler, emit_all, thread);
+    if (_stacktrace_id_set->is_nonempty()) {
+      write_stacktraces(thread);
+    }
+  }
   // write reference chains
   if (!edge_store->is_empty()) {
     JfrCheckpointWriter writer(thread);

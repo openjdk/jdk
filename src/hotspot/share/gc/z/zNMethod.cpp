@@ -22,8 +22,8 @@
  */
 
 #include "code/codeCache.hpp"
-#include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
+#include "code/relocInfo.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -241,7 +241,7 @@ void ZNMethod::disarm(nmethod* nm) {
 
 void ZNMethod::set_guard_value(nmethod* nm, int value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  bs->set_guard_value(nm, value);
+  bs->guard_with(nm, value);
 }
 
 void ZNMethod::nmethod_patch_barriers(nmethod* nm) {
@@ -300,9 +300,8 @@ void ZNMethod::nmethods_do(bool secondary, NMethodClosure* cl) {
 }
 
 uintptr_t ZNMethod::color(nmethod* nm) {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  // color is stored at low order bits of int; conversion to uintptr_t is fine
-  return (uintptr_t)bs_nm->guard_value(nm);
+  ZBarrierSetNMethod* bs_nm = static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod());
+  return bs_nm->color(nm);
 }
 
 oop ZNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {

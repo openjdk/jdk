@@ -71,7 +71,9 @@ public class T7086261 {
         try (JavaFileManager jfm = javac.getStandardFileManager(null, null, null)) {
             JavaCompiler.CompilationTask task =
                     javac.getTask(null, jfm, new DiagnosticChecker(), null, null, Arrays.asList(new ErroneousSource()));
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
         }
     }
 

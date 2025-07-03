@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,11 @@ public class JdiHangingListenExecutionControlTest {
             System.err.printf("Unexpected return value: %s\n",
                     HangingRemoteAgent.state(false, null).eval("33;"));
         } catch (IllegalStateException ex) {
-            assertTrue(ex.getMessage().startsWith(EXPECTED_ERROR), ex.getMessage());
+            if (!ex.getMessage().startsWith(EXPECTED_ERROR)) {
+                // unexpected message in the exception, rethrow the original exception
+                throw ex;
+            }
+            // received expected exception
             return;
         }
         fail("Expected IllegalStateException");

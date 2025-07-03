@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,10 @@ public class TestZForceDiscontiguousHeapReservations {
     private static void testValue(int n) throws Exception  {
         /**
          *  Xmx is picked so that it is divisible by 'ZForceDiscontiguousHeapReservations * ZGranuleSize'
-         *  Xms is picked so that it is less than '16 * Xmx / ZForceDiscontiguousHeapReservations' as ZGC
-         *   cannot currently handle a discontiguous heap with an initial size larger than the individual
-         *   reservations.
+         *  Xms is picked to be the same as Xmx
          */
         final int XmxInM = 2000;
-        final int XmsInM = Math.min(16 * XmxInM / (n + 1), XmxInM);
+        final int XmsInM = XmxInM;
         OutputAnalyzer oa = ProcessTools.executeTestJava(
             "-XX:+UseZGC",
             "-Xms" + XmsInM + "M",
@@ -56,7 +54,7 @@ public class TestZForceDiscontiguousHeapReservations {
                 .errorTo(System.out)
                 .shouldHaveExitValue(0);
         if (n > 1) {
-            oa.shouldContain("Address Space Type: Discontiguous");
+            oa.shouldContain("Reserved Space Type: Discontiguous");
         }
     }
 

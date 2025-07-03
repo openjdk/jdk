@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -459,7 +460,9 @@ public class ConnectionPoolTest {
                 InetSocketAddress address,
                 InetSocketAddress proxy,
                 boolean secured) {
-            super(address, impl);
+            final Origin originServer = Origin.from(
+                    URI.create("http://"+ address.getHostString() + ":" + address.getPort()));
+            super(originServer, address, impl, "testConn-" + IDS.incrementAndGet());
             this.key = ConnectionPool.cacheKey(secured, address, proxy);
             this.address = address;
             this.proxy = proxy;

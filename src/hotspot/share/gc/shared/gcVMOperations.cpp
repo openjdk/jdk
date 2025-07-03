@@ -25,10 +25,10 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
@@ -48,12 +48,12 @@
 #include "gc/g1/g1Policy.hpp"
 #endif // INCLUDE_G1GC
 
-bool VM_GC_Sync_Operation::doit_prologue() {
+bool VM_Heap_Sync_Operation::doit_prologue() {
   Heap_lock->lock();
   return true;
 }
 
-void VM_GC_Sync_Operation::doit_epilogue() {
+void VM_Heap_Sync_Operation::doit_epilogue() {
   Heap_lock->unlock();
 }
 
@@ -93,9 +93,13 @@ bool VM_GC_Operation::skip_operation() const {
   return skip;
 }
 
+static bool should_use_gclocker() {
+  // Only Serial and Parallel use GCLocker to synchronize with threads in JNI critical-sections, in order to handle pinned objects.
+  return UseSerialGC || UseParallelGC;
+}
+
 bool VM_GC_Operation::doit_prologue() {
-  assert(((_gc_cause != GCCause::_no_gc) &&
-          (_gc_cause != GCCause::_no_cause_specified)), "Illegal GCCause");
+  assert(_gc_cause != GCCause::_no_gc, "Illegal GCCause");
 
   // To be able to handle a GC the VM initialization needs to be completed.
   if (!is_init_completed()) {
@@ -106,17 +110,21 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
-  VM_GC_Sync_Operation::doit_prologue();
+
+  if (should_use_gclocker()) {
+    GCLocker::block();
+  }
+  VM_Heap_Sync_Operation::doit_prologue();
 
   // Check invocations
   if (skip_operation()) {
     // skip collection
     Heap_lock->unlock();
+    if (should_use_gclocker()) {
+      GCLocker::unblock();
+    }
     _prologue_succeeded = false;
   } else {
-    if (UseSerialGC || UseParallelGC) {
-      GCLocker::block();
-    }
     _prologue_succeeded = true;
   }
   return _prologue_succeeded;
@@ -124,16 +132,16 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
-  if (UseSerialGC || UseParallelGC) {
-    GCLocker::unblock();
-  }
   // GC thread root traversal likely used OopMapCache a lot, which
   // might have created lots of old entries. Trigger the cleanup now.
   OopMapCache::try_trigger_cleanup();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
-  VM_GC_Sync_Operation::doit_epilogue();
+  VM_Heap_Sync_Operation::doit_epilogue();
+  if (should_use_gclocker()) {
+    GCLocker::unblock();
+  }
 }
 
 bool VM_GC_HeapInspection::doit_prologue() {
@@ -197,7 +205,7 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
                                                                  uint gc_count_before,
                                                                  uint full_gc_count_before,
                                                                  GCCause::Cause gc_cause)
-    : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
+    : VM_GC_Collect_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
       _result(nullptr), _size(size), _mdtype(mdtype), _loader_data(loader_data) {
   assert(_size != 0, "An allocation should always be requested with this operation.");
   AllocTracer::send_allocation_requiring_gc_event(_size * HeapWordSize, GCId::peek());
@@ -260,7 +268,7 @@ void VM_CollectForMetadataAllocation::doit() {
 }
 
 VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)
-    : VM_GC_Operation(gc_count_before, cause), _word_size(word_size), _result(nullptr) {
+    : VM_GC_Collect_Operation(gc_count_before, cause), _word_size(word_size), _result(nullptr) {
   // Only report if operation was really caused by an allocation.
   if (_word_size != 0) {
     AllocTracer::send_allocation_requiring_gc_event(_word_size * HeapWordSize, GCId::peek());

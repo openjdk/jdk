@@ -28,13 +28,13 @@
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/machnode.hpp"
-#include "opto/movenode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "opto/runtime.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -823,37 +823,32 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
     return bot;
   }
 
-  // x/x == 1, we ignore 0/0.
-  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
-  // Does not work for variables because of NaN's
-  if (in(1) == in(2) && t1->base() == Type::HalfFloatCon &&
-      !g_isnan(t1->getf()) && g_isfinite(t1->getf()) && t1->getf() != 0.0) { // could be negative ZERO or NaN
-    return TypeH::ONE;
-  }
-
-  if (t2 == TypeH::ONE) {
-    return t1;
-  }
-
-  // If divisor is a constant and not zero, divide the numbers
   if (t1->base() == Type::HalfFloatCon &&
-      t2->base() == Type::HalfFloatCon &&
-      t2->getf() != 0.0)  {
-    // could be negative zero
+      t2->base() == Type::HalfFloatCon)  {
+    // IEEE 754 floating point comparison treats 0.0 and -0.0 as equals.
+
+    // Division of a zero by a zero results in NaN.
+    if (t1->getf() == 0.0f && t2->getf() == 0.0f) {
+      return TypeH::make(NAN);
+    }
+
+    // As per C++ standard section 7.6.5 (expr.mul), behavior is undefined only if
+    // the second operand is 0.0. In all other situations, we can expect a standard-compliant
+    // C++ compiler to generate code following IEEE 754 semantics.
+    if (t2->getf() == 0.0) {
+      // If either operand is NaN, the result is NaN
+      if (g_isnan(t1->getf())) {
+        return TypeH::make(NAN);
+      } else {
+        // Division of a nonzero finite value by a zero results in a signed infinity. Also,
+        // division of an infinity by a finite value results in a signed infinity.
+        bool res_sign_neg = (jint_cast(t1->getf()) < 0) ^ (jint_cast(t2->getf()) < 0);
+        const TypeF* res = res_sign_neg ? TypeF::NEG_INF : TypeF::POS_INF;
+        return TypeH::make(res->getf());
+      }
+    }
+
     return TypeH::make(t1->getf() / t2->getf());
-  }
-
-  // If the dividend is a constant zero
-  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
-  // Test TypeHF::ZERO is not sufficient as it could be negative zero
-
-  if (t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0) {
-    return TypeH::ZERO;
-  }
-
-  // If divisor or dividend is nan then result is nan.
-  if (g_isnan(t1->getf()) || g_isnan(t2->getf())) {
-    return TypeH::make(NAN);
   }
 
   // Otherwise we give up all hope
@@ -1319,6 +1314,11 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return TypeClass::ZERO;
   }
 
+  // Mod by zero?  Throw an exception at runtime!
+  if (type_divisor->is_con() && type_divisor->get_con() == 0) {
+    return TypeClass::POS;
+  }
+
   const TypeClass* type_dividend = t1->cast<TypeClass>();
   if (type_dividend->is_con() && type_divisor->is_con()) {
     Unsigned dividend = static_cast<Unsigned>(type_dividend->get_con());
@@ -1515,6 +1515,13 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
+  if (result_is_unused && not_dead) {
+    return replace_with_con(igvn, TypeF::make(0.));
+  }
 
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(dividend());
@@ -1535,10 +1542,10 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1)) {
-    return replace_with_con(phase, t1);
+    return replace_with_con(igvn, t1);
   }
   if (g_isnan(f2)) {
-    return replace_with_con(phase, t2);
+    return replace_with_con(igvn, t2);
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
@@ -1553,12 +1560,19 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     xr ^= min_jint;
   }
 
-  return replace_with_con(phase, TypeF::make(jfloat_cast(xr)));
+  return replace_with_con(igvn, TypeF::make(jfloat_cast(xr)));
 }
 
 Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
+  if (result_is_unused && not_dead) {
+    return replace_with_con(igvn, TypeD::make(0.));
   }
 
   // Either input is TOP ==> the result is TOP
@@ -1580,10 +1594,10 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1)) {
-    return replace_with_con(phase, t1);
+    return replace_with_con(igvn, t1);
   }
   if (g_isnan(f2)) {
-    return replace_with_con(phase, t2);
+    return replace_with_con(igvn, t2);
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
@@ -1598,33 +1612,33 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     xr ^= min_jlong;
   }
 
-  return replace_with_con(phase, TypeD::make(jdouble_cast(xr)));
+  return replace_with_con(igvn, TypeD::make(jdouble_cast(xr)));
 }
 
-Node* ModFloatingNode::replace_with_con(PhaseGVN* phase, const Type* con) {
+Node* ModFloatingNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
   Compile* C = phase->C;
   Node* con_node = phase->makecon(con);
   CallProjections projs;
   extract_projections(&projs, false, false);
-  C->gvn_replace_by(projs.fallthrough_proj, in(TypeFunc::Control));
+  phase->replace_node(projs.fallthrough_proj, in(TypeFunc::Control));
   if (projs.fallthrough_catchproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_catchproj, in(TypeFunc::Control));
+    phase->replace_node(projs.fallthrough_catchproj, in(TypeFunc::Control));
   }
   if (projs.fallthrough_memproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_memproj, in(TypeFunc::Memory));
+    phase->replace_node(projs.fallthrough_memproj, in(TypeFunc::Memory));
   }
   if (projs.catchall_memproj != nullptr) {
-    C->gvn_replace_by(projs.catchall_memproj, C->top());
+    phase->replace_node(projs.catchall_memproj, C->top());
   }
   if (projs.fallthrough_ioproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_ioproj, in(TypeFunc::I_O));
+    phase->replace_node(projs.fallthrough_ioproj, in(TypeFunc::I_O));
   }
   assert(projs.catchall_ioproj == nullptr, "no exceptions from floating mod");
   assert(projs.catchall_catchproj == nullptr, "no exceptions from floating mod");
   if (projs.resproj != nullptr) {
-    C->gvn_replace_by(projs.resproj, con_node);
+    phase->replace_node(projs.resproj, con_node);
   }
-  C->gvn_replace_by(this, C->top());
+  phase->replace_node(this, C->top());
   C->remove_macro_node(this);
   disconnect_inputs(C);
   return nullptr;

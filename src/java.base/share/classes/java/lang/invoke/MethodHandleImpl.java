@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,13 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
+import java.lang.foreign.MemoryLayout;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -982,7 +982,7 @@ abstract class MethodHandleImpl {
         return makePairwiseConvert(getFunction(NF_throwException).resolvedHandle(), type, false, true);
     }
 
-    static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
+    static <T extends Throwable> Void throwException(T t) throws T { throw t; }
 
     static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
     static MethodHandle fakeMethodHandleInvoke(MemberName method) {
@@ -1343,7 +1343,6 @@ abstract class MethodHandleImpl {
         ARRAY_STORE,
         ARRAY_LENGTH,
         IDENTITY,
-        ZERO,
         NONE // no intrinsic associated
     }
 
@@ -1526,6 +1525,11 @@ abstract class MethodHandleImpl {
     }
 
     static {
+        runtimeSetup();
+    }
+
+    // Also called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
             public Class<?> getDeclaringClass(Object rmname) {
@@ -1552,8 +1556,8 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
-                return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
+            public VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask, ByteOrder order, boolean constantOffset, long offset) {
+                return VarHandles.memorySegmentViewHandle(carrier, enclosing, alignmentMask, constantOffset, offset, order);
             }
 
             @Override
@@ -2231,6 +2235,29 @@ abstract class MethodHandleImpl {
             selectedCase = caseActions[input];
         }
         return selectedCase.invokeWithArguments(args);
+    }
+
+    // type is validated, value is not
+    static MethodHandle makeConstantReturning(Class<?> type, Object value) {
+        var callType = MethodType.methodType(type);
+        var basicType = BasicType.basicType(type);
+        var form = constantForm(basicType);
+
+        if (type.isPrimitive()) {
+            assert type != void.class;
+            var wrapper = Wrapper.forPrimitiveType(type);
+            var v = wrapper.convert(value, type); // throws CCE
+            return switch (wrapper) {
+                case INT    -> BoundMethodHandle.bindSingleI(callType, form, (int) v);
+                case LONG   -> BoundMethodHandle.bindSingleJ(callType, form, (long) v);
+                case FLOAT  -> BoundMethodHandle.bindSingleF(callType, form, (float) v);
+                case DOUBLE -> BoundMethodHandle.bindSingleD(callType, form, (double) v);
+                default -> BoundMethodHandle.bindSingleI(callType, form, ValueConversions.widenSubword(v));
+            };
+        }
+
+        var v = type.cast(value); // throws CCE
+        return BoundMethodHandle.bindSingleL(callType, form, v);
     }
 
     // Indexes into constant method handles:

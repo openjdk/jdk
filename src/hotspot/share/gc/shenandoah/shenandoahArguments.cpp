@@ -29,6 +29,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -183,8 +184,14 @@ void ShenandoahArguments::initialize() {
   // Current default is good for generational collectors that run frequent young GCs.
   // With Shenandoah, GC cycles are much less frequent, so we need we need sizing policy
   // to converge faster over smaller number of resizing decisions.
-  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
+  if (strcmp(ShenandoahGCMode, "generational") && FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
+  }
+  // In generational mode, let TLABAllocationWeight keeps its default value of 35.
+
+  if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
+    vm_exit_during_initialization(
+      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);
@@ -211,6 +218,10 @@ void ShenandoahArguments::initialize_alignments() {
   }
   SpaceAlignment = align;
   HeapAlignment = align;
+
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    TLABSize = MAX2(ShenandoahHeapRegion::region_size_bytes() / 256, (size_t) 32 * 1024);
+  }
 }
 
 CollectedHeap* ShenandoahArguments::create_heap() {
