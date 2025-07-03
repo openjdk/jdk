@@ -3757,15 +3757,10 @@ general form:
     be loaded on top of those in the `<static_archive>`.
 -   On Windows, the above path delimiter `:` should be replaced with `;`
 
-The names "static" and "dynamic" are used for historical reasons.
-The dynamic archive may be less efficient as it does not support the
-following optimizations:
-
--   Java heap objects cannot be stored in the dynamic archive.
--   Class files that are created by JDK 5 or before cannot be
-    stored in the dynamic archive.
--   Lambda expressions cannot be resolved ahead-of-time for classes
-    in the dynamic archive.
+The names "static" and "dynamic" are used for historical reasons. The dynamic
+archive, while still useful, supports fewer optimizations than
+available for the static CDS archive. If the full set of CDS/AOT
+optimizations are desired, consider using the AOTCache features describe below.
 
 The JVM can use up to two archives. To use only a single `<static_archive>`,
 you can omit the `<dynamic_archive>` portion:
