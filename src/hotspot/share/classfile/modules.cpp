@@ -30,7 +30,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -625,6 +624,11 @@ void Modules::ArchivedProperty::runtime_check() const {
   }
 }
 
+
+static int compare_module_names(const char** p1, const char** p2) {
+  return strcmp(*p1, *p2);
+}
+
 // Caller needs ResourceMark
 const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() const {
   assert(_numbered, "sanity");
@@ -665,7 +669,7 @@ const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() 
   // list[2] = "java.base"
   // list[3] = ""
   // list[4] = ""
-  list.sort(ClassLoaderExt::compare_module_names);
+  list.sort(compare_module_names);
 
   const char* prefix = "";
   stringStream st;
