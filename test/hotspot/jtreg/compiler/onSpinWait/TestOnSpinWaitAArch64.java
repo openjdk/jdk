@@ -29,7 +29,6 @@
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
- * @requires vm.debug
  *
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
@@ -50,6 +49,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestOnSpinWaitAArch64 {
+
+    private static String retInst = "ret";
+    private static String neededAddInst = "addsp,sp,#0x20";
+    private static String neededLdpInst = "ldpx29,x30,[sp,#16]";
+
     public static void main(String[] args) throws Exception {
         String compiler = args[0];
         String spinWaitInst = args[1];
@@ -87,130 +91,109 @@ public class TestOnSpinWaitAArch64 {
 
         System.out.println(analyzer.getOutput());
 
+        if (analyzer.contains("[MachCode]")) {
+            spinWaitInst = getSpinWaitInstHex(spinWaitInst);
+            retInst = "c0035fd6";
+            neededAddInst = "ff830091";
+            neededLdpInst = "fd7b41a9";
+        }
         checkOutput(analyzer, spinWaitInst, Integer.parseInt(spinWaitInstCount));
     }
 
     private static String getSpinWaitInstHex(String spinWaitInst) {
       if ("nop".equals(spinWaitInst)) {
-          return "1f20 03d5";
+          return "1f2003d5";
       } else if ("isb".equals(spinWaitInst)) {
-          return "df3f 03d5";
+          return "df3f03d5";
       } else if ("yield".equals(spinWaitInst)) {
-          return "3f20 03d5";
+          return "3f2003d5";
       } else if ("sb".equals(spinWaitInst)) {
-          return "ff30 03d5";
+          return "ff3003d5";
       } else {
           throw new RuntimeException("Unknown spin wait instruction: " + spinWaitInst);
       }
     }
 
-    private static void addInstrs(String line, ArrayList<String> instrs) {
-        for (String instr : line.split("\\|")) {
-            instrs.add(instr.trim());
-        }
-    }
-
-    // The expected output of PrintAssembly for example for a spin wait with three NOPs:
-    //
-    // # {method} {0x0000ffff6ac00370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'
-    // #           [sp+0x40]  (sp of caller)
-    // 0x0000ffff9d557680: 1f20 03d5 | e953 40d1 | 3f01 00f9 | ff03 01d1 | fd7b 03a9 | 1f20 03d5 | 1f20 03d5
-    //
-    // 0x0000ffff9d5576ac: ;*invokestatic onSpinWait {reexecute=0 rethrow=0 return_oop=0}
-    //                     ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0 (line 161)
-    // 0x0000ffff9d5576ac: 1f20 03d5 | fd7b 43a9 | ff03 0191
-    //
-    // The checkOutput method adds hex instructions before 'invokestatic onSpinWait' and from the line after
-    // it to a list. The list is traversed from the end to count spin wait instructions.
-    //
-    // If JVM finds the hsdis library the output is like:
-    //
-    // # {method} {0x0000ffff63000370} 'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'
-    // #           [sp+0x20]  (sp of caller)
-    // 0x0000ffffa409da80:   nop
-    // 0x0000ffffa409da84:   sub sp, sp, #0x20
-    // 0x0000ffffa409da88:   stp x29, x30, [sp, #16]         ;*synchronization entry
-    //                                                       ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@-1 (line 187)
-    // 0x0000ffffa409da8c:   nop
-    // 0x0000ffffa409da90:   nop
-    // 0x0000ffffa409da94:   nop
-    // 0x0000ffffa409da98:   nop
-    // 0x0000ffffa409da9c:   nop
-    // 0x0000ffffa409daa0:   nop
-    // 0x0000ffffa409daa4:   nop                                 ;*invokestatic onSpinWait {reexecute=0 rethrow=0 return_oop=0}
-    //                                                           ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0 (line 187)
-    private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int spinWaitInstCount) {
+    private static ArrayList<String> getInstrs(OutputAnalyzer output) {
         Iterator<String> iter = output.asLines().listIterator();
 
-        String match = skipTo(iter, "'test' '()V' in 'compiler/onSpinWait/TestOnSpinWaitAArch64$Launcher'");
-        if (match == null) {
-            throw new RuntimeException("Missing compiler output for the method compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test");
-        }
-
-        ArrayList<String> instrs = new ArrayList<String>();
         String line = null;
-        boolean hasHexInstInOutput = false;
+        ArrayList<String> instrs = new ArrayList<String>();
         while (iter.hasNext()) {
-            line = iter.next();
-            if (line.contains("*invokestatic onSpinWait")) {
+            line = iter.next().trim();
+            if (!line.startsWith("0x")) {
+                continue;
+            }
+            int pos = line.indexOf(':');
+            if (pos == -1 || pos == line.length() - 1) {
+                continue;
+            }
+
+            line = line.substring(pos + 1).replaceAll("\\s", "");
+            if (line.startsWith(";")) {
+                continue;
+            }
+
+            for (String instr : line.split("\\|")) {
+                if (instr.startsWith(retInst)) {
+                    return instrs;
+                }
+                instrs.add(instr);
+            }
+        }
+        return instrs;
+    }
+
+    // The expected output of PrintAssembly for example for a spin wait with three NOPs
+    // if JVM finds the hsdis library the output is like:
+    //
+    // 0x0000000111dfa588:   b.ne    0x0000000111dfa5c4
+    // 0x0000000111dfa58c:   nop
+    // 0x0000000111dfa590:   nop
+    // 0x0000000111dfa594:   nop
+    // 0x0000000111dfa598:   ldp    x29, x30, [sp, #16]
+    // 0x0000000111dfa59c:   add    sp, sp, #0x20
+    // 0x0000000111dfa5a0:   ldr    x8, [x28, #40]              ;   {poll_return}
+    // 0x0000000111dfa5a4:   cmp    sp, x8
+    // 0x0000000111dfa5a8:   b.hi    0x0000000111dfa5b0  // b.pmore
+    // 0x0000000111dfa5ac:   ret
+    //
+    // We work as follows:
+    // 1. Check whether printed instructions are disassembled ("[Disassembly]") or in hex form ("[MachCode]").
+    // 2. Look for RET instruction and collect all seen instructions.
+    // 3. In reverse order, search for 'add    sp, sp, #0x20' and 'ldp    x29, x30, [sp, #16]'.
+    // 4. Count spin wait instructions.
+    private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int spinWaitInstCount) {
+        ArrayList<String> instrs = getInstrs(output);
+
+        // From the end of the list, look for the following instructions:
+        //   ldp     x29, x30, [sp, #16]
+        //   add     sp, sp, #0x20
+        // or their hex form if a disassembler is not available:
+        //   fd7b41a9
+        //   ff830091
+        ListIterator<String> instrReverseIter = instrs.listIterator(instrs.size());
+        while (instrReverseIter.hasPrevious()) {
+          String s = instrReverseIter.previous();
+          instrReverseIter.next();
+            if (instrReverseIter.previous().startsWith(neededAddInst)) {
                 break;
             }
-            if (!hasHexInstInOutput) {
-                hasHexInstInOutput = line.contains("|");
-            }
-            if (line.contains("0x") && !line.contains(";")) {
-                addInstrs(line, instrs);
-            }
-        }
-
-        if (!iter.hasNext() || !iter.next().contains("- compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@0") || !iter.hasNext()) {
-            throw new RuntimeException("Missing compiler output for Thread.onSpinWait intrinsic");
-        }
-
-        String strToSearch = null;
-        if (!hasHexInstInOutput) {
-            instrs.add(line.split(";")[0].trim());
-            strToSearch = spinWaitInst;
-        } else {
-            line = iter.next();
-            if (!line.contains("0x") || line.contains(";")) {
-                throw new RuntimeException("Expected hex instructions");
-            }
-
-            addInstrs(line, instrs);
-            strToSearch = getSpinWaitInstHex(spinWaitInst);
         }
 
         int foundInstCount = 0;
-
-        ListIterator<String> instrReverseIter = instrs.listIterator(instrs.size());
-        while (instrReverseIter.hasPrevious()) {
-            if (instrReverseIter.previous().endsWith(strToSearch)) {
-                foundInstCount = 1;
-                break;
+        if (instrReverseIter.hasPrevious() && instrReverseIter.previous().startsWith(neededLdpInst)) {
+            while (instrReverseIter.hasPrevious()) {
+                if (!instrReverseIter.previous().startsWith(spinWaitInst)) {
+                    break;
+                }
+                ++foundInstCount;
             }
-        }
-
-        while (instrReverseIter.hasPrevious()) {
-            if (!instrReverseIter.previous().endsWith(strToSearch)) {
-                break;
-            }
-            ++foundInstCount;
         }
 
         if (foundInstCount != spinWaitInstCount) {
-            throw new RuntimeException("Wrong instruction " + strToSearch + " count " + foundInstCount + "!\n  -- expecting " + spinWaitInstCount);
+            throw new RuntimeException("Expect " + spinWaitInstCount + " " + spinWaitInst + " instructions. Found: " + foundInstCount);
         }
-    }
-
-    private static String skipTo(Iterator<String> iter, String substring) {
-        while (iter.hasNext()) {
-            String nextLine = iter.next();
-            if (nextLine.contains(substring)) {
-                return nextLine;
-            }
-        }
-        return null;
     }
 
     static class Launcher {
