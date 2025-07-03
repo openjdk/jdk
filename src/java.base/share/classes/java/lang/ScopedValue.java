@@ -531,7 +531,8 @@ public final class ScopedValue<T> {
     }
 
     private ScopedValue() {
-        this.hash = hashGenerator != null ? hashGenerator.getAsInt() : generateKey();
+        IntSupplier nextHash = hashGenerator;
+        this.hash = nextHash != null ? nextHash.getAsInt() : generateKey();
     }
 
     /**
@@ -778,11 +779,12 @@ public final class ScopedValue<T> {
                 CACHE_TABLE_SIZE = cacheSize;
                 SLOT_MASK = cacheSize - 1;
 
-                // hashGenerator is set here in order not to initialize
+                // hashGenerator is set here (in class Constants rather than
+                // in global scope) in order not to initialize
                 // j.u.c.ThreadLocalRandom early in the JDK boot process.
                 // After this static initialization, new instances of
-                // ScopedValue will be initialized by a thread-local
-                // random generator.
+                // ScopedValue will be initialized by a thread-local random
+                // generator.
                 hashGenerator = new IntSupplier() {
                     @Override
                     public int getAsInt() {
