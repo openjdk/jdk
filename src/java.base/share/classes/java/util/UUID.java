@@ -223,7 +223,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * and fills the remaining bytes with random data from a cryptographically strong
      * pseudo-random number generator.
      *
-     * <p><strong>Note:</strong> The timestamp must be a Unix Epoch timestamp in milliseconds in order
+     * @apiNote The timestamp must be a Unix Epoch timestamp in milliseconds in order
      * to be compliant with <a href="https://datatracker.ietf.org/doc/html/rfc9562">RFC 9562</a>.
      *
      * @param timestamp
