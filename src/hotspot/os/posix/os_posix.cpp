@@ -1599,8 +1599,6 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-bool os::supports_vtime() { return true; }
-
 // Return the real, user, and system times in seconds from an
 // arbitrary fixed point in the past.
 bool os::getTimesSecs(double* process_real_time,

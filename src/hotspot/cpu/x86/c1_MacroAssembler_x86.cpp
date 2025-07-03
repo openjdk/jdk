@@ -325,16 +325,6 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
 
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
-  if (breakAtEntry) {
-    // Verified Entry first instruction should be 5 bytes long for correct
-    // patching by patch_verified_entry().
-    //
-    // Breakpoint has one byte first instruction.
-    // Also first instruction will be one byte "push(rbp)" if stack banging
-    // code is not generated (see build_frame() above).
-    // For all these cases generate long instruction first.
-    fat_nop();
-  }
   if (breakAtEntry) int3();
   // build frame
 }

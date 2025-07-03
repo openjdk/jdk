@@ -294,7 +294,7 @@ public:
     }
 
     PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
+    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
 
     // Scavenge OopStorages
     {

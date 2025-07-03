@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,42 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jfr.event.tracing;
 
-package sun.jvm.hotspot.runtime;
+import jdk.internal.misc.Unsafe;
+import jdk.jfr.FlightRecorder;
+import jdk.jfr.Recording;
+/**
+* @test
+* @summary Tests that PlatformTracer is not initialized if a method filter has not been set.
+* @requires vm.flagless
+* @requires vm.hasJFR
+* @modules java.base/jdk.internal.misc jdk.jfr/jdk.jfr.internal.tracing
+* @library /test/lib
+* @run main/othervm -XX:StartFlightRecording jdk.jfr.event.tracing.TestLazyPlatformTracer
+*/
+public class TestLazyPlatformTracer {
 
-import sun.jvm.hotspot.types.TypeDataBase;
-
-
-/** Encapsulates the LockingMode enum in globalDefinitions.hpp in
-    the VM. */
-
-public class LockingMode {
-  private static int monitor;
-  private static int legacy;
-  private static int lightweight;
-
-  static {
-    VM.registerVMInitializedObserver(
-        (o, d) -> initialize(VM.getVM().getTypeDataBase()));
-  }
-
-  private static synchronized void initialize(TypeDataBase db) {
-    monitor     = db.lookupIntConstant("LM_MONITOR").intValue();
-    legacy      = db.lookupIntConstant("LM_LEGACY").intValue();
-    lightweight = db.lookupIntConstant("LM_LIGHTWEIGHT").intValue();
-  }
-
-  public static int getMonitor() {
-    return monitor;
-  }
-
-  public static int getLegacy() {
-    return legacy;
-  }
-
-  public static int getLightweight() {
-    return lightweight;
-  }
+    public static void main(String... args) throws Exception {
+        // Stop recording so end chunk events are emitted
+        FlightRecorder.getFlightRecorder().getRecordings().getFirst().stop();
+        if (!Unsafe.getUnsafe().shouldBeInitialized(jdk.jfr.internal.tracing.PlatformTracer.class)) {
+            throw new AssertionError("PlatformTracer should not have been initialized");
+        }
+    }
 }

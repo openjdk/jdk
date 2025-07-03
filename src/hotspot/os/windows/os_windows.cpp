@@ -1194,21 +1194,6 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
-double os::elapsedVTime() {
-  FILETIME created;
-  FILETIME exited;
-  FILETIME kernel;
-  FILETIME user;
-  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
-    // the resolution of windows_to_java_time() should be sufficient (ms)
-    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
-  } else {
-    return elapsedTime();
-  }
-}
-
 jlong os::javaTimeMillis() {
   FILETIME wt;
   GetSystemTimeAsFileTime(&wt);
@@ -2751,19 +2736,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
-
-#ifdef _M_ARM64
-    if (in_java &&
-        (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
-          exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
-      }
-    }
-#endif
 
     if (in_java) {
       switch (exception_code) {

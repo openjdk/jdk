@@ -35,6 +35,7 @@ import jdk.test.lib.containers.docker.DockerTestUtils;
  * @key cgroups
  * @summary Test JDK Metrics class when running inside docker container
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsCpuTester
