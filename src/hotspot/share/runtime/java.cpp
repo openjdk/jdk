@@ -471,6 +471,7 @@ void before_exit(JavaThread* thread, bool halt) {
 
   NativeHeapTrimmer::cleanup();
 
+  Universe::heap()->print_tracing_info();
   // Stop concurrent GC threads
   Universe::heap()->stop();
 
@@ -513,7 +514,6 @@ void before_exit(JavaThread* thread, bool halt) {
   os::terminate_signal_thread();
 
   print_statistics();
-  Universe::heap()->print_tracing_info();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;

@@ -773,7 +773,7 @@ void Modules::set_bootloader_unnamed_module(Handle module, TRAPS) {
   ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
   ModuleEntry* unnamed_module = boot_loader_data->unnamed_module();
   assert(unnamed_module != nullptr, "boot loader's unnamed ModuleEntry not defined");
-  unnamed_module->set_module(boot_loader_data->add_handle(module));
+  unnamed_module->set_module_handle(boot_loader_data->add_handle(module));
   // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module object.
   java_lang_Module::set_module_entry(module(), unnamed_module);
 }
@@ -954,8 +954,8 @@ oop Modules::get_named_module(Handle h_loader, const char* package_name) {
     get_package_entry_by_name(package_sym, h_loader);
   const ModuleEntry* const module_entry = (pkg_entry != nullptr ? pkg_entry->module() : nullptr);
 
-  if (module_entry != nullptr && module_entry->module() != nullptr && module_entry->is_named()) {
-    return module_entry->module();
+  if (module_entry != nullptr && module_entry->module_oop() != nullptr && module_entry->is_named()) {
+    return module_entry->module_oop();
   }
   return nullptr;
 }
