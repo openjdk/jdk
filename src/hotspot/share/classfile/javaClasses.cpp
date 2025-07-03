@@ -1882,20 +1882,21 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
   return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
-oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
-  ThreadsListHandle tlh(JavaThread::current());
-  JavaThread* thread;
-  bool is_virtual = java_lang_VirtualThread::is_instance(java_thread);
+oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
+  ThreadsListHandle tlh(THREAD);
+  JavaThread* java_thread = nullptr;
+  oop thread_oop;
+  tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
   if (is_virtual) {
-    oop carrier_thread = java_lang_VirtualThread::carrier_thread(java_thread);
+    oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
     if (carrier_thread == nullptr) {
       return nullptr;
     }
-    thread = java_lang_Thread::thread(carrier_thread);
-  } else {
-    thread = java_lang_Thread::thread(java_thread);
+    java_thread = java_lang_Thread::thread(carrier_thread);
   }
-  if (thread == nullptr) {
+  if (java_thread == nullptr) {
+    // terminated platform thread or unmounted virtual thread
     return nullptr;
   }
 
@@ -1977,9 +1978,9 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   // Handshake with target
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  GetStackTraceClosure gstc(Handle(THREAD, java_thread));
+  GetStackTraceClosure gstc(Handle(THREAD, thread_oop));
   do {
-   Handshake::execute(&gstc, &tlh, thread);
+   Handshake::execute(&gstc, &tlh, java_thread);
   } while (gstc.read_reset_retry());
 
   // Stop if no stack trace is found.
