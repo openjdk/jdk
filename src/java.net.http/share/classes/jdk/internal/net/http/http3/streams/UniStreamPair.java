@@ -71,7 +71,7 @@ import static jdk.internal.net.http.quic.TerminationCause.appLayerClose;
  * listen directly for creation of new remote streams.
  * <p>
  * The {@link QueuingStreamPair} class is a subclass of this class which
- * implements a writer loop over a unbounded queue of {@code ByteBuffer}, and
+ * implements a writer loop over an unbounded queue of {@code ByteBuffer}, and
  * can be used when unlimited buffering of data for writing is not an issue.
  */
 public class UniStreamPair {
