@@ -3760,7 +3760,7 @@ general form:
 The names "static" and "dynamic" are used for historical reasons. The dynamic
 archive, while still useful, supports fewer optimizations than
 available for the static CDS archive. If the full set of CDS/AOT
-optimizations are desired, consider using the AOT cache describe below.
+optimizations are desired, consider using the AOT cache described below.
 
 The JVM can use up to two archives. To use only a single `<static_archive>`,
 you can omit the `<dynamic_archive>` portion:
