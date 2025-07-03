@@ -42,17 +42,10 @@ import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
 
 /**
- * An aggregator for mandatory warnings, setting up a deferred diagnostic
+ * An aggregator for warnings, setting up a deferred diagnostic
  * to be printed at the end of the compilation if some warnings get suppressed
  * because the lint category is not enabled or too many warnings have already
  * been generated.
- *
- * <p>
- * Note that the SuppressWarnings annotation can be used to suppress warnings
- * about conditions that would otherwise merit a warning. Such processing
- * is done when the condition is detected, and in those cases, no call is
- * made on any API to generate a warning at all. In consequence, this handler only
- * Returns to handle those warnings that JLS says must be generated.
  *
  * <p>
  * All warnings must be in the same {@link LintCategory} provided to the constructor.
@@ -62,12 +55,11 @@ import com.sun.tools.javac.util.JCDiagnostic.Warning;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-class MandatoryWarningAggregator {
+class WarningAggregator {
 
     /**
      * The kinds of different deferred diagnostics that might be generated
-     * if a mandatory warning is suppressed because too many warnings have
-     * already been output.
+     * if a warning is suppressed because too many warnings have already been output.
      *
      * The parameter is a fragment used to build an I18N message key for Log.
      */
@@ -109,18 +101,18 @@ class MandatoryWarningAggregator {
 
 
     /**
-     * Create an aggregator for mandatory warnings.
+     * Create an aggregator for warnings.
      *
      * @param log     The log on which to generate any diagnostics
      * @param source  Associated source file, or null for none
      * @param lc      The lint category for all warnings
      */
-    public MandatoryWarningAggregator(Log log, Source source, LintCategory lc) {
+    public WarningAggregator(Log log, Source source, LintCategory lc) {
         this(log, source, lc, null);
     }
 
     /**
-     * Create an aggregator for mandatory warnings.
+     * Create an aggregator for warnings.
      *
      * @param log     The log on which to generate any diagnostics
      * @param source  Associated source file, or null for none
@@ -128,7 +120,7 @@ class MandatoryWarningAggregator {
      * @param prefix  A common prefix for the set of message keys for the messages
      *                that may be generated, or null to infer from the lint category.
      */
-    public MandatoryWarningAggregator(Log log, Source source, LintCategory lc, String prefix) {
+    public WarningAggregator(Log log, Source source, LintCategory lc, String prefix) {
         this.log = log;
         this.source = source;
         this.prefix = prefix != null ? prefix : lc.option;
@@ -136,14 +128,13 @@ class MandatoryWarningAggregator {
     }
 
     /**
-     * Aggregate a mandatory warning and determine whether to emit it.
+     * Aggregate a warning and determine whether to emit it.
      *
-     * @param diagnostic the mandatory warning
+     * @param diagnostic the warning
      * @param verbose whether the warning's lint category is enabled
      * @return true if diagnostic should be emitted, otherwise false
      */
     public boolean aggregate(JCDiagnostic diagnostic, boolean verbose) {
-        Assert.check(diagnostic.isMandatory());
         Assert.check(diagnostic.getLintCategory() == lintCategory);
         JavaFileObject currentSource = log.currentSourceFile();
         if (verbose) {

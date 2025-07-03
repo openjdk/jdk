@@ -858,7 +858,7 @@ public class Log extends AbstractLog {
 
 // Mandatory Warnings
 
-    private final EnumMap<LintCategory, MandatoryWarningAggregator> aggregators = new EnumMap<>(LintCategory.class);
+    private final EnumMap<LintCategory, WarningAggregator> aggregators = new EnumMap<>(LintCategory.class);
 
     private final EnumSet<LintCategory> suppressedDeferredMandatory = EnumSet.noneOf(LintCategory.class);
 
@@ -876,17 +876,17 @@ public class Log extends AbstractLog {
         aggregators.entrySet().stream()
           .filter(entry -> !suppressedDeferredMandatory.contains(entry.getKey()))
           .map(Map.Entry::getValue)
-          .map(MandatoryWarningAggregator::aggregationNotes)
+          .map(WarningAggregator::aggregationNotes)
           .flatMap(List::stream)
           .forEach(this::report);
         aggregators.clear();
     }
 
-    private MandatoryWarningAggregator aggregatorFor(LintCategory lc) {
+    private WarningAggregator aggregatorFor(LintCategory lc) {
         return switch (lc) {
-        case PREVIEW -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, Source.instance(context), c));
-        case DEPRECATION -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c, "deprecated"));
-        default -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
+        case PREVIEW -> aggregators.computeIfAbsent(lc, c -> new WarningAggregator(this, Source.instance(context), c));
+        case DEPRECATION -> aggregators.computeIfAbsent(lc, c -> new WarningAggregator(this, null, c, "deprecated"));
+        default -> aggregators.computeIfAbsent(lc, c -> new WarningAggregator(this, null, c));
         };
     }
 
