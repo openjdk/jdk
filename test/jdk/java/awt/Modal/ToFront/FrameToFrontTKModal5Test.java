@@ -33,7 +33,6 @@ import java.awt.Dialog;
  *
  * @library ../helpers
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame
