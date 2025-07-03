@@ -798,7 +798,8 @@ public class Log extends AbstractLog {
                 }
 
                 // Emit warning unless not mandatory and warnings are disabled
-                if (emitWarnings || diagnostic.isMandatory()) {
+                if (emitWarnings || diagnostic.isMandatory() ||
+                        diagnostic.isFlagSet(DiagnosticFlag.STRICT)) {
                     if (nwarnings < MaxWarnings) {
                         writeDiagnostic(diagnostic);
                         nwarnings++;
