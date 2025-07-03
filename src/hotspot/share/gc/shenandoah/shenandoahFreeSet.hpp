@@ -222,8 +222,7 @@ public:
 
   inline size_t available_in(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
-    auto available = capacity_of(which_partition) - used_by(which_partition);
-    return available >= 0 ? available : 0;
+    return capacity_of(which_partition) - used_by(which_partition);
   }
 
   // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
