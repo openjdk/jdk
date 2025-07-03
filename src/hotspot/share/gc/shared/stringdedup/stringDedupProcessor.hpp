@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPPROCESSOR_HPP
 
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
