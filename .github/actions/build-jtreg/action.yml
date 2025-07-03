@@ -56,10 +56,11 @@ runs:
         retry=0
         while ! bash make/build.sh --jdk "$JAVA_HOME_17_X64"; do
           retry=$[$retry+1]
-          if [ $retry -gt 20 ];then
+          if [ $retry -gt 3 ];then
             echo >&2 "JTReg is failing to build"
             exit 1
           fi
+          sleep 30
         done
         mkdir ../installed
         mv build/images/jtreg/* ../installed
