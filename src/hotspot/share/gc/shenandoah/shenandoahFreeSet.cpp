@@ -1248,6 +1248,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
         return nullptr;
       }
       end = beg;
+      region = _heap->get_region(end);
     }
 
     if ((end - beg + 1) == num) {
@@ -1256,7 +1257,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     }
 
     end++;
-    region = _heap->get_region(end);
   }
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
