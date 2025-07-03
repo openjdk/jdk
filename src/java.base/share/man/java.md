@@ -3757,9 +3757,15 @@ general form:
     be loaded on top of those in the `<static_archive>`.
 -   On Windows, the above path delimiter `:` should be replaced with `;`
 
-(The names "static" and "dynamic" are used for historical reasons.
-The only significance is that the "static" archive is loaded first and
-the "dynamic" archive is loaded second).
+The names "static" and "dynamic" are used for historical reasons.
+The dynamic archive may be less efficient as it does not support the
+following optimizations:
+
+-   Java heap objects cannot be stored in the dynamic archive.
+-   Class files that are created by JDK 5 or before cannot be
+    stored in the dynamic archive.
+-   Lambda expressions cannot be resolved ahead-of-time for classes
+    in the dynamic archive.
 
 The JVM can use up to two archives. To use only a single `<static_archive>`,
 you can omit the `<dynamic_archive>` portion:
