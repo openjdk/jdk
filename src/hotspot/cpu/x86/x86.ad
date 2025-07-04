@@ -1538,10 +1538,7 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_CopySignD:
     case Op_CopySignF:
-      if (UseAVX < 3)  {
-        return false;
-      }
-      if (!VM_Version::supports_avx512vl()) {
+      if (UseAVX < 1)  {
         return false;
       }
       break;
@@ -1666,6 +1663,12 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_UMinV:
     case Op_UMaxV:
       if (UseAVX == 0) {
+        return false;
+      }
+      break;
+    case Op_CopySignVD:
+    case Op_CopySignVF:
+      if (UseAVX < 1)  {
         return false;
       }
       break;
@@ -6667,47 +6670,68 @@ instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-// ---------------------------------------
-// For copySign use 0xE4 as writemask for vpternlog
-// Desired Truth Table: A -> xmm0 bit, B -> xmm1 bit, C -> xmm2 bit
-// C (xmm2) is set to 0x7FFFFFFF
-// Wherever xmm2 is 0, we want to pick from B (sign)
-// Wherever xmm2 is 1, we want to pick from A (src)
-//
-// A B C Result
-// 0 0 0 0
-// 0 0 1 0
-// 0 1 0 1
-// 0 1 1 0
-// 1 0 0 0
-// 1 0 1 1
-// 1 1 0 1
-// 1 1 1 1
-//
-// Result going from high bit to low bit is 0x11100100 = 0xe4
-// ---------------------------------------
-
-instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegI tmp2) %{
+#ifdef _LP64
+instruct copySignF_reg(regF dst, regF src, regF xtmp) %{
+  predicate(VM_Version::supports_avx512vl());
   match(Set dst (CopySignF dst src));
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignF $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
+  effect(TEMP xtmp);
+  format %{ "CopySignF $dst, $src\t! using $xtmp as TEMP" %}
   ins_encode %{
-    __ movl($tmp2$$Register, 0x7FFFFFFF);
-    __ movdl($tmp1$$XMMRegister, $tmp2$$Register);
-    __ vpternlogd($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vector_copy_sign_evex(T_FLOAT, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
+instruct copySignD_imm(regD dst, regD src, regD xtmp, immD zero) %{
+  predicate(VM_Version::supports_avx512vl());
   match(Set dst (CopySignD dst (Binary src zero)));
   ins_cost(100);
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignD  $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
+  effect(TEMP xtmp);
+  format %{ "CopySignD  $dst, $src\t! using $xtmp as TEMP" %}
   ins_encode %{
-    __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
-    __ movq($tmp1$$XMMRegister, $tmp2$$Register);
-    __ vpternlogq($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vector_copy_sign_evex(T_DOUBLE, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+#endif // _LP64
+
+instruct copySignF_reg_avx(regF dst, regF src, regF xtmp) %{
+  predicate(!VM_Version::supports_avx512vl());
+  match(Set dst (CopySignF dst src));
+  effect(TEMP_DEF dst,TEMP xtmp);
+  format %{ "CopySignF $dst, $src\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    __ vector_copy_sign_avx(T_FLOAT, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct copySignD_imm_avx(regD dst, regD src, regD xtmp, immD zero) %{
+  predicate(!VM_Version::supports_avx512vl());
+  match(Set dst (CopySignD dst (Binary src zero)));
+  ins_cost(100);
+  effect(TEMP_DEF dst,TEMP xtmp);
+  format %{ "CopySignD  $dst, $src\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    __ vector_copy_sign_avx(T_DOUBLE, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct copySignV_reg(vec dst, vec src, vec xtmp) %{
+  match(Set dst (CopySignVF dst src));
+  match(Set dst (CopySignVD dst src));
+  effect(TEMP xtmp);
+  format %{ "vector_copysign $dst, $src\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    if (VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(this) == 64) {
+      __ vector_copy_sign_evex(bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister, vlen_enc);
+    } else {
+      __ vector_copy_sign_avx(bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp$$XMMRegister, vlen_enc);
+    }
   %}
   ins_pipe( pipe_slow );
 %}
