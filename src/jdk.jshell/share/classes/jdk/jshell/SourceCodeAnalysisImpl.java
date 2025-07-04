@@ -2003,7 +2003,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, paths);
             appendPaths(fm, StandardLocation.CLASS_PATH, paths);
             appendPaths(fm, StandardLocation.SOURCE_PATH, paths);
-            appendPaths(fm, StandardLocation.MODULE_PATH, paths);
+            appendModulePaths(fm, StandardLocation.MODULE_PATH, paths);
 
             Map<Path, ClassIndex> newIndexes = new HashMap<>();
 
@@ -2053,6 +2053,23 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
 
             paths.add(path);
+        }
+    }
+
+    private void appendModulePaths(MemoryFileManager fm, Location loc, Collection<Path> paths) {
+        Iterable<? extends Path> locationPaths = fm.getLocationAsPaths(loc);
+        if (locationPaths == null)
+            return ;
+        for (Path path : locationPaths) {
+            if (Files.isDirectory(path) && !Files.exists(path.resolve("module-info.class"))) {
+                try (var ds = Files.newDirectoryStream(path)) {
+                    ds.forEach(paths::add);
+                } catch (IOException ex) {
+                    proc.debug(ex, "appendModulePaths: " + path);
+                }
+            } else {
+                paths.add(path);
+            }
         }
     }
 

@@ -36,6 +36,8 @@
  * @build ReplToolTesting TestingInputStream Compiler
  * @run testng ToolCompletionTest
  */
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -161,6 +163,39 @@ public class ToolCompletionTest extends ReplToolTesting {
         compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
 
         test(false, new String[]{"--no-startup", "--module-path", compiler.getPath(p1.resolve(jarName)).toString()},
+                (a) -> assertCompletions(a, "p1.", ".*p2\\..*p3\\..*"),
+                 //cancel the input, so that JShell can be finished:
+                (a) -> assertCommand(a, "\003", null)
+                );
+    }
+
+    @Test
+    public void testModulePathOnCmdLineIndexing2() throws IOException {
+        Path p1 = outDir.resolve("dir1");
+        compiler.compile(p1,
+                """
+                module m {
+                    exports p1.p2;
+                    exports p1.p3;
+                }
+                """,
+                """
+                package p1.p2;
+                public class Test {
+                }
+                """,
+                """
+                package p1.p3;
+                public class Test {
+                }
+                """);
+        String jarName = "test.jar";
+        Path lib = outDir.resolve("lib");
+        Files.createDirectories(lib);
+        compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
+        Files.move(compiler.getPath(p1.resolve(jarName)), lib.resolve(jarName));
+
+        test(false, new String[]{"--no-startup", "--module-path", lib.toString()},
                 (a) -> assertCompletions(a, "p1.", ".*p2\\..*p3\\..*"),
                  //cancel the input, so that JShell can be finished:
                 (a) -> assertCommand(a, "\003", null)
