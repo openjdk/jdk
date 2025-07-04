@@ -1818,7 +1818,8 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
 
   // The number of nodes shoud not increase.
   uint old_unique = C->unique();
-
+  // The hash of a node should not change, this would indicate different inputs
+  uint old_hash = n->hash();
   Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
@@ -1827,6 +1828,16 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
       ss.cr();
       ss.print_cr("Ideal optimization did not make progress but created new unused nodes.");
       ss.print_cr("  old_unique = %d, unique = %d", old_unique, C->unique());
+      n->dump_bfs(1, nullptr, "", &ss);
+      tty->print_cr("%s", ss.as_string());
+      return true;
+    }
+
+    if (old_hash != n->hash()) {
+      stringStream ss; // Print as a block without tty lock.
+      ss.cr();
+      ss.print_cr("Ideal optimization did not make progress but node hash changed.");
+      ss.print_cr("  old_hash = %d, hash = %d", old_hash, n->hash());
       n->dump_bfs(1, nullptr, "", &ss);
       tty->print_cr("%s", ss.as_string());
       return true;
