@@ -111,6 +111,17 @@ public class EncoderInstructionsReader {
     }
 
     public void read(ByteBuffer buffer, int maxStringLength) {
+        try {
+            read0(buffer, maxStringLength);
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            // "Duplicate" and "Insert With Name Reference" instructions can reference
+            // non-existing entries in the dynamic table.
+            // Such errors are treated as encoder stream errors.
+            throw QPackException.encoderStreamError(exception);
+        }
+    }
+
+    private void read0(ByteBuffer buffer, int maxStringLength) {
         requireNonNull(buffer, "buffer");
         while (buffer.hasRemaining()) {
             switch (state) {

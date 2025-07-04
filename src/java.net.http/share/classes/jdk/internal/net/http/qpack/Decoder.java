@@ -336,8 +336,7 @@ public final class Decoder {
             // insert entries into the dynamic table and MUST NOT send any encoder
             // instructions on the encoder stream."
             if (dynamicTable.maxCapacity() == 0) {
-                throw QPackException.decoderStreamError(
-                        new IllegalStateException("Unexpected encoder instruction"));
+                throw new IllegalStateException("Unexpected encoder instruction");
             }
         }
 
@@ -347,11 +346,7 @@ public final class Decoder {
                 return;
             }
             ensureInstructionsAllowed();
-            try {
-                dynamicTable.setCapacity(capacity);
-            } catch (IllegalArgumentException iae) {
-                throw QPackException.encoderStreamError(iae);
-            }
+            dynamicTable.setCapacity(capacity);
         }
 
         @Override
@@ -362,8 +357,7 @@ public final class Decoder {
                 ackTableInsertions();
             } else {
                 // Not enough evictable space in dynamic table to insert entry
-                IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
-                throw QPackException.encoderStreamError(ise);
+                throw new IllegalStateException("Not enough space in dynamic table");
             }
         }
 
@@ -380,8 +374,7 @@ public final class Decoder {
                 ackTableInsertions();
             } else {
                 // Not enough space in dynamic table to insert entry
-                IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
-                throw QPackException.encoderStreamError(ise);
+                throw new IllegalStateException("Not enough space in dynamic table");
             }
         }
 
@@ -392,21 +385,15 @@ public final class Decoder {
             //  MUST be treated as a stream error of type QPACK_DECOMPRESSION_FAILED"
             ensureInstructionsAllowed();
             incrementAndCheckDynamicTableInsertsCount();
-            try {
-                if (logger.isLoggable(NORMAL)) {
-                    logger.log(NORMAL,
-                            () -> format("Processing duplicate instruction (%d)", l));
-                }
-                if (dynamicTable.duplicate(l) != DynamicTable.ENTRY_NOT_INSERTED) {
-                    ackTableInsertions();
-                } else {
-                    // Not enough space in dynamic table to duplicate entry
-                    IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
-                    throw QPackException.encoderStreamError(ise);
-                }
-            } catch (IllegalStateException e) {
-                // Entry id requested for duplication was already evicted or doesn't exist
-                throw QPackException.encoderStreamError(e);
+            if (logger.isLoggable(NORMAL)) {
+                logger.log(NORMAL,
+                        () -> format("Processing duplicate instruction (%d)", l));
+            }
+            if (dynamicTable.duplicate(l) != DynamicTable.ENTRY_NOT_INSERTED) {
+                ackTableInsertions();
+            } else {
+                // Not enough space in dynamic table to duplicate entry
+                throw new IllegalStateException("Not enough space in dynamic table");
             }
         }
     }
