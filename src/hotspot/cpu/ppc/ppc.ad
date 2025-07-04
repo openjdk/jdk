@@ -10802,7 +10802,7 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmpU3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
+instruct cmpU3_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpU3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 5);
