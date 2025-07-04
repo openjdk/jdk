@@ -44,7 +44,7 @@ class MacroAssembler: public Assembler {
 
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg = t0);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp_reg = t0);
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
@@ -660,13 +660,15 @@ class MacroAssembler: public Assembler {
   void cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
 
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
   // we often need to resort to movptr, li <48imm>.
-  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
+  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/main/src/asm-manual.adoc
 
   // Hotspot only use the standard calling convention using x1/ra.
   // The alternative calling convection using x5/t0 is not used.
@@ -1382,10 +1384,6 @@ public:
   void adc(Register dst, Register src1, Register src2, Register carry);
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2, Register carry);
-  void multiply_32_x_32_loop(Register x, Register xstart, Register x_xstart,
-                             Register y, Register y_idx, Register z,
-                             Register carry, Register product,
-                             Register idx, Register kdx);
   void multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
                              Register y, Register y_idx, Register z,
                              Register carry, Register product,

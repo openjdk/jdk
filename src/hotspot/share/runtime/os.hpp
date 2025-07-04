@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,13 +292,6 @@ class os: AllStatic {
   // Interface to the performance counter
   static jlong elapsed_counter();
   static jlong elapsed_frequency();
-
-  // The "virtual time" of a thread is the amount of time a thread has
-  // actually run.  The first function indicates whether the OS supports
-  // this functionality for the current thread, and if so the second
-  // returns the elapsed virtual time for the current thread.
-  static bool supports_vtime();
-  static double elapsedVTime();
 
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).
   // It is MT safe, but not async-safe, as reading time zone

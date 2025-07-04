@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,6 @@ class RawNativeInstruction {
     instr_ldrh_strh  = 0x10,
     instr_fld_fst    = 0xd0
   };
-
-  // illegal instruction used by NativeJump::patch_verified_entry
-  // permanently undefined (UDF): 0xe << 28 | 0b1111111 << 20 | 0b1111 << 4
-  static const int not_entrant_illegal_instruction = 0xe7f000f0;
 
   static int decode_rotated_imm12(int encoding) {
     int base = encoding & 0xff;
@@ -273,10 +269,6 @@ class RawNativeJump: public NativeInstruction {
       OrderAccess::storeload(); // overkill if caller holds lock?
     }
   }
-
-  static void check_verified_entry_alignment(address entry, address verified_entry);
-
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
 
 };
 

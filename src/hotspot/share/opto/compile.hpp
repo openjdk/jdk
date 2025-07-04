@@ -28,17 +28,18 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
-#include "compiler/compiler_globals.hpp"
-#include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/cHeapStringHolder.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/phasetype.hpp"
 #include "opto/phase.hpp"
+#include "opto/phasetype.hpp"
+#include "opto/printinlining.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -46,7 +47,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
-#include "opto/printinlining.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -928,8 +928,8 @@ public:
   bool copy_node_notes_to(Node* dest, Node* source);
 
   // Workhorse function to sort out the blocked Node_Notes array:
-  inline Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
-                                       int idx, bool can_grow = false);
+  Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
+                                int idx, bool can_grow = false);
 
   void grow_node_notes(GrowableArray<Node_Notes*>* arr, int grow_by);
 

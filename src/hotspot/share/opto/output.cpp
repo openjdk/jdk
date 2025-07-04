@@ -36,8 +36,8 @@
 #include "memory/allocation.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
-#include "opto/c2compiler.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/locknode.hpp"
@@ -2015,8 +2015,10 @@ void PhaseOutput::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_s
 
     // Handle implicit null exception table updates
     if (n->is_MachNullCheck()) {
-      assert(n->in(1)->as_Mach()->barrier_data() == 0,
-             "Implicit null checks on memory accesses with barriers are not yet supported");
+      MachNode* access = n->in(1)->as_Mach();
+      assert(access->barrier_data() == 0 ||
+             access->is_late_expanded_null_check_candidate(),
+             "Implicit null checks on memory accesses with barriers are only supported on nodes explicitly marked as null-check candidates");
       uint block_num = block->non_connector_successor(0)->_pre_order;
       _inc_table.append(inct_starts[inct_cnt++], blk_labels[block_num].loc_pos());
       continue;
