@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
+class Metadata;
 class MetaspaceShared;
 class MetaspaceTracer;
 class Mutex;
@@ -153,6 +154,16 @@ public:
   static inline bool is_in_class_space(const void* ptr) {
     return ptr < _class_space_end && ptr >= _class_space_start;
   }
+
+  // xxx_is_live functions returns true if the pointer given points to
+  // valid metadata. In release builds, it is equivalent to Metaspace::contains. In debug
+  // builds, it checks that:
+  // - the specified metadata is inside class-space or metaspace in committed, readable memory
+  // - not marked as dead space (i.e. not returned prematurely via Metaspace::deallocate)
+  // - correctly aligned for the type (esp. Klass)
+  // - Metadata token is valid specific to this type
+  static bool metadata_is_live(const Metadata* md);
+  static bool klass_is_live(const Klass* k, bool must_have_narrow_klass_id);
 
   // Free empty virtualspaces
   static void purge(bool classes_unloaded);
