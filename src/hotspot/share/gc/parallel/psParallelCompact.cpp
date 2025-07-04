@@ -1668,7 +1668,7 @@ void PSParallelCompact::verify_forward() {
       if (cur_addr == bump_ptr) {
         assert(!FullGCForwarding::is_forwarded(obj), "inv");
       } else {
-        assert(FullGCForwarding::forwardee(obj) == cast_to_oop(bump_ptr), "inv");
+        assert(FullGCForwarding::forwardee(obj) == cast_to_oop(bump_ptr), "inv; obj: " PTR_FORMAT ", bump_ptr: " PTR_FORMAT ", fwd: " PTR_FORMAT, p2i(obj), p2i(bump_ptr), p2i(FullGCForwarding::forwardee(obj)));
       }
       bump_ptr += obj->size();
       cur_addr += obj->size();

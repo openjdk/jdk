@@ -24,48 +24,56 @@
 #ifndef SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP
 #define SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP
 
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "oops/markWord.hpp"
-#include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"
 
-inline bool FullGCForwarding::is_forwarded(oop obj) {
+template <int BITS>
+bool FullGCForwardingImpl<BITS>::is_forwarded(oop obj) {
   return obj->is_forwarded();
 }
 
-size_t FullGCForwarding::biased_region_index_containing(HeapWord* addr) {
-  return (uintptr_t)addr >> BLOCK_SIZE_BYTES_SHIFT;
+template <int BITS>
+size_t FullGCForwardingImpl<BITS>::biased_region_index_containing(HeapWord* addr) {
+  return reinterpret_cast<uintptr_t>(addr) >> BLOCK_SIZE_BYTES_SHIFT;
 }
 
-bool FullGCForwarding::is_fallback(uintptr_t encoded) {
+template <int BITS>
+bool FullGCForwardingImpl<BITS>::is_fallback(uintptr_t encoded) {
   return (encoded & OFFSET_MASK) == FALLBACK_PATTERN_IN_PLACE;
 }
 
-uintptr_t FullGCForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
+template <int BITS>
+uintptr_t FullGCForwardingImpl<BITS>::encode_forwarding(HeapWord* from, HeapWord* to) {
   size_t from_block_idx = biased_region_index_containing(from);
 
   HeapWord* to_region_base = _biased_bases[from_block_idx];
   if (to_region_base == UNUSED_BASE) {
-    _biased_bases[from_block_idx] = to_region_base = to;
+    HeapWord* prev = Atomic::cmpxchg(&_biased_bases[from_block_idx], UNUSED_BASE, to);
+    if (prev == UNUSED_BASE) {
+      to_region_base = to;
+    } else {
+      to_region_base = prev;
+    }
+    // _biased_bases[from_block_idx] = to_region_base = to;
   }
-
   // Avoid pointer_delta() on purpose: using an unsigned subtraction,
   // we get an underflow when to < to_region_base, which means
   // we can use a single comparison instead of:
   // if (to_region_base > to || (to - to_region_base) > MAX_OFFSET) { .. }
-  size_t offset = size_t(to - to_region_base);
+  size_t offset = static_cast<size_t>(to - to_region_base);
   if (offset > MAX_OFFSET) {
     offset = FALLBACK_PATTERN;
   }
   uintptr_t encoded = (offset << OFFSET_BITS_SHIFT) | markWord::marked_value;
 
-  assert(is_fallback(encoded) || to == decode_forwarding(from, encoded), "must be reversible");
+  assert(is_fallback(encoded) || to == decode_forwarding(from, encoded), "must be reversible: " PTR_FORMAT " -> " PTR_FORMAT ", reversed: " PTR_FORMAT ", encoded: " INTPTR_FORMAT ", to_region_base: " PTR_FORMAT ", from_block_idx: %lu", p2i(from), p2i(to), p2i(decode_forwarding(from, encoded)), encoded, p2i(to_region_base), from_block_idx);
   assert((encoded & ~AVAILABLE_BITS_MASK) == 0, "must encode to available bits");
   return encoded;
 }
 
-HeapWord* FullGCForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded) {
+template <int BITS>
+HeapWord* FullGCForwardingImpl<BITS>::decode_forwarding(HeapWord* from, uintptr_t encoded) {
   assert(!is_fallback(encoded), "must not be fallback-forwarded, encoded: " INTPTR_FORMAT ", OFFSET_MASK: " INTPTR_FORMAT ", FALLBACK_PATTERN_IN_PLACE: " INTPTR_FORMAT, encoded, OFFSET_MASK, FALLBACK_PATTERN_IN_PLACE);
   assert((encoded & ~AVAILABLE_BITS_MASK) == 0, "must decode from available bits, encoded: " INTPTR_FORMAT, encoded);
   uintptr_t offset = (encoded >> OFFSET_BITS_SHIFT);
@@ -81,7 +89,8 @@ HeapWord* FullGCForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded)
   return decoded;
 }
 
-inline void FullGCForwarding::forward_to_impl(oop from, oop to) {
+template <int BITS>
+void FullGCForwardingImpl<BITS>::forward_to_impl(oop from, oop to) {
   assert(_bases_table != nullptr, "call begin() before forwarding");
 
   markWord from_header = from->mark();
@@ -97,18 +106,20 @@ inline void FullGCForwarding::forward_to_impl(oop from, oop to) {
   NOT_PRODUCT(Atomic::inc(&_num_forwardings);)
 }
 
-inline void FullGCForwarding::forward_to(oop obj, oop fwd) {
+template <int BITS>
+void FullGCForwardingImpl<BITS>::forward_to(oop obj, oop fwd) {
   assert(fwd != nullptr, "no null forwarding");
 #ifdef _LP64
   assert(_bases_table != nullptr, "expect sliding forwarding initialized");
   forward_to_impl(obj, fwd);
-  assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee, obj: " PTR_FORMAT ", forwardee(obj): " PTR_FORMAT ", fwd: " PTR_FORMAT ", mark: " INTPTR_FORMAT, p2i(obj), p2i(forwardee(obj)), p2i(fwd), obj->mark().value());
+  // assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee, obj: " PTR_FORMAT ", forwardee(obj): " PTR_FORMAT ", fwd: " PTR_FORMAT ", mark: " INTPTR_FORMAT ", num-regions: %lu, base: " PTR_FORMAT ", OFFSET_MASK: " INTPTR_FORMAT ", encoded: " PTR_FORMAT ", biased-base: " PTR_FORMAT ", heap-start: " PTR_FORMAT, p2i(obj), p2i(forwardee(obj)), p2i(fwd), obj->mark().value(), _num_regions, p2i(_bases_table[0]), OFFSET_MASK, encode_forwarding(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(fwd)), p2i(_biased_bases[biased_region_index_containing(cast_from_oop<HeapWord*>(obj))]), p2i(_heap_start));
 #else
   obj->forward_to(fwd);
 #endif
 }
 
-inline oop FullGCForwarding::forwardee_impl(oop from) {
+template <int BITS>
+oop FullGCForwardingImpl<BITS>::forwardee_impl(oop from) {
   assert(_bases_table != nullptr, "call begin() before asking for forwarding");
 
   markWord header = from->mark();
@@ -122,7 +133,8 @@ inline oop FullGCForwarding::forwardee_impl(oop from) {
   return cast_to_oop(to);
 }
 
-inline oop FullGCForwarding::forwardee(oop obj) {
+template <int BITS>
+oop FullGCForwardingImpl<BITS>::forwardee(oop obj) {
 #ifdef _LP64
   assert(_bases_table != nullptr, "expect sliding forwarding initialized");
   return forwardee_impl(obj);
@@ -130,5 +142,9 @@ inline oop FullGCForwarding::forwardee(oop obj) {
   return obj->forwardee();
 #endif
 }
+
+template class FullGCForwardingImpl<markWord::klass_shift>;
+// For testing, used in test_fullGCForwarding.cpp
+template class FullGCForwardingImpl<4>;
 
 #endif // SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP

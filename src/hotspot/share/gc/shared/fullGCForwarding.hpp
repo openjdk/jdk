@@ -31,7 +31,6 @@
 #include "oops/oopsHierarchy.hpp"
 
 class FallbackTable;
-class Mutex;
 
 /**
  * FullGCForwarding is a method to store forwarding information in a compressed form into the object header,
@@ -116,10 +115,11 @@ class Mutex;
  * This implies that this particular offset (the last word of a block) can not be used directly as forwarding,
  * but also has to be handled by the fallback-table.
  */
-class FullGCForwarding : public AllStatic {
-private:
-  static constexpr int AVAILABLE_LOW_BITS       = 11;
-  static constexpr int AVAILABLE_BITS_MASK      = right_n_bits(AVAILABLE_LOW_BITS);
+template <int BITS>
+class FullGCForwardingImpl : public AllStatic {
+  friend class FullGCForwardingTest;
+  static constexpr int AVAILABLE_LOW_BITS        = BITS;
+  static constexpr uintptr_t AVAILABLE_BITS_MASK = right_n_bits(AVAILABLE_LOW_BITS);
   // The offset bits start after the lock-bits, which are currently used by Serial GC
   // for marking objects. Could be 1 for Serial GC when being clever with the bits,
   // and 0 for all other GCs.
@@ -127,7 +127,7 @@ private:
 
   // How many bits we use for the offset
   static constexpr int NUM_OFFSET_BITS = AVAILABLE_LOW_BITS - OFFSET_BITS_SHIFT;
-  static constexpr size_t BLOCK_SIZE_WORDS = 1 << NUM_OFFSET_BITS;
+  static constexpr size_t BLOCK_SIZE_WORDS = 1l << NUM_OFFSET_BITS;
   static constexpr int BLOCK_SIZE_BYTES_SHIFT = NUM_OFFSET_BITS + LogHeapWordSize;
   static constexpr size_t MAX_OFFSET = BLOCK_SIZE_WORDS - 2;
   static constexpr uintptr_t OFFSET_MASK = right_n_bits(NUM_OFFSET_BITS) << OFFSET_BITS_SHIFT;
@@ -153,6 +153,7 @@ private:
   // Entries into the target base tables, biased to the start of the heap.
   static HeapWord**     _biased_bases;
 
+  static size_t _fallback_table_log2_start_size;
   static FallbackTable* _fallback_table;
 
 #ifndef PRODUCT
@@ -160,29 +161,40 @@ private:
   static volatile uint64_t _num_fallback_forwardings;
 #endif
 
-  static inline size_t biased_region_index_containing(HeapWord* addr);
+  static size_t biased_region_index_containing(HeapWord* addr);
 
-  static inline bool is_fallback(uintptr_t encoded);
-  static inline uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
-  static inline HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded);
+  static bool is_fallback(uintptr_t encoded);
+  static uintptr_t encode_forwarding(HeapWord* from, HeapWord* to);
+  static HeapWord* decode_forwarding(HeapWord* from, uintptr_t encoded);
 
+  static void maybe_init_fallback_table();
   static void fallback_forward_to(HeapWord* from, HeapWord* to);
   static HeapWord* fallback_forwardee(HeapWord* from);
 
-  static inline void forward_to_impl(oop from, oop to);
-  static inline oop forwardee_impl(oop from);
+  static void forward_to_impl(oop from, oop to);
+  static oop forwardee_impl(oop from);
 
+  FullGCForwardingImpl() = delete;
+
+  // Used in unit-test, so that we can test fallback-table-growth.
+  static void set_fallback_table_log2_start_size(size_t fallback_table_log2_start_size) {
+    _fallback_table_log2_start_size = fallback_table_log2_start_size;
+  }
 public:
   static void initialize(MemRegion heap);
 
   static void begin();
   static void end();
 
-  static inline bool is_forwarded(oop obj);
-  static inline bool is_not_forwarded(oop obj);
+  static bool is_forwarded(oop obj);
 
-  static inline void forward_to(oop from, oop to);
-  static inline oop forwardee(oop from);
+  static void forward_to(oop from, oop to);
+  static oop forwardee(oop from);
 };
+
+extern template class FullGCForwardingImpl<markWord::klass_shift>;
+extern template class FullGCForwardingImpl<4>;
+
+using FullGCForwarding = FullGCForwardingImpl<markWord::klass_shift>;
 
 #endif // SHARE_GC_SHARED_FULLGCFORWARDING_HPP
