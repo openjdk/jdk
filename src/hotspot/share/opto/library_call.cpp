@@ -135,6 +135,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
 
   // The intrinsic bailed out
   assert(ctrl == kit.control(), "Control flow was added although the intrinsic bailed out");
+  assert(jvms->map() == kit.map(), "Out of sync JVM state");
   if (jvms->has_method()) {
     // Not a root compile.
     const char* msg;
@@ -1724,18 +1725,16 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   }
 
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state = clone_map_and_save_state();
 
   value = must_be_not_null(value, true);
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (adr->is_top()) {
-    set_map(old_map);
-    set_sp(old_sp);
+    restore_state(old_state);
     return false;
   }
-  destruct_map_clone(old_map);
+  destruct_map_clone(old_state.map);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -2373,6 +2372,36 @@ DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(AccessKind kind) {
   }
 }
 
+LibraryCallKit::SavedState LibraryCallKit::clone_map_and_save_state() {
+  SavedState state;
+  state.sp = sp();
+  state.jvms = jvms();
+  state.map = clone_map();
+  for (DUIterator_Fast imax, i = control()->fast_outs(imax); i < imax; i++) {
+    Node* out = control()->fast_out(i);
+    if (out->is_CFG()) {
+      state.ctrl_succ.push(out);
+    }
+  }
+  return state;
+}
+
+void LibraryCallKit::restore_state(const SavedState& state) {
+  jvms()->set_map(state.map);
+  jvms()->set_sp(state.sp);
+  state.map->set_jvms(jvms());
+  set_map(state.map);
+  set_sp(state.sp);
+  for (DUIterator_Fast imax, i = control()->fast_outs(imax); i < imax; i++) {
+    Node* out = control()->fast_out(i);
+    if (out->is_CFG() && out->in(0) == control() && out != map() && !state.ctrl_succ.member(out)) {
+      out->set_req(0, C->top());
+      C->record_for_igvn(out);
+      --i; --imax;
+    }
+  }
+}
+
 bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
   if (callee()->is_static())  return false;  // caller must have the capability!
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
@@ -2434,8 +2463,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   offset = ConvL2X(offset);
 
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state = clone_map_and_save_state();
 
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
@@ -2444,8 +2472,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     if (type != T_OBJECT) {
       decorators |= IN_NATIVE; // off-heap primitive access
     } else {
-      set_map(old_map);
-      set_sp(old_sp);
+      restore_state(old_state);
       return false; // off-heap oop accesses are not supported
     }
   } else {
@@ -2463,8 +2490,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 
   const TypePtr* adr_type = _gvn.type(adr)->isa_ptr();
   if (adr_type == TypePtr::NULL_PTR) {
-    set_map(old_map);
-    set_sp(old_sp);
+    restore_state(old_state);
     return false; // off-heap access with zero address
   }
 
@@ -2473,9 +2499,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
-      alias_type->adr_type() == TypeAryPtr::RANGE) {
-    set_map(old_map);
-    set_sp(old_sp);
+  alias_type->adr_type() == TypeAryPtr::RANGE) {
+    restore_state(old_state);
     return false; // not supported
   }
 
@@ -2494,8 +2519,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     }
     if ((bt == T_OBJECT) != (type == T_OBJECT)) {
       // Don't intrinsify mismatched object accesses
-      set_map(old_map);
-      set_sp(old_sp);
+      restore_state(old_state);
       return false;
     }
     mismatched = (bt != type);
@@ -2503,7 +2527,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
-  destruct_map_clone(old_map);
+  destruct_map_clone(old_state.map);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2739,8 +2763,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state = clone_map_and_save_state();
   Node* adr = make_unsafe_address(base, offset,type, false);
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
@@ -2749,12 +2772,11 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   if (bt != T_ILLEGAL &&
       (is_reference_type(bt) != (type == T_OBJECT))) {
     // Don't intrinsify mismatched object accesses.
-    set_map(old_map);
-    set_sp(old_sp);
+    restore_state(old_state);
     return false;
   }
 
-  destruct_map_clone(old_map);
+  destruct_map_clone(old_state.map);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.
