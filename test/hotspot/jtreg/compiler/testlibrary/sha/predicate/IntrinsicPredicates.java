@@ -97,11 +97,14 @@ public class IntrinsicPredicates {
               new OrPredicate(new CPUSpecificPredicate("ppc64.*",   new String[] { "sha"          }, null),
               new OrPredicate(new CPUSpecificPredicate("ppc64le.*", new String[] { "sha"          }, null),
               // x86 variants
-              new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] { "sha"          }, null),
               new OrPredicate(new CPUSpecificPredicate("i386.*",    new String[] { "sha"          }, null),
               new OrPredicate(new CPUSpecificPredicate("x86.*",     new String[] { "sha"          }, null),
-              new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] { "avx2", "bmi2" }, null),
-                              new CPUSpecificPredicate("x86_64",    new String[] { "avx2", "bmi2" }, null))))))))));
+              new OrPredicate(new AndPredicate(new CPUSpecificPredicate("amd64.*",   new String[] { "sha", "avx2" }, null),
+                                               new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] { "bmi2" }, null),
+                                                               new CPUSpecificPredicate("amd64.*",   new String[] { "sha512" }, null))),
+                              (new AndPredicate(new CPUSpecificPredicate("x86_64",   new String[] { "sha", "avx2" }, null),
+                                                new OrPredicate(new CPUSpecificPredicate("x86_64",   new String[] { "bmi2" }, null),
+                                                                new CPUSpecificPredicate("x86_64",   new String[] { "sha512" }, null))))))))))));
 
     public static final BooleanSupplier SHA3_INSTRUCTION_AVAILABLE
             // sha3 is only implemented on aarch64 and avx512 for now
