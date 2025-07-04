@@ -2119,13 +2119,9 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
 
   size_t actual_size = req.size();
   size_t min_requested_size = IS_TLAB ? req.min_size() : actual_size;
-#if  defined(__APPLE__) && defined(__aarch64__)
-  const uint hash = abs(os::random()) % ShenandoahDirectlyAllocatableRegionCount;
-#else
-  const uint hash = (os::is_MP() ? os::processor_id() : abs(os::random())) % ShenandoahDirectlyAllocatableRegionCount;
-#endif
+  const uint hash = (reinterpret_cast<size_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount;
   for (;;) {
-    uint idx = hash % ShenandoahDirectlyAllocatableRegionCount;
+    uint idx = hash;
     ShenandoahHeapRegion* retirable_regions[3];
     ShenandoahHeapRegion** retirable_shared_regions_addresses[3];
     HeapWord* obj = nullptr;
