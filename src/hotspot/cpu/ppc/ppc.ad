@@ -13581,6 +13581,7 @@ instruct vneg2D_reg(vecX dst, vecX src) %{
 
 instruct vnegI_reg(vecX dst, vecX src) %{
   match(Set dst (NegVI src));
+  predicate(PowerArchitecturePPC64 >= 9);
   format %{ "VNEGW $dst,$src\t// negate int vector" %}
   size(4);
   ins_encode %{
