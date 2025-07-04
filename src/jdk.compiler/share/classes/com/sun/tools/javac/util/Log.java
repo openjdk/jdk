@@ -48,6 +48,7 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
@@ -797,9 +798,15 @@ public class Log extends AbstractLog {
                         return;
                 }
 
-                // Emit warning unless not mandatory and warnings are disabled
-                if (emitWarnings || diagnostic.isMandatory() ||
-                        diagnostic.isFlagSet(DiagnosticFlag.STRICT)) {
+                // Strict warnings are always emitted
+                if (diagnostic.isFlagSet(DiagnosticFlag.STRICT)) {
+                    writeDiagnostic(diagnostic);
+                    nwarnings++;
+                    return;
+                }
+
+                // Emit other warning unless not mandatory and warnings are disabled
+                if (emitWarnings || diagnostic.isMandatory()) {
                     if (nwarnings < MaxWarnings) {
                         writeDiagnostic(diagnostic);
                         nwarnings++;
