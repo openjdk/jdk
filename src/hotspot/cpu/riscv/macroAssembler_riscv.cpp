@@ -26,6 +26,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -758,9 +759,13 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 }
 
 void MacroAssembler::stop(const char* msg) {
-  BLOCK_COMMENT(msg);
+  // Skip AOT caching C strings in scratch buffer.
+  const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+  BLOCK_COMMENT(str);
+  // load msg into c_rarg0 so we can access it from the signal handler
+  // ExternalAddress enables saving and restoring via the code cache
+  la(c_rarg0, ExternalAddress((address) str));
   illegal_instruction(Assembler::csr::time);
-  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -790,10 +795,9 @@ void MacroAssembler::emit_static_call_stub() {
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
-  int32_t offset = 0;
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
-  movptr(t1, entry_point, offset, t0);
-  jalr(t1, offset);
+  movptr(t1, RuntimeAddress(entry_point), t0);
+  jalr(t1);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
@@ -3395,6 +3399,19 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src, Register tmp) {
+  // we have to load the klass base from the AOT constants area but
+  // not the shift because it is not allowed to change
+  int shift = CompressedKlassPointers::shift();
+  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
+  assert_different_registers(src, tmp);
+  la(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+  ld(tmp, tmp);
+  Register t = src == dst ? dst : t0;
+  assert_different_registers(t, tmp);
+  shadd(dst, src, tmp, t, shift);
+}
+
 void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
   decode_klass_not_null(r, r, tmp);
@@ -3402,6 +3419,11 @@ void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    decode_klass_not_null_for_aot(dst, src, tmp);
+    return;
+  }
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
@@ -3429,6 +3451,24 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   }
 }
 
+void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src, Register tmp) {
+  // we have to load the klass base from the AOT constants area but
+  // not the shift because it is not allowed to change
+  int shift = CompressedKlassPointers::shift();
+  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
+  assert_different_registers(src, tmp);
+  Register xbase = dst;
+  if (dst == src) {
+    xbase = tmp;
+  }
+  la(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
+  ld(xbase, xbase);
+  sub(dst, src, xbase);
+  if (shift != 0) {
+    srli(dst, dst, shift);
+  }
+}
+
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
   encode_klass_not_null(r, r, tmp);
@@ -3436,6 +3476,11 @@ void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register tmp) {
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    encode_klass_not_null_for_aot(dst, src, tmp);
+    return;
+  }
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
@@ -4882,7 +4927,7 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  mv(t1, CAST_FROM_FN_PTR(address, Thread::current));
+  movptr(t1, ExternalAddress(CAST_FROM_FN_PTR(address, Thread::current)));
   jalr(t1);
   if (thread != c_rarg0) {
     mv(thread, c_rarg0);
