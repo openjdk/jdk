@@ -87,9 +87,9 @@ abstract class HttpQuicConnection extends HttpConnection {
             proto.equals("TLSv1.3");
 
 
-    HttpQuicConnection(InetSocketAddress address, HttpClientImpl client,
+    HttpQuicConnection(Origin originServer, InetSocketAddress address, HttpClientImpl client,
                        QuicConnection quicConnection, AltService sourceAltService) {
-        super(address, client, "quic:" + quicConnection.uniqueId());
+        super(originServer, address, client, "quic:" + quicConnection.uniqueId());
         Objects.requireNonNull(quicConnection);
         this.quicConnection = quicConnection;
         this.quicConnTerminator = quicConnection.connectionTerminator();
@@ -355,7 +355,7 @@ abstract class HttpQuicConnection extends HttpConnection {
                                 : (c,t) -> registerUnadvertised(client, uri, addr, c, t);
         // Note: we could get rid of the updater by introducing
         //       H3DirectQuicConnectionImpl extends H3QuicConnectionImpl
-        HttpQuicConnection httpQuicConn = new H3QuicConnectionImpl(addr, client,
+        HttpQuicConnection httpQuicConn = new H3QuicConnectionImpl(Origin.from(request.uri()), addr, client,
                     quicConnection, onConnectFinished, directTimeout, altSvc);
         // if we created a connection and if that connection is to an (advertised) alt service then
         // we setup the Exchange's request to include the "alt-used" header to refer to the
@@ -408,13 +408,14 @@ abstract class HttpQuicConnection extends HttpConnection {
     static class H3QuicConnectionImpl extends HttpQuicConnection {
         private final Optional<Duration> directTimeout;
         private final DirectConnectionUpdater connFinishedAction;
-        H3QuicConnectionImpl(InetSocketAddress address,
+        H3QuicConnectionImpl(Origin originServer,
+                             InetSocketAddress address,
                              HttpClientImpl client,
                              QuicConnection quic,
                              DirectConnectionUpdater connFinishedAction,
                              Optional<Duration> directTimeout,
                              AltService sourceAltService) {
-            super(address, client, quic, sourceAltService);
+            super(originServer, address, client, quic, sourceAltService);
             this.directTimeout = directTimeout;
             this.connFinishedAction = connFinishedAction;
         }

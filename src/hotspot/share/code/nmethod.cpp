@@ -1935,6 +1935,14 @@ bool nmethod::is_maybe_on_stack() {
 void nmethod::inc_decompile_count() {
   if (!is_compiled_by_c2() && !is_compiled_by_jvmci()) return;
   // Could be gated by ProfileTraps, but do not bother...
+#if INCLUDE_JVMCI
+  // Deoptimization count is used by the CompileBroker to reason about compilations
+  // it requests so do not pollute the count for deoptimizations in non-default (i.e.
+  // non-CompilerBroker) compilations.
+  if (is_jvmci_hosted()) {
+    return;
+  }
+#endif
   Method* m = method();
   if (m == nullptr)  return;
   MethodData* mdo = m->method_data();
@@ -2156,6 +2164,7 @@ void nmethod::purge(bool unregister_nmethod) {
   }
   CodeCache::unregister_old_nmethod(this);
 
+  JVMCI_ONLY( _metadata_size = 0; )
   CodeBlob::purge();
 }
 
@@ -3463,6 +3472,9 @@ void nmethod::decode2(outputStream* ost) const {
   if (use_compressed_format && ! compressed_with_comments) {
     const_cast<nmethod*>(this)->print_constant_pool(st);
 
+    st->bol();
+    st->cr();
+    st->print_cr("Loading hsdis library failed, undisassembled code is shown in MachCode section");
     //---<  Open the output (Marker for post-mortem disassembler)  >---
     st->print_cr("[MachCode]");
     const char* header = nullptr;
@@ -3497,6 +3509,9 @@ void nmethod::decode2(outputStream* ost) const {
   if (compressed_with_comments) {
     const_cast<nmethod*>(this)->print_constant_pool(st);
 
+    st->bol();
+    st->cr();
+    st->print_cr("Loading hsdis library failed, undisassembled code is shown in MachCode section");
     //---<  Open the output (Marker for post-mortem disassembler)  >---
     st->print_cr("[MachCode]");
     while ((p < end) && (p != nullptr)) {
@@ -4049,5 +4064,9 @@ const char* nmethod::jvmci_name() {
     return jvmci_nmethod_data()->name();
   }
   return nullptr;
+}
+
+bool nmethod::is_jvmci_hosted() const {
+  return jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->is_default();
 }
 #endif
