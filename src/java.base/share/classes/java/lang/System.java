@@ -2209,6 +2209,10 @@ public final class System {
                 return StringConcatHelper.concat(prefix, value, suffix);
             }
 
+            public int encodeUTF8(String s, int sp, int sl, byte[] dst, int dp) {
+                return s.encodeUTF8(sp, sl, dst, dp);
+            }
+
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
