@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package org.openjdk.bench.java.nio;
 
-#ifndef SHARE_CLASSFILE_CLASSLOADEREXT_HPP
-#define SHARE_CLASSFILE_CLASSLOADEREXT_HPP
+import java.nio.ByteBuffer;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
-#include "classfile/classLoader.hpp"
-#include "classfile/moduleEntry.hpp"
-#include "utilities/macros.hpp"
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Thread)
+@BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3, jvmArgs = {"-Xmx256m", "-Xms256m", "-XX:+AlwaysPreTouch"})
+public class DirectByteBufferChurn {
 
-class ClassListParser;
+    @Param({"128", "256", "512", "1024", "2048"})
+    int recipFreq;
 
-class ClassLoaderExt: public ClassLoader { // AllStatic
-public:
-#if INCLUDE_CDS
-public:
-  // Called by JVMTI code to add boot classpath
+    @Benchmark
+    public Object test() {
+        boolean direct = ThreadLocalRandom.current().nextInt(recipFreq) == 0;
+        return direct ? ByteBuffer.allocateDirect(1) : ByteBuffer.allocate(1);
+    }
 
-  static void append_boot_classpath(ClassPathEntry* new_entry);
-
-  static int compare_module_names(const char** p1, const char** p2);
-  static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
-#endif // INCLUDE_CDS
-};
-
-#endif // SHARE_CLASSFILE_CLASSLOADEREXT_HPP
+}
