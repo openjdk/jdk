@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8356165
+ * @bug 8356165 8358552
  * @summary Check user input works properly
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
@@ -38,6 +38,7 @@
  * @run testng/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
  */
 
+import java.util.Map;
 import java.util.function.Function;
 import org.testng.annotations.Test;
 
@@ -67,4 +68,21 @@ public class InputUITest extends UITesting {
         }, false);
     }
 
+    public void testCloseInputSinkWhileReadingUserInputSimulatingCtrlD() throws Exception {
+        var snippets = Map.of(
+                "System.in.read()",                 " ==> -1",
+                "System.console().reader().read()", " ==> -1",
+                "System.console().readLine()",      " ==> null",
+                "System.console().readPassword()",  " ==> null",
+                "IO.readln()",                      " ==> null",
+                "System.in.readAllBytes()",         " ==> byte[0] {  }"
+            );
+        for (var snippet : snippets.entrySet()) {
+            doRunTest((inputSink, out) -> {
+                inputSink.write(snippet.getKey() + "\n");
+                inputSink.close(); // Does not work: inputSink.write("\u0004"); // CTRL + D
+                waitOutput(out, patternQuote(snippet.getValue()), patternQuote("EndOfFileException"));
+            }, false);
+        }
+    }
 }

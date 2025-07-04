@@ -106,10 +106,18 @@ public class UITesting {
         });
 
         Writer inputSink = new OutputStreamWriter(input.createOutput(), StandardCharsets.UTF_8) {
+            boolean closed = false;
             @Override
             public void write(String str) throws IOException {
+                if (closed) return; // prevents exception thrown due to closed writer
                 super.write(str);
                 flush();
+            }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                closed = true;
             }
         };
 
