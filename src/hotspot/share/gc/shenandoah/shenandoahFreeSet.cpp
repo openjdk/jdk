@@ -2237,17 +2237,24 @@ public:
       Atomic::store(_shared_region_addresses[_current_index++], r);
       skip_invalid_address();
       _fulfilled_count++;
-    } else if (_obj == nullptr && r->affiliation() == YOUNG_GENERATION && r->is_regular() &&
+    } else if (r->affiliation() == YOUNG_GENERATION && r->is_regular() &&
                r->get_top_before_promote() != nullptr && r->free() >= _min_req_byte_size) {
-      size_t actual_size = _req.size();
-      if (_req.is_lab_alloc()) {
-        _obj = r->allocate_lab(_req, actual_size);
+      if (_obj == nullptr) {
+        size_t actual_size = _req.size();
+        if (_req.is_lab_alloc()) {
+          _obj = r->allocate_lab(_req, actual_size);
+        } else {
+          _obj = r->allocate(actual_size, _req);
+        }
+        if (_obj != nullptr) {
+          _req.set_actual_size(actual_size);
+          _in_new_region = false;
+        }
       } else {
-        _obj = r->allocate(actual_size, _req);
-      }
-      if (_obj != nullptr) {
-        _req.set_actual_size(actual_size);
-        _in_new_region = false;
+        r->reserve_for_direct_allocation();
+        Atomic::store(_shared_region_addresses[_current_index++], r);
+        skip_invalid_address();
+        _fulfilled_count++;
       }
     }
     return _fulfilled_count == _request_count || _current_index == _shared_region_address_count;
