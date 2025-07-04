@@ -26,6 +26,7 @@
 package jdk.internal.misc;
 
 import jdk.internal.ref.Cleaner;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
@@ -60,7 +61,7 @@ public final class Unsafe {
         runtimeSetup();
     }
 
-    // Called from JVM when loading an AOT cache
+    @AOTRuntimeSetup
     private static void runtimeSetup() {
         registerNatives();
     }
