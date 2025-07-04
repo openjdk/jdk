@@ -379,19 +379,15 @@ abstract class HttpQuicConnection extends HttpConnection {
     }
 
     static void registerUnadvertised(final HttpClientImpl client,
-                                                                   final URI requestURI,
-                                                                   final InetSocketAddress destAddr,
-                                                                   final Http3Connection connection,
-                                                                   final Throwable t) {
-        final URI originURI = requestURI.resolve("/");
+                                     final URI requestURI,
+                                     final InetSocketAddress destAddr,
+                                     final Http3Connection connection,
+                                     final Throwable t) {
         if (t == null && connection != null) {
             // There is an h3 endpoint at the given origin: update the registry
-            final AltServicesRegistry.Origin origin;
-            try {
-                origin = AltServicesRegistry.Origin.from(originURI);
-            } catch (IllegalArgumentException iae) {
-                return;
-            }
+            final Origin origin = connection.connection().getOriginServer();
+            assert origin != null : "origin server is null on connection: "
+                    + connection.connection();
             assert origin.port() == destAddr.getPort();
             var id = new AltService.Identity(H3, origin.host(), origin.port());
             client.registry().registerUnadvertised(id, origin, connection.connection());
@@ -399,6 +395,7 @@ abstract class HttpQuicConnection extends HttpConnection {
         }
         if (t != null) {
             assert client.client3().isPresent() : "HTTP3 isn't supported by the client";
+            final URI originURI = requestURI.resolve("/");
             // record that there is no h3 at the given origin
             client.client3().get().noH3(originURI.getRawAuthority());
         }

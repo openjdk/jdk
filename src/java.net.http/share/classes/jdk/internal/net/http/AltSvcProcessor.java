@@ -26,11 +26,9 @@
 package jdk.internal.net.http;
 
 import jdk.internal.net.http.AltServicesRegistry.AltService;
-import jdk.internal.net.http.AltServicesRegistry.Origin;
 import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
-import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.frame.AltSvcFrame;
@@ -44,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.concurrent.CompletableFuture;
 
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
@@ -181,18 +178,8 @@ final class AltSvcProcessor {
                         + conn + ", ignoring alt-svc frame");
                 return;
             }
-            // We are processing a AltSvcFrame that arrived on a HttpConnection
-            // which we have verified as secure. We thus use "https" as the
-            // scheme for the origin
-            final String scheme = "https";
-            try {
-                origin = Origin.of(scheme, conn.address);
-            } catch (IllegalArgumentException iae) {
-                debug.log("origin couldn't be parsed: " + iae
-                        + ", ignoring invalid alt-svc frame on stream "
-                        + streamId + " of " + conn);
-                return;
-            }
+            origin = conn.getOriginServer();
+            assert origin != null : "origin server is null on connection: " + conn;
         }
         processValueAndUpdateRegistry(client, origin, value);
     }

@@ -24,13 +24,10 @@
  */
 package jdk.internal.net.http;
 
-import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -75,115 +72,6 @@ public final class AltServicesRegistry {
         return "AltServicesRegistry(" + id + ")";
     }
 
-    /**
-     * Represents an origin of an alternative service.
-     *
-     * @param scheme The scheme of the origin (for example: https). Unlike the protocol part of the
-     *               alternative service (which can be a finer grained protocol like h2, h3 etc...),
-     *               this is actually a scheme.
-     * @param host   The host of the origin
-     * @param port   The port of the origin
-     */
-    public record Origin(String scheme, String host, int port) {
-        public Origin {
-            Objects.requireNonNull(scheme);
-            Objects.requireNonNull(host);
-            if (port <= 0) {
-                throw new IllegalArgumentException("Invalid port");
-            }
-        }
-
-        /**
-         * {@return true if the Origin's scheme is considered secure, else returns false}
-         */
-        boolean isSecure() {
-            // we consider https to be the only secure scheme
-            return scheme.toLowerCase(Locale.ROOT).equals("https");
-        }
-
-        @Override
-        public String toString() {
-            return scheme + "://" + toAuthority(host, port);
-        }
-
-        /**
-         * {@return Creates and returns an Origin from an URI}
-         *
-         * @param uri The URI of the origin
-         * @throws IllegalArgumentException if a Origin cannot be constructed from
-         *                                  the given {@code uri}
-         */
-        public static Origin from(final URI uri) throws IllegalArgumentException {
-            Objects.requireNonNull(uri);
-            final String scheme = uri.getScheme();
-            if (scheme == null) {
-                throw new IllegalArgumentException("missing scheme in URI");
-            }
-            final String host = uri.getHost();
-            if (host == null) {
-                throw new IllegalArgumentException("missing host in URI");
-            }
-            int port = uri.getPort();
-            if (port == -1 && scheme != null) {
-                port = switch (scheme.toLowerCase(Locale.ROOT)) {
-                    case "http" -> 80;
-                    case "https" -> 443;
-                    default -> throw new IllegalArgumentException("Unsupported scheme: " + scheme);
-                };
-            }
-            return new Origin(scheme, host, port);
-        }
-
-        /**
-         * {@return Creates and returns an Origin parsed from the ASCII serialized form as defined
-         * in section 6.2 of RFC-6454}
-         *
-         * @param value The value to be parsed
-         */
-        static Origin fromASCIISerializedForm(final String value) throws IllegalArgumentException {
-            Objects.requireNonNull(value);
-            try {
-                URI uri = new URI(value);
-                // the ASCII-serialized form contains scheme://host, optionally followed by :port
-                if (uri.getScheme() == null || uri.getHost() == null) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
-                }
-                // normalize the origin string, check if we get the same result
-                String normalized = uri.getScheme() + "://" + uri.getHost();
-                if (uri.getPort() != -1) {
-                    normalized += ":" + uri.getPort();
-                }
-                if (!value.equals(normalized)) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
-                }
-
-                try {
-                    return Origin.from(uri);
-                } catch (IllegalArgumentException iae) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin", iae);
-                }
-            } catch (URISyntaxException use) {
-                throw new IllegalArgumentException("Invalid ASCII serialized form of origin", use);
-            }
-        }
-
-        /**
-         * {@return Creates and returns an Origin for the given scheme and origin address}
-         *
-         * @param scheme the scheme of the Origin
-         * @param addr the address of the Origin
-         * @throws IllegalArgumentException if an Origin cannot be constructed from
-         *                                  the given {@code scheme} or {@code addr}
-         */
-        static Origin of(final String scheme, final InetSocketAddress addr)
-                throws IllegalArgumentException {
-            // we use getHostString(), since the address could be unresolved in the case where
-            // proxy is configured
-            final String originHost = addr.getHostString();
-            return new Origin(scheme, originHost, addr.getPort());
-        }
-    }
-
     public static final class AltService {
         // As defined in RFC-7838, section 2, formally an alternate service is a combination of
         // ALPN, host and port
@@ -202,7 +90,7 @@ public final class AltServicesRegistry {
 
             @Override
             public String toString() {
-                return alpn + "=\"" + toAuthority(host, port) +"\"";
+                return alpn + "=\"" + Origin.toAuthority(host, port) +"\"";
             }
         }
 
@@ -238,8 +126,8 @@ public final class AltServicesRegistry {
             Objects.requireNonNull(origin);
             assert origin.isSecure() : "origin " + origin + " is not secure";
             deadline = deadline == null ? Deadline.MAX : deadline;
-            final String authority = toAuthority(id.host, id.port);
-            final String originAuthority = toAuthority(origin.host, origin.port);
+            final String authority = Origin.toAuthority(id.host, id.port);
+            final String originAuthority = Origin.toAuthority(origin.host(), origin.port());
             // keep track of whether the authority of this alt service is same as that
             // of the origin
             final boolean sameAuthorityAsOrigin = authority.equals(originAuthority);
@@ -381,18 +269,6 @@ public final class AltServicesRegistry {
 
     // An alt-service is invalid for a particular origin
     private record InvalidAltSvc(Origin origin, AltService.Identity id) {
-    }
-
-    private static String toAuthority(String host, int port) {
-        assert port > 0 : "invalid port: " + port;
-        // borrowed from code in java.net.URI
-        final boolean needBrackets = host.indexOf(':') >= 0
-                && !host.startsWith("[")
-                && !host.endsWith("]");
-        if (needBrackets) {
-            return "[" + host + "]:" + port;
-        }
-        return host + ":" + port;
     }
 
     private boolean keepAltServiceFor(Origin origin, AltService svc) {
