@@ -32,8 +32,6 @@
 typedef void* HMODULE;
 #endif
 
-#include "kludge_c++11.h"
-
 #include <memory>
 #include "tstrings.h"
 #include "ErrorHandling.h"

@@ -25,7 +25,7 @@
  * @test
  * @bug     6326485
  * @summary Compiler does not enforce rule that interfaces may not use Override annotation
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T6326485.java
  */
 

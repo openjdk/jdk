@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -43,6 +44,7 @@
 #include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/recorder/service/jfrRecorderThread.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1023,8 +1025,10 @@
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
+        declare_type(TrainingReplayThread, JavaThread)                    \
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
+        declare_type(JfrRecorderThread, JavaThread)                       \
         DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
           declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
@@ -1164,6 +1168,7 @@
   /********************/                                                  \
                                                                           \
   declare_toplevel_type(Abstract_VM_Version)                              \
+  declare_toplevel_type(VM_Version)                                       \
                                                                           \
   /*************/                                                         \
   /* Arguments */                                                         \
@@ -1480,13 +1485,13 @@
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
                                                                           \
-  /***********************************************/                       \
-  /* ConstantPool* layout enum for InvokeDynamic */                       \
-  /***********************************************/                       \
+  /******************************************************/                \
+  /* BSMAttributeEntry* - layout enum for InvokeDynamic */                \
+  /******************************************************/                \
                                                                           \
-  declare_constant(ConstantPool::_indy_bsm_offset)                        \
-  declare_constant(ConstantPool::_indy_argc_offset)                       \
-  declare_constant(ConstantPool::_indy_argv_offset)                       \
+  declare_constant(BSMAttributeEntry::_bsmi_offset)                       \
+  declare_constant(BSMAttributeEntry::_argc_offset)                       \
+  declare_constant(BSMAttributeEntry::_argv_offset)                       \
                                                                           \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \
@@ -1716,7 +1721,6 @@
   /**********************/                                                \
   NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
                                                                           \
-  NOT_ZERO(X86_ONLY(declare_constant(frame::entry_frame_call_wrapper_offset)))      \
   declare_constant(frame::pc_return_offset)                               \
                                                                           \
   /*************/                                                         \
@@ -2146,3 +2150,4 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
+

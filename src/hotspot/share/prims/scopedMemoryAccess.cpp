@@ -105,15 +105,15 @@ static frame get_last_frame(JavaThread* jt) {
   return last_frame;
 }
 
-class ScopedAsyncExceptionHandshake : public AsyncExceptionHandshake {
+class ScopedAsyncExceptionHandshakeClosure : public AsyncExceptionHandshakeClosure {
   OopHandle _session;
 
 public:
-  ScopedAsyncExceptionHandshake(OopHandle& session, OopHandle& error)
-    : AsyncExceptionHandshake(error),
+  ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error)
+    : AsyncExceptionHandshakeClosure(error),
       _session(session) {}
 
-  ~ScopedAsyncExceptionHandshake() {
+  ~ScopedAsyncExceptionHandshakeClosure() {
     _session.release(Universe::vm_global());
   }
 
@@ -122,17 +122,17 @@ public:
     bool ignored;
     if (is_accessing_session(jt, _session.resolve(), ignored)) {
       // Throw exception to unwind out from the scoped access
-      AsyncExceptionHandshake::do_thread(thread);
+      AsyncExceptionHandshakeClosure::do_thread(thread);
     }
   }
 };
 
-class CloseScopedMemoryClosure : public HandshakeClosure {
+class CloseScopedMemoryHandshakeClosure : public HandshakeClosure {
   jobject _session;
   jobject _error;
 
 public:
-  CloseScopedMemoryClosure(jobject session, jobject error)
+  CloseScopedMemoryHandshakeClosure(jobject session, jobject error)
     : HandshakeClosure("CloseScopedMemory")
     , _session(session)
     , _error(error) {}
@@ -159,7 +159,7 @@ public:
       // the scoped access.
       OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
-      jt->install_async_exception(new ScopedAsyncExceptionHandshake(session, error));
+      jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error));
     } else if (!in_scoped) {
       frame last_frame = get_last_frame(jt);
       if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
@@ -213,7 +213,7 @@ public:
  * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
  */
 JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject session, jobject error))
-  CloseScopedMemoryClosure cl(session, error);
+  CloseScopedMemoryHandshakeClosure cl(session, error);
   Handshake::execute(&cl);
 JVM_END
 

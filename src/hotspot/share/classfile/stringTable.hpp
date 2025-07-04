@@ -33,7 +33,6 @@
 #include "utilities/tableStatistics.hpp"
 
 class CompactHashtableWriter;
-class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
@@ -41,7 +40,7 @@ class StringTableConfig;
 
 class StringTable : AllStatic {
   friend class StringTableConfig;
-
+  class VerifyCompStrings;
   static volatile bool _has_work;
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
@@ -75,6 +74,7 @@ private:
 
   static void item_added();
   static void item_removed();
+  static size_t items_count_acquire();
 
   static oop intern(const StringWrapper& name, TRAPS);
   static oop do_intern(const StringWrapper& name, uintx hash, TRAPS);
@@ -147,8 +147,8 @@ private:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static void allocate_shared_strings_array(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static oop init_shared_strings_array(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  static void write_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN;
+  static oop init_shared_strings_array() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void write_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void set_shared_strings_array_index(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 

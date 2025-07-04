@@ -23,6 +23,7 @@
 
 #include "gc/z/zAllocator.hpp"
 #include "gc/z/zObjectAllocator.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 
 ZAllocatorEden*          ZAllocator::_eden;
 ZAllocatorForRelocation* ZAllocator::_relocation[ZAllocator::_relocation_allocators];
@@ -39,10 +40,6 @@ ZAllocatorEden::ZAllocatorEden()
   ZAllocator::_eden = this;
 }
 
-size_t ZAllocatorEden::tlab_used() const {
-  return _object_allocator.used();
-}
-
 size_t ZAllocatorEden::remaining() const {
   return _object_allocator.remaining();
 }
@@ -51,7 +48,7 @@ ZPageAge ZAllocatorForRelocation::install() {
   for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
     if (_relocation[i] == nullptr) {
       _relocation[i] = this;
-      return static_cast<ZPageAge>(i + 1);
+      return to_zpageage(i + 1);
     }
   }
 

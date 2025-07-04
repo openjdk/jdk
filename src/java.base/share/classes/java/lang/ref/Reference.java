@@ -44,7 +44,7 @@ import jdk.internal.ref.Cleaner;
  * @sealedGraph
  */
 
-public abstract sealed class Reference<T>
+public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     permits PhantomReference, SoftReference, WeakReference, FinalReference {
 
     /* The state of a Reference object is characterized by two attributes.  It
@@ -306,11 +306,11 @@ public abstract sealed class Reference<T>
         handler.start();
     }
 
-    // Called from JVM when loading an AOT cache
     static {
         runtimeSetup();
     }
 
+    // Also called from JVM when loading an AOT cache
     private static void runtimeSetup() {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
@@ -357,10 +357,17 @@ public abstract sealed class Reference<T>
      *           {@code null} if this reference object has been cleared
      * @see #refersTo
      */
-    @IntrinsicCandidate
     public T get() {
-        return this.referent;
+        return get0();
     }
+
+    /* Implementation of get().  This method exists to avoid making get() all
+     * of virtual, native, and intrinsic candidate. That could have the
+     * undesirable effect of having the native method used instead of the
+     * intrinsic when devirtualization fails.
+     */
+    @IntrinsicCandidate
+    private native T get0();
 
     /**
      * Tests if the referent of this reference object is {@code obj}.
