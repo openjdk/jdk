@@ -54,9 +54,12 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.KeyStroke;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class RightLeftOrientation {
+
+    static volatile JFrame frame;
 
     private static final String INSTRUCTIONS = """
         A menu bar is shown containing a menu for each look and feel.
@@ -83,7 +86,7 @@ public class RightLeftOrientation {
     }
 
     private static JFrame createTestUI() {
-        JFrame frame = new JFrame("RightLeftOrientation");
+        frame = new JFrame("RightLeftOrientation");
         JMenuBar menuBar = new JMenuBar();
 
         menuBar.add(createMenu("javax.swing.plaf.metal.MetalLookAndFeel",
@@ -100,14 +103,15 @@ public class RightLeftOrientation {
 
 
     static JMenu createMenu(String laf, String name) {
-        JMenu menu = new JMenu(name);
+        JMenu menu;
         try {
             LookAndFeel save = UIManager.getLookAndFeel();
             UIManager.setLookAndFeel(laf);
+            SwingUtilities.updateComponentTreeUI(frame);
+            menu = new JMenu(name);
             addMenuItems(menu, ComponentOrientation.LEFT_TO_RIGHT);
             menu.addSeparator();
             addMenuItems(menu, ComponentOrientation.RIGHT_TO_LEFT);
-            UIManager.setLookAndFeel(save);
         } catch (Exception e) {
             menu = new JMenu(name);
             menu.setEnabled(false);
