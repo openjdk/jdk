@@ -368,7 +368,7 @@ static int xmm29_29[] = {29, 29, 29, 29};
 address generate_kyberNtt_avx512(StubGenerator *stubgen,
                                  MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = kyberNtt_id;
+  StubId stub_id = StubId::stubgen_kyberNtt_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -465,7 +465,7 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
                                         MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = kyberInverseNtt_id;
+  StubId stub_id = StubId::stubgen_kyberInverseNtt_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -590,7 +590,7 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
                                      MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = kyberNttMult_id;
+  StubId stub_id = StubId::stubgen_kyberNttMult_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -710,7 +710,7 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = kyberAddPoly_2_id;
+  StubId stub_id = StubId::stubgen_kyberAddPoly_2_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -756,7 +756,7 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = kyberAddPoly_3_id;
+  StubId stub_id = StubId::stubgen_kyberAddPoly_3_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -810,7 +810,7 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
                                     MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = kyber12To16_id;
+  StubId stub_id = StubId::stubgen_kyber12To16_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -907,7 +907,7 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
                                            MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = kyberBarrettReduce_id;
+  StubId stub_id = StubId::stubgen_kyberBarrettReduce_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();

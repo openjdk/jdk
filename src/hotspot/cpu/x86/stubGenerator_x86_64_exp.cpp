@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
+* Copyright (c) 2016, 2025, Intel Corporation. All rights reserved.
 * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 * Intel Math Library (LIBM) Source Code
 *
@@ -165,7 +165,7 @@ ATTRIBUTE_ALIGNED(4) static const juint _INF[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmExp() {
-  StubGenStubId stub_id = StubGenStubId::dexp_id;
+  StubId stub_id = StubId::stubgen_dexp_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

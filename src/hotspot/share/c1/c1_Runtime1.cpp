@@ -62,6 +62,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -103,14 +104,7 @@ void StubAssembler::set_num_rt_args(int args) {
 }
 
 // Implementation of Runtime1
-
-CodeBlob* Runtime1::_blobs[(int)C1StubId::NUM_STUBIDS];
-
-#define C1_BLOB_NAME_DEFINE(name)  "C1 Runtime " # name "_blob",
-const char *Runtime1::_blob_names[] = {
-  C1_STUBS_DO(C1_BLOB_NAME_DEFINE)
-};
-#undef C1_STUB_NAME_DEFINE
+CodeBlob* Runtime1::_blobs[StubInfo::C1_STUB_COUNT];
 
 #ifndef PRODUCT
 // statistics
@@ -188,19 +182,21 @@ static void deopt_caller(JavaThread* current) {
   }
 }
 
-class C1StubIdStubAssemblerCodeGenClosure: public StubAssemblerCodeGenClosure {
+class C1StubAssemblerCodeGenClosure: public StubAssemblerCodeGenClosure {
  private:
-  C1StubId _id;
+  StubId _id;
  public:
-  C1StubIdStubAssemblerCodeGenClosure(C1StubId id) : _id(id) {}
+  C1StubAssemblerCodeGenClosure(StubId id) : _id(id) {
+    assert(StubInfo::is_c1(_id), "not a c1 stub id %s", StubInfo::name(_id));
+  }
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     return Runtime1::generate_code_for(_id, sasm);
   }
 };
 
-CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure* cl) {
-  if ((int)id >= 0) {
-    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure* cl) {
+  if (id != StubId::NO_STUBID) {
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C1Blob, StubInfo::blob(id));
     if (blob != nullptr) {
       return blob;
     }
@@ -240,61 +236,63 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const ch
                                                  must_gc_arguments,
                                                  false /* alloc_fail_is_fatal */ );
   if (blob != nullptr && (int)id >= 0) {
-    AOTCodeCache::store_code_blob(*blob, AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+    AOTCodeCache::store_code_blob(*blob, AOTCodeEntry::C1Blob, StubInfo::blob(id));
   }
   return blob;
 }
 
-bool Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
-  assert(C1StubId::NO_STUBID < id && id < C1StubId::NUM_STUBIDS, "illegal stub id");
+bool Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubId id) {
+  assert(StubInfo::is_c1(id), "not a c1 stub %s", StubInfo::name(id));
   bool expect_oop_map = true;
 #ifdef ASSERT
   // Make sure that stubs that need oopmaps have them
   switch (id) {
     // These stubs don't need to have an oopmap
-  case C1StubId::dtrace_object_alloc_id:
-  case C1StubId::slow_subtype_check_id:
-  case C1StubId::fpu2long_stub_id:
-  case C1StubId::unwind_exception_id:
-  case C1StubId::counter_overflow_id:
-  case C1StubId::is_instance_of_id:
+  case StubId::c1_dtrace_object_alloc_id:
+  case StubId::c1_slow_subtype_check_id:
+  case StubId::c1_fpu2long_stub_id:
+  case StubId::c1_unwind_exception_id:
+  case StubId::c1_counter_overflow_id:
+  case StubId::c1_is_instance_of_id:
     expect_oop_map = false;
     break;
   default:
     break;
   }
 #endif
-  C1StubIdStubAssemblerCodeGenClosure cl(id);
+  C1StubAssemblerCodeGenClosure cl(id);
   CodeBlob* blob = generate_blob(buffer_blob, id, name_for(id), expect_oop_map, &cl);
   // install blob
-  _blobs[(int)id] = blob;
+  int idx = StubInfo::c1_offset(id);   // will assert on non-c1 id
+  _blobs[idx] = blob;
   return blob != nullptr;
 }
 
 bool Runtime1::initialize(BufferBlob* blob) {
   // platform-dependent initialization
   initialize_pd();
-  // generate stubs
-  int limit = (int)C1StubId::NUM_STUBIDS;
-  for (int id = 0; id <= (int)C1StubId::forward_exception_id; id++) {
-    if (!generate_blob_for(blob, (C1StubId) id)) {
+  // iterate blobs in C1 group and generate a single stub per blob
+  StubId id = StubInfo::stub_base(StubGroup::C1);
+  StubId limit = StubInfo::next(StubInfo::stub_max(StubGroup::C1));
+  for (; id != limit; id = StubInfo::next(id)) {
+    if (!generate_blob_for(blob, id)) {
       return false;
     }
-  }
-  AOTCodeCache::init_early_c1_table();
-  for (int id = (int)C1StubId::forward_exception_id+1; id < limit; id++) {
-    if (!generate_blob_for(blob, (C1StubId) id)) {
-      return false;
+    if (id == StubId::c1_forward_exception_id) {
+      // publish early c1 stubs at this point so later stubs can refer to them
+      AOTCodeCache::init_early_c1_table();
     }
   }
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {
     ResourceMark rm;
-    for (int id = 0; id < limit; id++) {
-      _blobs[id]->print();
-      if (_blobs[id]->oop_maps() != nullptr) {
-        _blobs[id]->oop_maps()->print();
+    id = StubInfo::stub_base(StubGroup::C1);
+    for (; id != limit; id = StubInfo::next(id)) {
+      CodeBlob* blob = blob_for(id);
+      blob->print();
+      if (blob->oop_maps() != nullptr) {
+        blob->oop_maps()->print();
       }
     }
   }
@@ -303,22 +301,22 @@ bool Runtime1::initialize(BufferBlob* blob) {
   return bs->generate_c1_runtime_stubs(blob);
 }
 
-CodeBlob* Runtime1::blob_for(C1StubId id) {
-  assert(C1StubId::NO_STUBID < id && id < C1StubId::NUM_STUBIDS, "illegal stub id");
-  return _blobs[(int)id];
+CodeBlob* Runtime1::blob_for(StubId id) {
+  int idx = StubInfo::c1_offset(id);   // will assert on non-c1 id
+  return _blobs[idx];
 }
 
 
-const char* Runtime1::name_for(C1StubId id) {
-  assert(C1StubId::NO_STUBID < id && id < C1StubId::NUM_STUBIDS, "illegal stub id");
-  return _blob_names[(int)id];
+const char* Runtime1::name_for(StubId id) {
+  return StubInfo::name(id);
 }
 
 const char* Runtime1::name_for_address(address entry) {
-  int limit = (int)C1StubId::NUM_STUBIDS;
-  for (int i = 0; i < limit; i++) {
-    C1StubId id = (C1StubId)i;
-    if (entry == entry_for(id)) return name_for(id);
+  // iterate stubs starting from C1 group base
+  StubId id = StubInfo::stub_base(StubGroup::C1);
+  StubId limit = StubInfo::next(StubInfo::stub_max(StubGroup::C1));
+  for (; id != limit; id = StubInfo::next(id)) {
+    if (entry == entry_for(id)) return StubInfo::name(id);
   }
 
 #define FUNCTION_CASE(a, f) \
@@ -450,7 +448,7 @@ JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* current, Klass* klass, int
 JRT_END
 
 
-JRT_ENTRY(void, Runtime1::unimplemented_entry(JavaThread* current, C1StubId id))
+JRT_ENTRY(void, Runtime1::unimplemented_entry(JavaThread* current, StubId id))
   tty->print_cr("Runtime1::entry_for(%d) returned unimplemented entry point", (int)id);
 JRT_END
 
@@ -550,8 +548,8 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   // This function is called when we are about to throw an exception. Therefore,
   // we have to poll the stack watermark barrier to make sure that not yet safe
   // stack frames are made safe before returning into them.
-  if (current->last_frame().cb() == Runtime1::blob_for(C1StubId::handle_exception_from_callee_id)) {
-    // The C1StubId::handle_exception_from_callee_id handler is invoked after the
+  if (current->last_frame().cb() == Runtime1::blob_for(StubId::c1_handle_exception_from_callee_id)) {
+    // The StubId::c1_handle_exception_from_callee_id handler is invoked after the
     // frame has been unwound. It instead builds its own stub frame, to call the
     // runtime. But the throwing frame has already been unwound here.
     StackWatermarkSet::after_unwind(current);
@@ -947,7 +945,7 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 // Therefore, if there is any chance of a race condition, we try to
 // patch only naturally aligned words, as single, full-word writes.
 
-JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
+JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _patch_code_slowcase_cnt++;
@@ -984,9 +982,9 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
   Handle mirror(current, nullptr); // oop needed by load_mirror_patching code
   Handle appendix(current, nullptr); // oop needed by appendix_patching code
   bool load_klass_or_mirror_patch_id =
-    (stub_id == C1StubId::load_klass_patching_id || stub_id == C1StubId::load_mirror_patching_id);
+    (stub_id == StubId::c1_load_klass_patching_id || stub_id == StubId::c1_load_mirror_patching_id);
 
-  if (stub_id == C1StubId::access_field_patching_id) {
+  if (stub_id == StubId::c1_access_field_patching_id) {
 
     Bytecode_field field_access(caller_method, bci);
     fieldDescriptor result; // initialize class if needed
@@ -1069,7 +1067,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
       default: fatal("unexpected bytecode for load_klass_or_mirror_patch_id");
     }
     load_klass = k;
-  } else if (stub_id == C1StubId::load_appendix_patching_id) {
+  } else if (stub_id == StubId::c1_load_appendix_patching_id) {
     Bytecode_invoke bytecode(caller_method, bci);
     Bytecodes::Code bc = bytecode.invoke_code();
 
@@ -1153,7 +1151,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
         if (TracePatching) {
           ttyLocker ttyl;
           tty->print_cr(" Patching %s at bci %d at address " INTPTR_FORMAT "  (%s)", Bytecodes::name(code), bci,
-                        p2i(instr_pc), (stub_id == C1StubId::access_field_patching_id) ? "field" : "klass");
+                        p2i(instr_pc), (stub_id == StubId::c1_access_field_patching_id) ? "field" : "klass");
           nmethod* caller_code = CodeCache::find_nmethod(caller_frame.pc());
           assert(caller_code != nullptr, "nmethod not found");
 
@@ -1169,7 +1167,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
         }
         // depending on the code below, do_patch says whether to copy the patch body back into the nmethod
         bool do_patch = true;
-        if (stub_id == C1StubId::access_field_patching_id) {
+        if (stub_id == StubId::c1_access_field_patching_id) {
           // The offset may not be correct if the class was not loaded at code generation time.
           // Set it now.
           NativeMovRegMem* n_move = nativeMovRegMem_at(copy_buff);
@@ -1195,7 +1193,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
             assert(n_copy->data() == 0 ||
                    n_copy->data() == (intptr_t)Universe::non_oop_word(),
                    "illegal init value");
-            if (stub_id == C1StubId::load_klass_patching_id) {
+            if (stub_id == StubId::c1_load_klass_patching_id) {
               assert(load_klass != nullptr, "klass not set");
               n_copy->set_data((intx) (load_klass));
             } else {
@@ -1207,7 +1205,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
               Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);
             }
           }
-        } else if (stub_id == C1StubId::load_appendix_patching_id) {
+        } else if (stub_id == StubId::c1_load_appendix_patching_id) {
           NativeMovConstReg* n_copy = nativeMovConstReg_at(copy_buff);
           assert(n_copy->data() == 0 ||
                  n_copy->data() == (intptr_t)Universe::non_oop_word(),
@@ -1226,7 +1224,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
           // first replace the tail, then the call
 #ifdef ARM
           if((load_klass_or_mirror_patch_id ||
-              stub_id == C1StubId::load_appendix_patching_id) &&
+              stub_id == StubId::c1_load_appendix_patching_id) &&
               nativeMovConstReg_at(copy_buff)->is_pc_relative()) {
             nmethod* nm = CodeCache::find_nmethod(instr_pc);
             address addr = nullptr;
@@ -1234,13 +1232,13 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
             RelocIterator mds(nm, copy_buff, copy_buff + 1);
             while (mds.next()) {
               if (mds.type() == relocInfo::oop_type) {
-                assert(stub_id == C1StubId::load_mirror_patching_id ||
-                       stub_id == C1StubId::load_appendix_patching_id, "wrong stub id");
+                assert(stub_id == StubId::c1_load_mirror_patching_id ||
+                       stub_id == StubId::c1_load_appendix_patching_id, "wrong stub id");
                 oop_Relocation* r = mds.oop_reloc();
                 addr = (address)r->oop_addr();
                 break;
               } else if (mds.type() == relocInfo::metadata_type) {
-                assert(stub_id == C1StubId::load_klass_patching_id, "wrong stub id");
+                assert(stub_id == StubId::c1_load_klass_patching_id, "wrong stub id");
                 metadata_Relocation* r = mds.metadata_reloc();
                 addr = (address)r->metadata_addr();
                 break;
@@ -1263,9 +1261,9 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
           NativeGeneralJump::replace_mt_safe(instr_pc, copy_buff);
 
           if (load_klass_or_mirror_patch_id ||
-              stub_id == C1StubId::load_appendix_patching_id) {
+              stub_id == StubId::c1_load_appendix_patching_id) {
             relocInfo::relocType rtype =
-              (stub_id == C1StubId::load_klass_patching_id) ?
+              (stub_id == StubId::c1_load_klass_patching_id) ?
                                    relocInfo::metadata_type :
                                    relocInfo::oop_type;
             // update relocInfo to metadata
@@ -1299,9 +1297,9 @@ JRT_END
 
 #else // DEOPTIMIZE_WHEN_PATCHING
 
-static bool is_patching_needed(JavaThread* current, C1StubId stub_id) {
-  if (stub_id == C1StubId::load_klass_patching_id ||
-      stub_id == C1StubId::load_mirror_patching_id) {
+static bool is_patching_needed(JavaThread* current, StubId stub_id) {
+  if (stub_id == StubId::c1_load_klass_patching_id ||
+      stub_id == StubId::c1_load_mirror_patching_id) {
     // last java frame on stack
     vframeStream vfst(current, true);
     assert(!vfst.at_end(), "Java frame must exist");
@@ -1330,7 +1328,7 @@ static bool is_patching_needed(JavaThread* current, C1StubId stub_id) {
   return true;
 }
 
-void Runtime1::patch_code(JavaThread* current, C1StubId stub_id) {
+void Runtime1::patch_code(JavaThread* current, StubId stub_id) {
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _patch_code_slowcase_cnt++;
@@ -1385,7 +1383,7 @@ int Runtime1::move_klass_patching(JavaThread* current) {
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
-    patch_code(current, C1StubId::load_klass_patching_id);
+    patch_code(current, StubId::c1_load_klass_patching_id);
   }
   // Back in JAVA, use no oops DON'T safepoint
 
@@ -1402,7 +1400,7 @@ int Runtime1::move_mirror_patching(JavaThread* current) {
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
-    patch_code(current, C1StubId::load_mirror_patching_id);
+    patch_code(current, StubId::c1_load_mirror_patching_id);
   }
   // Back in JAVA, use no oops DON'T safepoint
 
@@ -1419,7 +1417,7 @@ int Runtime1::move_appendix_patching(JavaThread* current) {
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
-    patch_code(current, C1StubId::load_appendix_patching_id);
+    patch_code(current, StubId::c1_load_appendix_patching_id);
   }
   // Back in JAVA, use no oops DON'T safepoint
 
@@ -1446,7 +1444,7 @@ int Runtime1::access_field_patching(JavaThread* current) {
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
-    patch_code(current, C1StubId::access_field_patching_id);
+    patch_code(current, StubId::c1_access_field_patching_id);
   }
   // Back in JAVA, use no oops DON'T safepoint
 

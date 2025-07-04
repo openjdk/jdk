@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2024, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2025, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -249,7 +249,7 @@ void StubGenerator::generate_aes_stubs() {
 //   rax - number of processed bytes
 address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -336,7 +336,7 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 //   rax - number of processed bytes
 address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -408,7 +408,7 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
 // Vector AES Counter implementation
 address StubGenerator::generate_counterMode_VectorAESCrypt()  {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -497,7 +497,7 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
 address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -785,7 +785,7 @@ address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
 address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
   assert(VM_Version::supports_avx512_vaes(), "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1068,7 +1068,7 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 address StubGenerator::generate_aescrypt_encryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
+  StubId stub_id = StubId::stubgen_aescrypt_encryptBlock_id;
   StubCodeMark mark(this, stub_id);
   Label L_doLast;
   address start = __ pc();
@@ -1163,7 +1163,7 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
 address StubGenerator::generate_aescrypt_decryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
+  StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
   StubCodeMark mark(this, stub_id);
   Label L_doLast;
   address start = __ pc();
@@ -1265,7 +1265,7 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
 address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1417,7 +1417,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 address StubGenerator::generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1660,7 +1660,7 @@ __ opc(xmm_result3, src_reg);         \
 
 address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::electronicCodeBook_encryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_electronicCodeBook_encryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1681,7 +1681,7 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
 
 address StubGenerator::generate_electronicCodeBook_decryptAESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::electronicCodeBook_decryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
