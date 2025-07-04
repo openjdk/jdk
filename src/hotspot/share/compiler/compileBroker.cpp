@@ -1750,6 +1750,10 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   }
 }
 
+void CompileBroker::wait_for_no_active_tasks() {
+  CompileTask::wait_for_no_active_tasks();
+}
+
 /**
  * Initialize compiler thread(s) + compiler object(s). The postcondition
  * of this function is that the compiler runtimes are initialized and that

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008 Red Hat, Inc.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package org.openjdk.bench.java.nio;
 
-#include "asm/assembler.inline.hpp"
-#include "entry_zero.hpp"
-#include "interpreter/zero/zeroInterpreter.hpp"
-#include "nativeInst_zero.hpp"
-#include "runtime/sharedRuntime.hpp"
+import java.nio.ByteBuffer;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
-// This method is called by nmethod::make_not_entrant to
-// insert a jump to SharedRuntime::get_handle_wrong_method_stub()
-// (dest) at the start of a compiled method (verified_entry) to avoid
-// a race where a method is invoked while being made non-entrant.
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Thread)
+@BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3, jvmArgs = {"-Xmx256m", "-Xms256m", "-XX:+AlwaysPreTouch"})
+public class DirectByteBufferChurn {
 
-void NativeJump::patch_verified_entry(address entry,
-                                      address verified_entry,
-                                      address dest) {
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
+    @Param({"128", "256", "512", "1024", "2048"})
+    int recipFreq;
 
-  ((ZeroEntry*) verified_entry)->set_entry_point(
-    (address) ZeroInterpreter::normal_entry);
+    @Benchmark
+    public Object test() {
+        boolean direct = ThreadLocalRandom.current().nextInt(recipFreq) == 0;
+        return direct ? ByteBuffer.allocateDirect(1) : ByteBuffer.allocate(1);
+    }
+
 }

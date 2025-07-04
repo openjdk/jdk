@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jfr.event.tracing;
 
-#ifndef SHARE_CLASSFILE_CLASSLOADEREXT_HPP
-#define SHARE_CLASSFILE_CLASSLOADEREXT_HPP
+import jdk.internal.misc.Unsafe;
+import jdk.jfr.FlightRecorder;
+import jdk.jfr.Recording;
+/**
+* @test
+* @summary Tests that PlatformTracer is not initialized if a method filter has not been set.
+* @requires vm.flagless
+* @requires vm.hasJFR
+* @modules java.base/jdk.internal.misc jdk.jfr/jdk.jfr.internal.tracing
+* @library /test/lib
+* @run main/othervm -XX:StartFlightRecording jdk.jfr.event.tracing.TestLazyPlatformTracer
+*/
+public class TestLazyPlatformTracer {
 
-#include "classfile/classLoader.hpp"
-#include "classfile/moduleEntry.hpp"
-#include "utilities/macros.hpp"
-
-class ClassListParser;
-
-class ClassLoaderExt: public ClassLoader { // AllStatic
-public:
-#if INCLUDE_CDS
-public:
-  // Called by JVMTI code to add boot classpath
-
-  static void append_boot_classpath(ClassPathEntry* new_entry);
-
-  static int compare_module_names(const char** p1, const char** p2);
-  static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
-#endif // INCLUDE_CDS
-};
-
-#endif // SHARE_CLASSFILE_CLASSLOADEREXT_HPP
+    public static void main(String... args) throws Exception {
+        // Stop recording so end chunk events are emitted
+        FlightRecorder.getFlightRecorder().getRecordings().getFirst().stop();
+        if (!Unsafe.getUnsafe().shouldBeInitialized(jdk.jfr.internal.tracing.PlatformTracer.class)) {
+            throw new AssertionError("PlatformTracer should not have been initialized");
+        }
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import java.lang.management.ManagementFactory;
-import com.sun.management.HotSpotDiagnosticMXBean;
+#ifndef SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP
+#define SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP
 
-class LockingMode {
-    private LockingMode() { }
+#include "memory/allocation.hpp"
 
-    /**
-     * Returns true if using legacy locking mode.
-     */
-    static boolean isLegacy() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                .getVMOption("LockingMode")
-                .getValue()
-                .equals("1");
-    }
-}
+class VMThread;
+
+class VMThreadCPUTimeScope : public StackObj {
+private:
+  jlong   _start;
+  bool    _enabled;
+  bool    _is_gc_operation;
+  VMThread* _thread;
+
+public:
+  VMThreadCPUTimeScope(VMThread* thread, bool is_gc_operation);
+  ~VMThreadCPUTimeScope();
+};
+
+#endif // SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP

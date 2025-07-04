@@ -510,8 +510,9 @@ The following options are provided by the standard doclet.
 <span id="option-footer">`-footer` *html-code*</span>
 :   This option is no longer supported and reports a warning.
 
-<span id="option-group">`-group` *name* *p1*`,`*p2...*</span>
-:   Group the specified packages together in the Overview page.
+<span id="option-group">`-group` *name* *g1*`,`*g2...*</span>
+:   Group the specified packages, or modules when documenting modular code,
+    together in the Overview page.
     For historical reasons, `:` can be used as a separator anywhere in the
     argument instead of `,`.
 
