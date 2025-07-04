@@ -1393,7 +1393,13 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     cfs->guarantee_more(8, CHECK);
 
     AccessFlags access_flags;
-    const jint flags = cfs->get_u2_fast() & JVM_RECOGNIZED_FIELD_MODIFIERS;
+    jint flags = cfs->get_u2_fast() & JVM_RECOGNIZED_FIELD_MODIFIERS;
+
+    // Remove ACC_SYNTHETIC, if present, the flag wasn't introduced until classfile version 50.
+    if (_major_version <= JAVA_1_5_VERSION) {
+      flags &= (~JVM_ACC_SYNTHETIC);
+    }
+
     verify_legal_field_modifiers(flags, is_interface, CHECK);
     access_flags.set_flags(flags);
     FieldInfo::FieldFlags fieldFlags(0);
@@ -1451,11 +1457,12 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
         parsed_annotations.set_field_type_annotations(nullptr);
       }
 
-      if (is_synthetic) {
-        access_flags.set_is_synthetic();
-      }
       if (generic_signature_index != 0) {
         fieldFlags.update_generic(true);
+      }
+
+      if (is_synthetic) {
+        fieldFlags.update_has_synthetic_attribute(true);
       }
     }
 
@@ -2145,6 +2152,11 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     signature_index, CHECK_NULL);
   const Symbol* const signature = cp->symbol_at(signature_index);
 
+  // Remove ACC_SYNTHETIC, if present, the flag wasn't introduced until classfile version 50.
+  if (_major_version <= JAVA_1_5_VERSION) {
+    flags &= (~JVM_ACC_SYNTHETIC);
+  }
+
   if (name == vmSymbols::class_initializer_name()) {
     // We ignore the other access flags for a valid class initializer.
     // (JVM Spec 2nd ed., chapter 4.6)
@@ -2222,6 +2234,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   bool runtime_invisible_parameter_annotations_exists = false;
   const u1* annotation_default = nullptr;
   int annotation_default_length = 0;
+  bool is_synthetic;
 
   // Parse code and exceptions attribute
   u2 method_attributes_count = cfs->get_u2_fast();
@@ -2438,7 +2451,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
         return nullptr;
       }
       // Should we check that there hasn't already been a synthetic attribute?
-      access_flags.set_is_synthetic();
+      is_synthetic = true;
     } else if (method_attribute_name == vmSymbols::tag_deprecated()) { // 4276120
       if (method_attribute_length != 0) {
         classfile_parse_error(
@@ -2660,6 +2673,10 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
     m->set_is_hidden();
+  }
+
+  if (is_synthetic) {
+    m->constMethod()->set_has_synthetic_attribute();
   }
 
   // Copy annotations
@@ -2993,6 +3010,12 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
       // Set abstract bit for old class files for backward compatibility
       flags |= JVM_ACC_ABSTRACT;
     }
+
+    // Remove ACC_SYNTHETIC, if present, the flag wasn't introduced until classfile version 50.
+    if (_major_version <= JAVA_1_5_VERSION) {
+      flags &= (~JVM_ACC_SYNTHETIC);
+    }
+
     verify_legal_class_modifiers(flags, CHECK_0);
     AccessFlags inner_access_flags(flags);
 
@@ -3689,7 +3712,8 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
 void ClassFileParser::apply_parsed_class_attributes(InstanceKlass* k) {
   assert(k != nullptr, "invariant");
 
-  if (_synthetic_flag)
+  if (_synthetic_flag && _major_version > JAVA_1_5_VERSION)
+    // Only set the synthetic access flag if present in classfile version.
     k->set_is_synthetic();
   if (_sourcefile_index != 0) {
     k->set_source_file_name_index(_sourcefile_index);
@@ -4708,6 +4732,7 @@ void ClassFileParser::verify_legal_class_name(const Symbol* name, TRAPS) const {
       legal = verify_unqualified_name(bytes, length, LegalClass);
     }
   }
+
   if (!legal) {
     ResourceMark rm(THREAD);
     assert(_class_name != nullptr, "invariant");
@@ -5507,6 +5532,11 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   }
 
   verify_legal_class_modifiers(flags, CHECK);
+
+  // Remove ACC_SYNTHETIC, if present, the flag wasn't introduced until classfile version 50.
+  if (_major_version <= JAVA_1_5_VERSION) {
+    flags &= (~JVM_ACC_SYNTHETIC);
+  }
 
   short bad_constant = class_bad_constant_seen();
   if (bad_constant != 0) {

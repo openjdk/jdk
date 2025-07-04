@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ class fieldDescriptor {
   bool is_volatile()              const    { return access_flags().is_volatile(); }
   bool is_transient()             const    { return access_flags().is_transient(); }
 
-  bool is_synthetic()             const    { return access_flags().is_synthetic(); }
+  bool is_synthetic()             const    { return access_flags().is_synthetic() || field_flags().has_synthetic_attribute();  }
 
   bool is_field_access_watched()  const    { return field_status().is_access_watched(); }
   bool is_field_modification_watched() const

@@ -76,6 +76,7 @@ class FieldInfo {
       _ff_generic,      // has a generic signature
       _ff_stable,       // trust as stable b/c declared as @Stable
       _ff_contended,    // is contended, may have contention-group
+      _ff_has_synthetic_attribute   // has a synthetic attribute
     };
 
     // Some but not all of the flag bits signal the presence of an
@@ -110,12 +111,14 @@ class FieldInfo {
     bool is_generic() const         { return test_flag(_ff_generic); }
     bool is_stable() const          { return test_flag(_ff_stable); }
     bool is_contended() const       { return test_flag(_ff_contended); }
+    bool has_synthetic_attribute()  { return test_flag(_ff_has_synthetic_attribute); }
 
     void update_initialized(bool z) { update_flag(_ff_initialized, z); }
     void update_injected(bool z)    { update_flag(_ff_injected, z); }
     void update_generic(bool z)     { update_flag(_ff_generic, z); }
     void update_stable(bool z)      { update_flag(_ff_stable, z); }
     void update_contended(bool z)   { update_flag(_ff_contended, z); }
+    void update_has_synthetic_attribute(bool z) { update_flag(_ff_has_synthetic_attribute, z); }
   };
 
  private:
