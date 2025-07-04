@@ -1478,7 +1478,7 @@ public sealed class PacketSpaceManager implements PacketSpace
      * @return whether the given pending unacknowledged packet is being
      *         acknowledged by this ack frame.
      */
-    private boolean isAcknowledging(PendingAcknowledgement pending, AckFrame frame) {
+    private boolean trackAcknowlegment(PendingAcknowledgement pending, AckFrame frame) {
         return emittedAckTracker.trackAcknowlegment(pending, frame);
     }
 
@@ -1581,11 +1581,11 @@ public sealed class PacketSpaceManager implements PacketSpace
                 }
             }
 
-            pendingRetransmission.removeIf((p) -> isAcknowledging(p, frame));
-            triggeredForRetransmission.removeIf((p) -> isAcknowledging(p, frame));
+            pendingRetransmission.removeIf((p) -> trackAcknowlegment(p, frame));
+            triggeredForRetransmission.removeIf((p) -> trackAcknowlegment(p, frame));
             for (Iterator<PendingAcknowledgement> iterator = pendingAcknowledgements.iterator(); iterator.hasNext(); ) {
                 PendingAcknowledgement p = iterator.next();
-                if (isAcknowledging(p, frame)) {
+                if (trackAcknowlegment(p, frame)) {
                     iterator.remove();
                     congestionController.packetAcked(p.packet.size(), p.sent);
                 }
