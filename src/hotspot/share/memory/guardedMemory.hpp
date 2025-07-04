@@ -119,7 +119,7 @@ protected:
         // We may not be able to dereference directly so use
         // SafeFetch. It doesn't matter if the value read happens
         // to be 0xFF as that is not what we expect anyway.
-        u_char val = (u_char) SafeFetch32((int*)c, 0xFF);
+        u_char val = (u_char) (SafeFetch32((int*)c, 0xFF) BIG_ENDIAN_ONLY(>> 24));
         if (val != badResourceValue) {
           return false;
         }
