@@ -976,6 +976,9 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
 //
 //
 void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
+  if (!OptimizePtrCompare) {
+    return;
+  }
   Node* ophi = cmp->in(1)->is_Con() ? cmp->in(2) : cmp->in(1);
   assert(ophi->is_Phi(), "Expected this to be a Phi node.");
 
