@@ -2274,6 +2274,8 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_UMinV:
     case Op_UMaxV:
       return bt == T_INT || bt == T_LONG;
+    case OP_NegVI:
+      return PowerArchitecturePPC64 >= 9 && bt == T_INT;
   }
   return true; // Per default match rules are supported.
 }
@@ -10795,6 +10797,21 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
 
   ins_encode %{
     __ cmpd(CR0, $src1$$Register, $src2$$Register);
+    __ set_cmp3($dst$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpU3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 5);
+  size((VM_Version::has_brw() ? 16 : 20));
+
+  format %{ "cmpU3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ cmplw(CR0, $src1$$Register, $src2$$Register);
     __ set_cmp3($dst$$Register);
   %}
   ins_pipe(pipe_class_default);
