@@ -29,13 +29,11 @@ import java.awt.*;
  * @summary An attempt to set non-trivial background, shape, or translucency
  *          to a decorated toplevel should end with an exception.
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library /lib/client
- * @build ExtendedRobot
  * @run main DecoratedExceptions
  */
 public class DecoratedExceptions {
     public static void main(String args[]) throws Exception{
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         Toolkit.getDefaultToolkit().getSystemEventQueue().invokeAndWait(() -> {
             Frame frame = new Frame("Frame");
             frame.setBounds(50,50,400,200);
