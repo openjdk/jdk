@@ -926,7 +926,7 @@ public final class WindowsIconFactory implements Serializable
                                         getIconWidth(), getIconHeight(), backgroundState);
                                 skinWidth = getIconWidth();
                                 skin = xp.getSkin(c, part);
-                                skin.paintSkin(g, x, y + OFFSET, state);
+                                skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                             }
                         }
                     }
@@ -935,7 +935,7 @@ public final class WindowsIconFactory implements Serializable
                     if (!isWindows11OrLater) {
                         icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     } else {
-                        icon.paintIcon(c, g, x + icon.getIconWidth(),
+                        icon.paintIcon(c, g, x + icon.getIconWidth() + OFFSET,
                                 y + OFFSET);
                     }
                 }
