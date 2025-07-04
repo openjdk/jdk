@@ -30,9 +30,12 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
+import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
+import jdk.jfr.internal.util.TimespanRate;
 import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.settings.Throttler;
 import jdk.jfr.internal.tracing.Modification;
 
 /**
@@ -45,6 +48,7 @@ public final class PlatformEventType extends Type {
     private final boolean isJVM;
     private final boolean isJDK;
     private final boolean isMethodSampling;
+    private final boolean isCPUTimeMethodSampling;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
@@ -56,6 +60,7 @@ public final class PlatformEventType extends Type {
     private boolean stackTraceEnabled = true;
     private long thresholdTicks = 0;
     private long period = 0;
+    private TimespanRate cpuRate;
     private boolean hasHook;
 
     private boolean beginChunk;
@@ -68,6 +73,7 @@ public final class PlatformEventType extends Type {
     private boolean registered = true;
     private boolean committable = enabled && registered;
     private boolean hasLevel = false;
+    private Throttler throttler;
 
     // package private
     PlatformEventType(String name, long id, boolean isJDK, boolean dynamicSettings) {
@@ -75,6 +81,7 @@ public final class PlatformEventType extends Type {
         this.dynamicSettings = dynamicSettings;
         this.isJVM = Type.isDefinedByJVM(id);
         this.isMethodSampling = determineMethodSampling();
+        this.isCPUTimeMethodSampling = isJVM && name.equals(Type.EVENT_NAME_PREFIX + "CPUTimeSample");
         this.isJDK = isJDK;
         this.stackTraceOffset = determineStackTraceOffset();
     }
@@ -185,9 +192,20 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public void setThrottle(long eventSampleSize, long period_ms) {
+    public void setThrottle(long eventSampleSize, long periodInMillis) {
         if (isJVM) {
-            JVM.setThrottle(getId(), eventSampleSize, period_ms);
+            JVM.setThrottle(getId(), eventSampleSize, periodInMillis);
+        } else {
+            throttler.configure(eventSampleSize, periodInMillis);
+        }
+    }
+
+    public void setCPUThrottle(TimespanRate rate) {
+        if (isCPUTimeMethodSampling) {
+            this.cpuRate = rate;
+            if (isEnabled()) {
+                JVM.setCPUThrottle(rate.rate(), rate.autoAdapt());
+            }
         }
     }
 
@@ -251,6 +269,9 @@ public final class PlatformEventType extends Type {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
                 JVM.setMethodSamplingPeriod(getId(), p);
+            } else if (isCPUTimeMethodSampling) {
+                TimespanRate r = enabled ? cpuRate : new TimespanRate(0, false);
+                JVM.setCPUThrottle(r.rate(), r.autoAdapt());
             } else {
                 JVM.setEnabled(getId(), enabled);
             }
@@ -388,6 +409,10 @@ public final class PlatformEventType extends Type {
         return isMethodSampling;
     }
 
+    public boolean isCPUTimeMethodSampling() {
+        return isCPUTimeMethodSampling;
+    }
+
     public void setStackFilterId(long id) {
         startFilterId = id;
     }
@@ -398,5 +423,13 @@ public final class PlatformEventType extends Type {
 
     public long getStackFilterId() {
         return startFilterId;
+    }
+
+    public Throttler getThrottler() {
+        return throttler;
+    }
+
+    public void setThrottler(Throttler throttler) {
+       this.throttler = throttler;
     }
 }
