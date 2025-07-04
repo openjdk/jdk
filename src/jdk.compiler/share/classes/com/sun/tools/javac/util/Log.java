@@ -680,16 +680,6 @@ public class Log extends AbstractLog {
         errWriter.flush();
     }
 
-    /** Report a warning that cannot be suppressed.
-     *  @param pos    The source position at which to report the warning.
-     *  @param key    The key for the localized warning message.
-     *  @param args   Fields of the warning message.
-     */
-    public void strictWarning(DiagnosticPosition pos, String key, Object ... args) {
-        writeDiagnostic(diags.warning(null, source, pos, key, args));
-        nwarnings++;
-    }
-
     /**
      * Primary method to report a diagnostic.
      * @param diagnostic
