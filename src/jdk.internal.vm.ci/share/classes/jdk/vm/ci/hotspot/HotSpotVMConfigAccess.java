@@ -305,7 +305,7 @@ public class HotSpotVMConfigAccess {
      * @return the field
      * @throws JVMCIError if the field is not present and {@code required == true}
      */
-    private VMField getField(String name, String cppType, boolean required) {
+    public VMField getField(String name, String cppType, boolean required) {
         VMField entry = store.vmFields.get(name);
         if (entry == null) {
             if (!required) {
