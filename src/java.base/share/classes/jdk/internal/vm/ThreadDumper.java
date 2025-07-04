@@ -177,8 +177,11 @@ public class ThreadDumper {
         container.children().forEach(c -> dumpThreads(c, writer));
     }
 
-    private static void dumpThread(Thread thread, TextWriter writer) {
+    private static boolean dumpThread(Thread thread, TextWriter writer) {
         ThreadSnapshot snapshot = ThreadSnapshot.of(thread);
+        if (snapshot == null) {
+            return false; // thread terminated
+        }
         Instant now = Instant.now();
         Thread.State state = snapshot.threadState();
         writer.println("#" + thread.threadId() + " \"" + snapshot.threadName()
@@ -217,6 +220,7 @@ public class ThreadDumper {
             depth++;
         }
         writer.println();
+        return true;
     }
 
     /**
@@ -284,8 +288,9 @@ public class ThreadDumper {
         Iterator<Thread> threads = container.threads().iterator();
         while (threads.hasNext()) {
             Thread thread = threads.next();
-            dumpThread(thread, jsonWriter);
-            threadCount++;
+            if (dumpThread(thread, jsonWriter)) {
+                threadCount++;
+            }
         }
         jsonWriter.endArray(); // threads
 
@@ -303,11 +308,15 @@ public class ThreadDumper {
 
     /**
      * Write a thread to the given JSON writer.
+     * @return true if the thread dump was written, false otherwise
      * @throws UncheckedIOException if an I/O error occurs
      */
-    private static void dumpThread(Thread thread, JsonWriter jsonWriter) {
+    private static boolean dumpThread(Thread thread, JsonWriter jsonWriter) {
         Instant now = Instant.now();
         ThreadSnapshot snapshot = ThreadSnapshot.of(thread);
+        if (snapshot == null) {
+            return false; // thread terminated
+        }
         Thread.State state = snapshot.threadState();
         StackTraceElement[] stackTrace = snapshot.stackTrace();
 
@@ -369,6 +378,7 @@ public class ThreadDumper {
         }
 
         jsonWriter.endObject();
+        return true;
     }
 
     /**
