@@ -844,6 +844,7 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
 }
 
 #ifndef PRODUCT
+#ifdef ASSERT
 // Return true if the execution after the provided bytecode continues at the
 // next bytecode in the code. This is not the case for gotos, returns, and
 // throws.
@@ -867,6 +868,7 @@ static bool falls_through(Bytecodes::Code bc) {
       return true;
   }
 }
+#endif
 #endif
 
 // Return BasicType of value being returned
