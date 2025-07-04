@@ -484,6 +484,7 @@ void os::init_before_ergo() {
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
   VM_Version::init_before_ergo();
+  LINUX_ONLY(initialize_max_ram_percentage();)
 }
 
 void os::initialize_jdk_signal_support(TRAPS) {
