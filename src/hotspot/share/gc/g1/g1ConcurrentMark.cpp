@@ -488,7 +488,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _tasks set inside the constructor
 
   _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
-  _terminator(_max_num_tasks, _task_queues),
+  _terminator(_max_num_tasks, _task_queues, TERMINATION_EVENT_NAME("Concurrent Marking")),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -1806,6 +1806,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
 
 class G1CMRemarkTask : public WorkerTask {
   G1ConcurrentMark* _cm;
+  TaskTerminatorReuseMark _ttmr;
 public:
   void work(uint worker_id) {
     G1CMTask* task = _cm->task(worker_id);
@@ -1828,9 +1829,8 @@ public:
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
-    WorkerTask("Par Remark"), _cm(cm) {
-    _cm->terminator()->reset_for_reuse(active_workers);
-  }
+    WorkerTask("Par Remark"), _cm(cm),
+    _ttmr(cm->terminator(), active_workers, TERMINATION_EVENT_NAME("Par Remark")) {}
 };
 
 void G1ConcurrentMark::finalize_marking() {
