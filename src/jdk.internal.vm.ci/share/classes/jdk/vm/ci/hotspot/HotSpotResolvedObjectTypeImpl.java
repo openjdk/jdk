@@ -1120,15 +1120,19 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
         if (!mayHaveAnnotations(true)) {
+            checkIsAnnotation(annotationType);
             return null;
         }
-        return getAnnotationData0(annotationType).get(0);
+        return getFirstAnnotationOrNull(getAnnotationData0(annotationType));
     }
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
         if (!mayHaveAnnotations(true)) {
-            return Collections.emptyList();
+            checkIsAnnotation(type1);
+            checkIsAnnotation(type2);
+            checkAreAnnotations(types);
+            return List.of();
         }
         return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
     }
