@@ -727,8 +727,8 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     OopStorageSet::strong_oops_do(&adjust_pointer_closure);
 
-    NMethodToOopClosure nmthod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
-    CodeCache::nmethods_do(&nmthod_cl);
+    NMethodToOopClosure nmethod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
+    CodeCache::nmethods_do(&nmethod_cl);
 
     WeakProcessor::oops_do(&adjust_pointer_closure);
 
