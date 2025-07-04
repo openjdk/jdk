@@ -362,6 +362,26 @@ public class Long512VectorTests extends AbstractVectorTest {
         }
     }
 
+    static void assertArraysEqualsAssociative(long[] rl, long[] rr, long[] a, long[] b, long[] c, FBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                //Left associative
+                Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]));
+
+                //Right associative
+                Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])));
+
+                //Results equal sanity check
+                Assert.assertEquals(rl[i], rr[i]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]), "left associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])), "right associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            Assert.assertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
+        }
+    }
+
     static void assertArraysEquals(long[] r, long[] a, long[] b, FBinOp f) {
         int i = 0;
         try {
@@ -1008,6 +1028,11 @@ public class Long512VectorTests extends AbstractVectorTest {
                 flatMap(fa -> LONG_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
+    static final List<List<IntFunction<long[]>>> LONG_SATURATING_GENERATOR_TRIPLETS =
+           Stream.of(LONG_GENERATOR_PAIRS.get(0)).
+                   flatMap(pair -> LONG_SATURATING_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                   collect(Collectors.toList());
+
     @DataProvider
     public Object[][] boolUnaryOpProvider() {
         return BOOL_ARRAY_GENERATORS.stream().
@@ -1043,6 +1068,13 @@ public class Long512VectorTests extends AbstractVectorTest {
         return LONG_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
+
+    @DataProvider
+    public Object[][] longSaturatingBinaryOpAssocProvider() {
+        return LONG_SATURATING_GENERATOR_TRIPLETS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
 
     @DataProvider
     public Object[][] longIndexedOpProvider() {
@@ -3485,6 +3517,26 @@ public class Long512VectorTests extends AbstractVectorTest {
         }
 
         assertBroadcastArraysEquals(r, a, b, Long512VectorTests::max);
+    }
+    @Test(dataProvider = "longSaturatingBinaryOpAssocProvider")
+    static void SUADDAssocLong512VectorTests(IntFunction<long[]> fa, IntFunction<long[]> fb, IntFunction<long[]> fc) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] b = fb.apply(SPECIES.length());
+        long[] c = fc.apply(SPECIES.length());
+        long[] rl = fr.apply(SPECIES.length());
+        long[] rr = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                LongVector bv = LongVector.fromArray(SPECIES, b, i);
+                LongVector cv = LongVector.fromArray(SPECIES, c, i);
+                av.lanewise(VectorOperators.SUADD, bv).lanewise(VectorOperators.SUADD, cv).intoArray(rl, i);
+                av.lanewise(VectorOperators.SUADD, bv.lanewise(VectorOperators.SUADD, cv)).intoArray(rr, i);
+            }
+        }
+
+        assertArraysEqualsAssociative(rl, rr, a, b, c, Long512VectorTests::SUADD);
     }
 
     static long ANDReduce(long[] a, int idx) {

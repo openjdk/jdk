@@ -405,6 +405,26 @@ public class Byte128VectorTests extends AbstractVectorTest {
         }
     }
 
+    static void assertArraysEqualsAssociative(byte[] rl, byte[] rr, byte[] a, byte[] b, byte[] c, FBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                //Left associative
+                Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]));
+
+                //Right associative
+                Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])));
+
+                //Results equal sanity check
+                Assert.assertEquals(rl[i], rr[i]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]), "left associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])), "right associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            Assert.assertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
+        }
+    }
+
     static void assertArraysEquals(byte[] r, byte[] a, byte[] b, FBinOp f) {
         int i = 0;
         try {
@@ -1028,6 +1048,11 @@ public class Byte128VectorTests extends AbstractVectorTest {
                 flatMap(fa -> BYTE_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
+    static final List<List<IntFunction<byte[]>>> BYTE_SATURATING_GENERATOR_TRIPLETS =
+           Stream.of(BYTE_GENERATOR_PAIRS.get(0)).
+                   flatMap(pair -> BYTE_SATURATING_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                   collect(Collectors.toList());
+
     @DataProvider
     public Object[][] boolUnaryOpProvider() {
         return BOOL_ARRAY_GENERATORS.stream().
@@ -1063,6 +1088,13 @@ public class Byte128VectorTests extends AbstractVectorTest {
         return BYTE_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
+
+    @DataProvider
+    public Object[][] byteSaturatingBinaryOpAssocProvider() {
+        return BYTE_SATURATING_GENERATOR_TRIPLETS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
 
     @DataProvider
     public Object[][] byteIndexedOpProvider() {
@@ -3419,6 +3451,26 @@ public class Byte128VectorTests extends AbstractVectorTest {
         }
 
         assertBroadcastArraysEquals(r, a, b, Byte128VectorTests::max);
+    }
+    @Test(dataProvider = "byteSaturatingBinaryOpAssocProvider")
+    static void SUADDAssocByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb, IntFunction<byte[]> fc) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] c = fc.apply(SPECIES.length());
+        byte[] rl = fr.apply(SPECIES.length());
+        byte[] rr = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
+                ByteVector cv = ByteVector.fromArray(SPECIES, c, i);
+                av.lanewise(VectorOperators.SUADD, bv).lanewise(VectorOperators.SUADD, cv).intoArray(rl, i);
+                av.lanewise(VectorOperators.SUADD, bv.lanewise(VectorOperators.SUADD, cv)).intoArray(rr, i);
+            }
+        }
+
+        assertArraysEqualsAssociative(rl, rr, a, b, c, Byte128VectorTests::SUADD);
     }
 
     static byte ANDReduce(byte[] a, int idx) {
