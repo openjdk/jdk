@@ -161,7 +161,7 @@ public abstract class AbstractLog {
      * @param warningKey The key for the localized warning message.
      */
     public void warning(Warning warningKey) {
-        report(diags.warning(source, null, warningKey));
+        report(diags.warning(null, source, null, warningKey));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
@@ -170,7 +170,17 @@ public abstract class AbstractLog {
      *  @param warningKey    The key for the localized warning message.
      */
     public void warning(DiagnosticPosition pos, Warning warningKey) {
-        report(diags.warning(source, pos, warningKey));
+        report(diags.warning(null, source, pos, warningKey));
+    }
+
+    /** Report a warning, unless suppressed by the  -nowarn option or the
+     *  maximum number of warnings has been reached.
+     *  @param flag   A flag to set on the diagnostic
+     *  @param pos    The source position at which to report the warning.
+     *  @param warningKey    The key for the localized warning message.
+     */
+    public void warning(DiagnosticFlag flag, DiagnosticPosition pos, Warning warningKey) {
+        report(diags.warning(flag, source, pos, warningKey));
     }
 
     /** Report a warning, unless suppressed by the  -nowarn option or the
@@ -179,15 +189,7 @@ public abstract class AbstractLog {
      *  @param warningKey    The key for the localized warning message.
      */
     public void warning(int pos, Warning warningKey) {
-        report(diags.warning(source, wrap(pos), warningKey));
-    }
-
-    /** Report a warning.
-     *  @param pos    The source position at which to report the warning.
-     *  @param warningKey    The key for the localized warning message.
-     */
-    public void mandatoryWarning(DiagnosticPosition pos, Warning warningKey) {
-        report(diags.mandatoryWarning(source, pos, warningKey));
+        report(diags.warning(null, source, wrap(pos), warningKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
