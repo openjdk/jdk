@@ -64,7 +64,9 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj->klass()), obj->klass()->external_name());
+  Klass* obj_klass = ShenandoahForwarding::klass(obj);
+
+  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj_klass), obj_klass->external_name());
   msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
   msg.append("    %3s after update watermark\n",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
