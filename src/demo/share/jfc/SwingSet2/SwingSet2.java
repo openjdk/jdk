@@ -131,7 +131,7 @@ public class SwingSet2 extends JPanel {
     private JEditorPane demoSrcPane = null;
 
 
-    // contentPane cache, saved from the applet or application frame
+    // contentPane cache, saved from the application frame
     Container contentPane = null;
 
 
@@ -177,7 +177,7 @@ public class SwingSet2 extends JPanel {
 
 
     /**
-     * SwingSet2 Main. Called only if we're an application, not an applet.
+     * SwingSet2 Main.
      */
     public static void main(final String[] args) {
         // must run in EDT when constructing the GUI components
@@ -716,8 +716,7 @@ public class SwingSet2 extends JPanel {
     }
 
     /**
-     * Returns the content pane whether we're in an applet
-     * or application
+     * Returns the content pane
      */
     public Container getContentPane() {
         if(contentPane == null) {
