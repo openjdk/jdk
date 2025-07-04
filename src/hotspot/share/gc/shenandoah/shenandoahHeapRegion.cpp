@@ -371,9 +371,9 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
-  Atomic::store(&_tlab_allocs, 0ul);
-  Atomic::store(&_gclab_allocs, 0ul);
-  Atomic::store(&_plab_allocs, 0ul);
+  Atomic::store(&_tlab_allocs, size_t(0));
+  Atomic::store(&_gclab_allocs, size_t(0));
+  Atomic::store(&_plab_allocs, size_t(0));
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {

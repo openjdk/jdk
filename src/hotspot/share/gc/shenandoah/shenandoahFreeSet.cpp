@@ -253,9 +253,9 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
   _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)] = _max;
   _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)] = -1;
 
-  Atomic::store(_region_counts + int(ShenandoahFreeSetPartitionId::Collector), 0ul);
-  Atomic::store(_used + int(ShenandoahFreeSetPartitionId::Collector), 0ul);
-  Atomic::store(_capacity + int(ShenandoahFreeSetPartitionId::Collector), 0ul);
+  Atomic::store(_region_counts + int(ShenandoahFreeSetPartitionId::Collector), size_t(0));
+  Atomic::store(_used + int(ShenandoahFreeSetPartitionId::Collector), size_t(0));
+  Atomic::store(_capacity + int(ShenandoahFreeSetPartitionId::Collector), size_t(0));
 }
 
 void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_collector_leftmost, idx_t old_collector_rightmost,
@@ -2119,7 +2119,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
 
   size_t actual_size = req.size();
   size_t min_requested_size = IS_TLAB ? req.min_size() : actual_size;
-  const uint hash = (reinterpret_cast<size_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount;
+  const uint hash = uint((reinterpret_cast<uintptr_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount);
   for (;;) {
     uint idx = hash;
     ShenandoahHeapRegion* retirable_regions[3];
