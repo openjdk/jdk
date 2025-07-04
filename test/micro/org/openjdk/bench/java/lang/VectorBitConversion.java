@@ -51,4 +51,14 @@ public class VectorBitConversion {
         }
         return result;
     }
+
+    @Benchmark
+    public int[] floatToIntBits() {
+        for (int i = 0; i < floats.length; i++) {
+            final float aFloat = floats[i];
+            final int bits = Float.floatToIntBits(aFloat);
+            result[i] = bits;
+        }
+        return result;
+    }
 }
