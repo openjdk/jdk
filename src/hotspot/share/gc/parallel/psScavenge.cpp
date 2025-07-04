@@ -229,9 +229,9 @@ public:
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
-    MarkingNMethodClosure roots_in_nmethods(&roots_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
 
-    thread->oops_do(&roots_closure, &roots_in_nmethods);
+    // No need to visit nmethods, because they are handled by ScavengableNMethods.
+    thread->oops_do(&roots_closure, nullptr);
 
     // Do the real work
     pm->drain_stacks(false);
