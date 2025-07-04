@@ -7,7 +7,9 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Random;
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 4, time = 5)
 @Fork(2)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
+@State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)
 public class VectorBitConversion {
     @Param({"2048"})
