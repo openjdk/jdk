@@ -157,7 +157,8 @@ jobs:
               # Dry run rebuilds the caches in current branch, so they can be reused
               # for any child PR branches. Because of this, we want to trigger this
               # workflow in master branch, so that actual PR branches can use the cache.
-              # This workflow would trigger every time contributors sync their forked masters.
+              # This workflow would trigger every time contributors sync their master
+              # branches in their personal forks.
               if [[ $BRANCH == "master" ]]; then
                 echo 'true'
                 return
@@ -165,12 +166,6 @@ jobs:
 
               # ...same for stabilization branches
               if [[ $BRANCH =~ "jdk(.*)" ]]; then
-                echo 'true'
-                return
-              fi
-
-              # FOR TESTING, REMOVE BEFORE INTEGRATION
-              if [[ $BRANCH == "JDK-8343546-gha-master-cache" ]]; then
                 echo 'true'
                 return
               fi
