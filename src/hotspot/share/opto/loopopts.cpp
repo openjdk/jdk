@@ -4711,7 +4711,8 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
 
     // Create post-loop reduction.
     Node* last_accumulator = phi->in(2);
-    Node* post_loop_reduction = ReductionNode::make(sopc, nullptr, init, last_accumulator, bt);
+    Node* post_loop_reduction = ReductionNode::make(sopc, nullptr, init, last_accumulator, bt,
+                                                    /* requires_strict_order */ false);
 
     // Take over uses of last_accumulator that are not in the loop.
     for (DUIterator i = last_accumulator->outs(); last_accumulator->has_out(i); i++) {
