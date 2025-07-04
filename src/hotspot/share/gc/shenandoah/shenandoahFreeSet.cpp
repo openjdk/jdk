@@ -2119,12 +2119,13 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
 
   const uint hash = uint((reinterpret_cast<uintptr_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount);
   for (;;) {
+    constexpr uint max_probes = 3;
     uint idx = hash;
-    ShenandoahHeapRegion* retirable_regions[3];
-    ShenandoahHeapRegion** retirable_shared_regions_addresses[3];
+    ShenandoahHeapRegion* retirable_regions[max_probes];
+    ShenandoahHeapRegion** retirable_shared_regions_addresses[max_probes];
     HeapWord* obj = nullptr;
     uint count = 0u;
-    for (uint i = 0u; i < 3; i++) {
+    for (uint i = 0u; i < max_probes; i++) {
       ShenandoahHeapRegion** shared_region_address = _directly_allocatable_regions + idx;
       ShenandoahHeapRegion* r = Atomic::load_acquire(shared_region_address);
       if (r != nullptr && r->reserved_for_direct_allocation()) {
