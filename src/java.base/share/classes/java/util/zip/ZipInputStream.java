@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,7 +422,13 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         case STORED:
             if (remaining <= 0) {
                 entryEOF = true;
+                final ZipEntry currentEntry = entry;
                 entry = null;
+                if (currentEntry.crc != crc.getValue()) {
+                    throw new ZipException("invalid entry CRC (expected 0x"
+                            + Long.toHexString(currentEntry.crc)
+                            + " but got 0x" + Long.toHexString(crc.getValue()) + ")");
+                }
                 return -1;
             }
             if (len > remaining) {
