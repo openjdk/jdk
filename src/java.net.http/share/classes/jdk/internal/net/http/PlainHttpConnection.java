@@ -36,12 +36,10 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.MinimalFuture;
-import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 
 /**
@@ -57,7 +55,6 @@ class PlainHttpConnection extends HttpConnection {
     private volatile boolean connected;
     private volatile boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
-    private volatile int unsuccessfulAttempts;
     private final ReentrantLock stateLock = new ReentrantLock();
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
@@ -117,10 +114,10 @@ class PlainHttpConnection extends HttpConnection {
     }
 
     final class ConnectEvent extends AsyncEvent {
-        private final CompletableFuture<ConnectState> cf;
+        private final CompletableFuture<Void> cf;
         private final Exchange<?> exchange;
 
-        ConnectEvent(CompletableFuture<ConnectState> cf, Exchange<?> exchange) {
+        ConnectEvent(CompletableFuture<Void> cf, Exchange<?> exchange) {
             this.cf = cf;
             this.exchange = exchange;
         }
@@ -149,7 +146,8 @@ class PlainHttpConnection extends HttpConnection {
                 assert finished || exchange.multi.requestCancelled() : "Expected channel to be connected";
                 if (connectionOpened()) {
                     // complete async since the event runs on the SelectorManager thread
-                    cf.completeAsync(() -> ConnectState.CONNECT_FINISHED, client().theExecutor());
+                    if (debug.on()) debug.log("%s has been connected asynchronously", label());
+                    cf.completeAsync(() -> null, client().theExecutor());
                 } else throw new ConnectException("Connection closed");
             } catch (Throwable e) {
                 Throwable t = getError(Utils.toConnectException(e));
@@ -170,7 +168,7 @@ class PlainHttpConnection extends HttpConnection {
 
     @Override
     public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
-        CompletableFuture<ConnectState> cf = new MinimalFuture<>();
+        CompletableFuture<Void> cf = new MinimalFuture<>();
         try {
             assert !connected : "Already connected";
             assert !chan.isBlocking() : "Unexpected blocking channel";
@@ -208,7 +206,8 @@ class PlainHttpConnection extends HttpConnection {
             if (finished) {
                 if (debug.on()) debug.log("connect finished without blocking");
                 if (connectionOpened()) {
-                    cf.complete(ConnectState.CONNECTED);
+                    if (debug.on()) debug.log("%s has been connected", label());
+                    cf.complete(null);
                 } else throw getError(new ConnectException("connection closed"));
             } else {
                 if (debug.on()) debug.log("registering connect event");
@@ -228,10 +227,7 @@ class PlainHttpConnection extends HttpConnection {
                     debug.log("Failed to close channel after unsuccessful connect");
             }
         }
-        return cf.thenApply((state)->{
-            if (debug.on()) debug.log("%s: %s", label(), state);
-            return null;
-        });
+        return cf;
     }
 
     boolean connectionOpened() {
