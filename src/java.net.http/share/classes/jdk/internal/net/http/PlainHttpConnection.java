@@ -310,8 +310,9 @@ class PlainHttpConnection extends HttpConnection {
         return tube;
     }
 
-    PlainHttpConnection(InetSocketAddress addr, HttpClientImpl client, String label) {
-        super(addr, client, label);
+    PlainHttpConnection(Origin originServer, InetSocketAddress addr, HttpClientImpl client,
+                        String label) {
+        super(originServer, addr, client, label);
         try {
             this.chan = SocketChannel.open();
             chan.configureBlocking(false);
