@@ -58,14 +58,6 @@ class PlainHttpConnection extends HttpConnection {
     private final ReentrantLock stateLock = new ReentrantLock();
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
-    // Indicates whether a connection attempt has succeeded.
-    // If the attempt failed there will be an exception
-    // instead.
-    // CONNECTED is used when connect() succeeded immediately
-    // CONNECT_FINISHED is used when connect succeeded asynchronously
-    private enum ConnectState { CONNECTED, CONNECT_FINISHED }
-
-
     /**
      * Returns a ConnectTimerEvent iff there is a connect timeout duration,
      * otherwise null.
