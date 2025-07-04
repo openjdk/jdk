@@ -2274,7 +2274,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_UMinV:
     case Op_UMaxV:
       return bt == T_INT || bt == T_LONG;
-    case OP_NegVI:
+    case Op_NegVI:
       return PowerArchitecturePPC64 >= 9 && bt == T_INT;
   }
   return true; // Per default match rules are supported.
