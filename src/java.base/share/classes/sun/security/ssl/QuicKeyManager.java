@@ -524,11 +524,6 @@ sealed abstract class QuicKeyManager
         // will be set when the keys are derived
         private volatile QuicVersion negotiatedVersion;
 
-        // will be set when the keys are derived, used for key logging.
-        private volatile byte[] clientHelloRandom;
-
-        // number of times key updates have been done
-        private final AtomicInteger keyUpdateCount = new AtomicInteger();
         private final Lock keySeriesLock = new ReentrantLock();
         // will be set when keys are derived and will
         // be updated whenever keys are updated.
@@ -852,10 +847,6 @@ sealed abstract class QuicKeyManager
                         this.keySpace + " key space");
             }
             this.negotiatedVersion = negotiatedVersion;
-
-            // Used for key logging.
-            this.clientHelloRandom =
-                    handshakeContext.clientHelloRandom.randomBytes;
 
             try {
                 SSLKeyDerivation kd = handshakeContext.handshakeKeyDerivation;
