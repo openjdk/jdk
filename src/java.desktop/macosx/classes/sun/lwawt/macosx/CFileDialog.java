@@ -56,9 +56,9 @@ import java.util.List;
 import sun.awt.AWTAccessor;
 import sun.java2d.pipe.Region;
 
-class CFileDialog implements FileDialogPeer {
+final class CFileDialog implements FileDialogPeer {
 
-    private class Task implements Runnable {
+    private final class Task implements Runnable {
 
         @Override
         public void run() {

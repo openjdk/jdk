@@ -29,7 +29,7 @@ import java.awt.Component;
 import java.awt.Window;
 import sun.awt.KeyboardFocusManagerPeerImpl;
 
-public class LWKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
+public final class LWKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     private static final LWKeyboardFocusManagerPeer inst = new LWKeyboardFocusManagerPeer();
 
     private Window focusedWindow;

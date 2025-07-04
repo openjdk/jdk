@@ -56,11 +56,13 @@ public class AquaTextFieldBorder extends AquaBorder {
         super(other);
     }
 
+    @Override
     protected void setSize(final Size size) {
         super.setSize(size);
         painter.state.set(Size.LARGE);
     }
 
+    @Override
     public void paintBorder(final Component c, final Graphics g, int x, int y, int width, int height) {
 //        g.setColor(Color.MAGENTA);
 //        g.drawRect(x, y, width - 1, height - 1);
@@ -122,6 +124,7 @@ public class AquaTextFieldBorder extends AquaBorder {
         return insets;
     }
 
+    @Override
     public Insets getBorderInsets(final Component c) {
         if (!(c instanceof JTextComponent) || c.isOpaque()) return new InsetsUIResource(3, 7, 3, 7);
         return new InsetsUIResource(5, 5, 5, 5);

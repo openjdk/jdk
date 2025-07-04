@@ -38,7 +38,7 @@ import sun.swing.SwingUtilities2;
 /**
  * The class represents the border of a {@code JMenuBar}.
  */
-public class AquaMenuBarBorder implements Border, UIResource {
+public final class AquaMenuBarBorder implements Border, UIResource {
 
     @Override
     public void paintBorder(final Component c, final Graphics g, final int x,
