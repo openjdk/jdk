@@ -48,6 +48,7 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
@@ -679,16 +680,6 @@ public class Log extends AbstractLog {
         errWriter.flush();
     }
 
-    /** Report a warning that cannot be suppressed.
-     *  @param pos    The source position at which to report the warning.
-     *  @param key    The key for the localized warning message.
-     *  @param args   Fields of the warning message.
-     */
-    public void strictWarning(DiagnosticPosition pos, String key, Object ... args) {
-        writeDiagnostic(diags.warning(null, source, pos, key, args));
-        nwarnings++;
-    }
-
     /**
      * Primary method to report a diagnostic.
      * @param diagnostic
@@ -797,7 +788,14 @@ public class Log extends AbstractLog {
                         return;
                 }
 
-                // Emit warning unless not mandatory and warnings are disabled
+                // Strict warnings are always emitted
+                if (diagnostic.isFlagSet(DiagnosticFlag.STRICT)) {
+                    writeDiagnostic(diagnostic);
+                    nwarnings++;
+                    return;
+                }
+
+                // Emit other warning unless not mandatory and warnings are disabled
                 if (emitWarnings || diagnostic.isMandatory()) {
                     if (nwarnings < MaxWarnings) {
                         writeDiagnostic(diagnostic);
