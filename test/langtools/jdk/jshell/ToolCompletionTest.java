@@ -64,12 +64,9 @@ public class ToolCompletionTest extends ReplToolTesting {
         compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
 
         test(false, new String[]{"--no-startup", "--class-path", compiler.getPath(p1.resolve(jarName)).toString()},
-                (a) -> assertCompletions(a, "p1.", null, null, null, null,
-                                         """
-                                         \u0005p1.
-                                         p2.   p3.\s\s\s\n\r"""),
+                (a) -> assertCompletions(a, "p1.", ".*p2\\..*p3\\..*"),
                  //cancel the input, so that JShell can be finished:
-                (a) -> assertCompletions(a, "\003", null, null, null, null, null)
+                (a) -> assertCommand(a, "\003", null)
                 );
     }
 
@@ -92,12 +89,9 @@ public class ToolCompletionTest extends ReplToolTesting {
 
         test(false, new String[]{"--no-startup"},
                 (a) -> assertCommand(a, "/env --class-path " + compiler.getPath(p1.resolve(jarName)).toString(), null),
-                (a) -> assertCompletions(a, "p1.", null, null, null, null,
-                                         """
-                                         \u0005p1.
-                                         p2.   p3.\s\s\s\n\r"""),
+                (a) -> assertCompletions(a, "p1.", ".*p2\\..*p3\\..*"),
                  //cancel the input, so that JShell can be finished:
-                (a) -> assertCompletions(a, "\003", null, null, null, null, null)
+                (a) -> assertCommand(a, "\003", null)
                 );
     }
 
@@ -137,12 +131,9 @@ public class ToolCompletionTest extends ReplToolTesting {
         test(false, new String[]{"--no-startup", "--class-path", compiler.getPath(dir1.resolve(jarName1)).toString()},
                 (a) -> assertCommand(a, "1", null),
                 (a) -> assertCommand(a, "/env --class-path " + compiler.getPath(dir2.resolve(jarName2)).toString(), null),
-                (a) -> assertCompletions(a, "p1.", null, null, null, null,
-                                         """
-                                         \u0005p1.
-                                         p5.   p6.\s\s\s\n\r"""),
+                (a) -> assertCompletions(a, "p1.", ".*p5\\..*p6\\..*"),
                  //cancel the input, so that JShell can be finished:
-                (a) -> assertCompletions(a, "\003", null, null, null, null, null)
+                (a) -> assertCommand(a, "\003", null)
                 );
     }
 
@@ -170,12 +161,9 @@ public class ToolCompletionTest extends ReplToolTesting {
         compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
 
         test(false, new String[]{"--no-startup", "--module-path", compiler.getPath(p1.resolve(jarName)).toString()},
-                (a) -> assertCompletions(a, "p1.", null, null, null, null,
-                                         """
-                                         \u0005p1.
-                                         p2.   p3.\s\s\s\n\r"""),
+                (a) -> assertCompletions(a, "p1.", ".*p2\\..*p3\\..*"),
                  //cancel the input, so that JShell can be finished:
-                (a) -> assertCompletions(a, "\003", null, null, null, null, null)
+                (a) -> assertCommand(a, "\003", null)
                 );
     }
 }

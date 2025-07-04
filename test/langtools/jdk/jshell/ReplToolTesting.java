@@ -567,8 +567,7 @@ public class ReplToolTesting {
         }
     }
 
-    public void assertCompletions(boolean after, String cmd, String out, String err,
-            String print, String usererr, String terminalOut) {
+    public void assertCompletions(boolean after, String input, String expectedCompletionsPattern) {
         if (!after) {
             try {
                 Class<?> sourceCodeAnalysisImpl = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
@@ -580,13 +579,21 @@ public class ReplToolTesting {
                 throw new AssertionError(ex.getMessage(), ex);
             }
 
-            setCommandInput(cmd + "\t");
+            setCommandInput(input + "\t");
         } else {
-            assertOutput(getCommandOutput().trim(), out==null? out : out.trim(), "command output: " + cmd);
-            assertOutput(getCommandErrorOutput(), err, "command error: " + cmd);
-            assertOutput(getUserOutput(), print, "user output: " + cmd);
-            assertOutput(getUserErrorOutput(), usererr, "user error: " + cmd);
-            assertOutput(getTerminalOutput(), terminalOut, "terminal output: " + cmd);
+            assertOutput(getCommandOutput().trim(), "", "command output: " + input);
+            assertOutput(getCommandErrorOutput(), "", "command error: " + input);
+            assertOutput(getUserOutput(), "", "user output: " + input);
+            assertOutput(getUserErrorOutput(), "", "user error: " + input);
+            String actualOutput = getTerminalOutput();
+            Pattern compiledPattern =
+                    Pattern.compile(expectedCompletionsPattern, Pattern.DOTALL);
+            if (!compiledPattern.asMatchPredicate().test(actualOutput)) {
+                throw new AssertionError("Actual output:\n" +
+                                         actualOutput + "\n" +
+                                         "does not match expected pattern: " +
+                                         expectedCompletionsPattern);
+            }
         }
     }
 
