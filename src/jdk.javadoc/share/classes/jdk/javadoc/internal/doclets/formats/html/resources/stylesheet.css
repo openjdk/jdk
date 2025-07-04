@@ -34,6 +34,20 @@
     --nav-height: calc(var(--top-nav-height) + var(--sub-nav-height));
     --max-content-width: 1500px;
     --content-margin: 0 auto;
+    /* Inline SVG icons for dark theme */
+    --right-svg-dark: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"> \
+    <path d="m35.763 5.058 38.675 36.885a12.596 12.596 90 0 1 0 18.23L35.763 97.058v-18.32l27.055-25.431a2.975 2.975 90.09 0 0 .007-4.33L35.763 23.38Z" \
+    style="fill:%23fff;stroke-width:.285806" transform="translate(-5.292 -1.058)"/> \
+    </svg>');
+    --glass-svg-dark: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"> \
+    <path d="M66.37 55.005C64.415 58.958 60.147 63.321 56.153 66l32.478 33.456L99.377 88.99Z" style="fill:%23a1d3ff"/>\
+    <circle cx="35.072" cy="35.072" r="30.635" style="fill:none;stroke:%23a1d3ff;stroke-width:8"/></svg>');
+    --x-svg-dark: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
+    <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
+    <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
 }
 body {
     /* Text colors for body and block elements */
@@ -84,7 +98,7 @@ body {
     /* Search input colors */
     --search-input-background-color: #ffffff;
     --search-input-text-color: #000000;
-    --search-input-placeholder-color: #909090;
+    --search-input-placeholder-color: #757575;
     /* Highlight color for active search tag target */
     --search-tag-highlight-color: #ffff66;
     /* Copy button colors and filters */
@@ -115,7 +129,7 @@ body.theme-dark {
     --selected-link-color: #4a698a;
     --table-header-color: #38444d;
     --even-row-color: #292f35;
-    --odd-row-color: #21262d;
+    --odd-row-color: #1d2228;
     --title-color: #fff;
     --link-color: #d99a23;
     --link-color-active: #ffb45b;
@@ -132,7 +146,7 @@ body.theme-dark {
     --tab-border-radius: 2px 2px 0 0;
     --search-input-background-color: #303030;
     --search-input-text-color: #d0d0d0;
-    --search-input-placeholder-color: #909090;
+    --search-input-placeholder-color: #979797;
     --search-tag-highlight-color: #ffff66;
     --button-border-color: #909090;
     --button-active-filter: brightness(96%);
@@ -159,21 +173,21 @@ body.theme-dark {
         --detail-block-color: #f4f4f4;
         --navbar-background-color: #37546c;
         --navbar-text-color: #ffffff;
-        --subnav-background-color: #43505b;
+        --subnav-background-color: #404d57;
         --subnav-link-color: #f5ae29;
         --member-heading-background-color: var(--subnav-background-color);
         --selected-background-color: #f8981d;
         --selected-text-color: #253441;
         --selected-link-color: #4a698a;
-        --table-header-color: var(--subnav-background-color);
-        --even-row-color: #293540;
-        --odd-row-color: #21262d;
+        --table-header-color: #38444d;
+        --even-row-color: #292f35;
+        --odd-row-color: #1d2228;
         --title-color: #fff;
         --link-color: #d99a23;
-        --link-color-active: #ffc886;
-        --toc-background-color: #373f46;
+        --link-color-active: #ffb45b;
+        --toc-background-color: #343b42;
         --toc-highlight-color: var(--subnav-background-color);
-        --toc-hover-color: #333639;
+        --toc-hover-color: #323538;
         --snippet-background-color: #364148;
         --snippet-text-color: var(--block-text-color);
         --snippet-highlight-color: #f7c590;
@@ -184,7 +198,7 @@ body.theme-dark {
         --tab-border-radius: 2px 2px 0 0;
         --search-input-background-color: #303030;
         --search-input-text-color: #d0d0d0;
-        --search-input-placeholder-color: #909090;
+        --search-input-placeholder-color: #979797;
         --search-tag-highlight-color: #ffff66;
         --button-border-color: #909090;
         --button-active-filter: brightness(96%);
@@ -232,7 +246,7 @@ body.theme-dark {
         --tab-border-radius: 2px 2px 0 0;
         --search-input-background-color: #ffffff;
         --search-input-text-color: #000000;
-        --search-input-placeholder-color: #909090;
+        --search-input-placeholder-color: #757575;
         --search-tag-highlight-color: #ffff66;
         --button-border-color: #b0b8c8;
         --button-active-filter: brightness(96%);
@@ -490,11 +504,15 @@ ol.sub-nav-list li:not(:first-child) {
     list-style: none;
 }
 body.theme-dark ol.sub-nav-list li:not(:first-child) {
-    background-image: url('data:image/svg+xml; utf8, \
-    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"> \
-    <path d="m35.763 5.058 38.675 36.885a12.596 12.596 90 0 1 0 18.23L35.763 97.058v-18.32l27.055-25.431a2.975 2.975 90.09 0 0 .007-4.33L35.763 23.38Z" \
-    style="fill:%23fff;stroke-width:.285806" transform="translate(-5.292 -1.058)"/> \
-    </svg>');
+    background-image: var(--right-svg-dark);
+}
+@media (prefers-color-scheme: dark) {
+    ol.sub-nav-list li:not(:first-child) {
+        background-image: var(--right-svg-dark);
+    }
+    body.theme-light ol.sub-nav-list li:not(:first-child) {
+        background-image: url("right.svg");
+    }
 }
 ol.sub-nav-list a {
     padding: 3px;
@@ -1257,6 +1275,17 @@ input[type="text"] {
     font-size: var(--nav-font-size);
     height: 19px;
 }
+body.theme-dark input[type="text"] {
+    background-image: var(--glass-svg-dark);
+}
+@media (prefers-color-scheme: dark) {
+    input[type="text"] {
+        background-image: var(--glass-svg-dark);
+    }
+    body.theme-light input[type="text"] {
+        background-image: url('glass.svg');
+    }
+}
 input#page-search-input {
     width: calc(180px + 10vw);
     margin: 10px 0;
@@ -1283,6 +1312,21 @@ input#reset-search, input.reset-filter, input#page-search-reset {
     min-height:12px;
     font-size:0;
     visibility:hidden;
+}
+body.theme-dark input#reset-search,
+body.theme-dark input.reset-filter,
+body.theme-dark input#page-search-reset {
+    background-image: var(--x-svg-dark);
+}
+@media (prefers-color-scheme: dark) {
+    input#reset-search, input.reset-filter, input#page-search-reset {
+        background-image: var(--x-svg-dark);
+    }
+    body.theme-light input#reset-search,
+    body.theme-light input.reset-filter,
+    body.theme-light input#page-search-reset {
+        background-image: url('x.svg');
+    }
 }
 input#reset-search {
     position:absolute;
