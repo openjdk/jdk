@@ -2535,6 +2535,81 @@ VStatus VLoopBody::construct() {
   return VStatus::make_success();
 }
 
+// Returns true if the given operation can be vectorized with "truncation" where the upper bits in the integer do not
+// contribute to the result. This is true for most arithmetic operations, but false for operations such as
+// leading/trailing zero count.
+static bool can_subword_truncate(Node* in, const Type* type) {
+  if (in->is_Load() || in->is_Store() || in->is_Convert() || in->is_Phi()) {
+    return true;
+  }
+
+  int opc = in->Opcode();
+
+  // If the node's base type is a subword type, check an additional set of nodes.
+  if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
+    switch (opc) {
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
+      return true;
+    }
+  }
+
+  // Can be truncated:
+  switch (opc) {
+  case Op_AddI:
+  case Op_SubI:
+  case Op_MulI:
+  case Op_AndI:
+  case Op_OrI:
+  case Op_XorI:
+    return true;
+  }
+
+#ifdef ASSERT
+  // While shifts have subword vectorized forms, they require knowing the precise type of input loads so they are
+  // considered non-truncating.
+  if (VectorNode::is_shift_opcode(opc)) {
+    return false;
+  }
+
+  // Vector nodes should not truncate.
+  if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction()) {
+    return false;
+  }
+
+  // Cannot be truncated:
+  switch (opc) {
+  case Op_AbsI:
+  case Op_DivI:
+  case Op_MinI:
+  case Op_MaxI:
+  case Op_CMoveI:
+  case Op_Conv2B:
+  case Op_RotateRight:
+  case Op_RotateLeft:
+  case Op_PopCountI:
+  case Op_ReverseBytesI:
+  case Op_ReverseI:
+  case Op_CountLeadingZerosI:
+  case Op_CountTrailingZerosI:
+  case Op_IsInfiniteF:
+  case Op_IsInfiniteD:
+  case Op_ExtractS:
+  case Op_ExtractC:
+  case Op_ExtractB:
+    return false;
+  default:
+    // If this assert is hit, that means that we need to determine if the node can be safely truncated,
+    // and then add it to the list of truncating nodes or the list of non-truncating ones just above.
+    // In product, we just return false, which is always correct.
+    assert(false, "Unexpected node in SuperWord truncation: %s", NodeClassNames[in->Opcode()]);
+  }
+#endif
+
+  // Default to disallowing vector truncation
+  return false;
+}
+
 void VLoopTypes::compute_vector_element_type() {
 #ifndef PRODUCT
   if (_vloop.is_trace_vector_element_type()) {
@@ -2589,18 +2664,19 @@ void VLoopTypes::compute_vector_element_type() {
             // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
+            if (!can_subword_truncate(in, vt)) {
               Node* load = in->in(1);
-              if (load->is_Load() &&
+              // For certain operations such as shifts and abs(), use the size of the load if it exists
+              if ((VectorNode::is_shift_opcode(op) || op == Op_AbsI) && load->is_Load() &&
                   _vloop.in_bb(load) &&
                   (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
               } else if (op != Op_LShiftI) {
-                // Widen type to int to avoid the creation of vector nodes. Note
+                // Widen type to the node type to avoid the creation of vector nodes. Note
                 // that left shifts work regardless of the signedness.
-                vt = TypeInt::INT;
+                vt = container_type(in);
               }
             }
             set_velt_type(in, vt);
