@@ -212,10 +212,9 @@ public class TestDuplicateMethods extends JavadocTester {
 
         checkOutput("hm/V.html", true,
                 """
-                <h3>V</h3>
-                <div class="horizontal-scroll">
-                <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">V</span>()</div>
-                </div>
+                <div class="inherited-list">
+                <h3 id="methods-inherited-from-class-hm.PubJ">Methods inherited from class&nbsp;<a href="PubJ.html#method-summary" title="class in hm">PubJ</a></h3>
+                <code><a href="PubJ.html#testJ()" title="testJ()">testJ</a></code></div>
                 """);
     }
 }
