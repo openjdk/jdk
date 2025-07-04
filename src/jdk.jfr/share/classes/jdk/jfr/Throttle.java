@@ -74,7 +74,7 @@ public @interface Throttle {
      * <p>
      * Specifying {@code "off"} (case-sensitive) results in all events being emitted.
      *
-     * @return the throttle value, default {@code "off"} not {@code null}
+     * @return the throttle value, default {@code "off"}
      */
     String value() default "off";
 }

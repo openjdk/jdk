@@ -36,6 +36,8 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 
+int CompileTask::_active_tasks = 0;
+
 CompileTask::CompileTask(int compile_id,
                          const methodHandle& method,
                          int osr_bci,
@@ -74,6 +76,8 @@ CompileTask::CompileTask(int compile_id,
   _arena_bytes = 0;
 
   _next = nullptr;
+
+  Atomic::add(&_active_tasks, 1);
 }
 
 CompileTask::~CompileTask() {
@@ -86,6 +90,18 @@ CompileTask::~CompileTask() {
     os::free((void*) _failure_reason);
     _failure_reason = nullptr;
     _failure_reason_on_C_heap = false;
+  }
+
+  if (Atomic::sub(&_active_tasks, 1) == 0) {
+    MonitorLocker wait_ml(CompileTaskWait_lock);
+    wait_ml.notify_all();
+  }
+}
+
+void CompileTask::wait_for_no_active_tasks() {
+  MonitorLocker locker(CompileTaskWait_lock);
+  while (_active_tasks > 0) {
+    locker.wait();
   }
 }
 
