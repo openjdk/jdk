@@ -225,19 +225,8 @@ public class TestResolvedJavaType extends TypeUniverse {
     public void getModifiersTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            int mask = Modifier.classModifiers() & ~Modifier.STATIC;
-            int expected = c.getModifiers() & mask;
-            int actual = type.getModifiers() & mask;
-            Class<?> elementalType = c;
-            while (elementalType.isArray()) {
-                elementalType = elementalType.getComponentType();
-            }
-            if (elementalType.isMemberClass()) {
-                // member class get their modifiers from the inner-class attribute in the JVM and
-                // from the classfile header in jvmci
-                expected &= ~(Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED);
-                actual &= ~(Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED);
-            }
+            int expected = c.getModifiers();
+            int actual = type.getModifiers();
             assertEquals(String.format("%s: 0x%x != 0x%x", type, expected, actual), expected, actual);
         }
     }

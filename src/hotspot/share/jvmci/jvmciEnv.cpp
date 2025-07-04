@@ -1365,6 +1365,7 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
   guarantee(klass->is_loader_alive(), "klass must be alive");
 
   jlong pointer = (jlong) klass();
+  int modifiers = klass()->modifier_flags();
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   jboolean exception = false;
   if (is_hotspot()) {
@@ -1372,6 +1373,7 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long(pointer);
+    args.push_int(modifiers);
     JavaCalls::call_static(&result,
                            HotSpotJVMCI::HotSpotResolvedObjectTypeImpl::klass(),
                            vmSymbols::fromMetaspace_name(),
@@ -1388,7 +1390,7 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
     HandleMark hm(THREAD);
     type = JNIJVMCI::wrap(jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotResolvedObjectTypeImpl::clazz(),
                                                         JNIJVMCI::HotSpotResolvedObjectTypeImpl_fromMetaspace_method(),
-                                                        pointer));
+                                                        pointer, modifiers));
     exception = jni()->ExceptionCheck();
   }
   if (exception) {

@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
+import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
 import static java.lang.reflect.Modifier.PRIVATE;
@@ -35,7 +36,10 @@ import static java.lang.reflect.Modifier.PUBLIC;
 public interface ModifiersProvider {
 
     /**
-     * Returns the modifiers for this element.
+     * Returns the Java language modifiers for this element.
+     *
+     * @see Class#getModifiers
+     * @see Member#getModifiers
      */
     int getModifiers();
 
