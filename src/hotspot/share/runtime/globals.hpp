@@ -949,7 +949,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \
-          "UseDynamicNumberOfCompilerThreads")                              \                                                                           
+          "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
   product_pd(bool, ImplicitNullChecks, DIAGNOSTIC,                          \
           "Generate code for implicit null checks")                         \
