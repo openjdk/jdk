@@ -623,6 +623,6 @@ class WindowsSelectorImpl extends SelectorImpl {
     }
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
     }
 }
