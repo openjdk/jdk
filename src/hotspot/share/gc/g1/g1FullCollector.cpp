@@ -211,6 +211,8 @@ void G1FullCollector::collect() {
   // Don't add any more derived pointers during later phases
   deactivate_derived_pointers();
 
+  FullGCForwarding::begin();
+
   phase2_prepare_compaction();
 
   if (has_compaction_targets()) {
@@ -222,6 +224,8 @@ void G1FullCollector::collect() {
     // The live ratio is only considered if do_maximal_compaction is false.
     log_info(gc, phases) ("No Regions selected for compaction. Skipping Phase 3: Adjust pointers and Phase 4: Compact heap");
   }
+
+  FullGCForwarding::end();
 
   phase5_reset_metadata();
 
