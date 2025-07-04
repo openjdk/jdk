@@ -571,6 +571,15 @@ bool VectorNode::is_convert_opcode(int opc) {
   }
 }
 
+bool VectorNode::is_move_opcode(int opc) {
+  switch (opc) {
+    case Op_MoveF2I:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool VectorNode::is_minmax_opcode(int opc) {
   return opc == Op_MinI || opc == Op_MaxI;
 }
@@ -1813,6 +1822,14 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
     }
   }
   return this;
+}
+
+bool VectorReinterpretNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
+  if (src_type == T_FLOAT && dst_type == T_INT) {
+    int vopc = Op_VectorReinterpret;
+    return Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
+  }
+  return false;
 }
 
 Node* VectorInsertNode::make(Node* vec, Node* new_val, int position, PhaseGVN& gvn) {
