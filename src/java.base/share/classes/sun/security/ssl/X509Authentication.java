@@ -219,8 +219,7 @@ enum X509Authentication implements SSLAuthentication {
                             chc.peerSupportedAuthorities.clone(),
                     engine);
         } else if (chc.conContext.transport instanceof QuicTLSEngineImpl quicEngineImpl) {
-            // TODO in future, when QuicTLSEngine might become a public exported interface
-            // we should have a method on javax.net.ssl.X509ExtendedKeyManager that
+            // TODO add a method on javax.net.ssl.X509ExtendedKeyManager that
             // takes QuicTLSEngine.
             // For now, in context of QUIC, for KeyManager implementations other than
             // sun.security.ssl.X509KeyManagerImpl we don't take into account
@@ -313,8 +312,7 @@ enum X509Authentication implements SSLAuthentication {
                                 shc.peerSupportedAuthorities.clone(),
                         engine);
             } else if (shc.conContext.transport instanceof QuicTLSEngineImpl quicEngineImpl) {
-                // TODO in future, when QuicTLSEngine might become a public exported interface
-                // we should have a method on javax.net.ssl.X509ExtendedKeyManager that
+                // TODO add a method on javax.net.ssl.X509ExtendedKeyManager that
                 // takes QuicTLSEngine.
                 // For now, in context of QUIC, for KeyManager implementations other than
                 // sun.security.ssl.X509KeyManagerImpl we don't take into account
