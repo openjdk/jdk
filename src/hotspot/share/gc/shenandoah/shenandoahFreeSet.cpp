@@ -2228,7 +2228,8 @@ public:
       Atomic::store(_shared_region_addresses[_current_index++], r);
       skip_invalid_address();
       _fulfilled_count++;
-    } else if (r->affiliation() == YOUNG_GENERATION && r->is_regular() && r->free() >= _min_req_byte_size) {
+    } else if (r->affiliation() == YOUNG_GENERATION && r->is_regular() &&
+               r->get_top_before_promote() != nullptr && r->free() >= _min_req_byte_size) {
       r->reserve_for_direct_allocation();
       Atomic::store(_shared_region_addresses[_current_index++], r);
       skip_invalid_address();
