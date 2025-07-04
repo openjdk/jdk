@@ -29,14 +29,14 @@ public class VectorBitConversion {
     private int seed;
     private Random r = new Random(seed);
 
-    private Float[] floats;
+    private float[] floats;
     private int[] result;
 
     @Setup
     public void init() {
         result = new int[size];
 
-        floats = new Float[size];
+        floats = new float[size];
         for (int i = 0; i < size; i++) {
             floats[i] = r.nextFloat();
         }
