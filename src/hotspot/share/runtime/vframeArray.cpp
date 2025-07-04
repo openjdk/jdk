@@ -61,7 +61,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
 
   _method = vf->method();
   _bci    = vf->raw_bci();
-  _reexecute = vf->should_reexecute();
+  _reexecute = vf->should_reexecute(); // initial value, updated in unpack_on_stack
 #ifdef ASSERT
   _removed_monitors = false;
 #endif
@@ -171,7 +171,30 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
   }
 }
 
-int unpack_counter = 0;
+static int unpack_counter = 0;
+
+bool vframeArrayElement::should_reexecute(bool is_top_frame, int exec_mode) const {
+  if (is_top_frame) {
+    switch (exec_mode) {
+    case Deoptimization::Unpack_uncommon_trap:
+    case Deoptimization::Unpack_reexecute:
+      return true;
+    default:
+      break;
+    }
+  }
+  if (raw_bci() == SynchronizationEntryBCI) {
+    return true;
+  }
+  bool reexec = should_reexecute();
+  assert(is_top_frame || reexec == false, "unexepected should_reexecute()");
+  if (!reexec) {
+    address bcp = method()->bcp_from(bci());
+    Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
+    assert(!Interpreter::bytecode_should_reexecute(code), "should_reexecute mismatch");
+  }
+  return reexec;
+}
 
 void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          int callee_parameters,
@@ -191,16 +214,32 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   address pc;
   bool use_next_mdp = false; // true if we should use the mdp associated with the next bci
                              // rather than the one associated with bcp
+  bool reexecute = should_reexecute(is_top_frame, exec_mode);
   if (raw_bci() == SynchronizationEntryBCI) {
     // We are deoptimizing while hanging in prologue code for synchronized method
     bcp = method()->bcp_from(0); // first byte code
     pc  = Interpreter::deopt_entry(vtos, 0); // step = 0 since we don't skip current bytecode
-  } else if (should_reexecute()) { //reexecute this bytecode
+    assert(reexecute, "must be");
+  } else if (reexecute) { //reexecute this bytecode
     assert(is_top_frame, "reexecute allowed only for the top frame");
     bcp = method()->bcp_from(bci());
-    pc  = Interpreter::deopt_reexecute_entry(method(), bcp);
+    switch (exec_mode) {
+    case Deoptimization::Unpack_uncommon_trap:
+      // Do not special-case _athrow or _return_register_finalizer
+      pc = Interpreter::deopt_entry(vtos, 0);
+      break;
+    case Deoptimization::Unpack_reexecute:
+      pc = Interpreter::deopt_entry(vtos, 0);
+      assert(pc == Interpreter::deopt_reexecute_entry(method(), bcp), "athrow or return with Unpack_reexecute?");
+      break;
+    default:
+      // Yes, special-case _athrow and _return_register_finalizer
+      pc = Interpreter::deopt_reexecute_entry(method(), bcp);
+    }
+    assert(reexecute, "must be");
   } else {
     bcp = method()->bcp_from(bci());
+    assert(!reexecute, "must be");
     pc  = Interpreter::deopt_continue_after_entry(method(), bcp, callee_parameters, is_top_frame);
     use_next_mdp = true;
   }
@@ -239,6 +278,17 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       } else {
         // Reexecute invoke in top frame
         pc = Interpreter::deopt_entry(vtos, 0);
+#ifdef ASSERT
+        Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
+        assert(Bytecodes::is_invoke(code), "must be");
+        assert(!reexecute, "must be");
+        assert(use_next_mdp, "must be");
+#endif
+        // It would be nice if the VerifyStack logic in unpack_frames() was refactored so
+        // we could check the stack before and after changing the reexecute mode, but
+        // it should pass either way because an invoke uses the same stack state for both modes,
+        // which is: args popped but result not yet pushed.
+        reexecute = true;
         use_next_mdp = false;
         popframe_preserved_args_size_in_bytes = in_bytes(thread->popframe_preserved_args_size());
         // Note: the PopFrame-related extension of the expression stack size is done in
@@ -270,13 +320,17 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       case Deoptimization::Unpack_uncommon_trap:
       case Deoptimization::Unpack_reexecute:
         // redo last byte code
-        pc  = Interpreter::deopt_entry(vtos, 0);
-        use_next_mdp = false;
+        assert(!use_next_mdp, "must be");
+        assert(reexecute, "must be");
+        // Was Interpreter::deopt_reexecute_entry()
+        assert(pc == Interpreter::deopt_entry(vtos, 0), "pc changed");
         break;
       default:
         ShouldNotReachHere();
       }
     }
+    assert(use_next_mdp == !reexecute, "!");
+    _reexecute = reexecute;
   }
 
   // Setup the interpreter frame
