@@ -27,7 +27,6 @@
  * @summary Ensure Object natives stay registered after redefinition
  * @requires vm.jvmti
  * @library /test/lib
- * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.instrument
@@ -41,19 +40,13 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.lang.RuntimeException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
-
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-
-import static org.objectweb.asm.Opcodes.ASM6;
-import static org.objectweb.asm.Opcodes.V1_8;
 
 public class RedefineObject {
 
@@ -69,31 +62,14 @@ public class RedefineObject {
                           Class<?> classBeingRedefined,
                           ProtectionDomain protectionDomain, byte[] classfileBuffer)
                 throws IllegalClassFormatException {
-            ClassWriter cw = new ClassWriter(0);
-            // Force an older ASM to force a bytecode update
-            ClassVisitor cv = new DummyClassVisitor(ASM6, cw) { };
-            ClassReader cr = new ClassReader(classfileBuffer);
-            cr.accept(cv, 0);
-            byte[] bytes = cw.toByteArray();
-            return bytes;
-        }
-
-        public class DummyClassVisitor extends ClassVisitor {
-
-            public DummyClassVisitor(int api, ClassVisitor cv) {
-                super(api, cv);
-            }
-
-            public void visit(
-                    final int version,
-                    final int access,
-                    final String name,
-                    final String signature,
-                    final String superName,
-                    final String[] interfaces) {
-                // Artificially lower to JDK 8 version to force a redefine
-                cv.visit(V1_8, access, name, signature, superName, interfaces);
-            }
+            return ClassFile.of().transformClass(ClassFile.of().parse(classfileBuffer), (cb, ce) -> {
+                if (ce instanceof ClassFileVersion cfv) {
+                    // Force a redefine with different class file versions
+                    cb.with(ClassFileVersion.of(cfv.majorVersion() - 1, 0));
+                } else {
+                    cb.with(ce);
+                }
+            });
         }
 
         @Override public byte[] transform(ClassLoader loader, String className,
