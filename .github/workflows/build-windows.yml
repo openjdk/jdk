@@ -54,6 +54,10 @@ on:
       make-arguments:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
 
 env:
   # These are needed to make the MSYS2 bash work properly
@@ -139,6 +143,7 @@ jobs:
           # Set PATH to "", so just GITHUB_PATH is included
           PATH: ''
         shell: env /usr/bin/bash --login -eo pipefail {0}
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Build'
         id: build
@@ -147,9 +152,11 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}

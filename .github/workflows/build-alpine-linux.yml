@@ -51,6 +51,10 @@ on:
       make-arguments:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-linux:
@@ -104,9 +108,11 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}

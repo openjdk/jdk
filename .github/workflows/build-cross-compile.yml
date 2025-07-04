@@ -40,6 +40,10 @@ on:
       make-arguments:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-cross-compile:
@@ -189,4 +193,4 @@ jobs:
         with:
           make-target: 'hotspot ${{ inputs.make-arguments }}'
           platform: linux-${{ matrix.target-cpu }}
-        if: steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true'
+        if: ((steps.create-sysroot.outcome == 'success' || steps.get-cached-sysroot.outputs.cache-hit == 'true') && inputs.dry-run == false)
