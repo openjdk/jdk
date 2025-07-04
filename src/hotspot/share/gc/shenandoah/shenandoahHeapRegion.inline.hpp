@@ -109,6 +109,26 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocReque
   }
 }
 
+HeapWord* ShenandoahHeapRegion::allocate_lab(const ShenandoahAllocRequest& req, size_t &actual_size) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(req.is_lab_alloc(), "Only lab alloc");
+  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
+
+  size_t adjusted_size = req.size();
+  HeapWord* obj = nullptr;
+  HeapWord* old_top = top();
+  size_t free_words = align_down(byte_size(old_top, end()) >> LogHeapWordSize, MinObjAlignment);
+  if (adjusted_size > free_words) {
+    adjusted_size = free_words;
+  }
+  if (adjusted_size >= req.min_size()) {
+    obj = allocate(adjusted_size, req);
+    actual_size = adjusted_size;
+    assert(obj == old_top, "Must be");
+  }
+  return obj;
+}
+
 HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAllocRequest& req) {
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
   assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");

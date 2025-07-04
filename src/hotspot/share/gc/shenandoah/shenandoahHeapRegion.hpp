@@ -368,6 +368,8 @@ public:
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
+  inline HeapWord* allocate_lab(const ShenandoahAllocRequest &req, size_t &actual_size);
+
   // Atomic allocation using CAS, return nullptr if full or no enough space for the req
   inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req);
 

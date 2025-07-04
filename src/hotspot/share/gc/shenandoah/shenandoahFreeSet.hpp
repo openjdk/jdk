@@ -395,12 +395,14 @@ private:
   void log_status();
 
   template<bool IS_TLAB>
-  HeapWord* par_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
+  HeapWord* par_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
-  bool try_allocate_directly_allocatable_regions(uint probed_region_count,
-                                                 ShenandoahHeapRegion** shared_region_address[],
+  bool try_allocate_directly_allocatable_regions(ShenandoahHeapRegion** shared_region_address[],
                                                  ShenandoahHeapRegion* original_shared_regions[],
-                                                 size_t min_req_size);
+                                                 uint region_count,
+                                                 ShenandoahAllocRequest &req,
+                                                 HeapWord* &obj,
+                                                 bool &in_new_region);
   template<bool IS_MUTATOR, bool IS_OLD>
   uint iterate_regions_for_alloc(ShenandoahHeapRegionBreakableIterClosure* cl, bool use_empty);
 
