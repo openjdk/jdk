@@ -111,11 +111,10 @@ public class MemoryBarriers {
     public static final int JMM_POST_VOLATILE_READ = LOAD_LOAD | LOAD_STORE;
 
     public static String barriersString(int barriers) {
-        StringBuilder sb = new StringBuilder();
-        sb.append((barriers & LOAD_LOAD) != 0 ? "LOAD_LOAD " : "");
-        sb.append((barriers & LOAD_STORE) != 0 ? "LOAD_STORE " : "");
-        sb.append((barriers & STORE_LOAD) != 0 ? "STORE_LOAD " : "");
-        sb.append((barriers & STORE_STORE) != 0 ? "STORE_STORE " : "");
-        return sb.toString().trim();
+        String sb = ((barriers & LOAD_LOAD) != 0 ? "LOAD_LOAD " : "") +
+                    ((barriers & LOAD_STORE) != 0 ? "LOAD_STORE " : "") +
+                    ((barriers & STORE_LOAD) != 0 ? "STORE_LOAD " : "") +
+                    ((barriers & STORE_STORE) != 0 ? "STORE_STORE " : "");
+        return sb.trim();
     }
 }

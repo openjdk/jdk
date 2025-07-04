@@ -64,11 +64,10 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
          * @param fieldName name of the field to be searched
          * @param fieldType resolved Java type of the field
          * @return resolved Java field
-         * @throws NoSuchFieldError
+         * @throws NoSuchFieldError if no field matches the field name and type
          */
         private static ResolvedJavaField findFieldInClass(ResolvedJavaType declaringType, String fieldName, ResolvedJavaType fieldType) {
-            ResolvedJavaField[] fields = declaringType.getInstanceFields(false);
-            for (ResolvedJavaField field : fields) {
+            for (ResolvedJavaField field : declaringType.getInstanceFields(false)) {
                 if (field.getName().equals(fieldName) && field.getType().equals(fieldType)) {
                     return field;
                 }

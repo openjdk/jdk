@@ -22,12 +22,12 @@
  */
 package jdk.vm.ci.hotspot.aarch64;
 
-import static java.util.Collections.emptyMap;
 import static jdk.vm.ci.common.InitTimer.timer;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
-
+import jdk.internal.util.OperatingSystem;
 import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.aarch64.AArch64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
@@ -49,7 +49,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     private static EnumSet<AArch64.CPUFeature> computeFeatures(AArch64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
-        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
+        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, Collections.emptyMap());
     }
 
     private static TargetDescription createTarget(AArch64HotSpotVMConfig config) {
@@ -68,7 +68,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         // ARMv8 defines r18 as being available to the platform ABI. Windows
         // and Darwin use it for such. Linux doesn't assign it and thus r18 can
         // be used as an additional register.
-        boolean canUsePlatformRegister = target.linuxOs;
+        boolean canUsePlatformRegister = OperatingSystem.isLinux();
         return new AArch64HotSpotRegisterConfig(target, config.useCompressedOops, canUsePlatformRegister);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,33 +24,10 @@ package jdk.vm.ci.hotspot;
 
 /**
  * Describes a VM flag exposed via {@link HotSpotVMConfigAccess}.
+ *
+ * @param name  the name of the flag.
+ * @param type  the C++ type of the flag.
+ * @param value the flag's value.
  */
-public final class VMFlag {
-
-    /**
-     * The name of the flag.
-     */
-    public final String name;
-
-    /**
-     * The C++ type of the flag.
-     */
-    public final String type;
-
-    /**
-     * The flag's value.
-     */
-    public final Object value;
-
-    @VMEntryPoint
-    VMFlag(String name, String type, Object value) {
-        this.name = name;
-        this.type = type;
-        this.value = value;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Flag[type=%s, name=%s, value=%s]", type, name, value);
-    }
+public record VMFlag(String name, String type, Object value) {
 }

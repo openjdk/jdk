@@ -85,9 +85,9 @@ public abstract class Architecture {
                     int returnAddressSize) {
         // registers is expected to mention all registers in order of their encoding.
         for (int i = 0; i < registers.size(); ++i) {
-            if (registers.get(i).number != i) {
+            if (registers.get(i).number() != i) {
                 Register reg = registers.get(i);
-                throw new JVMCIError("%s: %d != %d", reg, reg.number, i);
+                throw new JVMCIError("%s: %d != %d", reg, reg.number(), i);
             }
         }
         this.name = name;
@@ -222,8 +222,7 @@ public abstract class Architecture {
         if (obj == this) {
             return true;
         }
-        if (obj instanceof Architecture) {
-            Architecture that = (Architecture) obj;
+        if (obj instanceof Architecture that) {
             if (this.name.equals(that.name)) {
                 assert this.byteOrder.equals(that.byteOrder);
                 assert this.implicitMemoryBarriers == that.implicitMemoryBarriers;

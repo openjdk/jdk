@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,34 +24,16 @@ package jdk.vm.ci.meta;
 
 /**
  * A implementation of {@link JavaField} for an unresolved field.
+ *
+ * @param cause the reason field resolution failed. Can be null.
  */
-public final class UnresolvedJavaField implements JavaField {
-
-    private final String name;
-    private final JavaType holder;
-    private final JavaType type;
-
-    /**
-     * The reason field resolution failed. Can be null.
-     */
-    private final Throwable cause;
-
-    public UnresolvedJavaField(JavaType holder, String name, JavaType type, Throwable cause) {
-        this.name = name;
-        this.type = type;
-        this.holder = holder;
-        this.cause = cause;
-    }
+public record UnresolvedJavaField(JavaType  holder,
+                                  String    name,
+                                  JavaType  type,
+                                  Throwable cause) implements JavaField {
 
     public UnresolvedJavaField(JavaType holder, String name, JavaType type) {
         this(holder, name, type, null);
-    }
-
-    /**
-     * Gets the exception, if any, representing the reason field resolution resulted in this object.
-     */
-    public Throwable getCause() {
-        return cause;
     }
 
     @Override
@@ -70,19 +52,13 @@ public final class UnresolvedJavaField implements JavaField {
     }
 
     @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
-        if (obj == null || !(obj instanceof UnresolvedJavaField)) {
+        if (!(obj instanceof UnresolvedJavaField that)) {
             return false;
         }
-        UnresolvedJavaField that = (UnresolvedJavaField) obj;
         return this.holder.equals(that.holder) && this.name.equals(that.name) && this.type.equals(that.type);
     }
 

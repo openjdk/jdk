@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,34 +24,16 @@ package jdk.vm.ci.meta;
 
 /**
  * Implementation of {@link JavaMethod} for unresolved HotSpot methods.
+ *
+ * @param cause the reason method resolution failed. Can be null.
  */
-public final class UnresolvedJavaMethod implements JavaMethod {
+public record UnresolvedJavaMethod(JavaType  holder,
+                                   String    name,
+                                   Signature signature,
+                                   Throwable cause) implements JavaMethod {
 
-    private final String name;
-    private final Signature signature;
-    protected JavaType holder;
-
-    /**
-     * The reason method resolution failed. Can be null.
-     */
-    private final Throwable cause;
-
-    public UnresolvedJavaMethod(String name, Signature signature, JavaType holder, Throwable cause) {
-        this.name = name;
-        this.holder = holder;
-        this.signature = signature;
-        this.cause = cause;
-    }
-
-    public UnresolvedJavaMethod(String name, Signature signature, JavaType holder) {
-        this(name, signature, holder, null);
-    }
-
-    /**
-     * Gets the exception, if any, representing the reason method resolution resulted in this object.
-     */
-    public Throwable getCause() {
-        return cause;
+    public UnresolvedJavaMethod(JavaType holder, String name, Signature signature) {
+        this(holder, name, signature, null);
     }
 
     @Override
@@ -70,19 +52,15 @@ public final class UnresolvedJavaMethod implements JavaMethod {
     }
 
     @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
     public boolean equals(Object obj) {
+        // TODO delete? note that it does not take cause into account
+        // same applies to UnresolvedJavaField/Type
         if (this == obj) {
             return true;
         }
-        if (obj == null || !(obj instanceof UnresolvedJavaMethod)) {
+        if (!(obj instanceof UnresolvedJavaMethod that)) {
             return false;
         }
-        UnresolvedJavaMethod that = (UnresolvedJavaMethod) obj;
         return this.name.equals(that.name) && this.signature.equals(that.signature) && this.holder.equals(that.holder);
     }
 }

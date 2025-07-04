@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         if (base instanceof HotSpotMetaspaceConstantImpl) {
             MetaspaceObject meta = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
             return meta.getMetaspacePointer();
-        } else if (base instanceof PrimitiveConstant) {
-            PrimitiveConstant prim = (PrimitiveConstant) base;
+        } else if (base instanceof PrimitiveConstant prim) {
             if (prim.getJavaKind().isNumericInteger()) {
                 return prim.asLong();
             }
@@ -57,27 +56,17 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
 
     @Override
     public JavaConstant readPrimitiveConstant(JavaKind kind, Constant baseConstant, long initialDisplacement, int bits) {
-        if (baseConstant instanceof HotSpotObjectConstantImpl) {
+        if (baseConstant instanceof HotSpotObjectConstantImpl baseObject) {
             JavaKind readKind = kind;
             if (kind.getBitCount() != bits) {
-                switch (bits) {
-                    case Byte.SIZE:
-                        readKind = JavaKind.Byte;
-                        break;
-                    case Short.SIZE:
-                        readKind = JavaKind.Short;
-                        break;
-                    case Integer.SIZE:
-                        readKind = JavaKind.Int;
-                        break;
-                    case Long.SIZE:
-                        readKind = JavaKind.Long;
-                        break;
-                    default:
-                        throw new IllegalArgumentException(String.valueOf(bits));
-                }
+                readKind = switch (bits) {
+                    case Byte.SIZE -> JavaKind.Byte;
+                    case Short.SIZE -> JavaKind.Short;
+                    case Integer.SIZE -> JavaKind.Int;
+                    case Long.SIZE -> JavaKind.Long;
+                    default -> throw new IllegalArgumentException(String.valueOf(bits));
+                };
             }
-            HotSpotObjectConstantImpl baseObject = (HotSpotObjectConstantImpl) baseConstant;
             JavaConstant result = runtime().compilerToVm.readFieldValue(baseObject, null, initialDisplacement, readKind.getTypeChar());
             if (result != null && kind != readKind) {
                 return JavaConstant.forPrimitive(kind, result.asLong());
@@ -85,37 +74,25 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
             return result;
         } else {
             long pointer = asRawPointer(baseConstant);
-            long value;
-            switch (bits) {
-                case Byte.SIZE:
-                    value = UNSAFE.getByte(pointer + initialDisplacement);
-                    break;
-                case Short.SIZE:
-                    value = UNSAFE.getShort(pointer + initialDisplacement);
-                    break;
-                case Integer.SIZE:
-                    value = UNSAFE.getInt(pointer + initialDisplacement);
-                    break;
-                case Long.SIZE:
-                    value = UNSAFE.getLong(pointer + initialDisplacement);
-                    break;
-                default:
-                    throw new IllegalArgumentException(String.valueOf(bits));
-            }
+            long value = switch (bits) {
+                case Byte.SIZE -> UNSAFE.getByte(pointer + initialDisplacement);
+                case Short.SIZE -> UNSAFE.getShort(pointer + initialDisplacement);
+                case Integer.SIZE -> UNSAFE.getInt(pointer + initialDisplacement);
+                case Long.SIZE -> UNSAFE.getLong(pointer + initialDisplacement);
+                default -> throw new IllegalArgumentException(String.valueOf(bits));
+            };
             return JavaConstant.forPrimitive(kind, value);
         }
     }
 
     @Override
     public JavaConstant readObjectConstant(Constant base, long displacement) {
-        if (base instanceof HotSpotObjectConstantImpl) {
-            HotSpotObjectConstantImpl hsBase = (HotSpotObjectConstantImpl) base;
+        if (base instanceof HotSpotObjectConstantImpl hsBase) {
             return runtime.getCompilerToVM().readFieldValue(hsBase, null, displacement, JavaKind.Object.getTypeChar());
         }
         if (base instanceof HotSpotMetaspaceConstant) {
             MetaspaceObject metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
-            if (metaspaceObject instanceof HotSpotResolvedObjectTypeImpl) {
-                HotSpotResolvedObjectTypeImpl type = (HotSpotResolvedObjectTypeImpl) metaspaceObject;
+            if (metaspaceObject instanceof HotSpotResolvedObjectTypeImpl type) {
                 if (displacement == runtime.getConfig().javaMirrorOffset) {
                     // Klass::_java_mirror is valid for all Klass* values
                     return type.getJavaMirror();
@@ -130,9 +107,8 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
 
     @Override
     public JavaConstant readNarrowOopConstant(Constant base, long displacement) {
-        if (base instanceof HotSpotObjectConstantImpl) {
+        if (base instanceof HotSpotObjectConstantImpl hsBase) {
             assert runtime.getConfig().useCompressedOops;
-            HotSpotObjectConstantImpl hsBase = (HotSpotObjectConstantImpl) base;
             JavaConstant res = runtime.getCompilerToVM().readFieldValue(hsBase, null, displacement, JavaKind.Object.getTypeChar());
             if (res != null) {
                 return JavaConstant.NULL_POINTER.equals(res) ? HotSpotCompressedNullConstant.COMPRESSED_NULL : ((HotSpotObjectConstant) res).compress();

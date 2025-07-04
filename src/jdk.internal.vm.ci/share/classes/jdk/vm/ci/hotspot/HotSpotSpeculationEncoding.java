@@ -188,7 +188,7 @@ final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements 
             // Should never happen given that SHA-1 is mandated in a
             // compliant Java platform implementation.
             throw new JVMCIError(e);
-        } catch (CloneNotSupportedException e) {
+        } catch (CloneNotSupportedException _) {
         }
         SHA1 = sha1;
         SHA1_IS_CLONEABLE = sha1IsCloneable;

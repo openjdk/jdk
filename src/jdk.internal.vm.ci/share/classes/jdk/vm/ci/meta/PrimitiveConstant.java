@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,26 +101,17 @@ public class PrimitiveConstant implements JavaConstant, SerializableConstant {
 
     @Override
     public Object asBoxedPrimitive() {
-        switch (getJavaKind()) {
-            case Byte:
-                return Byte.valueOf((byte) primitive);
-            case Boolean:
-                return Boolean.valueOf(asBoolean());
-            case Short:
-                return Short.valueOf((short) primitive);
-            case Char:
-                return Character.valueOf((char) primitive);
-            case Int:
-                return Integer.valueOf(asInt());
-            case Long:
-                return Long.valueOf(asLong());
-            case Float:
-                return Float.valueOf(asFloat());
-            case Double:
-                return Double.valueOf(asDouble());
-            default:
-                throw new IllegalArgumentException("unexpected kind " + getJavaKind());
-        }
+        return switch (getJavaKind()) {
+            case Byte -> Byte.valueOf((byte) primitive);
+            case Boolean -> Boolean.valueOf(asBoolean());
+            case Short -> Short.valueOf((short) primitive);
+            case Char -> Character.valueOf((char) primitive);
+            case Int -> Integer.valueOf(asInt());
+            case Long -> Long.valueOf(asLong());
+            case Float -> Float.valueOf(asFloat());
+            case Double -> Double.valueOf(asDouble());
+            default -> throw new IllegalArgumentException("unexpected kind " + getJavaKind());
+        };
     }
 
     @Override
@@ -160,7 +151,7 @@ public class PrimitiveConstant implements JavaConstant, SerializableConstant {
 
     @Override
     public int hashCode() {
-        return (int) (primitive ^ (primitive >>> 32)) * (getJavaKind().ordinal() + 31);
+        return Long.hashCode(primitive) * (getJavaKind().ordinal() + 31);
     }
 
     @Override
@@ -168,10 +159,9 @@ public class PrimitiveConstant implements JavaConstant, SerializableConstant {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof PrimitiveConstant)) {
+        if (!(o instanceof PrimitiveConstant other)) {
             return false;
         }
-        PrimitiveConstant other = (PrimitiveConstant) o;
         return this.kind.equals(other.kind) && this.primitive == other.primitive;
     }
 

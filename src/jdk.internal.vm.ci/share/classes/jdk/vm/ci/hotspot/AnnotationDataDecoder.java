@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,9 @@ final class AnnotationDataDecoder implements AnnotationDecoder<JavaType, Annotat
         return new ErrorData(description);
     }
 
+    /**
+     * Aggregate {@link ResolvedJavaType} inputs in an array as argument to varargs method.
+     */
     static ResolvedJavaType[] asArray(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
         ResolvedJavaType[] filter = new ResolvedJavaType[2 + types.length];
         filter[0] = type1;
