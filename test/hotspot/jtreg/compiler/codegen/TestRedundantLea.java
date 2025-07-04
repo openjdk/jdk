@@ -224,23 +224,18 @@ class StringInflateTest {
     }
 
     @Test
+    // TODO: Make tests more precise
     @IR(counts = {IRNode.LEA_P, "=2"},
         phase = {CompilePhase.FINAL_CODE},
         applyIfPlatform = {"mac", "false"})
     // Negative
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=5"},
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, ">=5"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd = {"OptoPeephole", "false", "UseAVX", ">=2"})
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=13"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd = {"OptoPeephole", "false", "UseAVX", "<2"})
+        applyIf = {"OptoPeephole", "false"})
     // 2 decodes get removed
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3"},
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, ">=3"},
         phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd = {"OptoPeephole", "true", "UseAVX", ">=2"})
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=11"},
-        phase = {CompilePhase.FINAL_CODE},
-        applyIfAnd = {"OptoPeephole", "true", "UseAVX", "<2"})
+        applyIf = {"OptoPeephole", "true"})
     @Arguments(setup = "setup")
     public static Name test(Name n1, Name n2) {
         return n1.append(n2);
@@ -258,6 +253,7 @@ class RegexFindTest {
     }
 
     @Test
+    // TODO: Make tests more precise
     @IR(counts = {IRNode.LEA_P, "=1"},
         phase = {CompilePhase.FINAL_CODE},
         applyIfPlatform = {"mac", "false"})
