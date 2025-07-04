@@ -56,8 +56,8 @@ public class TestMachTempsAcrossSafepoints {
 
     public static void main(String[] args) throws Exception {
         String inlineCmd = "-XX:CompileCommand=inline,java.lang.ref.SoftReference::get";
-        TestFramework.runWithFlags(inlineCmd, "-XX:+StressGCM", "-XX:+StressLCM", "-XX:StressSeed=1");
-        TestFramework.runWithFlags(inlineCmd, "-XX:+StressGCM", "-XX:+StressLCM");
+        TestFramework.runWithFlags(inlineCmd, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+StressGCM", "-XX:+StressLCM", "-XX:StressSeed=1");
+        TestFramework.runWithFlags(inlineCmd, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+StressGCM", "-XX:+StressLCM");
     }
 
     @Test

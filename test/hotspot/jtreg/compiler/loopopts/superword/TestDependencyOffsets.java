@@ -483,8 +483,8 @@ public class TestDependencyOffsets {
         }
 
         String[] flags = switch (args[0]) {
-            case "vanilla-A" -> new String[] {"-XX:+AlignVector"};
-            case "vanilla-U" -> new String[] {"-XX:-AlignVector"};
+            case "vanilla-A" -> new String[] {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector"};
+            case "vanilla-U" -> new String[] {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector"};
             case "sse4-v016-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:+AlignVector"};
             case "sse4-v016-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:-AlignVector"};
             case "sse4-v008-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:+AlignVector"};

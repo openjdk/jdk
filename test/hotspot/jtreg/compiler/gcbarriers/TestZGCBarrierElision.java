@@ -99,7 +99,8 @@ public class TestZGCBarrierElision {
         }
         String commonName = Common.class.getName();
         TestFramework test = new TestFramework(testClass);
-        test.addFlags("-XX:+UseZGC", "-XX:+UnlockExperimentalVMOptions",
+        test.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                      "-XX:+UseZGC", "-XX:+UnlockExperimentalVMOptions",
                       "-XX:CompileCommand=blackhole," + commonName + "::blackhole",
                       "-XX:CompileCommand=dontinline," + commonName + "::nonInlinedMethod",
                       "-XX:LoopMaxUnroll=0");
