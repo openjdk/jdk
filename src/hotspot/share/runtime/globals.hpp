@@ -951,10 +951,6 @@ const int ObjectAlignmentInBytes = 8;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  develop(bool, GenerateSynchronizationCode, true,                          \
-          "generate locking/unlocking code for synchronized methods and "   \
-          "monitors")                                                       \
-                                                                            \
   product_pd(bool, ImplicitNullChecks, DIAGNOSTIC,                          \
           "Generate code for implicit null checks")                         \
                                                                             \
