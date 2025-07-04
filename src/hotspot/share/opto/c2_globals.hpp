@@ -870,6 +870,19 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
+                                                                            \
+  develop(bool, PrintLoopConditionalPropagation, false,                     \
+          "Trace Loop Conditional Propagation pass")                        \
+                                                                            \
+  product(bool, UseLoopConditionalPropagation, true,                        \
+          "Perform Loop Conditional Propagation pass")                      \
+                                                                            \
+  develop(bool, VerifyLoopConditionalPropagation, false,                    \
+          "expensive Loop Conditional Propagation verification")            \
+                                                                            \
+  product(bool, LoopConditionalPropagationALot, false,                      \
+          "run Loop Conditional Propagation on every round of loop opts")   \
+                                                                            \
 
 // end of C2_FLAGS
 
