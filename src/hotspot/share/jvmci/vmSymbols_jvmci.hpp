@@ -85,7 +85,7 @@
   template(fromMetaspace_name,                                    "fromMetaspace")                                                        \
   template(method_fromMetaspace_signature,                        "(JLjdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;") \
   template(constantPool_fromMetaspace_signature,                  "(J)Ljdk/vm/ci/hotspot/HotSpotConstantPool;")                           \
-  template(klass_fromMetaspace_signature,                         "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")                 \
+  template(klass_fromMetaspace_signature,                         "(JI)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")                \
   template(primitive_fromMetaspace_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotObjectConstantImpl;C)Ljdk/vm/ci/hotspot/HotSpotResolvedPrimitiveType;") \
   template(getRuntime_name,                                       "getRuntime")                                                           \
   template(getRuntime_signature,                                  "()Ljdk/vm/ci/runtime/JVMCIRuntime;")                                   \

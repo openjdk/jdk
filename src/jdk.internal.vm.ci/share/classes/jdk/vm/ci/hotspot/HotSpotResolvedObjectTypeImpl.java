@@ -93,6 +93,13 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     private FieldInfo[] fieldInfo;
 
     /**
+     * The JVM defined modifiers. This is different from {@code Klass::_access_flags}
+     * in the case of inner classes where the modifiers are provided by an
+     * InnerClasses attribute.
+     */
+    private final char modifiers;
+
+    /**
      * Managed exclusively by {@link HotSpotJDKReflection#getField}.
      */
     HashMap<HotSpotResolvedJavaFieldImpl, Field> reflectionFieldCache;
@@ -107,12 +114,13 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * Called from the VM.
      *
      * @param klassPointer a native pointer to the Klass*
+     * @param modifiers the {@linkplain Class#getModifiers() class modifiers}
      * @return the {@link ResolvedJavaType} corresponding to {@code javaClass}
      */
     @SuppressWarnings("unused")
     @VMEntryPoint
-    private static HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
-        return runtime().fromMetaspace(klassPointer);
+    private static HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer, int modifiers) {
+        return runtime().fromMetaspace(klassPointer, modifiers);
     }
 
     /**
@@ -123,12 +131,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * </p>
      *
      * @param klass the {@code Klass*} for the type
+     * @param modifiers the {@linkplain Class#getModifiers() class modifiers}
      */
     @SuppressWarnings("try")
-    HotSpotResolvedObjectTypeImpl(long klass, String name) {
+    HotSpotResolvedObjectTypeImpl(long klass, String name, char modifiers) {
         super(name);
         assert klass != 0;
         this.klassPointer = klass;
+        this.modifiers = modifiers;
 
         // The mirror object must be in the global scope since
         // this object will be cached in HotSpotJVMCIRuntime.resolvedJavaTypes
@@ -157,16 +167,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public int getModifiers() {
-        if (isArray()) {
-            return (getElementalType().getModifiers() & (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED)) | Modifier.FINAL | Modifier.ABSTRACT;
-        } else {
-            return getAccessFlags() & jvmClassModifiers();
-        }
-    }
-
-    public int getAccessFlags() {
-        HotSpotVMConfig config = config();
-        return UNSAFE.getInt(getKlassPointer() + config.klassAccessFlagsOffset);
+        return modifiers;
     }
 
     public int getMiscFlags() {
@@ -461,7 +462,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public boolean isInterface() {
-        return (getAccessFlags() & config().jvmAccInterface) != 0;
+        return (modifiers & config().jvmAccInterface) != 0;
     }
 
     @Override
