@@ -72,7 +72,7 @@ public final class TimedClass {
                         min = average;
                     }
                     if (max == Long.MIN_VALUE) {
-                        min = average;
+                        max = average;
                     }
                     min = Math.min(min, average);
                     max = Math.max(max, average);
