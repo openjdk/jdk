@@ -762,8 +762,10 @@ void MacroAssembler::stop(const char* msg) {
   // Skip AOT caching C strings in scratch buffer.
   const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
   BLOCK_COMMENT(str);
+  // load msg into c_rarg0 so we can access it from the signal handler
+  // ExternalAddress enables saving and restoring via the code cache
+  la(c_rarg0, ExternalAddress((address) str));
   illegal_instruction(Assembler::csr::time);
-  emit_int64((uintptr_t)str);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
