@@ -47,6 +47,7 @@ import java.security.Provider.Service;
 import java.security.Security;
 import java.util.List;
 
+import sun.security.jca.ProvidersFilter;
 
 /**
  * A factory for creating {@link XMLSignature} objects from scratch or
@@ -174,12 +175,20 @@ public abstract class XMLSignatureFactory {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
-     * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
-     * {@link Security#getProviders() Security.getProviders()}.
+     * The JDK Reference Implementation additionally uses the following
+     * properties to customize the behavior of this method:
+     * <ul>
+     * <li> The {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property determines
+     * the preferred provider order for the specified mechanism type.
+     * This may be different from the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.</li>
+     * <li> The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which services are enabled. A service that is not enabled by the
+     * filter will not make its mechanism type implementation available.</li>
+     * </ul>
      *
      * @param mechanismType the type of the XML processing mechanism and
      *    representation. See the {@code XMLSignatureFactory} section in the
@@ -203,7 +212,7 @@ public abstract class XMLSignatureFactory {
         Provider[] provs = Security.getProviders();
         for (Provider p : provs) {
             Service s = p.getService("XMLSignatureFactory", mechanismType);
-            if (s != null) {
+            if (s != null && ProvidersFilter.isAllowed(s)) {
                 Object obj = null;
                 try {
                     obj = s.newInstance(null);
@@ -228,6 +237,14 @@ public abstract class XMLSignatureFactory {
      * as supplied by the specified provider. Note that the specified
      * <code>Provider</code> object does not have to be registered in the
      * provider list.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its mechanism type implementation available.
      *
      * @param mechanismType the type of the XML processing mechanism and
      *    representation. See the {@code XMLSignatureFactory} section in the
@@ -254,7 +271,7 @@ public abstract class XMLSignatureFactory {
         }
 
         Service s = provider.getService("XMLSignatureFactory", mechanismType);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Object obj = null;
             try {
                 obj = s.newInstance(null);
@@ -282,6 +299,14 @@ public abstract class XMLSignatureFactory {
      *
      * <p>Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its mechanism type implementation available.
      *
      * @param mechanismType the type of the XML processing mechanism and
      *    representation. See the {@code XMLSignatureFactory} section in the
@@ -317,7 +342,7 @@ public abstract class XMLSignatureFactory {
                                               provider);
         }
         Service s = p.getService("XMLSignatureFactory", mechanismType);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Object obj = null;
             try {
                 obj = s.newInstance(null);
@@ -349,6 +374,14 @@ public abstract class XMLSignatureFactory {
      *
      * <p>Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its mechanism type implementation available.
      *
      * @return a new <code>XMLSignatureFactory</code>
      * @throws NoSuchMechanismException if no <code>Provider</code> supports an

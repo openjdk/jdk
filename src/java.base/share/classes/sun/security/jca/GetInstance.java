@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class GetInstance {
             throw new NoSuchProviderException("no such provider: " + provider);
         }
         Service s = p.getService(type, algorithm);
-        if (s == null) {
+        if (s == null || !ProvidersFilter.isAllowed(s)) {
             throw new NoSuchAlgorithmException("no such algorithm: "
                 + algorithm + " for provider " + provider);
         }
@@ -96,7 +96,7 @@ public class GetInstance {
             throw new IllegalArgumentException("missing provider");
         }
         Service s = provider.getService(type, algorithm);
-        if (s == null) {
+        if (s == null || !ProvidersFilter.isAllowed(s)) {
             throw new NoSuchAlgorithmException("no such algorithm: "
                 + algorithm + " for provider " + provider.getName());
         }
@@ -121,6 +121,11 @@ public class GetInstance {
     public static Iterator<Service> getServices(List<ServiceId> ids) {
         ProviderList list = Providers.getProviderList();
         return list.getServices(ids);
+    }
+
+    public static Iterator<Service> getCipherServices(List<ServiceId> ids) {
+        ProviderList list = Providers.getProviderList();
+        return list.getCipherServices(ids);
     }
 
     /*

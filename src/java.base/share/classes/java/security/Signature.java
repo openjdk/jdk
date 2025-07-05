@@ -241,12 +241,20 @@ public abstract class Signature extends SignatureSpi {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
-     * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
-     * may be different from the order of providers returned by
-     * {@link Security#getProviders() Security.getProviders()}.
+     * The JDK Reference Implementation additionally uses the following
+     * properties to customize the behavior of this method:
+     * <ul>
+     * <li> The {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property determines
+     * the preferred provider order for the specified algorithm.
+     * This may be different from the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.</li>
+     * <li> The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which services are enabled. A service that is not enabled by the
+     * filter will not make its algorithm implementation available.</li>
+     * </ul>
      *
      * @param algorithm the standard name of the algorithm requested.
      * See the Signature section in the <a href=
@@ -370,6 +378,14 @@ public abstract class Signature extends SignatureSpi {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its algorithm implementation available.
+     *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
@@ -424,6 +440,14 @@ public abstract class Signature extends SignatureSpi {
      * is returned.  Note that the specified provider does not
      * have to be registered in the provider list.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its algorithm implementation available.
+     *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
@@ -468,7 +492,7 @@ public abstract class Signature extends SignatureSpi {
             throws NoSuchAlgorithmException {
         // try Signature first
         Service s = p.getService("Signature", RSA_SIGNATURE);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Instance instance = GetInstance.getInstance(s, SignatureSpi.class);
             return getInstance(instance, RSA_SIGNATURE);
         }
