@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_PREDICATES_HPP
 #define SHARE_OPTO_PREDICATES_HPP
 
+#include "opto/c2_globals.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/predicates_enums.hpp"
@@ -44,9 +45,10 @@ class TemplateAssertionPredicate;
  * - Parse Predicate: Added during parsing to capture the current JVM state. This predicate represents a "placeholder"
  *                    above which Regular Predicates can be created later after parsing.
  *
- *                    There are initially three Parse Predicates for each loop:
+ *                    There are initially four Parse Predicates for each loop:
  *                    - Loop Parse Predicate:             The Parse Predicate added for Loop Predicates.
  *                    - Profiled Loop Parse Predicate:    The Parse Predicate added for Profiled Loop Predicates.
+ *                    - AutoVectorization Predicate:      The Parse Predicate added for AutoVectorization runtime checks.
  *                    - Loop Limit Check Parse Predicate: The Parse Predicate added for a Loop Limit Check Predicate.
  * - Runtime Predicate: This term is used to refer to a Hoisted Check Predicate (either a Loop Predicate or a Profiled
  *                      Loop Predicate) or a Loop Limit Check Predicate. These predicates will be checked at runtime while
@@ -776,8 +778,10 @@ class PredicateIterator : public StackObj {
     Node* current_node = _start_node;
     PredicateBlockIterator loop_limit_check_predicate_iterator(current_node, Deoptimization::Reason_loop_limit_check);
     current_node = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
-    PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
-    current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    if (UseAutoVectorizationPredicate) {
+      PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
+      current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    }
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
         PredicateBlockIterator profiled_loop_predicate_iterator(current_node, Deoptimization::Reason_profile_predicate);
