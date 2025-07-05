@@ -105,7 +105,7 @@ address StubGenerator::generate_ghash_processBlocks() {
 
   __ enter();
 
-  __ push(rbx); // scratch
+  __ push(rbx, true /*is_pair*/); // scratch
 
   __ movdqu(xmm_temp10, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
 
@@ -206,7 +206,7 @@ address StubGenerator::generate_ghash_processBlocks() {
   __ pshufb(xmm_temp6, xmm_temp10);          // Byte swap 16-byte result
   __ movdqu(Address(state, 0), xmm_temp6);   // store the result
 
-  __ pop(rbx);
+  __ pop(rbx, true /*is_pair*/);
 
   __ leave();
   __ ret(0);
@@ -229,11 +229,11 @@ address StubGenerator::generate_avx_ghash_processBlocks() {
   const Register data = c_rarg2;
   const Register blocks = c_rarg3;
   __ enter();
-  __ push(rbx);
+  __ push(rbx, true /*is_pair*/);
 
   avx_ghash(state, htbl, data, blocks);
 
-  __ pop(rbx);
+  __ pop(rbx, true /*is_pair*/);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
