@@ -63,13 +63,8 @@ public abstract class AbstractProfiledItem<T> implements Comparable<AbstractProf
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        long temp;
-        temp = Double.doubleToLongBits(probability);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        result = prime * result + item.hashCode();
-        return result;
+        int result = 31 + Double.hashCode(probability);
+        return 31 * result + item.hashCode();
     }
 
     @Override
