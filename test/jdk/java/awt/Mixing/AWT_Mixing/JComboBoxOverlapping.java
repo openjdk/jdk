@@ -63,7 +63,7 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
     protected void prepareControls() {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
-        frame.setSize(200, 200);
+        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
         frame.setVisible(true);
 
         cb = new JComboBox(petStrings);
