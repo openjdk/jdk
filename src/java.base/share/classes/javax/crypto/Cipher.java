@@ -431,8 +431,8 @@ public class Cipher {
         String[] parts = tokenizeTransformation(transformation);
 
         String alg = parts[0];
-        String mode = (parts[1].length() == 0 ? null : parts[1]);
-        String pad = (parts[2].length() == 0 ? null : parts[2]);
+        String mode = (parts.length == 1 ? null : parts[1]);
+        String pad = (parts.length == 1 ? null : parts[2]);
 
         if ((mode == null) && (pad == null)) {
             // Algorithm only
