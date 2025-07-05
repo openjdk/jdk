@@ -36,7 +36,7 @@ import sun.java2d.xr.*;
  *
  * @author Clemens Eisserer
  */
-public class XRTextRenderer extends GlyphListPipe {
+public final class XRTextRenderer extends GlyphListPipe {
     // Workaround for a bug in libXrender.
     // In case the number of glyphs of an ELT is a multiple of 254,
     // a few garbage bytes are sent to the XServer causing hangs.
@@ -55,6 +55,7 @@ public class XRTextRenderer extends GlyphListPipe {
         eltList = new GrowableEltArray(64);
     }
 
+    @Override
     protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
         if (gl.getNumGlyphs() == 0) {
             return;

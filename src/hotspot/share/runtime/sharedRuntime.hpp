@@ -288,15 +288,36 @@ class SharedRuntime: AllStatic {
   }
 
   // Implicit exceptions
-  static address throw_AbstractMethodError_entry()          { return _throw_AbstractMethodError_blob->entry_point(); }
-  static address throw_IncompatibleClassChangeError_entry() { return _throw_IncompatibleClassChangeError_blob->entry_point(); }
-  static address throw_NullPointerException_at_call_entry() { return _throw_NullPointerException_at_call_blob->entry_point(); }
-  static address throw_StackOverflowError_entry()           { return _throw_StackOverflowError_blob->entry_point(); }
-  static address throw_delayed_StackOverflowError_entry()   { return _throw_delayed_StackOverflowError_blob->entry_point(); }
+  static address throw_AbstractMethodError_entry()          {
+    assert(_throw_AbstractMethodError_blob != nullptr, "");
+    return _throw_AbstractMethodError_blob->entry_point();
+  }
+  static address throw_IncompatibleClassChangeError_entry() {
+    assert(_throw_IncompatibleClassChangeError_blob != nullptr, "");
+    return  _throw_IncompatibleClassChangeError_blob->entry_point();
+  }
+  static address throw_NullPointerException_at_call_entry() {
+    assert(_throw_NullPointerException_at_call_blob != nullptr, "");
+    return  _throw_NullPointerException_at_call_blob->entry_point();
+  }
+  static address throw_StackOverflowError_entry()           {
+    assert(_throw_StackOverflowError_blob != nullptr, "");
+    return _throw_StackOverflowError_blob->entry_point();
+  }
+  static address throw_delayed_StackOverflowError_entry()   {
+    assert(_throw_delayed_StackOverflowError_blob != nullptr, "");
+    return _throw_delayed_StackOverflowError_blob->entry_point();
+  }
 
 #if INCLUDE_JFR
-  static address jfr_write_checkpoint() { return _jfr_write_checkpoint_blob->entry_point(); }
-  static address jfr_return_lease()     { return _jfr_return_lease_blob->entry_point(); }
+  static address jfr_write_checkpoint() {
+    assert(_jfr_write_checkpoint_blob != nullptr, "");
+    return _jfr_write_checkpoint_blob->entry_point();
+  }
+  static address jfr_return_lease()     {
+    assert(_jfr_return_lease_blob != nullptr, "");
+    return _jfr_return_lease_blob->entry_point();
+  }
 #endif
 
   // Counters
@@ -711,6 +732,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
   // Dummy argument is used to avoid C++ warning about using
   // deleted opearator MetaspaceObj::delete().
   void* operator new(size_t size, size_t dummy) throw() {
+    assert(size == BytesPerWord * heap_word_size(sizeof(AdapterHandlerEntry)), "should match");
     void* p = AllocateHeap(size, mtCode);
     memset(p, 0, size);
     return p;

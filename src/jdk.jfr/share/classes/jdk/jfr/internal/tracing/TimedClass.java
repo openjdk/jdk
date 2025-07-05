@@ -61,7 +61,12 @@ public final class TimedClass {
                 long invocations = tm.invocations().get();
                 long time = tm.time().get();
                 long average = invocations == 0 ? Long.MIN_VALUE : time / invocations;
-                MethodTimingEvent.commit(timestamp, methodId, invocations, average);
+                long min = tm.minimum().get();
+                if (min == Long.MAX_VALUE) {
+                    min = Long.MIN_VALUE; // Signals that the value is missing
+                }
+                long max = tm.maximum().get();
+                MethodTimingEvent.commit(timestamp, methodId, invocations, min, average, max);
                 tm.method().log("Emitted event");
             }
         }

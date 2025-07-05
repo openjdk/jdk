@@ -132,6 +132,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
 
+  jlong _vmthread_cpu_time;
+
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
   GCCause::Cause _gc_cause;
@@ -206,6 +208,9 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Stop any onging concurrent work and prepare for exit.
+  virtual void stop() = 0;
+
  public:
 
   static inline size_t filler_array_max_size() {
@@ -239,12 +244,13 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() {}
+  void before_exit();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
+
+  void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
@@ -419,6 +425,8 @@ protected:
 
   void print_relative_to_gc(GCWhen::Type when) const;
 
+  void log_gc_cpu_time() const;
+
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -454,6 +462,8 @@ protected:
   // Print any relevant tracing info that flags imply.
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
+
+  double elapsed_gc_cpu_time() const;
 
   void print_before_gc() const;
   void print_after_gc() const;
