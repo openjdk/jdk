@@ -114,7 +114,6 @@ class SerializeClosure;
   template(java_lang_reflect_Method,                  "java/lang/reflect/Method")                 \
   template(java_lang_reflect_Constructor,             "java/lang/reflect/Constructor")            \
   template(java_lang_reflect_Field,                   "java/lang/reflect/Field")                  \
-  template(java_lang_reflect_Parameter,               "java/lang/reflect/Parameter")              \
   template(java_lang_reflect_Array,                   "java/lang/reflect/Array")                  \
   template(java_lang_reflect_RecordComponent,         "java/lang/reflect/RecordComponent")        \
   template(java_lang_StringBuffer,                    "java/lang/StringBuffer")                   \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,6 @@ public:
   static bool Object_klass_loaded()         { return is_loaded(VM_CLASS_AT(Object_klass));             }
   static bool Class_klass_loaded()          { return is_loaded(VM_CLASS_AT(Class_klass));              }
   static bool Cloneable_klass_loaded()      { return is_loaded(VM_CLASS_AT(Cloneable_klass));          }
-  static bool Parameter_klass_loaded()      { return is_loaded(VM_CLASS_AT(reflect_Parameter_klass));  }
   static bool ClassLoader_klass_loaded()    { return is_loaded(VM_CLASS_AT(ClassLoader_klass));        }
 };
 
