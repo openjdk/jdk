@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,11 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
             kdf = pBES2_params.data.getDerValue();
         }
 
-        String kdfAlgo = parseKDF(kdf);
+        var kdfParams = new PBKDF2Parameters();
+        String kdfAlgo = kdfParams.parseKDF(kdf);
+        salt = kdfParams.getSalt();
+        iCount = kdfParams.getIterationCount();
+        keysize = kdfParams.getKeyLength();
 
         if (pBES2_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBE parameter parsing error: "
@@ -236,65 +240,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         String cipherAlgo = parseES(pBES2_params.data.getDerValue());
 
         this.pbes2AlgorithmName = "PBEWith" + kdfAlgo + "And" + cipherAlgo;
-    }
-
-    private String parseKDF(DerValue keyDerivationFunc) throws IOException {
-
-        if (!pkcs5PBKDF2_OID.equals(keyDerivationFunc.data.getOID())) {
-            throw new IOException("PBE parameter parsing error: "
-                + "expecting the object identifier for PBKDF2");
-        }
-        if (keyDerivationFunc.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBE parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
-        DerValue pBKDF2_params = keyDerivationFunc.data.getDerValue();
-        if (pBKDF2_params.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBE parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
-        DerValue specified = pBKDF2_params.data.getDerValue();
-        // the 'specified' ASN.1 CHOICE for 'salt' is supported
-        if (specified.tag == DerValue.tag_OctetString) {
-            salt = specified.getOctetString();
-        } else {
-            // the 'otherSource' ASN.1 CHOICE for 'salt' is not supported
-            throw new IOException("PBE parameter parsing error: "
-                + "not an ASN.1 OCTET STRING tag");
-        }
-        iCount = pBKDF2_params.data.getInteger();
-
-        // keyLength INTEGER (1..MAX) OPTIONAL,
-        var ksDer = pBKDF2_params.data.getOptional(DerValue.tag_Integer);
-        if (ksDer.isPresent()) {
-            keysize = ksDer.get().getInteger() * 8; // keysize (in bits)
-        }
-
-        // prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
-        String kdfAlgo;
-        var prfDer = pBKDF2_params.data.getOptional(DerValue.tag_Sequence);
-        if (prfDer.isPresent()) {
-            DerValue prf = prfDer.get();
-            kdfAlgo_OID = prf.data.getOID();
-            KnownOIDs o = KnownOIDs.findMatch(kdfAlgo_OID.toString());
-            if (o == null || (!o.stdName().equals("HmacSHA1") &&
-                    !o.stdName().equals("HmacSHA224") &&
-                    !o.stdName().equals("HmacSHA256") &&
-                    !o.stdName().equals("HmacSHA384") &&
-                    !o.stdName().equals("HmacSHA512") &&
-                    !o.stdName().equals("HmacSHA512/224") &&
-                    !o.stdName().equals("HmacSHA512/256"))) {
-                throw new IOException("PBE parameter parsing error: "
-                        + "expecting the object identifier for a HmacSHA key "
-                        + "derivation function");
-            }
-            kdfAlgo = o.stdName();
-            prf.data.getOptional(DerValue.tag_Null);
-            prf.data.atEnd();
-        } else {
-            kdfAlgo = "HmacSHA1";
-        }
-        return kdfAlgo;
     }
 
     private String parseES(DerValue encryptionScheme) throws IOException {
