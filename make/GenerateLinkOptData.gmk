@@ -40,7 +40,7 @@ $(eval $(call SetupJavaCompilation, CLASSLIST_JAR, \
     SMALL_JAVA := false, \
     SRC := $(TOPDIR)/make/jdk/src/classes, \
     INCLUDES := build/tools/classlist, \
-    DISABLED_WARNINGS := dangling-doc-comments, \
+    DISABLED_WARNINGS := dangling-doc-comments suppression, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/classlist_classes, \
     JAR := $(SUPPORT_OUTPUTDIR)/classlist.jar, \
 ))
