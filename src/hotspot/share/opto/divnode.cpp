@@ -510,7 +510,12 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   typedef typename IntegerType::NativeType NativeType;
   assert(!i2->is_con() || i2->get_con() != 0, "Can't handle zero constant divisor");
 
-  // special case: divisor type contains zero
+  // Case A: divisor range spans zero (i2->_lo < 0 < i2->_hi)
+  // We split into two subproblems to avoid division by 0:
+  //   - negative part: [i2->_lo, −1]
+  //   - positive part: [1, i2->_hi]
+  // Then we union the results by taking the min of all lower‐bounds and
+  // the max of all upper‐bounds from the two halves.
   if (i2->_lo < 0 && i2->_hi > 0) {
     // Handle negative part of the divisor range
     const IntegerType* neg_part = compute_generic_div_type(i1, IntegerType::make(i2->_lo, -1, widen), widen);
@@ -523,27 +528,41 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
     return IntegerType::make(new_lo, new_hi, widen);
   }
 
+  // Case B: divisor range does NOT span zero.
+  // Here i2 is entirely negative or entirely positive.
+  // Let d_min and d_max be the nonzero endpoints of i2.
+  // Then a/b is monotonic in a and in b (when b keeps the same sign).
+  // Therefore the extrema occur at the four “corners”:
+  //   (i1->_lo, i2->_hi), (i1->_lo, i2->_lo), (i1->_hi, i2->_lo), (i1->_hi, i2->_hi).
+  // We compute all four and take the min and max.
+  // A special case handles overflow when dividing the most‐negative value by −1.
+
   NativeType new_lo = max_jint;
   NativeType new_hi = min_jint;
+  // adjust i2 bounds to not include zero, as zero always throws
   NativeType i2_lo = i2->_lo == 0 ? 1 : i2->_lo;
   NativeType i2_hi = i2->_hi == 0 ? -1 : i2->_hi;
   NativeType min_val = std::numeric_limits<NativeType>::min();
   assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
 
+  // Special overflow case: min_val / (-1) == min_val
+  // We must include min_val in the output if i1->_lo == min_val and i2->_hi.
   if (i1->_lo == min_val && i2_hi == -1) {
     // special case: min_jint or min_jlong div -1 == min_val
     new_lo = i1->_lo;
     if (!i1->is_con()) {
+      // Also compute the “next” division result for a non‑constant range.
       new_hi = MAX2(new_hi, i1->_lo + 1 / i2_hi);
     }
   } else {
-    // normal case
+    // Normal corner: (i1->_lo, i2->_hi)
     NativeType result = i1->_lo / i2_hi;
     new_lo = MIN2(new_lo, result);
     new_hi = MAX2(new_hi, result);
   }
 
-  // cannot use is_con here, as a range of [-1, 0] will also result in i2_lo and i2_hi being -1
+  // If the divisor range is wider than a singleton, include (i1->_lo, i2->_lo).
+  // We cannot use is_con here, as a range of [-1, 0] will also result in i2_lo and i2_hi being -1
   if (i2_lo != i2_hi) {
     // special case not possible here, _lo mus
     assert(i2_lo != -1, "Special case not possible here");
@@ -552,6 +571,8 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
     new_hi = MAX2(new_hi, result);
   }
 
+  // If i1 is not a single constant, include the two corners with i1->_hi:
+  //   (i1->_hi, i2->_lo) and (i1->_hi, i2->_hi)
   if (!i1->is_con()) {
     // Special case not possible here, as i1->_hi has to be > min
     assert(i2_hi > min_val, "Special case not possible here");
