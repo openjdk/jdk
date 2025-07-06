@@ -636,7 +636,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _ilt(nullptr),
       _stub_function(nullptr),
       _stub_name(nullptr),
-      _stub_id(-1),
+      _stub_id(StubId::NO_STUBID),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -907,7 +907,7 @@ Compile::Compile(ciEnv* ci_env,
                  TypeFunc_generator generator,
                  address stub_function,
                  const char* stub_name,
-                 int stub_id,
+                 StubId stub_id,
                  int is_fancy_jump,
                  bool pass_tls,
                  bool return_pc,
@@ -973,8 +973,7 @@ Compile::Compile(ciEnv* ci_env,
 
   // try to reuse an existing stub
   {
-    StubId stub_id = static_cast<StubId>(_stub_id);
-    BlobId blob_id = StubInfo::blob(stub_id);
+    BlobId blob_id = StubInfo::blob(_stub_id);
     CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
       RuntimeStub* rs = blob->as_runtime_stub();

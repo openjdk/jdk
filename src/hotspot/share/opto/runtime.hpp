@@ -201,7 +201,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _dtrace_object_alloc_Type;
 
   // define stubs
-  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int stub_id, int is_fancy_jump, bool pass_tls, bool return_pc);
+  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, StubId stub_id, int is_fancy_jump, bool pass_tls, bool return_pc);
 
   //
   // Implementation of runtime methods

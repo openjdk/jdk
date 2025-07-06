@@ -147,7 +147,7 @@ static bool check_compiled_frame(JavaThread* thread) {
                   C2_STUB_TYPEFUNC(name),                             \
                   C2_STUB_C_FUNC(name),                               \
                   C2_STUB_NAME(name),                                 \
-                  (int)C2_STUB_ID(name),                              \
+                  C2_STUB_ID(name),                                   \
                   fancy_jump,                                         \
                   pass_tls,                                           \
                   pass_retpc);                                        \
@@ -161,7 +161,7 @@ static bool check_compiled_frame(JavaThread* thread) {
                   notify_jvmti_vthread_Type,                          \
                   C2_JVMTI_STUB_C_FUNC(name),                         \
                   C2_STUB_NAME(name),                                 \
-                  (int)C2_STUB_ID(name),                              \
+                  C2_STUB_ID(name),                                   \
                   0,                                                  \
                   true,                                               \
                   false);                                             \
@@ -269,7 +269,7 @@ const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
                                    TypeFunc_generator gen, address C_function,
-                                   const char *name, int stub_id,
+                                   const char *name, StubId stub_id,
                                    int is_fancy_jump, bool pass_tls,
                                    bool return_pc) {
 
