@@ -837,11 +837,10 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       struct stat st;
       if (os::stat(AOTCache, &st) != 0) {
         tty->print_cr("AOTCache creation failed: %s", AOTCache);
-        vm_exit(0);
       } else {
         tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
-        vm_exit(0);
       }
+      vm_direct_exit(0);
     }
   }
 }
