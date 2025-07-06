@@ -22,6 +22,7 @@
  */
 package compiler.c2.gvn;
 
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 
@@ -29,11 +30,14 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8312213
  * @summary Test value method of DivINode and DivLNode
+ * @key randomness
  * @library /test/lib /
  * @run driver compiler.c2.gvn.IntegerDivValueTests
  */
 // TODO bug number
 public class IntegerDivValueTests {
+    private static final RestrictableGenerator<Integer> INTS = Generators.G.ints();
+    private static final RestrictableGenerator<Long> LONGS = Generators.G.longs();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -54,7 +58,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public int testIntRange(int in) {
         int a = (in & 7) + 16;
@@ -62,7 +65,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testIntRange2(int in) {
         int a = (in & 7) + 16;
@@ -70,7 +72,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.DIV_I, "1"})
     public boolean testIntRange3(int in, int in2) {
         int a = (in & 31) + 16;
@@ -79,7 +80,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testIntRange4(int in, int in2) {
         int a = (in & 15); // [0, 15]
@@ -88,7 +88,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testIntRange5(int in, int in2) {
         int a = (in & 15) + 5; // [5, 20]
@@ -97,7 +96,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testIntRange6(int in, int in2) {
         int a = (in & 15) + 5; // [5, 20]
@@ -107,13 +105,68 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.DIV_I, "1"})
     public boolean testIntRange7(int in, int in2) {
         int a = (in & 15) + 5; // [5, 20]
         int b = (in2 & 7) - 1; // [-1, 5]
         if (b == 0) return false;
         return a / b > 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
+    public int testIntRange8(int in, int in2) {
+        int a = (in & 31) + 128; // [128, 159]
+        int b = (in2 & 15) + 100; // [100, 115]
+        return a / b; // [1, 1] -> can be constant
+    }
+
+    @Run(test = {"testIntRange", "testIntRange2", "testIntRange3", "testIntRange4", "testIntRange5", "testIntRange6", "testIntRange7", "testIntRange8"})
+    public void checkIntRanges(RunInfo info) {
+
+        for (int j = 0; j < 20; j++) {
+            int i1 = INTS.next();
+            int i2 = INTS.next();
+            checkInt(i1, i2);
+        }
+    }
+
+    @DontCompile
+    public void checkInt(int in, int in2) {
+        Asserts.assertEquals(2, testIntConstantFolding());
+        Asserts.assertEquals(Integer.MIN_VALUE, testIntConstantFoldingSpecialCase());
+
+        int a;
+        int b;
+        a = (in & 7) + 16;
+        Asserts.assertEquals(a / 12, testIntRange(in));
+
+        a = (in & 7) + 16;
+        Asserts.assertEquals(a / 4 > 3, testIntRange2(in));
+
+        a = (in & 31) + 16;
+        b = (in2 & 3) + 5;
+        Asserts.assertEquals(a / b > 4, testIntRange3(in, in2));
+
+        a = (in & 15);
+        b = (in2 & 3) + 1;
+        Asserts.assertEquals(a / b >= 0, testIntRange4(in, in2));
+
+        a = (in & 15) + 5;
+        b = (in2 & 3) + 1;
+        Asserts.assertEquals(a / b > 0, testIntRange5(in, in2));
+
+        a = (in & 15) + 5;
+        b = (in2 & 7) - 1;
+        Asserts.assertEquals(b == 0 ? false : a / b >= -20, testIntRange6(in, in2));
+
+        a = (in & 15) + 5;
+        b = (in2 & 7) - 1;
+        Asserts.assertEquals(b == 0 ? false : a / b > 0, testIntRange7(in, in2));
+
+        a = (in & 31) + 128;
+        b = (in2 & 15) + 100;
+        Asserts.assertEquals(a / b, testIntRange8(in, in2));
     }
 
 
@@ -134,7 +187,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public long testLongRange(long in) {
         long a = (in & 7L) + 16L;
@@ -142,7 +194,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testLongRange2(long in) {
         long a = (in & 7L) + 16L;
@@ -150,7 +201,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.DIV_L, "1"})
     public boolean testLongRange3(long in, long in2) {
         long a = (in & 31L) + 16L;
@@ -159,7 +209,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testLongRange4(long in, long in2) {
         long a = (in & 15L); // [0, 15]
@@ -168,7 +217,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testLongRange5(long in, long in2) {
         long a = (in & 15L) + 5L; // [5, 20]
@@ -177,7 +225,6 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public boolean testLongRange6(long in, long in2) {
         long a = (in & 15L) + 5L; // [5, 20]
@@ -187,12 +234,67 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.DIV_L, "1"})
     public boolean testLongRange7(long in, long in2) {
         long a = (in & 15L) + 5L; // [5, 20]
         long b = (in2 & 7L) - 1L; // [-1, 5]
         if (b == 0L) return false;
         return a / b > 0L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
+    public long testLongRange8(long in, long in2) {
+        long a = (in & 31L) + 128L; // [128, 159]
+        long b = (in2 & 15L) + 100L; // [100, 115]
+        return a / b; // [1, 1] -> can be constant
+    }
+
+    @Run(test = {"testLongRange", "testLongRange2", "testLongRange3", "testLongRange4", "testLongRange5", "testLongRange6", "testLongRange7", "testLongRange8"})
+    public void checkLongRanges(RunInfo info) {
+
+        for (int j = 0; j < 20; j++) {
+            long l1 = LONGS.next();
+            long l2 = LONGS.next();
+            checkLong(l1, l2);
+        }
+    }
+
+    @DontCompile
+    public void checkLong(long in, long in2) {
+        Asserts.assertEquals(2L, testLongConstantFolding());
+        Asserts.assertEquals(Long.MIN_VALUE, testLongConstantFoldingSpecialCase());
+
+        long a;
+        long b;
+        a = (in & 7L) + 16L;
+        Asserts.assertEquals(a / 12L, testLongRange(in));
+
+        a = (in & 7L) + 16L;
+        Asserts.assertEquals(a / 4L > 3L, testLongRange2(in));
+
+        a = (in & 31L) + 16L;
+        b = (in2 & 3L) + 5L;
+        Asserts.assertEquals(a / b > 4L, testLongRange3(in, in2));
+
+        a = (in & 15L);
+        b = (in2 & 3L) + 1L;
+        Asserts.assertEquals(a / b >= 0L, testLongRange4(in, in2));
+
+        a = (in & 15L) + 5L;
+        b = (in2 & 3L) + 1L;
+        Asserts.assertEquals(a / b > 0L, testLongRange5(in, in2));
+
+        a = (in & 15L) + 5L;
+        b = (in2 & 7L) - 1L;
+        Asserts.assertEquals(b == 0 ? false : a / b >= -20L, testLongRange6(in, in2));
+
+        a = (in & 15L) + 5L;
+        b = (in2 & 7L) - 1L;
+        Asserts.assertEquals(b == 0 ? false : a / b > 0L, testLongRange7(in, in2));
+
+        a = (in & 31L) + 128L;
+        b = (in2 & 15L) + 100L;
+        Asserts.assertEquals(a / b, testLongRange8(in, in2));
     }
 }
