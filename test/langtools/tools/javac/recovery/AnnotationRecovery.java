@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8270139
+ * @bug 8270139 8361445
  * @summary Verify error recovery w.r.t. annotations
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -103,6 +103,57 @@ public class AnnotationRecovery extends TestRunner {
                 "Test.java:3:13: compiler.err.cant.resolve.location.args: kindname.method, wrong, , , (compiler.misc.location: kindname.annotation, java.lang.annotation.Repeatable, null)",
                 "Test.java:3:1: compiler.err.annotation.missing.default.value: java.lang.annotation.Repeatable, value",
                 "2 errors"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8361445
+    public void testSuppressWarningsErroneousAttribute1() throws Exception {
+        String code = """
+                      @SuppressWarnings(CONST)
+                      public class Test {
+                          public static final String CONST = "";
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:1:19: compiler.err.cant.resolve: kindname.variable, CONST, , ",
+                "1 error"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8361445
+    public void testSuppressWarningsErroneousAttribute2() throws Exception {
+        String code = """
+                      @SuppressWarnings(0)
+                      public class Test {
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:1:19: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)",
+                "1 error"
         );
 
         if (!Objects.equals(actual, expected)) {
