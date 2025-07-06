@@ -138,6 +138,7 @@ public class ImmutableDescriptor implements Descriptor {
         if (names == null || values == null || names.length != values.length)
             bad = true;
         if (!bad) {
+            hashCode = -1; // Force recalculation
             if (names.length == 0 && getClass() == ImmutableDescriptor.class)
                 return EMPTY_DESCRIPTOR;
             final Comparator<String> compare = String.CASE_INSENSITIVE_ORDER;
@@ -441,12 +442,14 @@ public class ImmutableDescriptor implements Descriptor {
      */
     public final void setFields(String[] fieldNames, Object[] fieldValues)
         throws RuntimeOperationsException {
+
         if (fieldNames == null || fieldValues == null)
             illegal("Null argument");
         if (fieldNames.length != fieldValues.length)
             illegal("Different array sizes");
         for (int i = 0; i < fieldNames.length; i++)
             checkIllegalFieldName(fieldNames[i]);
+        hashCode = -1; // Force recalculation
         for (int i = 0; i < fieldNames.length; i++)
             setField(fieldNames[i], fieldValues[i]);
     }
@@ -462,10 +465,12 @@ public class ImmutableDescriptor implements Descriptor {
      */
     public final void setField(String fieldName, Object fieldValue)
         throws RuntimeOperationsException {
+
         checkIllegalFieldName(fieldName);
         int i = fieldIndex(fieldName);
         if (i < 0)
             unsupported();
+        hashCode = -1; // Force recalculation
         Object value = values[i];
         if ((value == null) ?
                 (fieldValue != null) :
@@ -485,6 +490,7 @@ public class ImmutableDescriptor implements Descriptor {
      * be an {@link UnsupportedOperationException}.
      */
     public final void removeField(String fieldName) {
+        hashCode = -1; // Force recalculation
         if (fieldName != null && fieldIndex(fieldName) >= 0)
             unsupported();
     }

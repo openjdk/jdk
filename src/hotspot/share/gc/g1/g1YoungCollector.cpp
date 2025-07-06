@@ -971,12 +971,9 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   ReferenceProcessor* rp = ref_processor_stw();
   assert(rp->discovery_enabled(), "should have been enabled");
 
-  uint no_of_gc_workers = workers()->active_workers();
-  rp->set_active_mt_degree(no_of_gc_workers);
-
   G1STWRefProcProxyTask task(rp->max_num_queues(), *_g1h, *per_thread_states, *task_queues());
   ReferenceProcessorPhaseTimes& pt = *phase_times()->ref_phase_times();
-  ReferenceProcessorStats stats = rp->process_discovered_references(task, pt);
+  ReferenceProcessorStats stats = rp->process_discovered_references(task, _g1h->workers(), pt);
 
   gc_tracer_stw()->report_gc_reference_stats(stats);
 

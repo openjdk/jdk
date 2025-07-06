@@ -101,10 +101,6 @@ BlobId StubRoutines::stub_to_blob(StubId id) {
 #endif // ASSERT
 
 // Initialization
-//
-// Note: to break cycle with universe initialization, stubs are generated in two phases.
-// The first one generates stubs needed during universe init (e.g., _handle_must_compile_first_entry).
-// The second phase includes all other stubs (which may depend on universe being initialized.)
 
 extern void StubGenerator_generate(CodeBuffer* code, BlobId blob_id); // only interface to generators
 
@@ -114,6 +110,7 @@ void UnsafeMemoryAccess::create_table(int max_size) {
 }
 
 bool UnsafeMemoryAccess::contains_pc(address pc) {
+  assert(UnsafeMemoryAccess::_table != nullptr, "");
   for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
     UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
@@ -124,6 +121,7 @@ bool UnsafeMemoryAccess::contains_pc(address pc) {
 }
 
 address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
+  assert(UnsafeMemoryAccess::_table != nullptr, "");
   for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
     UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {

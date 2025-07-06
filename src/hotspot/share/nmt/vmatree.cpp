@@ -82,8 +82,8 @@
 
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::invalid, mtNone};
 
-const char* VMATree::statetype_strings[3] = {
-  "released", "reserved", "committed"
+const char* VMATree::statetype_strings[4] = {
+  "released","reserved", "only-committed", "committed",
 };
 
 VMATree::SIndex VMATree::get_new_reserve_callstack(const SIndex es, const StateType ex, const RequestInfo& req) const {
@@ -241,6 +241,7 @@ void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req
   compute_summary_diff(region_size, existing_tag, existing_state, req, new_tag, diff);
 }
 
+
 VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateType state,
                                                const RegionData& metadata, bool use_tag_inplace) {
 
@@ -344,7 +345,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
     return false;
   };
   GrowableArrayCHeap<position, mtNMT> to_be_removed;
-  // update regions in [Y,W)
+  // update regions in range A to B
   auto update_loop = [&]() {
     TreapNode* prev = nullptr;
     _tree.visit_range_in_order(_A + 1, _B + 1, [&](TreapNode* curr) {
@@ -357,6 +358,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
         }
       }
       prev = curr;
+      return true;
     });
   };
   // update region of [A,T)
@@ -416,8 +418,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   if ( X_eq_A   &&  Y_exists && !Y_eq_W && !W_eq_B &&  U_exists) { row = 22; }
   if ( X_eq_A   &&  Y_exists &&             W_eq_B &&  U_exists) { row = 23; }
 
-  DEBUG_ONLY(print_case();)
-  switch(row) {
+    switch(row) {
     // row  0:  .........A..................B.....
     case 0: {
       update_A(B);
@@ -652,6 +653,7 @@ void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
     out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
               statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
+    return true;
   });
   out->cr();
 }

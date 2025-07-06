@@ -125,6 +125,8 @@ public:
   // Does operations required after initialization has been done.
   void post_initialize() override;
 
+  void stop() override {};
+
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Performance Counter support

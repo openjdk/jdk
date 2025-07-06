@@ -28,6 +28,7 @@
  *          the reported host ip and host name are correctly reported within
  *          the container.
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
