@@ -122,10 +122,8 @@ public class ExpectContinueResponseMessageTest {
                     //send a wrong response
                     outputStream.write(control.statusLine.getBytes());
                     outputStream.flush();
-                } catch (SocketException e) {
-                    // ignore
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    // Any exceptions will be ignored
                 }
             }
         };
@@ -150,13 +148,9 @@ public class ExpectContinueResponseMessageTest {
 
         HttpURLConnection connection = createConnection();
         connection.setFixedLengthStreamingMode(body.getBytes().length);
-        try {
             OutputStream outputStream = connection.getOutputStream();
             outputStream.write(body.getBytes());
             outputStream.close();
-        } catch (Exception ex) {
-            // swallow the exception
-        }
 
         int responseCode = connection.getResponseCode();
         String responseMessage = connection.getResponseMessage();
