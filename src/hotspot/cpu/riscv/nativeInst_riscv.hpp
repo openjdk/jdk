@@ -134,7 +134,7 @@ class NativeCall: private NativeInstruction {
   address next_instruction_address() const;
   address return_address() const;
   address destination() const;
-  address reloc_destination(address orig_address);
+  address reloc_destination();
 
   void verify_alignment() {} // do nothing on riscv
   void verify();
