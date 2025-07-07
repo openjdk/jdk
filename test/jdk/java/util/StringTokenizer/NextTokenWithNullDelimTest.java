@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,14 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/* @test
- * @summary Run LockStack gtests with LockingMode=2
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=LockStackTest* -XX:LockingMode=2
+/*
+ * @test
+ * @bug 8360045
+ * @summary Verify StringTokenizer.nextToken(null) does not alter the
+ *      existing delimiter
+ * @run junit NextTokenWithNullDelimTest
  */
+
+import java.util.StringTokenizer;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class NextTokenWithNullDelimTest {
+    @Test
+    void testNextTokenWithNullDelim() {
+        StringTokenizer st = new StringTokenizer("test");
+        assertThrows(NullPointerException.class, () -> st.nextToken(null));
+        assertDoesNotThrow(st::hasMoreTokens);
+    }
+}

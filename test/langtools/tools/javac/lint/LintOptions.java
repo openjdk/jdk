@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,16 @@
  * questions.
  */
 
-package java.lang.invoke;
-
-/**
- * This is a place-holder class.  Some HotSpot implementations need to see it.
+/*
+ * @test
+ * @bug 8359596
+ * @summary Verify behavior when both "-Xlint:options" and "-Xlint:-options" are given
+ * @compile/fail/ref=LintOptions.out -Werror -XDrawDiagnostics -source 21 -target 21                                LintOptions.java
+ * @compile/fail/ref=LintOptions.out -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options                 LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21                -Xlint:-options LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options -Xlint:-options LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21                -Xlint:none     LintOptions.java
+ * @compile                          -Werror -XDrawDiagnostics -source 21 -target 21 -Xlint:options -Xlint:none     LintOptions.java
  */
-final class InvokeDynamic {
-    private InvokeDynamic() { throw new InternalError(); }  // do not instantiate
+class LintOptions {
 }

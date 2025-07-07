@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,19 +23,16 @@
  * questions.
  */
 
-import java.lang.management.ManagementFactory;
-import com.sun.management.HotSpotDiagnosticMXBean;
+package sun.nio;
 
-class LockingMode {
-    private LockingMode() { }
-
+/**
+ * {@code Cleaner} represents an object and a cleaning action.
+ */
+public interface Cleaner {
     /**
-     * Returns true if using legacy locking mode.
+     * Unregisters the cleaner and invokes the cleaning action.
+     * The cleaner's cleaning action is invoked at most once,
+     * regardless of the number of calls to {@code clean}.
      */
-    static boolean isLegacy() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                .getVMOption("LockingMode")
-                .getValue()
-                .equals("1");
-    }
+    void clean();
 }

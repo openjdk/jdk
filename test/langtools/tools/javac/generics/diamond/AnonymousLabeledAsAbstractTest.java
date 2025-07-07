@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008 Red Hat, Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "asm/assembler.inline.hpp"
-#include "entry_zero.hpp"
-#include "interpreter/zero/zeroInterpreter.hpp"
-#include "nativeInst_zero.hpp"
-#include "runtime/sharedRuntime.hpp"
+/*
+ * @test
+ * @bug 8361214
+ * @summary An anonymous class is erroneously being classify as an abstract class
+ * @compile AnonymousLabeledAsAbstractTest.java
+ */
 
-// This method is called by nmethod::make_not_entrant to
-// insert a jump to SharedRuntime::get_handle_wrong_method_stub()
-// (dest) at the start of a compiled method (verified_entry) to avoid
-// a race where a method is invoked while being made non-entrant.
+class AnonymousLabeledAsAbstractTest {
+    abstract class Base<T> {}
+    abstract class Derived1<T> extends Base<T> {}
+    abstract class Derived2<T> extends Base<T> {
+        Derived2(Derived1<T> obj){}
+    }
+    abstract class Derived3<T> extends Base<T> {
+        Derived3(Derived2<T> obj){}
+    }
 
-void NativeJump::patch_verified_entry(address entry,
-                                      address verified_entry,
-                                      address dest) {
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
-
-  ((ZeroEntry*) verified_entry)->set_entry_point(
-    (address) ZeroInterpreter::normal_entry);
+    Base<String> obj = new Derived2<>(new Derived1<>(){}){};
+    Base<String> obj2 = new Derived3<String>(new Derived2<>(new Derived1<>(){}){}){};
+    Base<String> obj3 = new Derived3<>(new Derived2<>(new Derived1<>(){}){}){};
 }

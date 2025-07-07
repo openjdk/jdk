@@ -19,42 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package org.openjdk.bench.java.nio;
 
-package sun.jvm.hotspot.runtime;
+import java.nio.ByteBuffer;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
-import sun.jvm.hotspot.types.TypeDataBase;
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Thread)
+@BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3, jvmArgs = {"-Xmx256m", "-Xms256m", "-XX:+AlwaysPreTouch"})
+public class DirectByteBufferChurn {
 
+    @Param({"128", "256", "512", "1024", "2048"})
+    int recipFreq;
 
-/** Encapsulates the LockingMode enum in globalDefinitions.hpp in
-    the VM. */
+    @Benchmark
+    public Object test() {
+        boolean direct = ThreadLocalRandom.current().nextInt(recipFreq) == 0;
+        return direct ? ByteBuffer.allocateDirect(1) : ByteBuffer.allocate(1);
+    }
 
-public class LockingMode {
-  private static int monitor;
-  private static int legacy;
-  private static int lightweight;
-
-  static {
-    VM.registerVMInitializedObserver(
-        (o, d) -> initialize(VM.getVM().getTypeDataBase()));
-  }
-
-  private static synchronized void initialize(TypeDataBase db) {
-    monitor     = db.lookupIntConstant("LM_MONITOR").intValue();
-    legacy      = db.lookupIntConstant("LM_LEGACY").intValue();
-    lightweight = db.lookupIntConstant("LM_LIGHTWEIGHT").intValue();
-  }
-
-  public static int getMonitor() {
-    return monitor;
-  }
-
-  public static int getLegacy() {
-    return legacy;
-  }
-
-  public static int getLightweight() {
-    return lightweight;
-  }
 }
