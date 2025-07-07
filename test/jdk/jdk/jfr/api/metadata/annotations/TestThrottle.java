@@ -23,38 +23,25 @@
 
 package jdk.jfr.api.metadata.annotations;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
-import jdk.jfr.AnnotationElement;
-import jdk.jfr.Event;
-import jdk.jfr.EventType;
-import jdk.jfr.MetadataDefinition;
-import jdk.jfr.Name;
-import jdk.jfr.Threshold;
 import jdk.jfr.Enabled;
+import jdk.jfr.Event;
 import jdk.jfr.Recording;
-import jdk.jfr.SettingDefinition;
-import jdk.jfr.SettingDescriptor;
-import jdk.jfr.Throttle;
-import jdk.jfr.ValueDescriptor;
-import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.jfr.Events;
 import jdk.jfr.SettingControl;
+import jdk.jfr.SettingDefinition;
+import jdk.jfr.Threshold;
+import jdk.jfr.Throttle;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.consumer.RecordingStream;
 
 /**
  * @test
@@ -64,6 +51,9 @@ import jdk.jfr.SettingControl;
  * @run main/othervm jdk.jfr.api.metadata.annotations.TestThrottle
  */
 public class TestThrottle {
+
+    public static class UnthrottledEvent extends Event {
+    }
 
     @Throttle("off")
     @Enabled(false)
@@ -130,7 +120,11 @@ public class TestThrottle {
         public int index;
     }
 
+    private static Instant startTime;
+
     public static void main(String[] args) throws Exception {
+        startTime = determineMinimumTime();
+        testUnthrottled(); // To ensure problem is specific to throttled events
         testThrottleDisabled();
         testThrottledOff();
         testThottleZeroRate();
@@ -138,6 +132,20 @@ public class TestThrottle {
         testThrottleThresholded();
         testThrottleNormalRate();
         testThrottleUserdefined();
+    }
+
+    private static void testUnthrottled() throws Exception {
+        testEvent(UnthrottledEvent.class, true);
+    }
+
+    private static Instant determineMinimumTime() throws IOException {
+        try (Recording r = new Recording()) {
+            r.enable("jdk.JVMInformation");
+            r.start();
+            Path p = Path.of("start.jfr");
+            r.dump(p);
+            return RecordingFile.readAllEvents(p).get(0).getStartTime();
+        }
     }
 
     private static void testThrottleDisabled() throws Exception {
@@ -220,8 +228,6 @@ public class TestThrottle {
             if (e5.shouldCommit()) {
                 e5.commit();
             }
-
-            r.stop();
             assertEvents(r, eventName, emit ? 5 : 0);
         }
     }
@@ -272,14 +278,31 @@ public class TestThrottle {
 
     private static void assertEvents(Recording r, String name, int expected) throws Exception {
         int count = 0;
-        for (RecordedEvent event : Events.fromRecording(r)) {
+        r.stop();
+        Duration d = Duration.between(r.getStartTime(), r.getStopTime());
+        Path file = Path.of("dump.jfr");
+        r.dump(file);
+        for (RecordedEvent event : RecordingFile.readAllEvents(file)) {
             if (event.getEventType().getName().equals(name)) {
                 count++;
+            }
+            if (event.getDuration().isNegative()) {
+                System.out.println(event);
+                throw new Exception("Unexpected negative duration");
+            }
+            if (event.getStartTime().isBefore(startTime)) {
+                System.out.println(event);
+                throw new Exception("Unexpected early start time");
+            }
+            if (event.getDuration().toMillis() > 2 * d.toMillis()) {
+                System.out.println(event);
+                throw new Exception("Duration exceed twice the length of the recording");
             }
         }
         if (count != expected) {
             throw new Exception("Expected " + expected + " " + name + " events, but found " + count);
         }
+        Files.delete(file);
     }
 
     private static void assertShouldCommit(Event e, boolean expected) throws Exception {
