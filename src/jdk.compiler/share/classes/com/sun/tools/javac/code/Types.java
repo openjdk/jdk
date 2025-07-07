@@ -42,14 +42,12 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.comp.LambdaToMethod;
 import com.sun.tools.javac.jvm.ClassFile;
 import com.sun.tools.javac.util.*;
 
@@ -2242,7 +2240,7 @@ public class Types {
      * @param t a type
      * @param sym a symbol
      */
-    public Type getOuterSuper(Type t, Symbol sym) {
+    public Type asOuterSuper(Type t, Symbol sym) {
         switch (t.getTag()) {
         case CLASS:
             do {
@@ -2267,7 +2265,7 @@ public class Types {
      * @param t a type
      * @param sym a symbol
      */
-    public Type getOwnerSuper(Type t, Symbol sym) {
+    public Type asEnclosingSuper(Type t, Symbol sym) {
         switch (t.getTag()) {
             case CLASS: do {
                 Type s = asSuper(t, sym);
@@ -2316,7 +2314,7 @@ public class Types {
                 Symbol owner = sym.owner;
                 long flags = sym.flags();
                 if (((flags & STATIC) == 0) && owner.type.isParameterized()) {
-                    Type base = getOuterSuper(t, owner);
+                    Type base = asOuterSuper(t, owner);
                     //if t is an intersection type T = CT & I1 & I2 ... & In
                     //its supertypes CT, I1, ... In might contain wildcards
                     //so we need to go through capture conversion

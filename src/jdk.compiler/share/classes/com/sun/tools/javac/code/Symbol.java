@@ -30,7 +30,6 @@ import java.lang.annotation.Inherited;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -333,7 +332,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return location();
         }
         if (owner.type.hasTag(CLASS)) {
-            Type ownertype = types.getOuterSuper(site, owner);
+            Type ownertype = types.asOuterSuper(site, owner);
             if (ownertype != null) return ownertype.tsym;
         }
         return owner;
