@@ -3346,7 +3346,7 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   // and all loop-invariant uses of the exit values will be correct.
   phase->_igvn.replace_node(cl->phi(), cl->init_trip());
   phase->C->set_major_progress();
-  phase->C->print_method(PHASE_AFTER_ONE_INTERATION_LOOP, 4, init_n);
+  phase->C->print_method(PHASE_AFTER_ONE_ITERATION_LOOP, 4, init_n);
   return true;
 }
 
