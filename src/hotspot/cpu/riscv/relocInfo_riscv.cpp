@@ -78,7 +78,6 @@ address Relocation::pd_call_destination(address orig_addr) {
       return nativeCall_at(addr())->reloc_destination();
     }
   } else {
-    // the extracted address from the instructions in address orig_addr
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
     // If call is branch to self, don't try to relocate it, just leave it
     // as branch to self. This happens during code generation if the code
