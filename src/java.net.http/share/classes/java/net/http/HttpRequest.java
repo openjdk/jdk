@@ -739,8 +739,8 @@ public abstract class HttpRequest {
          * @param length the number of bytes to read from the file channel
          *
          * @throws IndexOutOfBoundsException if the specified byte range is
-         * found to be out of bounds compared with the size of the file
-         * referred by the channel
+         * found to be {@linkplain Objects.checkFromIndexSize(long, long, long) out of bounds}
+         * compared with the size of the file referred by the channel
          */
         public static BodyPublisher ofFileChannel(FileChannel channel, long offset, long length) {
             Objects.requireNonNull(channel, "channel");
