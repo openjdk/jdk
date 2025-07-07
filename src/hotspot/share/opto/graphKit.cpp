@@ -2558,9 +2558,12 @@ Node* GraphKit::make_runtime_call(int flags,
 }
 
 Node* GraphKit::make_debug_print(const char* str) {
-  int flags = RC_LEAF; // TODO this is probably wrong, let's see how it goes
+  int flags = RC_LEAF;
   address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print);
-  Node* call = make_runtime_call(flags, OptoRuntime::void_void_Type(), call_addr, "debug_print", TypeRawPtr::BOTTOM); // TODO do we want a CallLeaf? we probably get one anyway
+
+  Node* str_node = new ConPNode(TypeRawPtr::make(((address) str)));
+  Node* call = make_runtime_call(flags, OptoRuntime::debug_print_Type(), call_addr, "debug_print", TypeRawPtr::BOTTOM, str_node);
+
   return call;
 }
 
