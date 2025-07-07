@@ -419,12 +419,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 // power-of-2 pattern. (e.g., 2 * a => a << 1, 3 * a => (a << 2) + a). We can't guarantee we'll always pick up
 // transformed power-of-2 patterns when term `a` is complex.
 //
-// Therefore, when matching the LHS `a * CON`, we match with best efforts by looking for the following patterns:
-//     - (1) Simple addition:       LHS = a + a
-//     - (2) Simple lshift:         LHS = a << CON
-//     - (3) Simple multiplication: LHS = CON * a
-//     - (4) Power-of-two addition: LHS = (a << CON1) + (a << CON2)
-//
 // Note this also converts, for example, original expression `(a*3) + a` into `4*a` and `(a<<2) + a` into `5*a`. A more
 // generalized pattern `(a*b) + (a*c)` into `a*(b + c)` is handled by AddNode::IdealIL().
 Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
@@ -438,35 +432,56 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
   Node* lhs = in(1);
   Node* rhs = in(2);
 
-  // (1) Simple addition pattern (e.g., lhs = a + a)
-  Multiplication mul = find_simple_addition_pattern(lhs, bt);
-
-  // (2) Simple lshift pattern (e.g., lhs = a << CON)
+  Multiplication mul = find_serial_addition_patterns(lhs, rhs, bt);
   if (!mul.is_valid_with(rhs)) {
-    mul = find_simple_lshift_pattern(lhs, bt);
-  }
-
-  // (3) Simple multiplication pattern (e.g., lhs = CON * a)
-  if (!mul.is_valid_with(rhs)) {
-    mul = find_simple_multiplication_pattern(lhs, bt);
-  }
-
-  // (4) Power-of-two addition pattern (e.g., lhs = (a << CON1) + (a << CON2))
-  // While multiplications can be potentially optimized to power-of-2 subtractions (e.g., a * 7 => (a << 3) - a),
-  // (x - y) + y => x is already handled by the Identity() methods. So, we don't need to check for that pattern here.
-  if (!mul.is_valid_with(rhs)) {
-    mul = find_power_of_two_addition_pattern(lhs, bt);
-  }
-
-  // We've tried everything.
-  if (!mul.is_valid_with(rhs)) {
-    return nullptr;
+    // Swap lhs and rhs then try again
+    mul = find_serial_addition_patterns(rhs, lhs, bt);
+    if (!mul.is_valid_with(lhs)) {
+      return nullptr;
+    }
   }
 
   Node* con = (bt == T_INT)
               ? (Node*) phase->intcon(java_add((jint) mul.multiplier, (jint) 1)) // Overflow at max_jint
               : (Node*) phase->longcon(java_add((jlong) mul.multiplier, (jlong) 1));
   return MulNode::make(con, mul.variable, bt);
+}
+
+// Find a pattern of serial additions that can be converted to a multiplication.
+// When matching the LHS `a * CON`, we match with best efforts by looking for the following patterns:
+//     - (1) Simple addition:       LHS = a + a
+//     - (2) Simple lshift:         LHS = a << CON
+//     - (3) Simple multiplication: LHS = CON * a
+//     - (4) Power-of-two addition: LHS = (a << CON1) + (a << CON2)
+AddNode::Multiplication AddNode::find_serial_addition_patterns(const Node* lhs, const Node* rhs, BasicType bt) {
+  // (1) Simple addition pattern (e.g., lhs = a + a)
+  Multiplication mul = find_simple_addition_pattern(lhs, bt);
+  if (mul.is_valid_with(rhs)) {
+    return mul;
+  }
+
+  // (2) Simple lshift pattern (e.g., lhs = a << CON)
+  mul = find_simple_lshift_pattern(lhs, bt);
+  if (mul.is_valid_with(rhs)) {
+    return mul;
+  }
+
+  // (3) Simple multiplication pattern (e.g., lhs = CON * a)
+  mul = find_simple_multiplication_pattern(lhs, bt);
+  if (mul.is_valid_with(rhs)) {
+    return mul;
+  }
+
+  // (4) Power-of-two addition pattern (e.g., lhs = (a << CON1) + (a << CON2))
+  // While multiplications can be potentially optimized to power-of-2 subtractions (e.g., a * 7 => (a << 3) - a),
+  // (x - y) + y => x is already handled by the Identity() methods. So, we don't need to check for that pattern here.
+  mul = find_power_of_two_addition_pattern(lhs, bt);
+  if (mul.is_valid_with(rhs)) {
+    return mul;
+  }
+
+  // We've tried everything.
+  return Multiplication::make_invalid();
 }
 
 // Try to match `n = a + a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = 2`.

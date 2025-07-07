@@ -58,6 +58,7 @@ class AddNode : public Node {
   };
 
   Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
+  static Multiplication find_serial_addition_patterns(const Node* lhs, const Node* rhs, BasicType bt);
   static Multiplication find_simple_addition_pattern(const Node* n, BasicType bt);
   static Multiplication find_simple_lshift_pattern(const Node* n, BasicType bt);
   static Multiplication find_simple_multiplication_pattern(const Node* n, BasicType bt);

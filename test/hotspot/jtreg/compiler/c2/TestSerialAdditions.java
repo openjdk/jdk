@@ -332,4 +332,99 @@ public class TestSerialAdditions {
     private static long randomPowerOfTwoAdditionL(long a) {
         return a * CON1_L + a * CON2_L + a * CON3_L + a * CON4_L;
     }
+
+    // Patterns that are originally cannot be recognized due to their right precedence making it difficult without
+    // recursion, but some are made possible with swapping lhs and rhs.
+    @Run(test = {
+        "rightPrecedence",
+        "rightPrecedenceL",
+        "rightPrecedenceShift",
+        "rightPrecedenceShiftL",
+    })
+    private void runLhsRhsSwaps() {
+        for (int a : new int[] { 0, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, GEN_INT.next() }) {
+            Asserts.assertEQ(a * 3, rightPrecedence(a));
+            Asserts.assertEQ(a * 4, rightPrecedenceShift(a));
+        }
+
+        for (long a : new long[] { 0, 1, Long.MIN_VALUE, Long.MAX_VALUE, GEN_LONG.next() }) {
+            Asserts.assertEQ(a * 3, rightPrecedenceL(a));
+            Asserts.assertEQ(a * 4, rightPrecedenceShiftL(a));
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_I, "1", IRNode.LSHIFT_I, "1" })
+    private static int rightPrecedence(int a) {
+        return a + (a + a);
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_L, "1", IRNode.LSHIFT_L, "1" })
+    private static long rightPrecedenceL(long a) {
+        return a + (a + a);
+    }
+
+    @Test
+    @IR(failOn = IRNode.ADD_I)
+    @IR(counts = { IRNode.LSHIFT_I, "1" })
+    private static int rightPrecedenceShift(int a) {
+        return a + (a << 1) + a; // a + a*2 + a => a*2 + a + a => a*3 + a => a*4 => a<<2
+    }
+
+    @Test
+    @IR(failOn = IRNode.ADD_L)
+    @IR(counts = { IRNode.LSHIFT_L, "1" })
+    private static long rightPrecedenceShiftL(long a) {
+        return a + (a << 1) + a; // a + a*2 + a => a*2 + a + a => a*3 + a => a*4 => a<<2
+    }
+
+    // JDK-8347555 only aims to cover cases minimally needed for patterns a + a + ... + a => n*a. However, some patterns
+    // like CON * a + a => (CON + 1) * a are considered unintended side-effects due to the way pattern matching is
+    // implemented.
+    //
+    // The followings are patterns that could be, mathematically speaking, optimized, but not implemented at this stage.
+    // These tests are to be updated if they are addressed in the future.
+
+    @Test
+    @IR(counts = { IRNode.ADD_I, "2", IRNode.LSHIFT_I, "2" })
+    @Arguments(values = { Argument.RANDOM_EACH })
+    private static int complexShiftPattern(int a) {
+        return a + (a << 1) + (a << 2); // This could've been: a + a*2 + a*4 => a*7
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_I, "2" })  // b = a + a, c = b + b
+    @Arguments(values = { Argument.RANDOM_EACH })
+    private static int nestedAddPattern(int a) {
+        return (a + a) + (a + a); // This could've been: 2*a + 2*a => 4*a
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_I, "3", IRNode.LSHIFT_I, "1" })
+    @Arguments(values = { Argument.RANDOM_EACH })
+    private static int complexPrecedence(int a) {
+        return a + a + ((a + a) + a); // This could've been: 2*a + (2*a + a) => 2*a + 3*a => 5*a
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_L, "2", IRNode.LSHIFT_L, "2" })
+    @Arguments(values = { Argument.RANDOM_EACH })
+    private static long complexShiftPatternL(long a) {
+        return a + (a << 1) + (a << 2); // This could've been: a + a*2 + a*4 => a*7
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_L, "2" })  // b = a + a, c = b + b
+    @Arguments(values = { Argument.RANDOM_EACH })
+    private static long nestedAddPatternL(long a) {
+        return (a + a) + (a + a); // This could've been: 2*a + 2*a => 4*a
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_L, "3", IRNode.LSHIFT_L, "1" })
+    @Arguments(values = { Argument.RANDOM_EACH })
+    private static long complexPrecedenceL(long a) {
+        return a + a + ((a + a) + a); // This could've been: 2*a + (2*a + a) => 2*a + 3*a => 5*a
+    }
 }
