@@ -82,6 +82,16 @@ public class ScopedValues {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int thousandUnboundQueries(Blackhole bh) throws Exception {
+        var result = 0;
+        for (int i = 0; i < 1_000; i++) {
+            result += ScopedValuesData.unbound.isBound() ? 1 : 0;
+        }
+        return result;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int thousandMaybeGets(Blackhole bh) throws Exception {
         int result = 0;
         for (int i = 0; i < 1_000; i++) {
@@ -212,5 +222,12 @@ public class ScopedValues {
         // tl1.set(tl1.get() + 1);
         var ctr = tl_atomicInt.get();
         ctr.setPlain(ctr.getPlain() + 1);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public Object newInstance() {
+        ScopedValue<Integer> val = ScopedValue.newInstance();
+        return val;
     }
 }

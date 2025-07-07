@@ -365,6 +365,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::dcos());
   FUNCTION_CASE(entry, StubRoutines::dtan());
   FUNCTION_CASE(entry, StubRoutines::dtanh());
+  FUNCTION_CASE(entry, StubRoutines::dcbrt());
 
 #undef FUNCTION_CASE
 
@@ -508,7 +509,7 @@ static nmethod* counter_overflow_helper(JavaThread* current, int branch_bci, Met
 
 JRT_BLOCK_ENTRY(address, Runtime1::counter_overflow(JavaThread* current, int bci, Method* method))
   nmethod* osr_nm;
-  JRT_BLOCK
+  JRT_BLOCK_NO_ASYNC
     osr_nm = counter_overflow_helper(current, bci, method);
     if (osr_nm != nullptr) {
       RegisterMap map(current,
@@ -817,7 +818,7 @@ JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* current, jint trap_request))
   Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
 
   if (action == Deoptimization::Action_make_not_entrant) {
-    if (nm->make_not_entrant("C1 deoptimize")) {
+    if (nm->make_not_entrant(nmethod::InvalidationReason::C1_DEOPTIMIZE)) {
       if (reason == Deoptimization::Reason_tenured) {
         MethodData* trap_mdo = Deoptimization::get_method_data(current, method, true /*create_if_missing*/);
         if (trap_mdo != nullptr) {
@@ -1109,7 +1110,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
     // safepoint, but if it's still alive then make it not_entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant("C1 code patch");
+      nm->make_not_entrant(nmethod::InvalidationReason::C1_CODEPATCH);
     }
 
     Deoptimization::deoptimize_frame(current, caller_frame.id());
@@ -1357,7 +1358,7 @@ void Runtime1::patch_code(JavaThread* current, C1StubId stub_id) {
     // Make sure the nmethod is invalidated, i.e. made not entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant("C1 deoptimize for patching");
+      nm->make_not_entrant(nmethod::InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING);
     }
   }
 
@@ -1485,7 +1486,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
 
   nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
   assert (nm != nullptr, "no more nmethod?");
-  nm->make_not_entrant("C1 predicate failed trap");
+  nm->make_not_entrant(nmethod::InvalidationReason::C1_PREDICATE_FAILED_TRAP);
 
   methodHandle m(current, nm->method());
   MethodData* mdo = m->method_data();

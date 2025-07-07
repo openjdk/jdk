@@ -206,6 +206,8 @@ void CodeBlob::purge() {
   if (_mutable_data != blob_end()) {
     os::free(_mutable_data);
     _mutable_data = blob_end(); // Valid not null address
+    _mutable_data_size = 0;
+    _relocation_size = 0;
   }
   if (_oop_maps != nullptr) {
     delete _oop_maps;
@@ -281,10 +283,6 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                            const char* name,
                            address archived_reloc_data,
                            ImmutableOopMapSet* archived_oop_maps
-#ifndef PRODUCT
-                           , AsmRemarks& archived_asm_remarks
-                           , DbgStrings& archived_dbg_strings
-#endif // PRODUCT
                           )
 {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
@@ -301,14 +299,8 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                                     name,
                                     archived_reloc_data,
                                     archived_oop_maps);
-#ifndef PRODUCT
-      blob->use_remarks(archived_asm_remarks);
-      archived_asm_remarks.clear();
-      blob->use_strings(archived_dbg_strings);
-      archived_dbg_strings.clear();
-#endif // PRODUCT
-
       assert(blob != nullptr, "sanity check");
+
       // Flush the code block
       ICache::invalidate_range(blob->code_begin(), blob->code_size());
       CodeCache::commit(blob); // Count adapters

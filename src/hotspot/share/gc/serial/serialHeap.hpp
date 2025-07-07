@@ -125,6 +125,8 @@ public:
   // Does operations required after initialization has been done.
   void post_initialize() override;
 
+  void stop() override {};
+
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Performance Counter support
@@ -215,11 +217,6 @@ public:
   bool print_location(outputStream* st, void* addr) const override;
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
-
-  // Return "true" if all generations have reached the
-  // maximal committed limit that they can reach, without a garbage
-  // collection.
-  virtual bool is_maximal_no_gc() const override;
 
   // This function returns the CardTableRS object that allows us to scan
   // generations in a fully generational heap.

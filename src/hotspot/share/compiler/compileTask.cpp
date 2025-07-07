@@ -37,12 +37,13 @@
 #include "runtime/mutexLocker.hpp"
 
 CompileTask*  CompileTask::_task_free_list = nullptr;
+int CompileTask::_active_tasks = 0;
 
 /**
  * Allocate a CompileTask, from the free list if possible.
  */
 CompileTask* CompileTask::allocate() {
-  MutexLocker locker(CompileTaskAlloc_lock);
+  MonitorLocker locker(CompileTaskAlloc_lock);
   CompileTask* task = nullptr;
 
   if (_task_free_list != nullptr) {
@@ -56,6 +57,7 @@ CompileTask* CompileTask::allocate() {
   }
   assert(task->is_free(), "Task must be free.");
   task->set_is_free(false);
+  _active_tasks++;
   return task;
 }
 
@@ -63,9 +65,8 @@ CompileTask* CompileTask::allocate() {
 * Add a task to the free list.
 */
 void CompileTask::free(CompileTask* task) {
-  MutexLocker locker(CompileTaskAlloc_lock);
+  MonitorLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
-    assert(!task->lock()->is_locked(), "Should not be locked when freed");
     if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder))) {
       JNIHandles::destroy_weak_global(task->_method_holder);
     } else {
@@ -80,6 +81,17 @@ void CompileTask::free(CompileTask* task) {
     task->set_is_free(true);
     task->set_next(_task_free_list);
     _task_free_list = task;
+    _active_tasks--;
+    if (_active_tasks == 0) {
+      locker.notify_all();
+    }
+  }
+}
+
+void CompileTask::wait_for_no_active_tasks() {
+  MonitorLocker locker(CompileTaskAlloc_lock);
+  while (_active_tasks > 0) {
+    locker.wait();
   }
 }
 
@@ -90,8 +102,6 @@ void CompileTask::initialize(int compile_id,
                              int hot_count,
                              CompileTask::CompileReason compile_reason,
                              bool is_blocking) {
-  assert(!_lock->is_locked(), "bad locking");
-
   Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
@@ -119,6 +129,7 @@ void CompileTask::initialize(int compile_id,
   _nm_total_size = 0;
   _failure_reason = nullptr;
   _failure_reason_on_C_heap = false;
+  _training_data = nullptr;
   _arena_bytes = 0;
 
   _next = nullptr;
