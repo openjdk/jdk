@@ -993,6 +993,14 @@ public final class Security {
      * Java Cryptography Architecture (JCA) Reference Guide}.
      * Note: the returned set is immutable.
      *
+     * @implNote
+     * The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which {@linkplain java.security.Provider.Service services} are
+     * enabled. The algorithm of a service that is not enabled by the providers
+     * filter will be in the returned set but may not be available for use.
+     *
      * @param serviceName the name of the Java cryptographic
      * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
      * {@code Mac}, {@code KeyStore}).
