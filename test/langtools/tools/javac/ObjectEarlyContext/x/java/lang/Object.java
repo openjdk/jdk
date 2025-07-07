@@ -21,19 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8361481
- * @summary Flexible Constructor Bodies generates a compilation error when compiling a user supplied java.lang.Object class
- * @compile -source 8 Object.java
- */
-
 package java.lang;
 
 public class Object {
-    int x;
-
     public Object() {
-        x = 2;
+        foo(); // valid, not in early constructor context
     }
+
+    void foo() { }
 }
