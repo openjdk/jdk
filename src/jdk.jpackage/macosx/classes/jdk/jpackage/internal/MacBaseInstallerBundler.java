@@ -27,13 +27,17 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.model.ConfigException;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
@@ -63,6 +67,23 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                             "warning.unsigned.app.image"), getID()));
                 }
             }
+        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            // Call appImageBundler.validate(params); to validate signing
+            // requirements.
+            appImageBundler.validate(params);
+
+            Path runtimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+
+            // Make sure we have valid runtime image.
+            if (!isRuntimeImageJDKBundle(runtimeImage)
+                    && !isRuntimeImageJDKImage(runtimeImage)) {
+                throw new ConfigException(
+                    MessageFormat.format(I18N.getString(
+                    "message.runtime-image-invalid"),
+                    runtimeImage.toString()),
+                    I18N.getString(
+                    "message.runtime-image-invalid.advice"));
+            }
         } else {
             appImageBundler.validate(params);
         }
@@ -71,6 +92,34 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
     @Override
     public String getBundleType() {
         return "INSTALLER";
+    }
+
+    // JDK bundle: "Contents/Home", "Contents/MacOS/libjli.dylib"
+    // and "Contents/Info.plist"
+    private static boolean isRuntimeImageJDKBundle(Path runtimeImage) {
+        Path path1 = runtimeImage.resolve("Contents/Home");
+        Path path2 = runtimeImage.resolve("Contents/MacOS/libjli.dylib");
+        Path path3 = runtimeImage.resolve("Contents/Info.plist");
+        return IOUtils.exists(path1)
+                && path1.toFile().list() != null
+                && path1.toFile().list().length > 0
+                && IOUtils.exists(path2)
+                && IOUtils.exists(path3);
+    }
+
+    // JDK image: "lib/*/libjli.dylib"
+    static boolean isRuntimeImageJDKImage(Path runtimeImage) {
+        final Path jliName = Path.of("libjli.dylib");
+        try (Stream<Path> walk = Files.walk(runtimeImage.resolve("lib"))) {
+            final Path jli = walk
+                    .filter(file -> file.getFileName().equals(jliName))
+                    .findFirst()
+                    .get();
+            return IOUtils.exists(jli);
+        } catch (IOException | NoSuchElementException ex) {
+            Log.verbose(ex);
+            return false;
+        }
     }
 
     private final Bundler appImageBundler;

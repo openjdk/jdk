@@ -43,6 +43,7 @@ import static jdk.jpackage.internal.model.MacPackage.RUNTIME_PACKAGE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -76,7 +77,8 @@ final class MacFromParams {
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params).map(predefinedRuntimeImage -> {
-            if (Files.isDirectory(RUNTIME_PACKAGE_LAYOUT.resolveAt(predefinedRuntimeImage).runtimeDirectory())) {
+            if (!isRuntimeInstaller(params) &&
+                    Files.isDirectory(RUNTIME_PACKAGE_LAYOUT.resolveAt(predefinedRuntimeImage).runtimeDirectory())) {
                 return RUNTIME_PACKAGE_LAYOUT;
             } else {
                 return RuntimeLayout.DEFAULT;
@@ -147,7 +149,15 @@ final class MacFromParams {
                 signingBuilder.entitlementsResourceName("sandbox.plist");
             }
 
-            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresent(signingBuilder::signingIdentifierPrefix);
+            final var bundleIdentifier = appBuilder.validatedBundleIdentifier();
+            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresentOrElse(
+                signingBuilder::signingIdentifierPrefix,
+                () -> {
+                    // Runtime installer does not have main launcher, so use
+                    // 'bundleIdentifier' as prefix by default.
+                    signingBuilder.signingIdentifierPrefix(
+                        bundleIdentifier + ".");
+                });
             SIGN_IDENTIFIER_PREFIX.copyInto(params, signingBuilder::signingIdentifierPrefix);
 
             ENTITLEMENTS.copyInto(params, signingBuilder::entitlements);
