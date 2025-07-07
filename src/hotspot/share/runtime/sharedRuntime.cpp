@@ -280,8 +280,8 @@ JRT_LEAF(jlong, SharedRuntime::ldiv(jlong y, jlong x))
   }
 JRT_END
 
-JRT_LEAF(void, SharedRuntime::debug_print())
-  tty->print_cr("hello_world");
+JRT_LEAF(void, SharedRuntime::debug_print(const char *msg))
+  tty->print_raw(msg);
 JRT_END
 
 

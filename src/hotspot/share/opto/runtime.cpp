@@ -265,6 +265,7 @@ const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
 #endif // INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
+const TypeFunc* OptoRuntime::_debug_print_Type = nullptr;
 
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
@@ -1780,6 +1781,23 @@ static const TypeFunc* make_osr_end_Type() {
   return TypeFunc::make(domain, range);
 }
 
+static const TypeFunc* make_debug_print_Type() {
+  // create input type (domain)
+  int num_args      = 1; // TODO is it actually one for a pointer
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // static string pointer
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
 //-------------------------------------------------------------------------------------
 // register policy
 
@@ -2290,6 +2308,7 @@ void OptoRuntime::initialize_types() {
 #endif // INCLUDE_JVMTI
   _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
   _dtrace_object_alloc_Type           = make_dtrace_object_alloc_Type();
+  _debug_print_Type                   = make_debug_print_Type();
 }
 
 int trace_exception_counter = 0;
