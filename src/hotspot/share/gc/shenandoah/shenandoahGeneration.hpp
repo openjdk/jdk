@@ -104,8 +104,7 @@ private:
  public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers,
-                       size_t max_capacity,
-                       size_t soft_max_capacity);
+                       size_t max_capacity);
   ~ShenandoahGeneration();
 
   bool is_young() const  { return _type == YOUNG; }
@@ -125,7 +124,6 @@ private:
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
-  size_t soft_max_capacity() const override;
   size_t max_capacity() const override      { return _max_capacity; }
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;

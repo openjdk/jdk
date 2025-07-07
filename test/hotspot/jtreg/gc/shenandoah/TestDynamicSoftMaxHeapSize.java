@@ -30,6 +30,7 @@
  *
  * @run driver TestDynamicSoftMaxHeapSize
  */
+
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -42,16 +43,18 @@ import java.util.Random;
 
 public class TestDynamicSoftMaxHeapSize {
     static final int K = 1024;
-    static final List<String> COMMON_COMMANDS = Arrays.asList("-Xms16m",
-            "-Xmx512m",
+    static final int XMS_MB = 100;
+    static final int XMX_MB = 512;
+    static final List<String> COMMON_COMMANDS = Arrays.asList("-Xms" + XMS_MB + "m",
+            "-Xmx" + XMX_MB + "m",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseShenandoahGC",
-            "-Xlog:gc=debug",
+            "-Xlog:gc=info",
             "-Dtest.jdk=" + System.getProperty("test.jdk"),
             "-Dcompile.jdk=" + System.getProperty("compile.jdk"),
             "-Dtarget=10000"
-            );
+    );
     static final List<String> HEURISTICS = Arrays.asList("adaptive", "aggressive", "compact", "static");
 
 
@@ -92,20 +95,18 @@ public class TestDynamicSoftMaxHeapSize {
         new OutputAnalyzer(genShenPbSetFlagOnly.start()).shouldHaveExitValue(0);
 
         // generational gc mode. Verify if it can detect soft max heap change when app is running
-        int xMsHeapInByte = 16 * K * K;
-        int xMxHeapInByte = 512 * K * K;
-        int softMaxInByte = Utils.getRandomInstance().nextInt(xMsHeapInByte, xMxHeapInByte + 1);
+        int softMaxInMb = Utils.getRandomInstance().nextInt(XMS_MB, XMX_MB + 1);
 
         List<String> genShenGCModeValidateFlagArgs = new ArrayList<>(COMMON_COMMANDS);
         genShenGCModeValidateFlagArgs.add("-XX:ShenandoahGCMode=generational");
-        genShenGCModeValidateFlagArgs.add("-DsoftMaxCapacity=" + softMaxInByte);
+        genShenGCModeValidateFlagArgs.add("-DsoftMaxCapacity=" + softMaxInMb * K * K);
 
         genShenGCModeValidateFlagArgs.add(SoftMaxWithExpectationTest.class.getName());
 
         ProcessBuilder genShenPbValidateFlag = ProcessTools.createLimitedTestJavaProcessBuilder(genShenGCModeValidateFlagArgs);
         OutputAnalyzer output = new OutputAnalyzer(genShenPbValidateFlag.start());
         output.shouldHaveExitValue(0);
-        output.shouldContain("soft_max_capacity: " + softMaxInByte);
+        output.shouldContain(String.format("Soft Max Heap Size: %dM -> %dM", XMX_MB, softMaxInMb)); // By default, the soft max heap size is Xmx
     }
 
     public static class SoftMaxSetFlagOnlyTest {

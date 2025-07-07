@@ -524,7 +524,7 @@ void ShenandoahHeap::initialize_mode() {
 }
 
 void ShenandoahHeap::initialize_heuristics() {
-  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
+  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity());
   _global_generation->initialize_heuristics(mode());
 }
 
