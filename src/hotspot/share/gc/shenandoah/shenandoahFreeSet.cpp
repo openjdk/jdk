@@ -2117,10 +2117,10 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
   assert(!ShenandoahHeapRegion::requires_humongous(req.size()), "Must not");
   assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
 
-  const uint hash = uint((reinterpret_cast<uintptr_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount);
+  const uint start_idx = uint((reinterpret_cast<uintptr_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount);
   for (;;) {
     constexpr uint max_probes = 3;
-    uint idx = hash;
+    uint idx = start_idx;
     ShenandoahHeapRegion* retirable_regions[max_probes];
     ShenandoahHeapRegion** retirable_shared_regions_addresses[max_probes];
     HeapWord* obj = nullptr;
@@ -2154,19 +2154,21 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
     if (!try_allocate_directly_allocatable_regions(retirable_shared_regions_addresses, retirable_regions, count, req, obj, in_new_region)) {
       if (obj == nullptr) {
         //only tried 3 shared regions, try to steal from other shared regions before OOM
-        for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
+        do {
           ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + i);
           if (r != nullptr) {
             obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
             if (obj != nullptr) break;
           }
-        }
+          idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
+        } while (idx != start_idx);
         return obj;
       }
-    }
-    if (obj != nullptr) {
-      _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
-      return obj;
+    } else {
+      if (obj != nullptr) {
+        _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
+        return obj;
+      }
     }
   }
 }
