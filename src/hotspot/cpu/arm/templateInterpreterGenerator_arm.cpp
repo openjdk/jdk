@@ -174,6 +174,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_sinh:
   case Interpreter::java_lang_math_tanh:
   case Interpreter::java_lang_math_cbrt:
     // TODO: Implement intrinsic

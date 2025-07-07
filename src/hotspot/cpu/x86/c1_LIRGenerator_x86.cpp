@@ -720,8 +720,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
       x->id() == vmIntrinsics::_dpow || x->id() == vmIntrinsics::_dcos ||
       x->id() == vmIntrinsics::_dsin || x->id() == vmIntrinsics::_dtan ||
-      x->id() == vmIntrinsics::_dlog10 || x->id() == vmIntrinsics::_dtanh ||
-      x->id() == vmIntrinsics::_dcbrt
+      x->id() == vmIntrinsics::_dlog10 || x->id() == vmIntrinsics::_dsinh ||
+      x->id() == vmIntrinsics::_dtanh || x->id() == vmIntrinsics::_dcbrt
       ) {
     do_LibmIntrinsic(x);
     return;
@@ -833,6 +833,12 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
         __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dsinh:
+      assert(StubRoutines::dsinh() != nullptr, "sinh intrinsic not found");
+      if (StubRoutines::dsinh() != nullptr) {
+        __ call_runtime_leaf(StubRoutines::dsinh(), getThreadTemp(), result_reg, cc->args());
       }
       break;
     case vmIntrinsics::_dtanh:

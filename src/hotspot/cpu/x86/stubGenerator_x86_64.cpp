@@ -3689,6 +3689,9 @@ void StubGenerator::generate_libm_stubs() {
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
       StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsinh)) {
+      StubRoutines::_dsinh = generate_libmSinh(); // from stubGenerator_x86_64_sinh.cpp
+    }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtanh)) {
       StubRoutines::_dtanh = generate_libmTanh(); // from stubGenerator_x86_64_tanh.cpp
     }
