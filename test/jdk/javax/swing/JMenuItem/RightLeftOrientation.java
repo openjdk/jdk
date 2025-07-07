@@ -124,7 +124,7 @@ public class RightLeftOrientation {
         menuBar.add(createMenu());
 
         frame.setJMenuBar(menuBar);
-        frame.pack();
+        frame.setSize(250, 70);
         return frame;
     }
 
