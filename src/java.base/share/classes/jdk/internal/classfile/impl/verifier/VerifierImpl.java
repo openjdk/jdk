@@ -1662,7 +1662,7 @@ public final class VerifierImpl {
                 // Indirect superclass (including Object), indirect interface, or unrelated interface.
                 // Any interface use is an error.
                 if (is_interface[0]) {
-                    verifyError("Bad invokespecial instruction: interface method reference is in an indirect superinterface.");
+                    verifyError("Bad invokespecial instruction: interface method to invoke is not in a direct superinterface.");
                 }
             }
 
