@@ -600,6 +600,14 @@ public final class Security {
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *
+     * @implNote
+     * The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which {@linkplain java.security.Provider.Service services} are
+     * enabled. A service that is not enabled by the providers filter
+     * will not match the selection criteria for its provider.
+     *
      * @param filter the criterion for selecting
      * providers. The filter is case-insensitive.
      *
@@ -677,6 +685,14 @@ public final class Security {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
+     *
+     * @implNote
+     * The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which {@linkplain java.security.Provider.Service services} are
+     * enabled. A service that is not enabled by the providers filter
+     * will not match the selection criteria for its provider.
      *
      * @param filter the criteria for selecting
      * providers. The filter is case-insensitive.
