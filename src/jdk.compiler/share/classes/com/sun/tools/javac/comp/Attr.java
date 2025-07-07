@@ -1236,8 +1236,8 @@ public class Attr extends JCTree.Visitor {
                 annotate.queueScanTreeAndTypeAnnotate(tree.body, localEnv, m, null);
                 annotate.flush();
 
-                // Start of constructor prologue
-                localEnv.info.ctorPrologue = isConstructor;
+                // Start of constructor prologue (if not in java.lang.Object constructor)
+                localEnv.info.ctorPrologue = isConstructor && owner.type != syms.objectType;
 
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
