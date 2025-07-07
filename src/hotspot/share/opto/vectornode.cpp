@@ -297,19 +297,44 @@ int VectorNode::opcode(int sopc, BasicType bt) {
 // and basic type.
 int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
   switch (vopc) {
-    case Op_AddReductionVI:
+    case Op_AddVB:
+    case Op_AddVS:
     case Op_AddVI:
       return Op_AddI;
-    case Op_AddReductionVL:
     case Op_AddVL:
       return Op_AddL;
-    case Op_MulReductionVI:
+    case Op_AddVF:
+      return Op_AddF;
+    case Op_AddVD:
+      return Op_AddD;
+
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+      return Op_SubI;
+    case Op_SubVL:
+      return Op_SubL;
+    case Op_SubVF:
+      return Op_SubF;
+    case Op_SubVD:
+      return Op_SubD;
+
+    case Op_MulVB:
+    case Op_MulVS:
     case Op_MulVI:
       return Op_MulI;
-    case Op_MulReductionVL:
     case Op_MulVL:
       return Op_MulL;
-    case Op_AndReductionV:
+    case Op_MulVF:
+      return Op_MulF;
+    case Op_MulVD:
+      return Op_MulD;
+
+    case Op_DivVF:
+      return Op_DivF;
+    case Op_DivVD:
+      return Op_DivD;
+
     case Op_AndV:
       switch (bt) {
         case T_BOOLEAN:
@@ -324,7 +349,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
           assert(!enable_assertions, "basic type not handled");
           return 0;
       }
-    case Op_OrReductionV:
+
     case Op_OrV:
       switch (bt) {
         case T_BOOLEAN:
@@ -339,7 +364,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
           assert(!enable_assertions, "basic type not handled");
           return 0;
       }
-    case Op_XorReductionV:
+
     case Op_XorV:
       switch (bt) {
         case T_BOOLEAN:
@@ -354,11 +379,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
           assert(!enable_assertions, "basic type not handled");
           return 0;
       }
-    case Op_SubVI:
-      return Op_SubI;
-    case Op_SubVL:
-      return Op_SubL;
-    case Op_MinReductionV:
+
     case Op_MinV:
       switch (bt) {
         case T_BOOLEAN:
@@ -379,7 +400,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
           assert(!enable_assertions, "basic type not handled");
           return 0;
       }
-    case Op_MaxReductionV:
+
     case Op_MaxV:
       switch (bt) {
         case T_BOOLEAN:
@@ -400,10 +421,17 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
           assert(!enable_assertions, "basic type not handled");
           return 0;
       }
-    case Op_MinVHF:
-      return Op_MinHF;
-    case Op_MaxVHF:
-      return Op_MaxHF;
+
+    case Op_SqrtVD:
+      return Op_SqrtD;
+    case Op_SqrtVF:
+      return Op_SqrtF;
+
+    case Op_FmaVF:
+      return Op_FmaF;
+    case Op_FmaVD:
+      return Op_FmaD;
+
     default:
       assert(!enable_assertions,
              "Vector node %s is not handled in VectorNode::scalar_opcode",
@@ -1151,14 +1179,7 @@ bool VectorNode::can_push_broadcasts_across_vector_operation(BasicType bt) {
     return false;
   }
 
-  //FIXME: Currently only handling most common binary vector operations.
-  if (req() != 3) {
-    return false;
-  }
-
   for (uint i = 1; i < req(); i++) {
-    //FIXME: Fine tune check for Vector operations like SHIFTS/ROTATES which
-    //accept scalar/constant inputs.
     if (in(i)->Opcode() != Op_Replicate) {
       return false;
     }
@@ -1166,7 +1187,7 @@ bool VectorNode::can_push_broadcasts_across_vector_operation(BasicType bt) {
   return true;
 }
 
-Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* in1, Node* in2) {
+Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* control, Node* in1, Node* in2, Node* in3) {
   switch (sopc) {
     case Op_AddI:
       return new AddINode(in1, in2);
@@ -1208,10 +1229,14 @@ Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* in1, Node* in2
       return new MaxFNode(in1, in2);
     case Op_MaxD:
       return new MaxDNode(in1, in2);
-    case Op_MinHF:
-      return new MinHFNode(in1, in2);
-    case Op_MaxHF:
-      return new MaxHFNode(in1, in2);
+    case Op_SqrtF:
+      return new SqrtFNode(c, control, in1);
+    case Op_SqrtD:
+      return new SqrtDNode(c, control, in1);
+    case Op_FmaF:
+      return new FmaFNode(in1, in2, in3);
+    case Op_FmaD:
+      return new FmaDNode(in1, in2, in3);
     default:
       return nullptr;
   }
@@ -1232,12 +1257,24 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   BasicType bt = vect_type()->element_basic_type();
   if (can_push_broadcasts_across_vector_operation(bt)) {
 
-    assert(in(1)->Opcode() == Op_Replicate, "");
-    Node* sinp1 = in(1)->in(1);
-    assert(in(2)->Opcode() == Op_Replicate, "");
-    Node* sinp2 = in(2)->in(1);
+    Node* sinp1 = nullptr;
+    Node* sinp2 = nullptr;
+    Node* sinp3 = nullptr;
 
-    Node* sop = scalar_node_factory(phase->C, scalar_opcode(Opcode(), bt, false), sinp1, sinp2);
+    assert(in(1)->Opcode() == Op_Replicate, "");
+    sinp1 = in(1)->in(1);
+
+    if (req() > 2) {
+      assert(in(2)->Opcode() == Op_Replicate, "");
+      sinp2 = in(2)->in(1);
+    }
+
+    if (req() > 3) {
+      assert(req() < 4 || in(3)->Opcode() == Op_Replicate, "");
+      sinp3 = in(3)->in(1);
+    }
+
+    Node* sop = scalar_node_factory(phase->C, scalar_opcode(Opcode(), bt, false), in(0), sinp1, sinp2, sinp3);
     if (sop) {
       sop = phase->transform(sop);
       return new ReplicateNode(sop, vect_type());
