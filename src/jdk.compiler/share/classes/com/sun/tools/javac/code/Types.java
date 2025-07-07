@@ -2234,8 +2234,16 @@ public class Types {
         };
 
     /**
-     * Return the base type of t or any of its outer types that starts
-     * with the given symbol.  If none exists, return null.
+     * Return the base type of t or any of its strictly enclosing types that start
+     * with the given symbol. If none exists, return null.
+     *
+     * This is typically used when there is an explicit qualification of a type.
+     * The qualified part may either be a parameter or not.
+     * Example: user writes {@code G.m()} and {@code <G extends A<String>}
+     * ({@code m()} is an inherited member).
+     *
+     * Note, if there's an explicit qualifier, both {@code asEnclosingSuper} and
+     * {@code asOuterSuper} are equivalent.
      *
      * @param t a type
      * @param sym a symbol
@@ -2259,8 +2267,16 @@ public class Types {
     }
 
     /**
-     * Return the base type of t or any of its enclosing types that
-     * starts with the given symbol.  If none exists, return null.
+     * Return the base type of t or any of its enclosing types (traversing potential
+     * enclosing classes along the path) that start with the given symbol. If none
+     * exists, return null.
+     *
+     * This is typically used when there is an implicit qualification of a type.
+     * Example: user writes {@code B<?>} and the real type is a qualified path
+     * {@code A<String>.B<?>}.
+     *
+     * Note, if there's an explicit qualifier, both {@code asEnclosingSuper} and
+     * {@code asOuterSuper} are equivalent.
      *
      * @param t a type
      * @param sym a symbol
