@@ -1042,7 +1042,7 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
     }
     print_hex_location(st, p, unitsize, ascii_form);
     p += unitsize;
-    logical_p += unitsize;
+    logical_p = (const_address) ((uintptr_t)logical_p + unitsize);
     cols++;
     if (cols >= cols_per_line) {
        if (print_ascii && !ascii_form.is_empty()) {
