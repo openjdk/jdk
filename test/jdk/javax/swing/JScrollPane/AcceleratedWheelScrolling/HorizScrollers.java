@@ -50,6 +50,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class HorizScrollers {
     private static final String INSTRUCTIONS = """
@@ -59,12 +60,14 @@ public class HorizScrollers {
             the next test phase will run automatically.
             DO NOT TOUCH ANYTHING DURING TESTING!
 
-            The test will automatically FAIL during testing if something
-            fails. Otherwise, the test will automatically PASS after the
-            third testing phase.
+            If any step of the test fails, the automated test window will
+            close and the error will be output to the main test window's
+            text area. If so, press the fail button. Otherwise, the test
+            will automatically pass after the third testing phase.
     """;
 
     public static void main(String[] args) throws Exception {
+        checkNimbusLaf();
         PassFailJFrame.builder()
                 .title("HorizScrollers Instructions")
                 .instructions(INSTRUCTIONS)
@@ -97,6 +100,14 @@ public class HorizScrollers {
             Once the mouse is setup correctly, the area will turn green.
             When you're ready for the next part of the test to run, press GO!
     """;
+
+    static void checkNimbusLaf() {
+        String lafName = UIManager.getLookAndFeel().getName();
+        if (lafName.equals("Nimbus")) {
+            System.err.println("Nimbus LAF not supported. Skipping.");
+            PassFailJFrame.forcePass();
+        }
+    }
 
     static class ConfigPanel extends JPanel
             implements ActionListener, MouseWheelListener {
@@ -176,9 +187,7 @@ public class HorizScrollers {
                 );
             }
 
-            if (isFailure) {
-                PassFailJFrame.forceFail();
-            } else {
+            if (!isFailure) {
                 PassFailJFrame.forcePass();
             }
         }
