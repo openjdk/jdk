@@ -2289,11 +2289,11 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(ShenandoahHeap
       if (r != nullptr) {
         if (r->free() < PLAB::min_size()) {
           Atomic::release_store_fence(shared_region_address[i], static_cast<ShenandoahHeapRegion*>(nullptr));
-          r->release_from_direct_allocation();
           // TODO confirm when&why the region is moved out of Mutator partition?
           if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, r->index())) {
             _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
           }
+          r->release_from_direct_allocation();
         } else {
           // Although r is same as original one when tried CAS allocation, but it has more free space.
           fulfilled_by_others++;
