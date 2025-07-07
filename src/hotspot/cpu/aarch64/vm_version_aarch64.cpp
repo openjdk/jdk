@@ -121,6 +121,8 @@ void VM_Version::initialize() {
   }
 
   if (!(is_aligned(CryptoPmullForCRC32LowLimit, 128))) {
+    // the instrinsic handle 128 bytes in an iteration of the loop, so aligning
+    // to 128 helps consistency.
     warning("CryptoPmullForCRC32LowLimit must be a multiple of 128");
     CryptoPmullForCRC32LowLimit = align_down(CryptoPmullForCRC32LowLimit, 128);
   }
