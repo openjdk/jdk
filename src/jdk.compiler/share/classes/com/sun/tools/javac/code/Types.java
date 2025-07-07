@@ -2242,7 +2242,7 @@ public class Types {
      * @param t a type
      * @param sym a symbol
      */
-    public Type asOuterSuper(Type t, Symbol sym) {
+    public Type getOuterSuper(Type t, Symbol sym) {
         switch (t.getTag()) {
         case CLASS:
             do {
@@ -2251,8 +2251,6 @@ public class Types {
                 t = t.getEnclosingType();
             } while (t.hasTag(CLASS));
             return null;
-        case ARRAY:
-            return isSubtype(t, sym.type) ? sym.type : null;
         case TYPEVAR:
             return asSuper(t, sym);
         case ERROR:
@@ -2269,19 +2267,16 @@ public class Types {
      * @param t a type
      * @param sym a symbol
      */
-    public Type asEnclosingSuper(Type t, Symbol sym) {
+    public Type getOwnerSuper(Type t, Symbol sym) {
         switch (t.getTag()) {
-        case CLASS:
-            do {
+            case CLASS: do {
                 Type s = asSuper(t, sym);
                 if (s != null) return s;
                 t = (t.tsym.owner.enclClass() != null)
-                  ? t.tsym.owner.enclClass().type
-                  : Type.noType;
+                        ? t.tsym.owner.enclClass().type
+                        : Type.noType;
             } while (t.hasTag(CLASS));
             return null;
-        case ARRAY:
-            return isSubtype(t, sym.type) ? sym.type : null;
         case TYPEVAR:
             return asSuper(t, sym);
         case ERROR:
@@ -2321,7 +2316,7 @@ public class Types {
                 Symbol owner = sym.owner;
                 long flags = sym.flags();
                 if (((flags & STATIC) == 0) && owner.type.isParameterized()) {
-                    Type base = asOuterSuper(t, owner);
+                    Type base = getOuterSuper(t, owner);
                     //if t is an intersection type T = CT & I1 & I2 ... & In
                     //its supertypes CT, I1, ... In might contain wildcards
                     //so we need to go through capture conversion
