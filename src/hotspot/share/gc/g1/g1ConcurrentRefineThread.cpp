@@ -42,8 +42,6 @@
 
 G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr) :
   ConcurrentGCThread(),
-  _vtime_start(0.0),
-  _vtime_accum(0.0),
   _notifier(Mutex::nosafepoint, "G1 Refine Control", true),
   _requested_active(false),
   _cr(cr)
@@ -52,8 +50,6 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr) :
 }
 
 void G1ConcurrentRefineThread::run_service() {
-  _vtime_start = os::elapsedVTime();
-
   while (wait_for_work()) {
     SuspendibleThreadSetJoiner sts_join;
     report_active("Activated");
@@ -86,7 +82,7 @@ void G1ConcurrentRefineThread::run_service() {
       }
     }
     report_inactive("Deactivated");
-    track_usage();
+    update_perf_counter_cpu_time();
   }
 
   log_debug(gc, refine)("Stopping %s", name());
@@ -119,6 +115,10 @@ bool G1ConcurrentRefineThread::deactivate() {
 
 void G1ConcurrentRefineThread::stop_service() {
   activate();
+}
+
+jlong G1ConcurrentRefineThread::cpu_time() {
+  return os::thread_cpu_time(this);
 }
 
 // When inactive, the control thread periodically wakes up to check if there is
@@ -230,14 +230,9 @@ void G1ConcurrentRefineThread::do_refinement() {
   }
 }
 
-void G1ConcurrentRefineThread::track_usage() {
-  if (os::supports_vtime()) {
-    _vtime_accum = (os::elapsedVTime() - _vtime_start);
-  } else {
-    _vtime_accum = 0.0;
-  }
+void G1ConcurrentRefineThread::update_perf_counter_cpu_time() {
   // The control thread is responsible for updating the CPU time for all workers.
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+  if (UsePerfData) {
     {
       ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_refine);
       cr()->worker_threads_do(&tttc);

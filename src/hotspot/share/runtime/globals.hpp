@@ -293,6 +293,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
+  develop(bool, VerifyInlineCaches, true,                                   \
+          "Verify Inline Caches")                                           \
+                                                                            \
   product(bool, InlineArrayCopy, true, DIAGNOSTIC,                          \
           "Inline arraycopy native that is known to be part of "            \
           "base library DLL")                                               \
@@ -947,10 +950,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
-                                                                            \
-  develop(bool, GenerateSynchronizationCode, true,                          \
-          "generate locking/unlocking code for synchronized methods and "   \
-          "monitors")                                                       \
                                                                             \
   product_pd(bool, ImplicitNullChecks, DIAGNOSTIC,                          \
           "Generate code for implicit null checks")                         \

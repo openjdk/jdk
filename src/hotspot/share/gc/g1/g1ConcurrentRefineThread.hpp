@@ -39,9 +39,6 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class G1CollectedHeap;
 
-  double _vtime_start;  // Initial virtual time.
-  double _vtime_accum;  // Accumulated virtual time.
-
   Monitor _notifier;
   bool _requested_active;
 
@@ -68,8 +65,8 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   // refinement table.
   void do_refinement();
 
-  // Update concurrent refine threads stats.
-  void track_usage();
+  // Update concurrent refine threads cpu time stats.
+  void update_perf_counter_cpu_time();
 
   void report_active(const char* reason) const;
   void report_inactive(const char* reason) const;
@@ -86,8 +83,8 @@ public:
   // precondition: this is not the current thread.
   void activate();
 
-  // Total virtual time so far.
-  double vtime_accum() { return _vtime_accum; }
+  // Total cpu time spent in this thread so far.
+  jlong cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
