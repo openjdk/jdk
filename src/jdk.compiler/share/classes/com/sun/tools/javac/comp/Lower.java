@@ -2831,22 +2831,22 @@ public class Lower extends TreeTranslator {
      */
     public void visitTypeTest(JCInstanceOf tree) {
         if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
-            JCStatement sideEffect;
+            JCStatement prefixStatement;
             JCExpression exactnessCheck;
             JCExpression instanceOfExpr = translate(tree.expr);
 
             if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
                 // instanceOfExpr; true
-                sideEffect = make.Exec(instanceOfExpr);
+                prefixStatement = make.Exec(instanceOfExpr);
                 exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
             } else if (tree.expr.type.isPrimitive()) {
                 // ExactConversionSupport.isXxxExact(instanceOfExpr)
-                sideEffect = null;
+                prefixStatement = null;
                 exactnessCheck = getExactnessCheck(tree, instanceOfExpr);
             } else if (tree.expr.type.isReference()) {
                 if (types.isUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
                     // instanceOfExpr != null
-                    sideEffect = null;
+                    prefixStatement = null;
                     exactnessCheck = makeBinary(NE, instanceOfExpr, makeNull());
                 } else {
                     // We read the result of instanceOfExpr, so create variable
@@ -2854,7 +2854,7 @@ public class Lower extends TreeTranslator {
                             names.fromString("tmp" + variableIndex++ + this.target.syntheticNameChar()),
                             types.erasure(tree.expr.type),
                             currentMethodSym);
-                    sideEffect = make.at(tree.pos())
+                    prefixStatement = make.at(tree.pos())
                             .VarDef(dollar_s, instanceOfExpr);
 
                     JCExpression nullCheck =
@@ -2877,9 +2877,9 @@ public class Lower extends TreeTranslator {
                     }
                 }
             } else {
-                throw Assert.error("Non primitive or reference type");
+                throw Assert.error("Non primitive or reference type: " + tree.expr.type);
             }
-            result = (sideEffect == null ? exactnessCheck : make.LetExpr(List.of(sideEffect), exactnessCheck))
+            result = (prefixStatement == null ? exactnessCheck : make.LetExpr(List.of(prefixStatement), exactnessCheck))
                     .setType(syms.booleanType);
         } else {
             tree.expr = translate(tree.expr);

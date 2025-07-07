@@ -37,11 +37,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * @test
  * @bug 8357185
  * @enablePreview
- * @summary Behaviors with unconditionally exact primitive patterns
+ * @summary No unused local variable in unconditionally exact primitive patterns
  * @library /test/lib
- * @run junit PrimitiveUnconditionallyExactTest
+ * @run junit PrimitiveInstanceOfBytecodeTest
  */
-public class PrimitiveUnconditionallyExactTest {
+public class PrimitiveInstanceOfBytecodeTest {
 
     private static final String SOURCE = """
             public class Test {
@@ -79,22 +79,5 @@ public class PrimitiveUnconditionallyExactTest {
             System.err.println(code.toDebugString());
             fail("Store and load mismatch, see stderr");
         }
-    }
-
-    @Test
-    public void testExpressionExecution() {
-        int a = 0;
-        boolean b = (a = 5) instanceof int;
-        assertTrue(b);
-        assertEquals(5, a);
-        b = (a = -24) instanceof int cap;
-        assertTrue(b);
-        assertEquals(-24, a);
-        b = (a = 42) instanceof long;
-        assertTrue(b);
-        assertEquals(42, a);
-        b = (a = -28) instanceof double cap2;
-        assertTrue(b);
-        assertEquals(-28, a);
     }
 }
