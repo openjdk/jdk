@@ -118,7 +118,6 @@ private:
   void gc_prologue();
   void gc_epilogue(bool full);
 
-protected:
   void print_tracing_info() const override;
   void stop() override {};
 

@@ -36,7 +36,6 @@ class ShenandoahGenerationalControlThread;
 class ShenandoahAgeCensus;
 
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
-protected:
   void print_tracing_info() const override;
   void stop() override;
 

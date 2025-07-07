@@ -883,7 +883,6 @@ private:
   jint initialize_concurrent_refinement();
   jint initialize_service_thread();
 
-protected:
   void print_tracing_info() const override;
   void stop() override;
 

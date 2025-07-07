@@ -55,7 +55,6 @@ private:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-protected:
   void print_tracing_info() const override;
   void stop() override;
 

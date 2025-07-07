@@ -111,7 +111,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void do_full_collection(bool clear_all_soft_refs) override;
 
-protected:
   void print_tracing_info() const override;
   void stop() override {};
 

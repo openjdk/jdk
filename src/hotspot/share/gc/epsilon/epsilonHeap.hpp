@@ -49,7 +49,7 @@ private:
   volatile size_t _last_counter_update;
   volatile size_t _last_heap_print;
 
-protected:
+private:
   void print_tracing_info() const override;
   void stop() override {};
 
