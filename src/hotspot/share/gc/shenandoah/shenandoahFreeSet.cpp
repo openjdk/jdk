@@ -2101,10 +2101,9 @@ void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
     ShenandoahHeapRegion** address = _directly_allocatable_regions + i;
     ShenandoahHeapRegion* r = Atomic::load_acquire(address);
     if (r != nullptr) {
-      if (r->reserved_for_direct_allocation()) {
-        r->release_from_direct_allocation();
-      }
-      Atomic::release_store(address, static_cast<ShenandoahHeapRegion*>(nullptr));
+      assert(r->reserved_for_direct_allocation(), "Must be");
+      Atomic::release_store_fence(address, static_cast<ShenandoahHeapRegion*>(nullptr));
+      r->release_from_direct_allocation();
     }
   }
 }
@@ -2314,7 +2313,6 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(ShenandoahHeap
 
 void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion* region) {
   shenandoah_assert_heaplocked();
-  region->release_from_direct_allocation();
   for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
     ShenandoahHeapRegion** shared_region_address = _directly_allocatable_regions + i;
     if (Atomic::load_acquire(shared_region_address) == region) {
@@ -2322,6 +2320,8 @@ void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion
       break;
     }
   }
+  OrderAccess::fence();
+  region->release_from_direct_allocation();
 }
 
 template<bool IS_MUTATOR, bool IS_OLD>
