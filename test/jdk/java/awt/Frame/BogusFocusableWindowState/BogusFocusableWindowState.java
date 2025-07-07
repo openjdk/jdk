@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,35 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_WINDOWS_SAFEFETCH_WINDOWS_HPP
-#define OS_WINDOWS_SAFEFETCH_WINDOWS_HPP
+import java.awt.Window;
 
-#include "sanitizers/address.hpp"
-#include "utilities/globalDefinitions.hpp"
+/**
+ * @test
+ * @bug 8346952
+ * @summary Verifies no exception occurs when triggering updateCG()
+ * for an ownerless window.
+ * @key headful
+ */
+public final class BogusFocusableWindowState {
 
-// On windows, we use structured exception handling to implement SafeFetch
-
-template <class T>
-ATTRIBUTE_NO_ASAN inline T SafeFetchXX(const T* adr, T errValue) {
-  T v = 0;
-  __try {
-    v = *adr;
-  }
-  __except(EXCEPTION_EXECUTE_HANDLER) {
-    v = errValue;
-  }
-  return v;
+    public static void main(String[] args) {
+        Window frame = new Window(null) {
+            @Override
+            public boolean getFocusableWindowState() {
+                removeNotify();
+                return true;
+            }
+        };
+        try {
+            frame.pack();
+            frame.setVisible(true);
+        } finally {
+            frame.dispose();
+        }
+    }
 }
-
-inline int SafeFetch32_impl(const int* adr, int errValue) {
-  return SafeFetchXX<int>(adr, errValue);
-}
-
-inline intptr_t SafeFetchN_impl(const intptr_t* adr, intptr_t errValue) {
-  return SafeFetchXX<intptr_t>(adr, errValue);
-}
-
-#endif
