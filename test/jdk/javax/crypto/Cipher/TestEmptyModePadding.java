@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8358159 8359388
+ * @bug 8359388
  * @summary test that the Cipher.getInstance() would reject improper
  *     transformations with empty mode and/or padding.
  */
