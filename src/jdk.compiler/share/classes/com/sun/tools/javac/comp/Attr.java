@@ -79,7 +79,6 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 
 /** This is the main context-dependent analysis phase in GJC. It
  *  encompasses name resolution, type checking and constant folding as
@@ -2834,7 +2833,7 @@ public class Attr extends JCTree.Visitor {
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
             boolean skipNonDiamondPath = false;
             // Check that class is not abstract
-            if (cdef == null && !isSpeculativeDiamondInferenceRound && // class body may be nulled out in speculative tree copy
+            if (cdef == null && !tree.classDeclRemoved() && !isSpeculativeDiamondInferenceRound && // class body may be nulled out in speculative tree copy
                 (clazztype.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
                 log.error(tree.pos(),
                           Errors.AbstractCantBeInstantiated(clazztype.tsym));
@@ -4146,8 +4145,7 @@ public class Attr extends JCTree.Visitor {
                 !exprtype.isErroneous() && !clazztype.isErroneous() &&
                 tree.pattern.getTag() != RECORDPATTERN) {
                 if (!allowUnconditionalPatternsInstanceOf) {
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
-                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.error(this.sourceName));
+                    log.error(tree.pos(), Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.error(this.sourceName));
                 }
             }
             typeTree = TreeInfo.primaryPatternTypeTree((JCPattern) tree.pattern);
@@ -4167,8 +4165,7 @@ public class Attr extends JCTree.Visitor {
                 if (allowReifiableTypesInInstanceof) {
                     valid = checkCastablePattern(tree.expr.pos(), exprtype, clazztype);
                 } else {
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
-                            Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
+                    log.error(tree.pos(), Feature.REIFIABLE_TYPES_INSTANCEOF.error(this.sourceName));
                     allowReifiableTypesInInstanceof = true;
                 }
                 if (!valid) {

@@ -623,7 +623,6 @@ void LIRGenerator::logic_op (Bytecodes::Code code, LIR_Opr result_op, LIR_Opr le
 
 
 void LIRGenerator::monitor_enter(LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info) {
-  if (!GenerateSynchronizationCode) return;
   // for slow path, use debug info for state after successful locking
   CodeStub* slow_path = new MonitorEnterStub(object, lock, info);
   __ load_stack_address_monitor(monitor_no, lock);
@@ -633,7 +632,6 @@ void LIRGenerator::monitor_enter(LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_
 
 
 void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, LIR_Opr scratch, int monitor_no) {
-  if (!GenerateSynchronizationCode) return;
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
@@ -1185,7 +1183,7 @@ void LIRGenerator::do_Return(Return* x) {
 
 // Example: ref.get()
 // Combination of LoadField and g1 pre-write barrier
-void LIRGenerator::do_Reference_get(Intrinsic* x) {
+void LIRGenerator::do_Reference_get0(Intrinsic* x) {
 
   const int referent_offset = java_lang_ref_Reference::referent_offset();
 
@@ -2585,7 +2583,7 @@ void LIRGenerator::do_Base(Base* x) {
     }
     assert(obj->is_valid(), "must be valid");
 
-    if (method()->is_synchronized() && GenerateSynchronizationCode) {
+    if (method()->is_synchronized()) {
       LIR_Opr lock = syncLockOpr();
       __ load_stack_address_monitor(0, lock);
 
@@ -2914,8 +2912,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_onSpinWait:
     __ on_spin_wait();
     break;
-  case vmIntrinsics::_Reference_get:
-    do_Reference_get(x);
+  case vmIntrinsics::_Reference_get0:
+    do_Reference_get0(x);
     break;
 
   case vmIntrinsics::_updateCRC32:

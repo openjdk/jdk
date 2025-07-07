@@ -22,10 +22,10 @@
  *
  */
 
+#include "compiler/compilerDirectives.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "opto/block.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
@@ -37,11 +37,8 @@
 #include "utilities/copy.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-void Block_Array::grow( uint i ) {
-  _nesting.check(_arena); // Check if a potential reallocation in the arena is safe
-  if (i < Max()) {
-    return; // No need to grow
-  }
+void Block_Array::grow(uint i) {
+  assert(i >= Max(), "Should have been checked before, use maybe_grow?");
   DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {

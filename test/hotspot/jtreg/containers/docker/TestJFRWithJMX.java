@@ -26,6 +26,7 @@
  * @test
  * @summary Test JFR recording controlled via JMX across container boundary.
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
