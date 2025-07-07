@@ -39,6 +39,9 @@ record TimedMethod(AtomicLong invocations, AtomicLong time, AtomicLong minimum, 
     }
 
     public void updateMinMax(long duration) {
+        if (duration == 0) {
+            return; // Ignore data due to low-resolution clock
+        }
         if (duration > maximum.getPlain()) {
             while (true) {
                 long max = maximum.get();
