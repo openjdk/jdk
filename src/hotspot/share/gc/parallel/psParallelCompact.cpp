@@ -892,10 +892,9 @@ void PSParallelCompact::summary_phase()
                                                        full_region_prefix_end);
     {
       GCTraceTime(Info, gc, phases) tm("Summary Phase: expand", &_gc_timer);
-      // Try to expand old-gen in order to fit all live objs, waste, and minimal delta room.
+      // Try to expand old-gen in order to fit all live objs and waste.
       size_t target_capacity_bytes = total_live_words * HeapWordSize
-                                   + old_space->capacity_in_bytes() * (MarkSweepDeadRatio / 100.0)
-                                   + SpaceAlignment;
+                                   + old_space->capacity_in_bytes() * (MarkSweepDeadRatio / 100);
       ParallelScavengeHeap::heap()->old_gen()->try_expand_till_size(target_capacity_bytes);
     }
 
