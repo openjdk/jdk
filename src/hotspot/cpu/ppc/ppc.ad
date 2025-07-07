@@ -13596,9 +13596,9 @@ instruct vneg2D_reg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct vnegI_reg(vecX dst, vecX src) %{
+instruct vneg4I_reg(vecX dst, vecX src) %{
   match(Set dst (NegVI src));
-  predicate(PowerArchitecturePPC64 >= 9);
+  predicate(PowerArchitecturePPC64 >= 9 && Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "VNEGW $dst,$src\t// negate int vector" %}
   size(4);
   ins_encode %{
