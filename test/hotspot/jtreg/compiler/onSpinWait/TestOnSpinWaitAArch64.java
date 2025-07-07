@@ -29,6 +29,7 @@
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
+ * @requires vm.debug
  *
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 nop 7
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 isb 3
@@ -49,10 +50,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestOnSpinWaitAArch64 {
-
-    private static String retInst = "ret";
-    private static String neededAddInst = "addsp,sp,#0x20";
-    private static String neededLdpInst = "ldpx29,x30,[sp,#16]";
 
     public static void main(String[] args) throws Exception {
         String compiler = args[0];
@@ -91,12 +88,6 @@ public class TestOnSpinWaitAArch64 {
 
         System.out.println(analyzer.getOutput());
 
-        if (analyzer.contains("[MachCode]")) {
-            spinWaitInst = getSpinWaitInstHex(spinWaitInst);
-            retInst = "c0035fd6";
-            neededAddInst = "ff830091";
-            neededLdpInst = "fd7b41a9";
-        }
         checkOutput(analyzer, spinWaitInst, Integer.parseInt(spinWaitInstCount));
     }
 
@@ -114,11 +105,9 @@ public class TestOnSpinWaitAArch64 {
       }
     }
 
-    private static ArrayList<String> getInstrs(OutputAnalyzer output) {
-        Iterator<String> iter = output.asLines().listIterator();
-
+    private static int countInstructions(Iterator<String> iter, String instr) {
         String line = null;
-        ArrayList<String> instrs = new ArrayList<String>();
+        int foundInstCount = 0;
         while (iter.hasNext()) {
             line = iter.next().trim();
             if (!line.startsWith("0x")) {
@@ -134,62 +123,60 @@ public class TestOnSpinWaitAArch64 {
                 continue;
             }
 
-            for (String instr : line.split("\\|")) {
-                if (instr.startsWith(retInst)) {
-                    return instrs;
+            for (String s : line.split("\\|")) {
+                if (!s.startsWith(instr)) {
+                    return foundInstCount;
                 }
-                instrs.add(instr);
+                foundInstCount++;
             }
         }
-        return instrs;
+        return foundInstCount;
     }
 
-    // The expected output of PrintAssembly for example for a spin wait with three NOPs
-    // if JVM finds the hsdis library the output is like:
+    // The expected output for a spin wait with three NOPs
+    // if the hsdis library is available:
     //
-    // 0x0000000111dfa588:   b.ne    0x0000000111dfa5c4
+    // ;; spin_wait
     // 0x0000000111dfa58c:   nop
     // 0x0000000111dfa590:   nop
     // 0x0000000111dfa594:   nop
     // 0x0000000111dfa598:   ldp    x29, x30, [sp, #16]
-    // 0x0000000111dfa59c:   add    sp, sp, #0x20
-    // 0x0000000111dfa5a0:   ldr    x8, [x28, #40]              ;   {poll_return}
-    // 0x0000000111dfa5a4:   cmp    sp, x8
-    // 0x0000000111dfa5a8:   b.hi    0x0000000111dfa5b0  // b.pmore
-    // 0x0000000111dfa5ac:   ret
     //
     // We work as follows:
-    // 1. Check whether printed instructions are disassembled ("[Disassembly]") or in hex form ("[MachCode]").
-    // 2. Look for RET instruction and collect all seen instructions.
-    // 3. In reverse order, search for 'add    sp, sp, #0x20' and 'ldp    x29, x30, [sp, #16]'.
-    // 4. Count spin wait instructions.
+    // 1. Check whether printed instructions are disassembled ("[Disassembly]").
+    // 2. Look for the block comment ';; spin_wait'.
+    // 3. Count spin wait instructions.
     private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int spinWaitInstCount) {
-        ArrayList<String> instrs = getInstrs(output);
+        Iterator<String> iter = output.asLines().listIterator();
+        String line = null;
+        boolean isDisassembled = false;
+        while (iter.hasNext()) {
+            line = iter.next();
+            if (line.contains("[Disassembly]")) {
+                isDisassembled = true;
+                break;
+            }
 
-        // From the end of the list, look for the following instructions:
-        //   ldp     x29, x30, [sp, #16]
-        //   add     sp, sp, #0x20
-        // or their hex form if a disassembler is not available:
-        //   fd7b41a9
-        //   ff830091
-        ListIterator<String> instrReverseIter = instrs.listIterator(instrs.size());
-        while (instrReverseIter.hasPrevious()) {
-          String s = instrReverseIter.previous();
-          instrReverseIter.next();
-            if (instrReverseIter.previous().startsWith(neededAddInst)) {
+            if (line.contains("[MachCode]")) {
                 break;
             }
         }
 
-        int foundInstCount = 0;
-        if (instrReverseIter.hasPrevious() && instrReverseIter.previous().startsWith(neededLdpInst)) {
-            while (instrReverseIter.hasPrevious()) {
-                if (!instrReverseIter.previous().startsWith(spinWaitInst)) {
-                    break;
-                }
-                ++foundInstCount;
+        boolean foundSpinWaitBlock = false;
+        while (iter.hasNext()) {
+            line = iter.next();
+            if (line.contains(";; spin_wait")) {
+                foundSpinWaitBlock = true;
+                break;
             }
         }
+
+        if (!foundSpinWaitBlock) {
+            throw new RuntimeException("Block comment ';; spin_wait' not found");
+        }
+
+        final String expectedInstInOutput = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
+        final int foundInstCount = countInstructions(iter, expectedInstInOutput); 
 
         if (foundInstCount != spinWaitInstCount) {
             throw new RuntimeException("Expect " + spinWaitInstCount + " " + spinWaitInst + " instructions. Found: " + foundInstCount);
