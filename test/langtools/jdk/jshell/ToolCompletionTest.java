@@ -192,8 +192,7 @@ public class ToolCompletionTest extends ReplToolTesting {
         String jarName = "test.jar";
         Path lib = outDir.resolve("lib");
         Files.createDirectories(lib);
-        compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
-        Files.move(compiler.getPath(p1.resolve(jarName)), lib.resolve(jarName));
+        compiler.jar(p1, lib.resolve(jarName), "p1/p2/Test.class", "p1/p3/Test.class");
 
         test(false, new String[]{"--no-startup", "--module-path", lib.toString()},
                 (a) -> assertCompletions(a, "p1.", ".*p2\\..*p3\\..*"),
