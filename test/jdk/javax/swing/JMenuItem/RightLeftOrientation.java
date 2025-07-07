@@ -110,13 +110,11 @@ public class RightLeftOrientation {
         });
         System.out.println("Test for LookAndFeel " + lafClassName);
         PassFailJFrame.builder()
-                .title("RightLeftOrientation Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(RightLeftOrientation::createTestUI)
                 .build()
                 .awaitAndCheck();
-       System.out.println("Test passed for LookAndFeel " + lafClassName);
     }
 
     private static JFrame createTestUI() {
