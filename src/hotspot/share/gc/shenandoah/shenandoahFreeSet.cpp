@@ -2237,7 +2237,7 @@ public:
       ShenandoahHeap::heap()->generation_for(r->affiliation())->increment_affiliated_region_count();
       if (_obj == nullptr) {
         size_t actual_size = _req.size();
-        _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : _obj = r->allocate(actual_size, _req);
+        _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
         _req.set_actual_size(actual_size);
         _in_new_region = true;
       }
@@ -2249,7 +2249,7 @@ public:
                r->get_top_before_promote() != nullptr && r->free() >= _min_req_byte_size) {
       if (_obj == nullptr) {
         size_t actual_size = _req.size();
-        _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : _obj = r->allocate(actual_size, _req);
+        _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
         _req.set_actual_size(actual_size);
         _in_new_region = false;
       } else {
