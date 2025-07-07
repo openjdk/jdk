@@ -2155,7 +2155,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
       if (obj == nullptr) {
         //only tried 3 shared regions, try to steal from other shared regions before OOM
         do {
-          ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + i);
+          ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
           if (r != nullptr) {
             obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
             if (obj != nullptr) break;
