@@ -2156,7 +2156,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
         //only tried 3 shared regions, try to steal from other shared regions before OOM
         do {
           ShenandoahHeapRegion* r = Atomic::load_acquire(_directly_allocatable_regions + idx);
-          if (r != nullptr) {
+          if (r != nullptr && r->reserved_for_direct_allocation()) {
             obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
             if (obj != nullptr) break;
           }
@@ -2288,8 +2288,8 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(ShenandoahHeap
       request_count++;
       if (r != nullptr) {
         if (r->free() < PLAB::min_size()) {
+          Atomic::release_store_fence(shared_region_address[i], static_cast<ShenandoahHeapRegion*>(nullptr));
           r->release_from_direct_allocation();
-          Atomic::release_store(shared_region_address[i], static_cast<ShenandoahHeapRegion*>(nullptr));
           // TODO confirm when&why the region is moved out of Mutator partition?
           if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, r->index())) {
             _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
