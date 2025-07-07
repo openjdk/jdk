@@ -176,7 +176,7 @@ public class TestOnSpinWaitAArch64 {
         }
 
         final String expectedInstInOutput = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
-        final int foundInstCount = countInstructions(iter, expectedInstInOutput); 
+        final int foundInstCount = countInstructions(iter, expectedInstInOutput);
 
         if (foundInstCount != spinWaitInstCount) {
             throw new RuntimeException("Expect " + spinWaitInstCount + " " + spinWaitInst + " instructions. Found: " + foundInstCount);
