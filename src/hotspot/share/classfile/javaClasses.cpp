@@ -1896,7 +1896,6 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
     java_thread = java_lang_Thread::thread(carrier_thread);
   }
   if (java_thread == nullptr) {
-    // terminated platform thread or unmounted virtual thread
     return nullptr;
   }
 
