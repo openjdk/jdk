@@ -882,6 +882,11 @@ public:
 private:
   jint initialize_concurrent_refinement();
   jint initialize_service_thread();
+
+protected:
+  void print_tracing_info() const override;
+  void stop() override;
+
 public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
@@ -891,7 +896,6 @@ public:
   // Returns whether concurrent mark threads (and the VM) are about to terminate.
   bool concurrent_mark_is_terminating() const;
 
-  void stop() override;
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
@@ -1308,9 +1312,6 @@ public:
   void print_gc_on(outputStream* st) const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
-
-  // Override
-  void print_tracing_info() const override;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;
