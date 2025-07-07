@@ -93,6 +93,7 @@ public class RightLeftOrientation {
         if (args.length < 1) {
             throw new IllegalArgumentException("Look-and-Feel keyword is required");
         }
+
         final String lafClassName;
         switch (args[0]) {
             case "metal" -> lafClassName = UIManager.getCrossPlatformLookAndFeelClassName();
@@ -101,6 +102,7 @@ public class RightLeftOrientation {
             default -> throw new IllegalArgumentException(
                            "Unsupported Look-and-Feel keyword for this test: " + args[0]);
         }
+
         SwingUtilities.invokeAndWait(() -> {
             try {
                 UIManager.setLookAndFeel(lafClassName);
@@ -108,7 +110,9 @@ public class RightLeftOrientation {
                 throw new RuntimeException(e);
             }
         });
+
         System.out.println("Test for LookAndFeel " + lafClassName);
+
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .columns(35)
