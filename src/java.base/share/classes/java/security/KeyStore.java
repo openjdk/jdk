@@ -853,8 +853,9 @@ public class KeyStore {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its type implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.</li>
      * </ul>.
      *
      * @param type the type of keystore.
@@ -902,8 +903,9 @@ public class KeyStore {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -957,8 +959,9 @@ public class KeyStore {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -1707,8 +1710,9 @@ public class KeyStore {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.
      *
      * @param  file the keystore file
      * @param  password the keystore password, which may be {@code null}
@@ -1768,8 +1772,9 @@ public class KeyStore {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.
      *
      * @param  file the keystore file
      * @param  param the {@code LoadStoreParameter} that specifies how to load

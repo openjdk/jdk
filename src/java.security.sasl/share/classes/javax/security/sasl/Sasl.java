@@ -350,8 +350,9 @@ public class Sasl {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its SASL mechanism(s) implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its SASL
+     * mechanism(s) implementation available.</li>
      * </ul>
      * <p>
      * If a mechanism is listed in the {@code jdk.sasl.disabledMechanisms}
@@ -514,8 +515,9 @@ public class Sasl {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its SASL mechanism(s) implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its SASL
+     * mechanism(s) implementation available.</li>
      * </ul>
      * <p>
      * If {@code mechanism} is listed in the {@code jdk.sasl.disabledMechanisms}

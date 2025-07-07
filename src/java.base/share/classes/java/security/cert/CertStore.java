@@ -213,9 +213,9 @@ public class CertStore {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its {@code CertStore} type implementation
-     * available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its
+     * {@code CertStore} type implementation available.</li>
      * </ul>
      *
      * @param type the name of the requested {@code CertStore} type.
@@ -288,8 +288,9 @@ public class CertStore {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its {@code CertStore} type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its
+     * {@code CertStore} type implementation available.
      *
      * @param type the requested {@code CertStore} type.
      * See the CertStore section in the <a href=
@@ -358,8 +359,9 @@ public class CertStore {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its {@code CertStore} type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its
+     * {@code CertStore} type implementation available.
      *
      * @param type the requested {@code CertStore} type.
      * See the CertStore section in the <a href=

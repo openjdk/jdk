@@ -522,8 +522,9 @@ public class Cipher {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its transformation implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its
+     * transformation implementation available.</li>
      * </ul>
      * <p>
      * See also the Cipher Transformations section of the {@extLink
@@ -622,8 +623,9 @@ public class Cipher {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its transformation implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its
+     * transformation implementation available.
      * <p>
      * See the Cipher Transformations section of the {@extLink
      * security_guide_jdk_providers JDK Providers} document for information
@@ -702,8 +704,9 @@ public class Cipher {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its transformation implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its
+     * transformation implementation available.
      * <p>
      * See the Cipher Transformations section of the {@extLink
      * security_guide_jdk_providers JDK Providers} document for information

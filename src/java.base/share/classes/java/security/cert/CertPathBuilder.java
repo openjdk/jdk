@@ -153,8 +153,9 @@ public class CertPathBuilder {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its algorithm implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.</li>
      * </ul>
      *
      * @param algorithm the name of the requested {@code CertPathBuilder}
@@ -201,8 +202,9 @@ public class CertPathBuilder {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the name of the requested {@code CertPathBuilder}
      *  algorithm.  See the CertPathBuilder section in the <a href=
@@ -253,8 +255,9 @@ public class CertPathBuilder {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the name of the requested {@code CertPathBuilder}
      *  algorithm.  See the CertPathBuilder section in the <a href=

@@ -215,8 +215,9 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its algorithm implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.</li>
      * </ul>
      *
      * @param algorithm the standard string name of the algorithm.
@@ -282,8 +283,9 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
@@ -333,8 +335,9 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=

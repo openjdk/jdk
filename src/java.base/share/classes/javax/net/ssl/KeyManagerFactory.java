@@ -121,8 +121,9 @@ public class KeyManagerFactory {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its algorithm implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.</li>
      * </ul>
      *
      * @param algorithm the standard name of the requested algorithm.
@@ -170,8 +171,9 @@ public class KeyManagerFactory {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the standard name of the requested algorithm.
      *          See the <a href=
@@ -224,8 +226,9 @@ public class KeyManagerFactory {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the standard name of the requested algorithm.
      *          See the <a href=

@@ -1174,8 +1174,9 @@ public abstract class Provider extends Properties {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its described implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its described
+     * implementation available.
      *
      * @param type the type of {@link Service service} requested
      * (for example, {@code MessageDigest})
@@ -1239,8 +1240,9 @@ public abstract class Provider extends Properties {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not be included in the Set.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not be included in the
+     * Set.
      *
      * @return an unmodifiable Set of all services supported by
      * this {@code Provider}
@@ -1306,8 +1308,8 @@ public abstract class Provider extends Properties {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not be added.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not be added.
      *
      * @param s the Service to add
      *

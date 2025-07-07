@@ -186,8 +186,9 @@ public abstract class XMLSignatureFactory {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its mechanism type implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its mechanism
+     * type implementation available.</li>
      * </ul>
      *
      * @param mechanismType the type of the XML processing mechanism and
@@ -243,8 +244,9 @@ public abstract class XMLSignatureFactory {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its mechanism type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its mechanism
+     * type implementation available.
      *
      * @param mechanismType the type of the XML processing mechanism and
      *    representation. See the {@code XMLSignatureFactory} section in the
@@ -305,8 +307,9 @@ public abstract class XMLSignatureFactory {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its mechanism type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its mechanism
+     * type implementation available.
      *
      * @param mechanismType the type of the XML processing mechanism and
      *    representation. See the {@code XMLSignatureFactory} section in the
@@ -380,8 +383,9 @@ public abstract class XMLSignatureFactory {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its mechanism type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its mechanism
+     * type implementation available.
      *
      * @return a new <code>XMLSignatureFactory</code>
      * @throws NoSuchMechanismException if no <code>Provider</code> supports an

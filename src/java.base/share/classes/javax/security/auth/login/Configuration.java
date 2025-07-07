@@ -265,8 +265,9 @@ public abstract class Configuration {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its type implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.</li>
      * </ul>
      *
      * @param type the specified Configuration type.  See the Configuration
@@ -329,8 +330,9 @@ public abstract class Configuration {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.
      *
      * @param type the specified Configuration type.  See the Configuration
      *    section in the <a href=
@@ -401,8 +403,9 @@ public abstract class Configuration {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its type implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its type
+     * implementation available.
      *
      * @param type the specified Configuration type.  See the Configuration
      *    section in the <a href=

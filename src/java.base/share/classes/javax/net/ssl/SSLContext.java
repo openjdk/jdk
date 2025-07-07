@@ -160,8 +160,9 @@ public class SSLContext {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its protocol implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its protocol
+     * implementation available.</li>
      * </ul>
      *
      * @param protocol the standard name of the requested protocol.
@@ -207,8 +208,9 @@ public class SSLContext {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its protocol implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its protocol
+     * implementation available.
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=
@@ -258,8 +260,9 @@ public class SSLContext {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its protocol implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its protocol
+     * implementation available.
      *
      * @param protocol the standard name of the requested protocol.
      *          See the SSLContext section in the <a href=

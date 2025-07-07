@@ -147,8 +147,9 @@ public abstract class TransformService implements Transform {
      * <li> The {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties determine
-     * which services are enabled. A service that is not enabled by the
-     * filter will not make its algorithm implementation available.</li>
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.</li>
      * </ul>
      *
      * @param algorithm the URI of the algorithm. See the
@@ -218,8 +219,9 @@ public abstract class TransformService implements Transform {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the URI of the algorithm. See the
      *    {@code TransformService} section in the
@@ -289,8 +291,9 @@ public abstract class TransformService implements Transform {
      * {@code jdk.security.providers.filter}
      * {@link System#getProperty(String) System} and
      * {@link Security#getProperty(String) Security} properties to determine
-     * which services are enabled. A service that is not enabled by the filter
-     * will not make its algorithm implementation available.
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm the URI of the algorithm. See the
      *    {@code TransformService} section in the
