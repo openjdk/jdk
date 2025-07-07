@@ -70,14 +70,11 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.KeyStroke;
-import javax.swing.LookAndFeel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class RightLeftOrientation {
-
-    static volatile JFrame frame;
 
     private static final String INSTRUCTIONS = """
         A menu bar is shown with a menu.
@@ -122,7 +119,7 @@ public class RightLeftOrientation {
     }
 
     private static JFrame createTestUI() {
-        frame = new JFrame("RightLeftOrientation");
+        JFrame frame = new JFrame("RightLeftOrientation");
         JMenuBar menuBar = new JMenuBar();
 
         menuBar.add(createMenu());
