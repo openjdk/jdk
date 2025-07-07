@@ -736,7 +736,7 @@ public abstract class HttpRequest {
          *
          * @param channel a file channel
          * @param offset the offset of the first byte
-         * @param length the number of bytes to use
+         * @param length the number of bytes to read from the file channel
          *
          * @throws IndexOutOfBoundsException if the specified byte range is
          * found to be out of bounds compared with the size of the file

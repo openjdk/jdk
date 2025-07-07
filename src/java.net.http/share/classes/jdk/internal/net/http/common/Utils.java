@@ -383,13 +383,13 @@ public final class Utils {
      * @param maxCapacity a buffer capacity, in bytes
      * @throws IllegalArgumentException if {@code capacity < 0}
      */
-    public static ByteBuffer getBufferWithAtMost(int maxCapacity) {
+    public static ByteBuffer getBufferWithAtMost(long maxCapacity) {
         if (maxCapacity < 0) {
             throw new IllegalArgumentException(
                     // Match the message produced by `ByteBuffer::createCapacityException`
                     "capacity < 0: (%s < 0)".formatted(maxCapacity));
         }
-        int effectiveCapacity = Math.clamp(maxCapacity, 0, BUFSIZE);
+        int effectiveCapacity = (int) Math.min(maxCapacity, BUFSIZE);
         return ByteBuffer.allocate(effectiveCapacity);
     }
 

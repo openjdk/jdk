@@ -483,9 +483,7 @@ public final class RequestPublishers {
                 throw new NoSuchElementException();
             }
             long remaining = limit - position;
-            ByteBuffer buffer = Utils.BUFSIZE > remaining
-                    ? Utils.getBufferWithAtMost((int) remaining)
-                    : Utils.getBuffer();
+            ByteBuffer buffer = Utils.getBufferWithAtMost(remaining);
             try {
                 int readLength = channel.read(buffer, position);
                 // Short-circuit if `read()` has failed, e.g., due to file content being changed in the meantime
