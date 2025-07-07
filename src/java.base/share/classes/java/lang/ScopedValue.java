@@ -582,8 +582,11 @@ public final class ScopedValue<T> {
 
     /**
      * Return the value of the scoped value or NIL if not bound.
+     * Consult the cache, and only if the value is not found there
+     * search the list of bindings. Update the cache if the binding
+     * was found.
      */
-    private Object orElseNil() {
+    private Object findBinding() {
         Object[] objects = scopedValueCache();
         if (objects != null) {
             int n = (hash & Cache.Constants.SLOT_MASK) * 2;
@@ -605,7 +608,7 @@ public final class ScopedValue<T> {
      * {@return {@code true} if this scoped value is bound in the current thread}
      */
     public boolean isBound() {
-        Object obj = orElseNil();
+        Object obj = findBinding();
         return obj != Snapshot.NIL;
     }
 
@@ -618,7 +621,7 @@ public final class ScopedValue<T> {
      */
     public T orElse(T other) {
         Objects.requireNonNull(other);
-        Object obj = orElseNil();
+        Object obj = findBinding();
         if (obj != Snapshot.NIL) {
             @SuppressWarnings("unchecked")
             T value = (T) obj;
@@ -639,7 +642,7 @@ public final class ScopedValue<T> {
      */
     public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         Objects.requireNonNull(exceptionSupplier);
-        Object obj = orElseNil();
+        Object obj = findBinding();
         if (obj != Snapshot.NIL) {
             @SuppressWarnings("unchecked")
             T value = (T) obj;
