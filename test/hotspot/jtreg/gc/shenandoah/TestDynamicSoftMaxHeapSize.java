@@ -23,14 +23,105 @@
  *
  */
 
-/*
- * @test id=dynamicSoftMaxHeapSize
+/**
+ * @test id=satb-adaptive
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run driver TestDynamicSoftMaxHeapSize
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=adaptive
+ *      TestDynamicSoftMaxHeapSize
+ *
  */
 
+/**
+ * @test id=satb-aggressive
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=aggressive
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
+ * @test id=satb-compact
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=compact
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
+ * @test id=satb-static
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=satb
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -XX:ShenandoahGCHeuristics=static
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
+ * @test id=passive
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahDegeneratedGC
+ *      -Dtarget=10000
+ *      TestDynamicSoftMaxHeapSize
+ *
+ * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:-ShenandoahDegeneratedGC
+ *      -Dtarget=10000
+ *      TestDynamicSoftMaxHeapSize
+ */
+
+/**
+ * @test id=generational
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
+ *      -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahGCHeuristics=adaptive
+ *      TestDynamicSoftMaxHeapSize
+ *
+ */
+
+/**
+ * @test id=generational-softMaxHeapSizeValidation
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -DvalidateSoftMaxHeap=true
+ *      TestDynamicSoftMaxHeapSize
+ *      -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000 -DverifySoftMaxHeapValue=true
+ *      -XX:ShenandoahGCMode=generational
+ *      -XX:ShenandoahGCHeuristics=adaptive
+ */
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -45,68 +136,25 @@ public class TestDynamicSoftMaxHeapSize {
     static final int K = 1024;
     static final int XMS_MB = 100;
     static final int XMX_MB = 512;
-    static final List<String> COMMON_COMMANDS = Arrays.asList("-Xms" + XMS_MB + "m",
-            "-Xmx" + XMX_MB + "m",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+UseShenandoahGC",
-            "-Xlog:gc=info",
-            "-Dtest.jdk=" + System.getProperty("test.jdk"),
-            "-Dcompile.jdk=" + System.getProperty("compile.jdk"),
-            "-Dtarget=10000"
-    );
-    static final List<String> HEURISTICS = Arrays.asList("adaptive", "aggressive", "compact", "static");
-
 
     public static void main(String[] args) throws Exception {
-        // satb gc mode
-        List<String> satbGCModeArgsNoDegeneratedGC = new ArrayList<>(COMMON_COMMANDS);
-        satbGCModeArgsNoDegeneratedGC.add("-XX:ShenandoahGCMode=satb");
+        if ("true".equals(System.getProperty("validateSoftMaxHeap"))) {
+            List<String> flagArgs = new ArrayList<>(Arrays.asList(args));
 
-        for (String heuristic : HEURISTICS) {
-            satbGCModeArgsNoDegeneratedGC.add("-XX:ShenandoahGCHeuristics=" + heuristic);
-            satbGCModeArgsNoDegeneratedGC.add(SoftMaxSetFlagOnlyTest.class.getName());
+            int softMaxInMb = Utils.getRandomInstance().nextInt(XMS_MB, XMX_MB);
+            flagArgs.add("-DsoftMaxCapacity=" + softMaxInMb * K * K);
+            flagArgs.add("-Dtest.jdk=" + System.getProperty("test.jdk"));
+            flagArgs.add("-Dcompile.jdk=" + System.getProperty("compile.jdk"));
 
-            ProcessBuilder satbPb = ProcessTools.createLimitedTestJavaProcessBuilder(satbGCModeArgsNoDegeneratedGC);
-            new OutputAnalyzer(satbPb.start()).shouldHaveExitValue(0);
+            flagArgs.add(SoftMaxWithExpectationTest.class.getName());
+
+            ProcessBuilder genShenPbValidateFlag = ProcessTools.createLimitedTestJavaProcessBuilder(flagArgs);
+            OutputAnalyzer output = new OutputAnalyzer(genShenPbValidateFlag.start());
+            output.shouldHaveExitValue(0);
+            output.shouldContain(String.format("Soft Max Heap Size: %dM -> %dM", XMX_MB, softMaxInMb)); // By default, the soft max heap size is Xmx
+        } else {
+            SoftMaxSetFlagOnlyTest.test();
         }
-
-        // passive gc mode
-        List<String> degeneratedJvmArgs = Arrays.asList("-XX:+ShenandoahDegeneratedGC", "-XX:-ShenandoahDegeneratedGC");
-
-        List<String> passiveGCModeArgs = new ArrayList<>(COMMON_COMMANDS);
-        passiveGCModeArgs.add("-XX:ShenandoahGCMode=passive");
-
-        for (String degeneratedJvmArg : degeneratedJvmArgs) {
-            passiveGCModeArgs.add(degeneratedJvmArg);
-            passiveGCModeArgs.add(SoftMaxSetFlagOnlyTest.class.getName());
-
-            ProcessBuilder passivePb = ProcessTools.createLimitedTestJavaProcessBuilder(passiveGCModeArgs);
-            new OutputAnalyzer(passivePb.start()).shouldHaveExitValue(0);
-        }
-
-        // generational gc mode. gen shen only works in pair with adaptive heuristic
-        List<String> genShenGCModeSetFlagOnlyArgs = new ArrayList<>(COMMON_COMMANDS);
-        genShenGCModeSetFlagOnlyArgs.add("-XX:ShenandoahGCMode=generational");
-
-        genShenGCModeSetFlagOnlyArgs.add(SoftMaxSetFlagOnlyTest.class.getName());
-
-        ProcessBuilder genShenPbSetFlagOnly = ProcessTools.createLimitedTestJavaProcessBuilder(genShenGCModeSetFlagOnlyArgs);
-        new OutputAnalyzer(genShenPbSetFlagOnly.start()).shouldHaveExitValue(0);
-
-        // generational gc mode. Verify if it can detect soft max heap change when app is running
-        int softMaxInMb = Utils.getRandomInstance().nextInt(XMS_MB, XMX_MB + 1);
-
-        List<String> genShenGCModeValidateFlagArgs = new ArrayList<>(COMMON_COMMANDS);
-        genShenGCModeValidateFlagArgs.add("-XX:ShenandoahGCMode=generational");
-        genShenGCModeValidateFlagArgs.add("-DsoftMaxCapacity=" + softMaxInMb * K * K);
-
-        genShenGCModeValidateFlagArgs.add(SoftMaxWithExpectationTest.class.getName());
-
-        ProcessBuilder genShenPbValidateFlag = ProcessTools.createLimitedTestJavaProcessBuilder(genShenGCModeValidateFlagArgs);
-        OutputAnalyzer output = new OutputAnalyzer(genShenPbValidateFlag.start());
-        output.shouldHaveExitValue(0);
-        output.shouldContain(String.format("Soft Max Heap Size: %dM -> %dM", XMX_MB, softMaxInMb)); // By default, the soft max heap size is Xmx
     }
 
     public static class SoftMaxSetFlagOnlyTest {
@@ -115,7 +163,7 @@ public class TestDynamicSoftMaxHeapSize {
 
         static volatile Object sink;
 
-        public static void main(String[] args) throws Exception {
+        public static void test() throws Exception {
             long count = TARGET_MB * 1024 * 1024 / 16;
             Random r = Utils.getRandomInstance();
             PidJcmdExecutor jcmd = new PidJcmdExecutor();
