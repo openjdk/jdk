@@ -126,6 +126,9 @@ class SharedRuntime: AllStatic {
   static jfloat  frem(jfloat  x, jfloat  y);
   static jdouble drem(jdouble x, jdouble y);
 
+  // TODO probably not the right location, let's move it later
+  static void debug_print();
+
 
 #ifdef _WIN64
   // Workaround for fmod issue in the Windows x64 CRT
