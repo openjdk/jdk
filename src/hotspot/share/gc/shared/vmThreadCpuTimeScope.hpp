@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,23 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
-#define SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
+#ifndef SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP
+#define SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP
 
-#include "gc/shared/collectedHeap.hpp"
+#include "memory/allocation.hpp"
 
-#include "gc/shared/memAllocator.hpp"
-#include "oops/oop.inline.hpp"
-#include "utilities/align.hpp"
+class VMThread;
 
-inline oop CollectedHeap::obj_allocate(Klass* klass, size_t size, TRAPS) {
-  ObjAllocator allocator(klass, size, THREAD);
-  return allocator.allocate();
-}
+class VMThreadCPUTimeScope : public StackObj {
+private:
+  jlong   _start;
+  bool    _enabled;
+  bool    _is_gc_operation;
+  VMThread* _thread;
 
-inline oop CollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
-  ObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
-  return allocator.allocate();
-}
+public:
+  VMThreadCPUTimeScope(VMThread* thread, bool is_gc_operation);
+  ~VMThreadCPUTimeScope();
+};
 
-inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
-  ClassAllocator allocator(klass, size, THREAD);
-  return allocator.allocate();
-}
-
-inline void CollectedHeap::add_vmthread_cpu_time(jlong time) {
-  _vmthread_cpu_time += time;
-}
-
-#endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
+#endif // SHARE_GC_SHARED_VMTHREADCPUTIMESCOPE_HPP
