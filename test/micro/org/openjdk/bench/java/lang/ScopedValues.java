@@ -92,6 +92,26 @@ public class ScopedValues {
         return result;
     }
 
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int thousandUnboundOrElses(Blackhole bh) throws Exception {
+        int result = 0;
+        for (int i = 0; i < 1_000; i++) {
+            result += ScopedValuesData.unbound.orElse(1);
+        }
+        return result;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public int thousandBoundOrElses(Blackhole bh) throws Exception {
+        int result = 0;
+        for (int i = 0; i < 1_000; i++) {
+            result += ScopedValuesData.sl1.orElse(1);
+        }
+        return result;
+    }
+
     // Test 2: stress the ScopedValue cache.
     // The idea here is to use a bunch of bound values cyclically, which
     // stresses the ScopedValue cache.

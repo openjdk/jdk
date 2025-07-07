@@ -566,7 +566,7 @@ public final class ScopedValue<T> {
 
     @SuppressWarnings("unchecked")
     private T slowGet() {
-        var value = findBinding();
+        Object value = scopedValueBindings().find(this);
         if (value == Snapshot.NIL) {
             throw new NoSuchElementException("ScopedValue not bound");
         }
@@ -575,32 +575,32 @@ public final class ScopedValue<T> {
     }
 
     /**
-     * {@return {@code true} if this scoped value is bound in the current thread}
+     * Return the value of the scoped value or NIL if not bound.
      */
-    public boolean isBound() {
+    private Object orElseNil() {
         Object[] objects = scopedValueCache();
         if (objects != null) {
             int n = (hash & Cache.SLOT_MASK) * 2;
             if (objects[n] == this) {
-                return true;
+                return objects[n + 1];
             }
             n = ((hash >>> Cache.INDEX_BITS) & Cache.SLOT_MASK) * 2;
             if (objects[n] == this) {
-                return true;
+                return objects[n + 1];
             }
         }
-        var value = findBinding();
-        boolean result = (value != Snapshot.NIL);
-        if (result)  Cache.put(this, value);
-        return result;
+        Object value = scopedValueBindings().find(this);
+        boolean found = (value != Snapshot.NIL);
+        if (found)  Cache.put(this, value);
+        return value;
     }
 
     /**
-     * Return the value of the scoped value or NIL if not bound.
+     * {@return {@code true} if this scoped value is bound in the current thread}
      */
-    private Object findBinding() {
-        Object value = scopedValueBindings().find(this);
-        return value;
+    public boolean isBound() {
+        Object obj = orElseNil();
+        return obj != Snapshot.NIL;
     }
 
     /**
@@ -612,7 +612,7 @@ public final class ScopedValue<T> {
      */
     public T orElse(T other) {
         Objects.requireNonNull(other);
-        Object obj = findBinding();
+        Object obj = orElseNil();
         if (obj != Snapshot.NIL) {
             @SuppressWarnings("unchecked")
             T value = (T) obj;
@@ -633,7 +633,7 @@ public final class ScopedValue<T> {
      */
     public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         Objects.requireNonNull(exceptionSupplier);
-        Object obj = findBinding();
+        Object obj = orElseNil();
         if (obj != Snapshot.NIL) {
             @SuppressWarnings("unchecked")
             T value = (T) obj;
