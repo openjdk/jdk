@@ -71,7 +71,7 @@ public class AccessibleTabbedPaneRoleTest {
         JTabbedPane tabPane = new JTabbedPane();
         tabPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabPane.setTabPlacement(JTabbedPane.TOP);
-        for( int i = 0; i < NUM_TABS; ++i) {
+        for (int i = 0; i < NUM_TABS; ++i) {
             tabPane.addTab("Tab " + i , new JLabel("Content Area"));
         }
         JPanel panel = new JPanel(new BorderLayout());
