@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  private:
   static CompileTask*  _task_free_list;
+  static int           _active_tasks;
   int                  _compile_id;
   Method*              _method;
   jobject              _method_holder;
@@ -123,6 +124,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   static CompileTask* allocate();
   static void         free(CompileTask* task);
+  static void         wait_for_no_active_tasks();
 
   int          compile_id() const                { return _compile_id; }
   Method*      method() const                    { return _method; }

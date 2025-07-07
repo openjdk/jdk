@@ -59,6 +59,7 @@
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #include "os_aix.hpp"
+#include "porting_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -76,6 +77,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <spawn.h>
+#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -1076,7 +1078,7 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
-  char* fname;
+  const char* fname;
 #ifdef AIX
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
@@ -1099,7 +1101,7 @@ void os::jvm_path(char *buf, jint buflen) {
 #endif // AIX
   char* rp = nullptr;
   if (fname[0] != '\0') {
-    rp = os::realpath(dli_fname, buf, buflen);
+    rp = os::realpath(fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
@@ -1137,7 +1139,7 @@ void os::jvm_path(char *buf, jint buflen) {
                "buf has been truncated");
       } else {
         // Go back to path of .so
-        rp = os::realpath(dli_fname, buf, buflen);
+        rp = os::realpath(fname, buf, buflen);
         if (rp == nullptr) {
           return;
         }
@@ -1598,7 +1600,16 @@ jlong os::elapsed_frequency() {
   return NANOSECS_PER_SEC; // nanosecond resolution
 }
 
-bool os::supports_vtime() { return true; }
+double os::elapsed_process_cpu_time() {
+  struct rusage usage;
+  int retval = getrusage(RUSAGE_SELF, &usage);
+  if (retval == 0) {
+    return usage.ru_utime.tv_sec + usage.ru_stime.tv_sec +
+         (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000.0 * 1000.0);
+  } else {
+    return -1;
+  }
+}
 
 // Return the real, user, and system times in seconds from an
 // arbitrary fixed point in the past.

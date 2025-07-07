@@ -154,7 +154,8 @@ julong os::Bsd::available_memory() {
   assert(kerr == KERN_SUCCESS,
          "host_statistics64 failed - check mach_host_self() and count");
   if (kerr == KERN_SUCCESS) {
-    available = vmstat.free_count * os::vm_page_size();
+    // free_count is just a lowerbound, other page categories can be freed too and make memory available
+    available = (vmstat.free_count + vmstat.inactive_count + vmstat.purgeable_count) * os::vm_page_size();
   }
 #endif
   return available;
@@ -781,10 +782,6 @@ void os::free_thread(OSThread* osthread) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
-}
 
 #ifdef __APPLE__
 void os::Bsd::clock_init() {

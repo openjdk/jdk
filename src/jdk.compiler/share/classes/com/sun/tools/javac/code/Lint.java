@@ -183,9 +183,9 @@ public class Lint {
 
         // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
-            if (options.isExplicitlyEnabled(Option.XLINT, lc)) {
+            if (options.isLintExplicitlyEnabled(lc)) {
                 values.add(lc);
-            } else if (options.isExplicitlyDisabled(Option.XLINT, lc)) {
+            } else if (options.isLintExplicitlyDisabled(lc)) {
                 values.remove(lc);
             }
         }
