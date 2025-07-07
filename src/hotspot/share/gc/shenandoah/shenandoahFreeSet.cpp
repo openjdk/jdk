@@ -2235,6 +2235,13 @@ public:
       r->set_affiliation(YOUNG_GENERATION);
       r->make_regular_allocation(YOUNG_GENERATION);
       ShenandoahHeap::heap()->generation_for(r->affiliation())->increment_affiliated_region_count();
+      if (_obj == nullptr) {
+        size_t actual_size = _req.size();
+        _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : _obj = r->allocate(actual_size, _req);
+        _req.set_actual_size(actual_size);
+        _in_new_region = true;
+      }
+      OrderAccess::fence();
       Atomic::store(_shared_region_addresses[_current_index++], r);
       skip_invalid_address();
       _fulfilled_count++;
@@ -2242,15 +2249,9 @@ public:
                r->get_top_before_promote() != nullptr && r->free() >= _min_req_byte_size) {
       if (_obj == nullptr) {
         size_t actual_size = _req.size();
-        if (_req.is_lab_alloc()) {
-          _obj = r->allocate_lab(_req, actual_size);
-        } else {
-          _obj = r->allocate(actual_size, _req);
-        }
-        if (_obj != nullptr) {
-          _req.set_actual_size(actual_size);
-          _in_new_region = false;
-        }
+        _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : _obj = r->allocate(actual_size, _req);
+        _req.set_actual_size(actual_size);
+        _in_new_region = false;
       } else {
         r->reserve_for_direct_allocation();
         Atomic::store(_shared_region_addresses[_current_index++], r);
