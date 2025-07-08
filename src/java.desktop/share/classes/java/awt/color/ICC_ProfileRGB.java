@@ -37,8 +37,8 @@ package java.awt.color;
 
 import java.io.Serial;
 
+import sun.java2d.cmm.BuiltinProfileInfo;
 import sun.java2d.cmm.Profile;
-import sun.java2d.cmm.ProfileDeferralInfo;
 
 /**
  * The {@code ICC_ProfileRGB} class is a subclass of the {@code ICC_Profile}
@@ -122,11 +122,11 @@ public final class ICC_ProfileRGB extends ICC_Profile {
 
     /**
      * Constructs a new {@code ICC_ProfileRGB} from a
-     * {@code ProfileDeferralInfo} object.
+     * {@code BuiltinProfileInfo} object.
      *
      * @param  pdi
      */
-    ICC_ProfileRGB(ProfileDeferralInfo pdi) {
+    ICC_ProfileRGB(BuiltinProfileInfo pdi) {
         super(pdi);
     }
 
