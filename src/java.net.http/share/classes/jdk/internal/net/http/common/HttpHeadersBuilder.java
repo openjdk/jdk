@@ -41,9 +41,13 @@ public class HttpHeadersBuilder {
         headersMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
+    // used in test library (Http3ServerExchange)
     public HttpHeadersBuilder(HttpHeaders headers) {
         headersMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        headersMap.putAll(headers.map());
+        for (Map.Entry<String, List<String>> entry : headers.map().entrySet()) {
+            List<String> valuesCopy = new ArrayList<>(entry.getValue());
+            headersMap.put(entry.getKey(), valuesCopy);
+        }
     }
 
     public HttpHeadersBuilder structuralCopy() {
