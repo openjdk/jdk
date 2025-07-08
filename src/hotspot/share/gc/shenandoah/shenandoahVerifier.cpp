@@ -247,7 +247,15 @@ private:
     // We want to check class loading/unloading did not corrupt them.
 
     if (obj_klass == vmClasses::Class_klass()) {
-      Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+      // During class redefinition the old Klass gets reclaimed and the old mirror oop's Klass reference
+      // nulled out (hence the "klass != nullptr" condition below). However, the mirror oop may have been
+      // forwarded if we are in the mids of an evacuation. In that case, the forwardee's Klass reference
+      // is nulled out. The old, forwarded, still still carries the old invalid Klass pointer. It will be
+      // eventually collected.
+      // This checking code may encounter the old copy of the mirror, and its referee Klass pointer may
+      // already be reclaimed and therefore be invalid. We must therefore check the forwardee's Klass
+      // reference.
+      Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             klass == nullptr || Metaspace::contains(klass),
             "Instance class mirror should point to Metaspace");

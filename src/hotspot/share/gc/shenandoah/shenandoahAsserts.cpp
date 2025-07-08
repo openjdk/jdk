@@ -269,17 +269,14 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   // We want to check class loading/unloading did not corrupt them.
 
   if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
-    // Note: class redefinition involves creating a new Klass structure and a new associated mirror object.
-    // The old Klass is discarded and thus made invalid. The old class mirror's Klass field is nulled
-    // out during redefinition (correctly) - hence the need for the "klass != nullptr" condition below.
-    //
-    // However, if this is happening during concurrent evacuation, the class mirror have been forwarded.
-    // In that case, class redefinition only nulls out only the Klass reference in the forwardee. The forwarded
-    // oop still contains the old, invalid Klass pointer. This should not matter since it is eventually
-    // reclaimed by GC, and all JVM code should consistently access the forwardee's Klass reference only.
-    //
-    // Here, we need to check the Klass reference in the forwardee version of the mirror oop.
-
+    // During class redefinition the old Klass gets reclaimed and the old mirror oop's Klass reference
+    // nulled out (hence the "klass != nullptr" condition below). However, the mirror oop may have been
+    // forwarded if we are in the mids of an evacuation. In that case, the forwardee's Klass reference
+    // is nulled out. The old, forwarded, still still carries the old invalid Klass pointer. It will be
+    // eventually collected.
+    // This checking code may encounter the old copy of the mirror, and its referee Klass pointer may
+    // already be reclaimed and therefore be invalid. We must therefore check the forwardee's Klass
+    // reference.
     const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
     if (klass != nullptr && !Metaspace::contains(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
