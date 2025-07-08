@@ -52,7 +52,7 @@ public class HalfDeadSecondPart {
      * The jvmArgs are provided to avoid GCs during object creation.
      */
 
-    ArrayList<Object[]> holder;
+    static ArrayList<Object[]> holder;
 
     @Setup(Level.Trial)
     public void preRun() {
