@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,13 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     private final boolean isDefault;
 
     /**
+     * Specifies whether HotSpot should profile deoptimizations for the {@code nmethod} associated
+     * with this object. This is particularly useful for whitebox testing scenarios that involve
+     * deoptimization.
+     */
+    private final boolean profileDeopt;
+
+    /**
      * Determines whether this object is in the oops table of the nmethod.
      * <p>
      * If this object is in the oops table, the VM uses the oops table entry to update this object's
@@ -83,10 +90,11 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
      */
     private int invalidationReason;
 
-    HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, long compileId) {
+    HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, boolean profileDeopt, long compileId) {
         super(name);
         this.method = method;
         this.isDefault = isDefault;
+        this.profileDeopt = profileDeopt;
         boolean inOopsTable = !IS_IN_NATIVE_IMAGE && !isDefault;
         this.compileIdSnapshot = inOopsTable ? 0L : compileId;
         this.invalidationReason = -1;
@@ -116,6 +124,14 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
      */
     public boolean isDefault() {
         return isDefault;
+    }
+
+    /**
+     * Determines if HotSpot should profile deoptimization for the {@code nmethod} associated
+     * with this object.
+     */
+    public boolean profileDeopt() {
+        return profileDeopt;
     }
 
     @Override
