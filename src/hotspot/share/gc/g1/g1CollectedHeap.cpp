@@ -1753,7 +1753,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
         old_marking_started_before = old_marking_started_after;
       }
     } else if (!GCCause::is_user_requested_gc(cause) &&
-               // We can only skip CodeCache requested GCs if we are before marking. 
+               // We can only skip CodeCache requested GCs if we are before marking.
                (!GCCause::is_codecache_requested_gc(cause) || op.marking_in_progress()) ) {
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.

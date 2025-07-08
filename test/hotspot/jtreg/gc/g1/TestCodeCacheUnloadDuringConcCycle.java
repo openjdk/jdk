@@ -30,7 +30,7 @@ package gc.g1;
  * a request to unload code cache during concurrent mark.
  * We do that by triggering a code cache gc request (by triggering compilations)
  * during concurrent mark, and verify that after the concurrent cycle additional code
- * cache gc requests start more concurrent cycles. 
+ * cache gc requests start more concurrent cycles.
  * @requires vm.gc.G1
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
