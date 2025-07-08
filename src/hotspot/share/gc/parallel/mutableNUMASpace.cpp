@@ -201,8 +201,6 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
     const size_t os_align = UseLargePages ? page_size() : os::vm_page_size();
     os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // Then we uncommit the pages in the range.
-    // The alignment_hint argument must be less than or equal to the small page
-    // size if not using large pages or else this function does nothing.
     os::disclaim_memory((char*)aligned_region.start(), aligned_region.byte_size());
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), checked_cast<int>(lgrp_id));

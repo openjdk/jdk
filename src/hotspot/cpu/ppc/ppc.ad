@@ -1493,12 +1493,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   const Register toc_temp             = R23;
   assert_different_registers(R11, return_pc, callers_sp, push_frame_temp, toc_temp);
 
-  if (method_is_frameless) {
-    // Add nop at beginning of all frameless methods to prevent any
-    // oop instructions from getting overwritten by make_not_entrant
-    // (patching attempt would fail).
-    __ nop();
-  } else {
+  if (!method_is_frameless) {
     // Get return pc.
     __ mflr(return_pc);
   }
@@ -2198,6 +2193,7 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_DivVD:
     case Op_AbsVF:
     case Op_AbsVD:
+    case Op_NegVI:
     case Op_NegVF:
     case Op_NegVD:
     case Op_SqrtVF:
@@ -2208,6 +2204,8 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_RoundDoubleModeV:
     case Op_MinV:
     case Op_MaxV:
+    case Op_UMinV:
+    case Op_UMaxV:
     case Op_AndV:
     case Op_OrV:
     case Op_XorV:
@@ -2273,7 +2271,11 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     // MaxV, MinV need types == INT || LONG.
     case Op_MaxV:
     case Op_MinV:
+    case Op_UMinV:
+    case Op_UMaxV:
       return bt == T_INT || bt == T_LONG;
+    case Op_NegVI:
+      return PowerArchitecturePPC64 >= 9 && bt == T_INT;
   }
   return true; // Per default match rules are supported.
 }
@@ -8427,6 +8429,18 @@ instruct mulHighL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct uMulHighL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
+  match(Set dst (UMulHiL src1 src2));
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MULHDU   $dst $src1, $src2 \t// unsigned long" %}
+  size(4);
+  ins_encode %{
+    __ mulhdu($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // Immediate Multiplication
 instruct mulL_reg_imm16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
   match(Set dst (MulL src1 src2));
@@ -10783,6 +10797,36 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
 
   ins_encode %{
     __ cmpd(CR0, $src1$$Register, $src2$$Register);
+    __ set_cmp3($dst$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpU3_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 5);
+  size((VM_Version::has_brw() ? 16 : 20));
+
+  format %{ "cmpU3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ cmplw(CR0, $src1$$Register, $src2$$Register);
+    __ set_cmp3($dst$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpUL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
+  match(Set dst (CmpUL3 src1 src2));
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 5);
+  size((VM_Version::has_brw() ? 16 : 20));
+
+  format %{ "cmpUL3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ cmpld(CR0, $src1$$Register, $src2$$Register);
     __ set_cmp3($dst$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -13352,6 +13396,46 @@ instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vminu_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (UMinV src1 src2));
+  format %{ "VMINU  $dst,$src1,$src2\t// vector unsigned min" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_INT:
+        __ vminuw($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_LONG:
+        __ vminud($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmaxu_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (UMaxV src1 src2));
+  format %{ "VMAXU  $dst,$src1,$src2\t// vector unsigned max" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_INT:
+        __ vmaxuw($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      case T_LONG:
+        __ vmaxud($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vand(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (AndV src1 src2));
   size(4);
@@ -13508,6 +13592,17 @@ instruct vneg2D_reg(vecX dst, vecX src) %{
   size(4);
   ins_encode %{
     __ xvnegdp($dst$$VectorRegister->to_vsr(), $src$$VectorRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vneg4I_reg(vecX dst, vecX src) %{
+  match(Set dst (NegVI src));
+  predicate(PowerArchitecturePPC64 >= 9 && Matcher::vector_element_basic_type(n) == T_INT);
+  format %{ "VNEGW $dst,$src\t// negate int vector" %}
+  size(4);
+  ins_encode %{
+    __ vnegw($dst$$VectorRegister, $src$$VectorRegister);
   %}
   ins_pipe(pipe_class_default);
 %}

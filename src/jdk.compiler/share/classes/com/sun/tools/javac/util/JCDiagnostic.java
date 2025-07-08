@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.function.UnaryOperator;
 import java.util.Locale;
@@ -237,7 +238,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic create(
                 DiagnosticType kind, DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, prefix, key, args));
+            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, null, prefix, key, args));
         }
 
         /**
@@ -252,7 +253,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic create(
                 DiagnosticType kind, DiagnosticSource source, DiagnosticPosition pos, String key, UnaryOperator<JCDiagnostic> rewriter, Object... args) {
-            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, prefix, key, args), rewriter);
+            return create(EnumSet.noneOf(DiagnosticFlag.class), source, pos, DiagnosticInfo.of(kind, null, prefix, key, args), rewriter);
         }
 
         /**
@@ -279,7 +280,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic create(DiagnosticType kind,
                 LintCategory lc, Set<DiagnosticFlag> flags, DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return create(flags, source, pos, DiagnosticInfo.of(kind, lc, prefix, key, args));
+            return create(flags, source, pos, DiagnosticInfo.of(kind, null, lc, prefix, key, args));
         }
 
         /**
@@ -303,7 +304,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                 //replace all nested FragmentKey with full-blown JCDiagnostic objects
                 LintCategory category = diagnosticInfo instanceof LintWarning lintWarning ?
                         lintWarning.category : null;
-                return DiagnosticInfo.of(diagnosticInfo.type, category, diagnosticInfo.prefix, diagnosticInfo.code,
+                return DiagnosticInfo.of(diagnosticInfo.type, diagnosticInfo.flags,
+                        category, diagnosticInfo.prefix, diagnosticInfo.code,
                         Stream.of(diagnosticInfo.args).map(o -> {
                             return (o instanceof Fragment frag) ?
                                     fragment(frag) : o;
@@ -314,28 +316,28 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          * Create a new error key.
          */
         public Error errorKey(String code, Object... args) {
-            return (Error)DiagnosticInfo.of(ERROR, prefix, code, args);
+            return (Error)DiagnosticInfo.of(ERROR, null, prefix, code, args);
         }
 
         /**
          * Create a new warning key.
          */
         Warning warningKey(LintCategory lintCategory, String code, Object... args) {
-            return (Warning)DiagnosticInfo.of(WARNING, lintCategory, prefix, code, args);
+            return (Warning)DiagnosticInfo.of(WARNING, null, lintCategory, prefix, code, args);
         }
 
         /**
          * Create a new note key.
          */
         public Note noteKey(String code, Object... args) {
-            return (Note)DiagnosticInfo.of(NOTE, prefix, code, args);
+            return (Note)DiagnosticInfo.of(NOTE, null, prefix, code, args);
         }
 
         /**
          * Create a new fragment key.
          */
         Fragment fragmentKey(String code, Object... args) {
-            return (Fragment)DiagnosticInfo.of(FRAGMENT, prefix, code, args);
+            return (Fragment)DiagnosticInfo.of(FRAGMENT, null, prefix, code, args);
         }
     }
 
@@ -351,6 +353,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     public static JCDiagnostic fragment(String key, Object... args) {
         return new JCDiagnostic(getFragmentFormatter(),
                               DiagnosticInfo.of(FRAGMENT,
+                                      null,
                                       null,
                                       "compiler",
                                       key,
@@ -447,6 +450,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         RECOVERABLE,
         NON_DEFERRABLE,
         COMPRESSED,
+        /** Flags mandatory warnings that should pass through a mandatory warning aggregator.
+         */
+        AGGREGATE,
         /** Flag for diagnostics that were reported through API methods.
          */
         API,
@@ -503,6 +509,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** The diagnostic kind (i.e. error). */
         DiagnosticType type;
 
+        /** A set of diagnostic flags to be automatically added to newly created JCDiagnostics. */
+        Set<DiagnosticFlag> flags;
+
         /** The diagnostic prefix (i.e. 'javac'); used to compute full resource key. */
         String prefix;
 
@@ -513,8 +522,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** The diagnostic arguments. */
         Object[] args;
 
-        private DiagnosticInfo(DiagnosticType type, String prefix, String code, Object... args) {
+        private DiagnosticInfo(DiagnosticType type, Set<DiagnosticFlag> flags, String prefix, String code, Object... args) {
             this.type = type;
+            this.flags = flags != null ? flags : EnumSet.noneOf(DiagnosticFlag.class);
             this.prefix = prefix;
             this.code = code;
             this.args = args;
@@ -530,22 +540,24 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /**
          * Static factory method; build a custom diagnostic key using given kind, prefix, code and args.
          */
-        public static DiagnosticInfo of(DiagnosticType type, String prefix, String code, Object... args) {
-            return of(type, null, prefix, code, args);
+        public static DiagnosticInfo of(DiagnosticType type, Set<DiagnosticFlag> flags,
+            String prefix, String code, Object... args) {
+            return of(type, flags, null, prefix, code, args);
         }
 
-        public static DiagnosticInfo of(DiagnosticType type, LintCategory lc, String prefix, String code, Object... args) {
+        public static DiagnosticInfo of(DiagnosticType type, Set<DiagnosticFlag> flags,
+            LintCategory lc, String prefix, String code, Object... args) {
             switch (type) {
                 case ERROR:
-                    return new Error(prefix, code, args);
+                    return new Error(flags, prefix, code, args);
                 case WARNING:
                     return lc == null ?
-                            new Warning(prefix, code, args) :
-                            new LintWarning(lc, prefix, code, args);
+                            new Warning(flags, prefix, code, args) :
+                            new LintWarning(flags, lc, prefix, code, args);
                 case NOTE:
-                    return new Note(prefix, code, args);
+                    return new Note(flags, prefix, code, args);
                 case FRAGMENT:
-                    return new Fragment(prefix, code, args);
+                    return new Fragment(flags, prefix, code, args);
                 default:
                     Assert.error("Wrong diagnostic type: " + type);
                     return null;
@@ -569,14 +581,18 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         public void setArgs(Object[] args) {
             this.args = args;
         }
+
+        public boolean hasFlag(DiagnosticFlag flag) {
+            return flags.contains(flag);
+        }
     }
 
     /**
      * Class representing error diagnostic keys.
      */
     public static final class Error extends DiagnosticInfo {
-        public Error(String prefix, String key, Object... args) {
-            super(DiagnosticType.ERROR, prefix, key, args);
+        public Error(Set<DiagnosticFlag> flags, String prefix, String key, Object... args) {
+            super(DiagnosticType.ERROR, flags, prefix, key, args);
         }
     }
 
@@ -584,8 +600,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Class representing warning diagnostic keys.
      */
     public static sealed class Warning extends DiagnosticInfo {
-        public Warning(String prefix, String key, Object... args) {
-            super(DiagnosticType.WARNING, prefix, key, args);
+        public Warning(Set<DiagnosticFlag> flags, String prefix, String key, Object... args) {
+            super(DiagnosticType.WARNING, flags, prefix, key, args);
         }
     }
 
@@ -595,8 +611,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     public static final class LintWarning extends Warning {
         final LintCategory category;
 
-        public LintWarning(LintCategory category, String prefix, String key, Object... args) {
-            super(prefix, key, args);
+        public LintWarning(Set<DiagnosticFlag> flags, LintCategory category, String prefix, String key, Object... args) {
+            super(flags, prefix, key, args);
             this.category = category;
         }
 
@@ -609,8 +625,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Class representing note diagnostic keys.
      */
     public static final class Note extends DiagnosticInfo {
-        public Note(String prefix, String key, Object... args) {
-            super(DiagnosticType.NOTE, prefix, key, args);
+        public Note(Set<DiagnosticFlag> flags, String prefix, String key, Object... args) {
+            super(DiagnosticType.NOTE, flags, prefix, key, args);
         }
     }
 
@@ -618,8 +634,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Class representing fragment diagnostic keys.
      */
     public static final class Fragment extends DiagnosticInfo {
-        public Fragment(String prefix, String key, Object... args) {
-            super(DiagnosticType.FRAGMENT, prefix, key, args);
+        public Fragment(Set<DiagnosticFlag> flags, String prefix, String key, Object... args) {
+            super(DiagnosticType.FRAGMENT, flags, prefix, key, args);
         }
     }
 
@@ -664,6 +680,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         this.source = source;
         this.position = pos;
         this.rewriter = rewriter;
+
+        this.flags.addAll(diagnosticInfo.flags);
     }
 
     /**
