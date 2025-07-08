@@ -126,6 +126,15 @@ class LibraryCallKit : public GraphKit {
 
   virtual int reexecute_sp() { return _reexecute_sp; }
 
+  /* When an intrinsic makes changes before bailing out, it's necessary to restore the graph
+   * as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
+   * bailout before making changes because the bailing out decision might depend on new nodes
+   * (their types, for instance).
+   *
+   * So, if an intrinsic might cause this situation, one must start by saving the state in a
+   * SavedState using clone_map_and_save_state, and before returning in case of bailing out,
+   * fix the graph using restore_state.
+   */
   struct SavedState {
     uint sp;
     JVMState* jvms;
@@ -134,6 +143,7 @@ class LibraryCallKit : public GraphKit {
   };
   SavedState clone_map_and_save_state();
   void restore_state(const SavedState&);
+  void destruct_map_clone(const SavedState& sfp);
 
   // Helper functions to inline natives
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);

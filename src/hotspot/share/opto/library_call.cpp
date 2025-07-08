@@ -1729,7 +1729,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     restore_state(old_state);
     return false;
   }
-  destruct_map_clone(old_state.map);
+  destruct_map_clone(old_state);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -2390,11 +2390,16 @@ void LibraryCallKit::restore_state(const SavedState& state) {
   for (DUIterator_Fast imax, i = control()->fast_outs(imax); i < imax; i++) {
     Node* out = control()->fast_out(i);
     if (out->is_CFG() && out->in(0) == control() && out != map() && !state.ctrl_succ.member(out)) {
+      _gvn.hash_delete(out);
       out->set_req(0, C->top());
       C->record_for_igvn(out);
       --i; --imax;
     }
   }
+}
+
+void LibraryCallKit::destruct_map_clone(const SavedState& state) {
+  GraphKit::destruct_map_clone(state.map);
 }
 
 bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
@@ -2522,7 +2527,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
 
-  destruct_map_clone(old_state.map);
+  destruct_map_clone(old_state);
   assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   if (mismatched) {
@@ -2771,7 +2776,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
     return false;
   }
 
-  destruct_map_clone(old_state.map);
+  destruct_map_clone(old_state);
 
   // For CAS, unlike inline_unsafe_access, there seems no point in
   // trying to refine types. Just use the coarse types here.

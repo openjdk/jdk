@@ -60,186 +60,126 @@ public class OpaqueAccesses {
     private Object f = new Object();
     private long l1, l2;
 
-
+    // To the end of a line, a new line character, repeated.
     private static final String FULL_LINES = "(.*\\R)*";
+    // Finish the line after the node type, skips full line, and eats until before the node types
     private static final String SKIP = IRNode.MID + IRNode.END + "\\R" + FULL_LINES + "\\s*" + IRNode.START;
+    
+    private static final String CALL_STATIC_JAVA_AND_THEN_OPAQUE_NOT_NULL = IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END;
+    private static final String OPAQUE_NOT_NULL_AND_THEN_CALL_STATIC_JAVA = IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END;
+    /* Having both CallStaticJava and OpaqueNotNull, in any order. We use that in a failOn to make sure we have one
+     * or the other (or none), but not both.
+     * The CallStaticJava happens when the call is not intrinsified, and the OpaqueNotNull comes from the intrinsic.
+     * We don't want a unfinished intrinsic, with the call nevertheless.
+     */
+    private static final String BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL =
+            "(" + CALL_STATIC_JAVA_AND_THEN_OPAQUE_NOT_NULL + ") | (" + OPAQUE_NOT_NULL_AND_THEN_CALL_STATIC_JAVA + ")";
+
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedOffsetField(Object o) {
         return UNSAFE.getReference(o, F_OFFSET);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader0(Object o) {
         return UNSAFE.getInt(o, 0);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader4(Object o) {
         return UNSAFE.getInt(o, 4);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader8(Object o) {
         return UNSAFE.getInt(o, 8);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader12(Object o) {
         return UNSAFE.getInt(o, 12);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader16(Object o) {
         return UNSAFE.getInt(o, 16);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeader17(Object o) {
         return UNSAFE.getIntUnaligned(o, 17);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedBase(long off) {
         return UNSAFE.getReference(INSTANCE, off);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testOpaque(Object o, long off) {
         return UNSAFE.getReference(o, off);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray0(Object[] arr) {
         return UNSAFE.getInt(arr, 0);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray4(Object[] arr) {
         return UNSAFE.getInt(arr, 4);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray8(Object[] arr) {
         return UNSAFE.getInt(arr, 8);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray12(Object[] arr) {
         return UNSAFE.getInt(arr, 12);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray16(Object[] arr) {
         return UNSAFE.getInt(arr, 16);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static int testFixedOffsetHeaderArray17(Object[] arr) {
         return UNSAFE.getIntUnaligned(arr, 17);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedOffsetArray(Object[] arr) {
         return UNSAFE.getReference(arr, E_OFFSET);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testFixedBaseArray(long off) {
         return UNSAFE.getReference(ARRAY, off);
     }
 
     @Test
-    @IR(failOn = {
-            IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END,
-            IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END,
-    },
-            phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    @IR(failOn = {BOTH_CALL_STATIC_JAVA_AND_OPAQUE_NOT_NULL}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     static Object testOpaqueArray(Object[] o, long off) {
         return UNSAFE.getReference(o, off);
     }
