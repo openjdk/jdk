@@ -60,9 +60,7 @@ class SubIntValidationTest {
         ClassFile.of().build(CD_Void, clb -> {
             assertThrows(IllegalArgumentException.class, () -> clb.withFlags(-1));
             assertThrows(IllegalArgumentException.class, () -> clb.withFlags(70000));
-            assertThrows(IllegalArgumentException.class, () -> {
-                clb.withField("test", CD_String, -1);
-            });
+            assertThrows(IllegalArgumentException.class, () -> clb.withField("test", CD_String, -1));
             assertThrows(IllegalArgumentException.class, () -> clb.withField("test", CD_String, 70000));
             assertThrows(IllegalArgumentException.class, () -> clb.withMethod("test", MTD_void, -1, _ -> {}));
             assertThrows(IllegalArgumentException.class, () -> clb.withMethod("test", MTD_void, 70000, _ -> {}));
