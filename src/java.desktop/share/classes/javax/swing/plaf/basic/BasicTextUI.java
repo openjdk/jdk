@@ -1029,7 +1029,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
 
     /**
-     * Gets the allocation (i.e. the allocated size) for the root view.
+     * Gets the allocation (that is the allocated size) for the root view.
      * <p>
      * The returned rectangle is unrelated to visibility.
      * It is used to set the size of the root view.
