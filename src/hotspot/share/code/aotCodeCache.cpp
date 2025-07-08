@@ -1314,6 +1314,7 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, SharedRuntime::resolve_opt_virtual_call_C);
     SET_ADDRESS(_extrs, SharedRuntime::resolve_virtual_call_C);
     SET_ADDRESS(_extrs, SharedRuntime::resolve_static_call_C);
+    SET_ADDRESS(_extrs, SharedRuntime::throw_StackOverflowError);
     SET_ADDRESS(_extrs, SharedRuntime::throw_delayed_StackOverflowError);
     SET_ADDRESS(_extrs, SharedRuntime::throw_AbstractMethodError);
     SET_ADDRESS(_extrs, SharedRuntime::throw_IncompatibleClassChangeError);
