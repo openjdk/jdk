@@ -1783,11 +1783,12 @@ static const TypeFunc* make_osr_end_Type() {
 
 static const TypeFunc* make_debug_print_Type() {
   // create input type (domain)
-  int num_args      = 1; // TODO is it actually one for a pointer
+  int num_args      = 2;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;    // static string pointer
+  fields[argp++] = TypeInt::INT;        // value to print
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
