@@ -2238,7 +2238,7 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   if (in1->Opcode() != Op_VectorMaskCmp ||
       in1->outcnt() != 1 ||
       !(in1->as_VectorMaskCmp())->predicate_can_be_negated() ||
-      !VectorNode::is_all_ones_vector(in2)) {
+        !VectorNode::is_all_ones_vector(in2)) {
     return nullptr;
   }
 
