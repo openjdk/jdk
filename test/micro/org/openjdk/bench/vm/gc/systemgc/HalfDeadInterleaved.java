@@ -54,11 +54,15 @@ public class HalfDeadInterleaved {
 
     static ArrayList<Object[]> holder;
 
+    @Setup(Level.Trial)
+    public void preRun() {
+        // Compact right now, kicking out all unrelated objects
+        System.gc();
+    }
+
     @Setup(Level.Iteration)
     public void generateGarbage() {
         holder = GarbageGenerator.generateObjectArrays();
-        // Compact right now, kicking out all unrelated objects
-        System.gc();
         for (Object[] objArray : holder) {
             for (int i=0; i < objArray.length; i++) {
                 if ((i & 1) == 1) {

@@ -53,11 +53,15 @@ public class DifferentObjectSizesArray {
 
     static Object[] largeObjArray;
 
+    @Setup(Level.Trial)
+    public void preRun() {
+        // Compact right now, kicking out all unrelated objects
+        System.gc();
+    }
+
     @Setup(Level.Iteration)
     public void generateGarbage() {
         largeObjArray = GarbageGenerator.generateAndFillLargeObjArray(false);
-        // Compact right now, kicking out all unrelated objects
-        System.gc();
         // Removing a third of the objects and keeping a good
         // distribution of sizes.
         for (int i = 0; i < largeObjArray.length; i++) {

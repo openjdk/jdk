@@ -53,11 +53,15 @@ public class AllLive {
 
     static ArrayList<Object[]> holder;
 
+    @Setup(Level.Trial)
+    public void preRun() {
+        // Compact right now, kicking out all unrelated objects
+        System.gc();
+    }
+
     @Setup(Level.Iteration)
     public void generateGarbage() {
         holder = GarbageGenerator.generateObjectArrays();
-        // Compact right now, kicking out all unrelated objects
-        System.gc();
     }
 
     @Benchmark

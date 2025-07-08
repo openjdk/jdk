@@ -54,11 +54,15 @@ public class HalfDeadSecondPart {
 
     ArrayList<Object[]> holder;
 
+    @Setup(Level.Trial)
+    public void preRun() {
+        // Compact right now, kicking out all unrelated objects
+        System.gc();
+    }
+
     @Setup(Level.Iteration)
     public void generateGarbage() {
         holder = GarbageGenerator.generateObjectArrays();
-        // Compact right now, kicking out all unrelated objects
-        System.gc();
         // Clearing every other object array in the holder
         for (int i = holder.size() / 2; i < holder.size(); i++) {
             holder.set(i, null);

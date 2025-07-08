@@ -53,11 +53,15 @@ public class OneBigObject {
 
     static Object[] holder;
 
+    @Setup(Level.Trial)
+    public void preRun() {
+        // Compact right now, kicking out all unrelated objects
+        System.gc();
+    }
+
     @Setup(Level.Iteration)
     public void generateGarbage() {
         holder = new Object[1024*1024*128];
-        // Compact right now, kicking out all unrelated objects
-        System.gc();
     }
 
     @Benchmark

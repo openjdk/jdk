@@ -52,8 +52,8 @@ public class NoObjects {
      * test for consistency.
      */
 
-    @Setup(Level.Iteration)
-    public void generateGarbage() {
+    @Setup(Level.Trial)
+    public void preRun() {
         // Compact right now, kicking out all unrelated objects
         System.gc();
     }

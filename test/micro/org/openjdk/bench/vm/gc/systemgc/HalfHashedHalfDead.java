@@ -54,11 +54,15 @@ public class HalfHashedHalfDead {
 
     static ArrayList<Object[]> holder;
 
+    @Setup(Level.Trial)
+    public void preRun() {
+        // Compact right now, kicking out all unrelated objects
+        System.gc();
+    }
+
     @Setup(Level.Iteration)
     public void generateGarbage() {
         holder = GarbageGenerator.generateObjectArrays();
-        // Compact right now, kicking out all unrelated objects
-        System.gc();
         // Keeping half the objects and calculating the hash code to
         // force some GCs to preserve marks.
         for (Object[] objectArray: holder) {
