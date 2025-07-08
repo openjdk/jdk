@@ -2340,7 +2340,7 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(ShenandoahHeap
                                                                   HeapWord* &obj,
                                                                   bool &in_new_region) {
   assert(Thread::current()->is_Java_thread(), "Must be mutator");
-  assert(region_count > 0u && region_count <= ShenandoahDirectlyAllocatableRegionCount, "Must be");
+  assert(region_count <= ShenandoahDirectlyAllocatableRegionCount, "Must be");
   shenandoah_assert_not_heaplocked();
 
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
