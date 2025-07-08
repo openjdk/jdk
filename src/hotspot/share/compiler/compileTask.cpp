@@ -81,7 +81,7 @@ CompileTask::CompileTask(int compile_id,
 }
 
 CompileTask::~CompileTask() {
-  if ((_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder))) {
+  if (_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder)) {
     JNIHandles::destroy_weak_global(_method_holder);
   } else {
     JNIHandles::destroy_global(_method_holder);
