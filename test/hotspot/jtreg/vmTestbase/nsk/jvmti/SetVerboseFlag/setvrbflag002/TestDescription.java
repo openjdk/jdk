@@ -35,6 +35,8 @@
  * COMMENTS
  *
  * @requires !vm.ubsan
+ * @comment We test with arguments out of scope of the jvmti enums, this causes
+ *          ubsan issues.
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm/native
