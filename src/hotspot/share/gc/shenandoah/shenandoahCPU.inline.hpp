@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAH_CPU_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAH_CPU_INLINE_HPP
 
-#include "gc/shared/shenandoah/shenandoahCPU.php"
+#include "gc/shenandoah/shenandoahCPU.php"
 
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
