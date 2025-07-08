@@ -2399,6 +2399,7 @@ void LibraryCallKit::restore_state(const SavedState& state) {
       out->set_req(0, C->top());
       C->record_for_igvn(out);
       --i; --imax;
+      _gvn.hash_find_insert(out);
     }
   }
 }
@@ -2504,7 +2505,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
 
   if (alias_type->adr_type() == TypeInstPtr::KLASS ||
-  alias_type->adr_type() == TypeAryPtr::RANGE) {
+      alias_type->adr_type() == TypeAryPtr::RANGE) {
     restore_state(old_state);
     return false; // not supported
   }
