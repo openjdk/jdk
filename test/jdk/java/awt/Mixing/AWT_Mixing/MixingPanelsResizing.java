@@ -302,7 +302,7 @@ public class MixingPanelsResizing {
     }//fail()
     private static boolean isAlmostEqualColor(Color color, Color refColor) {
         final int COLOR_TOLERANCE_MACOSX = 10;
-        if(color.equals(refColor)){
+        if (color.equals(refColor)){
             return true;
         } else {
             return Math.abs(color.getRed() - refColor.getRed()) <
