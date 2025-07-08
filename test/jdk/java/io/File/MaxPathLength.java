@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,7 @@ public class MaxPathLength {
 
         // test long paths on windows
         // And these long pathes cannot be handled on Solaris and Mac platforms
-        if (isWindows) {
-            String name = fileName;
-            while (name.length() < MAX_LENGTH) {
-                testLongPath (20, name, false);
-                testLongPath (20, name, true);
-                name = getNextName(name);
-            }
-        }
+        testLongPathOnWindows();
     }
 
     private static String getNextName(String fName) {
@@ -196,6 +189,17 @@ public class MaxPathLength {
                     System.err.println("Dir, " + p + ", is not empty");
                     break;
                 }
+            }
+        }
+    }
+
+    private static void testLongPathOnWindows () throws Exception {
+        if (isWindows) {
+            String name = fileName;
+            while (name.length() < MAX_LENGTH) {
+                testLongPath (20, name, false);
+                testLongPath (20, name, true);
+                name = getNextName(name);
             }
         }
     }
