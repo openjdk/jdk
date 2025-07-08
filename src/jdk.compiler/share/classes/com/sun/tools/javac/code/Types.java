@@ -36,6 +36,7 @@ import java.util.WeakHashMap;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 
 import javax.tools.JavaFileObject;
