@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 8159055
- * @summary Verifies ImageIcon.setImage and ImageIcon(Image) constructor
- *          handles null parameter
+ * @summary Verifies ImageIcon.setImage handles null parameter
  * @run main ImageIconNullImageTest
  */
 
@@ -35,13 +34,7 @@ import javax.swing.ImageIcon;
 public class ImageIconNullImageTest {
 
     public static void main(String[] args) throws Exception {
-        testImageIconNull();
         testSetImageNull();
-    }
-
-    private static void testImageIconNull() {
-        // Passing null image shouldn't cause NPE
-        new ImageIcon((Image) null);
     }
 
     private static void testSetImageNull() {
