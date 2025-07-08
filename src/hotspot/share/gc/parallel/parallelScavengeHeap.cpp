@@ -376,9 +376,11 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
 }
 
 HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  // We just finished a young/full gc, try everything to satisfy this allocation request.
   HeapWord* result = young_gen()->expand_and_allocate(size);
 
-  if (result == nullptr && !is_tlab && !should_alloc_in_eden(size)) {
+  if (result == nullptr && !is_tlab) {
     result = old_gen()->expand_and_allocate(size);
   }
 
