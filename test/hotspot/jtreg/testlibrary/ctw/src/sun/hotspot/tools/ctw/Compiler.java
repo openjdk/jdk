@@ -170,17 +170,22 @@ public class Compiler {
 
         @Override
         public final void run() {
+            // Make sure method is not compiled at any level before starting
+            // progressive compilations. No deopt in-between tiers is needed,
+            // as long as we increase the compilation levels one by one.
+            WHITE_BOX.deoptimizeMethod(method);
+
             int compLevel = Utils.INITIAL_COMP_LEVEL;
             if (Utils.TIERED_COMPILATION) {
                 for (int i = compLevel; i <= Utils.TIERED_STOP_AT_LEVEL; ++i) {
-                    WHITE_BOX.deoptimizeMethod(method);
                     compileAtLevel(i);
                 }
             } else {
                 compileAtLevel(compLevel);
             }
 
-            // Make the method eligible for sweeping sooner
+            // Ditch all the compiled versions of the code, make the method
+            // eligible for sweeping sooner.
             WHITE_BOX.deoptimizeMethod(method);
         }
 

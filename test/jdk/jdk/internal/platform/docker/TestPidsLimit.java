@@ -28,6 +28,7 @@
  * @summary Test JDK Metrics class when running inside a docker container with limited pids
  * @bug 8266490
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @build TestPidsLimit
  * @run driver TestPidsLimit
