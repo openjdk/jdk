@@ -51,6 +51,7 @@ public class AbsPathsInImage {
     public static final String DIR_PROPERTY = "jdk.test.build.AbsPathsInImage.dir";
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
     private static final boolean IS_LINUX   = System.getProperty("os.name").toLowerCase().contains("linux");
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     private boolean matchFound = false;
 
@@ -181,10 +182,10 @@ public class AbsPathsInImage {
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
         int bytesRead;
-        byte[] buffer = new byte[8192];
+        byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         List<String> matches = new ArrayList<>();
-        try(InputStream inputStream = Files.newInputStream(file)) {
-            while((bytesRead = inputStream.read(buffer)) != -1) {
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
                 matches.addAll(scanBytes(buffer, bytesRead, searchPatterns));
             }
         }
@@ -201,11 +202,11 @@ public class AbsPathsInImage {
     private void scanZipFile(Path zipFile, List<byte[]> searchPatterns) throws IOException {
         ZipEntry zipEntry;
         int bytesRead;
-        byte[] buffer = new byte[8192];
+        byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
             while ((zipEntry = zipInputStream.getNextEntry()) != null) {
                 List<String> matches = new ArrayList<>();
-                while((bytesRead = zipInputStream.read(buffer)) != -1) {
+                while ((bytesRead = zipInputStream.read(buffer)) != -1) {
                     matches.addAll(scanBytes(buffer, bytesRead, searchPatterns));
                 }
                 if (matches.size() > 0) {
