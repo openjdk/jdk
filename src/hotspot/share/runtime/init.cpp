@@ -149,10 +149,10 @@ jint init_globals() {
   AOTCodeCache::init2();     // depends on universe_init, must be before initial_stubs_init
   AsyncLogWriter::initialize();
 
-  initial_stubs_init();      // initial stub routines
+  initial_stubs_init();      // stubgen initial stub routines
   // stack overflow exception blob is referenced by the interpreter
+  AOTCodeCache::init_early_stubs_table();  // need this after stubgen initial stubs and before shared runtime initial stubs
   SharedRuntime::generate_initial_stubs();
-  AOTCodeCache::init_early_stubs_table();  // need this after initial_stubs
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   continuations_init();      // must precede continuation stub generation
   continuation_stubs_init(); // depends on continuations_init
