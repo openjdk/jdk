@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8206929
+ * @bug 8206929 8333857
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
  * @modules java.base/sun.security.x509
@@ -49,6 +49,8 @@ import java.io.*;
 import java.security.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+
 import sun.security.x509.X509CertImpl;
 
 public class ResumeChecksServer extends SSLContextTemplate {
@@ -63,10 +65,12 @@ public class ResumeChecksServer extends SSLContextTemplate {
         LOCAL_CERTS
     }
 
-    public static void main(String[] args) throws Exception {
+    static CountDownLatch latch = new CountDownLatch(1);
 
+    public static void main(String[] args) throws Exception {
         new ResumeChecksServer(TestMode.valueOf(args[0])).run();
     }
+
     private final TestMode testMode;
 
     public ResumeChecksServer(TestMode testMode) {
@@ -82,31 +86,38 @@ public class ResumeChecksServer extends SSLContextTemplate {
         SSLServerSocket ssock = (SSLServerSocket)
             fac.createServerSocket(0);
 
-        Client client = startClient(ssock.getLocalPort());
-
+        HexFormat hex = HexFormat.of();
+        long firstStartTime = System.currentTimeMillis();
         try {
-            firstSession = connect(client, ssock, testMode, null);
+            firstSession = connect(ssock, testMode, null);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
 
+        System.err.println("firstStartTime = " + firstStartTime);
+        System.err.println("firstId = " + hex.formatHex(firstSession.getId()));
+        System.err.println("firstSession.getCreationTime() = " +
+            firstSession.getCreationTime());
+
         long secondStartTime = System.currentTimeMillis();
-        Thread.sleep(10);
         try {
-            secondSession = connect(client, ssock, testMode, firstSession);
+            secondSession = connect(ssock, testMode, firstSession);
         } catch (SSLHandshakeException ex) {
             // this is expected
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
 
-        client.go = false;
-        client.signal();
+        System.err.println("secondStartTime = " + secondStartTime);
+        // Note: Ids will never match with TLS 1.3 due to spec
+        System.err.println("secondId = " + hex.formatHex(secondSession.getId()));
+        System.err.println("secondSession.getCreationTime() = " +
+            secondSession.getCreationTime());
 
         switch (testMode) {
         case BASIC:
             // fail if session is not resumed
-            if (secondSession.getCreationTime() > secondStartTime) {
+            if (secondSession.getCreationTime() < secondStartTime) {
                 throw new RuntimeException("Session was not reused");
             }
 
@@ -128,7 +139,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         case SIGNATURE_SCHEME:
         case LOCAL_CERTS:
             // fail if a new session is not created
-            if (secondSession.getCreationTime() <= secondStartTime) {
+            if (secondSession.getCreationTime() < secondStartTime) {
                 throw new RuntimeException("Existing session was used");
             }
             break;
@@ -138,13 +149,11 @@ public class ResumeChecksServer extends SSLContextTemplate {
     }
 
     private static class NoSig implements AlgorithmConstraints {
-
         private final String alg;
 
         NoSig(String alg) {
             this.alg = alg;
         }
-
 
         private boolean test(String a) {
             return !a.toLowerCase().contains(alg.toLowerCase());
@@ -153,26 +162,27 @@ public class ResumeChecksServer extends SSLContextTemplate {
         public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
+
         public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
-
             return test(algorithm);
         }
+
         public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
-
             return test(algorithm);
         }
     }
 
-    private static SSLSession connect(Client client, SSLServerSocket ssock,
+    private static SSLSession connect(SSLServerSocket ssock,
             TestMode mode, SSLSession firstSession) throws Exception {
 
         boolean second = firstSession != null;
 
         try {
-            client.signal();
             System.out.println("Waiting for connection");
+            new Thread(new Client(ssock.getLocalPort())).start();
+            latch.countDown();
             SSLSocket sock = (SSLSocket) ssock.accept();
             SSLParameters params = sock.getSSLParameters();
 
@@ -257,71 +267,46 @@ public class ResumeChecksServer extends SSLContextTemplate {
         return null;
     }
 
-    private static Client startClient(int port) {
-        Client client = new Client(port);
-        new Thread(client).start();
-        return client;
-    }
-
     private static class Client extends SSLContextTemplate implements Runnable {
 
-        public volatile boolean go = true;
-        private boolean signal = false;
         private final int port;
+        private final SSLContext sc;
 
         Client(int port) {
+            try {
+                sc = createClientSSLContext();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             this.port = port;
         }
 
-        private synchronized void waitForSignal() {
-            while (!signal) {
-                try {
-                    wait();
-                } catch (InterruptedException ex) {
-                    // do nothing
-                }
-            }
-            signal = false;
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                // do nothing
-            }
-        }
-        public synchronized void signal() {
-            signal = true;
-            notify();
-        }
-
         public void run() {
+            SSLSocket sock = null;
             try {
-
-                SSLContext sc = createClientSSLContext();
-
-                waitForSignal();
-                while (go) {
+                latch.await();
+                while (sock == null) {
                     try {
-                        SSLSocket sock = (SSLSocket)
-                            sc.getSocketFactory().createSocket();
-                        sock.connect(new InetSocketAddress("localhost", port));
-                        PrintWriter out = new PrintWriter(
-                            new OutputStreamWriter(sock.getOutputStream()));
-                        out.println("message");
-                        out.flush();
-                        BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(sock.getInputStream()));
-                        String inMsg = reader.readLine();
-                        System.out.println("Client received: " + inMsg);
-                        out.close();
-                        sock.close();
-                        waitForSignal();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+                        sock = (SSLSocket) sc.getSocketFactory().createSocket();
+                    } catch (IOException e) {
+                        // If the server never starts, test will timeout.
+                        System.err.println("client trying again to connect");
+                        Thread.sleep(500);
                     }
                 }
+                sock.connect(new InetSocketAddress("localhost", port));
+                PrintWriter out = new PrintWriter(
+                    new OutputStreamWriter(sock.getOutputStream()));
+                out.println("message");
+                out.flush();
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(sock.getInputStream()));
+                String inMsg = reader.readLine();
+                System.out.println("Client received: " + inMsg);
+                out.close();
+                sock.close();
             } catch (Exception ex) {
-                throw new RuntimeException(ex);
+                ex.printStackTrace();
             }
         }
     }
