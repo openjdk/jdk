@@ -2382,7 +2382,7 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(ShenandoahHeap
     ShenandoahSingleObjAllocationClosure cl(req, obj, in_new_region);
     iterate_regions_for_alloc<true, false>(&cl, true);
     // No new shared region allocated.
-    return false;
+    return fulfilled_by_others > 0;
   }
 }
 
