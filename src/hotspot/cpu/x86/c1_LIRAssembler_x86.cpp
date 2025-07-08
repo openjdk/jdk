@@ -1385,11 +1385,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ cmpptr(klass_RInfo, k_RInfo);
         __ jcc(Assembler::equal, *success_target);
 
-        __ push(klass_RInfo, true /*is_pair*/);
-        __ push(k_RInfo, true /*is_pair*/);
+        __ paired_push(klass_RInfo);
+        __ paired_push(k_RInfo);
         __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-        __ pop(klass_RInfo, true /*is_pair*/);
-        __ pop(klass_RInfo, true /*is_pair*/);
+        __ paired_pop(klass_RInfo);
+        __ paired_pop(klass_RInfo);
         // result is a boolean
         __ testl(klass_RInfo, klass_RInfo);
         __ jcc(Assembler::equal, *failure_target);
@@ -1399,11 +1399,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // perform the fast part of the checking logic
       __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-      __ push(klass_RInfo, true /*is_pair*/);
-      __ push(k_RInfo, true /*is_pair*/);
+      __ paired_push(klass_RInfo);
+      __ paired_push(k_RInfo);
       __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-      __ pop(klass_RInfo, true /*is_pair*/);
-      __ pop(k_RInfo, true /*is_pair*/);
+      __ paired_pop(klass_RInfo);
+      __ paired_pop(k_RInfo);
       // result is a boolean
       __ testl(k_RInfo, k_RInfo);
       __ jcc(Assembler::equal, *failure_target);
@@ -1478,11 +1478,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
-    __ push(klass_RInfo, true /*is_pair*/);
-    __ push(k_RInfo, true /*is_pair*/);
+    __ paired_push(klass_RInfo);
+    __ paired_push(k_RInfo);
     __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-    __ pop(klass_RInfo, true /*is_pair*/);
-    __ pop(k_RInfo, true /*is_pair*/);
+    __ paired_pop(klass_RInfo);
+    __ paired_pop(k_RInfo);
     // result is a boolean
     __ testl(k_RInfo, k_RInfo);
     __ jcc(Assembler::equal, *failure_target);
@@ -2536,26 +2536,26 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       // safely do the copy.
       Label cont, slow;
 
-      __ push(src, true /*is_pair*/);
-      __ push(dst, true /*is_pair*/);
+      __ paired_push(src);
+      __ paired_push(dst);
 
       __ load_klass(src, src, tmp_load_klass);
       __ load_klass(dst, dst, tmp_load_klass);
 
       __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
-      __ push(src, true /*is_pair*/);
-      __ push(dst, true /*is_pair*/);
+      __ paired_push(src);
+      __ paired_push(dst);
       __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
-      __ pop(dst, true /*is_pair*/);
-      __ pop(src, true /*is_pair*/);
+      __ paired_pop(dst);
+      __ paired_pop(src);
 
       __ testl(src, src);
       __ jcc(Assembler::notEqual, cont);
 
       __ bind(slow);
-      __ pop(dst, true /*is_pair*/);
-      __ pop(src, true /*is_pair*/);
+      __ paired_pop(dst);
+      __ paired_pop(src);
 
       address copyfunc_addr = StubRoutines::checkcast_arraycopy();
       if (copyfunc_addr != nullptr) { // use stub if available
@@ -2904,13 +2904,13 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
     if (exact_klass != nullptr) {
       Label ok;
       __ load_klass(tmp, obj, tmp_load_klass);
-      __ push(tmp, true /*is_pair*/);
+      __ paired_push(tmp);
       __ mov_metadata(tmp, exact_klass->constant_encoding());
       __ cmpptr(tmp, Address(rsp, 0));
       __ jcc(Assembler::equal, ok);
       __ stop("exact klass and actual klass differ");
       __ bind(ok);
-      __ pop(tmp, true /*is_pair*/);
+      __ paired_pop(tmp);
     }
 #endif
     if (!no_conflict) {
@@ -2975,7 +2975,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
         {
           Label ok;
-          __ push(tmp, true /*is_pair*/);
+          __ paired_push(tmp);
           __ testptr(mdo_addr, TypeEntries::type_mask);
           __ jcc(Assembler::zero, ok);
           // may have been set by another thread
@@ -2986,7 +2986,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
           __ stop("unexpected profiling mismatch");
           __ bind(ok);
-          __ pop(tmp, true /*is_pair*/);
+          __ paired_pop(tmp);
         }
 #else
         __ jccb(Assembler::zero, next);

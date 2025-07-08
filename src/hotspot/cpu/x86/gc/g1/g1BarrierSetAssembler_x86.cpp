@@ -500,8 +500,8 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ prologue("g1_pre_barrier", false);
   // arg0 : previous value of memory
 
-  __ push(rax, true /*is_pair*/);
-  __ push(rdx, true /*is_pair*/);
+  __ paired_push(rax);
+  __ paired_push(rdx);
 
   const Register pre_val = rax;
   const Register thread = r15_thread;
@@ -549,8 +549,8 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   __ bind(done);
 
-  __ pop(rdx, true /*is_pair*/);
-  __ pop(rax, true /*is_pair*/);
+  __ paired_pop(rdx);
+  __ paired_pop(rax);
 
   __ epilogue();
 }
@@ -573,8 +573,8 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
   Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
-  __ push(rax, true /*is_pair*/);
-  __ push(rcx, true /*is_pair*/);
+  __ paired_push(rax);
+  __ paired_push(rcx);
 
   const Register cardtable = rax;
   const Register card_addr = rcx;
@@ -599,7 +599,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ movb(Address(card_addr, 0), CardTable::dirty_card_val());
 
   const Register tmp = rdx;
-  __ push(rdx, true /*is_pair*/);
+  __ paired_push(rdx);
 
   __ movptr(tmp, queue_index);
   __ testptr(tmp, tmp);
@@ -618,11 +618,11 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ pop_call_clobbered_registers();
 
   __ bind(enqueued);
-  __ pop(rdx, true /*is_pair*/);
+  __ paired_pop(rdx);
 
   __ bind(done);
-  __ pop(rcx, true /*is_pair*/);
-  __ pop(rax, true /*is_pair*/);
+  __ paired_pop(rcx);
+  __ paired_pop(rax);
 
   __ epilogue();
 }

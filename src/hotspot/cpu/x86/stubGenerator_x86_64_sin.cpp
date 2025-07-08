@@ -195,11 +195,11 @@ address StubGenerator::generate_libmSin() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-  __ push(rsi, true /*is_pair*/);
-  __ push(rdi, true /*is_pair*/);
+  __ paired_push(rsi);
+  __ paired_push(rdi);
 #endif
 
-  __ push(rbx, true /*is_pair*/);
+  __ paired_push(rbx);
   __ subq(rsp, 16);
   __ movsd(Address(rsp, 8), xmm0);
   __ movl(rax, Address(rsp, 12));
@@ -635,11 +635,11 @@ address StubGenerator::generate_libmSin() {
 
   __ bind(B1_4);
   __ addq(rsp, 16);
-  __ pop(rbx, true /*is_pair*/);
+  __ paired_pop(rbx);
 
 #ifdef _WIN64
-  __ pop(rdi, true /*is_pair*/);
-  __ pop(rsi, true /*is_pair*/);
+  __ paired_pop(rdi);
+  __ paired_pop(rsi);
 #endif
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame

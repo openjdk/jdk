@@ -991,9 +991,8 @@ public:
   void push_d(XMMRegister r);
   void pop_d(XMMRegister r);
 
-  void push(int32_t imm32) { Assembler::push(imm32); }
-  void push(Register src, bool is_pair = false);
-  void pop(Register dst, bool is_pair = false);
+  void paired_push(Register src);
+  void paired_pop(Register dst);
 
   void andpd(XMMRegister dst, XMMRegister    src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, Address        src) { Assembler::andpd(dst, src); }

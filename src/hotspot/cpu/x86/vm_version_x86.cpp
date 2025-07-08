@@ -153,10 +153,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     // rcx and rdx are first and second argument registers on windows
 
-    __ push(rbp, true /*is_pair*/);
+    __ paired_push(rbp);
     __ mov(rbp, c_rarg0); // cpuid_info address
-    __ push(rbx, true /*is_pair*/);
-    __ push(rsi, true /*is_pair*/);
+    __ paired_push(rbx);
+    __ paired_push(rsi);
     __ pushf();          // preserve rbx, and flags
     __ pop(rax);
     __ push(rax);
@@ -230,11 +230,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, 0xb);
     __ movl(rcx, 1);     // Cores level
     __ cpuid();
-    __ push(rax, true /*is_pair*/);
+    __ paired_push(rax);
     __ andl(rax, 0x1f);  // Determine if valid topology level
     __ orl(rax, rbx);    // eax[4:0] | ebx[0:15] == 0 indicates invalid level
     __ andl(rax, 0xffff);
-    __ pop(rax, true /*is_pair*/);
+    __ paired_pop(rax);
     __ jccb(Assembler::equal, std_cpuid4);
 
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::tpl_cpuidB1_offset())));
@@ -246,11 +246,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, 0xb);
     __ movl(rcx, 2);     // Packages level
     __ cpuid();
-    __ push(rax, true /*is_pair*/);
+    __ paired_push(rax);
     __ andl(rax, 0x1f);  // Determine if valid topology level
     __ orl(rax, rbx);    // eax[4:0] | ebx[0:15] == 0 indicates invalid level
     __ andl(rax, 0xffff);
-    __ pop(rax, true /*is_pair*/);
+    __ paired_pop(rax);
     __ jccb(Assembler::equal, std_cpuid4);
 
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::tpl_cpuidB2_offset())));
@@ -269,10 +269,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     __ xorl(rcx, rcx);   // L1 cache
     __ cpuid();
-    __ push(rax, true /*is_pair*/);
+    __ paired_push(rax);
     __ andl(rax, 0x1f);  // Determine if valid cache parameters used
     __ orl(rax, rax);    // eax[4:0] == 0 indicates invalid cache
-    __ pop(rax, true /*is_pair*/);
+    __ paired_pop(rax);
     __ jccb(Assembler::equal, std_cpuid1);
 
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::dcp_cpuid4_offset())));
@@ -647,9 +647,9 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     __ bind(wrapup);
     __ popf();
-    __ pop(rsi, true /*is_pair*/);
-    __ pop(rbx, true /*is_pair*/);
-    __ pop(rbp, true /*is_pair*/);
+    __ paired_pop(rsi);
+    __ paired_pop(rbx);
+    __ paired_pop(rbp);
     __ ret(0);
 
 #   undef __
@@ -681,9 +681,9 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     // Evacuate callee-saved registers
-    __ push(rbp, true /*is_pair*/);
-    __ push(rbx, true /*is_pair*/);
-    __ push(rsi, true /*is_pair*/); // for Windows
+    __ paired_push(rbp);
+    __ paired_push(rbx);
+    __ paired_push(rsi); // for Windows
 
     __ mov(rax, c_rarg0); // CPUID leaf
     __ mov(rsi, c_rarg1); // register array address (eax, ebx, ecx, edx)
@@ -697,9 +697,9 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 12), rdx);
 
     // Epilogue
-    __ pop(rsi, true /*is_pair*/);
-    __ pop(rbx, true /*is_pair*/);
-    __ pop(rbp, true /*is_pair*/);
+    __ paired_pop(rsi);
+    __ paired_pop(rbx);
+    __ paired_pop(rbp);
     __ ret(0);
 
 #   undef __
@@ -729,10 +729,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     // rcx and rdx are first and second argument registers on windows
 
-    __ push(rbp, true /*is_pair*/);
+    __ paired_push(rbp);
     __ mov(rbp, c_rarg0); // cpuid_info address
-    __ push(rbx, true /*is_pair*/);
-    __ push(rsi, true /*is_pair*/);
+    __ paired_push(rbx);
+    __ paired_push(rsi);
     __ pushf();          // preserve rbx, and flags
     __ pop(rax);
     __ push(rax);
@@ -836,9 +836,9 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     __ bind(done);
     __ popf();
-    __ pop(rsi, true /*is_pair*/);
-    __ pop(rbx, true /*is_pair*/);
-    __ pop(rbp, true /*is_pair*/);
+    __ paired_pop(rsi);
+    __ paired_pop(rbx);
+    __ paired_pop(rbp);
     __ ret(0);
 
 #   undef __

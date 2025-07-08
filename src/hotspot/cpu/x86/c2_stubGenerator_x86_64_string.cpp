@@ -352,8 +352,8 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   __ movdq(save_r15, r15);
   __ movdq(save_rbx, rbx);
 #ifdef _WIN64
-  __ push(rsi, true /*is_pair*/);
-  __ push(rdi, true /*is_pair*/);
+  __ paired_push(rsi);
+  __ paired_push(rdi);
 
   // Move to Linux-style ABI
   __ movq(rdi, rcx);
@@ -368,7 +368,7 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   const Register needle_len   = rcx;
   const Register save_ndl_len = r12;
 
-  __ push(rbp, true /*is_pair*/);
+  __ paired_push(rbp);
   __ subptr(rsp, STACK_SPACE);
 
   if (isReallyUL) {
@@ -459,10 +459,10 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // Restore stack, vzeroupper and return
   __ bind(L_return);
   __ addptr(rsp, STACK_SPACE);
-  __ pop(rbp, true /*is_pair*/);
+  __ paired_pop(rbp);
 #ifdef _WIN64
-  __ pop(rdi, true /*is_pair*/);
-  __ pop(rsi, true /*is_pair*/);
+  __ paired_pop(rdi);
+  __ paired_pop(rsi);
 #endif
   __ movdq(r12, save_r12);
   __ movdq(r13, save_r13);

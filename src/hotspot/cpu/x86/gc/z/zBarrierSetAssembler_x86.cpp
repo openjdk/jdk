@@ -109,16 +109,16 @@ private:
       __ push2p(r30, r31);
     } else {
       if (_result != rax) {
-        __ push(rax, true /*is_pair*/);
+        __ paired_push(rax);
       }
-      __ push(rcx, true /*is_pair*/);
-      __ push(rdx, true /*is_pair*/);
-      __ push(rdi, true /*is_pair*/);
-      __ push(rsi, true /*is_pair*/);
-      __ push(r8, true /*is_pair*/);
-      __ push(r9, true /*is_pair*/);
-      __ push(r10, true /*is_pair*/);
-      __ push(r11, true /*is_pair*/);
+      __ paired_push(rcx);
+      __ paired_push(rdx);
+      __ paired_push(rdi);
+      __ paired_push(rsi);
+      __ paired_push(r8);
+      __ paired_push(r9);
+      __ paired_push(r10);
+      __ paired_push(r11);
     }
 
     if (_xmm_spill_size != 0) {
@@ -195,19 +195,19 @@ private:
         __ popp(rax);
       }
     } else {
-      __ pop(r11, true /*is_pair*/);
-      __ pop(r10, true /*is_pair*/);
-      __ pop(r9, true /*is_pair*/);
-      __ pop(r8, true /*is_pair*/);
-      __ pop(rsi, true /*is_pair*/);
-      __ pop(rdi, true /*is_pair*/);
-      __ pop(rdx, true /*is_pair*/);
-      __ pop(rcx, true /*is_pair*/);
+      __ paired_pop(r11);
+      __ paired_pop(r10);
+      __ paired_pop(r9);
+      __ paired_pop(r8);
+      __ paired_pop(rsi);
+      __ paired_pop(rdi);
+      __ paired_pop(rdx);
+      __ paired_pop(rcx);
       if (_result != rax) {
         if (_result != noreg) {
           __ movptr(_result, rax);
         }
-        __ pop(rax, true /*is_pair*/);
+        __ paired_pop(rax);
       }
     }
   }
@@ -288,7 +288,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   Register scratch = tmp1;
   if (tmp1 == noreg) {
     scratch = r12;
-    __ push(scratch, true /*is_pair*/);
+    __ paired_push(scratch);
   }
 
   assert_different_registers(dst, scratch);
@@ -348,7 +348,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   // Restore scratch register
   if (tmp1 == noreg) {
-    __ pop(scratch, true /*is_pair*/);
+    __ paired_pop(scratch);
   }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::load_at");
@@ -462,10 +462,10 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ movptr(rnew_zpointer, rnew_zaddress);
     }
     assert_different_registers(rcx, rnew_zpointer);
-    __ push(rcx, true /*is_pair*/);
+    __ paired_push(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shlq(rnew_zpointer);
-    __ pop(rcx, true /*is_pair*/);
+    __ paired_pop(rcx);
     __ orq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
   }
 }
@@ -483,7 +483,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ jcc(Assembler::equal, slow_path);
 
   Register tmp2 = r15_thread;
-  __ push(tmp2, true /*is_pair*/);
+  __ paired_push(tmp2);
 
   // Bump the pointer
   __ movq(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
@@ -501,7 +501,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ movptr(tmp1, Address(tmp1, 0));
   __ movptr(Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())), tmp1);
 
-  __ pop(tmp2, true /*is_pair*/);
+  __ paired_pop(tmp2);
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
@@ -528,9 +528,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
-    __ push(rax, true /*is_pair*/);
-    __ push(rbx, true /*is_pair*/);
-    __ push(rcx, true /*is_pair*/);
+    __ paired_push(rax);
+    __ paired_push(rbx);
+    __ paired_push(rcx);
 
     __ lea(rcx, ref_addr);
     __ xorq(rax, rax);
@@ -539,9 +539,9 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ lock();
     __ cmpxchgq(rbx, Address(rcx, 0));
 
-    __ pop(rcx, true /*is_pair*/);
-    __ pop(rbx, true /*is_pair*/);
-    __ pop(rax, true /*is_pair*/);
+    __ paired_pop(rcx);
+    __ paired_pop(rbx);
+    __ paired_pop(rax);
 
     __ jcc(Assembler::notEqual, slow_path);
 
@@ -583,10 +583,10 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       } else {
         __ movptr(tmp1, src);
       }
-      __ push(rcx, true /*is_pair*/);
+      __ paired_push(rcx);
       __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
       __ shlq(tmp1);
-      __ pop(rcx, true /*is_pair*/);
+      __ paired_pop(rcx);
       __ orq(tmp1, Address(r15_thread, ZThreadLocalData::store_good_mask_offset()));
     } else {
       Label done;
@@ -1007,10 +1007,10 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
     __ shrq(tmp);
     __ movptr(obj, tmp);
   } else {
-    __ push(rcx, true /*is_pair*/);
+    __ paired_push(rcx);
     __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
     __ shrq(obj);
-    __ pop(rcx, true /*is_pair*/);
+    __ paired_pop(rcx);
   }
 
   __ bind(done);
@@ -1089,7 +1089,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Save rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ push(rax, true /*is_pair*/);
+    __ paired_push(rax);
   }
 
   // Setup arguments and call runtime stub
@@ -1109,7 +1109,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
 
   // Restore rax unless it is the result or tmp register
   if (ref != rax && tmp != rax) {
-    __ pop(rax, true /*is_pair*/);
+    __ paired_pop(rax);
   }
 
   // Stub exit
@@ -1451,12 +1451,12 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   // Uncolor presumed zpointer
   assert(obj != rcx, "bad choice of register");
   if (rcx != tmp1 && rcx != tmp2) {
-    __ push(rcx, true /*is_pair*/);
+    __ paired_push(rcx);
   }
   __ movl(rcx, Address(tmp2, tmp1, Address::times_4, 0));
   __ shrq(obj);
   if (rcx != tmp1 && rcx != tmp2) {
-    __ pop(rcx, true /*is_pair*/);
+    __ paired_pop(rcx);
   }
 
   __ jmp(check_zaddress);

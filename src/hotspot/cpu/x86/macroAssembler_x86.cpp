@@ -795,16 +795,16 @@ void MacroAssembler::pop_d(XMMRegister r) {
   addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
-void MacroAssembler::push(Register src, bool is_pair) {
-  if (is_pair && VM_Version::supports_apx_f()) {
+void MacroAssembler::paired_push(Register src) {
+  if (VM_Version::supports_apx_f()) {
     pushp(src);
   } else {
     Assembler::push(src);
   }
 }
 
-void MacroAssembler::pop(Register dst, bool is_pair) {
-  if (is_pair && VM_Version::supports_apx_f()) {
+void MacroAssembler::paired_pop(Register dst) {
+  if (VM_Version::supports_apx_f()) {
     popp(dst);
   } else {
     Assembler::pop(dst);

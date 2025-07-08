@@ -130,9 +130,9 @@ static address generate_sha3_implCompress(StubGenStubId stub_id,
 
   __ enter();
 
-  __ push(r12, true /*is_pair*/);
-  __ push(r13, true /*is_pair*/);
-  __ push(r14, true /*is_pair*/);
+  __ paired_push(r12);
+  __ paired_push(r13);
+  __ paired_push(r14);
 
 #ifdef _WIN64
   // on win64, fill limit from stack position
@@ -309,9 +309,9 @@ static address generate_sha3_implCompress(StubGenStubId stub_id,
     __ evmovdquq(Address(state, i * 40), k5, xmm(i), true, Assembler::AVX_512bit);
   }
 
-  __ pop(r14, true /*is_pair*/);
-  __ pop(r13, true /*is_pair*/);
-  __ pop(r12, true /*is_pair*/);
+  __ paired_pop(r14);
+  __ paired_pop(r13);
+  __ paired_pop(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
