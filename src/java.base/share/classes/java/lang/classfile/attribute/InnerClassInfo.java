@@ -104,6 +104,8 @@ public sealed interface InnerClassInfo
      * @param outerClass the class that has the nested class as a member, if it exists
      * @param innerName the simple name of the nested class, if it is not anonymous
      * @param flags the inner class access flags
+     * @throws IllegalArgumentException if {@code flags} is not in the range
+     * {@code [0, 65535]}
      */
     static InnerClassInfo of(ClassEntry innerClass, Optional<ClassEntry> outerClass,
                              Optional<Utf8Entry> innerName, int flags) {
@@ -116,7 +118,8 @@ public sealed interface InnerClassInfo
      * @param outerClass the class that has the nested class as a member, if it exists
      * @param innerName the simple name of the nested class, if it is not anonymous
      * @param flags the inner class access flags
-     * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass} represents a primitive type
+     * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass}
+     * represents a primitive type, or if {@code flags} is not in the range {@code [0, 65535]}
      */
     static InnerClassInfo of(ClassDesc innerClass, Optional<ClassDesc> outerClass, Optional<String> innerName, int flags) {
         return new UnboundAttribute.UnboundInnerClassInfo(TemporaryConstantPool.INSTANCE.classEntry(innerClass),

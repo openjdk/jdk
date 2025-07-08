@@ -56,6 +56,8 @@ public sealed interface FieldBuilder
      *
      * @param flags the access flags, as a bit mask
      * @return this builder
+     * @throws IllegalArgumentException if {@code flags} is not in the range
+     * {@code [0, 65535]}
      * @see AccessFlags
      * @see AccessFlag.Location#FIELD
      * @see ClassBuilder#withField(String, ClassDesc, int)

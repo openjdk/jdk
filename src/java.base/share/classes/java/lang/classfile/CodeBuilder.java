@@ -791,6 +791,8 @@ public sealed interface CodeBuilder
      *
      * @param line the line number
      * @return this builder
+     * @throws IllegalArgumentException if {@code line} is not in the range
+     * {@code [0, 65535]}
      * @see LineNumber
      */
     default CodeBuilder lineNumber(int line) {
@@ -887,6 +889,8 @@ public sealed interface CodeBuilder
      * @param characterRangeEnd the encoded end of the character range region (exclusive)
      * @param flags the flags word, indicating the kind of range
      * @return this builder
+     * @throws IllegalArgumentException if {@code flags} is not in the range
+     * {@code [0, 65535]}
      * @see CharacterRange
      */
     default CodeBuilder characterRange(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {

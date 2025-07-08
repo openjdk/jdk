@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
  * represented as JVM type descriptor strings and symbols are represented as
  * name strings
  */
-public class Util {
+public final class Util {
 
     private Util() {
     }
@@ -184,6 +184,31 @@ public class Util {
     public static IllegalArgumentException badOpcodeKindException(Opcode op, Opcode.Kind k) {
         return new IllegalArgumentException(
                 String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
+    }
+
+    /// Ensures the given value won't be truncated when written as a u1
+    public static int checkU1(int incoming, String valueName) {
+        if ((incoming & ~0xFF) != 0) {
+            throw outOfRangeException(incoming, valueName, "u1");
+        }
+        return incoming;
+    }
+
+    /// Ensures the given value won't be truncated when written as a u2
+    public static char checkU2(int incoming, String valueName) {
+        if ((incoming & ~0xFFFF) != 0)
+            throw outOfRangeException(incoming, valueName, "u2");
+        return (char) incoming;
+    }
+
+    public static IllegalArgumentException outOfRangeException(int value, String fieldName, String typeName) {
+        return new IllegalArgumentException(
+                String.format("%s out of range of %d: %d", fieldName, typeName, value));
+    }
+
+    /// Ensures the given mask won't be truncated when written as an access flag
+    public static char checkFlags(int mask) {
+        return checkU2(mask, "access flags");
     }
 
     public static int flagsToBits(AccessFlag.Location location, Collection<AccessFlag> flags) {

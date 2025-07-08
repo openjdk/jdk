@@ -403,6 +403,8 @@ public sealed interface ConstantPoolBuilder
      *
      * @param refKind the reference kind of the method handle
      * @param reference the {@code MemberRefEntry}
+     * @throws IllegalArgumentException if {@code refKind} is not in the range
+     * {@code [0, 255]}; note that only {@code [1, 9]} are defined
      * @see MethodHandleInfo##refkinds Reference kinds
      * @see MethodHandleEntry#kind() MethodHandleEntry::kind
      * @see MethodHandleEntry#reference() MethodHandleEntry::reference
