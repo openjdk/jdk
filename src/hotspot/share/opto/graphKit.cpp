@@ -1913,7 +1913,7 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
   set_control(_gvn.transform( new ProjNode(call,TypeFunc::Control) ));
   if (call->is_CallLeafPure()) {
     // Pure function have only control (for now) and data output, in particular
-    // the don't touch the memory, so we don't want a memory proj that is set after.
+    // they don't touch the memory, so we don't want a memory proj that is set after.
     return;
   }
   if (keep_mem) {
