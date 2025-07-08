@@ -1339,7 +1339,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
     }
     if (target == nullptr || !target->is_public() || target->is_abstract()) {
       // Entry does not resolve. Leave it empty for AbstractMethodError or other error.
-      if (!(target == nullptr) && !target->is_public()) {
+      if (target != nullptr && !target->is_public()) {
         // Stuff an IllegalAccessError throwing method in there instead.
         itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
             initialize(_klass, Universe::throw_illegal_access_error());
