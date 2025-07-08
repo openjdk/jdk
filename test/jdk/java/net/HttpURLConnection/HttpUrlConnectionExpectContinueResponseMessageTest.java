@@ -61,8 +61,7 @@ public class HttpUrlConnectionExpectContinueResponseMessageTest {
     class Control {
         volatile ServerSocket serverSocket = null;
         volatile boolean stop = false;
-        volatile String statusLine = null;
-
+        volatile String response = null;
         volatile Socket acceptingSocket = null;
     }
 
@@ -95,8 +94,8 @@ public class HttpUrlConnectionExpectContinueResponseMessageTest {
         Runnable runnable = () -> {
             while (!control.stop) {
                 try {
-                    Socket socket = control.serverSocket.accept();
-                    InputStream inputStream = socket.getInputStream();
+                    control.acceptingSocket = control.serverSocket.accept();
+                    InputStream inputStream = control.acceptingSocket.getInputStream();
                     InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
 
                     StringBuilder stringBuilder = new StringBuilder();
@@ -117,13 +116,12 @@ public class HttpUrlConnectionExpectContinueResponseMessageTest {
                             }
                         }
                     }
-                    OutputStream outputStream = socket.getOutputStream();
+                    OutputStream outputStream = control.acceptingSocket.getOutputStream();
 
                     //send a wrong response
-                    outputStream.write(control.statusLine.getBytes());
+                    outputStream.write(control.response.getBytes());
                     outputStream.flush();
-                    socket.shutdownOutput();
-                    socket.close();
+                    control.acceptingSocket.shutdownOutput();
                 } catch (Exception e) {
                     // Any exceptions will be ignored
                 }
@@ -146,7 +144,7 @@ public class HttpUrlConnectionExpectContinueResponseMessageTest {
     public void test(int expectedCode, String statusLine, String expectedMessage) throws Exception {
         String body = "Testing: " + expectedCode;
         Control control = this.control;
-        control.statusLine = statusLine + "\r\n"
+        control.response = statusLine + "\r\n"
                 + "Content-Length: 0\r\n"
                 + "\r\n";
 
@@ -168,7 +166,7 @@ public class HttpUrlConnectionExpectContinueResponseMessageTest {
         assertTrue(expectedMessage.equals(responseMessage),
                 String.format("Expected Response Message  %s, instead received %s",
                         expectedMessage, responseMessage));
-        connection.disconnect();
+        control.acceptingSocket.close();
     }
 
     // Creates a connection with all the common settings used in each test
