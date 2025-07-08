@@ -396,6 +396,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             return;
         }
         if (!isInput(e.target) && keymap.has(e.key)) {
+            closeThemePanel();
             var elem = keymap.get(e.key);
             if (elem === filterInput && !elem.offsetParent) {
                 elem = getVisibleFilterInput(true);

@@ -113,30 +113,30 @@ body {
 body.theme-dark {
     --body-text-color: #e8e8e8;
     --block-text-color: #e8e8e8;
-    --body-background-color: #292f35;
+    --body-background-color: #222528;
     --section-background-color: var(--body-background-color);
     --detail-background-color: var(--body-background-color);
-    --code-background-color: #353f46;
+    --code-background-color: #303940;
     --mark-background-color: #313131;
     --detail-block-color: #f4f4f4;
-    --navbar-background-color: #37546c;
+    --navbar-background-color: #395A6F;
     --navbar-text-color: #ffffff;
-    --subnav-background-color: #404d57;
+    --subnav-background-color: #3d454d;
     --subnav-link-color: #f5ae29;
     --member-heading-background-color: var(--subnav-background-color);
     --selected-background-color: #f8981d;
     --selected-text-color: #253441;
     --selected-link-color: #4a698a;
     --table-header-color: #38444d;
-    --even-row-color: #292f35;
-    --odd-row-color: #1d2228;
+    --even-row-color: #222528;
+    --odd-row-color: #2d3135;
     --title-color: #fff;
-    --link-color: #d99a23;
+    --link-color: #e6a52a;
     --link-color-active: #ffb45b;
-    --toc-background-color: #343b42;
+    --toc-background-color: #31363c;
     --toc-highlight-color: var(--subnav-background-color);
-    --toc-hover-color: #323538;
-    --snippet-background-color: #364148;
+    --toc-hover-color: #3f4146;
+    --snippet-background-color: #2d363c;
     --snippet-text-color: var(--block-text-color);
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
@@ -165,30 +165,30 @@ body.theme-dark {
     body {
         --body-text-color: #e8e8e8;
         --block-text-color: #e8e8e8;
-        --body-background-color: #292f35;
+        --body-background-color: #222528;
         --section-background-color: var(--body-background-color);
         --detail-background-color: var(--body-background-color);
-        --code-background-color: #353f46;
+        --code-background-color: #303940;
         --mark-background-color: #313131;
         --detail-block-color: #f4f4f4;
-        --navbar-background-color: #37546c;
+        --navbar-background-color: #395A6F;
         --navbar-text-color: #ffffff;
-        --subnav-background-color: #404d57;
+        --subnav-background-color: #3d454d;
         --subnav-link-color: #f5ae29;
         --member-heading-background-color: var(--subnav-background-color);
         --selected-background-color: #f8981d;
         --selected-text-color: #253441;
         --selected-link-color: #4a698a;
         --table-header-color: #38444d;
-        --even-row-color: #292f35;
-        --odd-row-color: #1d2228;
+        --even-row-color: #222528;
+        --odd-row-color: #2d3135;
         --title-color: #fff;
-        --link-color: #d99a23;
+        --link-color: #e6a52a;
         --link-color-active: #ffb45b;
-        --toc-background-color: #343b42;
+        --toc-background-color: #31363c;
         --toc-highlight-color: var(--subnav-background-color);
-        --toc-hover-color: #323538;
-        --snippet-background-color: #364148;
+        --toc-hover-color: #3f4146;
+        --snippet-background-color: #2d363c;
         --snippet-text-color: var(--block-text-color);
         --snippet-highlight-color: #f7c590;
         --pre-background-color: var(--snippet-background-color);
@@ -1360,6 +1360,7 @@ select#search-modules {
 }
 kbd {
     background-color: #eeeeee;
+    color: #282828;
     border: 1px solid #b0b0b0;
     border-radius: 3px;
     padding: 0 4px;
@@ -1760,17 +1761,6 @@ table.striped > tbody > tr > th {
     }
     .top-nav nav.toc ol.toc-list li {
         font-size: 1.04em;
-    }
-    nav.toc a:link, nav.toc a:visited {
-        text-decoration:none;
-        color:var(--link-color);
-    }
-    nav.toc a[href]:hover, nav.toc a[href]:focus {
-        text-decoration:none;
-        color:var(--link-color-active);
-    }
-    :root {
-        scroll-behavior: auto;
     }
     header {
         max-height: 100vh;

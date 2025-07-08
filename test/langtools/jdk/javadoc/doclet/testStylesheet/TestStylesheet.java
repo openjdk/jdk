@@ -96,7 +96,7 @@ public class TestStylesheet extends JavadocTester {
                     }""",
                 """
                     a[href]:hover, a[href]:active {
-                        text-decoration:underline;
+                        text-decoration:none;
                         color:var(--link-color-active);
                     }""",
                 """

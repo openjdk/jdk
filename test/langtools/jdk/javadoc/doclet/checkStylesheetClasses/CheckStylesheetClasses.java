@@ -144,7 +144,7 @@ public class CheckStylesheetClasses {
                 "sort-asc", "sort-desc", "two-column-search-results", "visible");
 
         // used for themes
-        removeAll(styleSheetNames, "theme-dark", "theme-light");
+        removeAll(styleSheetNames, "theme-dark", "theme-light", "theme-os");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");
