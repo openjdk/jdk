@@ -340,7 +340,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   }
 
   // Copy the object:
-  evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
   oop copy_val = cast_to_oop(copy);
 
@@ -362,7 +362,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
     // Record that the evacuation succeeded
-    evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
 
     if (target_gen == OLD_GENERATION) {
       old_generation()->handle_evacuation(copy, size, from_region->is_young());

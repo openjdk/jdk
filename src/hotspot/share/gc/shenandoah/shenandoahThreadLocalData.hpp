@@ -173,7 +173,6 @@ public:
   }
 
   static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {
-    shenandoah_assert_generational();
     return data(thread)->_evacuation_stats;
   }
 
