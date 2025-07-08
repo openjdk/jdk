@@ -37,6 +37,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import static java.lang.foreign.MemorySegment.NULL;
+import static jdk.internal.ffi.generated.errno.errno_h.EINTR;
 
 /**
  * Provides access to the BSD kqueue facility.
@@ -122,7 +123,7 @@ final class KQueue {
                 result = kqueue_h.kevent(
                         kqfd, keventMS, 1, NULL,
                         0, NULL);
-            } while ((result == KQUEUE_ERROR_VALUE));
+            } while (result == -EINTR());
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -147,11 +148,11 @@ final class KQueue {
                     kqfd, NULL, 0, pollAddress,
                     nevents, tsp);
             if (result < 0) {
-                if (result == -errno_h.EINTR()) {
+                if (result == -EINTR()) {
                     return IOStatus.INTERRUPTED;
                 } else {
                     throw ErrnoUtils.IOExceptionWithLastError(-result,
-                            "kqueue_poll failed.", arena);
+                            "kqueue failed.", arena);
                 }
             }
         } catch (Throwable e) {
