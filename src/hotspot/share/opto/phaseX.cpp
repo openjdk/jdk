@@ -3121,6 +3121,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     hash_delete(n);             // changing bottom type may force a rehash
     n->raise_bottom_type(t);
     _worklist.push(n);          // n re-enters the hash table via the worklist
+    add_users_to_worklist(n);   // if ideal or identity optimizations depend on the input type, users need to be notified
   }
 
   // TEMPORARY fix to ensure that 2nd GVN pass eliminates null checks
