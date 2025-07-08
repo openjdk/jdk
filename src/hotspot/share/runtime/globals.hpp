@@ -1566,7 +1566,7 @@ const int ObjectAlignmentInBytes = 8;
           range(0.0, 100.0)                                                 \
                                                                             \
   product(uintx, StartAggressiveSweepingAt, 10,                             \
-          "Start aggressive sweeping if X[%] of the total code cache is free.")\
+          "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
                                                                             \
   /* interpreter debugging */                                               \
