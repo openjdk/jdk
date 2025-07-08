@@ -30,7 +30,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                    -Djdk.httpclient.HttpClient.log=all
- *                    ExpectContinueResponseMessageTest
+ *                    HttpUrlConnectionExpectContinueResponseMessageTest
  */
 
 import jdk.test.lib.net.URIBuilder;
@@ -41,13 +41,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.ServerSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -59,11 +57,13 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ExpectContinueResponseMessageTest {
+public class HttpUrlConnectionExpectContinueResponseMessageTest {
     class Control {
         volatile ServerSocket serverSocket = null;
         volatile boolean stop = false;
         volatile String statusLine = null;
+
+        volatile Socket acceptingSocket = null;
     }
 
     private Thread serverThread = null;
@@ -122,6 +122,8 @@ public class ExpectContinueResponseMessageTest {
                     //send a wrong response
                     outputStream.write(control.statusLine.getBytes());
                     outputStream.flush();
+                    socket.shutdownOutput();
+                    socket.close();
                 } catch (Exception e) {
                     // Any exceptions will be ignored
                 }
@@ -144,13 +146,20 @@ public class ExpectContinueResponseMessageTest {
     public void test(int expectedCode, String statusLine, String expectedMessage) throws Exception {
         String body = "Testing: " + expectedCode;
         Control control = this.control;
-        control.statusLine = statusLine + "\r\n\r\n";
+        control.statusLine = statusLine + "\r\n"
+                + "Content-Length: 0\r\n"
+                + "\r\n";
 
         HttpURLConnection connection = createConnection();
-        connection.setFixedLengthStreamingMode(body.getBytes().length);
+        try {
+            connection.setFixedLengthStreamingMode(body.getBytes().length);
             OutputStream outputStream = connection.getOutputStream();
             outputStream.write(body.getBytes());
             outputStream.close();
+        } catch (Exception ex) {
+            // server returning 4xx responses can result in exceptions
+            // but we can just swallow them
+        }
 
         int responseCode = connection.getResponseCode();
         String responseMessage = connection.getResponseMessage();
@@ -159,22 +168,23 @@ public class ExpectContinueResponseMessageTest {
         assertTrue(expectedMessage.equals(responseMessage),
                 String.format("Expected Response Message  %s, instead received %s",
                         expectedMessage, responseMessage));
+        connection.disconnect();
     }
 
     // Creates a connection with all the common settings used in each test
     private HttpURLConnection createConnection() throws Exception {
-            URL url = URIBuilder.newBuilder()
-                    .scheme("http")
-                    .loopback()
-                    .port(control.serverSocket.getLocalPort())
-                    .toURL();
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(control.serverSocket.getLocalPort())
+                .toURL();
 
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Connection", "Close");
-            connection.setRequestProperty("Expect", "100-Continue");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Connection", "Close");
+        connection.setRequestProperty("Expect", "100-Continue");
 
-            return connection;
-        }
+        return connection;
+    }
 }
