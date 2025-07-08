@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.java.nio;
 
-import java.lang.management.ManagementFactory;
-import com.sun.management.HotSpotDiagnosticMXBean;
+import java.nio.ByteBuffer;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
-class LockingMode {
-    private LockingMode() { }
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Thread)
+@BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3, jvmArgs = {"-Xmx256m", "-Xms256m", "-XX:+AlwaysPreTouch"})
+public class DirectByteBufferChurn {
 
-    /**
-     * Returns true if using legacy locking mode.
-     */
-    static boolean isLegacy() {
-        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
-                .getVMOption("LockingMode")
-                .getValue()
-                .equals("1");
+    @Param({"128", "256", "512", "1024", "2048"})
+    int recipFreq;
+
+    @Benchmark
+    public Object test() {
+        boolean direct = ThreadLocalRandom.current().nextInt(recipFreq) == 0;
+        return direct ? ByteBuffer.allocateDirect(1) : ByteBuffer.allocate(1);
     }
+
 }

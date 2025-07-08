@@ -1483,6 +1483,9 @@ AOTCodeAddressTable::~AOTCodeAddressTable() {
   if (_extrs_addr != nullptr) {
     FREE_C_HEAP_ARRAY(address, _extrs_addr);
   }
+  if (_stubs_addr != nullptr) {
+    FREE_C_HEAP_ARRAY(address, _stubs_addr);
+  }
   if (_shared_blobs_addr != nullptr) {
     FREE_C_HEAP_ARRAY(address, _shared_blobs_addr);
   }

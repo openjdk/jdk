@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,18 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import static sun.java2d.pipe.Region.clipRound;
+
 /*
  * @test
- * @bug 8282958
+ * @bug 8282958 8349188
  * @summary Verify LineBorder edges have the same width
  * @requires (os.family == "windows")
+ * @modules java.desktop/sun.java2d.pipe
  * @run main ScaledLineBorderTest
  */
 public class ScaledLineBorderTest {
-    private static final Dimension SIZE = new Dimension(120, 25);
+    private static final Dimension SIZE = new Dimension(250, 50);
 
     private static final Color OUTER_COLOR = Color.BLACK;
     private static final Color BORDER_COLOR = Color.RED;
@@ -59,12 +62,19 @@ public class ScaledLineBorderTest {
 
     private static final double[] scales =
             {1.00, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00};
+    private static final int[] thickness = {1, 4, 10, 15};
 
-    private static final List<BufferedImage> images =
-            new ArrayList<>(scales.length);
+    private record TestImage(BufferedImage image,
+                             List<Point> panelLocations,
+                             double scale,
+                             int thickness) {
+    }
 
-    private static final List<Point> panelLocations =
-            new ArrayList<>(4);
+    private record TestUI(JComponent content,
+                          List<Point> panelLocations,
+                          int thickness) {
+    }
+
 
     public static void main(String[] args) throws Exception {
         Collection<String> params = Arrays.asList(args);
@@ -74,29 +84,38 @@ public class ScaledLineBorderTest {
     }
 
     private static void testScaling(boolean showFrame, boolean saveImages) {
-        JComponent content = createUI();
-        if (showFrame) {
-            showFrame(content);
+        for (int thickness : thickness) {
+            TestUI testUI = createUI(thickness);
+            if (showFrame) {
+                showFrame(testUI.content);
+            }
+
+            List<TestImage> images = paintToImages(testUI, saveImages);
+            verifyBorderRendering(images, saveImages);
         }
 
-        paintToImages(content, saveImages);
-        verifyBorderRendering(saveImages);
+        if (errorCount > 0) {
+            throw new Error("Test failed: "
+                    + errorCount + " error(s) detected - "
+                    + errorMessage);
+        }
+
     }
 
-    private static void verifyBorderRendering(final boolean saveImages) {
-        String errorMessage = null;
-        int errorCount = 0;
-        for (int i = 0; i < images.size(); i++) {
-            BufferedImage img = images.get(i);
-            double scaling = scales[i];
+    private static String errorMessage = null;
+    private static int errorCount = 0;
+
+    private static void verifyBorderRendering(final List<TestImage> images,
+                                              final boolean saveImages) {
+        for (TestImage test : images) {
+            final BufferedImage img = test.image;
+            final int effectiveThickness = clipRound(test.thickness * test.scale);
             try {
-                int thickness = (int) Math.floor(scaling);
+                checkVerticalBorders((int) (SIZE.width * test.scale / 2), effectiveThickness, img);
 
-                checkVerticalBorders(SIZE.width / 2, thickness, img);
-
-                for (Point p : panelLocations) {
-                    int y = (int) (p.y * scaling) + SIZE.height / 2;
-                    checkHorizontalBorder(y, thickness, img);
+                for (Point p : test.panelLocations) {
+                    int y = (int) ((p.y + (SIZE.height / 2)) * test.scale);
+                    checkHorizontalBorder(y, effectiveThickness, img);
                 }
             } catch (Error e) {
                 if (errorMessage == null) {
@@ -104,20 +123,12 @@ public class ScaledLineBorderTest {
                 }
                 errorCount++;
 
-                System.err.printf("Scaling: %.2f\n", scaling);
+                System.err.printf("Scale: %.2f; thickness: %d, effective: %d\n",
+                        test.scale, test.thickness, effectiveThickness);
                 e.printStackTrace();
 
-                // Save the image if it wasn't already saved
-                if (!saveImages) {
-                    saveImage(img, getImageFileName(scaling));
-                }
+                saveImage(img, getImageFileName(test.scale, test.thickness));
             }
-        }
-
-        if (errorCount > 0) {
-            throw new Error("Test failed: "
-                    + errorCount + " error(s) detected - "
-                    + errorMessage);
         }
     }
 
@@ -220,9 +231,11 @@ public class ScaledLineBorderTest {
                         x, y, color));
     }
 
-    private static JComponent createUI() {
+    private static TestUI createUI(int thickness) {
         Box contentPanel = Box.createVerticalBox();
         contentPanel.setBackground(OUTER_COLOR);
+
+        List<Point> panelLocations = new ArrayList<>(4);
 
         Dimension childSize = null;
         for (int i = 0; i < 4; i++) {
@@ -230,7 +243,7 @@ public class ScaledLineBorderTest {
             filler.setBackground(INSIDE_COLOR);
             filler.setPreferredSize(SIZE);
             filler.setBounds(i, 0, SIZE.width, SIZE.height);
-            filler.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+            filler.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, thickness));
 
             JPanel childPanel = new JPanel(new BorderLayout());
             childPanel.setBorder(BorderFactory.createEmptyBorder(0, i, 4, 4));
@@ -248,7 +261,7 @@ public class ScaledLineBorderTest {
 
         contentPanel.setSize(childSize.width, childSize.height * 4);
 
-        return contentPanel;
+        return new TestUI(contentPanel, panelLocations, thickness);
     }
 
     private static void showFrame(JComponent content) {
@@ -260,28 +273,33 @@ public class ScaledLineBorderTest {
         frame.setVisible(true);
     }
 
-    private static void paintToImages(final JComponent content,
-                                      final boolean saveImages) {
-        for (double scaling : scales) {
+    private static List<TestImage> paintToImages(final TestUI testUI,
+                                                 final boolean saveImages) {
+        final List<TestImage> images = new ArrayList<>(scales.length);
+        final JComponent content = testUI.content;
+        for (double scale : scales) {
             BufferedImage image =
-                    new BufferedImage((int) Math.ceil(content.getWidth() * scaling),
-                            (int) Math.ceil(content.getHeight() * scaling),
+                    new BufferedImage((int) Math.ceil(content.getWidth() * scale),
+                            (int) Math.ceil(content.getHeight() * scale),
                             BufferedImage.TYPE_INT_ARGB);
 
             Graphics2D g2d = image.createGraphics();
-            g2d.scale(scaling, scaling);
+            g2d.scale(scale, scale);
             content.paint(g2d);
             g2d.dispose();
 
             if (saveImages) {
-                saveImage(image, getImageFileName(scaling));
+                saveImage(image, getImageFileName(scale, testUI.thickness));
             }
-            images.add(image);
+            images.add(new TestImage(image, testUI.panelLocations,
+                    scale, testUI.thickness));
         }
+        return images;
     }
 
-    private static String getImageFileName(final double scaling) {
-        return String.format("test%.2f.png", scaling);
+    private static String getImageFileName(final double scaling,
+                                           final int thickness) {
+        return String.format("test%02d@%.2f.png", thickness, scaling);
     }
 
     private static void saveImage(BufferedImage image, String filename) {

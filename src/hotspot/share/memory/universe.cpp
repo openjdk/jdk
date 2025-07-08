@@ -60,6 +60,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
@@ -436,6 +437,9 @@ void Universe::genesis(TRAPS) {
 
     vmSymbols::initialize();
 
+    // Initialize table for matching jmethodID, before SystemDictionary.
+    JmethodIDTable::initialize();
+
     SystemDictionary::initialize(CHECK);
 
     // Create string constants
@@ -443,7 +447,6 @@ void Universe::genesis(TRAPS) {
     _the_null_string = OopHandle(vm_global(), s);
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
-
 
 #if INCLUDE_CDS
     if (CDSConfig::is_using_archive()) {

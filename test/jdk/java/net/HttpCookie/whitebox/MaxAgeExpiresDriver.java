@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,14 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/* @test
- * @summary Run LockStack gtests with LockingMode=2
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=LockStackTest* -XX:LockingMode=2
+/*
+ * @test
+ * @bug 8351983
+ * @summary HttpCookie Parser Incorrectly Handles Cookies with Expires Attribute
+ * @run testng java.base/java.net.MaxAgeExpires
  */
+public class MaxAgeExpiresDriver {
+}

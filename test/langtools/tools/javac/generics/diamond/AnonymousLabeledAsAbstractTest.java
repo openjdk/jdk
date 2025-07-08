@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,24 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @summary Verify ThreadStart JVMTI event with can_generate_early_vmstart capability
- * @requires vm.jvmti
- * @run main/othervm/native -agentlib:MAAThreadStart MAAThreadStart
+ * @bug 8361214
+ * @summary An anonymous class is erroneously being classify as an abstract class
+ * @compile AnonymousLabeledAsAbstractTest.java
  */
 
-public class MAAThreadStart {
-
-    static {
-        try {
-            System.loadLibrary("MAAThreadStart");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load MAAThreadStart library");
-            System.err.println("java.library.path: "
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+class AnonymousLabeledAsAbstractTest {
+    abstract class Base<T> {}
+    abstract class Derived1<T> extends Base<T> {}
+    abstract class Derived2<T> extends Base<T> {
+        Derived2(Derived1<T> obj){}
+    }
+    abstract class Derived3<T> extends Base<T> {
+        Derived3(Derived2<T> obj){}
     }
 
-    native static int check();
-
-    public static void main(String args[]) {
-        int status = check();
-        if (status != 0) {
-            throw new RuntimeException("Non-zero status returned from the agent: " + status);
-        }
-    }
+    Base<String> obj = new Derived2<>(new Derived1<>(){}){};
+    Base<String> obj2 = new Derived3<String>(new Derived2<>(new Derived1<>(){}){}){};
+    Base<String> obj3 = new Derived3<>(new Derived2<>(new Derived1<>(){}){}){};
 }

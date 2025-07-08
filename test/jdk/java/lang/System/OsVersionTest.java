@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,56 +29,65 @@ import jtreg.SkippedException;
 
 /*
  * @test
- * @bug 8132374
+ * @bug 8132374 8359830
  * @summary Check that the value of the os.version property is equal
  *          to the value of the corresponding OS provided tools.
  * @library /test/lib
+ * @build jtreg.SkippedException
  * @run main OsVersionTest
  * @author Volker Simonis
  */
 public class OsVersionTest {
 
-    public static void main(String args[]) throws Throwable {
+    public static void main(String[] args) throws Throwable {
         final String osVersion = System.getProperty("os.version");
         if (osVersion == null) {
-            throw new Error("Cant query 'os.version' property!");
+            throw new Error("Missing value for os.version system property");
         }
         if (Platform.isLinux()) {
             OutputAnalyzer output = ProcessTools.executeProcess("uname", "-r");
+            output.shouldHaveExitValue(0);
             if (!osVersion.equals(output.getOutput().trim())) {
                 throw new Error(osVersion + " != " + output.getOutput().trim());
             }
-        }
-        else if (Platform.isOSX()) {
-            OutputAnalyzer output = ProcessTools.executeProcess("sw_vers", "-productVersion");
-            String swVersOutput = output.getOutput().trim();
-            if (!osVersion.equals(swVersOutput)) {
-                // This section can be removed if minimum build SDK is xcode 12+
-                if (swVersOutput.startsWith(osVersion)) {
-                    throw new SkippedException("MacOS version only matches in parts, this is expected when " +
-                                               "JDK was built with Xcode < 12 and MacOS version patch is > 0");
-                }
-                throw new Error(osVersion + " != " + swVersOutput);
-            }
-        }
-        else if (Platform.isAix()) {
+        } else if (Platform.isOSX()) {
+            testMacOS(osVersion);
+        } else if (Platform.isAix()) {
             OutputAnalyzer output1 = ProcessTools.executeProcess("uname", "-v");
+            output1.shouldHaveExitValue(0);
             OutputAnalyzer output2 = ProcessTools.executeProcess("uname", "-r");
+            output2.shouldHaveExitValue(0);
             String version = output1.getOutput().trim() + "." + output2.getOutput().trim();
             if (!osVersion.equals(version)) {
                 throw new Error(osVersion + " != " + version);
             }
-        }
-        else if (Platform.isWindows()) {
+        } else if (Platform.isWindows()) {
             OutputAnalyzer output = ProcessTools.executeProcess("cmd", "/c", "ver");
+            output.shouldHaveExitValue(0);
             String version = output.firstMatch(".+\\[Version ([0-9.]+)\\]", 1);
             if (version == null || !version.startsWith(osVersion)) {
                 throw new Error(osVersion + " != " + version);
             }
-        }
-        else {
-            System.out.println("This test is currently not supported on " +
+        } else {
+            throw new jtreg.SkippedException("This test is currently not supported on " +
                                Platform.getOsName());
+        }
+    }
+
+    private static void testMacOS(final String sysPropOsVersion) throws Exception {
+        final ProcessBuilder pb = new ProcessBuilder("sw_vers", "-productVersion");
+        // if the test was launched with SYSTEM_VERSION_COMPAT environment variable set,
+        // then propagate that to the sw_vers too
+        final String versionCompat = System.getenv().get("SYSTEM_VERSION_COMPAT");
+        if (versionCompat != null) {
+            pb.environment().put("SYSTEM_VERSION_COMPAT", versionCompat);
+        }
+        final OutputAnalyzer output = ProcessTools.executeCommand(pb);
+        output.shouldHaveExitValue(0);
+        final String swVersOutput = output.getOutput().trim();
+        if (!sysPropOsVersion.equals(swVersOutput)) {
+            throw new Error("sw_vers reports macOS version: " + swVersOutput
+                    + " but os.version system property reports version: " + sysPropOsVersion);
         }
     }
 }

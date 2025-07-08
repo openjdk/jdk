@@ -22,12 +22,15 @@
  *
  */
 
+#ifndef SHARE_OPTO_LIBRARY_CALL_HPP
+#define SHARE_OPTO_LIBRARY_CALL_HPP
+
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
 #include "opto/callGenerator.hpp"
-#include "opto/graphKit.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/movenode.hpp"
 
@@ -319,7 +322,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_bitshuffle_methods(vmIntrinsics::ID id);
   bool inline_compare_unsigned(vmIntrinsics::ID id);
   bool inline_divmod_methods(vmIntrinsics::ID id);
-  bool inline_reference_get();
+  bool inline_reference_get0();
   bool inline_reference_refersTo0(bool is_phantom);
   bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
@@ -435,3 +438,4 @@ class LibraryCallKit : public GraphKit {
   bool inline_blackhole();
 };
 
+#endif // SHARE_OPTO_LIBRARY_CALL_HPP

@@ -155,6 +155,8 @@ public:
   void post_initialize() override;
   void update_counters();
 
+  void stop() override {};
+
   size_t capacity() const override;
   size_t used() const override;
 
