@@ -353,6 +353,7 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
+      runs-on: windows-2025
       msvc-toolset-version: '14.44'
       msvc-toolset-architecture: 'x86.x64'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
