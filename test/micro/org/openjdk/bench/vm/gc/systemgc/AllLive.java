@@ -47,6 +47,8 @@ public class AllLive {
 
     /*
      * Test the System GC when all allocated objects are live.
+     *
+     * The jvmArgs are provided to avoid GCs during object creation.
      */
 
     static ArrayList<Object[]> holder;
