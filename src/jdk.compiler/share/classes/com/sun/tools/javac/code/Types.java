@@ -2234,70 +2234,53 @@ public class Types {
         };
 
     /**
-     * Return the base type of t or any of its strictly enclosing types that start
-     * with the given symbol. If none exists, return null.
-     *
-     * This is typically used when there is an explicit qualification of a type.
-     * The qualified part may either be a parameter or not.
-     * Example: user writes {@code G.m()} and {@code <G extends A<String>}
-     * ({@code m()} is an inherited member).
-     *
-     * Note, if there's an explicit qualifier, both {@code asEnclosingSuper} and
-     * {@code asOuterSuper} are equivalent.
+     * Return the base type of t or any of its outer types (by following the types enclosing type)
+     * that start with the given symbol.
+     * If none exists, return null.
      *
      * @param t a type
      * @param sym a symbol
      */
     public Type asOuterSuper(Type t, Symbol sym) {
-        switch (t.getTag()) {
-        case CLASS:
-            do {
-                Type s = asSuper(t, sym);
-                if (s != null) return s;
-                t = t.getEnclosingType();
-            } while (t.hasTag(CLASS));
-            return null;
-        case TYPEVAR:
-            return asSuper(t, sym);
-        case ERROR:
-            return t;
-        default:
-            return null;
-        }
+        return asOuter(t, sym, Type::getEnclosingType);
     }
 
     /**
-     * Return the base type of t or any of its enclosing types (traversing potential
-     * enclosing classes along the path) that start with the given symbol. If none
-     * exists, return null.
-     *
-     * This is typically used when there is an implicit qualification of a type.
-     * Example: user writes {@code B<?>} and the real type is a qualified path
-     * {@code A<String>.B<?>}.
-     *
-     * Note, if there's an explicit qualifier, both {@code asEnclosingSuper} and
-     * {@code asOuterSuper} are equivalent.
+     * Return the base type of t or any of its outer types (by following owner's
+     * enclosing class) that start with the given symbol.
+     * If none exists, return null.
      *
      * @param t a type
      * @param sym a symbol
      */
     public Type asEnclosingSuper(Type t, Symbol sym) {
-        switch (t.getTag()) {
-            case CLASS: do {
-                Type s = asSuper(t, sym);
-                if (s != null) return s;
-                t = (t.tsym.owner.enclClass() != null)
-                        ? t.tsym.owner.enclClass().type
-                        : Type.noType;
-            } while (t.hasTag(CLASS));
-            return null;
-        case TYPEVAR:
-            return asSuper(t, sym);
-        case ERROR:
-            return t;
-        default:
-            return null;
+        return asOuter(t, sym, type -> getOwnerEnclosingClassType(type));
+    }
+
+    private static Type getOwnerEnclosingClassType(Type type) {
+        return (type.tsym.owner.enclClass() != null)
+                ? type.tsym.owner.enclClass().type
+                : Type.noType;
+    }
+
+    /**
+     * Return the (most specific) base type of t that starts with
+     * the given symbol. If it exists, the base type is returned.
+     * Otherwise, a traversal of outer types attempts to find such
+     * a base type. The traversal of the next outwards type is left
+     * abstract, via the parameter nextType. If none exists, return null.
+     *
+     * @param t a type
+     * @param sym a symbol
+     * @param nextType a unary operator that emits the next type to be examined
+     */
+    public Type asOuter(Type t, Symbol sym, UnaryOperator<Type> nextType) {
+        while (!t.hasTag(NONE)) {
+            Type s = asSuper(t, sym);
+            if (s != null) return s;
+            t = nextType.apply(t);
         }
+        return null;
     }
     // </editor-fold>
 
