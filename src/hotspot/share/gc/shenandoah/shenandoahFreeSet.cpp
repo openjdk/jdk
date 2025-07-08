@@ -26,6 +26,7 @@
 
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahCPU.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
@@ -2116,7 +2117,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
   assert(!ShenandoahHeapRegion::requires_humongous(req.size()), "Must not");
   assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
 
-  const uint start_idx = uint((reinterpret_cast<uintptr_t>(Thread::current()) >> 5) % ShenandoahDirectlyAllocatableRegionCount);
+  const uint start_idx = uint(ShenandoahCPU::id() % ShenandoahDirectlyAllocatableRegionCount);
   for (;;) {
     constexpr uint max_probes = 3;
     uint idx = start_idx;
