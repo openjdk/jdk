@@ -2430,7 +2430,7 @@ static bool thread_cpu_time_unchecked(Thread* thread, jlong* p_sys_time, jlong* 
                           dummy, &dummy_size) == 0) {
     tid = pinfo.__pi_tid;
   } else {
-    tty->print_cr("pthread_getthrds_np failed.");
+    tty->print_cr("pthread_getthrds_np failed, errno: %d.", errno);
     error = true;
   }
 
@@ -2441,7 +2441,7 @@ static bool thread_cpu_time_unchecked(Thread* thread, jlong* p_sys_time, jlong* 
       sys_time = thrdentry.ti_ru.ru_stime.tv_sec * 1000000000LL + thrdentry.ti_ru.ru_stime.tv_usec * 1000LL;
       user_time = thrdentry.ti_ru.ru_utime.tv_sec * 1000000000LL + thrdentry.ti_ru.ru_utime.tv_usec * 1000LL;
     } else {
-      tty->print_cr("pthread_getthrds_np failed.");
+      tty->print_cr("getthrds64 failed, errno: %d.", errno);
       error = true;
     }
   }
