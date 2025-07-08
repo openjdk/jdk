@@ -64,7 +64,7 @@ public class OpaqueAccesses {
     private static final String FULL_LINES = "(.*\\R)*";
     // Finish the line after the node type, skips full line, and eats until before the node types
     private static final String SKIP = IRNode.MID + IRNode.END + "\\R" + FULL_LINES + "\\s*" + IRNode.START;
-    
+
     private static final String CALL_STATIC_JAVA_AND_THEN_OPAQUE_NOT_NULL = IRNode.START + "CallStaticJava" + SKIP + "OpaqueNotNull" + IRNode.MID + IRNode.END;
     private static final String OPAQUE_NOT_NULL_AND_THEN_CALL_STATIC_JAVA = IRNode.START + "OpaqueNotNull" + SKIP + "CallStaticJava" + IRNode.MID + IRNode.END;
     /* Having both CallStaticJava and OpaqueNotNull, in any order. We use that in a failOn to make sure we have one
