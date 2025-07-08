@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.c2.gvn;
+
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.DontCompile;
@@ -36,7 +38,7 @@ import jdk.test.lib.Asserts;
  * @summary Test that ReverseBytes operations constant-fold.
  * @library /test/lib /
  * @compile ReverseBytesConstantsHelper.jasm
- * @run driver ReverseBytesConstantsTests
+ * @run driver compiler.c2.gvn.ReverseBytesConstantsTests
  */
 public class ReverseBytesConstantsTests {
 
@@ -50,14 +52,14 @@ public class ReverseBytesConstantsTests {
     private static final int C_INT = GEN_INT.next();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:CompileCommand=inline,ReverseBytesConstantsHelper::*");
+        TestFramework.runWithFlags("-XX:CompileCommand=inline,compiler.c2.gvn.ReverseBytesConstantsHelper::*");
     }
 
     @Run(test = {
-        "testI1", "testI2", "testI3",
-        "testL1", "testL2", "testL3",
-        "testS1", "testS2", "testS3",
-        "testUS1", "testUS2", "testUS3",
+        "testI1", "testI2", "testI3", "testI4",
+        "testL1", "testL2", "testL3", "testL4",
+        "testS1", "testS2", "testS3", "testS4", "testS5", "testS6",
+        "testUS1", "testUS2", "testUS3", "testUS4", "testUS5", "testUS6"
     })
     public void runMethod() {
         assertResultI();
