@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CLASSFILE_CLASSLOADEREXT_HPP
-#define SHARE_CLASSFILE_CLASSLOADEREXT_HPP
+/*
+ * @test
+ * @bug 8361214
+ * @summary An anonymous class is erroneously being classify as an abstract class
+ * @compile AnonymousLabeledAsAbstractTest.java
+ */
 
-#include "classfile/classLoader.hpp"
-#include "classfile/moduleEntry.hpp"
-#include "utilities/macros.hpp"
+class AnonymousLabeledAsAbstractTest {
+    abstract class Base<T> {}
+    abstract class Derived1<T> extends Base<T> {}
+    abstract class Derived2<T> extends Base<T> {
+        Derived2(Derived1<T> obj){}
+    }
+    abstract class Derived3<T> extends Base<T> {
+        Derived3(Derived2<T> obj){}
+    }
 
-class ClassListParser;
-
-class ClassLoaderExt: public ClassLoader { // AllStatic
-public:
-#if INCLUDE_CDS
-public:
-  // Called by JVMTI code to add boot classpath
-
-  static void append_boot_classpath(ClassPathEntry* new_entry);
-
-  static int compare_module_names(const char** p1, const char** p2);
-  static void record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined);
-#endif // INCLUDE_CDS
-};
-
-#endif // SHARE_CLASSFILE_CLASSLOADEREXT_HPP
+    Base<String> obj = new Derived2<>(new Derived1<>(){}){};
+    Base<String> obj2 = new Derived3<String>(new Derived2<>(new Derived1<>(){}){}){};
+    Base<String> obj3 = new Derived3<>(new Derived2<>(new Derived1<>(){}){}){};
+}

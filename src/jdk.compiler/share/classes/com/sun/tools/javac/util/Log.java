@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,15 +42,18 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
 import static com.sun.tools.javac.main.Option.*;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 /** A class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
@@ -148,7 +152,7 @@ public class Log extends AbstractLog {
         }
 
         private boolean deferrable(JCDiagnostic diag) {
-            return !(diag.isFlagSet(DiagnosticFlag.NON_DEFERRABLE) && passOnNonDeferrable) && filter.test(diag);
+            return !(diag.isFlagSet(NON_DEFERRABLE) && passOnNonDeferrable) && filter.test(diag);
         }
 
         @Override
@@ -236,6 +240,16 @@ public class Log extends AbstractLog {
      * JavacMessages object used for localization.
      */
     private JavacMessages messages;
+
+    /**
+     * The compilation context.
+     */
+    private final Context context;
+
+    /**
+     * The root {@link Lint} singleton.
+     */
+    private Lint rootLint;
 
     /**
      * Handler for initial dispatch of diagnostics.
@@ -334,6 +348,7 @@ public class Log extends AbstractLog {
     private Log(Context context, Map<WriterKind, PrintWriter> writers) {
         super(JCDiagnostic.Factory.instance(context));
         context.put(logKey, this);
+        this.context = context;
         this.writers = writers;
 
         @SuppressWarnings("unchecked") // FIXME
@@ -517,7 +532,7 @@ public class Log extends AbstractLog {
         if (!shouldReport(file, d.getIntPosition()))
             return false;
 
-        if (!d.isFlagSet(DiagnosticFlag.SOURCE_LEVEL))
+        if (!d.isFlagSet(SOURCE_LEVEL))
             return true;
 
         Pair<JavaFileObject, List<String>> coords = new Pair<>(file, getCode(d));
@@ -681,7 +696,48 @@ public class Log extends AbstractLog {
     @Override
     public void report(JCDiagnostic diagnostic) {
         diagnosticHandler.report(diagnostic);
-     }
+    }
+
+    // Obtain root Lint singleton lazily to avoid init loops
+    private Lint rootLint() {
+        if (rootLint == null)
+            rootLint = Lint.instance(context);
+        return rootLint;
+    }
+
+// Mandatory Warnings
+
+    private final EnumMap<LintCategory, WarningAggregator> aggregators = new EnumMap<>(LintCategory.class);
+
+    private final EnumSet<LintCategory> suppressedDeferredMandatory = EnumSet.noneOf(LintCategory.class);
+
+    /**
+     * Suppress aggregated mandatory warning notes for the specified category.
+     */
+    public void suppressAggregatedWarningNotes(LintCategory category) {
+        suppressedDeferredMandatory.add(category);
+    }
+
+    /**
+     * Report any remaining unreported aggregated mandatory warning notes.
+     */
+    public void reportOutstandingNotes() {
+        aggregators.entrySet().stream()
+          .filter(entry -> !suppressedDeferredMandatory.contains(entry.getKey()))
+          .map(Map.Entry::getValue)
+          .map(WarningAggregator::aggregationNotes)
+          .flatMap(List::stream)
+          .forEach(this::report);
+        aggregators.clear();
+    }
+
+    private WarningAggregator aggregatorFor(LintCategory lc) {
+        return switch (lc) {
+        case PREVIEW -> aggregators.computeIfAbsent(lc, c -> new WarningAggregator(this, Source.instance(context), c));
+        case DEPRECATION -> aggregators.computeIfAbsent(lc, c -> new WarningAggregator(this, null, c, "deprecated"));
+        default -> aggregators.computeIfAbsent(lc, c -> new WarningAggregator(this, null, c));
+        };
+    }
 
     /**
      * Reset the state of this instance.
@@ -695,7 +751,11 @@ public class Log extends AbstractLog {
         nsuppressedwarns = 0;
         while (diagnosticHandler.prev != null)
             popDiagnosticHandler(diagnosticHandler);
+        aggregators.clear();
+        suppressedDeferredMandatory.clear();
     }
+
+// DefaultDiagnosticHandler
 
     /**
      * Common diagnostic handling.
@@ -703,6 +763,7 @@ public class Log extends AbstractLog {
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     private class DefaultDiagnosticHandler extends DiagnosticHandler {
+
         @Override
         public void report(JCDiagnostic diagnostic) {
             if (expectDiagKeys != null)
@@ -727,6 +788,16 @@ public class Log extends AbstractLog {
                 break;
 
             case WARNING:
+
+                // Apply the appropriate mandatory warning aggregator, if needed
+                if (diagnostic.isFlagSet(AGGREGATE)) {
+                    LintCategory category = diagnostic.getLintCategory();
+                    boolean verbose = rootLint().isEnabled(category);
+                    if (!aggregatorFor(category).aggregate(diagnostic, verbose))
+                        return;
+                }
+
+                // Emit warning unless not mandatory and warnings are disabled
                 if (emitWarnings || diagnostic.isMandatory()) {
                     if (nwarnings < MaxWarnings) {
                         writeDiagnostic(diagnostic);
@@ -738,8 +809,7 @@ public class Log extends AbstractLog {
                 break;
 
             case ERROR:
-                if (diagnostic.isFlagSet(DiagnosticFlag.API) ||
-                     shouldReport(diagnostic)) {
+                if (diagnostic.isFlagSet(API) || shouldReport(diagnostic)) {
                     if (nerrors < MaxErrors) {
                         writeDiagnostic(diagnostic);
                         nerrors++;
@@ -749,7 +819,7 @@ public class Log extends AbstractLog {
                 }
                 break;
             }
-            if (diagnostic.isFlagSet(JCDiagnostic.DiagnosticFlag.COMPRESSED)) {
+            if (diagnostic.isFlagSet(COMPRESSED)) {
                 compressedOutput = true;
             }
         }
