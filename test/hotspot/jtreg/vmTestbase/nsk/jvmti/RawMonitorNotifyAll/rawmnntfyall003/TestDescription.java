@@ -37,8 +37,8 @@
  *         4431533: TEST_BUG: destroyed raw monitor can be occasionally valid
  *     Ported from JVMDI.
  *
- * @comment the test intentionally passes bad argument to the function to verify the functionality,
-            it causes false positive from ASAN lib
+ * @comment The test intentionally passes a bad argument to the function to verify error checking,
+            which causes a false positive from the ASAN lib
  * @requires !vm.asan
  * @library /vmTestbase
  *          /test/lib
