@@ -349,7 +349,7 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
 }
 
 size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
-  return _space_info->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
+  return ShenandoahHeap::heap()->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
 }
 
 ShenandoahAllocationRate::ShenandoahAllocationRate() :
