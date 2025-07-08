@@ -29,13 +29,20 @@ public class VectorBitConversion {
     private int seed;
     private Random r = new Random(seed);
 
+    private double[] doubles;
     private float[] floats;
-    private int[] result;
+    private int[] resultInts;
+    private long[] resultLongs;
 
     @Setup
     public void init() {
-        result = new int[size];
+        resultInts = new int[size];
+        resultLongs = new long[size];
 
+        doubles = new double[size];
+        for (int i = 0; i < size; i++) {
+            doubles[i] = r.nextDouble();
+        }
         floats = new float[size];
         for (int i = 0; i < size; i++) {
             floats[i] = r.nextFloat();
@@ -43,13 +50,33 @@ public class VectorBitConversion {
     }
 
     @Benchmark
+    public long[] doubleToRawLongBits() {
+        for (int i = 0; i < doubles.length; i++) {
+            final double aDouble = doubles[i];
+            final long bits = Double.doubleToRawLongBits(aDouble);
+            resultLongs[i] = bits;
+        }
+        return resultLongs;
+    }
+
+    @Benchmark
+    public long[] doubleToLongBits() {
+        for (int i = 0; i < doubles.length; i++) {
+            final double aDouble = doubles[i];
+            final long bits = Double.doubleToLongBits(aDouble);
+            resultLongs[i] = bits;
+        }
+        return resultLongs;
+    }
+
+    @Benchmark
     public int[] floatToRawIntBits() {
         for (int i = 0; i < floats.length; i++) {
             final float aFloat = floats[i];
             final int bits = Float.floatToRawIntBits(aFloat);
-            result[i] = bits;
+            resultInts[i] = bits;
         }
-        return result;
+        return resultInts;
     }
 
     @Benchmark
@@ -57,8 +84,8 @@ public class VectorBitConversion {
         for (int i = 0; i < floats.length; i++) {
             final float aFloat = floats[i];
             final int bits = Float.floatToIntBits(aFloat);
-            result[i] = bits;
+            resultInts[i] = bits;
         }
-        return result;
+        return resultInts;
     }
 }
