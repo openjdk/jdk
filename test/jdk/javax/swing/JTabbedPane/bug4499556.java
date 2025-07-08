@@ -89,9 +89,10 @@ public class bug4499556 {
     }
 
     static volatile JTabbedPane pane;
+    static volatile JFrame frame;
 
     static JFrame createUI() {
-        JFrame frame = new JFrame("bug4499556");
+        frame = new JFrame("bug4499556");
         pane = getTabbedPane();
         frame.add(pane);
         frame.add(getRightPanel(), BorderLayout.EAST);
@@ -262,7 +263,7 @@ public class bug4499556 {
             e.printStackTrace();
             return false;
         }
-        SwingUtilities.updateComponentTreeUI(pane);
+        SwingUtilities.updateComponentTreeUI(frame);
         return true;
     }
 

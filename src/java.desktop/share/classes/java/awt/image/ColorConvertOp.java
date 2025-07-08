@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -684,13 +684,10 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
     private int getRenderingIntent (ICC_Profile profile) {
         byte[] header = profile.getData(ICC_Profile.icSigHead);
         int index = ICC_Profile.icHdrRenderingIntent;
-
-        /* According to ICC spec, only the least-significant 16 bits shall be
-         * used to encode the rendering intent. The most significant 16 bits
-         * shall be set to zero. Thus, we are ignoring two most significant
-         * bytes here.
-         *
-         *  See https://www.color.org/ICC1v42_2006-05.pdf, section 7.2.15.
+        /*
+         * ICC spec: only the least-significant 16 bits encode the rendering
+         * intent. The most significant 16 bits must be zero and can be ignored.
+         * https://www.color.org/specification/ICC.1-2022-05.pdf, section 7.2.15
          */
         return ((header[index+2] & 0xff) <<  8) |
                 (header[index+3] & 0xff);

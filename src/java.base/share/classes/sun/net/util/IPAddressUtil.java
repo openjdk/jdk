@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static jdk.internal.util.Exceptions.formatMsg;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 public class IPAddressUtil {
     private static final int INADDR4SZ = 4;
@@ -161,7 +164,8 @@ public class IPAddressUtil {
      * @return an {@code IllegalArgumentException} instance
      */
     public static IllegalArgumentException invalidIpAddressLiteral(String src) {
-        return new IllegalArgumentException("Invalid IP address literal: " + src);
+        return new IllegalArgumentException(
+            formatMsg("Invalid IP address literal%s", filterNonSocketInfo(src).prefixWith(": ")));
     }
 
     /*

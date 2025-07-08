@@ -41,7 +41,7 @@ PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
   _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
-  initialize(rs, initial_size, GenAlignment);
+  initialize(rs, initial_size, SpaceAlignment);
 }
 
 void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment) {
@@ -234,7 +234,7 @@ bool PSOldGen::expand_by(size_t bytes) {
     post_resize();
     if (UsePerfData) {
       _space_counters->update_capacity();
-      _gen_counters->update_all(_virtual_space->committed_size());
+      _gen_counters->update_capacity(_virtual_space->committed_size());
     }
   }
 
@@ -366,7 +366,7 @@ void PSOldGen::print_on(outputStream* st) const {
 void PSOldGen::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all(_virtual_space->committed_size());
+    _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }
 
