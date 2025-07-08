@@ -349,10 +349,7 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
 }
 
 size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
-  // Note that soft_max_capacity() / 100 * min_free_threshold is smaller than max_capacity() / 100 * min_free_threshold.
-  // We want to behave conservatively here, so use max_capacity().  By returning a larger value, we cause the GC to
-  // trigger when the remaining amount of free shrinks below the larger threshold.
-  return _space_info->max_capacity() / 100 * ShenandoahMinFreeThreshold;
+  return ShenandoahHeap::heap()->soft_max_capacity() / 100 * ShenandoahMinFreeThreshold;
 }
 
 ShenandoahAllocationRate::ShenandoahAllocationRate() :
