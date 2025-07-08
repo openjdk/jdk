@@ -556,6 +556,7 @@ public class Flags {
         MATCH_BINDING_TO_OUTER(Flags.MATCH_BINDING_TO_OUTER),
         RECORD(Flags.RECORD),
         RECOVERABLE(Flags.RECOVERABLE),
+        RESTRICTED(Flags.RESTRICTED),
         NON_SEALED(Flags.NON_SEALED) {
             @Override
             public String toString() {

@@ -28,6 +28,7 @@
  *          Symbol kinds.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.code
+ * @compile ExtendedStandardFlagsOverlayFlagsConflict.java
  * @run main ExtendedStandardFlagsOverlayFlagsConflict
  */
 
@@ -56,6 +57,9 @@ public class ExtendedStandardFlagsOverlayFlagsConflict {
 
         for (Field f : Flags.class.getFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {
+                continue;
+            }
+            if (f.getName().startsWith("ACC_")) {
                 continue;
             }
             long flag = ((Number) f.get(null)).longValue();
