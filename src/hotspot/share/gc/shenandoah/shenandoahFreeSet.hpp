@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+#include "memory/padded.inline.hpp"
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -268,6 +269,22 @@ public:
   //       idx <= rightmost
   //     }
   void assert_bounds() NOT_DEBUG_RETURN;
+};
+
+#define UNKNOWN_AFFINITY ((Thread*)-1)
+#define UNKNOWN_SELF     ((Thread*)-2)
+class ShenandoahDirectlyAllocatableRegionAffinity : public AllStatic {
+  struct Affinity {
+    Thread* _thread;
+  };
+
+  static PaddedEnd<Affinity>* _affinity;
+  static THREAD_LOCAL Thread*  _self;
+  static THREAD_LOCAL uint     _index;
+  static uint index_slow();
+public:
+  static void initialize();
+  static uint index();
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
