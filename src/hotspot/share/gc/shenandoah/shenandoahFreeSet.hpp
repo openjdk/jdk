@@ -319,9 +319,12 @@ public:
 
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
+  struct ShenandoahHeapRegionAddress {
+    ShenandoahHeapRegion* volatile address;
+  };
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
-  ShenandoahHeapRegion** _directly_allocatable_regions;
+  PaddedEnd<ShenandoahHeapRegionAddress>* _directly_allocatable_regions;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -420,7 +423,7 @@ private:
   template<bool IS_TLAB>
   HeapWord* par_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
-  bool try_allocate_directly_allocatable_regions(ShenandoahHeapRegion** shared_region_address[],
+  bool try_allocate_directly_allocatable_regions(ShenandoahHeapRegion* volatile * shared_region_address[],
                                                  ShenandoahHeapRegion* original_shared_regions[],
                                                  uint region_count,
                                                  ShenandoahAllocRequest &req,
