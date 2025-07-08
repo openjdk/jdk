@@ -750,12 +750,12 @@ void ShenandoahRegionPartitions::assert_bounds() {
 #endif
 
 PaddedEnd<ShenandoahDirectlyAllocatableRegionAffinity::Affinity>* ShenandoahDirectlyAllocatableRegionAffinity::_affinity = nullptr;
-THREAD_LOCAL Thread* ShenandoahDirectlyAllocatableRegionAffinity::_self = UNKNOWN_SELF;
+THREAD_LOCAL Thread* ShenandoahDirectlyAllocatableRegionAffinity::_self = DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_SELF;
 THREAD_LOCAL uint ShenandoahDirectlyAllocatableRegionAffinity::_index = 0;
 
 uint ShenandoahDirectlyAllocatableRegionAffinity::index_slow() {
   // Set current thread
-  if (_self == UNKNOWN_SELF) {
+  if (_self == DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_SELF) {
     _self = Thread::current();
   }
 
@@ -770,9 +770,9 @@ uint ShenandoahDirectlyAllocatableRegionAffinity::index_slow() {
 
 void ShenandoahDirectlyAllocatableRegionAffinity::initialize() {
   assert(_affinity == nullptr, "Already initialized");
-  _affinity = PaddedArray<ShenandoahDirectlyAllocatableRegionAffinity::Affinity, mtGC>::create_unfreeable(ShenandoahDirectlyAllocatableRegionCount);
+  _affinity = PaddedArray<Affinity, mtGC>::create_unfreeable(ShenandoahDirectlyAllocatableRegionCount);
   for (uint32_t i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
-    _affinity[i]._thread = UNKNOWN_AFFINITY;
+    _affinity[i]._thread = DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_AFFINITY;
   }
 }
 

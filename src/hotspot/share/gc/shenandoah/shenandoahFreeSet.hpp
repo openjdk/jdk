@@ -271,16 +271,22 @@ public:
   void assert_bounds() NOT_DEBUG_RETURN;
 };
 
-#define UNKNOWN_AFFINITY ((Thread*)-1)
-#define UNKNOWN_SELF     ((Thread*)-2)
+#define DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_AFFINITY ((Thread*)-1)
+#define DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_SELF     ((Thread*)-2)
+// When mutator threads allocate from directly allocatable regions, ideally the allocation should be evenly
+// distributed to all the directly allocatable regions, random is the best portable option for this, but with random
+// distribution it may worsen memory locality, e.g. two consecutive allocation from same thread are randomly
+// distributed to different allocatable regions. ShenandoahDirectlyAllocatableRegionAffinity solves/mitigates
+// the memory locality issue.
+// The idea and code is borrowed from ZGC's CPU affinity, but with random number instead of CPU id.
 class ShenandoahDirectlyAllocatableRegionAffinity : public AllStatic {
   struct Affinity {
     Thread* _thread;
   };
 
   static PaddedEnd<Affinity>* _affinity;
-  static THREAD_LOCAL Thread*  _self;
-  static THREAD_LOCAL uint     _index;
+  static THREAD_LOCAL Thread* _self;
+  static THREAD_LOCAL uint    _index;
   static uint index_slow();
 public:
   static void initialize();
