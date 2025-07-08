@@ -1155,20 +1155,6 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
-class NodeInSingleLoopBody : public NodeInLoopBody {
-  PhaseIdealLoop* const _phase;
-  IdealLoopTree* const _ilt;
-
-public:
-  NodeInSingleLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
-  }
-  NONCOPYABLE(NodeInSingleLoopBody);
-
-  bool check_node_in_loop_body(Node* node) const override {
-    return _phase->is_member(_ilt, _phase->get_ctrl(node));
-  }
-};
-
 // Make a copy of Parse/Template Assertion predicates below existing predicates at the loop passed as argument
 class CloneShortLoopPredicateVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
@@ -1176,8 +1162,8 @@ class CloneShortLoopPredicateVisitor : public PredicateVisitor {
 
 public:
   CloneShortLoopPredicateVisitor(LoopNode* target_loop_head,
-                                  const NodeInSingleLoopBody& node_in_loop_body,
-                                  PhaseIdealLoop* phase)
+                                 const NodeInSingleLoopBody &node_in_loop_body,
+                                 PhaseIdealLoop* phase)
     : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
       _phase(phase) {
   }

@@ -1096,6 +1096,19 @@ class NodeInClonedLoopBody : public NodeInLoopBody {
   }
 };
 
+// This class checks whether a node is in the loop body passed to the constructor.
+class NodeInSingleLoopBody : public NodeInLoopBody {
+  PhaseIdealLoop* const _phase;
+  IdealLoopTree* const _ilt;
+
+public:
+  NodeInSingleLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
+  }
+  NONCOPYABLE(NodeInSingleLoopBody);
+
+  bool check_node_in_loop_body(Node* node) const override;
+};
+
 // Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
 // loop. This visitor can be used in combination with a PredicateIterator.
 class CreateAssertionPredicatesVisitor : public PredicateVisitor {

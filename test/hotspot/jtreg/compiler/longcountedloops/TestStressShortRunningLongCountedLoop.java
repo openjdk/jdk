@@ -30,9 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8342692
  * @summary C2: long counted loop/long range checks: don't create loop-nest for short running loops
  * @library /test/lib /
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.longcountedloops.TestStressShortRunningLongCountedLoop
+ * @run driver compiler.longcountedloops.TestStressShortRunningLongCountedLoop
  */
 
 public class TestStressShortRunningLongCountedLoop {
