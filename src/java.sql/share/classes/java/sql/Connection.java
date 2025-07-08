@@ -298,6 +298,9 @@ public interface Connection extends Wrapper, AutoCloseable {
      */
     boolean isClosed() throws SQLException;
 
+    //======================================================================
+    // Advanced features:
+
     /**
      * Retrieves a {@code DatabaseMetaData} object that contains
      * metadata about the database to which this
