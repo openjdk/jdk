@@ -215,7 +215,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Creates an ImageIcon from an image object.
-     * If the image is {@code null}, no icon will be rendered.
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
      * @param image the image
@@ -224,9 +223,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     public ImageIcon (Image image) {
         this.image = image;
-        if (image == null) {
-            return;
-        }
         Object o = image.getProperty("comment", imageObserver);
         if (o instanceof String) {
             description = (String) o;
