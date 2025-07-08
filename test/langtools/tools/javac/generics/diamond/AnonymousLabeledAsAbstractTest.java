@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,24 @@
  * questions.
  */
 
-/* Windows process id's and threads */
+/*
+ * @test
+ * @bug 8361214
+ * @summary An anonymous class is erroneously being classify as an abstract class
+ * @compile AnonymousLabeledAsAbstractTest.java
+ */
 
-#include <process.h>
-#include <time.h>
-#include <Windows.h>
+class AnonymousLabeledAsAbstractTest {
+    abstract class Base<T> {}
+    abstract class Derived1<T> extends Base<T> {}
+    abstract class Derived2<T> extends Base<T> {
+        Derived2(Derived1<T> obj){}
+    }
+    abstract class Derived3<T> extends Base<T> {
+        Derived3(Derived2<T> obj){}
+    }
 
-#define MUTEX_T         int
-#define MUTEX_INIT      0
-#define MUTEX_LOCK(x)   ((void) (x))        /* FIXUP? */
-#define MUTEX_UNLOCK(x) ((void) (x))        /* FIXUP? */
-#define GET_THREAD_ID() GetCurrentThreadId()
-#define THREAD_T        unsigned long
-#define PID_T           int
-#define GETPID()        getpid()
-#define GETMILLSECS(millisecs) (millisecs=0)
-
-#define popen   _popen
-#define pclose  _pclose
-#define sleep(s)  Sleep((s)*1000)
+    Base<String> obj = new Derived2<>(new Derived1<>(){}){};
+    Base<String> obj2 = new Derived3<String>(new Derived2<>(new Derived1<>(){}){}){};
+    Base<String> obj3 = new Derived3<>(new Derived2<>(new Derived1<>(){}){}){};
+}

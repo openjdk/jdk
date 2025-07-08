@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,30 @@
  * questions.
  */
 
-/* Windows process id's and threads */
+import java.awt.Window;
 
-#include <process.h>
-#include <time.h>
-#include <Windows.h>
+/**
+ * @test
+ * @bug 8346952
+ * @summary Verifies no exception occurs when triggering updateCG()
+ * for an ownerless window.
+ * @key headful
+ */
+public final class BogusFocusableWindowState {
 
-#define MUTEX_T         int
-#define MUTEX_INIT      0
-#define MUTEX_LOCK(x)   ((void) (x))        /* FIXUP? */
-#define MUTEX_UNLOCK(x) ((void) (x))        /* FIXUP? */
-#define GET_THREAD_ID() GetCurrentThreadId()
-#define THREAD_T        unsigned long
-#define PID_T           int
-#define GETPID()        getpid()
-#define GETMILLSECS(millisecs) (millisecs=0)
-
-#define popen   _popen
-#define pclose  _pclose
-#define sleep(s)  Sleep((s)*1000)
+    public static void main(String[] args) {
+        Window frame = new Window(null) {
+            @Override
+            public boolean getFocusableWindowState() {
+                removeNotify();
+                return true;
+            }
+        };
+        try {
+            frame.pack();
+            frame.setVisible(true);
+        } finally {
+            frame.dispose();
+        }
+    }
+}
