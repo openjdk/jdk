@@ -67,6 +67,8 @@ public:
   jint initialize() override;
   void initialize_serviceability() override;
 
+  void stop() override {};
+
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
@@ -79,11 +81,6 @@ public:
   }
 
   bool requires_barriers(stackChunkOop obj) const override { return false; }
-
-  bool is_maximal_no_gc() const override {
-    // No GC is going to happen. Return "we are at max", when we are about to fail.
-    return used() == capacity();
-  }
 
   // Allocation
   HeapWord* allocate_work(size_t size, bool verbose = true);

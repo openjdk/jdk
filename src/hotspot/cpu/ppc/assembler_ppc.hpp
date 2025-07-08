@@ -591,6 +591,10 @@ class Assembler : public AbstractAssembler {
     XVRDPIC_OPCODE = (60u << OPCODE_SHIFT |  235u << 2),
     XVRDPIM_OPCODE = (60u << OPCODE_SHIFT |  249u << 2),
     XVRDPIP_OPCODE = (60u << OPCODE_SHIFT |  233u << 2),
+    XVMINSP_OPCODE = (60u << OPCODE_SHIFT |  200u << 3),
+    XVMINDP_OPCODE = (60u << OPCODE_SHIFT |  232u << 3),
+    XVMAXSP_OPCODE = (60u << OPCODE_SHIFT |  192u << 3),
+    XVMAXDP_OPCODE = (60u << OPCODE_SHIFT |  224u << 3),
 
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
@@ -699,15 +703,19 @@ class Assembler : public AbstractAssembler {
     VMAXSB_OPCODE  = (4u  << OPCODE_SHIFT |  258u     ),
     VMAXSW_OPCODE  = (4u  << OPCODE_SHIFT |  386u     ),
     VMAXSH_OPCODE  = (4u  << OPCODE_SHIFT |  322u     ),
+    VMAXSD_OPCODE  = (4u  << OPCODE_SHIFT |  450u     ),
     VMAXUB_OPCODE  = (4u  << OPCODE_SHIFT |    2u     ),
     VMAXUW_OPCODE  = (4u  << OPCODE_SHIFT |  130u     ),
     VMAXUH_OPCODE  = (4u  << OPCODE_SHIFT |   66u     ),
+    VMAXUD_OPCODE  = (4u  << OPCODE_SHIFT |  194u     ),
     VMINSB_OPCODE  = (4u  << OPCODE_SHIFT |  770u     ),
     VMINSW_OPCODE  = (4u  << OPCODE_SHIFT |  898u     ),
     VMINSH_OPCODE  = (4u  << OPCODE_SHIFT |  834u     ),
+    VMINSD_OPCODE  = (4u  << OPCODE_SHIFT |  962u     ),
     VMINUB_OPCODE  = (4u  << OPCODE_SHIFT |  514u     ),
     VMINUW_OPCODE  = (4u  << OPCODE_SHIFT |  642u     ),
     VMINUH_OPCODE  = (4u  << OPCODE_SHIFT |  578u     ),
+    VMINUD_OPCODE  = (4u  << OPCODE_SHIFT |  706u     ),
 
     VCMPEQUB_OPCODE= (4u  << OPCODE_SHIFT |    6u     ),
     VCMPEQUH_OPCODE= (4u  << OPCODE_SHIFT |   70u     ),
@@ -749,6 +757,7 @@ class Assembler : public AbstractAssembler {
     VCTZH_OPCODE   = (4u  << OPCODE_SHIFT | 29u << 16 | 1538u),
     VCTZW_OPCODE   = (4u  << OPCODE_SHIFT | 30u << 16 | 1538u),
     VCTZD_OPCODE   = (4u  << OPCODE_SHIFT | 31u << 16 | 1538u),
+    VNEGW_OPCODE   = (4u  << OPCODE_SHIFT |  6u << 16 | 1538u),
 
     // Vector Floating-Point
     // not implemented yet
@@ -2302,15 +2311,19 @@ class Assembler : public AbstractAssembler {
   inline void vmaxsb(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxsw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxsh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmaxsd(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxub(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxuw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxuh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmaxud(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsb(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vminsd(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminub(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminuw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminuh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vminud(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequb( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequh( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequw( VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2360,6 +2373,7 @@ class Assembler : public AbstractAssembler {
   inline void vctzh(    VectorRegister d, VectorRegister b);
   inline void vctzw(    VectorRegister d, VectorRegister b);
   inline void vctzd(    VectorRegister d, VectorRegister b);
+  inline void vnegw(    VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
@@ -2434,6 +2448,12 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
+
+  // The following functions do not match exactly the Java.math semantics.
+  inline void xvminsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmindp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaxsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaxdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
 
   // VSX Extended Mnemonics
   inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);

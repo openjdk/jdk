@@ -208,6 +208,11 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, pc);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  Unimplemented();
+  return nullptr;
+}
+
 frame os::get_sender_for_C_frame(frame* fr) {
 #ifdef __thumb__
   // We can't reliably get anything from a thumb C frame.
@@ -354,11 +359,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::continuation_for_implicit_exception(
               thread, pc, SharedRuntime::IMPLICIT_NULL);
         }
-      } else if (sig == SIGILL &&
-                 *(int*)pc ==
-                     NativeInstruction::not_entrant_illegal_instruction) {
-        // Not entrant
-        stub = SharedRuntime::get_handle_wrong_method_stub();
       }
     } else if ((thread->thread_state() == _thread_in_vm ||
                 thread->thread_state() == _thread_in_native) &&

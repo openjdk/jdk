@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,42 @@
  * @bug 8309811
  * @requires vm.debug
  * @summary Test the output of -XX:+TraceBytecodes, -XX:TraceBytecodesAt, and -XX:TraceBytecodesStopAt
- * @run main/othervm -XX:+TraceBytecodes -XX:TraceBytecodesAt=2000 -XX:TraceBytecodesStopAt=3000 TraceBytecodes
+ * @run main/othervm -XX:+TraceBytecodes -XX:TraceBytecodesAt=1000000 -XX:TraceBytecodesStopAt=1001000 TraceBytecodes
  */
 
-// This is just a very simple sanity test. Trace about 1000 bytecodes. See the .jtr file for the output.
+// CountBytecodes returns 1826384 bytecodes, so trace starting at a million to trace parallel threads.
+// This is just a very simple sanity test. See the .jtr file for the output.
 // Consider it OK if the VM doesn't crash. It should test a fair amount of the code in bytecodeTracer.cpp
-public class TraceBytecodes {
-    public static void main(String args[]) {
+public class TraceBytecodes extends Thread {
+    public void run() {
         System.out.println("Hello TraceBytecodes");
+    }
+
+    private static TraceBytecodes[] threads = new TraceBytecodes[2];
+    private static boolean success = true;
+
+    private static boolean report_success() {
+        for (int i = 0; i < 2; i++) {
+          try {
+            threads[i].join();
+          } catch (InterruptedException e) {}
+        }
+        return success;
+    }
+
+    public static void main(String args[]) {
+        threads[0] = new TraceBytecodes();
+        threads[1] = new TraceBytecodes();
+        for (int i = 0; i < 2; i++) {
+            threads[i].setName("Loading Thread #" + (i + 1));
+            threads[i].start();
+            System.out.println("Thread " + (i + 1) + " was started...");
+        }
+
+        if (report_success()) {
+           System.out.println("PASSED");
+        } else {
+            throw new RuntimeException("FAILED");
+        }
     }
 }

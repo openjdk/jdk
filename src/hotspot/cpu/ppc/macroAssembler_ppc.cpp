@@ -3277,6 +3277,35 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp, bool at_ret
   }
 }
 
+void MacroAssembler::jump_to_polling_page_return_handler_blob(int safepoint_offset, bool fixed_size) {
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+         "polling page return stub not created yet");
+  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+
+  // Determine saved exception pc using pc relative address computation.
+  {
+    Label next_pc;
+    bl(next_pc);
+    bind(next_pc);
+  }
+  int current_offset = offset();
+
+  if (fixed_size) {
+    // Code size must not depend on offsets.
+    load_const32(R12, safepoint_offset - current_offset);
+    mflr(R0);
+    add(R12, R12, R0);
+  } else {
+    mflr(R12);
+    add_const_optimized(R12, R12, safepoint_offset - current_offset);
+  }
+  std(R12, in_bytes(JavaThread::saved_exception_pc_offset()), R16_thread);
+
+  add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+  mtctr(R0);
+  bctr();
+}
+
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2,
                                      MacroAssembler::PreservationLevel preservation_level) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -3899,8 +3928,10 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
   Label L_outer_loop, L_inner_loop, L_last;
 
   // Set DSCR pre-fetch to deepest.
-  load_const_optimized(t0, VM_Version::_dscr_val | 7);
-  mtdscr(t0);
+  if (VM_Version::has_mfdscr()) {
+    load_const_optimized(t0, VM_Version::_dscr_val | 7);
+    mtdscr(t0);
+  }
 
   mtvrwz(VCRC, crc); // crc lives in VCRC, now
 
@@ -4044,8 +4075,10 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
   // ********** Main loop end **********
 
   // Restore DSCR pre-fetch value.
-  load_const_optimized(t0, VM_Version::_dscr_val);
-  mtdscr(t0);
+  if (VM_Version::has_mfdscr()) {
+    load_const_optimized(t0, VM_Version::_dscr_val);
+    mtdscr(t0);
+  }
 
   // ********** Simple loop for remaining 16 byte blocks **********
   {
