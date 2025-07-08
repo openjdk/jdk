@@ -175,7 +175,8 @@ public class AnnotationRecovery extends TestRunner {
             "Test.DOUBLE",
             "Test.CHAR",
             "Test.class",
-            "@Deprecated"
+            "@Deprecated",
+            "E.A",
         };
         Set<String> variants = new HashSet<>();
 
