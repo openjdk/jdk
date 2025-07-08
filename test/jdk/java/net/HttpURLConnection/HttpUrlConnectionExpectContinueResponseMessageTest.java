@@ -26,8 +26,7 @@
  * @summary Test that Response Message gets set even if a non 100 response
  *          gets return when Expect Continue is set
  * @bug 8352502
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ * @library /test/lib
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                    -Djdk.httpclient.HttpClient.log=all
  *                    HttpUrlConnectionExpectContinueResponseMessageTest
