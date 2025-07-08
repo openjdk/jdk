@@ -106,7 +106,7 @@ public class CodeInstallationTest {
             asm.emitEpilogue();
 
             HotSpotCompiledCode code = asm.finish(resolvedMethod);
-            InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);
+            InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null, true);
 
             if (DEBUG) {
                 String str = ((HotSpotCodeCacheProvider) codeCache).disassemble(installed);

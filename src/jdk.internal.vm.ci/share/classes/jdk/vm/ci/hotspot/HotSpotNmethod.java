@@ -90,10 +90,6 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
      */
     private int invalidationReason;
 
-    HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, long compileId) {
-        this(method, name, isDefault, isDefault, compileId);
-    }
-
     HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, boolean profileDeopt, long compileId) {
         super(name);
         this.method = method;
