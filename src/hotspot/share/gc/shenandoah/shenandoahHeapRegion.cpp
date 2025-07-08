@@ -299,6 +299,10 @@ void ShenandoahHeapRegion::make_cset() {
 }
 
 void ShenandoahHeapRegion::make_trash() {
+#define KELVIN_TRASH
+#ifdef KELVIN_TRASH
+  log_info(gc)("make_trash() on region %zu", index());
+#endif
   shenandoah_assert_heaplocked();
   reset_age();
   switch (state()) {
@@ -321,6 +325,9 @@ void ShenandoahHeapRegion::make_trash() {
 }
 
 void ShenandoahHeapRegion::make_trash_immediate() {
+#ifdef KELVIN_TRASH
+  log_info(gc)("make_trash_immediate() on region %zu", index());
+#endif
   make_trash();
 
   // On this path, we know there are no marked objects in the region,

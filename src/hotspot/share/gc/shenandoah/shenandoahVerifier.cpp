@@ -373,6 +373,11 @@ public:
      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0) {};
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
+#define KELVIN_STATS
+#ifdef KELVIN_STATS
+    log_info(gc)("ShenandoahCalculateRegiontatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
+                 r->affiliation_name(), r->index(), r->used(), r->is_trash()? "yes": "no");
+#endif
     _used += r->used();
     _garbage += r->garbage();
     _committed += r->is_committed() ? ShenandoahHeapRegion::region_size_bytes() : 0;
@@ -384,6 +389,10 @@ public:
       _trashed_used += r->used();
     }
     _regions++;
+#ifdef KELVIN_STATS
+    log_info(gc)(" _used: %zu, _garbage: %zu, _committed: %zu, _humongous_waste: %zu, _trashed_regions: %zu, _trashed_used: %zu",
+                 _used, _garbage, _committed, _humongous_waste, _trashed_regions, _trashed_used);
+#endif
     log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding %zu for %s Region %zu, yielding: %zu",
             r->used(), (r->is_humongous() ? "humongous" : "regular"), r->index(), _used);
   }
@@ -408,9 +417,8 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
   ShenandoahCalculateRegionStatsClosure global;
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-#define KELVIN_STATS
 #ifdef KELVIN_STATS
-    log_info(gc)("StatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
+    log_info(gc)("ShenandoahGenerationaStatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
                  r->affiliation_name(), r->index(), r->used(), r->is_trash()? "yes": "no");
 #endif
     switch (r->affiliation()) {
@@ -454,9 +462,9 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
     // in the following assertion, but maybe not...
 #endif
 
-    guarantee(stats.used() == generation_used,
+    guarantee(stats.used_after_recycle() == generation_used,
               "%s: generation (%s) used size must be consistent: generation-used: " PROPERFMT ", regions-used: " PROPERFMT,
-              label, generation->name(), PROPERFMTARGS(generation_used), PROPERFMTARGS(stats.used()));
+              label, generation->name(), PROPERFMTARGS(generation_used), PROPERFMTARGS(stats.used_after_recycle()));
 
     size_t stats_regions = stats.regions() - stats.trashed_regions();
     guarantee(stats_regions == generation_used_regions,
@@ -889,11 +897,11 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       heap_used = _heap->used();
     }
     if (sizeness != _verify_size_disable) {
-      guarantee(cl.used() == heap_used,
+      guarantee(cl.used_after_recycle() == heap_used,
                 "%s: heap used size must be consistent: heap-used = %zu%s, regions-used = %zu%s",
                 label,
                 byte_size_in_proper_unit(heap_used), proper_unit_for_byte_size(heap_used),
-                byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
+                byte_size_in_proper_unit(cl.used_after_recycle()), proper_unit_for_byte_size(cl.used_after_recycle()));
     }
     size_t heap_committed = _heap->committed();
     guarantee(cl.committed() == heap_committed,
