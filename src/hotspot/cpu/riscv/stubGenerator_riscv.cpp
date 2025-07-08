@@ -2632,23 +2632,24 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_exit_loadkey);
 
     // init aes_ctr counter input
+    uint64_t maskIndex = 0x00000088ul; // 0b10001000
+    __ li(t0, maskIndex);
     __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
-    __ li(t0, 0b10001000);
     __ vmv_v_x(v0, t0);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(v31, counter);
-    __ vrev8_v(v31, v31);
+    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t);
     __ vsetvli(x0, len, Assembler::e32, Assembler::m4);
     __ vmv_v_i(v16, 0);
-    __ vxor_vv(v16, v16, v31); // __ vaesz_vs(v16, v16, v31)
-    __ viota_m(v20, v0);
+    __ vaesz_vs(v16, v31);
+    __ viota_m(v20, v0, Assembler::VectorMask::v0_t);
     __ vsetvli(vlen, len, Assembler::e32, Assembler::m4);
-    __ vadd_vv(v16, v16, v20);
+    __ vadd_vv(v16, v16, v20, Assembler::VectorMask::v0_t);
     __ j(L_first_loop);
 
     __ bind(L_loop);
     __ vsetvli(vlen, len, Assembler::e32, Assembler::m4);
-    __ vadd_vx(v16, v16, ctr);
+    __ vadd_vx(v16, v16, ctr, Assembler::VectorMask::v0_t);
 
     __ bind(L_first_loop);
     __ vle32_v(v20, in);
@@ -2658,8 +2659,8 @@ class StubGenerator: public StubCodeGenerator {
     __ add(in, in, t0);
 
     __ vmv_v_v(v24, v16);
-    __ vrev8_v(v24, v24);
-    __ vxor_vv(v24, v24, working_vregs[0]); // TODO: vaesz_vs
+    __ vrev8_v(v24, v24, Assembler::VectorMask::v0_t);
+    __ vaesz_vs(v24, working_vregs[0]);
 
     Label L_aes128_loop, L_aes192_loop, L_exit_aes_loop;
     __ mv(t2, 52);
@@ -2722,7 +2723,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sd(rscratch1, Address(out));
     __ addi(in, in, 1);
     __ addi(out, out, 1);
-    __ add(used, used, 1);
+    __ addi(used, used, 1);
     __ subi(len, len, 1);
     __ blt(used, keysize, L_tail);
     __ j(L_ctr_group_loop);
@@ -6948,7 +6949,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
-      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+
+      if (UseAESCTRIntrinsics) {
+        StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+      }
     }
 
     if (UsePoly1305Intrinsics) {
