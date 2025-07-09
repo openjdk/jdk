@@ -43,14 +43,12 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.comp.LambdaToMethod;
 import com.sun.tools.javac.jvm.ClassFile;
 import com.sun.tools.javac.util.*;
 
@@ -2237,29 +2235,31 @@ public class Types {
         };
 
     /**
-     * Return the base type of t or any of its outer types (by following the types enclosing type)
-     * that start with the given symbol.
-     * If none exists, return null.
+     * Calls `asSuper(S, sym)` on a sequence of types until a match is found.
+     * The sequence of types starts with `t` and the next type in the sequence
+     * is obtained by calling `getEnclosingType()` on  the previous type in the
+     * sequence.
      *
      * @param t a type
      * @param sym a symbol
      */
     public Type asOuterSuper(Type t, Symbol sym) {
-        return asOuter(t, sym, Type::getEnclosingType);
+        return asSuperUpward(t, sym, Type::getEnclosingType);
     }
 
     /**
-     * Return the base type of t or any of its outer types (by following owner's
-     * enclosing class) that start with the given symbol.
-     * If none exists, return null.
+     * Calls `asSuper(S, sym)` on a sequence of types until a match is found.
+     * The sequence of types starts with `t` and the next type in the sequence
+     * is obtained by obtaining innermost lexically enclosing class type of the
+     * previous type in the sequence.
      *
      * @param t a type
      * @param sym a symbol
      */
     public Type asEnclosingSuper(Type t, Symbol sym) {
-        return asOuter(t, sym, type -> getOwnerEnclosingClassType(type));
+        return asSuperUpward(t, sym, type -> getOwnerEnclosingClassType(type));
     }
-
+    // where
     private static Type getOwnerEnclosingClassType(Type type) {
         return (type.tsym.owner.enclClass() != null)
                 ? type.tsym.owner.enclClass().type
@@ -2267,17 +2267,16 @@ public class Types {
     }
 
     /**
-     * Return the (most specific) base type of t that starts with
-     * the given symbol. If it exists, the base type is returned.
-     * Otherwise, a traversal of outer types attempts to find such
-     * a base type. The traversal of the next outwards type is left
-     * abstract, via the parameter nextType. If none exists, return null.
+     * Calls `asSuper(S, sym)` on a sequence of types until a match is found.
+     * The sequence of types starts with `t` and the next type in the sequence
+     * is obtained by passing the previous type in the sequence to the unary
+     * operator `nextType`.
      *
      * @param t a type
      * @param sym a symbol
      * @param nextType a unary operator that emits the next type to be examined
      */
-    public Type asOuter(Type t, Symbol sym, UnaryOperator<Type> nextType) {
+    public Type asSuperUpward(Type t, Symbol sym, UnaryOperator<Type> nextType) {
         while (!t.hasTag(NONE)) {
             Type s = asSuper(t, sym);
             if (s != null) return s;
