@@ -425,6 +425,32 @@ public class Byte512VectorTests extends AbstractVectorTest {
         }
     }
 
+   static void assertArraysEqualsAssociative(byte[] rl, byte[] rr, byte[] a, byte[] b, byte[] c, boolean[] mask, FBinOp f) {
+       assertArraysEqualsAssociative(rl, rr, a, b, c, mask, FBinMaskOp.lift(f));
+   }
+
+    static void assertArraysEqualsAssociative(byte[] rl, byte[] rr, byte[] a, byte[] b, byte[] c, boolean[] mask, FBinMaskOp f) {
+        int i = 0;
+        boolean mask_bit = false;
+        try {
+            for (; i < a.length; i++) {
+                mask_bit = mask[i % SPECIES.length()];
+                //Left associative
+                Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit));
+
+                //Right associative
+                Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit));
+
+                //Results equal sanity check
+                Assert.assertEquals(rl[i], rr[i]);
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit), "left associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
+            Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit), "right associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
+            Assert.assertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
+        }
+    }
+
     static void assertArraysEquals(byte[] r, byte[] a, byte[] b, FBinOp f) {
         int i = 0;
         try {
@@ -1092,6 +1118,15 @@ public class Byte512VectorTests extends AbstractVectorTest {
     @DataProvider
     public Object[][] byteSaturatingBinaryOpAssocProvider() {
         return BYTE_SATURATING_GENERATOR_TRIPLETS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] byteSaturatingBinaryOpAssocMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> BYTE_SATURATING_GENERATOR_TRIPLETS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
                 toArray(Object[][]::new);
     }
 
@@ -3471,6 +3506,31 @@ public class Byte512VectorTests extends AbstractVectorTest {
         }
 
         assertArraysEqualsAssociative(rl, rr, a, b, c, Byte512VectorTests::SUADD);
+    }
+
+    @Test(dataProvider = "byteSaturatingBinaryOpAssocMaskProvider")
+    static void SUADDAssocByte512VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+                                                     IntFunction<byte[]> fc, IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] c = fc.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        byte[] rl = fr.apply(SPECIES.length());
+        byte[] rr = fr.apply(SPECIES.length());
+
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
+                ByteVector cv = ByteVector.fromArray(SPECIES, c, i);
+                av.lanewise(VectorOperators.SUADD, bv, vmask).lanewise(VectorOperators.SUADD, cv, vmask).intoArray(rl, i);
+                av.lanewise(VectorOperators.SUADD, bv.lanewise(VectorOperators.SUADD, cv, vmask), vmask).intoArray(rr, i);
+            }
+        }
+
+        assertArraysEqualsAssociative(rl, rr, a, b, c, mask, Byte512VectorTests::SUADD);
     }
 
     static byte ANDReduce(byte[] a, int idx) {

@@ -47,6 +47,7 @@ binary_masked_memop="Binary-Masked-mem-op"
 saturating_binary="SaturatingBinary-op"
 saturating_binary_masked="SaturatingBinary-Masked-op"
 saturating_binary_assocative="SaturatingBinary-op-associative"
+saturating_binary_assocative_masked="SaturatingBinary-Masked-op-associative"
 binary_broadcast="Binary-Broadcast-op"
 binary_broadcast_masked="Binary-Broadcast-Masked-op"
 binary_broadcast_long="Binary-Broadcast-Long-op"
@@ -330,6 +331,7 @@ function gen_saturating_binary_op {
 function gen_saturating_binary_op_associative {
   echo "Generating saturating binary associative op $1 ($2)..."
   gen_op_tmpl $saturating_binary_assocative "$@"
+  gen_op_tmpl $saturating_binary_assocative_masked "$@"
 }
 
 function gen_binary_op_no_masked {
