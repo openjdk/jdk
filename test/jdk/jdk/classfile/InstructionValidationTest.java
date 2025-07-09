@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8341277
+ * @bug 8341277 8361102
  * @summary Testing ClassFile instruction argument validation.
  * @run junit InstructionValidationTest
  */
@@ -32,7 +32,6 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.instruction.*;
-import java.lang.constant.ClassDesc;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -43,7 +42,6 @@ import helpers.TestUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import static helpers.TestConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,6 +76,15 @@ class InstructionValidationTest {
 
             // Wrap up
             cob.labelBinding(label);
+            cob.return_();
+        });
+    }
+
+    @Test
+    void testLongJump() {
+        TestUtil.runCodeHandler(cob -> {
+            assertThrows(NullPointerException.class, () -> cob.goto_w(null));
+            // Ensures nothing redundant is written in case of failure
             cob.return_();
         });
     }
