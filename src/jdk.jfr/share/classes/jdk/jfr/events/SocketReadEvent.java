@@ -39,6 +39,7 @@ import jdk.jfr.internal.Type;
 @Label("Socket Read")
 @Category("Java Application")
 @Description("Reading data from a socket")
+@StackFilter({"java.io.InputStream", "java.nio.channels.SocketChannel", "java.net.Socket$SocketInputStream"})
 @Throttle
 public final class SocketReadEvent extends MirrorEvent {
 
