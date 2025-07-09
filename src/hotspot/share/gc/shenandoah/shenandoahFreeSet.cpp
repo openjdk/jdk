@@ -2251,10 +2251,10 @@ public:
 
   bool heap_region_do(ShenandoahHeapRegion* r) override {
     if (r->reserved_for_direct_allocation()) return false;
-    if (r->is_empty()) {
-      if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) {
-        return false;
-      }
+    if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) {
+      return false;
+    }
+    if (r->is_empty() || r->is_trash()) {
       r->try_recycle_under_lock();
       _in_new_region = r->is_empty();
       r->set_affiliation(YOUNG_GENERATION);
@@ -2318,10 +2318,10 @@ public:
   bool heap_region_do(ShenandoahHeapRegion *r) override {
     if (_fulfilled_count == _request_count && _obj != nullptr) return true;
     if (r->reserved_for_direct_allocation()) return false;
-    if (r->is_empty()) {
-      if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) {
-        return false;
-      }
+    if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) {
+      return false;
+    }
+    if (r->is_empty() || r->is_trash()) {
       r->try_recycle_under_lock();
       r->set_affiliation(YOUNG_GENERATION);
       r->make_regular_allocation(YOUNG_GENERATION);
