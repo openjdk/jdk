@@ -863,7 +863,12 @@ size_t ShenandoahGeneration::increment_affiliated_region_count() {
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
-  return Atomic::add(&_affiliated_region_count, (size_t) 1);
+  size_t result = Atomic::add(&_affiliated_region_count, (size_t) 1);
+#define KELVIN_AFFILIATED
+#ifdef KELVIN_AFFILIATED
+  log_info(gc)("%s: increment_affiliated_region_count() by 1: %zu", name(), result);
+#endif
+  return result;
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count() {
@@ -875,16 +880,27 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
+#ifdef KELVIN_AFFILIATED
+  log_info(gc)("%s: decrement_affiliated_region_count() by 1: %zu", name(), affiliated_region_count);
+#endif
   return affiliated_region_count;
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count_without_lock() {
-  return Atomic::sub(&_affiliated_region_count, (size_t) 1);
+  size_t result = Atomic::sub(&_affiliated_region_count, (size_t) 1);
+#ifdef KELVIN_AFFILIATED
+  log_info(gc)("%s: decrement_affiliated_region_count_without_lock() by 1: %zu", name(), result);
+#endif
+  return result;
 }
 
 size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_safepoint();
-  return Atomic::add(&_affiliated_region_count, delta);
+  size_t result = Atomic::add(&_affiliated_region_count, delta);
+#ifdef KELVIN_AFFILIATED
+  log_info(gc)("%s: increase_affiliated_region_count() by %zu: %zu", name(), delta, result);
+#endif
+  return result;
 }
 
 size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
@@ -895,6 +911,9 @@ size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
+#ifdef KELVIN_AFFILIATED
+  log_info(gc)("%s: decrease_affiliated_region_count() by %zu: %zu", name(), delta, affiliated_region_count);
+#endif
   return affiliated_region_count;
 }
 
@@ -903,6 +922,10 @@ void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes,
   Atomic::store(&_affiliated_region_count, num_regions);
   Atomic::store(&_used, num_bytes);
   _humongous_waste = humongous_waste;
+#ifdef KELVIN_AFFILIATED
+  log_info(gc)("%s: establish_usage(affiliated regions: %zu bytes: %zu, humongous_waste: %zu)",
+               name(), num_regions, num_bytes, humongous_waste);
+#endif
 }
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
@@ -945,7 +968,28 @@ void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
 }
 
 size_t ShenandoahGeneration::used_regions() const {
-  return Atomic::load(&_affiliated_region_count);
+  size_t result;
+  switch (_type) {
+    case ShenandoahGenerationType::OLD:
+      result = _free_set->old_affiliated_regions();
+      break;
+    case ShenandoahGenerationType::YOUNG:
+      result = _free_set->young_affiliated_regions();
+      break;
+    case ShenandoahGenerationType::GLOBAL:
+    case ShenandoahGenerationType::NON_GEN:
+    default:
+      result = _free_set->global_affiliated_regions();
+      break;
+  }
+  size_t original_result = Atomic::load(&_affiliated_region_count);
+#ifdef KELVIN_SCAFFOLDING
+  if (result != original_result) {
+        log_info(gc)("Problem with used for generation %s, freeset thinks %zu, generation thinks: %zu",
+                     shenandoah_generation_name(_type), result, original_result);
+  }
+#endif
+  return result;
 }
 
 size_t ShenandoahGeneration::free_unaffiliated_regions() const {

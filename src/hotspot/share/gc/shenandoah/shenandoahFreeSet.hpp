@@ -116,6 +116,7 @@ private:
   //  _retired_regions[p] is _total_region_counts[p] - _region_counts[p]
   //  _empty_region_counts[p] <= _region_counts[p] <= _total_region_counts[p]
   //  generation_used is (_total_region_counts[p] - _region_counts[p]) * region_size_bytes + _used[p]
+  //  (affiliated regions is total_region_counts - empty_region_counts)
   size_t _region_counts[UIntNumPartitions];
   size_t _total_region_counts[UIntNumPartitions];
   size_t _empty_region_counts[UIntNumPartitions];
@@ -480,6 +481,32 @@ private:
     recompute_total_global_used();
   }
 
+  size_t _young_affiliated_regions;
+  size_t _old_affiliated_regions;
+  size_t _global_affiliated_regions;
+
+  inline void recompute_total_affiliated() {
+    _young_affiliated_regions = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
+                                 _partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::Collector) -
+                                 (_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
+                                  _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector)));
+    _old_affiliated_regions = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector) - 
+                                 _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
+    _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
+#define KELVIN_AFFILIATED
+#ifdef KELVIN_AFFILIATED
+    log_info(gc)("recompute_affiliated(young: %zu, old: %zu, global: %zu)",
+                 _young_affiliated_regions, _old_affiliated_regions, _global_affiliated_regions);
+#endif
+#ifdef ASSERT
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
+      assert(_old_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_old_used, "sanity");
+    }
+    assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
+#endif
+  }
+
   // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
   // if this is the first allocation in the region.
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
@@ -583,6 +610,18 @@ public:
   // Return bytes used by global
   inline size_t global_used() {
     return _total_global_used;
+  }
+
+  size_t young_affiliated_regions() {
+    return _young_affiliated_regions;
+  }
+
+  size_t old_affiliated_regions() {
+    return _old_affiliated_regions;
+  }
+
+  size_t global_affiliated_regions() {
+    return _global_affiliated_regions;
   }
 
   void clear();

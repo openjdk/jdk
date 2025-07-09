@@ -249,6 +249,9 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
       region_used += available_in_region;
     }
 
+    // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
+    _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
+
     young_gen->decrease_used(region_used);
     young_gen->decrement_affiliated_region_count();
 
@@ -258,9 +261,6 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
 
     old_gen->increment_affiliated_region_count();
     old_gen->increase_used(region_used);
-
-    // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
-    _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
   }
 }
 
