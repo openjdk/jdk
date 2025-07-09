@@ -109,11 +109,10 @@ public class UnmountedVThreadNativeMethodAtTop {
 
             Path dumpFile = dumpHeap();
             verifyHeapDump(dumpFile);
-
+        } finally {
             synchronized (lock) {
                 lock.notify();
             }
-        } finally {
             vthread.join();
         }
     }
