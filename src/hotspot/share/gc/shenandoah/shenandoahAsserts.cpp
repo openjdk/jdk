@@ -282,14 +282,14 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
     if (klass != nullptr && !Metaspace::contains(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Instance class mirror should point to Metaspace",
+                    "Mirrored instance class should point to Metaspace",
                     file, line);
     }
 
-    Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+    const Metadata* array_klass = fwd->metadata_field(java_lang_Class::array_klass_offset());
     if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Array class mirror should point to Metaspace",
+                    "Mirrored array class should point to Metaspace",
                     file, line);
     }
   }

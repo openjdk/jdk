@@ -255,15 +255,15 @@ private:
       // This checking code may encounter the old copy of the mirror, and its referee Klass pointer may
       // already be reclaimed and therefore be invalid. We must therefore check the forwardee's Klass
       // reference.
-      Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
+      const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             klass == nullptr || Metaspace::contains(klass),
-            "Instance class mirror should point to Metaspace");
+            "Mirrored instance class should point to Metaspace");
 
-      Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+      const Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             array_klass == nullptr || Metaspace::contains(array_klass),
-            "Array class mirror should point to Metaspace");
+            "Mirrored array class should point to Metaspace");
     }
 
     // ------------ obj and fwd are safe at this point --------------
