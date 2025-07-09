@@ -26,6 +26,7 @@
 
 #include "gc/z/zLock.hpp"
 #include "gc/z/zThread.hpp"
+#include "utilities/ticks.hpp"
 
 class ZPartition;
 
@@ -35,9 +36,34 @@ private:
   ZPartition* const      _partition;
   mutable ZConditionLock _lock;
   bool                   _stop;
+  double                 _cancel_time;
+  uint64_t               _next_cycle_timeout;
+  uint64_t               _next_uncommit_timeout;
+  double                 _cycle_start;
+  size_t                 _to_uncommit;
+  size_t                 _uncommitted;
 
   bool wait(uint64_t timeout) const;
   bool should_continue() const;
+
+  uint64_t to_millis(double seconds) const;
+
+  void update_next_cycle_timeout(double from_time);
+  void update_next_cycle_timeout_on_cancel();
+  void update_next_cycle_timeout_on_finish();
+
+  void reset_uncommit_cycle();
+  void deactivate_uncommit_cycle();
+  bool activate_uncommit_cycle();
+  void register_uncommit(size_t size);
+
+  bool uncommit_cycle_is_finished() const;
+  bool uncommit_cycle_is_active() const;
+  bool uncommit_cycle_is_canceled() const;
+
+  size_t uncommit();
+
+  void update_statistics(size_t uncommitted, Ticks start, Tickspan* accumulated_time) const;
 
 protected:
   virtual void run_thread();
@@ -45,6 +71,8 @@ protected:
 
 public:
   ZUncommitter(uint32_t id, ZPartition* partition);
+
+  void cancel_uncommit_cycle();
 };
 
 #endif // SHARE_GC_Z_ZUNCOMMITTER_HPP

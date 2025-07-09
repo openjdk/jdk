@@ -410,7 +410,7 @@
 
   // C2I adapter frames:
   //
-  // STACK (interpreted called from compiled, on entry to frame manager):
+  // STACK (interpreted called from compiled, on entry to template interpreter):
   //
   //       [TOP_C2I_FRAME]
   //       [JIT_FRAME]
@@ -475,6 +475,7 @@
  public:
   // To be used, if sp was not extended to match callee's calling convention.
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map = nullptr);
 
   // Access frame via stack pointer.
   inline intptr_t* sp_addr_at(int index) const  { return &sp()[index]; }

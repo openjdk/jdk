@@ -26,6 +26,13 @@
 #ifndef CPU_ARM_STUBDECLARATIONS_HPP
 #define CPU_ARM_STUBDECLARATIONS_HPP
 
+#define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
+                                          do_arch_blob,                 \
+                                          do_arch_entry,                \
+                                          do_arch_entry_init)           \
+  do_arch_blob(preuniverse, 0)                                          \
+
+
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
@@ -38,7 +45,7 @@
   do_arch_entry(Arm, initial, atomic_load_long,                         \
                 atomic_load_long_entry, atomic_load_long_entry)         \
   do_stub(initial, atomic_store_long)                                   \
-  do_arch_entry(Arm, initial, atomic_load_long,                         \
+  do_arch_entry(Arm, initial, atomic_store_long,                        \
                 atomic_store_long_entry, atomic_store_long_entry)       \
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \

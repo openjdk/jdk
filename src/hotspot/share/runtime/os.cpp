@@ -1042,7 +1042,7 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
     }
     print_hex_location(st, p, unitsize, ascii_form);
     p += unitsize;
-    logical_p += unitsize;
+    logical_p = (const_address) ((uintptr_t)logical_p + unitsize);
     cols++;
     if (cols >= cols_per_line) {
        if (print_ascii && !ascii_form.is_empty()) {
@@ -1125,7 +1125,7 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 
 void os::print_jvmti_agent_info(outputStream* st) {
 #if INCLUDE_JVMTI
-  const JvmtiAgentList::Iterator it = JvmtiAgentList::all();
+  JvmtiAgentList::Iterator it = JvmtiAgentList::all();
   if (it.has_next()) {
     st->print_cr("JVMTI agents:");
   } else {

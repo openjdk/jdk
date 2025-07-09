@@ -276,6 +276,7 @@ class InstanceKlass: public Klass {
 
   // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
   Array<u1>*          _fieldinfo_stream;
+  Array<u1>*          _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here
@@ -349,9 +350,9 @@ class InstanceKlass: public Klass {
   // methods
   Array<Method*>* methods() const          { return _methods; }
   void set_methods(Array<Method*>* a)      { _methods = a; }
-  Method* method_with_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum, int version);
+  Method* method_with_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum, int version) const;
 
   // method ordering
   Array<int>* method_ordering() const     { return _method_ordering; }
@@ -398,6 +399,9 @@ class InstanceKlass: public Klass {
   Array<u1>* fieldinfo_stream() const { return _fieldinfo_stream; }
   void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
 
+  Array<u1>* fieldinfo_search_table() const { return _fieldinfo_search_table; }
+  void set_fieldinfo_search_table(Array<u1>* table) { _fieldinfo_search_table = table; }
+
   Array<FieldStatus>* fields_status() const {return _fields_status; }
   void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }
 
@@ -438,6 +442,9 @@ public:
   // Call this only if you know that the nest host has been initialized.
   InstanceKlass* nest_host_not_null() {
     assert(_nest_host != nullptr, "must be");
+    return _nest_host;
+  }
+  InstanceKlass* nest_host_or_null() {
     return _nest_host;
   }
   // Used to construct informative IllegalAccessError messages at a higher level,
@@ -688,7 +695,7 @@ public:
   InstanceKlass* previous_versions() const { return nullptr; }
 #endif
 
-  InstanceKlass* get_klass_version(int version);
+  const InstanceKlass* get_klass_version(int version) const;
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
@@ -777,8 +784,8 @@ public:
                                     u2 method_index);
 
   // jmethodID support
-  jmethodID get_jmethod_id(const methodHandle& method_h);
-  void ensure_space_for_methodids(int start_offset = 0);
+  jmethodID get_jmethod_id(Method* method);
+  void make_methods_jmethod_ids();
   jmethodID jmethod_id_or_null(Method* method);
   void update_methods_jmethod_cache();
 
@@ -1052,10 +1059,10 @@ private:
     Atomic::store(&_init_thread, thread);
   }
 
-  inline jmethodID* methods_jmethod_ids_acquire() const;
-  inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
-  // This nulls out jmethodIDs for all methods in 'klass'
-  static void clear_jmethod_ids(InstanceKlass* klass);
+  jmethodID* methods_jmethod_ids_acquire() const;
+  void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // This nulls out obsolete jmethodIDs for all methods in 'klass'.
+  static void clear_obsolete_jmethod_ids(InstanceKlass* klass);
   jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
 public:
@@ -1118,6 +1125,12 @@ public:
   bool can_be_verified_at_dumptime() const;
   void compute_has_loops_flag_for_methods();
 #endif
+  bool     has_init_deps_processed() const { return _misc_flags.has_init_deps_processed(); }
+  void set_has_init_deps_processed() {
+    assert(is_initialized(), "");
+    assert(!has_init_deps_processed(), "already set"); // one-off action
+    _misc_flags.set_has_init_deps_processed(true);
+  }
 
   u2 compute_modifier_flags() const;
 

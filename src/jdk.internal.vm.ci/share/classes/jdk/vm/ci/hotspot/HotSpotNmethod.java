@@ -27,6 +27,7 @@ import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -76,12 +77,19 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
      */
     private final long compileIdSnapshot;
 
+    /**
+     * Identify the reason that caused this nmethod to be invalidated.
+     * A value of -1 means that the nmethod was not invalidated.
+     */
+    private int invalidationReason;
+
     HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, long compileId) {
         super(name);
         this.method = method;
         this.isDefault = isDefault;
         boolean inOopsTable = !IS_IN_NATIVE_IMAGE && !isDefault;
         this.compileIdSnapshot = inOopsTable ? 0L : compileId;
+        this.invalidationReason = -1;
         assert inOopsTable || compileId != 0L : this;
     }
 
@@ -122,9 +130,19 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         return method;
     }
 
+    /**
+     * Invalidate this nmethod using the reason specified in {@code invalidationReason} and
+     * optionally deoptimize the method if {@code deoptimize} is set.
+     * @param deoptimize whether or not to deoptimize the method.
+     * @param invalidationReason invalidation reason code.
+     */
+    public void invalidate(boolean deoptimize, int invalidationReason) {
+        compilerToVM().invalidateHotSpotNmethod(this, deoptimize, invalidationReason);
+    }
+
     @Override
     public void invalidate(boolean deoptimize) {
-        compilerToVM().invalidateHotSpotNmethod(this, deoptimize);
+        invalidate(deoptimize, jvmciInvalidationReason());
     }
 
     @Override
@@ -187,5 +205,23 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     @Override
     public long getStart() {
         return isValid() ? super.getStart() : 0;
+    }
+
+    /**
+     * @return an integer representing the reason why this nmethod was invalidated.
+     */
+    public int getInvalidationReason() {
+        return invalidationReason;
+    }
+
+    /**
+     * @return a String describing the reason why this nmethod was invalidated.
+     */
+    public String getInvalidationReasonDescription() {
+        return compilerToVM().getInvalidationReasonDescription(this.getInvalidationReason());
+    }
+
+    private static int jvmciInvalidationReason() {
+        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::InvalidationReason::JVMCI_INVALIDATE", Integer.class);
     }
 }
