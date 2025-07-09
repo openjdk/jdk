@@ -1236,8 +1236,8 @@ public class Attr extends JCTree.Visitor {
                 annotate.queueScanTreeAndTypeAnnotate(tree.body, localEnv, m, null);
                 annotate.flush();
 
-                // Start of constructor prologue
-                localEnv.info.ctorPrologue = isConstructor;
+                // Start of constructor prologue (if not in java.lang.Object constructor)
+                localEnv.info.ctorPrologue = isConstructor && owner.type != syms.objectType;
 
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
@@ -2833,7 +2833,7 @@ public class Attr extends JCTree.Visitor {
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.SPECULATIVE;
             boolean skipNonDiamondPath = false;
             // Check that class is not abstract
-            if (cdef == null && !isSpeculativeDiamondInferenceRound && // class body may be nulled out in speculative tree copy
+            if (cdef == null && !tree.classDeclRemoved() && !isSpeculativeDiamondInferenceRound && // class body may be nulled out in speculative tree copy
                 (clazztype.tsym.flags() & (ABSTRACT | INTERFACE)) != 0) {
                 log.error(tree.pos(),
                           Errors.AbstractCantBeInstantiated(clazztype.tsym));
