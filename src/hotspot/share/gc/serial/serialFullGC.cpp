@@ -229,13 +229,8 @@ class Compacter {
 
   static void forward_obj(oop obj, HeapWord* new_addr) {
     prefetch_write_scan(obj);
-    if (cast_from_oop<HeapWord*>(obj) != new_addr) {
-      FullGCForwarding::forward_to(obj, cast_to_oop(new_addr));
-    } else {
-      assert(obj->is_gc_marked(), "inv");
-      // This obj will stay in-place. Fix the markword.
-      obj->init_mark();
-    }
+    assert(obj->is_gc_marked(), "inv");
+    FullGCForwarding::forward_to(obj, cast_to_oop(new_addr));
   }
 
   static HeapWord* find_next_live_addr(HeapWord* start, HeapWord* end) {
@@ -256,12 +251,14 @@ class Compacter {
 
     oop obj = cast_to_oop(addr);
     oop new_obj = FullGCForwarding::forwardee(obj);
-    HeapWord* new_addr = cast_from_oop<HeapWord*>(new_obj);
-    assert(addr != new_addr, "inv");
-    prefetch_write_copy(new_addr);
-
     size_t obj_size = obj->size();
-    Copy::aligned_conjoint_words(addr, new_addr, obj_size);
+    HeapWord* new_addr = cast_from_oop<HeapWord*>(new_obj);
+
+    if (addr != new_addr) {
+      prefetch_write_copy(new_addr);
+      Copy::aligned_conjoint_words(addr, new_addr, obj_size);
+    }
+
     new_obj->init_mark();
 
     return obj_size;
