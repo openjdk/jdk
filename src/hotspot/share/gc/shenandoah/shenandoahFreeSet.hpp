@@ -317,11 +317,12 @@ public:
 //     sure there is enough memory reserved at the high end of memory to hold the objects that might need to be evacuated
 //     during the next GC pass.
 
+struct ShenandoahHeapRegionAddress {
+  ShenandoahHeapRegion* volatile address;
+};
+
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
-  struct ShenandoahHeapRegionAddress {
-    ShenandoahHeapRegion* volatile address;
-  };
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
   PaddedEnd<ShenandoahHeapRegionAddress>* _directly_allocatable_regions;
@@ -423,9 +424,7 @@ private:
   template<bool IS_TLAB>
   HeapWord* par_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
-  bool try_allocate_directly_allocatable_regions(ShenandoahHeapRegion* volatile * shared_region_address[],
-                                                 ShenandoahHeapRegion* original_shared_regions[],
-                                                 uint region_count,
+  bool try_allocate_directly_allocatable_regions(uint start_index,
                                                  ShenandoahAllocRequest &req,
                                                  HeapWord* &obj,
                                                  bool &in_new_region);
