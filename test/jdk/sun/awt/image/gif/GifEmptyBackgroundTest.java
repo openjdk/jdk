@@ -31,8 +31,11 @@
 public class GifEmptyBackgroundTest {
     public static void main(String[] args) throws Throwable {
         GifBuilder.test(
-                new GifBuilder.FrameDescription(GifBuilder.Disposal.restoreToBackgroundColor, false),
-                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false),
-                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false) );
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.restoreToBackgroundColor, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false) );
     }
 }

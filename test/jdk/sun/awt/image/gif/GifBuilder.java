@@ -48,7 +48,8 @@ public class GifBuilder {
      * Different disposal methods for gif frames. These names exactly
      * correspond to the String identifier ImageIO uses.
      */
-    public enum Disposal {none, doNotDispose, restoreToBackgroundColor, restoreToPrevious};
+    public enum Disposal {none, doNotDispose, restoreToBackgroundColor,
+        restoreToPrevious};
 
 
     /**
@@ -58,13 +59,15 @@ public class GifBuilder {
      *                                     transparent pixel is set to the
      *                                     last index.
      */
-    public record FrameDescription(Disposal disposal, boolean isFirstTableIndexTransparent) {}
+    public record FrameDescription(Disposal disposal, boolean
+            isFirstTableIndexTransparent) {}
 
     /**
-     * This creates a sample gif image based on a series of FrameDescriptions, and the
-     * calls {@link GifComparison#run(URL)}
+     * This creates a sample gif image based on a series of FrameDescriptions,
+     * and the calls {@link GifComparison#run(URL)}
      */
-    public static void test(FrameDescription... frameDescriptions) throws Throwable {
+    public static void test(FrameDescription... frameDescriptions)
+            throws Throwable {
         File file = createTestFile(frameDescriptions);
         try {
             GifComparison.run(file.toURI().toURL());
@@ -73,7 +76,8 @@ public class GifBuilder {
         }
     }
 
-    private static File createTestFile(FrameDescription... frameDescriptions) throws IOException {
+    private static File createTestFile(FrameDescription... frameDescriptions)
+            throws IOException {
         Color[] colors = new Color[] {
                 Color.red,
                 Color.yellow,
@@ -82,15 +86,18 @@ public class GifBuilder {
         };
         File file = File.createTempFile("GifBuilder", ".gif");
         ImageOutputStream ios = ImageIO.createImageOutputStream(file);
-        ImageWriter gifWriter = ImageIO.getImageWritersByFormatName("GIF").next();
+        ImageWriter gifWriter = ImageIO.getImageWritersByFormatName("GIF").
+                next();
         gifWriter.setOutput(ios);
         ImageWriteParam wparam = gifWriter.getDefaultWriteParam();
-        IIOMetadata streamMetadata = gifWriter.getDefaultStreamMetadata(wparam);
+        IIOMetadata streamMetadata = gifWriter.
+                getDefaultStreamMetadata(wparam);
         gifWriter.prepareWriteSequence(streamMetadata);
 
         IndexColorModel icm = createIndexColorModel(colors, colors.length - 1);
 
-        ImageTypeSpecifier s = ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_BYTE_INDEXED);
+        ImageTypeSpecifier s = ImageTypeSpecifier.createFromBufferedImageType(
+                BufferedImage.TYPE_BYTE_INDEXED);
         IIOMetadata metadata = gifWriter.getDefaultImageMetadata(s, wparam);
         String metaFormatName = metadata.getNativeMetadataFormatName();
 
@@ -116,15 +123,20 @@ public class GifBuilder {
             g.dispose();
 
             // wrap attributes for gifWriter:
-            int transparentPixel = frameDescription.isFirstTableIndexTransparent ? 0 : icm.getMapSize() - 1;
-            IIOMetadata frameMetadata = gifWriter.getDefaultImageMetadata(ImageTypeSpecifier.createFromRenderedImage(bi), wparam);
+            int transparentPixel = frameDescription.isFirstTableIndexTransparent
+                    ? 0 : icm.getMapSize() - 1;
+            IIOMetadata frameMetadata = gifWriter.getDefaultImageMetadata(
+                    ImageTypeSpecifier.createFromRenderedImage(bi), wparam);
             IIOMetadataNode root = new IIOMetadataNode(metaFormatName);
-            IIOMetadataNode gce = new IIOMetadataNode("GraphicControlExtension");
-            gce.setAttribute("disposalMethod", frameDescription.disposal.name());
+            IIOMetadataNode gce = new IIOMetadataNode(
+                    "GraphicControlExtension");
+            gce.setAttribute("disposalMethod",
+                    frameDescription.disposal.name());
             gce.setAttribute("userInputFlag", "FALSE");
             gce.setAttribute("transparentColorFlag", "TRUE");
             gce.setAttribute("delayTime", "0");
-            gce.setAttribute("transparentColorIndex", Integer.toString(transparentPixel));
+            gce.setAttribute("transparentColorIndex",
+                    Integer.toString(transparentPixel));
             root.appendChild(gce);
             frameMetadata.mergeTree(metaFormatName, root);
             IIOImage img = new IIOImage(bi,  null, frameMetadata);
@@ -137,7 +149,8 @@ public class GifBuilder {
         return file;
     }
 
-    private static IndexColorModel createIndexColorModel(Color[] colors, int transparentIndex) {
+    private static IndexColorModel createIndexColorModel(Color[] colors,
+                                                 int transparentIndex) {
         byte[] r = new byte[colors.length];
         byte[] g = new byte[colors.length];
         byte[] b = new byte[colors.length];
@@ -147,6 +160,7 @@ public class GifBuilder {
             b[a] = (byte) colors[a].getBlue();
         }
         int bits = (int)(Math.log(colors.length) / Math.log(2) + .5);
-        return new IndexColorModel(bits, colors.length, r, g, b, transparentIndex);
+        return new IndexColorModel(bits, colors.length, r, g, b,
+                transparentIndex);
     }
 }
