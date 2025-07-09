@@ -1174,9 +1174,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.5.1",
+            version: "7.5.2",
             build_number: "1",
-            file: "bundles/jtreg-7.5.1+1.zip",
+            file: "bundles/jtreg-7.5.2+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1192,8 +1192,8 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jcov",
             version: "3.0",
-            build_number: "1",
-            file: "bundles/jcov-3.0+1.zip",
+            build_number: "3",
+            file: "bundles/jcov-3.0+3.zip",
             environment_name: "JCOV_HOME",
         },
 

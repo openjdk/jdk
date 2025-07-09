@@ -36,8 +36,8 @@
 #include "cds/cdsHeapVerifier.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
@@ -337,6 +337,9 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
       } else if (java_lang_invoke_ResolvedMethodName::is_instance(obj)) {
         Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(obj);
         if (m != nullptr) {
+          if (RegeneratedClasses::has_been_regenerated(m)) {
+            m = RegeneratedClasses::get_regenerated_object(m);
+          }
           InstanceKlass* method_holder = m->method_holder();
           AOTArtifactFinder::add_cached_class(method_holder);
         }
@@ -506,10 +509,17 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
     ik->set_is_runtime_setup_required();
   }
 
-  oop orig_mirror = ik->java_mirror();
-  oop m = scratch_java_mirror(ik);
-  assert(ik->is_initialized(), "must be");
+  oop orig_mirror;
+  if (RegeneratedClasses::is_regenerated_object(ik)) {
+    InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
+    precond(orig_ik->is_initialized());
+    orig_mirror = orig_ik->java_mirror();
+  } else {
+    precond(ik->is_initialized());
+    orig_mirror = ik->java_mirror();
+  }
 
+  oop m = scratch_java_mirror(ik);
   int nfields = 0;
   for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
@@ -1518,6 +1528,13 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     }
     out.print_cr("; scratch mirror = "  PTR_FORMAT,
                  p2i(scratch_java_mirror(orig_obj)));
+  }
+
+  if (java_lang_Class::is_instance(orig_obj)) {
+    Klass* k = java_lang_Class::as_Klass(orig_obj);
+    if (RegeneratedClasses::has_been_regenerated(k)) {
+      orig_obj = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
+    }
   }
 
   if (CDSConfig::is_initing_classes_at_dump_time()) {

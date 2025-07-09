@@ -304,11 +304,14 @@ public:
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(uint tc) { _trip_count = tc; }
+  // We use max_juint for the default value of _trip_count to signal it wasn't set.
+  // We shouldn't set _trip_count to max_juint explicitly.
+  void set_trip_count(uint tc) { assert(tc < max_juint, "Cannot set trip count to max_juint"); _trip_count = tc; }
   uint trip_count()            { return _trip_count; }
 
   bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
   void set_exact_trip_count(uint tc) {
+    assert(tc < max_juint, "Cannot set trip count to max_juint");
     _trip_count = tc;
     _loop_flags |= HasExactTripCount;
   }
@@ -570,7 +573,8 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+  void fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop) const;
+  void handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn);
 
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
@@ -586,6 +590,10 @@ public:
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
+  CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
+  CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
   void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
@@ -1277,8 +1285,8 @@ public:
   Node* loop_exit_control(Node* x, IdealLoopTree* loop);
   Node* loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);
   Node* loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Node*& phi_incr);
-  Node* loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi);
-  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
+  Node* loop_iv_stride(Node* incr, Node*& xphi);
+  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x);
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
@@ -1290,7 +1298,7 @@ public:
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
-  IdealLoopTree* create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+  IdealLoopTree* create_outer_strip_mined_loop(Node* init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
 

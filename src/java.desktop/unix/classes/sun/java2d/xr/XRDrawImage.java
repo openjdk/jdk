@@ -37,7 +37,7 @@ import sun.java2d.pipe.*;
  * Class used for re-routing transformed blits to the accelerated loops.
  */
 
-public class XRDrawImage extends DrawImage {
+public final class XRDrawImage extends DrawImage {
 
     @Override
     protected void renderImageXform(SunGraphics2D sg, Image img,
