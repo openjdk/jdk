@@ -68,7 +68,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
     static CountDownLatch latch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
-        new ResumeChecksServer(TestMode.valueOf(args[0])).run();
+        new ResumeChecksServer(TestMode.valueOf(args[0])).test();
     }
 
     private final TestMode testMode;
@@ -77,7 +77,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         this.testMode = testMode;
     }
 
-    private void run() throws Exception {
+    private void test() throws Exception {
         SSLSession firstSession;
         SSLSession secondSession = null;
 

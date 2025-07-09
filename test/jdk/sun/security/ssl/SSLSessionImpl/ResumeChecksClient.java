@@ -61,7 +61,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        new ResumeChecksClient(TestMode.valueOf(args[0])).run();
+        new ResumeChecksClient(TestMode.valueOf(args[0])).test();
     }
 
     private final TestMode testMode;
@@ -69,7 +69,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
         this.testMode = mode;
     }
 
-    private void run() throws Exception {
+    private void test() throws Exception {
         Server server = new Server();
         SSLContext sslContext = createClientSSLContext();
         HexFormat hex = HexFormat.of();
@@ -342,6 +342,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
                         new OutputStreamWriter(sock.getOutputStream()));
                     out.println(line);
                     out.flush();
+                    out.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
