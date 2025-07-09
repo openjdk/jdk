@@ -375,7 +375,7 @@ public:
   void heap_region_do(ShenandoahHeapRegion* r) override {
 #define KELVIN_STATS
 #ifdef KELVIN_STATS
-    log_info(gc)("ShenandoahCalculateRegiontatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
+    log_info(gc)("ShenandoahCalculateRegionStatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
                  r->affiliation_name(), r->index(), r->used(), r->is_trash()? "yes": "no");
 #endif
     _used += r->used();
@@ -418,7 +418,7 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
 #ifdef KELVIN_STATS
-    log_info(gc)("ShenandoahGenerationaStatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
+    log_info(gc)("ShenandoahGenerationalStatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
                  r->affiliation_name(), r->index(), r->used(), r->is_trash()? "yes": "no");
 #endif
     switch (r->affiliation()) {
@@ -456,8 +456,8 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
 
 #define KELVIN_EXTRA_NOISE
 #ifdef KELVIN_EXTRA_NOISE
-    log_info(gc)("%s: generation (%s) used size must be consistent: generation-used: %zu, regions-used from stats: %zu, stats.used_after_recycle: %zu",
-                 label, generation->name(), generation_used, stats.used(), stats.used_after_recycle());
+    log_info(gc)("%s: generation (%s) used size must be consistent: generation-used: %zu, regions-used from stats: %zu, stats.used_after_recycle: %zu, adjust_for_trash: %s",
+                 label, generation->name(), generation_used, stats.used(), stats.used_after_recycle(), adjust_for_trash? "yes": "no");
     // kelvin once thought he needed to use stats.used_after_recycle()
     // in the following assertion, but maybe not...
 #endif
@@ -466,10 +466,11 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
               "%s: generation (%s) used size must be consistent: generation-used: " PROPERFMT ", regions-used: " PROPERFMT,
               label, generation->name(), PROPERFMTARGS(generation_used), PROPERFMTARGS(stats_used));
 
-    size_t stats_regions = stats.regions() - stats.trashed_regions();
+    size_t stats_regions = adjust_for_trash? stats.regions() - stats.trashed_regions(): stats.regions();
     guarantee(stats_regions == generation_used_regions,
-              "%s: generation (%s) used regions (%zu) must equal regions that are in use (%zu) - trashed regions (%zu)",
-              label, generation->name(), generation->used_regions(), stats.regions(), stats.trashed_regions());
+              "%s: generation (%s) used regions (%zu) must equal regions that are in use (%zu)%s",
+              label, generation->name(), generation->used_regions(), stats_regions,
+              adjust_for_trash? " (after adjusting for trash)": "");
 
     size_t generation_capacity = generation->max_capacity();
     guarantee(stats.non_trashed_span() <= generation_capacity,
@@ -897,7 +898,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       heap_used = _heap->used();
     }
     if (sizeness != _verify_size_disable) {
-      size_t cl_size = (sizeness == _verify_size_including_trash)? cl.used(): cl.used_after_recycle();
+      size_t cl_size = (sizeness == _verify_size_exact_including_trash)? cl.used(): cl.used_after_recycle();
       guarantee(cl_size == heap_used,
                 "%s: heap used size must be consistent: heap-used = %zu%s, regions-used = %zu%s",
                 label,
@@ -954,10 +955,10 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       ShenandoahGenerationStatsClosure::log_usage(_heap->global_generation(), cl.global);
     }
     if (sizeness == _verify_size_adjusted_for_padding) {
-      ShenandoahGenerationStatsClosure::validate_usage(false, false, label, _heap->old_generation(), cl.old);
-      ShenandoahGenerationStatsClosure::validate_usage(true, false, label, _heap->young_generation(), cl.young);
-      ShenandoahGenerationStatsClosure::validate_usage(true, false, label, _heap->global_generation(), cl.global);
-    } else if (sizeness == _verify_size_exact || sizeness == _verify_size_including_trash) {
+      ShenandoahGenerationStatsClosure::validate_usage(false, true, label, _heap->old_generation(), cl.old);
+      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->young_generation(), cl.young);
+      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->global_generation(), cl.global);
+    } else if (sizeness == _verify_size_exact || sizeness == _verify_size_exact_including_trash) {
       bool adjust_trash = (sizeness == _verify_size_exact);
       ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->old_generation(), cl.old);
       ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->young_generation(), cl.young);
@@ -1177,7 +1178,8 @@ void ShenandoahVerifier::verify_after_update_refs() {
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
-          _verify_size_including_trash,// expect generation and heap sizes to match exactly, including trash
+                                       // expect generation and heap sizes to match exactly, including trash
+          _verify_size_exact_including_trash,
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );
 }
@@ -1441,7 +1443,7 @@ void ShenandoahVerifier::verify_before_rebuilding_free_set() {
   ShenandoahGenerationStatsClosure cl;
   _heap->heap_region_iterate(&cl);
 
-  ShenandoahGenerationStatsClosure::validate_usage(false, false, "Before free set rebuild", _heap->old_generation(), cl.old);
-  ShenandoahGenerationStatsClosure::validate_usage(false, false, "Before free set rebuild", _heap->young_generation(), cl.young);
-  ShenandoahGenerationStatsClosure::validate_usage(false, false, "Before free set rebuild", _heap->global_generation(), cl.global);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->old_generation(), cl.old);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->young_generation(), cl.young);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->global_generation(), cl.global);
 }

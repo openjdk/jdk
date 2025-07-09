@@ -158,7 +158,7 @@ public:
     _verify_size_adjusted_for_padding,
 
     // Expected heap size should not include
-    _verify_size_including_trash
+    _verify_size_exact_including_trash
   } VerifySize;
 
   typedef enum {
