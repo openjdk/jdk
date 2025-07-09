@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -35,6 +36,7 @@
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
+#include "gc/g1/g1HeapEvaluationTask.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
@@ -149,6 +151,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1TryInitiateConcMark;
+  friend class VM_G1ShrinkHeap;
   friend class VMStructs;
   friend class MutatorAllocRegion;
   friend class G1FullCollector;
@@ -191,6 +194,8 @@ private:
 
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
+
+  G1HeapEvaluationTask* _heap_evaluation_task;
 
 public:
   void rebuild_free_region_list();
@@ -578,6 +583,10 @@ public:
   bool expand(size_t expand_bytes, WorkerThreads* pretouch_workers);
   bool expand_single_region(uint node_index);
 
+  // Request an immediate heap contraction of (at most) the given number of bytes.
+  // Returns true if any pages were actually uncommitted.
+  bool request_heap_shrink(size_t shrink_bytes);
+
   // Returns the PLAB statistics for a given destination.
   inline G1EvacStats* alloc_buffer_stats(G1HeapRegionAttr dest);
 
@@ -918,6 +927,8 @@ public:
 
   // The current policy object for the collector.
   G1Policy* policy() const { return _policy; }
+  // The heap sizing policy.
+  G1HeapSizingPolicy* heap_sizing_policy() const { return _heap_sizing_policy; }
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
 

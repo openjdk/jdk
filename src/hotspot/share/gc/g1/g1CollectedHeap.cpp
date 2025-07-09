@@ -1,3 +1,4 @@
+﻿
 /*
  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -38,6 +39,8 @@
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"  // Include this first to avoid include cycle
+#include "gc/g1/g1HeapEvaluationTask.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
@@ -49,7 +52,6 @@
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
-#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1InitLogger.hpp"
@@ -111,6 +113,7 @@
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/autoRestore.hpp"
@@ -1070,8 +1073,14 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
 
   log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
-                            shrink_bytes, shrunk_bytes, num_regions_removed);
+                           shrink_bytes, shrunk_bytes, num_regions_removed);
   if (num_regions_removed > 0) {
+    log_info(gc, heap)("Heap shrink completed: uncommitted %u regions (%zuMB), heap size now %zuMB",
+                       num_regions_removed, shrunk_bytes / M, capacity() / M);
+    log_debug(gc, heap)("Heap shrink details: requested=%zuB attempted=%zuB actual=%zuB "
+                        "regions_removed=%u heap_capacity=%zuB",
+                        shrink_bytes, num_regions_to_remove * G1HeapRegion::GrainBytes,
+                        shrunk_bytes, num_regions_removed, capacity());
     policy()->record_new_heap_size(num_committed_regions());
   } else {
     log_debug(gc, ergo, heap)("Heap resize. Did not shrink the heap (heap shrinking operation failed)");
@@ -1114,6 +1123,24 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
+}
+
+bool G1CollectedHeap::request_heap_shrink(size_t shrink_bytes) {
+  if (shrink_bytes == 0) {
+    return false;
+  }
+
+  // Fast path: if we are already at a safepoint (e.g. called from the
+  // GC service thread) just do the work directly.
+  if (SafepointSynchronize::is_at_safepoint()) {
+    shrink(shrink_bytes);
+    return true;                     // we *did* something
+  }
+
+  // Schedule a small VM-op so the work is done at the next safepoint
+  VM_G1ShrinkHeap op(this, shrink_bytes);
+  VMThread::execute(&op);
+  return true;                       // pages were at least *requested* to be released
 }
 
 class OldRegionSetChecker : public G1HeapRegionSetChecker {
@@ -1219,11 +1246,14 @@ G1CollectedHeap::G1CollectedHeap() :
   _is_subject_to_discovery_cm(this),
   _region_attr() {
 
+  _heap_evaluation_task = nullptr;
+
   _verifier = new G1HeapVerifier(this);
 
   _allocator = new G1Allocator(this);
 
   _heap_sizing_policy = G1HeapSizingPolicy::create(this, _policy->analytics());
+  _heap_sizing_policy->initialize();
 
   _humongous_object_threshold_in_words = humongous_threshold_for(G1HeapRegion::GrainWords);
 
@@ -1472,6 +1502,15 @@ jint G1CollectedHeap::initialize() {
   _free_arena_memory_task = new G1MonotonicArenaFreeMemoryTask("Card Set Free Memory Task");
   _service_thread->register_task(_free_arena_memory_task);
 
+  // Create the heap evaluation task using PeriodicTask
+  if (G1UseTimeBasedHeapSizing) {
+    _heap_evaluation_task = new G1HeapEvaluationTask(this, _heap_sizing_policy);
+    // PeriodicTask will be enrolled after G1 is fully initialized in post_initialize()
+    log_debug(gc, init)("G1 Time-Based Heap Evaluation task created (PeriodicTask)");
+  } else {
+    _heap_evaluation_task = nullptr;
+  }
+
   // Here we allocate the dummy G1HeapRegion that is required by the
   // G1AllocRegion class.
   G1HeapRegion* dummy_region = _hrm.get_dummy_region();
@@ -1531,6 +1570,12 @@ void G1CollectedHeap::safepoint_synchronize_end() {
 void G1CollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
+
+  // Enroll the heap evaluation task after G1 is fully initialized
+  if (G1UseTimeBasedHeapSizing && _heap_evaluation_task != nullptr) {
+    _heap_evaluation_task->enroll();  // PeriodicTask enroll() starts the task
+    log_debug(gc, init)("G1 Time-Based Heap Evaluation task enrolled (PeriodicTask)");
+  }
 }
 
 void G1CollectedHeap::ref_processing_init() {
@@ -2914,6 +2959,8 @@ void G1CollectedHeap::retire_mutator_alloc_region(G1HeapRegion* alloc_region,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(alloc_region->is_eden(), "all mutator alloc regions should be eden");
 
+  alloc_region->record_activity();  // Record the activity of the alloc region
+
   collection_set()->add_eden_region(alloc_region);
   increase_used(allocated_bytes);
   _eden.add_used_bytes(allocated_bytes);
@@ -2975,6 +3022,8 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
 void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
                                              size_t allocated_bytes,
                                              G1HeapRegionAttr dest) {
+  alloc_region->record_activity();  // Record the activity of the alloc region
+
   _bytes_used_during_gc += allocated_bytes;
   if (dest.is_old()) {
     old_set_add(alloc_region);
