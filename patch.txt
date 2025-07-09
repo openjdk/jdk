@@ -1,0 +1,43 @@
+diff --git a/src/java.base/share/classes/java/io/RandomAccessFile.java b/src/java.base/share/classes/java/io/RandomAccessFile.java
+index 339030e022c..1933ad91680 100644
+--- a/src/java.base/share/classes/java/io/RandomAccessFile.java
++++ b/src/java.base/share/classes/java/io/RandomAccessFile.java
+@@ -1030,17 +1030,36 @@ public final double readDouble() throws IOException {
+      */
+ 
+     public final String readLine() throws IOException {
++        if (jfrTracing && FileReadEvent.enabled()) {
++            return traceImplReadLine();
++        }
++        return implReadLine();
++    }
++
++    private String traceImplReadLine() throws IOException {
++        long bytesRead = 0;
++        long start = FileReadEvent.timestamp();
++        try {
++            String result = implReadLine();
++            bytesRead = result == null ? 0 : result.length();
++            return result;
++        } finally {
++            FileReadEvent.offer(start, path, bytesRead);
++        }
++    }
++
++    private final String implReadLine() throws IOException {
+         StringBuilder input = new StringBuilder();
+         int c = -1;
+         boolean eol = false;
+ 
+         while (!eol) {
+-            switch (c = read()) {
++            switch (c = read0()) {
+                 case -1, '\n' -> eol = true;
+                 case '\r'     -> {
+                     eol = true;
+                     long cur = getFilePointer();
+-                    if ((read()) != '\n') {
++                    if ((read0()) != '\n') {
+                         seek(cur);
+                     }
+                 }
