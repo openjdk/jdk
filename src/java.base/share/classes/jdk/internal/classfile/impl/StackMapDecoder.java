@@ -303,8 +303,8 @@ public class StackMapDecoder {
             implements StackMapFrameInfo {
         public StackMapFrameImpl {
             requireNonNull(target);
-            locals = List.copyOf(locals);
-            stack = List.copyOf(stack);
+            locals = Util.sanitizeU2List(locals);
+            stack = Util.sanitizeU2List(stack);
         }
     }
 }

@@ -35,7 +35,7 @@ public final class InterfacesImpl
     private final List<ClassEntry> interfaces;
 
     public InterfacesImpl(List<ClassEntry> interfaces) {
-        this.interfaces = List.copyOf(interfaces);
+        this.interfaces = Util.sanitizeU2List(interfaces);
     }
 
     @Override

@@ -41,13 +41,13 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
     private final List<LoadableConstantEntry> arguments;
 
     BootstrapMethodEntryImpl(ConstantPool constantPool, int bsmIndex, int hash,
-                                 MethodHandleEntryImpl handle,
-                                 List<LoadableConstantEntry> arguments) {
+                             MethodHandleEntryImpl handle,
+                             List<LoadableConstantEntry> arguments) {
         this.index = bsmIndex;
         this.hash = hash;
         this.constantPool = constantPool;
         this.handle = handle;
-        this.arguments = List.copyOf(arguments);
+        this.arguments = Util.sanitizeU2List(arguments);
     }
 
     @Override

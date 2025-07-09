@@ -146,6 +146,33 @@ public final class Util {
                 : ClassDesc.ofInternalName(classInternalNameOrArrayDesc);
     }
 
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U1, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU1List(List<T> input) {
+        var copy = List.copyOf(input);
+        checkU1(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U2, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU2List(Collection<T> input) {
+        var copy = List.copyOf(input);
+        checkU2(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input nested list of parameter annotations.
+    public static List<List<Annotation>> sanitizeParameterAnnotations(List<List<Annotation>> input) {
+        var array = input.toArray().clone();
+        checkU1(array.length, "parameter count");
+        for (int i = 0; i < array.length; i++) {
+            array[i] = sanitizeU2List((List<?>) array[i]);
+        }
+
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
+    }
+
     public static<T, U> List<U> mappedList(List<? extends T> list, Function<T, U> mapper) {
         return new AbstractList<>() {
             @Override

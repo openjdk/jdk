@@ -108,7 +108,7 @@ public final class TargetInfoImpl {
 
         public LocalVarTargetImpl(TargetType targetType, List<LocalVarTargetInfo> table) {
             this.targetType = checkValid(targetType, TARGET_LOCAL_VARIABLE, TARGET_RESOURCE_VARIABLE);
-            this.table = List.copyOf(table);
+            this.table = Util.sanitizeU2List(table);
         }
         @Override
         public int size() {

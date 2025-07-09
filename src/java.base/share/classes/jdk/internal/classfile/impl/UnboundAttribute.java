@@ -174,7 +174,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundExceptionsAttribute(List<ClassEntry> exceptions) {
             super(Attributes.exceptions());
-            this.exceptions = List.copyOf(exceptions);
+            this.exceptions = Util.sanitizeU2List(exceptions);
         }
 
         @Override
@@ -244,7 +244,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundStackMapTableAttribute(List<StackMapFrameInfo> entries) {
             super(Attributes.stackMapTable());
-            this.entries = List.copyOf(entries);
+            this.entries = Util.sanitizeU2List(entries);
         }
 
         @Override
@@ -268,7 +268,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundInnerClassesAttribute(List<InnerClassInfo> innerClasses) {
             super(Attributes.innerClasses());
-            this.innerClasses = List.copyOf(innerClasses);
+            this.innerClasses = Util.sanitizeU2List(innerClasses);
         }
 
         @Override
@@ -292,7 +292,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRecordAttribute(List<RecordComponentInfo> components) {
             super(Attributes.record());
-            this.components = List.copyOf(components);
+            this.components = Util.sanitizeU2List(components);
         }
 
         @Override
@@ -347,7 +347,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundMethodParametersAttribute(List<MethodParameterInfo> parameters) {
             super(Attributes.methodParameters());
-            this.parameters = List.copyOf(parameters);
+            this.parameters = Util.sanitizeU1List(parameters);
         }
 
         @Override
@@ -421,7 +421,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public UnboundModuleHashesAttribute(Utf8Entry algorithm, List<ModuleHashInfo> hashes) {
             super(Attributes.moduleHashes());
             this.algorithm = requireNonNull(algorithm);
-            this.hashes = List.copyOf(hashes);
+            this.hashes = Util.sanitizeU2List(hashes);
         }
 
         @Override
@@ -446,16 +446,16 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         private static final Utf8Entry NAME = TemporaryConstantPool.INSTANCE.utf8Entry(Attributes.NAME_MODULE_PACKAGES);
 
-        private final Collection<PackageEntry> packages;
+        private final List<PackageEntry> packages;
 
         public UnboundModulePackagesAttribute(Collection<PackageEntry> packages) {
             super(Attributes.modulePackages());
-            this.packages = List.copyOf(packages);
+            this.packages = Util.sanitizeU2List(packages);
         }
 
         @Override
         public List<PackageEntry> packages() {
-            return List.copyOf(packages);
+            return packages;
         }
 
         @Override
@@ -498,7 +498,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundPermittedSubclassesAttribute(List<ClassEntry> permittedSubclasses) {
             super(Attributes.permittedSubclasses());
-            this.permittedSubclasses = List.copyOf(permittedSubclasses);
+            this.permittedSubclasses = Util.sanitizeU2List(permittedSubclasses);
         }
 
         @Override
@@ -522,7 +522,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundNestMembersAttribute(List<ClassEntry> memberEntries) {
             super(Attributes.nestMembers());
-            this.memberEntries = List.copyOf(memberEntries);
+            this.memberEntries = Util.sanitizeU2List(memberEntries);
         }
 
         @Override
@@ -642,7 +642,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundCharacterRangeTableAttribute(List<CharacterRangeInfo> ranges) {
             super(Attributes.characterRangeTable());
-            this.ranges = List.copyOf(ranges);
+            this.ranges = Util.sanitizeU2List(ranges);
         }
 
         @Override
@@ -666,7 +666,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundLineNumberTableAttribute(List<LineNumberInfo> lines) {
             super(Attributes.lineNumberTable());
-            this.lines = List.copyOf(lines);
+            this.lines = Util.sanitizeU2List(lines);
         }
 
         @Override
@@ -690,7 +690,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundLocalVariableTableAttribute(List<LocalVariableInfo> locals) {
             super(Attributes.localVariableTable());
-            this.locals = List.copyOf(locals);
+            this.locals = Util.sanitizeU2List(locals);
         }
 
         @Override
@@ -714,7 +714,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundLocalVariableTypeTableAttribute(List<LocalVariableTypeInfo> locals) {
             super(Attributes.localVariableTypeTable());
-            this.locals = List.copyOf(locals);
+            this.locals = Util.sanitizeU2List(locals);
         }
 
         @Override
@@ -738,7 +738,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeVisibleAnnotationsAttribute(List<Annotation> elements) {
             super(Attributes.runtimeVisibleAnnotations());
-            this.elements = List.copyOf(elements);
+            this.elements = Util.sanitizeU2List(elements);
         }
 
         @Override
@@ -762,7 +762,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeInvisibleAnnotationsAttribute(List<Annotation> elements) {
             super(Attributes.runtimeInvisibleAnnotations());
-            this.elements = List.copyOf(elements);
+            this.elements = Util.sanitizeU2List(elements);
         }
 
         @Override
@@ -786,13 +786,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeVisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
             super(Attributes.runtimeVisibleParameterAnnotations());
-            // deep copy
-            var array = elements.toArray().clone();
-            for (int i = 0; i < array.length; i++) {
-                array[i] = List.copyOf((List<?>) array[i]);
-            }
-
-            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
+            this.elements = Util.sanitizeParameterAnnotations(elements);
         }
 
         @Override
@@ -816,13 +810,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeInvisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
             super(Attributes.runtimeInvisibleParameterAnnotations());
-            // deep copy
-            var array = elements.toArray().clone();
-            for (int i = 0; i < array.length; i++) {
-                array[i] = List.copyOf((List<?>) array[i]);
-            }
-
-            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
+            this.elements = Util.sanitizeParameterAnnotations(elements);
         }
 
         @Override
@@ -846,7 +834,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeVisibleTypeAnnotationsAttribute(List<TypeAnnotation> elements) {
             super(Attributes.runtimeVisibleTypeAnnotations());
-            this.elements = List.copyOf(elements);
+            this.elements = Util.sanitizeU2List(elements);
         }
 
         @Override
@@ -870,7 +858,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeInvisibleTypeAnnotationsAttribute(List<TypeAnnotation> elements) {
             super(Attributes.runtimeInvisibleTypeAnnotations());
-            this.elements = List.copyOf(elements);
+            this.elements = Util.sanitizeU2List(elements);
         }
 
         @Override
@@ -955,7 +943,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public UnboundModuleExportInfo {
             requireNonNull(exportedPackage);
             Util.checkFlags(exportsFlagsMask);
-            exportsTo = List.copyOf(exportsTo);
+            exportsTo = Util.sanitizeU2List(exportsTo);
         }
     }
 
@@ -973,7 +961,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public UnboundModuleOpenInfo {
             requireNonNull(openedPackage);
             Util.checkFlags(opensFlagsMask);
-            opensTo = List.copyOf(opensTo);
+            opensTo = Util.sanitizeU2List(opensTo);
         }
     }
 
@@ -982,7 +970,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             implements ModuleProvideInfo {
         public UnboundModuleProvideInfo {
             requireNonNull(provides);
-            providesWith = List.copyOf(providesWith);
+            providesWith = Util.sanitizeU2List(providesWith);
         }
     }
 
@@ -1003,7 +991,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public UnboundRecordComponentInfo {
             requireNonNull(name);
             requireNonNull(descriptor);
-            attributes = List.copyOf(attributes);
+            attributes = Util.sanitizeU2List(attributes);
         }
     }
 
@@ -1013,7 +1001,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundTypeAnnotation {
             requireNonNull(targetInfo);
-            targetPath = List.copyOf(targetPath);
+            targetPath = Util.sanitizeU1List(targetPath);
             requireNonNull(annotation);
         }
     }
@@ -1047,11 +1035,11 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             this.moduleName = requireNonNull(moduleName);
             this.moduleFlags = Util.checkFlags(moduleFlags);
             this.moduleVersion = moduleVersion;
-            this.requires = List.copyOf(requires);
-            this.exports = List.copyOf(exports);
-            this.opens = List.copyOf(opens);
-            this.uses = List.copyOf(uses);
-            this.provides = List.copyOf(provides);
+            this.requires = Util.sanitizeU2List(requires);
+            this.exports = Util.sanitizeU2List(exports);
+            this.opens = Util.sanitizeU2List(opens);
+            this.uses = Util.sanitizeU2List(uses);
+            this.provides = Util.sanitizeU2List(provides);
         }
 
         @Override
