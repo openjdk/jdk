@@ -153,8 +153,6 @@ protected:
 
     void set_tag2(const void* tag2) { _tag2 = (void*) tag2; }
     void* get_tag2() const { return _tag2; }
-
-
   }; // GuardedMemory::GuardHeader
 
   // Guarded Memory...
