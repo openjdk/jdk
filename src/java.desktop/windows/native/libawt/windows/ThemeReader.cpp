@@ -393,7 +393,7 @@ static void copyDIBToBufferedImage(int *pDstBits, int *pSrcBits,
  */
 JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
   (JNIEnv *env, jclass klass, jintArray array, jlong theme, jint part, jint state,
-    jint rectRight, jint rectBottom, jint w, jint h, jint stride) {
+    jint w, jint h, jint stride) {
 
     int *pDstBits=NULL;
     int *pSrcBits=NULL;
@@ -440,14 +440,9 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
 
     rect.left = 0;
     rect.top = 0;
-
-    if (OpenThemeDataForDpiFunc) {
-        rect.bottom = rectBottom;
-        rect.right = rectRight;
-    } else {
-        rect.bottom = h;
-        rect.right = w;
-    }
+    rect.bottom = h;
+    rect.right = w;
+    
     ZeroMemory(pSrcBits,(BITS_PER_PIXEL>>3)*w*h);
 
     HRESULT hres = DrawThemeBackgroundFunc(hTheme, memDC, part, state, &rect, NULL);
