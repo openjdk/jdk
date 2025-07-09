@@ -2232,6 +2232,10 @@ HeapWord* ShenandoahFreeSet::par_allocate_in_for_mutator(ShenandoahHeapRegion* r
   return obj;
 }
 
+void ShenandoahFreeSet::retire_region(ShenandoahHeapRegion* region, ShenandoahFreeSetPartitionId partition_id) {
+  _partitions.retire_from_partition(partition_id, region->index(), region->used());
+}
+
 class ShenandoahSingleObjAllocationClosure : public ShenandoahHeapRegionBreakableIterClosure {
 public:
   ShenandoahAllocRequest &_req;
@@ -2246,6 +2250,7 @@ public:
 
   bool heap_region_do(ShenandoahHeapRegion *r) override {
     if (r->reserved_for_direct_allocation()) return false;
+    bool ready_for_retire = false;
     if (r->is_empty()) {
       r->try_recycle_under_lock();
       if (r->is_empty()) _in_new_region = true;
@@ -2255,12 +2260,17 @@ public:
       size_t actual_size = _req.size();
       _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
       _req.set_actual_size(actual_size);
+      if (r->free() < PLAB::min_size()) ready_for_retire = true;
     } else if (r->affiliation() == YOUNG_GENERATION && r->is_regular() &&
                r->get_top_before_promote() == nullptr && r->free() >= _min_req_byte_size) {
       size_t actual_size = _req.size();
       _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
       _req.set_actual_size(actual_size);
       _in_new_region = false;
+      if (r->free() < PLAB::min_size()) ready_for_retire = true;
+    }
+    if (ready_for_retire) {
+      ShenandoahHeap::heap()->free_set()->retire_region(r, ShenandoahFreeSetPartitionId::Mutator);
     }
     return _obj != nullptr;
   }
@@ -2311,6 +2321,10 @@ public:
         _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
         _req.set_actual_size(actual_size);
         _in_new_region = true;
+        if (r->free() < ShenandoahHeapRegion::region_size_bytes() / 2) {
+          if (r->free() < PLAB::min_size()) ShenandoahHeap::heap()->free_set()->retire_region(r, ShenandoahFreeSetPartitionId::Mutator);
+          return false;
+        }
       }
       OrderAccess::fence();
       Atomic::store(_shared_region_addresses[_current_index++], r);
@@ -2323,12 +2337,15 @@ public:
         _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
         _req.set_actual_size(actual_size);
         _in_new_region = false;
-      } else {
-        r->reserve_for_direct_allocation();
-        Atomic::store(_shared_region_addresses[_current_index++], r);
-        skip_invalid_address();
-        _fulfilled_count++;
       }
+      if (r->free() < ShenandoahHeapRegion::region_size_bytes() / 2) {
+        if (r->free() < PLAB::min_size()) ShenandoahHeap::heap()->free_set()->retire_region(r, ShenandoahFreeSetPartitionId::Mutator);
+        return false;
+      }
+      r->reserve_for_direct_allocation();
+      Atomic::store(_shared_region_addresses[_current_index++], r);
+      skip_invalid_address();
+      _fulfilled_count++;
     }
     return _fulfilled_count == _request_count || _current_index == _shared_region_address_count;
   }
@@ -2356,20 +2373,12 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(ShenandoahHeap
     } else {
       request_count++;
       if (r != nullptr) {
-        if (r->free() < PLAB::min_size()) {
-          Atomic::release_store_fence(shared_region_address[i], static_cast<ShenandoahHeapRegion*>(nullptr));
-          // TODO confirm when&why the region is moved out of Mutator partition?
-          if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, r->index())) {
-            _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
-          }
-          r->release_from_direct_allocation();
-        } else {
-          // Although r is same as original one when tried CAS allocation, but it has more free space.
-          fulfilled_by_others++;
-          shared_region_address[i] = nullptr;
-          original_shared_regions[i] = nullptr;
-          request_count--;
+        Atomic::release_store_fence(shared_region_address[i], static_cast<ShenandoahHeapRegion*>(nullptr));
+        // TODO confirm when&why the region is moved out of Mutator partition?
+        if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, r->index())) {
+          _partitions.retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
         }
+        r->release_from_direct_allocation();
       }
     }
   }
