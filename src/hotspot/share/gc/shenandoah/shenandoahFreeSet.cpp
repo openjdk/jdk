@@ -2254,7 +2254,6 @@ public:
 
   bool heap_region_do(ShenandoahHeapRegion *r) override {
     if (r->reserved_for_direct_allocation()) return false;
-    bool ready_for_retire = false;
     if (r->is_empty()) {
       r->try_recycle_under_lock();
       if (r->is_empty()) _in_new_region = true;
@@ -2264,17 +2263,14 @@ public:
       size_t actual_size = _req.size();
       _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
       _req.set_actual_size(actual_size);
-      if (r->free() < PLAB::min_size()) ready_for_retire = true;
+      ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(r, ShenandoahFreeSetPartitionId::Mutator);
     } else if (r->affiliation() == YOUNG_GENERATION && r->is_regular() &&
                r->get_top_before_promote() == nullptr && r->free() >= _min_req_byte_size) {
       size_t actual_size = _req.size();
       _obj = _req.is_lab_alloc() ? r ->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
       _req.set_actual_size(actual_size);
       _in_new_region = false;
-      if (r->free() < PLAB::min_size()) ready_for_retire = true;
-    }
-    if (ready_for_retire) {
-      ShenandoahHeap::heap()->free_set()->retire_region(r, ShenandoahFreeSetPartitionId::Mutator);
+      ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(r, ShenandoahFreeSetPartitionId::Mutator);
     }
     return _obj != nullptr;
   }
