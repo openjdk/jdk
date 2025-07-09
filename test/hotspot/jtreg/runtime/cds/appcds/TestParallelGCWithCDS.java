@@ -121,11 +121,10 @@ public class TestParallelGCWithCDS {
         out.shouldNotContain(errMsg);
         out.shouldHaveExitValue(0);
 
-        int n = 2;
         if (!dumpWithParallel && execWithParallel) {
             // We dumped with G1, so we have an archived heap. At exec time, try to load them into
             // a small ParallelGC heap that may be too small.
-            System.out.println("=======\n" + n + ". Exec with " + execGC);
+            System.out.println("2. Exec with " + execGC);
             out = TestCommon.exec(helloJar,
                                     execGC,
                                     small1,
@@ -140,7 +139,6 @@ public class TestParallelGCWithCDS {
             } else {
                 out.shouldNotHaveFatalError();
             }
-            n++;
         }
     }
 }
