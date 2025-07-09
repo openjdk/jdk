@@ -121,7 +121,7 @@ source %{
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
       // Vector API intrinsics.
-      if ((opcode == Op_VectorCastD2X && bt == T_INT) ||
+      if ((opcode == Op_VectorCastD2X && (bt == T_INT || bt == T_SHORT)) ||
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
@@ -2952,7 +2952,7 @@ instruct vcvtHFtoF(vReg dst, vReg src) %{
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      // 4HF to 4F
+      // 2HF to 2F, 4HF to 4F
       __ fcvtl($dst$$FloatRegister, __ T4S, $src$$FloatRegister, __ T4H);
     } else {
       assert(UseSVE > 0, "must be sve");
@@ -2968,9 +2968,9 @@ instruct vcvtHFtoF(vReg dst, vReg src) %{
 instruct vcvtFtoHF_neon(vReg dst, vReg src) %{
   predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(1))));
   match(Set dst (VectorCastF2HF src));
-  format %{ "vcvtFtoHF_neon $dst, $src\t# 4F to 4HF" %}
+  format %{ "vcvtFtoHF_neon $dst, $src\t# 2F/4F to 2HF/4HF" %}
   ins_encode %{
-    // 4F to 4HF
+    // 2F to 2HF, 4F to 4HF
     __ fcvtn($dst$$FloatRegister, __ T4H, $src$$FloatRegister, __ T4S);
   %}
   ins_pipe(pipe_slow);
