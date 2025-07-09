@@ -110,6 +110,10 @@ public class TestOnSpinWaitAArch64 {
         int foundInstCount = 0;
         while (iter.hasNext()) {
             line = iter.next().trim();
+            if (line.startsWith(";; }")) {
+                break;
+            }
+
             if (!line.startsWith("0x")) {
                 continue;
             }
@@ -136,15 +140,15 @@ public class TestOnSpinWaitAArch64 {
     // The expected output for a spin wait with three NOPs
     // if the hsdis library is available:
     //
-    // ;; spin_wait
+    // ;; spin_wait {
     // 0x0000000111dfa58c:   nop
     // 0x0000000111dfa590:   nop
     // 0x0000000111dfa594:   nop
-    // 0x0000000111dfa598:   ldp    x29, x30, [sp, #16]
+    // ;; }
     //
     // We work as follows:
     // 1. Check whether printed instructions are disassembled ("[Disassembly]").
-    // 2. Look for the block comment ';; spin_wait'.
+    // 2. Look for the block comment ';; spin_wait {'.
     // 3. Count spin wait instructions.
     private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int spinWaitInstCount) {
         Iterator<String> iter = output.asLines().listIterator();
@@ -165,14 +169,14 @@ public class TestOnSpinWaitAArch64 {
         boolean foundSpinWaitBlock = false;
         while (iter.hasNext()) {
             line = iter.next();
-            if (line.contains(";; spin_wait")) {
+            if (line.contains(";; spin_wait {")) {
                 foundSpinWaitBlock = true;
                 break;
             }
         }
 
         if (!foundSpinWaitBlock) {
-            throw new RuntimeException("Block comment ';; spin_wait' not found");
+            throw new RuntimeException("Block comment ';; spin_wait {' not found");
         }
 
         final String expectedInstInOutput = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
