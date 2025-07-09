@@ -7174,14 +7174,14 @@ instruct vexpandBits(vReg dst, vReg src1, vReg src2) %{
 // The Neon and SVE2 tbl instruction for two vector lookup requires both the source vectors to be
 // consecutive. The match rules for SelectFromTwoVector reserve two consecutive vector registers
 // for src1 and src2.
-// Four combinations of vector registers each for vselect_from_two_vectors_HS_Neon and
-// vselect_from_two_vectors are chosen at random (two from volatile and two from non-volatile set)
+// Four combinations of vector registers each for vselect_from_two_vectors_neon and
+// vselect_from_two_vectors_sve are chosen at random (two from volatile and two from non-volatile set)
 // which gives more freedom to the register allocator to choose the best pair of source registers
 // at that point.
 
 // ----------------------------------- SelectFromTwoVector Neon ---------------------------------
 
-instruct vselect_from_two_vectors_Neon_10_11(vReg dst, vReg_V10 src1, vReg_V11 src2,
+instruct vselect_from_two_vectors_neon_10_11(vReg dst, vReg_V10 src1, vReg_V11 src2,
                                              vReg index, vReg tmp) %{
   predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
   effect(TEMP_DEF dst, TEMP tmp);
@@ -7197,7 +7197,7 @@ instruct vselect_from_two_vectors_Neon_10_11(vReg dst, vReg_V10 src1, vReg_V11 s
   ins_pipe(pipe_slow);
 %}
 
-instruct vselect_from_two_vectors_Neon_12_13(vReg dst, vReg_V12 src1, vReg_V13 src2,
+instruct vselect_from_two_vectors_neon_12_13(vReg dst, vReg_V12 src1, vReg_V13 src2,
                                              vReg index, vReg tmp) %{
   predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
   effect(TEMP_DEF dst, TEMP tmp);
@@ -7213,7 +7213,7 @@ instruct vselect_from_two_vectors_Neon_12_13(vReg dst, vReg_V12 src1, vReg_V13 s
   ins_pipe(pipe_slow);
 %}
 
-instruct vselect_from_two_vectors_Neon_17_18(vReg dst, vReg_V17 src1, vReg_V18 src2,
+instruct vselect_from_two_vectors_neon_17_18(vReg dst, vReg_V17 src1, vReg_V18 src2,
                                              vReg index, vReg tmp) %{
   predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
   effect(TEMP_DEF dst, TEMP tmp);
@@ -7229,7 +7229,7 @@ instruct vselect_from_two_vectors_Neon_17_18(vReg dst, vReg_V17 src1, vReg_V18 s
   ins_pipe(pipe_slow);
 %}
 
-instruct vselect_from_two_vectors_Neon_23_24(vReg dst, vReg_V23 src1, vReg_V24 src2,
+instruct vselect_from_two_vectors_neon_23_24(vReg dst, vReg_V23 src1, vReg_V24 src2,
                                              vReg index, vReg tmp) %{
   predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
   effect(TEMP_DEF dst, TEMP tmp);
@@ -7247,7 +7247,7 @@ instruct vselect_from_two_vectors_Neon_23_24(vReg dst, vReg_V23 src1, vReg_V24 s
 
 // ----------------------------------- SelectFromTwoVector SVE ----------------------------------
 
-instruct vselect_from_two_vectors_SVE_10_11(vReg dst, vReg_V10 src1, vReg_V11 src2,
+instruct vselect_from_two_vectors_sve_10_11(vReg dst, vReg_V10 src1, vReg_V11 src2,
                                             vReg index, vReg tmp) %{
   predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
   effect(TEMP_DEF dst, TEMP tmp);
@@ -7263,7 +7263,7 @@ instruct vselect_from_two_vectors_SVE_10_11(vReg dst, vReg_V10 src1, vReg_V11 sr
   ins_pipe(pipe_slow);
 %}
 
-instruct vselect_from_two_vectors_SVE_12_13(vReg dst, vReg_V12 src1, vReg_V13 src2,
+instruct vselect_from_two_vectors_sve_12_13(vReg dst, vReg_V12 src1, vReg_V13 src2,
                                             vReg index, vReg tmp) %{
   predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
   effect(TEMP_DEF dst, TEMP tmp);
@@ -7279,7 +7279,7 @@ instruct vselect_from_two_vectors_SVE_12_13(vReg dst, vReg_V12 src1, vReg_V13 sr
   ins_pipe(pipe_slow);
 %}
 
-instruct vselect_from_two_vectors_SVE_17_18(vReg dst, vReg_V17 src1, vReg_V18 src2,
+instruct vselect_from_two_vectors_sve_17_18(vReg dst, vReg_V17 src1, vReg_V18 src2,
                                             vReg index, vReg tmp) %{
   predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
   effect(TEMP_DEF dst, TEMP tmp);
@@ -7295,7 +7295,7 @@ instruct vselect_from_two_vectors_SVE_17_18(vReg dst, vReg_V17 src1, vReg_V18 sr
   ins_pipe(pipe_slow);
 %}
 
-instruct vselect_from_two_vectors_SVE_23_24(vReg dst, vReg_V23 src1, vReg_V24 src2,
+instruct vselect_from_two_vectors_sve_23_24(vReg dst, vReg_V23 src1, vReg_V24 src2,
                                             vReg index, vReg tmp) %{
   predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
   effect(TEMP_DEF dst, TEMP tmp);

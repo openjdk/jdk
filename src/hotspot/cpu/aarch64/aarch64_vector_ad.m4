@@ -5156,15 +5156,15 @@ BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
 // The Neon and SVE2 tbl instruction for two vector lookup requires both the source vectors to be
 // consecutive. The match rules for SelectFromTwoVector reserve two consecutive vector registers
 // for src1 and src2.
-// Four combinations of vector registers each for vselect_from_two_vectors_HS_Neon and
-// vselect_from_two_vectors are chosen at random (two from volatile and two from non-volatile set)
+// Four combinations of vector registers each for vselect_from_two_vectors_neon and
+// vselect_from_two_vectors_sve are chosen at random (two from volatile and two from non-volatile set)
 // which gives more freedom to the register allocator to choose the best pair of source registers
 // at that point.
 dnl
 dnl SELECT_FROM_TWO_VECTORS_NEON($1,        $2        )
 dnl SELECT_FROM_TWO_VECTORS_NEON(first_reg, second_reg)
 define(`SELECT_FROM_TWO_VECTORS_NEON', `
-instruct vselect_from_two_vectors_Neon_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+instruct vselect_from_two_vectors_neon_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
                                              vReg index, vReg tmp) %{
   predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
   effect(TEMP_DEF dst, TEMP tmp);
@@ -5185,7 +5185,7 @@ dnl
 dnl SELECT_FROM_TWO_VECTORS_SVE($1,        $2        )
 dnl SELECT_FROM_TWO_VECTORS_SVE(first_reg, second_reg)
 define(`SELECT_FROM_TWO_VECTORS_SVE', `
-instruct vselect_from_two_vectors_SVE_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+instruct vselect_from_two_vectors_sve_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
                                             vReg index, vReg tmp) %{
   predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
   effect(TEMP_DEF dst, TEMP tmp);
