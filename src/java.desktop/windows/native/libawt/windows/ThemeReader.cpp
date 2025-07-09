@@ -442,7 +442,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
     rect.top = 0;
     rect.bottom = h;
     rect.right = w;
-    
+
     ZeroMemory(pSrcBits,(BITS_PER_PIXEL>>3)*w*h);
 
     HRESULT hres = DrawThemeBackgroundFunc(hTheme, memDC, part, state, &rect, NULL);
