@@ -2333,10 +2333,11 @@ public:
         _req.set_actual_size(actual_size);
       }
       if (_fulfilled_count < _request_count) {
+        assert(Atomic::load(_shared_region_addresses[_current_index]) == nullptr, "The directly allocatable region must have been set to nullptr.");
         OrderAccess::fence();
         r->reserve_for_direct_allocation();
         OrderAccess::fence();
-        Atomic::store(_shared_region_addresses[_current_index++], r);
+        Atomic::release_store(_shared_region_addresses[_current_index++], r);
         _fulfilled_count++;
         skip_nullptr_address();
       }
