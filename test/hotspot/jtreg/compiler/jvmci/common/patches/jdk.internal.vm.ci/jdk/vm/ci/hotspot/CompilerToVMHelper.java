@@ -306,7 +306,7 @@ public class CompilerToVMHelper {
     }
     private static class InstalledCodeStub extends HotSpotNmethod {
         private InstalledCodeStub(HotSpotResolvedJavaMethodImpl method, String name, long address, long entryPoint) {
-            super(method, name, false, 0, true);
+            super(method, name, false, true, 0);
             this.address = address;
             this.entryPoint = entryPoint;
         }
