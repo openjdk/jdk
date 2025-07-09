@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,33 @@ final class StringCharBuffer                                  // package-private
         return str.charAt(index + offset);
     }
 
-    // ## Override bulk get methods for better performance
+    // Override bulk get methods for better performance
+
+    @Override
+    public CharBuffer get(int index, char[] dst, int offset, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(offset, length, dst.length);
+        str.getChars(index, index + length, dst, offset);
+        return this;
+    }
+
+    @Override
+    public CharBuffer get(char[] dst, int offset, int length) {
+        int pos = position();
+        get(pos, dst, offset, length);
+        position(pos + length);
+        return this;
+    }
+
+    @Override
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        // Check [srcBegin,srcEnd) is a subset of [0, limit() - position())
+        int pos = position();
+        int lim = limit();
+        Objects.checkFromToIndex(srcBegin, srcEnd, lim - pos);
+
+        get(pos + srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
 
     public final CharBuffer put(char c) {
         throw new ReadOnlyBufferException();
