@@ -62,7 +62,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
         cpu_total_old = cpu_total;
         initialized = 1;
         last_sample_time = now;
-        return -1.0; // Not enough data yet
+        return -1.0;
     }
 
     long long user_diff = cpu_total.user - cpu_total_old.user;
@@ -75,14 +75,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
         return -1.0;
     }
 
-    printf("User diff: %lld\n", user_diff);
-    printf("Sys diff: %lld\n", sys_diff);
-    printf("Idle diff: %lld\n", idle_diff);
-    printf("Wait diff: %lld\n", wait_diff);
-
-
     double load = (double)(user_diff + sys_diff) / total;
-    printf("load:%.4f\n",load);    
     fflush(stdout);
     last_cpu_load = load;
     last_sample_time = now;
@@ -101,7 +94,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
     double user_diff, sys_diff, delta_time;
 
     if (perfstat_process(&id, &curr_stats, sizeof(perfstat_process_t), 1) < 0) {
-        return -1.0;  
+        return -1.0;
     }
     if (!initialized) {
         prev_stats = curr_stats;
@@ -109,28 +102,19 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
         initialized = 1;
         return -1.0;
     }
-    printf("initialised done");
     curr_timebase = curr_stats.last_timebase;
     timebase_diff = curr_timebase - prev_timebase;
-    
     if ((long long)timebase_diff <= 0 || XINTFRAC == 0) {
         return -1.0;
     }
 
     delta_time = HTIC2SEC(timebase_diff);
-
     user_diff = (double)(curr_stats.ucpu_time - prev_stats.ucpu_time);
     sys_diff  = (double)(curr_stats.scpu_time - prev_stats.scpu_time);
-
     prev_stats = curr_stats;
     prev_timebase = curr_timebase;
-
     double cpu_load = (user_diff + sys_diff) / delta_time;
-
     return (jdouble)cpu_load;
-
-
-
 }
 
 JNIEXPORT jdouble JNICALL
