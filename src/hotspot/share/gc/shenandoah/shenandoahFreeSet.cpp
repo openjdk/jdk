@@ -2260,7 +2260,7 @@ public:
   DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahHeapRegionAddress>* directly_allocatable_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
     : _directly_allocatable_regions(directly_allocatable_regions),
       _start_index(start_index),
-      _end_index((start_index + 3) % ShenandoahDirectlyAllocatableRegionCount ),
+      _end_index((start_index + 2) % ShenandoahDirectlyAllocatableRegionCount ),
       _req(req), _obj(obj),
       _in_new_region(in_new_region),
       _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize) {
@@ -2268,13 +2268,13 @@ public:
   }
 
   bool is_probing_region(const uint index) const {
-    return !(index >= _end_index && index < _start_index);
+    return !(index > _end_index && index < _start_index);
   }
 
   int find_next_retire_eligible_region(int current_retire_eligible_region) {
     if (_next_retire_eligible_region == -1) return -1;
     uint next = (current_retire_eligible_region + 1) % ShenandoahDirectlyAllocatableRegionCount;
-    while (next != _start_index) {
+    while (next != _end_index) {
       ShenandoahHeapRegion* region = Atomic::load(&_directly_allocatable_regions[next].address);
       if (region != nullptr && region->free() > _min_req_byte_size && is_probing_region(next)) {
         probing_region_refilled = true;
