@@ -2388,6 +2388,7 @@ LibraryCallKit::SavedState::SavedState(LibraryCallKit* kit) :
 
 LibraryCallKit::SavedState::~SavedState() {
   if (_discarded) {
+    _kit->destruct_map_clone(_map);
     return;
   }
   _kit->jvms()->set_map(_map);
