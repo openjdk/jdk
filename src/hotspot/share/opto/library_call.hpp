@@ -135,18 +135,22 @@ class LibraryCallKit : public GraphKit {
    * (their types, for instance).
    *
    * So, if an intrinsic might cause this situation, one must start by saving the state in a
-   * SavedState using clone_map_and_save_state, and before returning in case of bailing out,
-   * fix the graph using restore_state.
+   * SavedState by constructing it, and the state will be restored on destruction. If the
+   * intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
    */
-  struct SavedState {
-    uint sp;
-    JVMState* jvms;
-    SafePointNode* map;
-    Unique_Node_List ctrl_succ;
+  class SavedState {
+    LibraryCallKit* _kit;
+    uint _sp;
+    JVMState* _jvms;
+    SafePointNode* _map;
+    Unique_Node_List _ctrl_succ;
+    bool discarded = false;
+
+  public:
+    SavedState(LibraryCallKit*);
+    ~SavedState();
+    void discard();
   };
-  SavedState clone_map_and_save_state();
-  void restore_state(const SavedState&);
-  void destruct_map_clone(const SavedState& sfp);
 
   // Helper functions to inline natives
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
