@@ -12,6 +12,6 @@ import jdk.test.lib.jfr.GCHelper;
  */
 public class TestObjectCountEventWithShenandoah {
     public static void main(String[] args) throws Exception {
-        ObjectCountAfterGCEvent.test(GCHelper.gcShenandoah);
+        ObjectCountEvent.test(GCHelper.gcShenandoah);
     }
 }
