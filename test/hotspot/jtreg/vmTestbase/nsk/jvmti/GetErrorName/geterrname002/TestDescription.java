@@ -35,9 +35,9 @@
  *         JVMTI_ERROR_NULL_POINTER        if name_ptr is NULL.
  * COMMENTS
  *
- * @requires !vm.ubsan
- * @comment We test with arguments out of scope of the jvmti enums, this causes
+ * @comment We test with arguments out of scope of the jvmti enums, which causes
  *          ubsan issues.
+ * @requires !vm.ubsan
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm/native

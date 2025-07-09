@@ -34,9 +34,9 @@
  *     if flag is not a jvmtiVerboseFlag.
  * COMMENTS
  *
- * @requires !vm.ubsan
- * @comment We test with arguments out of scope of the jvmti enums, this causes
+ * @comment We test with arguments out of scope of the jvmti enums, which causes
  *          ubsan issues.
+ * @requires !vm.ubsan
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm/native
