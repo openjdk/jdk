@@ -2543,6 +2543,13 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
 #endif //PRODUCT
 
 void InstanceKlass::clean_weak_instanceklass_links() {
+  // JVMTI RedefineClasses creates previous versions that are not in
+  // the class hierarchy, so process them here.
+  InstanceKlass* ik = this;
+  while ((ik = ik->previous_versions()) != nullptr) {
+    ik->clean_weak_instanceklass_links();
+  }
+
   clean_implementors_list();
   clean_method_data();
 }
