@@ -86,28 +86,13 @@ private:
     RELEASED,
   } volatile _state;
 
-  // There are lots of writes to this field in common (WEAK) state.
-  // Protect the adjacent fields from false sharing to optimize state queries.
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
-  mutable volatile int _spin_lock;
-  DEBUG_ONLY(mutable volatile Thread* _spin_lock_owner;)
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
-
-  class SpinLocker : StackObj {
-  private:
-    const UnloadableMethodHandle* const _handle;
-
-  public:
-    SpinLocker(const UnloadableMethodHandle* handle);
-    ~SpinLocker();
-  };
-
   Method* _method;
   WeakHandle _weak_handle;
   OopHandle _strong_handle;
 
   inline State get_state() const;
-  inline void set_state(State s);
+  inline void set_state(State to);
+  inline bool transit_state(State from, State to);
   inline oop get_unload_blocker(Method* method);
 
 public:

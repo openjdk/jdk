@@ -34,12 +34,12 @@
 #include "runtime/javaThread.inline.hpp"
 
 inline UnloadableMethodHandle::UnloadableMethodHandle() :
-  _spin_lock(0) DEBUG_ONLY(COMMA _spin_lock_owner(nullptr)), _method(nullptr) {
+  _method(nullptr) {
   set_state(EMPTY);
 }
 
 inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
-  _spin_lock(0) DEBUG_ONLY(COMMA _spin_lock_owner(nullptr)), _method(method) {
+  _method(method) {
   assert(method != nullptr, "Should be");
 
   oop obj = get_unload_blocker(method);
@@ -49,6 +49,7 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
   } else {
     set_state(PERMANENT);
   }
+
   assert(is_safe(), "Should be");
 }
 
@@ -56,8 +57,12 @@ inline UnloadableMethodHandle::State UnloadableMethodHandle::get_state() const {
   return Atomic::load_acquire(&_state);
 }
 
-inline void UnloadableMethodHandle::set_state(State s) {
-  Atomic::release_store_fence(&_state, s);
+inline void UnloadableMethodHandle::set_state(State to) {
+  Atomic::release_store(&_state, to);
+}
+
+inline bool UnloadableMethodHandle::transit_state(State from, State to) {
+  return Atomic::cmpxchg(&_state, from, to, memory_order_release) == from;
 }
 
 oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
@@ -94,14 +99,10 @@ void UnloadableMethodHandle::release() {
     }
     case STRONG:
     case WEAK: {
-      // Release handles only once.
-      SpinLocker locker(this);
-      if (get_state() != RELEASED) {
-        _weak_handle.release(Universe::vm_weak());
-        _strong_handle.release(Universe::vm_global());
-        _method = nullptr;
-        set_state(RELEASED);
-      }
+      _weak_handle.release(Universe::vm_weak());
+      _strong_handle.release(Universe::vm_global());
+      _method = nullptr;
+      set_state(RELEASED);
       break;
     }
     default:
@@ -127,7 +128,7 @@ bool UnloadableMethodHandle::is_safe() const {
       return false;
     }
     case WEAK: {
-      // Safety 1: Caller should be a Java thread in proper state.
+      // Safety: Caller should be a Java thread in proper state.
       // Otherwise, unloading can happen without coordinating with this thread.
       // (Access API would assert this too, but do not rely on it.)
       Thread* t = Thread::current();
@@ -137,19 +138,10 @@ bool UnloadableMethodHandle::is_safe() const {
         return false;
       }
 
-      // Safety 2: Need to take a lock to coordinate with weak handle
-      // modifications at release or make_always_safe.
-      SpinLocker locker(this);
-      if (get_state() != WEAK) {
-        // State changed. Circle back to act accordingly.
-        return is_safe();
-      }
-
       // Finally, see if the handle was cleared by GC.
       return _weak_handle.peek() != nullptr;
     }
     default:
-      ShouldNotReachHere();
       return false;
   }
 }
@@ -166,13 +158,11 @@ inline void UnloadableMethodHandle::make_always_safe() {
       break;
     }
     case WEAK: {
-      // Transition WEAK -> STRONG only once.
-      SpinLocker locker(this);
-      if (get_state() == WEAK) {
+      if (transit_state(WEAK, STRONG)) {
+        // Do this only once, otherwise it leaks handles.
         oop obj = get_unload_blocker(_method);
         assert(obj != nullptr, "Should have one");
         _strong_handle = OopHandle(Universe::vm_global(), obj);
-        set_state(STRONG);
       }
       break;
     }
@@ -190,17 +180,6 @@ inline Method* UnloadableMethodHandle::method() const {
 
 inline Method* UnloadableMethodHandle::method_unsafe() const {
   return _method;
-}
-
-inline UnloadableMethodHandle::SpinLocker::SpinLocker(const UnloadableMethodHandle* handle) : _handle(handle) {
-  assert(_handle->_spin_lock_owner != Thread::current(), "Re-entering already owned lock, about to deadlock");
-  Thread::SpinAcquire(&_handle->_spin_lock);
-  DEBUG_ONLY(_handle->_spin_lock_owner = Thread::current();)
-}
-
-inline UnloadableMethodHandle::SpinLocker::~SpinLocker() {
-  DEBUG_ONLY(_handle->_spin_lock_owner = nullptr;)
-  Thread::SpinRelease(&_handle->_spin_lock);
 }
 
 #endif // SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_INLINE_HPP
