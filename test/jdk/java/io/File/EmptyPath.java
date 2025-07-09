@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -209,13 +210,15 @@ public class EmptyPath {
 
         File[] files = f.listFiles();
         for (File file : files)
-            assertTrue(f.toString().indexOf(File.separatorChar) == -1);
+            assertEquals(-1, f.toString().indexOf(File.separatorChar));
 
-        List<String> ioNames =
-            Arrays.asList(files).stream().map(f -> f.toString()).toList();
-        Set<String> ioSet = new HashSet(ioNames);
-        Set<String> nioSet = new HashSet();
-        Files.list(p).forEach((x) -> nioSet.add(x.toString()));
+        Set<String> ioSet = Arrays.stream(files)
+            .map(File::getName)
+            .collect(Collectors.toSet());
+        Set<String> nioSet = Files.list(p)
+            .map(Path::getFileName)
+            .map(Path::toString)
+            .collect(Collectors.toSet());
         assertEquals(nioSet, ioSet);
     }
 
