@@ -26,9 +26,14 @@
 
 package java.lang;
 
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
-import java.util.Objects;
+import java.util.function.BiFunction;
+
+import static java.util.Objects.requireNonNull;
+import static jdk.internal.util.Preconditions.AIOOBE_FORMATTER;
+import static jdk.internal.util.Preconditions.checkFromIndexSize;
 
 /**
  * Utility class for string encoding and decoding.
@@ -40,7 +45,7 @@ class StringCoding {
     /**
      * Count the number of leading non-zero ascii chars in the range.
      */
-    public static int countNonZeroAscii(String s) {
+    static int countNonZeroAscii(String s) {
         byte[] value = s.value();
         if (s.isLatin1()) {
             return countNonZeroAsciiLatin1(value, 0, value.length);
@@ -52,7 +57,7 @@ class StringCoding {
     /**
      * Count the number of non-zero ascii chars in the range.
      */
-    public static int countNonZeroAsciiLatin1(byte[] ba, int off, int len) {
+    private static int countNonZeroAsciiLatin1(byte[] ba, int off, int len) {
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] <= 0) {
@@ -65,7 +70,7 @@ class StringCoding {
     /**
      * Count the number of leading non-zero ascii chars in the range.
      */
-    public static int countNonZeroAsciiUTF16(byte[] ba, int off, int strlen) {
+    private static int countNonZeroAsciiUTF16(byte[] ba, int off, int strlen) {
         int limit = off + strlen;
         for (int i = off; i < limit; i++) {
             char c = StringUTF16.charAt(ba, i);
@@ -76,7 +81,7 @@ class StringCoding {
         return strlen;
     }
 
-    public static boolean hasNegatives(byte[] ba, int off, int len) {
+    static boolean hasNegatives(byte[] ba, int off, int len) {
         return countPositives(ba, off, len) != len;
     }
 
@@ -87,10 +92,16 @@ class StringCoding {
      *   bytes in the range. If there are negative bytes, the implementation must return
      *   a value that is less than or equal to the index of the first negative byte
      *   in the range.
+     *
+     * @param ba a byte array
+     * @param off the index of the first byte to start reading from
+     * @param len the total number of bytes to read
+     * @throws NullPointerException if {@code ba} is null
+     * @throws ArrayIndexOutOfBoundsException if the provided sub-range is
+     *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
-    public static int countPositives(byte[] ba, int off, int len) {
-        Objects.requireNonNull(ba, "ba");
-        Objects.checkFromIndexSize(off, len, ba.length);
+    static int countPositives(byte[] ba, int off, int len) {
+        checkFromIndexSize(off, len, requireNonNull(ba, "ba").length, AIOOBE_FORMATTER);
         return countPositives0(ba, off, len);
     }
 
@@ -105,29 +116,83 @@ class StringCoding {
         return len;
     }
 
+    /**
+     * Encodes as many ISO-8859-1 codepoints as possible from the source byte
+     * array containing characters encoded in UTF-16, into the destination byte
+     * array, assuming that the encoding is ISO-8859-1 compatible.
+     *
+     * @apiNote
+     *
+     * {@code sa} denotes the {@code byte[]} backing a {@link String}. When
+     * {@linkplain String#COMPACT_STRINGS compact strings} are disabled, a
+     * {@code char} is always represented by 2 bytes, i.e.,
+     * encoded in UTF-16. When enabled, if the content is ISO-8859-1, a
+     * {@code char} is represented by 1 byte; otherwise again by 2 bytes.
+     * <p>
+     * This method assumes that {@code sa} is encoded in UTF-16, and hence,
+     * each {@code char} maps to 2 bytes.
+     * </p><p>
+     * {@code sp} is encoded in ISO-8859-1. There each {@code byte} corresponds
+     * to a {@code char}.
+     * </p>
+     *
+     * @param sa the source byte array containing characters encoded in UTF-16
+     * @param sp the index of the <em>byte (not character!)</em> from the source array to start reading from
+     * @param da the target byte array
+     * @param dp the index of the target array to start writing to
+     * @param len the total number of <em>characters (not bytes!)</em> to be encoded
+     * @return the total number of <em>characters (not bytes!)</em> successfully encoded
+     * @throws NullPointerException if any of the provided arrays is null
+     * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
+     *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
+     */
+    static int encodeISOArray(byte[] sa, int sp, byte[] da, int dp, int len) {
+        checkFromIndexSize(sp, len << 1, requireNonNull(sa, "sa").length, AIOOBE_FORMATTER);
+        checkFromIndexSize(dp, len, requireNonNull(da, "da").length, AIOOBE_FORMATTER);
+        return encodeISOArray0(sa, sp, da, dp, len);
+    }
+
     @IntrinsicCandidate
-    public static int implEncodeISOArray(byte[] sa, int sp,
-                                         byte[] da, int dp, int len) {
+    private static int encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len) {
         int i = 0;
         for (; i < len; i++) {
             char c = StringUTF16.getChar(sa, sp++);
             if (c > '\u00FF')
                 break;
-            da[dp++] = (byte)c;
+            da[dp++] = (byte) c;
         }
         return i;
     }
 
+    /**
+     * Encodes as many ASCII codepoints as possible from the source
+     * character array into the destination byte array, assuming that
+     * the encoding is ASCII compatible.
+     *
+     * @param sa the source character array
+     * @param sp the index of the source array to start reading from
+     * @param da the target byte array
+     * @param dp the index of the target array to start writing to
+     * @param len the total number of characters to be encoded
+     * @return the total number of characters successfully encoded
+     * @throws NullPointerException if any of the provided arrays is null
+     * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
+     *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
+     */
+    static int encodeAsciiArray(char[] sa, int sp, byte[] da, int dp, int len) {
+        checkFromIndexSize(sp, len, requireNonNull(sa, "sa").length, AIOOBE_FORMATTER);
+        checkFromIndexSize(dp, len, requireNonNull(da, "da").length, AIOOBE_FORMATTER);
+        return encodeAsciiArray0(sa, sp, da, dp, len);
+    }
+
     @IntrinsicCandidate
-    public static int implEncodeAsciiArray(char[] sa, int sp,
-                                           byte[] da, int dp, int len)
-    {
+    private static int encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len) {
         int i = 0;
         for (; i < len; i++) {
             char c = sa[sp++];
             if (c >= '\u0080')
                 break;
-            da[dp++] = (byte)c;
+            da[dp++] = (byte) c;
         }
         return i;
     }

@@ -31,12 +31,16 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.util.Objects;
+import java.util.function.BiFunction;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+
+import static java.util.Objects.requireNonNull;
+import static jdk.internal.util.Preconditions.AIOOBE_FORMATTER;
+import static jdk.internal.util.Preconditions.checkFromIndexSize;
 
 public class ISO_8859_1
     extends Charset
@@ -142,39 +146,37 @@ public class ISO_8859_1
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
 
-        // Method possible replaced with a compiler intrinsic.
-        private static int encodeISOArray(char[] sa, int sp,
-                                          byte[] da, int dp, int len) {
-            if (len <= 0) {
-                return 0;
-            }
-            encodeISOArrayCheck(sa, sp, da, dp, len);
-            return implEncodeISOArray(sa, sp, da, dp, len);
+        /**
+         * Encodes as many ISO-8859-1 codepoints as possible from the source
+         * character array into the destination byte array, assuming that
+         * the encoding is ISO-8859-1 compatible.
+         *
+         * @param sa the source character array
+         * @param sp the index of the source array to start reading from
+         * @param da the target byte array
+         * @param dp the index of the target array to start writing to
+         * @param len the total number of characters to be encoded
+         * @return the total number of characters successfully encoded
+         * @throws NullPointerException if any of the provided arrays is null
+         * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
+         *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
+         */
+        private static int encodeISOArray(char[] sa, int sp, byte[] da, int dp, int len) {
+            checkFromIndexSize(sp, len, requireNonNull(sa, "sa").length, AIOOBE_FORMATTER);
+            checkFromIndexSize(dp, len, requireNonNull(da, "da").length, AIOOBE_FORMATTER);
+            return encodeISOArray0(sa, sp, da, dp, len);
         }
 
         @IntrinsicCandidate
-        private static int implEncodeISOArray(char[] sa, int sp,
-                                              byte[] da, int dp, int len)
-        {
+        private static int encodeISOArray0(char[] sa, int sp, byte[] da, int dp, int len) {
             int i = 0;
             for (; i < len; i++) {
                 char c = sa[sp++];
                 if (c > '\u00FF')
                     break;
-                da[dp++] = (byte)c;
+                da[dp++] = (byte) c;
             }
             return i;
-        }
-
-        private static void encodeISOArrayCheck(char[] sa, int sp,
-                                                byte[] da, int dp, int len) {
-            Objects.requireNonNull(sa);
-            Objects.requireNonNull(da);
-            Preconditions.checkIndex(sp, sa.length, Preconditions.AIOOBE_FORMATTER);
-            Preconditions.checkIndex(dp, da.length, Preconditions.AIOOBE_FORMATTER);
-
-            Preconditions.checkIndex(sp + len - 1, sa.length, Preconditions.AIOOBE_FORMATTER);
-            Preconditions.checkIndex(dp + len - 1, da.length, Preconditions.AIOOBE_FORMATTER);
         }
 
         private CoderResult encodeArrayLoop(CharBuffer src,
@@ -196,7 +198,7 @@ public class ISO_8859_1
             int slen = sl - sp;
             int len  = (dlen < slen) ? dlen : slen;
             try {
-                int ret = encodeISOArray(sa, sp, da, dp, len);
+                int ret = len <= 0 ? 0 : encodeISOArray(sa, sp, da, dp, len);
                 sp = sp + ret;
                 dp = dp + ret;
                 if (ret != len) {
