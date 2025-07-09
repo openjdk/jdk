@@ -26,6 +26,7 @@
  * @bug 8358592
  * @summary Regression test for -XX:+UseSSE42Intrinsics -XX:UseSSE=1 crash
  * @requires vm.debug
+ * @requires os.arch == "x86_64"
  * @library /test/lib
  * @run main/othervm Test8358592
  */
