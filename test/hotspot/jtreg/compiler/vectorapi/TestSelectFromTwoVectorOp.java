@@ -178,6 +178,9 @@ public class TestSelectFromTwoVectorOp {
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_8, ">0"},
+        applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Byte64() {
         ByteSelectFromTwoVectorKernel(ByteVector.SPECIES_64, ba, bb, bindex[0]);
     }
@@ -185,6 +188,9 @@ public class TestSelectFromTwoVectorOp {
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_16, ">0"},
+        applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     public static void selectFromTwoVector_Byte128() {
         ByteSelectFromTwoVectorKernel(ByteVector.SPECIES_128, ba, bb, bindex[1]);
     }
@@ -196,6 +202,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_32, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_32, ">0"},
+        applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=32"})
     public static void selectFromTwoVector_Byte256() {
         ByteSelectFromTwoVectorKernel(ByteVector.SPECIES_256, ba, bb, bindex[2]);
     }
@@ -206,6 +215,9 @@ public class TestSelectFromTwoVectorOp {
         applyIf = {"MaxVectorSize", ">=64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_64, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">=64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_64, ">0"},
+        applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public static void selectFromTwoVector_Byte512() {
         ByteSelectFromTwoVectorKernel(ByteVector.SPECIES_512, ba, bb, bindex[3]);
@@ -226,6 +238,9 @@ public class TestSelectFromTwoVectorOp {
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_4, ">0"},
+        applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Short64() {
         ShortSelectFromTwoVectorKernel(ShortVector.SPECIES_64, sa, sb, sindex[0]);
     }
@@ -235,6 +250,9 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"sve2", "true"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, ">0"},
+        applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     public static void selectFromTwoVector_Short128() {
         ShortSelectFromTwoVectorKernel(ShortVector.SPECIES_128, sa, sb, sindex[1]);
     }
@@ -246,6 +264,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_16, ">0"},
+        applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=32"})
     public static void selectFromTwoVector_Short256() {
         ShortSelectFromTwoVectorKernel(ShortVector.SPECIES_256, sa, sb, sindex[2]);
     }
@@ -256,6 +277,9 @@ public class TestSelectFromTwoVectorOp {
         applyIf = {"MaxVectorSize", ">=64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_32, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">=64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_32, ">0"},
+        applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public static void selectFromTwoVector_Short512() {
         ShortSelectFromTwoVectorKernel(ShortVector.SPECIES_512, sa, sb, sindex[3]);
@@ -275,7 +299,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_2, ">0"},
-        applyIfCPUFeature = {"asimd", "true"})
+        applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Int64() {
         IntSelectFromTwoVectorKernel(IntVector.SPECIES_64, ia, ib, iindex[0]);
     }
@@ -284,7 +309,8 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeature = {"sve2", "true"})
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     public static void selectFromTwoVector_Int128() {
         IntSelectFromTwoVectorKernel(IntVector.SPECIES_128, ia, ib, iindex[1]);
     }
@@ -294,7 +320,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
     public static void selectFromTwoVector_Int256() {
         IntSelectFromTwoVectorKernel(IntVector.SPECIES_256, ia, ib, iindex[2]);
@@ -305,7 +331,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_16, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public static void selectFromTwoVector_Int512() {
         IntSelectFromTwoVectorKernel(IntVector.SPECIES_512, ia, ib, iindex[3]);
@@ -325,7 +351,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_2, ">0"},
-        applyIfCPUFeature = {"asimd", "true"})
+        applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Float64() {
         FloatSelectFromTwoVectorKernel(FloatVector.SPECIES_64, fa, fb, findex[0]);
     }
@@ -334,7 +361,8 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeature = {"sve2", "true"})
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     public static void selectFromTwoVector_Float128() {
         FloatSelectFromTwoVectorKernel(FloatVector.SPECIES_128, fa, fb, findex[1]);
     }
@@ -344,7 +372,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
     public static void selectFromTwoVector_Float256() {
         FloatSelectFromTwoVectorKernel(FloatVector.SPECIES_256, fa, fb, findex[2]);
@@ -355,7 +383,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_16, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public static void selectFromTwoVector_Float512() {
         FloatSelectFromTwoVectorKernel(FloatVector.SPECIES_512, fa, fb, findex[3]);
@@ -377,7 +405,8 @@ public class TestSelectFromTwoVectorOp {
     @IR(failOn = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_2},
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_2, ">0"},
-        applyIfCPUFeature = {"sve2", "true"})
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     public static void selectFromTwoVector_Double128() {
         DoubleSelectFromTwoVectorKernel(DoubleVector.SPECIES_128, da, db, dindex[0]);
     }
@@ -387,7 +416,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
     public static void selectFromTwoVector_Double256() {
         DoubleSelectFromTwoVectorKernel(DoubleVector.SPECIES_256, da, db, dindex[1]);
@@ -398,7 +427,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public static void selectFromTwoVector_Double512() {
         DoubleSelectFromTwoVectorKernel(DoubleVector.SPECIES_512, da, db, dindex[2]);
@@ -420,7 +449,8 @@ public class TestSelectFromTwoVectorOp {
     @IR(failOn = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_2},
     applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_2, ">0"},
-        applyIfCPUFeature = {"sve2", "true"})
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     public static void selectFromTwoVector_Long128() {
         LongSelectFromTwoVectorKernel(LongVector.SPECIES_128, la, lb, lindex[0]);
     }
@@ -430,7 +460,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
     public static void selectFromTwoVector_Long256() {
         LongSelectFromTwoVectorKernel(LongVector.SPECIES_256, la, lb, lindex[1]);
@@ -441,7 +471,7 @@ public class TestSelectFromTwoVectorOp {
         applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
         applyIf = {"MaxVectorSize", ">=64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeature = {"sve2", "true"},
+        applyIfCPUFeatureOr = {"sve2", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public static void selectFromTwoVector_Long512() {
         LongSelectFromTwoVectorKernel(LongVector.SPECIES_512, la, lb, lindex[2]);
