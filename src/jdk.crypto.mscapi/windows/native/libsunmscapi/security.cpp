@@ -1313,6 +1313,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     EXPORT_BLOB(NCRYPT_PKCS7_ENVELOPE_BLOB);
     //EXPORT_BLOB(NCRYPTBUFFER_CERT_BLOB);
     //EXPORT_BLOB(NCRYPT_PKCS8_PRIVATE_KEY_BLOB);
+    /*
     BCryptBuffer bb;
     bb.BufferType = NCRYPTBUFFER_PKCS_SECRET;
     bb.cbBuffer = 18;
@@ -1321,6 +1322,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     bbd.ulVersion = 0;
     bbd.cBuffers = 1;
     bbd.pBuffers = &bb;
+    */
     if(::NCryptExportKey(hKey, NULL, NCRYPT_PKCS8_PRIVATE_KEY_BLOB, NULL,
             (PBYTE)buffer, 8192, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
         snprintf(header, sizeof(header), "NCRYPT_PKCS8_PRIVATE_KEY_BLOB %ls", NCRYPT_PKCS8_PRIVATE_KEY_BLOB);

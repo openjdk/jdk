@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,9 +245,9 @@ WGLGC_GetPixelFormatForDC(HDC hdc)
         db      = attrVals[2];
         alpha   = attrVals[3];
 
-        J2dRlsTrace5(J2D_TRACE_VERBOSE,
-            "[V]     pixfmt=%d db=%d alpha=%d depth=%d stencil=%d valid=",
-                     pixfmt, db, alpha, depth, stencil);
+        J2dRlsTrace(J2D_TRACE_VERBOSE, "[V]     "\
+                    "pixfmt=%d db=%d alpha=%d depth=%d stencil=%d valid=",
+                    pixfmt, db, alpha, depth, stencil);
 
         if ((depth + stencil) < minDepthPlusStencil) {
             J2dRlsTrace(J2D_TRACE_VERBOSE, "true\n");
@@ -264,9 +264,8 @@ WGLGC_GetPixelFormatForDC(HDC hdc)
         return 0;
     }
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
-        "WGLGC_GetPixelFormatForDC: chose %d as the best pixel format",
-                   chosenPixFmt);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "WGLGC_GetPixelFormatForDC: "\
+                  "chose %d as the best pixel format", chosenPixFmt);
 
     return chosenPixFmt;
 }
@@ -595,9 +594,9 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getWGLConfigInfo(JNIEnv *env,
     extstr = j2d_wglGetExtensionsStringARB(hdc);
     OGLContext_GetExtensionInfo(env, &caps);
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
-        "WGLGraphicsConfig_getWGLConfigInfo: OpenGL version=%s",
-                   (versionstr == NULL) ? "null" : (char *)versionstr);
+    J2dRlsTraceLn(J2D_TRACE_INFO,
+                  "WGLGraphicsConfig_getWGLConfigInfo: OpenGL version=%s",
+                  (versionstr == NULL) ? "null" : (char *)versionstr);
 
     if (!OGLContext_IsVersionSupported(versionstr)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,

@@ -27,6 +27,7 @@
  * @summary Test -XX:+AutoCreateSharedArchive on a copied JDK without default shared archive
  * @bug 8261455
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.flagless
  * @comment This test doesn't work on Windows because it depends on symlinks
  * @requires os.family != "windows"

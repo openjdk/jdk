@@ -54,6 +54,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #endif
@@ -141,6 +142,7 @@
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtanh,                                  address)                                      \
+  static_field(CompilerToVM::Data,             dcbrt,                                  address)                                      \
   static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
@@ -562,7 +564,30 @@
   declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
   declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
   declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
-                                                                          \
+                                                                                          \
+  declare_constant(nmethod::InvalidationReason::NOT_INVALIDATED)                          \
+  declare_constant(nmethod::InvalidationReason::C1_CODEPATCH)                             \
+  declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE)                            \
+  declare_constant(nmethod::InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING)               \
+  declare_constant(nmethod::InvalidationReason::C1_PREDICATE_FAILED_TRAP)                 \
+  declare_constant(nmethod::InvalidationReason::CI_REPLAY)                                \
+  declare_constant(nmethod::InvalidationReason::UNLOADING)                                \
+  declare_constant(nmethod::InvalidationReason::UNLOADING_COLD)                           \
+  declare_constant(nmethod::InvalidationReason::JVMCI_INVALIDATE)                         \
+  declare_constant(nmethod::InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT)         \
+  declare_constant(nmethod::InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE)             \
+  declare_constant(nmethod::InvalidationReason::JVMCI_REPROFILE)                          \
+  declare_constant(nmethod::InvalidationReason::MARKED_FOR_DEOPTIMIZATION)                \
+  declare_constant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER)                \
+  declare_constant(nmethod::InvalidationReason::NOT_USED)                                 \
+  declare_constant(nmethod::InvalidationReason::OSR_INVALIDATION_BACK_BRANCH)             \
+  declare_constant(nmethod::InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1)   \
+  declare_constant(nmethod::InvalidationReason::OSR_INVALIDATION_OF_LOWER_LEVEL)          \
+  declare_constant(nmethod::InvalidationReason::SET_NATIVE_FUNCTION)                      \
+  declare_constant(nmethod::InvalidationReason::UNCOMMON_TRAP)                            \
+  declare_constant(nmethod::InvalidationReason::WHITEBOX_DEOPTIMIZATION)                  \
+  declare_constant(nmethod::InvalidationReason::ZOMBIE)                                   \
+                                                                                          \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
   declare_constant(CodeInstaller::OSR_ENTRY)                              \
@@ -691,6 +716,7 @@
   declare_constant(ConstMethodFlags::_misc_reserved_stack_access)         \
   declare_constant(ConstMethodFlags::_misc_changes_current_thread)        \
   declare_constant(ConstMethodFlags::_misc_is_scoped)                     \
+  declare_constant(ConstMethodFlags::_misc_is_overpass)                   \
                                                                           \
   declare_constant(CounterData::count_off)                                \
                                                                           \
@@ -968,6 +994,13 @@
    declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_index_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset())) \
    declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_buffer_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset())) \
    declare_constant_with_value("ShenandoahThreadLocalData::card_table_offset", in_bytes(ShenandoahThreadLocalData::card_table_offset())) \
+   declare_constant_with_value("ShenandoahHeap::HAS_FORWARDED", ShenandoahHeap::HAS_FORWARDED)                                           \
+   declare_constant_with_value("ShenandoahHeap::MARKING", ShenandoahHeap::MARKING)                                                       \
+   declare_constant_with_value("ShenandoahHeap::EVACUATION", ShenandoahHeap::EVACUATION)                                                 \
+   declare_constant_with_value("ShenandoahHeap::UPDATE_REFS", ShenandoahHeap::UPDATE_REFS)                                               \
+   declare_constant_with_value("ShenandoahHeap::WEAK_ROOTS", ShenandoahHeap::WEAK_ROOTS)                                                 \
+   declare_constant_with_value("ShenandoahHeap::YOUNG_MARKING", ShenandoahHeap::YOUNG_MARKING)                                           \
+   declare_constant_with_value("ShenandoahHeap::OLD_MARKING", ShenandoahHeap::OLD_MARKING)                                               \
 
 #endif
 
