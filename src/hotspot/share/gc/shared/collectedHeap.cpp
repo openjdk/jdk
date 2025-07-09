@@ -55,10 +55,12 @@
 #include "runtime/perfData.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/heapDumper.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 class ClassLoaderData;
@@ -199,34 +201,6 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   if (_metaspace_log != nullptr) {
     _metaspace_log->log_gc(this, when);
   }
-}
-
-class CPUTimeThreadClosure : public ThreadClosure {
-private:
-  jlong _cpu_time = 0;
-
-public:
-  virtual void do_thread(Thread* thread) {
-    jlong cpu_time = os::thread_cpu_time(thread);
-    if (cpu_time != -1) {
-      _cpu_time += cpu_time;
-    }
-  }
-  jlong cpu_time() { return _cpu_time; };
-};
-
-double CollectedHeap::elapsed_gc_cpu_time() const {
-  double string_dedup_cpu_time = UseStringDeduplication ?
-    os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) : 0;
-
-  if (string_dedup_cpu_time == -1) {
-    string_dedup_cpu_time = 0;
-  }
-
-  CPUTimeThreadClosure cl;
-  gc_threads_do(&cl);
-
-  return (double)(cl.cpu_time() + _vmthread_cpu_time + string_dedup_cpu_time) / NANOSECS_PER_SEC;
 }
 
 void CollectedHeap::print_before_gc() const {
@@ -633,35 +607,54 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::log_gc_cpu_time() const {
-  LogTarget(Info, gc, cpu) out;
-  if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
-    double process_cpu_time = os::elapsed_process_cpu_time();
-    double gc_cpu_time = elapsed_gc_cpu_time();
+double calc_usage(double component_cpu_time, double process_cpu_time) {
+  assert(component_cpu_time < process_cpu_time && component_cpu_time != 0, "Invalid CPU time");
+  return 100 * component_cpu_time / process_cpu_time;
+}
 
-    if (process_cpu_time == -1 || gc_cpu_time == -1) {
-      log_warning(gc, cpu)("Could not sample CPU time");
-      return;
-    }
+void CollectedHeap::log_cpu_time() const {
+  if (!os::is_thread_cpu_time_supported()) {
+    return;
+  }
 
-    double usage;
-    if (gc_cpu_time > process_cpu_time ||
-        process_cpu_time == 0 || gc_cpu_time == 0) {
-      // This can happen e.g. for short running processes with
-      // low CPU utilization
-      usage = 0;
-    } else {
-      usage = 100 * gc_cpu_time / process_cpu_time;
+  double process_cpu_time = os::elapsed_process_cpu_time();
+  if (process_cpu_time == 0 || process_cpu_time == -1) {
+    // 0 can happen e.g. for short running processes with
+    // low CPU utilization
+    return;
+  }
+
+  LogTarget(Info, cpu) cpuLog;
+  if (cpuLog.is_enabled()) {
+    double vm_thread_cpu_time = CPUTimeUsage::Runtime::vm_thread() / NANOSECS_PER_SEC;
+    double gc_cpu_time = CPUTimeUsage::GC::total() / NANOSECS_PER_SEC;
+    double gc_threads_cpu_time = CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
+    double gc_vm_thread_cpu_time = CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
+    if (gc_cpu_time < process_cpu_time) {
+      cpuLog.print("=== CPU time Statistics =============================================================");
+      cpuLog.print("                                                                            CPUs");
+      cpuLog.print("                                                               s       %%  utilized");
+      cpuLog.print("   Process");
+      cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / os::elapsedTime());
+      cpuLog.print("     VM Thread                    %30.4f  %6.2f  %8.1f", vm_thread_cpu_time, calc_usage(vm_thread_cpu_time, process_cpu_time), vm_thread_cpu_time / os::elapsedTime());
+      cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, calc_usage(gc_cpu_time, process_cpu_time), gc_cpu_time / os::elapsedTime());
+      cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, calc_usage(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / os::elapsedTime());
+      cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, calc_usage(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / os::elapsedTime());
+
+      if (UseStringDeduplication) {
+        double string_dedup_cpu_time = CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
+        cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", string_dedup_cpu_time, calc_usage(string_dedup_cpu_time, process_cpu_time), string_dedup_cpu_time / os::elapsedTime());
+      }
+      cpuLog.print("=====================================================================================");
+
     }
-    out.print("GC CPU usage: %.2f%% (Process: %.4fs GC: %.4fs)", usage, process_cpu_time, gc_cpu_time);
   }
 }
 
 void CollectedHeap::before_exit() {
   print_tracing_info();
 
-  // Log GC CPU usage.
-  log_gc_cpu_time();
+  log_cpu_time();
 
   // Stop any on-going concurrent work and prepare for exit.
   stop();
