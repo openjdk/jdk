@@ -63,11 +63,10 @@ import jdk.jfr.consumer.RecordingFile;
  */
 public class TestIOTopFrame {
 
-    // Lines commented with a number indicate that they emit an event:
-    // The invocation of the 54following methods results in two events:
-    // RandomAccessFile::readUTF()
-    // SocketInputStream::readNBytes(...)
-    
+    // Lines commented with a number indicate that they emit an event.
+    // The invocation of the following RandomAccessFile::readUTF() and
+    // SocketInputStream::readNBytes(...) result in two events.
+    //
     public static void main(String... args) throws Exception {
         testFileWrite();
         testFileRead();
