@@ -2232,8 +2232,12 @@ HeapWord* ShenandoahFreeSet::par_allocate_in_for_mutator(ShenandoahHeapRegion* r
   return obj;
 }
 
-void ShenandoahFreeSet::retire_region(ShenandoahHeapRegion* region, ShenandoahFreeSetPartitionId partition_id) {
-  _partitions.retire_from_partition(partition_id, region->index(), region->used());
+void ShenandoahFreeSet::retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id) {
+  static const size_t min_capacity = (size_t) (ShenandoahHeapRegion::region_size_bytes() * (1.0 - 1.0 / ShenandoahEvacWaste));
+  const size_t ac = alloc_capacity(region);
+  if (((ac < min_capacity)) || (ac < PLAB::min_size() * HeapWordSize)) {
+    _partitions.retire_from_partition(partition_id, region->index(), region->used());
+  }
 }
 
 class ShenandoahSingleObjAllocationClosure : public ShenandoahHeapRegionBreakableIterClosure {
@@ -2322,7 +2326,7 @@ public:
         _req.set_actual_size(actual_size);
         _in_new_region = true;
         if (r->free() < ShenandoahHeapRegion::region_size_bytes() / 2) {
-          if (r->free() < PLAB::min_size()) ShenandoahHeap::heap()->free_set()->retire_region(r, ShenandoahFreeSetPartitionId::Mutator);
+          ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(r, ShenandoahFreeSetPartitionId::Mutator);
           return false;
         }
       }
@@ -2339,7 +2343,7 @@ public:
         _in_new_region = false;
       }
       if (r->free() < ShenandoahHeapRegion::region_size_bytes() / 2) {
-        if (r->free() < PLAB::min_size()) ShenandoahHeap::heap()->free_set()->retire_region(r, ShenandoahFreeSetPartitionId::Mutator);
+        ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(r, ShenandoahFreeSetPartitionId::Mutator);
         return false;
       }
       r->reserve_for_direct_allocation();

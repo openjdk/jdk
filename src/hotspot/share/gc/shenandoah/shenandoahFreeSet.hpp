@@ -518,7 +518,7 @@ public:
   template<bool IS_TLAB>
   HeapWord* par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
 
-  void retire_region(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
+  void retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
    *
