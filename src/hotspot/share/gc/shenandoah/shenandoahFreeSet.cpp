@@ -2298,7 +2298,7 @@ public:
 #ifdef ASSERT
     uint nonnull_shared_region_address_count = 0;
     for (uint i = 0; i < shared_region_address_count; i++) {
-      nonnull_shared_region_address_count++;
+      if (_shared_region_addresses[i] != nullptr) nonnull_shared_region_address_count++;
     }
     assert(nonnull_shared_region_address_count == request_count, "Must be");
 #endif
