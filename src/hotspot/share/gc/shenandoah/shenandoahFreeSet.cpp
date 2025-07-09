@@ -2173,7 +2173,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
         }
       }
 
-      if (r == nullptr || r->free() < PLAB::min_size()) {
+      if (r == nullptr || r->reserved_for_direct_allocation()) {
         // Region is ready to retire
         retirable_regions[count] = r;
         retirable_shared_regions_addresses[count] = shared_region_address;
