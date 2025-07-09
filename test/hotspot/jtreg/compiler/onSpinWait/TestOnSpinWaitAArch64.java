@@ -105,38 +105,6 @@ public class TestOnSpinWaitAArch64 {
       }
     }
 
-    private static int countInstructions(Iterator<String> iter, String instr) {
-        String line = null;
-        int foundInstCount = 0;
-        while (iter.hasNext()) {
-            line = iter.next().trim();
-            if (line.startsWith(";; }")) {
-                break;
-            }
-
-            if (!line.startsWith("0x")) {
-                continue;
-            }
-            int pos = line.indexOf(':');
-            if (pos == -1 || pos == line.length() - 1) {
-                continue;
-            }
-
-            line = line.substring(pos + 1).replaceAll("\\s", "");
-            if (line.startsWith(";")) {
-                continue;
-            }
-
-            for (String s : line.split("\\|")) {
-                if (!s.startsWith(instr)) {
-                    return foundInstCount;
-                }
-                foundInstCount++;
-            }
-        }
-        return foundInstCount;
-    }
-
     // The expected output for a spin wait with three NOPs
     // if the hsdis library is available:
     //
@@ -146,44 +114,63 @@ public class TestOnSpinWaitAArch64 {
     // 0x0000000111dfa594:   nop
     // ;; }
     //
-    // We work as follows:
-    // 1. Check whether printed instructions are disassembled ("[Disassembly]").
-    // 2. Look for the block comment ';; spin_wait {'.
-    // 3. Count spin wait instructions.
-    private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int spinWaitInstCount) {
+    private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int expectedCount) {
         Iterator<String> iter = output.asLines().listIterator();
-        String line = null;
+
+        // 1. Check whether printed instructions are disassembled
         boolean isDisassembled = false;
         while (iter.hasNext()) {
-            line = iter.next();
+            String line = iter.next();
             if (line.contains("[Disassembly]")) {
                 isDisassembled = true;
                 break;
             }
-
             if (line.contains("[MachCode]")) {
                 break;
             }
         }
 
-        boolean foundSpinWaitBlock = false;
+        // 2. Look for the block comment
+        boolean foundHead = false;
         while (iter.hasNext()) {
-            line = iter.next();
+            String line = iter.next().trim();
             if (line.contains(";; spin_wait {")) {
-                foundSpinWaitBlock = true;
+                foundHead = true;
                 break;
             }
         }
-
-        if (!foundSpinWaitBlock) {
-            throw new RuntimeException("Block comment ';; spin_wait {' not found");
+        if (!foundHead) {
+            throw new RuntimeException("Block comment not found");
         }
 
-        final String expectedInstInOutput = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
-        final int foundInstCount = countInstructions(iter, expectedInstInOutput);
+        // 3. Count spin wait instructions
+        final String expectedInst = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
+        int foundCount = 0;
+        while (iter.hasNext()) {
+            String line = iter.next().trim();
+            if (line.startsWith(";;}")) {
+                break;
+            }
+            if (!line.startsWith("0x")) {
+                continue;
+            }
+            int pos = line.indexOf(':');
+            if (pos == -1 || pos == line.length() - 1) {
+                continue;
+            }
+            line = line.substring(pos + 1).replaceAll("\\s", "");
+            if (line.startsWith(";")) {
+                continue;
+            }
+            for (String s : line.split("\\|")) {
+                if (s.startsWith(expectedInst)) {
+                    foundCount++;
+                }
+            }
+        }
 
-        if (foundInstCount != spinWaitInstCount) {
-            throw new RuntimeException("Expect " + spinWaitInstCount + " " + spinWaitInst + " instructions. Found: " + foundInstCount);
+        if (foundCount != expectedCount) {
+            throw new RuntimeException("Expected " + expectedCount + " " + spinWaitInst + " instructions. Found: " + foundCount);
         }
     }
 
