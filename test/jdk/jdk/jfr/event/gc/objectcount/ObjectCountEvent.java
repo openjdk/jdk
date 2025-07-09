@@ -29,6 +29,7 @@ public class ObjectCountEvent {
 
         Path tempFile = Path.of("temp.jfr");
         recording.dump(tempFile); // Forces chunk rotation
+        System.gc();
         recording.stop();
 
         Files.deleteIfExists(tempFile);
