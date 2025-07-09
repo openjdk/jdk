@@ -194,11 +194,11 @@
   void reconstruct_frame_pointer(Register rtmp);
 
   // Select from a table of two vectors
-  void select_from_two_vectors_Neon(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+  void select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                     FloatRegister index, FloatRegister tmp, BasicType bt,
                                     bool isQ);
 
-  void select_from_two_vectors_SVE(FloatRegister dst, FloatRegister src1, FloatRegister src2,
-                                   FloatRegister index, FloatRegister tmp, BasicType bt,
+  void select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                                   FloatRegister index, FloatRegister tmp, SIMD_RegVariant T,
                                    unsigned length_in_bytes);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

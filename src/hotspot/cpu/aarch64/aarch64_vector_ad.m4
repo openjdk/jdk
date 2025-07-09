@@ -5173,7 +5173,7 @@ instruct vselect_from_two_vectors_Neon_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 s
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_Neon($dst$$FloatRegister, $src1$$FloatRegister,
+    __ select_from_two_vectors_neon($dst$$FloatRegister, $src1$$FloatRegister,
                                     $src2$$FloatRegister, $index$$FloatRegister,
                                     $tmp$$FloatRegister, bt, /* isQ */ length_in_bytes == 16);
   %}
@@ -5192,11 +5192,11 @@ instruct vselect_from_two_vectors_SVE_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 sr
   match(Set dst (SelectFromTwoVector (Binary index src1) src2));
   format %{ "vselect_from_two_vectors_SVE_$1_$2 $dst, $src1, $src2, $index\t# KILL $tmp" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_SVE($dst$$FloatRegister, $src1$$FloatRegister,
+    __ select_from_two_vectors_sve($dst$$FloatRegister, $src1$$FloatRegister,
                                    $src2$$FloatRegister, $index$$FloatRegister,
-                                   $tmp$$FloatRegister, bt, length_in_bytes);
+                                   $tmp$$FloatRegister, get_reg_variant(this),
+                                   length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}')dnl

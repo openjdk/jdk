@@ -2854,7 +2854,7 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
   }
 }
 
-void C2_MacroAssembler::select_from_two_vectors_Neon(FloatRegister dst, FloatRegister src1,
+void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                                      FloatRegister src2, FloatRegister index,
                                                      FloatRegister tmp, BasicType bt, bool isQ) {
 
@@ -2881,9 +2881,7 @@ void C2_MacroAssembler::select_from_two_vectors_Neon(FloatRegister dst, FloatReg
   // offsets - dst = [0x0504, 0x0b0a, 0x0302, 0x0100]
   // Use these offsets in the "tbl" instruction to select chunks of 2B.
 
-  bool is_byte = (bt == T_BYTE);
-
-  if (is_byte) {
+  if (bt == T_BYTE) {
     if (isQ) {
       assert(UseSVE <= 1, "sve must be <= 1");
       // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
@@ -2898,12 +2896,12 @@ void C2_MacroAssembler::select_from_two_vectors_Neon(FloatRegister dst, FloatReg
       tbl(dst, size1, tmp, 1, index);
     }
   } else {
-    int elemSize = (bt == T_SHORT) ? 2 : 4;
-    uint64_t tblOffset = (bt == T_SHORT) ? 0x0100u : 0x03020100u;
+    int elem_size = (bt == T_SHORT) ? 2 : 4;
+    uint64_t tbl_offset = (bt == T_SHORT) ? 0x0100u : 0x03020100u;
 
-    mov(tmp, size1, elemSize);
+    mov(tmp, size1, elem_size);
     mulv(dst, size2, index, tmp);
-    mov(tmp, size2, tblOffset);
+    mov(tmp, size2, tbl_offset);
     addv(dst, size1, dst, tmp); // "dst" now contains the processed index elements
                                 // to select a set of 2B/4B
     if (isQ) {
@@ -2922,19 +2920,17 @@ void C2_MacroAssembler::select_from_two_vectors_Neon(FloatRegister dst, FloatReg
   }
 }
 
-void C2_MacroAssembler::select_from_two_vectors_SVE(FloatRegister dst, FloatRegister src1,
+void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1,
                                                     FloatRegister src2, FloatRegister index,
-                                                    FloatRegister tmp, BasicType bt,
+                                                    FloatRegister tmp, SIMD_RegVariant T,
                                                     unsigned vector_length_in_bytes) {
-  SIMD_RegVariant size = elemType_to_regVariant(bt);
-
   if (vector_length_in_bytes == 8) {
     assert(UseSVE >= 1, "sve must be >= 1");
     ins(tmp, D, src1, 0, 0);
     ins(tmp, D, src2, 1, 0);
-    sve_tbl(dst, size, tmp, index);
+    sve_tbl(dst, T, tmp, index);
   } else {  // UseSVE == 2 and vector_length_in_bytes > 8
     assert(UseSVE == 2, "must be sve2");
-    sve_tbl(dst, size, src1, src2, index);
+    sve_tbl(dst, T, src1, src2, index);
   }
 }

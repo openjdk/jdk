@@ -39,7 +39,7 @@ import jdk.test.lib.Utils;
  * @bug 8348868
  * @library /test/lib /
  * @summary Verify that SelectFromTwoVector IR node is correctly being
- *          generated for Neon and SVE
+ *          generated on aarch64 and x86
  * @modules jdk.incubator.vector
  * @run driver compiler.vectorapi.TestSelectFromTwoVectorOp
  */
@@ -177,7 +177,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeature = {"asimd", "true"})
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">=8"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=8"})
@@ -187,7 +188,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_16, ">0"},
-        applyIfCPUFeature = {"asimd", "true"})
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -237,7 +239,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeature = {"asimd", "true"})
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">=8"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=8"})
@@ -247,9 +250,11 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
+        applyIf = {"MaxVectorSize", ">=16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeature = {"sve2", "true"})
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -307,7 +312,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
+        applyIf = {"MaxVectorSize", ">=16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -359,7 +365,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
+        applyIf = {"MaxVectorSize", ">=16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -403,7 +410,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(failOn = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_2},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
+        applyIf = {"MaxVectorSize", ">=16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_2, ">0"},
         applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -447,7 +455,8 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(failOn = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_2},
-    applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
+        applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"},
+        applyIf = {"MaxVectorSize", ">=16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_2, ">0"},
         applyIfCPUFeatureOr = {"sve2", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
