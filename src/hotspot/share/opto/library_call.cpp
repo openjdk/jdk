@@ -2375,7 +2375,8 @@ LibraryCallKit::SavedState::SavedState(LibraryCallKit* kit) :
   _kit(kit),
   _sp(kit->sp()),
   _jvms(kit->jvms()),
-  _map(kit->clone_map())
+  _map(kit->clone_map()),
+  _discarded(false)
 {
   for (DUIterator_Fast imax, i = kit->control()->fast_outs(imax); i < imax; i++) {
     Node* out = kit->control()->fast_out(i);
@@ -2386,7 +2387,7 @@ LibraryCallKit::SavedState::SavedState(LibraryCallKit* kit) :
 }
 
 LibraryCallKit::SavedState::~SavedState() {
-  if (discarded) {
+  if (_discarded) {
     return;
   }
   _kit->jvms()->set_map(_map);
@@ -2407,7 +2408,7 @@ LibraryCallKit::SavedState::~SavedState() {
 }
 
 void LibraryCallKit::SavedState::discard() {
-  discarded = true;
+  _discarded = true;
 }
 
 bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {

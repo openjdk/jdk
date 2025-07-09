@@ -144,7 +144,7 @@ class LibraryCallKit : public GraphKit {
     JVMState* _jvms;
     SafePointNode* _map;
     Unique_Node_List _ctrl_succ;
-    bool discarded = false;
+    bool _discarded;
 
   public:
     SavedState(LibraryCallKit*);
