@@ -147,7 +147,8 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeature = {"avx2", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
+        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
     public void testVectorIRSharing3(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);

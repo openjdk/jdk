@@ -70,7 +70,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
@@ -332,6 +331,13 @@ void print_statistics() {
 
   print_bytecode_count();
 
+  if (PrintVMInfoAtExit) {
+    // Use an intermediate stream to prevent deadlocking on tty_lock
+    stringStream ss;
+    VMError::print_vm_info(&ss);
+    tty->print_raw(ss.base());
+  }
+
   if (PrintSystemDictionaryAtExit) {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
@@ -463,17 +469,13 @@ void before_exit(JavaThread* thread, bool halt) {
   // PeriodicTasks to reduce the likelihood of races.
   WatcherThread::stop();
 
-  // shut down the StatSampler task
-  StatSampler::disengage();
-  StatSampler::destroy();
-
   NativeHeapTrimmer::cleanup();
 
-  // Stop concurrent GC threads
-  Universe::heap()->stop();
+  // Run before exit and then stop concurrent GC threads
+  Universe::heap()->before_exit();
 
   // Print GC/heap related information.
-  Log(gc, heap, exit) log;
+  Log(gc, exit) log;
   if (log.is_info()) {
     LogStream ls_info(log.info());
     Universe::print_on(&ls_info);
@@ -511,7 +513,6 @@ void before_exit(JavaThread* thread, bool halt) {
   os::terminate_signal_thread();
 
   print_statistics();
-  Universe::heap()->print_tracing_info();
 
   { MutexLocker ml(BeforeExit_lock);
     _before_exit_status = BEFORE_EXIT_DONE;

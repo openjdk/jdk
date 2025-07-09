@@ -2350,11 +2350,25 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
+// Perform refining of strip mined loop nodes in the macro nodes list.
+void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
+   for (int i = C->macro_count(); i > 0; i--) {
+    Node* n = C->macro_node(i - 1);
+    if (n->is_OuterStripMinedLoop()) {
+      n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
+    }
+  }
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
+
+  if (StressMacroElimination) {
+    C->shuffle_macro_nodes();
+  }
   NOT_PRODUCT(int membar_before = count_MemBar(C);)
 
   // Before elimination may re-mark (change to Nested or NonEscObj)
@@ -2394,10 +2408,12 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
+      if (success) {
+        C->print_method(PHASE_AFTER_MACRO_ELIMINATION_STEP, 5, n);
+      }
     }
   }
   // Next, attempt to eliminate allocations
-  _has_locks = false;
   progress = true;
   while (progress) {
     progress = false;
@@ -2421,7 +2437,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Lock:
       case Node::Class_Unlock:
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
-        _has_locks = true;
         break;
       case Node::Class_ArrayCopy:
         break;
@@ -2444,6 +2459,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
+      if (success) {
+        C->print_method(PHASE_AFTER_MACRO_ELIMINATION_STEP, 5, n);
+      }
     }
   }
 #ifndef PRODUCT
@@ -2454,18 +2472,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 #endif
 }
 
-//------------------------------expand_macro_nodes----------------------
-//  Returns true if a failure occurred.
-bool PhaseMacroExpand::expand_macro_nodes() {
-  // Do not allow new macro nodes once we started to expand
-  C->reset_allow_macro_nodes();
-  if (StressMacroExpansion) {
-    C->shuffle_macro_nodes();
+void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
+  if (C->macro_count() == 0) {
+    return;
   }
-  // Last attempt to eliminate macro nodes.
-  eliminate_macro_nodes();
-  if (C->failing())  return true;
-
+  refine_strip_mined_loop_macro_nodes();
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;
   while (progress) {
@@ -2509,7 +2520,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, _igvn.intcon(1));
 #endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
-        n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
         success = true;
       } else if (n->Opcode() == Op_MaxL) {
@@ -2528,9 +2538,17 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
       progress = progress || success;
       if (success) {
-        C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
+        C->print_method(PHASE_AFTER_MACRO_ELIMINATION_STEP, 5, n);
       }
     }
+  }
+}
+
+//------------------------------expand_macro_nodes----------------------
+//  Returns true if a failure occurred.
+bool PhaseMacroExpand::expand_macro_nodes() {
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
   }
 
   // Clean up the graph so we're less likely to hit the maximum node

@@ -25,7 +25,7 @@
  * @test
  * @bug     6422215
  * @summary JSR 199: What happens if a directory is missing
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

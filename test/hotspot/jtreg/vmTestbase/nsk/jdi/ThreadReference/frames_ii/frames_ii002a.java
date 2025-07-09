@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ public class frames_ii002a {
     }
 
     //====================================================== test program
+
+    static Threadframes_ii002a test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -94,7 +97,7 @@ public class frames_ii002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadframes_ii002a test_thread =
+                         test_thread =
                              new Threadframes_ii002a("testedThread");
                          log1("       thread2 is created");
 

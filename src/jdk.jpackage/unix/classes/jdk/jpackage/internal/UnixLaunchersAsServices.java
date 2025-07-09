@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,35 +24,33 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Application;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.AppImageFile.LauncherInfo;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
  * Helper to install launchers as services for Unix installers.
  */
 class UnixLaunchersAsServices extends ShellCustomAction {
 
-    UnixLaunchersAsServices(PlatformPackage thePackage,
-            List<String> requiredPackages, Map<String, Object> params,
-            Function<LauncherInfo, UnixLauncherAsService> factory) throws
-            IOException {
+    UnixLaunchersAsServices(Path outputRoot, Application app, List<String> requiredPackages,
+            Function<Launcher, UnixLauncherAsService> factory) {
 
-        this.thePackage = thePackage;
-        this.requiredPackages = requiredPackages;
+        Objects.requireNonNull(factory);
+        this.outputRoot = Objects.requireNonNull(outputRoot);
+        this.requiredPackages = Objects.requireNonNull(requiredPackages);
 
         // Read launchers information
-        launchers = AppImageFile.getLaunchers(PREDEFINED_APP_IMAGE.fetchFrom(
-                params), params).stream().filter(LauncherInfo::isService).map(
-                factory::apply).toList();
+        launchers = app.launchers().stream().filter(Launcher::isService).map(factory::apply).toList();
     }
 
     @Override
@@ -93,8 +91,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         data.put(COMMANDS_UNINSTALL, strigifier.apply("unregister_services"));
 
         for (var launcher : launchers) {
-            launcher.getResource().saveToFile(launcher.descriptorFilePath(
-                    thePackage.sourceRoot()));
+            launcher.getResource().saveToFile(launcher.descriptorFilePath(outputRoot));
         }
 
         return data;
@@ -106,15 +103,14 @@ class UnixLaunchersAsServices extends ShellCustomAction {
 
     abstract static class UnixLauncherAsService extends LauncherAsService {
 
-        UnixLauncherAsService(String name, Map<String, Object> mainParams,
-                OverridableResource resource) {
-            super(name, mainParams, resource);
+        UnixLauncherAsService(Application app, Launcher launcher, OverridableResource resource) {
+            super(app, launcher, resource);
         }
 
         abstract Path descriptorFilePath(Path root);
     }
 
-    private final PlatformPackage thePackage;
+    private final Path outputRoot;
     private final List<String> requiredPackages;
     private final List<UnixLauncherAsService> launchers;
     private final Enquoter enqouter = Enquoter.forShellLiterals();

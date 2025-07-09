@@ -31,6 +31,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -58,6 +59,13 @@ import sun.nio.cs.UTF_8;
  * {@link #printf printf()} as well as the read, format and write operations
  * on the objects returned by {@link #reader()} and {@link #writer()} may
  * block in multithreaded scenarios.
+ * <p>
+ * Read and write operations use the {@code Charset}s specified by
+ * {@link System##stdin.encoding stdin.encoding} and {@link
+ * System##stdout.encoding stdout.encoding}, respectively. The
+ * {@code Charset} used for write operations can also be retrieved using
+ * the {@link #charset()} method. Since {@code Console} is intended for
+ * interactive use on a terminal, these charsets are typically the same.
  * <p>
  * Operations that format strings are locale sensitive, using either the
  * specified {@code Locale}, or the
@@ -509,17 +517,15 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Returns the {@link java.nio.charset.Charset Charset} object used for
-     * the {@code Console}.
+     * {@return the {@link java.nio.charset.Charset Charset} object used for
+     * the write operations on this {@code Console}}
      * <p>
-     * The returned charset corresponds to the input and output source
-     * (e.g., keyboard and/or display) specified by the host environment or user,
-     * which defaults to the one based on {@link System##stdout.encoding stdout.encoding}.
-     * It may not necessarily be the same as the default charset returned from
+     * The returned charset is used for encoding the data that is sent to
+     * the output (e.g., display), specified by the host environment or user.
+     * It defaults to the one based on {@link System##stdout.encoding stdout.encoding},
+     * and may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
      *
-     * @return a {@link java.nio.charset.Charset Charset} object used for the
-     *          {@code Console}
      * @since 17
      */
     public Charset charset() {
@@ -549,8 +555,10 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     private static final boolean istty = istty();
-    static final Charset CHARSET =
-        Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
+    private static final Charset STDIN_CHARSET =
+        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE);
+    private static final Charset STDOUT_CHARSET =
+        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {
         // Set up JavaIOAccess in SharedSecrets
@@ -579,7 +587,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
             for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
                 if (consModName.equals(jcp.getClass().getModule().getName())) {
-                    var jc = jcp.console(istty, CHARSET);
+                    var jc = jcp.console(istty, STDIN_CHARSET, STDOUT_CHARSET);
                     if (jc != null) {
                         c = new ProxyingConsole(jc);
                     }
@@ -591,7 +599,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         // If not found, default to built-in Console
         if (istty && c == null) {
-            c = new ProxyingConsole(new JdkConsoleImpl(CHARSET));
+            c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
         }
 
         return c;

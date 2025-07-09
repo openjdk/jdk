@@ -32,6 +32,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
@@ -98,6 +99,9 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -198,8 +202,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  // Default to max heap size.
-  _soft_max_size = _num_regions * reg_size_bytes;
+  _soft_max_size = SoftMaxHeapSize;
 
   _committed = _initial_size;
 
@@ -399,11 +402,10 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
-  _free_set = new ShenandoahFreeSet(this, _num_regions);
 
   {
     ShenandoahHeapLocker locker(lock());
-
+    _free_set = new ShenandoahFreeSet(this, _num_regions);
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
@@ -522,7 +524,7 @@ void ShenandoahHeap::initialize_mode() {
 }
 
 void ShenandoahHeap::initialize_heuristics() {
-  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
+  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity());
   _global_generation->initialize_heuristics(mode());
 }
 
@@ -1243,9 +1245,9 @@ public:
   }
 };
 
-class ShenandoahGCStatePropagator : public HandshakeClosure {
+class ShenandoahGCStatePropagatorHandshakeClosure : public HandshakeClosure {
 public:
-  explicit ShenandoahGCStatePropagator(char gc_state) :
+  explicit ShenandoahGCStatePropagatorHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah GC State Change"),
     _gc_state(gc_state) {}
 
@@ -1256,9 +1258,9 @@ private:
   char _gc_state;
 };
 
-class ShenandoahPrepareForUpdateRefs : public HandshakeClosure {
+class ShenandoahPrepareForUpdateRefsHandshakeClosure : public HandshakeClosure {
 public:
-  explicit ShenandoahPrepareForUpdateRefs(char gc_state) :
+  explicit ShenandoahPrepareForUpdateRefsHandshakeClosure(char gc_state) :
     HandshakeClosure("Shenandoah Prepare for Update Refs"),
     _retire(ResizeTLAB), _propagator(gc_state) {}
 
@@ -1270,7 +1272,7 @@ public:
   }
 private:
   ShenandoahRetireGCLABClosure _retire;
-  ShenandoahGCStatePropagator _propagator;
+  ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
@@ -1293,7 +1295,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   }
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
-  ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
+  ShenandoahPrepareForUpdateRefsHandshakeClosure prepare_for_update_refs(_gc_state.raw_value());
 
   // The handshake won't touch worker threads (or control thread, or VM thread), so do those separately.
   Threads::non_java_threads_do(&prepare_for_update_refs);
@@ -1325,7 +1327,7 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
     set_gc_state_concurrent(WEAK_ROOTS, false);
   }
 
-  ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+  ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
   Threads::non_java_threads_do(&propagator);
   if (handshake_closure == nullptr) {
     Handshake::execute(&propagator);
@@ -1497,6 +1499,9 @@ void ShenandoahHeap::labs_make_parsable() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     ThreadLocalAllocBuffer& tlab = t->tlab();
     tlab.make_parsable();
+    if (ZeroTLAB) {
+      t->retire_tlab();
+    }
     cl.do_thread(t);
   }
 
@@ -1514,10 +1519,9 @@ void ShenandoahHeap::tlabs_retire(bool resize) {
   ThreadLocalAllocStats stats;
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    ThreadLocalAllocBuffer& tlab = t->tlab();
-    tlab.retire(&stats);
+    t->retire_tlab(&stats);
     if (resize) {
-      tlab.resize();
+      t->tlab().resize();
     }
   }
 
@@ -2016,14 +2020,14 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   }
 }
 
-class ShenandoahRendezvousClosure : public HandshakeClosure {
+class ShenandoahRendezvousHandshakeClosure : public HandshakeClosure {
 public:
-  inline ShenandoahRendezvousClosure(const char* name) : HandshakeClosure(name) {}
+  inline ShenandoahRendezvousHandshakeClosure(const char* name) : HandshakeClosure(name) {}
   inline void do_thread(Thread* thread) {}
 };
 
 void ShenandoahHeap::rendezvous_threads(const char* name) {
-  ShenandoahRendezvousClosure cl(name);
+  ShenandoahRendezvousHandshakeClosure cl(name);
   Handshake::execute(&cl);
 }
 
@@ -2065,7 +2069,7 @@ void ShenandoahHeap::prepare_update_heap_references() {
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
-    ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+    ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
   }
@@ -2232,6 +2236,9 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
+
+      // Clean JVMCI metadata handles.
+      JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
       uint num_workers = _workers->active_workers();
       ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);

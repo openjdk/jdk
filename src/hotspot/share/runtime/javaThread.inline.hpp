@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,12 +57,6 @@ inline void JavaThread::clear_suspend_flag(SuspendFlags f) {
   while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
 }
 
-inline void JavaThread::set_trace_flag() {
-  set_suspend_flag(_trace_flag);
-}
-inline void JavaThread::clear_trace_flag() {
-  clear_suspend_flag(_trace_flag);
-}
 inline void JavaThread::set_obj_deopt_flag() {
   set_suspend_flag(_obj_deopt);
 }
@@ -71,21 +65,21 @@ inline void JavaThread::clear_obj_deopt_flag() {
 }
 
 #if INCLUDE_JVMTI
-inline void JavaThread::set_carrier_thread_suspended() {
-  _carrier_thread_suspended = true;
+inline bool JavaThread::set_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, false, true) == false;
 }
-inline void JavaThread::clear_carrier_thread_suspended() {
-  _carrier_thread_suspended = false;
+inline bool JavaThread::clear_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, true, false) == true;
 }
 #endif
 
-class AsyncExceptionHandshake : public AsyncHandshakeClosure {
+class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   OopHandle _exception;
  public:
-  AsyncExceptionHandshake(OopHandle& o, const char* name = "AsyncExceptionHandshake")
+  AsyncExceptionHandshakeClosure(OopHandle& o, const char* name = "AsyncExceptionHandshakeClosure")
   : AsyncHandshakeClosure(name), _exception(o) { }
 
-  ~AsyncExceptionHandshake() {
+  ~AsyncExceptionHandshakeClosure() {
     Thread* current = Thread::current();
     // Can get here from the VMThread via install_async_exception() bail out.
     if (current->is_Java_thread()) {
@@ -109,9 +103,9 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   bool is_async_exception()   { return true; }
 };
 
-class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
+class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
-  UnsafeAccessErrorHandshake() : AsyncHandshakeClosure("UnsafeAccessErrorHandshake") {}
+  UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
@@ -123,7 +117,7 @@ class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
 
 inline void JavaThread::set_pending_unsafe_access_error() {
   if (!has_async_exception_condition()) {
-    Handshake::execute(new UnsafeAccessErrorHandshake(), this);
+    Handshake::execute(new UnsafeAccessErrorHandshakeClosure(), this);
   }
 }
 

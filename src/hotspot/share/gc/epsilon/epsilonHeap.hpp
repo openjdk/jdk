@@ -49,6 +49,9 @@ private:
   volatile size_t _last_counter_update;
   volatile size_t _last_heap_print;
 
+  void print_tracing_info() const override;
+  void stop() override {};
+
 public:
   static EpsilonHeap* heap();
 
@@ -79,11 +82,6 @@ public:
   }
 
   bool requires_barriers(stackChunkOop obj) const override { return false; }
-
-  bool is_maximal_no_gc() const override {
-    // No GC is going to happen. Return "we are at max", when we are about to fail.
-    return used() == capacity();
-  }
 
   // Allocation
   HeapWord* allocate_work(size_t size, bool verbose = true);
@@ -133,7 +131,6 @@ public:
 
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override {}
-  void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 
 private:

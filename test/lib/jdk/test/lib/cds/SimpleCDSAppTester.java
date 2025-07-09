@@ -51,6 +51,7 @@ import jdk.test.lib.StringArrayUtils;
  */
 public class SimpleCDSAppTester {
     private String name;
+    private BiConsumer<OutputAnalyzer, RunMode> trainingChecker;
     private BiConsumer<OutputAnalyzer, RunMode> assemblyChecker;
     private BiConsumer<OutputAnalyzer, RunMode> productionChecker;
     private String classpath;
@@ -100,6 +101,11 @@ public class SimpleCDSAppTester {
         return this;
     }
 
+    public SimpleCDSAppTester setTrainingChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
+        this.trainingChecker = checker;
+        return this;
+    }
+
     public SimpleCDSAppTester setAssemblyChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
         this.assemblyChecker = checker;
         return this;
@@ -110,6 +116,12 @@ public class SimpleCDSAppTester {
         return this;
     }
 
+    public SimpleCDSAppTester setTrainingChecker(Consumer<OutputAnalyzer> checker) {
+        this.trainingChecker = (OutputAnalyzer out, RunMode runMode) -> {
+            checker.accept(out);
+        };
+        return this;
+    }
 
     public SimpleCDSAppTester setAssemblyChecker(Consumer<OutputAnalyzer> checker) {
         this.assemblyChecker = (OutputAnalyzer out, RunMode runMode) -> {
@@ -152,7 +164,11 @@ public class SimpleCDSAppTester {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            if (isDumping(runMode) && runMode != RunMode.TRAINING) {
+            if (runMode == RunMode.TRAINING) {
+                if (trainingChecker != null) {
+                    trainingChecker.accept(out, runMode);
+                }
+            } else if (isDumping(runMode)) {
                 if (assemblyChecker != null) {
                     assemblyChecker.accept(out, runMode);
                 }

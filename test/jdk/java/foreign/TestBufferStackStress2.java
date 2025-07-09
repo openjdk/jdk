@@ -23,12 +23,18 @@
 
 /*
  * @test
+ *
+ * @comment If the VM does not have continuations, then VTs will be scheduled on OS threads.
+ * @requires vm.continuations
+ *
+ * @bug 8356114 8356658
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStackStress2
  * @run junit TestBufferStackStress2
  */
 
 import jdk.internal.foreign.BufferStack;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileDescriptor;
@@ -37,6 +43,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,6 +69,14 @@ final class TestBufferStackStress2 {
      */
     @Test
     void movingVirtualThreadWithGc() throws InterruptedException {
+
+        // If the VM is configured such that the main thread is virtual,
+        // this stress test will not work as the main thread is always alive causing
+        // us to wait forever for contraction.
+        // Hence, we will skip this test if the main thread is virtual.
+        Assumptions.assumeFalse(Thread.currentThread().isVirtual(),
+                "Skipped because the main thread is a virtual thread");
+
         final long begin = System.nanoTime();
         var pool = BufferStack.of(POOL_SIZE, 1);
 
@@ -69,7 +84,8 @@ final class TestBufferStackStress2 {
 
         var done = new AtomicBoolean();
         var completed = new AtomicBoolean();
-        var quiescent = new Object();
+        var quiescentLatch = new CountDownLatch(1);
+
         var executor = Executors.newVirtualThreadPerTaskExecutor();
 
         executor.submit(() -> {
@@ -84,12 +100,11 @@ final class TestBufferStackStress2 {
             try (Arena arena = pool.pushFrame(SMALL_ALLOC_SIZE, 1)) {
                 MemorySegment segment = arena.allocate(SMALL_ALLOC_SIZE);
                 done.set(true);
-                synchronized (quiescent) {
-                    try {
-                        quiescent.wait();
-                    } catch (Throwable ex) {
-                        throw new AssertionError(ex);
-                    }
+                // wait for ForkJoinPool to contract
+                try {
+                    quiescentLatch.await();
+                } catch (Throwable ex) {
+                    throw new AssertionError(ex);
                 }
                 System.out.println(duration(begin) + "ACCESSING SEGMENT");
 
@@ -114,14 +129,12 @@ final class TestBufferStackStress2 {
         } while (count > 0);
 
         System.out.println(duration(begin) + "FJP HAS CONTRACTED");
-
-        synchronized (quiescent) {
-            quiescent.notify();
-        }
+        quiescentLatch.countDown(); // notify the thread that accesses the MemorySegment
 
         System.out.println(duration(begin) + "CLOSING EXECUTOR");
         executor.close();
         System.out.println(duration(begin) + "EXECUTOR CLOSED");
+
         assertTrue(completed.get(), "The VT did not complete properly");
     }
 

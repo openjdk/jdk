@@ -71,11 +71,13 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
+#endif
 
 // Helper class to access current interpreter state
 class LastFrameAccessor : public StackObj {
@@ -498,6 +500,10 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
                    h_method->print_value_string(), current_bci, p2i(current), current->name());
       Exceptions::log_exception(h_exception, tempst.as_string());
     }
+    if (log_is_enabled(Info, exceptions, stacktrace)) {
+      Exceptions::log_exception_stacktrace(h_exception, h_method, current_bci);
+    }
+
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
 //       // disabled for now - interpreter is not using shortcut yet
@@ -918,7 +924,7 @@ void InterpreterRuntime::cds_resolve_invoke(Bytecodes::Code bytecode, int method
     // Can't link it here since there are no guarantees it'll be prelinked on the next run.
     ResourceMark rm;
     InstanceKlass* resolved_iklass = InstanceKlass::cast(link_info.resolved_klass());
-    log_info(cds, resolve)("Not resolved: class not linked: %s %s %s",
+    log_info(aot, resolve)("Not resolved: class not linked: %s %s %s",
                            resolved_iklass->is_shared() ? "is_shared" : "",
                            resolved_iklass->init_state_name(),
                            resolved_iklass->external_name());
@@ -1168,6 +1174,7 @@ JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
+  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.
