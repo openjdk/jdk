@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4842706 8024695
+ * @bug 4842706 8024695 8361587
  * @summary Test some file operations with empty path
  * @run junit EmptyPath
  */
@@ -36,6 +36,7 @@ import java.nio.file.FileStore;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -193,6 +194,26 @@ public class EmptyPath {
         String[] files = f.list();
         assertNotNull(files);
         Set<String> ioSet = new HashSet(Arrays.asList(files));
+        Set<String> nioSet = new HashSet();
+        Files.list(p).forEach((x) -> nioSet.add(x.toString()));
+        assertEquals(nioSet, ioSet);
+    }
+
+    @Test
+    public void listFiles() throws IOException {
+        File child = new File(f.getAbsoluteFile(), "child");
+        assertTrue(child.createNewFile());
+        child.deleteOnExit();
+
+        assertTrue(Arrays.asList(f.list()).contains(child.getName()));
+
+        File[] files = f.listFiles();
+        for (File file : files)
+            assertTrue(f.toString().indexOf(File.separatorChar) == -1);
+
+        List<String> ioNames =
+            Arrays.asList(files).stream().map(f -> f.toString()).toList();
+        Set<String> ioSet = new HashSet(ioNames);
         Set<String> nioSet = new HashSet();
         Files.list(p).forEach((x) -> nioSet.add(x.toString()));
         assertEquals(nioSet, ioSet);
