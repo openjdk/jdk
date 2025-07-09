@@ -2196,10 +2196,11 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
           idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
         } while (idx != start_idx);
         return obj;
+      } else {
+        _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
+        return obj;
       }
-    }
-    // Regardless whether result of directly allocatable region allocation, the obj may have been allocated.
-    if (obj != nullptr) {
+    } else if (obj != nullptr) {
       _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
       return obj;
     }
