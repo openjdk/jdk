@@ -2360,11 +2360,10 @@ public:
       ShenandoahHeapRegion* region = Atomic::load(&_directly_allocatable_regions[next].address);
       if (region != nullptr && region->free() > _min_req_byte_size && is_probing_region(next)) {
         probing_region_refilled = true;
-        continue;
-      }
-      if (region == nullptr || region->free() < PLAB::min_size() * HeapWordSize) {
+      } else if (region == nullptr || region->free() < PLAB::min_size() * HeapWordSize) {
         return (int) next;
       }
+      next = (next + 1) % ShenandoahDirectlyAllocatableRegionCount
     }
     return -1;
   }
