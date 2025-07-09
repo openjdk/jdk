@@ -1235,7 +1235,7 @@ JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char*
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result, ik,
                             vmSymbols::object_initializer_name(),
-                            vmSymbols::method_string_bool_long_signature(),
+                            vmSymbols::method_string_bool_bool_long_signature(),
                             &jargs, CHECK_(JVMCIObject()));
     return wrap(obj_h());
   } else {
