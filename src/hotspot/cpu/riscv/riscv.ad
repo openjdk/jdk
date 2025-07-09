@@ -1368,14 +1368,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // n.b. frame size includes space for return pc and fp
   const int framesize = C->output()->frame_size_in_bytes();
 
-  // insert a nop at the start of the prolog so we can patch in a
-  // branch if we need to invalidate the method later
-  {
-    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
-    MacroAssembler::assert_alignment(__ pc());
-    __ nop();  // 4 bytes
-  }
-
   assert_cond(C != nullptr);
 
   if (C->clinit_barrier_on_entry()) {
@@ -1804,7 +1796,6 @@ void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
   // This is the unverified entry point.
   __ ic_check(CodeEntryAlignment);
 
-  // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
   // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
   assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
 }
@@ -8199,7 +8190,7 @@ instruct unnecessary_membar_volatile_rvtso() %{
   ins_cost(0);
 
   size(0);
-  
+ 
   format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
@@ -8425,6 +8416,17 @@ instruct castDD(fRegD dst)
 %}
 
 instruct castVV(vReg dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVVMask(vRegMask dst)
 %{
   match(Set dst (CastVV dst));
 

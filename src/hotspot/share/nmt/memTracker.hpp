@@ -34,8 +34,8 @@
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
-#include "utilities/deferred.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
@@ -319,7 +319,7 @@ class MemTracker : AllStatic {
   // Tracking level
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
-  static Deferred<MemBaseline>      _baseline;
+  static DeferredStatic<MemBaseline> _baseline;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP
