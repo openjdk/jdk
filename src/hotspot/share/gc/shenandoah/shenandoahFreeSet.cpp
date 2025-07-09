@@ -2363,7 +2363,7 @@ public:
       } else if (region == nullptr || region->free() < PLAB::min_size() * HeapWordSize) {
         return (int) next;
       }
-      next = (next + 1) % ShenandoahDirectlyAllocatableRegionCount
+      next = (next + 1) % ShenandoahDirectlyAllocatableRegionCount;
     }
     return -1;
   }
