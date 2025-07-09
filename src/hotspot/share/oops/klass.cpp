@@ -732,14 +732,14 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
 
     assert(current->is_loader_alive(), "just checking, this should be live");
 
-    // Find and set the first alive subklass
+    // Find and set the first subklass.
     Klass* sub = current->subklass(true);
     current->clean_subklass();
     if (sub != nullptr) {
       stack.push(sub);
     }
 
-    // Find and set the first alive sibling
+    // Find and set the first sibling.
     Klass* sibling = current->next_sibling(true);
     current->set_next_sibling(sibling);
     if (sibling != nullptr) {
