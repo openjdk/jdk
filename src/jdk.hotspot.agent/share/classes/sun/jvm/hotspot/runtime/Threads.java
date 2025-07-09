@@ -151,12 +151,14 @@ public class Threads {
 
         if (!VM.getVM().isCore()) {
             virtualConstructor.addMapping("CompilerThread", CompilerThread.class);
+            virtualConstructor.addMapping("TrainingReplayThread", HiddenJavaThread.class);
         }
 
         // These are all the visible JavaThread subclasses that execute java code.
         virtualConstructor.addMapping("JvmtiAgentThread", JavaThread.class);
         virtualConstructor.addMapping("NotificationThread", JavaThread.class);
         virtualConstructor.addMapping("AttachListenerThread", JavaThread.class);
+        virtualConstructor.addMapping("JfrRecorderThread", JavaThread.class);
 
         // These are all the hidden JavaThread subclasses that don't execute java code.
         virtualConstructor.addMapping("StringDedupThread", HiddenJavaThread.class);
@@ -194,7 +196,8 @@ public class Threads {
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
             " (expected type JavaThread, CompilerThread, MonitorDeflationThread, AttachListenerThread," +
-            " DeoptimizeObjectsALotThread, StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
+            " DeoptimizeObjectsALotThread, StringDedupThread, NotificationThread, ServiceThread," +
+            " JfrRecorderThread, or JvmtiAgentThread)", e);
         }
     }
 
@@ -221,29 +224,18 @@ public class Threads {
 
     public JavaThread owningThreadFromMonitor(ObjectMonitor monitor) {
         if (monitor.isOwnedAnonymous()) {
-            if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
-                OopHandle object = monitor.object();
-                for (int i = 0; i < getNumberOfThreads(); i++) {
-                    JavaThread thread = getJavaThreadAt(i);
-                    if (thread.isLockOwned(object)) {
-                        return thread;
-                     }
-                }
-                // We should have found the owner, however, as the VM could be in any state, including the middle
-                // of performing GC, it is not always possible to do so. Just return null if we can't locate it.
-                System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
-                System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
-                return null;
-            } else {
-                assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLegacy());
-                Address o = (Address)monitor.stackLocker();
-                for (int i = 0; i < getNumberOfThreads(); i++) {
-                    JavaThread thread = getJavaThreadAt(i);
-                    if (thread.isLockOwned(o))
-                        return thread;
-                }
-                return null;
+            OopHandle object = monitor.object();
+            for (int i = 0; i < getNumberOfThreads(); i++) {
+                JavaThread thread = getJavaThreadAt(i);
+                if (thread.isLockOwned(object)) {
+                    return thread;
+                 }
             }
+            // We should have found the owner, however, as the VM could be in any state, including the middle
+            // of performing GC, it is not always possible to do so. Just return null if we can't locate it.
+            System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
+            System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
+            return null;
         } else {
             return owningThreadFromMonitor(monitor.owner());
         }

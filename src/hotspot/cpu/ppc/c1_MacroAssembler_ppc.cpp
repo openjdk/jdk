@@ -46,7 +46,6 @@ void C1_MacroAssembler::explicit_null_check(Register base) {
 
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
-  // Avoid stack bang as first instruction. It may get overwritten by patch_verified_entry.
   const Register return_pc = R20;
   mflr(return_pc);
 
@@ -308,7 +307,7 @@ void C1_MacroAssembler::initialize_object(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
 //    assert(obj == O0, "must be");
-//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
+//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)),
 //         relocInfo::runtime_call_type);
   }
 
@@ -384,7 +383,7 @@ void C1_MacroAssembler::allocate_array(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
     //assert(obj == O0, "must be");
-    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
+    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)),
     //     relocInfo::runtime_call_type);
   }
 
@@ -413,7 +412,7 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
   if (TrapBasedNullChecks) { // SIGTRAP based
     trap_null_check(r);
   } else { // explicit
-    //const address exception_entry = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
+    //const address exception_entry = Runtime1::entry_for(StubId::c1_throw_null_pointer_exception_id);
     assert(Lnull != nullptr, "must have Label for explicit check");
     cmpdi(CR0, r, 0);
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CR0, Assembler::equal), *Lnull);

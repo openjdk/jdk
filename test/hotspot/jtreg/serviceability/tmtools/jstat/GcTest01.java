@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,17 +47,15 @@ public class GcTest01 {
         // We will be running "jstat -gc" tool
         JstatGcTool jstatGcTool = new JstatGcTool(ProcessHandle.current().pid());
 
-        // Run once and get the  results asserting that they are reasonable
-        JstatGcResults measurement1 = jstatGcTool.measure();
-        measurement1.assertConsistency();
+        // Run once and get the results asserting that they are reasonable
+        JstatGcResults measurement1 = jstatGcTool.measureAndAssertConsistency();
 
         GcProvoker gcProvoker = new GcProvoker();
 
         // Provoke GC then run the tool again and get the results
         // asserting that they are reasonable
         gcProvoker.provokeGc();
-        JstatGcResults measurement2 = jstatGcTool.measure();
-        measurement2.assertConsistency();
+        JstatGcResults measurement2 = jstatGcTool.measureAndAssertConsistency();
 
         // Assert the increase in GC events and time between the measurements
         JstatResults.assertGCEventsIncreased(measurement1, measurement2);
@@ -66,13 +64,10 @@ public class GcTest01 {
         // Provoke GC again and get the results
         // asserting that they are reasonable
         gcProvoker.provokeGc();
-        JstatGcResults measurement3 = jstatGcTool.measure();
-        measurement3.assertConsistency();
+        JstatGcResults measurement3 = jstatGcTool.measureAndAssertConsistency();
 
         // Assert the increase in GC events and time between the measurements
         JstatResults.assertGCEventsIncreased(measurement2, measurement3);
         JstatResults.assertGCTimeIncreased(measurement2, measurement3);
-
     }
-
 }

@@ -153,7 +153,7 @@ public final class YearMonth
     /**
      * @serial The month-of-year, not null.
      */
-    private final int month;
+    private final byte month;
 
     //-----------------------------------------------------------------------
     /**
@@ -306,7 +306,7 @@ public final class YearMonth
      */
     private YearMonth(int year, int month) {
         this.year = year;
-        this.month = month;
+        this.month = (byte) month;
     }
 
     /**

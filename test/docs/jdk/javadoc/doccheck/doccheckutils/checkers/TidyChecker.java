@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jtreg.SkippedException;
 
 public class TidyChecker implements FileChecker, AutoCloseable {
     private final Path TIDY;
@@ -164,8 +165,7 @@ public class TidyChecker implements FileChecker, AutoCloseable {
             if (p.isPresent()) {
                 tidyExePath = p.get();
             } else {
-                System.err.println("tidy not found on PATH");
-                return Path.of("tidy"); //non-null placeholder return; exception would be better
+                throw new jtreg.SkippedException("tidy not found on PATH");
             }
         }
 

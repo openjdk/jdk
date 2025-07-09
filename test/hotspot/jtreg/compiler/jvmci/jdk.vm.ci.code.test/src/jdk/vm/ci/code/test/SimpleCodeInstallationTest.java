@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,13 +71,13 @@ public class SimpleCodeInstallationTest extends CodeInstallationTest {
         Asserts.assertNotEquals(nmethod.getStart(), 0L);
 
         // Make nmethod non-entrant but still alive
-        nmethod.invalidate(false);
+        nmethod.invalidate(false, config.NMETHOD_INVALIDATION_REASON_JVMCI_INVALIDATE);
         Asserts.assertFalse(nmethod.isValid(), "code is valid, i = " + nmethod);
         Asserts.assertTrue(nmethod.isAlive(), "code is not alive, i = " + nmethod);
         Asserts.assertEquals(nmethod.getStart(), 0L);
 
         // Deoptimize the nmethod and cut the link to it from the HotSpotNmethod
-        nmethod.invalidate(true);
+        nmethod.invalidate(true, config.NMETHOD_INVALIDATION_REASON_JVMCI_INVALIDATE);
         Asserts.assertFalse(nmethod.isValid(), "code is valid, i = " + nmethod);
         Asserts.assertFalse(nmethod.isAlive(), "code is alive, i = " + nmethod);
         Asserts.assertEquals(nmethod.getStart(), 0L);
