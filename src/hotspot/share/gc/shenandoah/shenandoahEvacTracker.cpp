@@ -154,7 +154,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
     // for use in the next cycle.
     // The first argument is used for any age 0 cohort population that we may otherwise have
     // missed during the census. This is non-zero only when census happens at marking.
-    ShenandoahGenerationalHeap::heap()->age_census()->update_census(0, _mutators_global.age_table(), _workers_global.age_table());
+    ShenandoahGenerationalHeap::heap()->age_census()->update_census(0, mutators.age_table(), workers.age_table());
   }
 
   return {workers, mutators};
