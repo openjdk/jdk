@@ -260,9 +260,27 @@ public class EmptyPath {
     }
 
     @Test
-    public void mkdirs() {
+    @DisabledOnOs({OS.WINDOWS})
+    public void mkdirsNotWindows() {
+        // The empty parent causes the child to be resolved against the
+        // system-dependent directory, the Unix default for which is "/"
         File child = new File(f, "child");
+        assertEquals("/child", child.toString());
         assertFalse(child.mkdirs());
+    }
+
+    @Test
+    @EnabledOnOs({OS.WINDOWS})
+    public void mkdirsWindows() {
+        // The empty parent causes the child to be resolved against the
+        // system-dependent directory, the Windows default for which is "\\"
+        String childName = "child" + System.nanoTime();
+        File child = new File(f, childName);
+        assertEquals("\\" + childName, child.toString());
+        if (!child.exists()) {
+            assertTrue(child.mkdirs());
+            assertTrue(child.delete());
+        }
     }
 
     @Test
