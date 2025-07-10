@@ -47,6 +47,8 @@ import jdk.test.lib.hprof.parser.Reader;
 
 public class UnmountedVThreadNativeMethodAtTop {
 
+    public boolean done;
+
     /**
      * Test dumping the heap while a virtual thread is blocked entering a synchronized native method.
      */
@@ -96,7 +98,9 @@ public class UnmountedVThreadNativeMethodAtTop {
             started.countDown();
             try {
                 synchronized (lock) {
-                    lock.wait();
+                    while (!done) {
+                        lock.wait();
+                    }
                 }
             } catch (InterruptedException e) { }
         });
@@ -111,6 +115,7 @@ public class UnmountedVThreadNativeMethodAtTop {
             verifyHeapDump(dumpFile);
         } finally {
             synchronized (lock) {
+                done = true;
                 lock.notify();
             }
             vthread.join();
