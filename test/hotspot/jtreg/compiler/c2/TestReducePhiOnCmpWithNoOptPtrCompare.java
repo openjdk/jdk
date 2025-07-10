@@ -26,8 +26,6 @@
  * @bug 8361140
  * @summary Test ConnectionGraph::reduce_phi_on_cmp when OptimizePtrCompare is disabled
  * @library /test/lib /
- * @requires vm.debug == true
- * @requires vm.compiler2.enabled
  * @run driver compiler.c2.TestReducePhiOnCmpWithNoOptPtrCompare
  */
 
@@ -41,16 +39,14 @@ public class TestReducePhiOnCmpWithNoOptPtrCompare {
     private int invocations = 0;
 
     public static void main(String[] args) {
-        TestFramework framework = new TestFramework();
-        Scenario scenario0 = new Scenario(0, "-XX:-OptimizePtrCompare");
-        framework.addScenarios(scenario0).start();
+        TestFramework.runWithFlags("-XX:-OptimizePtrCompare","-XX:+VerifyReduceAllocationMerges","-XX:+IgnoreUnrecognizedVMOptions");
     }
 
     @Run(test = {"testReducePhiOnCmp_C2"})
     public void runner(RunInfo info) {
         invocations++;
         Random random = info.getRandom();
-        boolean cond = invocations % 2 == 0;
+        boolean cond = random.nextBoolean();
         int x = random.nextInt();
         int y = random.nextInt();
         Asserts.assertEQ(testReducePhiOnCmp_Interp(cond, x, y),testReducePhiOnCmp_C2(cond, x, y));
