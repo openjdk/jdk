@@ -103,6 +103,10 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
   }
 }
 
+inline narrowKlass ShenandoahForwarding::narrow_klass(oop obj) {
+  return get_forwardee_raw_unchecked(obj)->narrow_klass();
+}
+
 inline size_t ShenandoahForwarding::size(oop obj) {
   return obj->size_given_klass(klass(obj));
 }

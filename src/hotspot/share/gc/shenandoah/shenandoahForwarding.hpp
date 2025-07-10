@@ -64,6 +64,8 @@ public:
 
   static inline size_t size(oop obj);
   static inline Klass* klass(oop obj);
+  static inline narrowKlass narrow_klass(oop obj);
+
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP

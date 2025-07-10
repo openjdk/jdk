@@ -77,6 +77,8 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
       ObjectMonitor* mon = monitor();
       if (mon == nullptr) {
         st->print("null (this should never be seen!)");
+      } else if (!os::is_readable_pointer(mon)) {
+        st->print("(unreadable location)");
       } else {
         mon->print_on(st);
       }

@@ -168,6 +168,18 @@ void oopDesc::set_klass_gap(HeapWord* mem, int v) {
   *(int*)(((char*)mem) + klass_gap_offset_in_bytes()) = v;
 }
 
+narrowKlass oopDesc::narrow_klass() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return mark().narrow_klass();
+    case ObjLayout::Compressed:
+      return _metadata._compressed_klass;
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
 bool oopDesc::is_a(Klass* k) const {
   return klass()->is_subtype_of(k);
 }

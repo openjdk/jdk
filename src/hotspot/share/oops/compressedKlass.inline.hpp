@@ -73,6 +73,11 @@ inline narrowKlass CompressedKlassPointers::encode(Klass* v) {
   return is_null(v) ? (narrowKlass)0 : encode_not_null(v);
 }
 
+inline bool CompressedKlassPointers::is_valid_narrow_klass_id(narrowKlass nk) {
+  return nk >= _lowest_valid_narrow_klass_id &&
+         nk <= _highest_valid_narrow_klass_id;
+}
+
 #ifdef ASSERT
 inline void CompressedKlassPointers::check_encodable(const void* addr) {
   assert(UseCompressedClassPointers, "Only call for +UseCCP");

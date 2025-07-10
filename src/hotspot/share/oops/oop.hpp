@@ -91,6 +91,7 @@ class oopDesc {
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline void set_klass(Klass* k);
+  inline narrowKlass narrow_klass() const;
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
   // For klass field compression

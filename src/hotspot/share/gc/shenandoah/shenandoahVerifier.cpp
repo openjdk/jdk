@@ -151,7 +151,16 @@ private:
               "oop must be aligned");
 
     ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
-    Klass* obj_klass = ShenandoahForwarding::klass(obj);
+
+    Klass* obj_klass = nullptr;
+    if (UseCompressedClassPointers) {
+      const narrowKlass nk = ShenandoahForwarding::get_forwardee_raw_unchecked(obj)->narrow_klass();
+      check(ShenandoahAsserts::_safe_unknown, obj, CompressedKlassPointers::is_valid_narrow_klass_id(nk),
+             "Object narrow klass pointer appears invalid");
+      obj_klass = CompressedKlassPointers::decode_without_asserts(nk);
+    } else {
+      obj_klass = ShenandoahForwarding::get_forwardee_raw_unchecked(obj)->klass_or_null();
+    }
 
     // Verify that obj is not in dead space:
     {

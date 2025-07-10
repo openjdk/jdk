@@ -251,6 +251,8 @@ public:
   inline static void check_valid_narrow_klass_id(narrowKlass nk);
 #endif
 
+  static inline bool is_valid_narrow_klass_id(narrowKlass nk);
+
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.
   static inline bool is_encodable(const void* addr) {
