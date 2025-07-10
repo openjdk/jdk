@@ -2147,7 +2147,7 @@ HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
     ShenandoahHeapRegion* r = nullptr;
     if (!Atomic::load(&shared_region._eligible_for_replacement) && (r = Atomic::load(&shared_region._address)) != nullptr) {
       if (r->reserved_for_direct_allocation()) {
-        obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
+        obj = cas_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
         if (obj != nullptr) {
           return obj;
         }
@@ -2168,7 +2168,7 @@ HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
   return obj;
 }
 template<bool IS_TLAB>
-HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
+HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
   shenandoah_assert_not_heaplocked();
   assert(req.is_mutator_alloc(), "Must be mutator allocation");
   assert(req.is_young(), "Mutator allocations always come from young generation.");
@@ -2220,11 +2220,11 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
 }
 
 // Explicit specializations
-template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<true>(ShenandoahAllocRequest &req, bool &in_new_region);
-template HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator<false>(ShenandoahAllocRequest &req, bool &in_new_region);
+template HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator<true>(ShenandoahAllocRequest &req, bool &in_new_region);
+template HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator<false>(ShenandoahAllocRequest &req, bool &in_new_region);
 
 template<bool IS_TLAB>
-HeapWord* ShenandoahFreeSet::par_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region) {
+HeapWord* ShenandoahFreeSet::cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region) {
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
   if (IS_TLAB) {

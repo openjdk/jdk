@@ -1072,9 +1072,9 @@ HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& re
     return free_set->allocate_humongous(req);
   }
   if (req.is_lab_alloc()) {
-    return free_set->par_allocate_single_for_mutator<true>(req, in_new_region);
+    return free_set->try_allocate_single_for_mutator<true>(req, in_new_region);
   } else {
-    return free_set->par_allocate_single_for_mutator<false>(req, in_new_region);
+    return free_set->try_allocate_single_for_mutator<false>(req, in_new_region);
   }
 }
 

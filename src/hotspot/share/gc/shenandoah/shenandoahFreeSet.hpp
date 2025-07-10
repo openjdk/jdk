@@ -427,7 +427,7 @@ private:
     uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region, bool &has_replacement_eligible_region);
 
   template<bool IS_TLAB>
-  HeapWord* par_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
+  HeapWord* cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
   bool try_allocate_directly_allocatable_regions(uint start_index,
                                                  bool replace_all_eligible_regions,
@@ -521,7 +521,7 @@ public:
   void release_directly_allocatable_region(ShenandoahHeapRegion *region);
 
   template<bool IS_TLAB>
-  HeapWord* par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
+  HeapWord* try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
 
   void retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
   /*
