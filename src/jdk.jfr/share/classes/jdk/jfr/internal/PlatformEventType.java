@@ -33,7 +33,7 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
-import jdk.jfr.internal.util.TimespanRateOrPeriod;
+import jdk.jfr.internal.util.TimespanRate;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.settings.Throttler;
 import jdk.jfr.internal.tracing.Modification;
@@ -60,7 +60,7 @@ public final class PlatformEventType extends Type {
     private boolean stackTraceEnabled = true;
     private long thresholdTicks = 0;
     private long period = 0;
-    private TimespanRateOrPeriod cpuRate;
+    private TimespanRate cpuRate;
     private boolean hasHook;
 
     private boolean beginChunk;
@@ -200,12 +200,10 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public void setCPUThrottle(TimespanRateOrPeriod rate) {
+    public void setCPUThrottle(TimespanRate rate) {
         if (isCPUTimeMethodSampling) {
-            System.out.println("Setting CPU throttle for " + getName() + " to " + rate);
             this.cpuRate = rate;
             if (isEnabled()) {
-                System.out.println("enabled");
                 if (rate.isRate()) {
                     JVM.setCPURate(rate.rate());
                 } else {
@@ -276,7 +274,7 @@ public final class PlatformEventType extends Type {
                 long p = enabled ? period : 0;
                 JVM.setMethodSamplingPeriod(getId(), p);
             } else if (isCPUTimeMethodSampling) {
-                TimespanRateOrPeriod r = enabled ? cpuRate : TimespanRateOrPeriod.OFF;
+                TimespanRate r = enabled ? cpuRate : TimespanRate.OFF;
                 if (r.isRate()) {
                     JVM.setCPURate(r.rate());
                 } else {

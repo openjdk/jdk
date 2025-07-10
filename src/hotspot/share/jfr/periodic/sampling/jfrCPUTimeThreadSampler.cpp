@@ -166,8 +166,10 @@ void JfrCPUTimeTraceQueue::clear() {
 // A throttle is either a rate or a fixed period
 class JfrCPUSamplerThrottle {
 
-  double _rate;
-  u8 _period_nanos;
+  union {
+    double _rate;
+    u8 _period_nanos;
+  };
   bool _is_rate;
 
 public:
