@@ -555,7 +555,6 @@ void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line
   report_vm_error(file, line, msg.buffer());
 }
 
-// Given a possibly invalid oop, extract narrowKlass (if UCCP) and Klass* from it safely, with checks.
 bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k) {
   nk = 0;
   k = nullptr;

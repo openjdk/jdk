@@ -116,4 +116,7 @@ TEST_VM(CompressedKlass, test_is_valid_narrow_klass) {
   ASSERT_FALSE(CompressedKlassPointers::is_valid_narrow_klass_id(0));
   narrowKlass nk_jlC = CompressedKlassPointers::encode((Klass*)vmClasses::Class_klass());
   ASSERT_TRUE(CompressedKlassPointers::is_valid_narrow_klass_id(nk_jlC));
+  if (CompressedClassSpaceSize < 4 * G && CompressedKlassPointers::base() != nullptr) {
+    ASSERT_FALSE(CompressedKlassPointers::is_valid_narrow_klass_id(0xFFFFFFFF));
+  }
 }

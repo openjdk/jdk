@@ -80,11 +80,6 @@ public:
 
   // Given a possibly invalid oop, extract narrowKlass (if UCCP) and Klass*
   // from it safely.
-  // Returns:
-  // - false, nk=0 && k=0 if oop is unreadable or (+COH) is forwarded and forwardee is unreadable
-  //   or oop's narrowKlass was 0
-  // - false, nk>0 && k=0 if narrowKlass is garbage
-  // - true,  nk>0 && k!=0 if Klass* was successfully extracted. No further validity checks are done on the Klass*.
   // Note: For -UCCP, returned nk is always 0.
   static bool extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k);
 
