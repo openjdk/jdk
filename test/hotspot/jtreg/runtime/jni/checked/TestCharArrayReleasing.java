@@ -84,7 +84,7 @@ public class TestCharArrayReleasing {
     }
 
     public static void main(String[] args) throws Throwable {
-        int ABRT = Platform.isWindows() ? 1 : 134;
+        int ABRT = 1;
         int[][] errorCodes = new int[][] {
             { ABRT, 0, ABRT, ABRT, ABRT },
             { ABRT, ABRT, 0, ABRT, ABRT },
@@ -118,6 +118,7 @@ public class TestCharArrayReleasing {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
              "-Djava.library.path=" + System.getProperty("test.nativepath"),
              "--enable-native-access=ALL-UNNAMED",
+             "-XX:-CreateCoredumpOnCrash",
              "-Xcheck:jni",
              "TestCharArrayReleasing$Driver",
              args[0], args[1]);
