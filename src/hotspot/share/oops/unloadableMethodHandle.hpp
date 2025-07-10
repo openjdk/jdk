@@ -34,34 +34,28 @@
 // This handle allows holding to Method* safely without delaying class unloading
 // of its holder.
 //
-// This handle can be in 3 states:
-//  1. Empty. There is no Method* inside. All methods are safe to call.
-//     This is a convenience state to allow easy initializations.
-//  2. Weak. Method* is present, but its holder is only weakly-reachable, and can
+// This handle can be in 2 states:
+//  1. Weak. Method* is present, but its holder is only weakly-reachable, and can
 //     be unloaded. Users need to check is_safe() before calling method().
 //     method() is safe to call iff we have not crossed a safepoint since construction
 //     or last is_safe() check. Calling make_always_safe() after is_safe() check
 //     moves handle to the strong state.
-//  3. Strong. Method* holder is strongly reachable, cannot be unloaded.
+//  2. Strong. Method* holder is strongly reachable, cannot be unloaded.
 //     Calling method() is always safe in this state.
 //
 // The handle transitions are one-shot:
 //    weak   --(make_always_safe) --> strong
 //
-// Additionally, when handle is empty, it stays empty:
-//    empty  --(make_always_safe) --> empty
-//
 // Common usage pattern:
 //
-//   UnloadableMethodHandle mh;           // Initially empty.
-//   mh = UnloadableMethodHandle(method); // Now in weak state.
+//   UnloadableMethodHandle mh(method);   // Now in unsafe (weak) state.
 //   mh.method()->print_on(tty);          // method() is good until the next safepoint.
 //   <safepoint>
 //   if (!mh.is_safe()) {                 // Safe to use method()?
 //     return;                            // Nope!
 //   }
 //   mh.method()->print_on(tty);          // method() is good until the next safepoint.
-//   mh.make_always_safe();               // Now in safe state.
+//   mh.make_always_safe();               // Now in safe (strong) state.
 //   <safepoint>
 //   mh.method()->print_on(tty);          // method() is always safe now.
 //
@@ -72,7 +66,6 @@ class UnloadableMethodHandle {
   friend class VMStructs;
 private:
   enum State {
-    EMPTY,
     PERMANENT,
     WEAK,
     STRONG,
@@ -87,10 +80,8 @@ private:
   inline void set_state(State to);
   inline bool transit_state(State from, State to);
   inline oop get_unload_blocker(Method* method);
-  inline void release();
 
 public:
-  UnloadableMethodHandle();
   UnloadableMethodHandle(Method* method);
   ~UnloadableMethodHandle();
 

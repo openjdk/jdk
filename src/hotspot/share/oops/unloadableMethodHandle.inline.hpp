@@ -33,11 +33,6 @@
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 
-inline UnloadableMethodHandle::UnloadableMethodHandle() :
-  _method(nullptr) {
-  set_state(EMPTY);
-}
-
 inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
   _method(method) {
   assert(method != nullptr, "Should be");
@@ -54,7 +49,29 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
 }
 
 inline UnloadableMethodHandle::~UnloadableMethodHandle() {
-  release();
+  switch (get_state()) {
+    case STRONG: {
+      _strong_handle.release(Universe::vm_global());
+    }
+    case WEAK: {
+      _weak_handle.release(Universe::vm_weak());
+    }
+    case PERMANENT: {
+      _method = nullptr;
+      set_state(RELEASED);
+    }
+    case RELEASED: {
+      // Nothing to do.
+      break;
+    }
+    default:
+      assert(false, "Should not be here");
+  }
+
+  assert(_method == nullptr, "Should be");
+  assert(_weak_handle.is_empty(), "Should be");
+  assert(_strong_handle.is_empty(), "Should be");
+  assert(!is_safe(), "Should not be");
 }
 
 inline UnloadableMethodHandle::State UnloadableMethodHandle::get_state() const {
@@ -86,37 +103,8 @@ oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
   return klass_holder;
 }
 
-void UnloadableMethodHandle::release() {
-  switch (get_state()) {
-    case STRONG: {
-      _strong_handle.release(Universe::vm_global());
-    }
-    case WEAK: {
-      _weak_handle.release(Universe::vm_weak());
-    }
-    case PERMANENT: {
-      _method = nullptr;
-    }
-    case EMPTY: {
-      set_state(RELEASED);
-    }
-    case RELEASED: {
-      // Nothing to do.
-      break;
-    }
-    default:
-      assert(false, "Should not be here");
-  }
-
-  assert(_method == nullptr, "Should be");
-  assert(_weak_handle.is_empty(), "Should be");
-  assert(_strong_handle.is_empty(), "Should be");
-  assert(!is_safe(), "Should not be");
-}
-
 bool UnloadableMethodHandle::is_safe() const {
   switch (get_state()) {
-    case EMPTY:
     case PERMANENT:
     case STRONG: {
       // Definitely safe.
@@ -150,7 +138,6 @@ inline void UnloadableMethodHandle::make_always_safe() {
   assert(is_safe(), "Should be");
 
   switch (get_state()) {
-    case EMPTY:
     case PERMANENT:
     case STRONG:
     case RELEASED: {

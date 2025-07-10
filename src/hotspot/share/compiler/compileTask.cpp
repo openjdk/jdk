@@ -45,10 +45,9 @@ CompileTask::CompileTask(int compile_id,
                          int comp_level,
                          int hot_count,
                          CompileReason compile_reason,
-                         bool is_blocking) {
-  Thread* thread = Thread::current();
+                         bool is_blocking) :
+  _method_handle(method()) {
   _compile_id = compile_id;
-  _method_handle = UnloadableMethodHandle(method());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
