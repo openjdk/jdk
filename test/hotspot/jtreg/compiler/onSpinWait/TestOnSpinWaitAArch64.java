@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.function.Function;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -146,23 +145,7 @@ public class TestOnSpinWaitAArch64 {
         }
 
         // 3. Count spin wait instructions
-        Function<String, Integer> countExpectedInstFunc = null;
-        if (isDisassembled) {
-            // When code is disassembled, we have one instruction per line.
-            countExpectedInstFunc = (s) ->
-            {
-                return s.startsWith(spinWaitInst) ? 1 : 0;
-            };
-        } else {
-            final String expectedInst = getSpinWaitInstHex(spinWaitInst);
-            // Otherwise, there can be multiple hex instructions separated by '|'
-            countExpectedInstFunc = (s) ->
-            {
-                return (int)Arrays.stream(s.split("\\|"))
-                                  .takeWhile(i -> i.startsWith(expectedInst))
-                                  .count();
-            };
-        }
+        final String expectedInst = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
         int foundCount = 0;
         while (iter.hasNext()) {
             String line = iter.next().trim();
@@ -180,7 +163,11 @@ public class TestOnSpinWaitAArch64 {
             if (line.startsWith(";")) {
                 continue;
             }
-            foundCount += countExpectedInstFunc.apply(line);
+            // When code is disassembled, we have one instruction per line.
+            // Otherwise, there can be multiple hex instructions separated by '|'.
+            foundCount += (int)Arrays.stream(line.split("\\|"))
+                                     .takeWhile(i -> i.startsWith(expectedInst))
+                                     .count();
         }
 
         if (foundCount != expectedCount) {
