@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -31,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -53,6 +52,7 @@ public class AbsPathsInImage {
     public static final String DIR_PROPERTY = "jdk.test.build.AbsPathsInImage.dir";
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
     private static final boolean IS_LINUX   = System.getProperty("os.name").toLowerCase().contains("linux");
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     private boolean matchFound = false;
 
@@ -183,9 +183,8 @@ public class AbsPathsInImage {
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
         List<String> matches;
-        InputStream inputStream = Files.newInputStream(file);
-        try (BufferedInputStream input = new BufferedInputStream(inputStream)) {
-            matches = scanBytes(input, searchPatterns);
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            matches = scanBytes(inputStream, searchPatterns);
         }
         if (matches.size() > 0) {
             matchFound = true;
@@ -198,12 +197,10 @@ public class AbsPathsInImage {
     }
 
     private void scanZipFile(Path zipFile, List<byte[]> searchPatterns) throws IOException {
-        ZipEntry zipEntry;
-        InputStream inputStream = Files.newInputStream(zipFile);
-        BufferedInputStream bufferedStream = new BufferedInputStream(inputStream);
-        try (ZipInputStream input = new ZipInputStream(bufferedStream)) {
-            while ((zipEntry = input.getNextEntry()) != null) {
-                List<String> matches = scanBytes(input, searchPatterns);
+        try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
+            ZipEntry zipEntry;
+            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+                List<String> matches = scanBytes(zipInputStream, searchPatterns);
                 if (matches.size() > 0) {
                     matchFound = true;
                     System.out.println(zipFile + ", " + zipEntry.getName() + ":");
@@ -218,28 +215,41 @@ public class AbsPathsInImage {
 
     private List<String> scanBytes(InputStream input, List<byte[]> searchPatterns) throws IOException {
         List<String> matches = new ArrayList<>();
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
         int[] states = new int[searchPatterns.size()];
+        String buffer = "";
+        int markpos = -1;
+        int bytesRead;
         boolean found = false;
-        int datum;
-        while ((datum = input.read()) != -1) {
-            if (datum < 32 || datum > 126) {
-                if (found) {
-                    matches.add(buffer.toString());
-                    found = false;
+        while ((bytesRead = input.read(buf)) != -1) {
+            for (int i = 0; i < bytesRead; i++) {
+                byte datum = buf[i];
+                if (datum < 32 || datum > 126) {
+                    if (found) {
+                        matches.add((++markpos < 0) ? buffer + new String(buf, 0, i) : new String(buf, markpos, i - markpos));
+                        found = false;
+                    }
+                    markpos = i;
+                    continue;
                 }
-                buffer.reset();
+                for (int j = 0; !found && j < searchPatterns.size(); j++) {
+                    if (datum != searchPatterns.get(j)[states[j]]) {
+                        states[j] = 0;
+                    } else if (++states[j] == searchPatterns.get(j).length) {
+                        Arrays.fill(states, 0);
+                        found = true;
+                    }
+                }
+            }
+            if (++markpos == bytesRead) {
+                buffer = new String(buf, markpos, bytesRead - markpos);
+                markpos -= bytesRead;
             } else {
-                buffer.write(datum);
+                markpos = -1;
             }
-            for (int i = 0; i < searchPatterns.size(); i++) {
-                if (datum != searchPatterns.get(i)[states[i]]) {
-                    states[i] = 0;
-                } else if (++states[i] == searchPatterns.get(i).length) {
-                    states[i] = 0;
-                    found = true;
-                }
-            }
+        }
+        if (found) {
+            matches.add((++markpos < 0) ? buffer + new String(buf, 0, bytesRead) : new String(buf, markpos, bytesRead - markpos));
         }
         return matches;
     }
