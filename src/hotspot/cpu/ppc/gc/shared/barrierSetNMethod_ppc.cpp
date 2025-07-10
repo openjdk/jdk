@@ -47,7 +47,8 @@ public:
     return get_patchable_instruction_handle()->offset();
   }
 
-  void release_set_guard_value(int value) {
+  void release_set_guard_value(int value, int bit_mask) {
+    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
     // Patching is not atomic.
     // Stale observations of the "armed" state is okay as invoking the barrier stub in that case has no
     // unwanted side effects. Disarming is thus a non-critical operation.
@@ -55,8 +56,24 @@ public:
 
     OrderAccess::release(); // Release modified oops
 
-    // Set the guard value (naming of 'offset' function is misleading).
-    get_patchable_instruction_handle()->set_offset(value);
+    NativeMovRegMem* mov = get_patchable_instruction_handle();
+    uint64_t *instr = static_cast<uint64_t*>(mov->instruction_address());
+    assert(NativeMovRegMem::instruction_size >= sizeof(instr), "must be");
+    union {
+      char buf[NativeMovRegMem::instruction_size];
+      uint64_t u64;
+    } new_mov_instr, old_mov_instr;
+    while (true) {
+      new_mov_instr.u64 = old_mov_instr.u64 = Atomic::load(instr);
+      int old_value = nativeMovRegMem_at(&old_mov_instr.buf)->offset();
+      // Only bits in the mask are changed
+      int new_value = value | (old_value & ~bit_mask);
+      nativeMovRegMem_at(&new_mov_instr.buf)->set_offset(new_value, false /* no icache flush */);
+      // Swap in the new value
+      int v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_release);
+      if (v == old) break;
+    }
+    ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
   }
 
   void verify() const {
@@ -117,13 +134,13 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   // Thus, there's nothing to do here.
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(value);
+  barrier->release_set_guard_value(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {

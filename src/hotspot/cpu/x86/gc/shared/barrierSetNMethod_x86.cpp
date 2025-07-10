@@ -50,8 +50,29 @@ public:
   address instruction_address() const { return addr_at(0); }
   address immediate_address() const { return addr_at(imm_offset); }
 
+  NativeNMethodCmpBarrier* nativeNMethodCmpBarrier_at(address a) { return (NativeNMethodCmpBarrier*)a; }
+
   jint get_immediate() const { return int_at(imm_offset); }
-  void set_immediate(jint imm) { set_int_at(imm_offset, imm); }
+  void set_immediate(jint imm, int bit_mask) {
+    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+
+    uint64_t *instr = static_cast<uint64_t*>(instruction_address());
+    assert(instruction_size >= sizeof(instr), "must be");
+    union {
+      char buf[instruction_size];
+      uint64_t instr;
+    } new_mov_instr, old_mov_instr;
+    while (true) {
+      new_mov_instr.instr = old_mov_instr.instr = Atomic::load(instr);
+      int old_value = nativeNMethodCmpBarrier_at(&old_mov_instr.buf)->get_immediate();
+      // Only bits in the mask are changed
+      int new_value = value | (old_value & ~bit_mask);
+      nativeNMethodCmpBarrier_at(&new_mov_instr.buf)->set_int_at(imm_offset, new_value);
+      // Swap in the new value
+      int v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_release);
+      if (v == old) break;
+    }
+  }
   bool check_barrier(err_msg& msg) const;
   void verify() const {
 #ifdef ASSERT
@@ -159,13 +180,13 @@ static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
   return barrier;
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
-  cmp->set_immediate(value);
+  cmp->set_immediate(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {

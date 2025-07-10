@@ -53,11 +53,16 @@ class NativeMethodBarrier: public NativeInstruction {
       return *((int32_t*)data_addr);
     }
 
-    void set_guard_value(int value) {
+    void set_guard_value(int value, int bit_mask) {
+      assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
       int32_t* data_addr = (int32_t*)get_patchable_data_address();
-
-      // Set guard instruction value
-      *data_addr = value;
+      while (true) {
+        int old = Atomic::load(data_addr);
+        // Only bits in the mask are changed
+        int new_value = value | (old & ~bit_mask);
+        int v = Atomic::cmpxchg(data_addr, old, new_value, memory_order_release);
+        if (v == old) break;
+      }
     }
 
     #ifdef ASSERT
@@ -100,13 +105,13 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   return;
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->set_guard_value(value);
+  barrier->set_guard_value(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {
