@@ -3074,7 +3074,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       </parameters>
       <errors>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The implementation is unable to set a <eventlink id="FramePop"></eventlink> event for the frame
+           A <eventlink id="FramePop"></eventlink> event cannot be generated for the frame
           (e.g. the frame at <code>depth</code> is executing a native method).
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
