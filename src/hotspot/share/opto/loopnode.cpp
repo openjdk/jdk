@@ -1348,7 +1348,7 @@ bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint strid
     inner_head = create_inner_head(loop, head, exit_test);
   } else {
     // Use existing counted loop
-    head->as_CountedLoop()->set_normal_loop();
+    revert_to_normal_loop(head);
   }
 
   if (bt == T_INT) {
