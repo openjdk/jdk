@@ -115,10 +115,10 @@
   do_arch_entry(x86, compiler, vector_64_bit_mask,                      \
                 vector_64_bit_mask, vector_64_bit_mask)                 \
   do_stub(compiler, vector_byte_shuffle_mask)                           \
-  do_arch_entry(x86, compiler, vector_int_shuffle_mask,                 \
+  do_arch_entry(x86, compiler, vector_byte_shuffle_mask,                 \
                 vector_byte_shuffle_mask, vector_byte_shuffle_mask)     \
   do_stub(compiler, vector_short_shuffle_mask)                          \
-  do_arch_entry(x86, compiler, vector_int_shuffle_mask,                 \
+  do_arch_entry(x86, compiler, vector_short_shuffle_mask,               \
                 vector_short_shuffle_mask, vector_short_shuffle_mask)   \
   do_stub(compiler, vector_int_shuffle_mask)                            \
   do_arch_entry(x86, compiler, vector_int_shuffle_mask,                 \
