@@ -793,9 +793,16 @@ void StubInfo::dump_group_table(LogStream& ls) {
     GroupDetails& g = _group_table[i];
     ls.print_cr("%1d: %-8s", i, g._name);
     if (g._base == g._max) {
-      ls.print_cr("  blobs: %s(%d)",
-                  blob_details(g._base)._name,
-                  static_cast<int>(g._base));
+      // some groups don't have a blob
+      if (g._base == BlobId::NO_BLOBID) {
+        ls.print_cr("  blobs: %s(%d)",
+                    "no_blobs",
+                    static_cast<int>(g._base));
+      } else {
+        ls.print_cr("  blobs: %s(%d)",
+                    blob_details(g._base)._name,
+                    static_cast<int>(g._base));
+      }
     } else {
       ls.print_cr(" blobs: %s(%d) ... %s(%d)",
                   blob_details(g._base)._name,
@@ -812,9 +819,16 @@ void StubInfo::dump_blob_table(LogStream& ls) {
     BlobDetails& b = _blob_table[i];
     ls.print_cr("%-3d: %s", i, b._name);
     if (b._base == b._max) {
-      ls.print_cr("  stubs: %s(%d)",
-                  stub_details(b._base)._name,
-                  static_cast<int>(b._base));
+      // some blobs don't have a stub
+      if (b._base == StubId::NO_STUBID) {
+        ls.print_cr("  stubs: %s(%d)",
+                    "no_stubs",
+                    static_cast<int>(b._base));
+      } else {
+        ls.print_cr("  stubs: %s(%d)",
+                    stub_details(b._base)._name,
+                    static_cast<int>(b._base));
+      }
     } else {
       ls.print_cr("  stubs: %s(%d) ... %s(%d)",
                   stub_details(b._base)._name,
