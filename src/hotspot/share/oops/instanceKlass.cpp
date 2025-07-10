@@ -3474,7 +3474,6 @@ void InstanceKlass::adjust_default_methods(bool* trace_name_printed) {
       if (old_method == nullptr || !old_method->is_old()) {
         continue; // skip uninteresting entries
       }
-      assert(!old_method->is_deleted(), "default methods may not be deleted");
       Method* new_method = old_method->get_new_method();
       default_methods()->at_put(index, new_method);
 

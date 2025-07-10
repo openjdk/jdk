@@ -1022,8 +1022,6 @@ void klassVtable::adjust_method_entries(bool * trace_name_printed) {
     if (old_method == nullptr || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
-    assert(!old_method->is_deleted(), "vtable methods may not be deleted");
-
     Method* new_method = old_method->get_new_method();
     put_method_at(new_method, index);
 
@@ -1383,7 +1381,6 @@ void klassItable::adjust_method_entries(bool * trace_name_printed) {
     if (old_method == nullptr || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
-    assert(!old_method->is_deleted(), "itable methods may not be deleted");
     Method* new_method = old_method->get_new_method();
     ime->initialize(_klass, new_method);
 

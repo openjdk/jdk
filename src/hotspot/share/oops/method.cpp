@@ -1224,7 +1224,6 @@ void Method::remove_unshareable_flags() {
   // clear all the flags that shouldn't be in the archived version
   assert(!is_old(), "must be");
   assert(!is_obsolete(), "must be");
-  assert(!is_deleted(), "must be");
 
   set_is_prefixed_native(false);
   set_queued_for_compilation(false);

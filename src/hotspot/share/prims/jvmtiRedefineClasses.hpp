@@ -337,11 +337,7 @@ class VM_RedefineClasses: public VM_Operation {
   static Array<Method*>* _new_methods;
   static Method**        _matching_old_methods;
   static Method**        _matching_new_methods;
-  static Method**        _deleted_methods;
-  static Method**        _added_methods;
   static int             _matching_methods_length;
-  static int             _deleted_methods_length;
-  static int             _added_methods_length;
   static bool            _has_redefined_Object;
   static bool            _has_null_class_loader;
 
@@ -403,9 +399,8 @@ class VM_RedefineClasses: public VM_Operation {
   jvmtiError compare_and_normalize_class_versions(
     InstanceKlass* the_class, InstanceKlass* scratch_class);
 
-  // Figure out which new methods match old methods in name and signature,
-  // which methods have been added, and which are no longer present
-  void compute_added_deleted_matching_methods();
+  // Figure out which new methods match old methods in name and signature.
+  void compute_matching_methods();
 
   // Change jmethodIDs to point to the new methods
   void update_jmethod_ids();

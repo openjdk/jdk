@@ -72,11 +72,7 @@ Array<Method*>* VM_RedefineClasses::_old_methods = nullptr;
 Array<Method*>* VM_RedefineClasses::_new_methods = nullptr;
 Method**  VM_RedefineClasses::_matching_old_methods = nullptr;
 Method**  VM_RedefineClasses::_matching_new_methods = nullptr;
-Method**  VM_RedefineClasses::_deleted_methods      = nullptr;
-Method**  VM_RedefineClasses::_added_methods        = nullptr;
 int       VM_RedefineClasses::_matching_methods_length = 0;
-int       VM_RedefineClasses::_deleted_methods_length  = 0;
-int       VM_RedefineClasses::_added_methods_length    = 0;
 
 // This flag is global as the constructor does not reset it:
 bool      VM_RedefineClasses::_has_redefined_Object = false;
@@ -926,12 +922,6 @@ static jvmtiError check_permitted_subclasses_attribute(InstanceKlass* the_class,
                                 scratch_class->permitted_subclasses());
 }
 
-static bool can_add_or_delete(Method* m) {
-      // Compatibility mode
-  return (AllowRedefinitionToAddDeleteMethods &&
-          (m->is_private() && (m->is_static() || m->is_final())));
-}
-
 jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
              InstanceKlass* the_class,
              InstanceKlass* scratch_class) {
@@ -1184,51 +1174,18 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       ++ni;
       break;
     case added:
-      // method added, see if it is OK
-      if (!can_add_or_delete(k_new_method)) {
-        log_info(redefine, class, normalize)
-          ("redefined class %s methods error: added method: %s [%d]",
-           the_class->external_name(), k_new_method->name_and_sig_as_C_string(), ni);
-        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_ADDED;
-      }
-      {
-        u2 num = the_class->next_method_idnum();
-        if (num == ConstMethod::UNSET_IDNUM) {
-          // cannot add any more methods
-          log_info(redefine, class, normalize)
-            ("redefined class %s methods error: can't create ID for new method %s [%d]",
-             the_class->external_name(), k_new_method->name_and_sig_as_C_string(), ni);
-          return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_ADDED;
-        }
-        u2 new_num = k_new_method->method_idnum();
-        Method* idnum_owner = scratch_class->method_with_idnum(num);
-        if (idnum_owner != nullptr) {
-          // There is already a method assigned this idnum -- switch them
-          // Take current and original idnum from the new_method
-          idnum_owner->set_method_idnum(new_num);
-          idnum_owner->set_orig_method_idnum(k_new_method->orig_method_idnum());
-        }
-        k_new_method->set_method_idnum(num);
-        k_new_method->set_orig_method_idnum(num);
-        if (thread->has_pending_exception()) {
-          return JVMTI_ERROR_OUT_OF_MEMORY;
-        }
-      }
-      log_trace(redefine, class, normalize)
-        ("Method added: new: %s [%d]", k_new_method->name_and_sig_as_C_string(), ni);
-      ++ni; // advance to next new method
+      // method added, report the error
+      log_info(redefine, class, normalize)
+        ("redefined class %s methods error: added method: %s [%d]",
+         the_class->external_name(), k_new_method->name_and_sig_as_C_string(), ni);
+      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_ADDED;
       break;
     case deleted:
-      // method deleted, see if it is OK
-      if (!can_add_or_delete(k_old_method)) {
-        log_info(redefine, class, normalize)
-          ("redefined class %s methods error: deleted method %s [%d]",
-           the_class->external_name(), k_old_method->name_and_sig_as_C_string(), oi);
-        return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_DELETED;
-      }
-      log_trace(redefine, class, normalize)
-        ("Method deleted: old: %s [%d]", k_old_method->name_and_sig_as_C_string(), oi);
-      ++oi; // advance to next old method
+      // method deleted, report the error
+      log_info(redefine, class, normalize)
+        ("redefined class %s methods error: deleted method %s [%d]",
+         the_class->external_name(), k_old_method->name_and_sig_as_C_string(), oi);
+      return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_DELETED;
       break;
     default:
       ShouldNotReachHere();
@@ -3918,26 +3875,6 @@ int VM_RedefineClasses::check_methods_and_mark_as_obsolete() {
     }
     old_method->set_is_old();
   }
-  for (int i = 0; i < _deleted_methods_length; ++i) {
-    Method* old_method = _deleted_methods[i];
-
-    assert(!old_method->has_vtable_index(),
-           "cannot delete methods with vtable entries");;
-
-    // Mark all deleted methods as old, obsolete and deleted
-    old_method->set_is_deleted();
-    old_method->set_is_old();
-    old_method->set_is_obsolete();
-    ++obsolete_count;
-    // With tracing we try not to "yack" too much. The position of
-    // this trace assumes there are fewer obsolete methods than
-    // EMCP methods.
-    if (log_is_enabled(Trace, redefine, class, obsolete, mark)) {
-      ResourceMark rm;
-      log_trace(redefine, class, obsolete, mark)
-        ("mark deleted %s(%s) as obsolete", old_method->name()->as_C_string(), old_method->signature()->as_C_string());
-    }
-  }
   assert((emcp_method_count + obsolete_count) == _old_methods->length(),
     "sanity check");
   log_trace(redefine, class, obsolete, mark)("EMCP_cnt=%d, obsolete_cnt=%d", emcp_method_count, obsolete_count);
@@ -4051,7 +3988,7 @@ class TransferNativeFunctionRegistration {
     prefixes = JvmtiExport::get_all_native_method_prefixes(&prefix_count);
   }
 
-  // Attempt to transfer any of the old or deleted methods that are native
+  // Attempt to transfer any of the old methods that are native
   void transfer_registrations(Method** old_methods, int methods_length) {
     for (int j = 0; j < methods_length; j++) {
       Method* old_method = old_methods[j];
@@ -4073,7 +4010,6 @@ class TransferNativeFunctionRegistration {
 // Don't lose the association between a native method and its JNI function.
 void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlass* the_class) {
   TransferNativeFunctionRegistration transfer(the_class);
-  transfer.transfer_registrations(_deleted_methods, _deleted_methods_length);
   transfer.transfer_registrations(_matching_old_methods, _matching_methods_length);
 }
 
@@ -4114,18 +4050,14 @@ void VM_RedefineClasses::flush_dependent_code() {
   JvmtiExport::set_all_dependencies_are_recorded(true);
 }
 
-void VM_RedefineClasses::compute_added_deleted_matching_methods() {
+void VM_RedefineClasses::compute_matching_methods() {
   Method* old_method;
   Method* new_method;
 
   _matching_old_methods = NEW_RESOURCE_ARRAY(Method*, _old_methods->length());
   _matching_new_methods = NEW_RESOURCE_ARRAY(Method*, _old_methods->length());
-  _added_methods        = NEW_RESOURCE_ARRAY(Method*, _new_methods->length());
-  _deleted_methods      = NEW_RESOURCE_ARRAY(Method*, _old_methods->length());
 
   _matching_methods_length = 0;
-  _deleted_methods_length  = 0;
-  _added_methods_length    = 0;
 
   int nj = 0;
   int oj = 0;
@@ -4135,14 +4067,10 @@ void VM_RedefineClasses::compute_added_deleted_matching_methods() {
         break; // we've looked at everything, done
       }
       // New method at the end
-      new_method = _new_methods->at(nj);
-      _added_methods[_added_methods_length++] = new_method;
-      ++nj;
+      assert(false, "unexpected added method at the end");
     } else if (nj >= _new_methods->length()) {
       // Old method, at the end, is deleted
-      old_method = _old_methods->at(oj);
-      _deleted_methods[_deleted_methods_length++] = old_method;
-      ++oj;
+      assert(false, "unexpected deleted method at the end");
     } else {
       old_method = _old_methods->at(oj);
       new_method = _new_methods->at(nj);
@@ -4155,24 +4083,21 @@ void VM_RedefineClasses::compute_added_deleted_matching_methods() {
         } else {
           // added overloaded have already been moved to the end,
           // so this is a deleted overloaded method
-          _deleted_methods[_deleted_methods_length++] = old_method;
-          ++oj;
+          assert(false, "unexpected deleted overloaded method");
         }
       } else { // names don't match
         if (old_method->name()->fast_compare(new_method->name()) > 0) {
           // new method
-          _added_methods[_added_methods_length++] = new_method;
-          ++nj;
+          assert(false, "unexpected added method at the end");
         } else {
           // deleted method
-          _deleted_methods[_deleted_methods_length++] = old_method;
-          ++oj;
+          assert(false, "unexpected deleted method");
         }
       }
     }
   }
-  assert(_matching_methods_length + _deleted_methods_length == _old_methods->length(), "sanity");
-  assert(_matching_methods_length + _added_methods_length == _new_methods->length(), "sanity");
+  assert(_matching_methods_length == _old_methods->length(), "sanity");
+  assert(_matching_methods_length == _new_methods->length(), "sanity");
 }
 
 
@@ -4218,7 +4143,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   _old_methods = the_class->methods();
   _new_methods = scratch_class->methods();
   _the_class = the_class;
-  compute_added_deleted_matching_methods();
+  compute_matching_methods();
   update_jmethod_ids();
 
   _any_class_has_resolved_methods = the_class->has_resolved_methods() || _any_class_has_resolved_methods;
@@ -4571,26 +4496,6 @@ void VM_RedefineClasses::dump_methods() {
     m = _matching_new_methods[j];
     log_stream.print("      (%5d)  ", m->vtable_index());
     m->access_flags().print_on(&log_stream);
-    log_stream.cr();
-  }
-  log_trace(redefine, class, dump)("_deleted_methods --");
-  for (j = 0; j < _deleted_methods_length; ++j) {
-    LogStreamHandle(Trace, redefine, class, dump) log_stream;
-    Method* m = _deleted_methods[j];
-    log_stream.print("%4d  (%5d)  ", j, m->vtable_index());
-    m->access_flags().print_on(&log_stream);
-    log_stream.print(" --  ");
-    m->print_name(&log_stream);
-    log_stream.cr();
-  }
-  log_trace(redefine, class, dump)("_added_methods --");
-  for (j = 0; j < _added_methods_length; ++j) {
-    LogStreamHandle(Trace, redefine, class, dump) log_stream;
-    Method* m = _added_methods[j];
-    log_stream.print("%4d  (%5d)  ", j, m->vtable_index());
-    m->access_flags().print_on(&log_stream);
-    log_stream.print(" --  ");
-    m->print_name(&log_stream);
     log_stream.cr();
   }
 }

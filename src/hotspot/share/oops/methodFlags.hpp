@@ -46,7 +46,7 @@ class MethodFlags {
    status(has_jsrs                    , 1 << 1) \
    status(is_old                      , 1 << 2) /* RedefineClasses() has replaced this method */ \
    status(is_obsolete                 , 1 << 3) /* RedefineClasses() has made method obsolete */ \
-   status(is_deleted                  , 1 << 4) /* RedefineClasses() has deleted this method */  \
+   status(RESERVED                    , 1 << 4) \
    status(is_prefixed_native          , 1 << 5) /* JVMTI has prefixed this native method */ \
    status(monitor_matching            , 1 << 6) /* True if we know that monitorenter/monitorexit bytecodes match */ \
    status(queued_for_compilation      , 1 << 7) \
