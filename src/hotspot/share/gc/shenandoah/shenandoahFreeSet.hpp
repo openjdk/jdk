@@ -317,15 +317,15 @@ public:
 //     sure there is enough memory reserved at the high end of memory to hold the objects that might need to be evacuated
 //     during the next GC pass.
 
-struct ShenandoahHeapRegionAddress {
-  ShenandoahHeapRegion* volatile address;
+struct ShenandoahDirectAllocationRegion {
+  ShenandoahHeapRegion* volatile _address = nullptr;
 };
 
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
-  PaddedEnd<ShenandoahHeapRegionAddress>* _directly_allocatable_regions;
+  PaddedEnd<ShenandoahDirectAllocationRegion>* _direct_allocation_regions;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
