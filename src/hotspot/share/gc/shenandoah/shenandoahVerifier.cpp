@@ -244,17 +244,11 @@ private:
     }
 
     // Do additional checks for special objects: their fields can hold metadata as well.
-    // We want to check class loading/unloading did not corrupt them.
+    // We want to check class loading/unloading did not corrupt them. We can only reasonably
+    // trust the forwarded objects, as the from-space object can have the klasses effectively
+    // dead.
 
     if (obj_klass == vmClasses::Class_klass()) {
-      // During class redefinition the old Klass gets reclaimed and the old mirror oop's Klass reference
-      // nulled out (hence the "klass != nullptr" condition below). However, the mirror oop may have been
-      // forwarded if we are in the mids of an evacuation. In that case, the forwardee's Klass reference
-      // is nulled out. The old, forwarded, still still carries the old invalid Klass pointer. It will be
-      // eventually collected.
-      // This checking code may encounter the old copy of the mirror, and its referee Klass pointer may
-      // already be reclaimed and therefore be invalid. We must therefore check the forwardee's Klass
-      // reference.
       const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             klass == nullptr || Metaspace::contains(klass),
