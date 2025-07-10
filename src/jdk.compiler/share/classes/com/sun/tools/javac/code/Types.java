@@ -36,7 +36,6 @@ import java.util.WeakHashMap;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 
 import javax.tools.JavaFileObject;
@@ -2242,11 +2241,20 @@ public class Types {
      * is obtained by calling `getEnclosingType()` on  the previous type in the
      * sequence.
      *
+     * @implNote this is typically used to compute the implicit qualifier in a
+     * method/field access expression.
+     *
      * @param t a type
      * @param sym a symbol
      */
     public Type asOuterSuper(Type t, Symbol sym) {
-        return asSuperClosure(t, sym, Type::getEnclosingType);
+        Type t1 = t;
+        while (!t1.hasTag(NONE)) {
+            Type s = asSuper(t1, sym);
+            if (s != null) return s;
+            t1 = t1.getEnclosingType();
+        }
+        return null;
     }
 
     /**
@@ -2257,36 +2265,20 @@ public class Types {
      * is obtained by obtaining innermost lexically enclosing class type of the
      * previous type in the sequence.
      *
+     * @implNote this is typically used to compute the implicit qualifier in
+     * a type expression.
+     *
      * @param t a type
      * @param sym a symbol
      */
     public Type asEnclosingSuper(Type t, Symbol sym) {
-        return asSuperClosure(t, sym, type -> getOwnerEnclosingClassType(type));
-    }
-    // where
-    private static Type getOwnerEnclosingClassType(Type type) {
-        return (type.tsym.owner.enclClass() != null)
-                ? type.tsym.owner.enclClass().type
-                : Type.noType;
-    }
-
-    /**
-     * Traverses a sequence of types starting with `t` and returns the first type
-     * that can be seen as a supertype of one of those types. The sequence of types
-     * starts with `t` and is left abstract.
-     *
-     * The next type in the sequence is obtained by passing the previous type in
-     * the sequence to the unary operator `nextType`.
-     *
-     * @param t a type
-     * @param sym a symbol
-     * @param nextType a unary operator that emits the next type to be examined
-     */
-    public Type asSuperClosure(Type t, Symbol sym, UnaryOperator<Type> nextType) {
-        while (!t.hasTag(NONE)) {
-            Type s = asSuper(t, sym);
+        Type t1 = t;
+        while (!t1.hasTag(NONE)) {
+            Type s = asSuper(t1, sym);
             if (s != null) return s;
-            t = nextType.apply(t);
+            t1 = (t1.tsym.owner.enclClass() != null)
+                    ? t1.tsym.owner.enclClass().type
+                    : noType;
         }
         return null;
     }
