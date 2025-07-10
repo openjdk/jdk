@@ -111,6 +111,59 @@ public class T8357653 extends TestRunner {
     }
 
     @Test
+    public void testCompilationArray(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                """
+                package test;
+                public class Test {
+                    static abstract class Getters<X> {
+                      abstract class Getter {
+                          abstract X get();
+                      }
+                    }
+
+                    static class Usage1<T, G extends Getters<T>> {
+                      public T test(G.Getter[] getter) {
+                          return getter[0].get();
+                      }
+                    }
+
+                    static class Usage2<T, U extends Getters<T>, G extends U> {
+                      public T test(G.Getter[] getter) {
+                          return getter[0].get();
+                      }
+                    }
+
+                    static class Usage3<T, U extends T, G extends Getters<T>> {
+                      public T test(G.Getter[] getter) {
+                          return getter[0].get();
+                      }
+                    }
+
+                    class G2<K> extends Getters<K> {}
+                    static class Usage4<M, L extends G2<M>> {
+                      M test(L.Getter[] getter) {
+                          return getter[0].get();
+                      }
+                    }
+                }
+                """);
+
+        Files.createDirectories(classes);
+
+        {
+            new JavacTask(tb)
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.SUCCESS)
+                    .writeAll();
+        }
+    }
+
+    @Test
     public void testErasureViaJavap(Path base) throws Exception {
         Path current = base.resolve(".");
         Path src = current.resolve("src");

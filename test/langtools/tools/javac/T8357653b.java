@@ -40,6 +40,9 @@ class T8357653b {
             {
                 B<?> b = null;
                 String s = b.rett();
+
+                B<?>[] b2 = new B[1];
+                String s2 = b2[0].rett();
             }
         }
     }

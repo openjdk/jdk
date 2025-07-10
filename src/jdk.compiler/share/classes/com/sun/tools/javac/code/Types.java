@@ -2244,7 +2244,7 @@ public class Types {
      * @param sym a symbol
      */
     public Type asOuterSuper(Type t, Symbol sym) {
-        return asSuperUpward(t, sym, Type::getEnclosingType);
+        return asSuperClosure(t, sym, Type::getEnclosingType);
     }
 
     /**
@@ -2257,7 +2257,7 @@ public class Types {
      * @param sym a symbol
      */
     public Type asEnclosingSuper(Type t, Symbol sym) {
-        return asSuperUpward(t, sym, type -> getOwnerEnclosingClassType(type));
+        return asSuperClosure(t, sym, type -> getOwnerEnclosingClassType(type));
     }
     // where
     private static Type getOwnerEnclosingClassType(Type type) {
@@ -2276,7 +2276,7 @@ public class Types {
      * @param sym a symbol
      * @param nextType a unary operator that emits the next type to be examined
      */
-    public Type asSuperUpward(Type t, Symbol sym, UnaryOperator<Type> nextType) {
+    public Type asSuperClosure(Type t, Symbol sym, UnaryOperator<Type> nextType) {
         while (!t.hasTag(NONE)) {
             Type s = asSuper(t, sym);
             if (s != null) return s;
@@ -4507,7 +4507,7 @@ public class Types {
             to = from;
             from = target;
         }
-        List<Type> commonSupers = superClosure(to, erasure(from));
+        List<Type> commonSupers = supertypeClosure(to, erasure(from));
         boolean giveWarning = commonSupers.isEmpty();
         // The arguments to the supers could be unified here to
         // get a more accurate analysis
@@ -4565,13 +4565,13 @@ public class Types {
         return false;
     }
 
-    private List<Type> superClosure(Type t, Type s) {
+    private List<Type> supertypeClosure(Type t, Type s) {
         List<Type> cl = List.nil();
         for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
             if (isSubtype(s, erasure(l.head))) {
                 cl = insert(cl, l.head);
             } else {
-                cl = union(cl, superClosure(l.head, s));
+                cl = union(cl, supertypeClosure(l.head, s));
             }
         }
         return cl;
