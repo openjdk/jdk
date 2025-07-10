@@ -2235,7 +2235,9 @@ public class Types {
         };
 
     /**
-     * Calls `asSuper(S, sym)` on a sequence of types until a match is found.
+     * Traverses a sequence of types starting with `t` and returns the first type
+     * that can be seen as a supertype of one of those types.
+     *
      * The sequence of types starts with `t` and the next type in the sequence
      * is obtained by calling `getEnclosingType()` on  the previous type in the
      * sequence.
@@ -2248,7 +2250,9 @@ public class Types {
     }
 
     /**
-     * Calls `asSuper(S, sym)` on a sequence of types until a match is found.
+     * Traverses a sequence of types starting with `t` and returns the first type
+     * that can be seen as a supertype of one of those types.
+     *
      * The sequence of types starts with `t` and the next type in the sequence
      * is obtained by obtaining innermost lexically enclosing class type of the
      * previous type in the sequence.
@@ -2267,10 +2271,12 @@ public class Types {
     }
 
     /**
-     * Calls `asSuper(S, sym)` on a sequence of types until a match is found.
-     * The sequence of types starts with `t` and the next type in the sequence
-     * is obtained by passing the previous type in the sequence to the unary
-     * operator `nextType`.
+     * Traverses a sequence of types starting with `t` and returns the first type
+     * that can be seen as a supertype of one of those types. The sequence of types
+     * starts with `t` and is left abstract.
+     *
+     * The next type in the sequence is obtained by passing the previous type in
+     * the sequence to the unary operator `nextType`.
      *
      * @param t a type
      * @param sym a symbol
