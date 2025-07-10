@@ -156,17 +156,33 @@ int StubInfo::span(EntryId second, EntryId first) {
 }
 
 int StubInfo::span(StubId second, StubId first) {
+  // normally when the two ids are equal the entry span is 1 but we
+  // have a special case when the base and max are both NO_STUBID in
+  // which case the entry count is 0. n.b. that only happens in the
+  // case where a stub group is empty e.g. when either C1 or C2 is
+  // omitted from the build
   int idx1 = static_cast<int>(first);
   int idx2 = static_cast<int>(second);
-  assert(idx2 >= 0 && idx2 >= idx1, "bad stub ids first %d and second %d", idx1, idx2);
+  assert((idx1 < 0 && idx2  < 0) || (idx1 >= 0 && idx2 >= idx1), "bad stub ids first %d and second %d", idx1, idx2);
+  if (idx1 < 0) {
+    return 0;
+  }
   // span is inclusive of first and second
   return idx2 + 1 - idx1;
 }
 
 int StubInfo::span(BlobId second, BlobId first) {
+  // normally when the two ids are equal the entry span is 1 but we
+  // have a special case when the base and max are both NO_BLOBID in
+  // which case the entry count is 0. n.b. that only happens in the
+  // case where a stub group is empty e.g. when either C1 or C2 is
+  // omitted from the build
   int idx1 = static_cast<int>(first);
   int idx2 = static_cast<int>(second);
-  assert(idx2 >= 0 && idx2 >= idx1, "bad blob ids first %d and second %d", idx1, idx2);
+  assert((idx1 < 0 && idx2  < 0) || (idx1 >= 0 && idx2 >= idx1), "bad blob ids first %d and second %d", idx1, idx2);
+  if (idx1 < 0) {
+    return 0;
+  }
   // span is inclusive of first and second
   return idx2 + 1 - idx1;
 }
@@ -905,13 +921,13 @@ int StubInfo::blob_count(StubGroup stub_group) {
 }
 
 StubId StubInfo::stub_base(StubGroup stub_group) {
-  // delegate
-  return stub_base(blob_base(stub_group));
+  BlobId base = blob_base(stub_group);
+  return (base == BlobId::NO_BLOBID ? StubId::NO_STUBID : stub_base(base));
 }
 
 StubId StubInfo::stub_max(StubGroup stub_group) {
-  // delegate
-  return stub_max(blob_max(stub_group));
+  BlobId base = blob_max(stub_group);
+  return (base == BlobId::NO_BLOBID ? StubId::NO_STUBID : stub_max(base));
 }
 
 int StubInfo::stub_count(StubGroup stub_group) {
