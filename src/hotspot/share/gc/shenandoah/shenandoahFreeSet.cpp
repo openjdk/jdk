@@ -2192,8 +2192,9 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
           if (r != nullptr) {
             if (r->reserved_for_direct_allocation()) {
               obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
+              if (obj != nullptr) break;
             }
-            if (obj == nullptr && !r->reserved_for_direct_allocation()) {
+            if (!r->reserved_for_direct_allocation()) {
               // The region should have been released from direct allocatable regions.
               // It is rare race condition, mutator can retry on the same slot.
               assert(Atomic::load(address) != r, "The direct allocatable region should have been replaced.");
@@ -2201,7 +2202,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
             }
           }
           idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
-        } while (obj != nullptr && idx != start_idx);
+        } while (idx != start_idx);
         return obj;
       }
     }
@@ -2240,16 +2241,19 @@ HeapWord* ShenandoahFreeSet::par_allocate_in_for_mutator(ShenandoahHeapRegion* r
 void ShenandoahFreeSet::retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id) {
   static const size_t min_capacity = (size_t) (ShenandoahHeapRegion::region_size_bytes() * (1.0 - 1.0 / ShenandoahEvacWaste));
   const size_t ac = alloc_capacity(region);
-  if (((ac < min_capacity)) || (ac < PLAB::min_size() * HeapWordSize)) {
+  if ((((ac < min_capacity)) || (ac < PLAB::min_size() * HeapWordSize)) &&
+      (_partitions.in_free_set(partition_id, region->index()))) {
     _partitions.retire_from_partition(partition_id, region->index(), region->used());
   }
 }
 
 class DirectAllocatableRegionRefillClosure : public ShenandoahHeapRegionBreakableIterClosure {
   PaddedEnd<ShenandoahHeapRegionAddress>* _directly_allocatable_regions;
+  // inclusive
   const uint _start_index;
+  // inclusive
   const uint _end_index;
-  int _next_retire_eligible_region;
+  int _next_retire_eligible_region = 0;
 public:
   ShenandoahAllocRequest &_req;
   HeapWord* &_obj;
@@ -2260,7 +2264,7 @@ public:
   DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahHeapRegionAddress>* directly_allocatable_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
     : _directly_allocatable_regions(directly_allocatable_regions),
       _start_index(start_index),
-      _end_index((start_index + 2) % ShenandoahDirectlyAllocatableRegionCount ),
+      _end_index((start_index + 2) % ShenandoahDirectlyAllocatableRegionCount),
       _req(req), _obj(obj),
       _in_new_region(in_new_region),
       _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize) {
@@ -2302,19 +2306,21 @@ public:
         _in_new_region = r->is_empty();
         size_t actual_size = _req.size();
         _obj = _req.is_lab_alloc() ? r->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
+        assert(_obj != nullptr, "Must have successfully allocated the object.");
         _req.set_actual_size(actual_size);
       }
       if (_next_retire_eligible_region != -1) {
         r->reserve_for_direct_allocation();
+        OrderAccess::fence();
         ShenandoahHeapRegion *volatile *address = &_directly_allocatable_regions[_next_retire_eligible_region].address;
         ShenandoahHeapRegion *const original_region = Atomic::load(address);
+        Atomic::store(address, r);
+
         if (original_region != nullptr) {
           assert(original_region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
           original_region->release_from_direct_allocation();
           ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(original_region, ShenandoahFreeSetPartitionId::Mutator);
         }
-        OrderAccess::fence();
-        Atomic::store(address, r);
         if (is_probing_region((uint) _next_retire_eligible_region)) {
           probing_region_refilled = true;
         }
