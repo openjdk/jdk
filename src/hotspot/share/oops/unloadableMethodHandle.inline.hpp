@@ -53,6 +53,10 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
   assert(is_safe(), "Should be");
 }
 
+inline UnloadableMethodHandle::~UnloadableMethodHandle() {
+  release();
+}
+
 inline UnloadableMethodHandle::State UnloadableMethodHandle::get_state() const {
   return Atomic::load_acquire(&_state);
 }

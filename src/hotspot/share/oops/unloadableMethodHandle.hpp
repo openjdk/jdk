@@ -34,7 +34,7 @@
 // This handle allows holding to Method* safely without delaying class unloading
 // of its holder.
 //
-// This handle can be in 4 states:
+// This handle can be in 3 states:
 //  1. Empty. There is no Method* inside. All methods are safe to call.
 //     This is a convenience state to allow easy initializations.
 //  2. Weak. Method* is present, but its holder is only weakly-reachable, and can
@@ -44,17 +44,12 @@
 //     moves handle to the strong state.
 //  3. Strong. Method* holder is strongly reachable, cannot be unloaded.
 //     Calling method() is always safe in this state.
-//  4. Released. Method* is in unknown state, and cannot be accessed.
-//     method() is unsafe to call in this state.
 //
 // The handle transitions are one-shot:
 //    weak   --(make_always_safe) --> strong
-//    weak   ------(release) -------> released
-//    strong ------(release) -------> released
 //
 // Additionally, when handle is empty, it stays empty:
 //    empty  --(make_always_safe) --> empty
-//    empty  ------(release) -------> empty
 //
 // Common usage pattern:
 //
@@ -63,14 +58,12 @@
 //   mh.method()->print_on(tty);          // method() is good until the next safepoint.
 //   <safepoint>
 //   if (!mh.is_safe()) {                 // Safe to use method()?
-//     mh.release();                      // No! Release the handle and exit.
-//     return;
+//     return;                            // Nope!
 //   }
 //   mh.method()->print_on(tty);          // method() is good until the next safepoint.
 //   mh.make_always_safe();               // Now in safe state.
 //   <safepoint>
 //   mh.method()->print_on(tty);          // method() is always safe now.
-//   mh.release();                        // Release the handle.
 //
 
 class Method;
@@ -94,11 +87,12 @@ private:
   inline void set_state(State to);
   inline bool transit_state(State from, State to);
   inline oop get_unload_blocker(Method* method);
+  inline void release();
 
 public:
   UnloadableMethodHandle();
   UnloadableMethodHandle(Method* method);
-  inline void release();
+  ~UnloadableMethodHandle();
 
   inline Method* method() const;
   inline Method* method_unsafe() const;

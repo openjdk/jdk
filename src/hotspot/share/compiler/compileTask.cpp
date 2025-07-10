@@ -81,7 +81,6 @@ CompileTask::CompileTask(int compile_id,
 }
 
 CompileTask::~CompileTask() {
-  _method_handle.release();
   if (_failure_reason_on_C_heap && _failure_reason != nullptr) {
     os::free((void*) _failure_reason);
     _failure_reason = nullptr;
