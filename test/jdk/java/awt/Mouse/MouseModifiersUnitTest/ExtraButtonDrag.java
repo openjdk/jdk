@@ -26,14 +26,22 @@
   @key headful
   @bug 6315717
   @summary verifies that drag events are coming for every button if the property is set to true
-  @author Andrei Dmitriev : area=awt.mouse
   @run main ExtraButtonDrag
  */
 
 //events from standard should also come
 
-import java.awt.*;
-import java.awt.event.*;
+
+import java.awt.AWTException;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.lang.reflect.InvocationTargetException;
 
 
@@ -87,6 +95,7 @@ public class ExtraButtonDrag extends Frame {
 
         try {
             robot = new Robot();
+            robot.waitForIdle();
             robot.delay(1000);
             Point centerFrame = new Point(frame.getLocationOnScreen().x + frame.getWidth()/2, frame.getLocationOnScreen().y + frame.getHeight()/2);
             Point outboundsFrame = new Point(frame.getLocationOnScreen().x + frame.getWidth()*3/2, frame.getLocationOnScreen().y + frame.getHeight()/2);
@@ -123,8 +132,8 @@ public class ExtraButtonDrag extends Frame {
                     }
                 }
             }
-        }
-        finally {
+        }finally
+        {
             EventQueue.invokeAndWait(ExtraButtonDrag::disposeFrame);
         }
     }
@@ -154,11 +163,11 @@ public class ExtraButtonDrag extends Frame {
         }
         robot.mouseRelease(button);
     }
-
-    public static void disposeFrame() {
+    static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
             frame = null;
         }
     }
+
 }
