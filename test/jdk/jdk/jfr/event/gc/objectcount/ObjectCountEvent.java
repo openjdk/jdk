@@ -25,7 +25,6 @@ public class ObjectCountEvent {
 
         ObjectCountEventVerifier.createTestData();
         recording.start();
-        ObjectCountEventVerifier.createTestData();
 
         Path tempFile = Path.of("temp.jfr");
         recording.dump(tempFile); // Forces chunk rotation
