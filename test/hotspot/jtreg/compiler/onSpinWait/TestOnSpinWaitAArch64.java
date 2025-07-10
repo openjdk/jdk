@@ -43,9 +43,11 @@
 
 package compiler.onSpinWait;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.function.Function;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -114,7 +116,7 @@ public class TestOnSpinWaitAArch64 {
     // 0x0000000111dfa594:   nop
     // ;; }
     //
-    private static void checkOutput(OutputAnalyzer output, String spinWaitInst, int expectedCount) {
+    private static void checkOutput(OutputAnalyzer output, final String spinWaitInst, final int expectedCount) {
         Iterator<String> iter = output.asLines().listIterator();
 
         // 1. Check whether printed instructions are disassembled
@@ -144,11 +146,27 @@ public class TestOnSpinWaitAArch64 {
         }
 
         // 3. Count spin wait instructions
-        final String expectedInst = isDisassembled ? spinWaitInst : getSpinWaitInstHex(spinWaitInst);
+        Function<String, Integer> countExpectedInstFunc = null;
+        if (isDisassembled) {
+            // When code is disassembled, we have one instruction per line.
+            countExpectedInstFunc = (s) ->
+            {
+                return s.startsWith(spinWaitInst) ? 1 : 0;
+            };
+        } else {
+            final String expectedInst = getSpinWaitInstHex(spinWaitInst);
+            // Otherwise, there can be multiple hex instructions separated by '|'
+            countExpectedInstFunc = (s) ->
+            {
+                return (int)Arrays.stream(s.split("\\|"))
+                                  .takeWhile(i -> i.startsWith(expectedInst))
+                                  .count();
+            };
+        }
         int foundCount = 0;
         while (iter.hasNext()) {
             String line = iter.next().trim();
-            if (line.startsWith(";;}")) {
+            if (line.startsWith(";; }")) {
                 break;
             }
             if (!line.startsWith("0x")) {
@@ -162,11 +180,7 @@ public class TestOnSpinWaitAArch64 {
             if (line.startsWith(";")) {
                 continue;
             }
-            for (String s : line.split("\\|")) {
-                if (s.startsWith(expectedInst)) {
-                    foundCount++;
-                }
-            }
+            foundCount += countExpectedInstFunc.apply(line);
         }
 
         if (foundCount != expectedCount) {
