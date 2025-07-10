@@ -67,6 +67,37 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 
+
+class ShenandoahTrashImmediateGarbageClosure: public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahHeap* const _heap;
+  ShenandoahMarkingContext* const _ctx;
+
+public:
+  ShenandoahTrashImmediateGarbageClosure() :
+    _heap(ShenandoahHeap::heap()),
+    _ctx(ShenandoahHeap::heap()->global_generation()->complete_marking_context()) {}
+
+  void heap_region_do(ShenandoahHeapRegion* r) override {
+    if (r->is_humongous_start()) {
+      oop humongous_obj = cast_to_oop(r->bottom());
+      if (!_ctx->is_marked(humongous_obj)) {
+        assert(!r->has_live(), "Region %zu is not marked, should not have live", r->index());
+        _heap->trash_humongous_region_at(r);
+      } else {
+        assert(r->has_live(), "Region %zu should have live", r->index());
+      }
+    } else if (r->is_humongous_continuation()) {
+      // If we hit continuation, the non-live humongous starts should have been trashed already
+      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
+    } else if (r->is_regular()) {
+      if (!r->has_live()) {
+        r->make_trash_immediate();
+      }
+    }
+  }
+};
+
 ShenandoahFullGC::ShenandoahFullGC() :
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
@@ -307,6 +338,13 @@ void ShenandoahFullGC::phase1_mark_heap() {
 
   ShenandoahSTWMark mark(heap->global_generation(), true /*full_gc*/);
   mark.mark();
+
+  // Marking is finished. Reclaim immediate garbage before unloading any classes.
+  ShenandoahTrashImmediateGarbageClosure trash_immediate_garbage;
+  ShenandoahExcludeRegionClosure<FREE> cl(&trash_immediate_garbage);
+  heap->heap_region_iterate(&cl);
+
+  // Weak refs, roots and class unloading
   heap->parallel_cleaning(true /* full_gc */);
 
   if (ShenandoahHeap::heap()->mode()->is_generational()) {
@@ -550,36 +588,6 @@ public:
   }
 };
 
-class ShenandoahTrashImmediateGarbageClosure: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahHeap* const _heap;
-  ShenandoahMarkingContext* const _ctx;
-
-public:
-  ShenandoahTrashImmediateGarbageClosure() :
-    _heap(ShenandoahHeap::heap()),
-    _ctx(ShenandoahHeap::heap()->global_generation()->complete_marking_context()) {}
-
-  void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_humongous_start()) {
-      oop humongous_obj = cast_to_oop(r->bottom());
-      if (!_ctx->is_marked(humongous_obj)) {
-        assert(!r->has_live(), "Region %zu is not marked, should not have live", r->index());
-        _heap->trash_humongous_region_at(r);
-      } else {
-        assert(r->has_live(), "Region %zu should have live", r->index());
-      }
-    } else if (r->is_humongous_continuation()) {
-      // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
-    } else if (r->is_regular()) {
-      if (!r->has_live()) {
-        r->make_trash_immediate();
-      }
-    }
-  }
-};
-
 void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
@@ -733,11 +741,6 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
   heap->assert_pinned_region_status();
 
   {
-    // Trash the immediately collectible regions before computing addresses
-    ShenandoahTrashImmediateGarbageClosure trash_immediate_garbage;
-    ShenandoahExcludeRegionClosure<FREE> cl(&trash_immediate_garbage);
-    heap->heap_region_iterate(&cl);
-
     // Make sure regions are in good state: committed, active, clean.
     // This is needed because we are potentially sliding the data through them.
     ShenandoahEnsureHeapActiveClosure ecl;

@@ -361,11 +361,12 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
     heap->verifier()->verify_roots_no_forwarded();
   }
 
+  // Prepare regions and collection set. This may ask for the size of humongous
+  // objects so it must happen before classes unloaded.
+  _generation->prepare_regions_and_collection_set(false /*concurrent*/);
+
   // STW cleanup weak roots and unload classes
   heap->parallel_cleaning(false /*full gc*/);
-
-  // Prepare regions and collection set
-  _generation->prepare_regions_and_collection_set(false /*concurrent*/);
 
   // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
   // This is needed for two reasons. Strong one: new allocations would be with new freeset,
