@@ -128,7 +128,7 @@ public class Robot {
 
     /**
      * Default delay for mouse {@code click} and
-     * step delay for mouse {@code glide}.
+     * step delay for mouse {@code glide} in milliseconds.
      */
     public static final int DEFAULT_DELAY = 20;
 
@@ -786,9 +786,9 @@ public class Robot {
     }
 
     /**
-     * A convenience method that simulates clicking a mouse button by calling {@code mousePress}
-     * and {@code mouseRelease}. Invokes {@code waitForIdle} with a default {@link #DEFAULT_DELAY delay} after
-     * {@code mousePress} and {@code mouseRelease} calls. For specifics on valid inputs please see
+     * A convenience method that simulates clicking a mouse button by calling {@code mousePress}, {@code mouseRelease},
+     * and {@code waitForIdle}. Invokes {@code waitForIdle} with a default {@link #DEFAULT_DELAY delay} after
+     * {@code mousePress} and {@code mouseRelease} calls. For specifics on valid inputs see
      * {@link java.awt.Robot#mousePress(int)}.
      *
      * @param   buttons The button mask; a combination of one or more mouse button masks.
