@@ -976,9 +976,6 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
 //
 //
 void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
-  if (!OptimizePtrCompare) {
-    return;
-  }
   Node* ophi = cmp->in(1)->is_Con() ? cmp->in(2) : cmp->in(1);
   assert(ophi->is_Phi(), "Expected this to be a Phi node.");
 
@@ -3275,7 +3272,9 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
 
 // Optimize objects compare.
 const TypeInt* ConnectionGraph::optimize_ptr_compare(Node* left, Node* right) {
-  assert(OptimizePtrCompare, "sanity");
+  if (!OptimizePtrCompare) {
+    return TypeInt::CC;
+  }
   const TypeInt* EQ = TypeInt::CC_EQ; // [0] == ZERO
   const TypeInt* NE = TypeInt::CC_GT; // [1] == ONE
   const TypeInt* UNKNOWN = TypeInt::CC;    // [-1, 0,1]
