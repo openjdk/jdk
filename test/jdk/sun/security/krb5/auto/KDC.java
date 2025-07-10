@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1646,9 +1646,9 @@ public class KDC {
             System.out.println("Done");
         } else {
             try {
-                thread1.stop();
-                thread2.stop();
-                thread3.stop();
+                thread1.interrupt();
+                thread2.interrupt();
+                thread3.interrupt();
                 u1.close();
                 t1.close();
             } catch (Exception e) {
