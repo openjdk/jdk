@@ -77,6 +77,7 @@ public class ListTypeCheckTest {
             try {
                 switch (i) {
                     case 0:
+                        // Add the wrong kind of element, will fail:
                         al.add("yo");
                         break;
                     case 1:
@@ -92,21 +93,23 @@ public class ListTypeCheckTest {
                         al.set(0, "foo");
                         break;
                     case 5:
-                        // Add the correct kind of element, so we can iterate.
+                        // Add the correct kind of element, so we can test ListIterator.
                         al.add(o);
                         ListIterator iter = al.listIterator();
                         Object x = iter.next();
-                        iter.set("blah"); // Should fail like the others
+                        iter.set("blah"); // Test "set", should fail like the others.
                         break;
                     case 6:
+                        // Add the correct kind of element, so we can test ListIterator.
                         al.add(o);
                         ListIterator iter2 = al.listIterator();
                         Object x2 = iter2.next();
-                        iter2.add("blah");
+                        iter2.add("blah"); // "Test "add", should fail like the others.
                         break;
                     default:
                         throw new Exception("test wrong");
                 }
+                // All cases above should have caused an Exception:
                 throw new Exception("op " + i + " allowed but should fail on " + al.getClass());
             } catch (IllegalArgumentException e) {
                 System.out.println("op " + i + " got expected " + e + " on " + al.getClass());
