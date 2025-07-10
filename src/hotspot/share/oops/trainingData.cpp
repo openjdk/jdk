@@ -35,6 +35,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
@@ -433,9 +434,11 @@ void KlassTrainingData::print_on(outputStream* st, bool name_only) const {
 
 KlassTrainingData::KlassTrainingData(InstanceKlass* klass) : TrainingData(klass) {
   assert(klass != nullptr, "");
-  Handle hm(JavaThread::current(), klass->java_mirror());
-  jobject hmj = JNIHandles::make_global(hm);
-  _holder_mirror = hmj;
+  oop* handle = oop_storage()->allocate();
+  if (handle == nullptr) {
+    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR, "Cannot allocate oop storage for mirror");
+  }
+  NativeAccess<>::oop_store(handle, klass->java_mirror());
   _holder = klass;
   assert(holder() == klass, "");
 }
@@ -759,7 +762,6 @@ void TrainingData::DepList<T>::prepare(ClassLoaderData* loader_data) {
 
 void KlassTrainingData::remove_unshareable_info() {
   TrainingData::remove_unshareable_info();
-  _holder_mirror = nullptr;
   _comp_deps.remove_unshareable_info();
 }
 

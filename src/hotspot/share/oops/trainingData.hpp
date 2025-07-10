@@ -32,6 +32,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -431,7 +432,6 @@ class KlassTrainingData : public TrainingData {
 
   // cross-link to live klass, or null if not loaded or encountered yet
   InstanceKlass* _holder;
-  jobject _holder_mirror;   // extra link to prevent unloading by GC
 
   DepList<CompileTrainingData*> _comp_deps; // compiles that depend on me
 
@@ -454,7 +454,9 @@ class KlassTrainingData : public TrainingData {
     TrainingDataLocker::assert_locked();
      _comp_deps.remove_if_existing(ctd);
   }
-
+  static OopStorage* oop_storage() {
+    return Universe::vm_global();
+  }
  public:
   Symbol* name() const {
     precond(has_holder());
