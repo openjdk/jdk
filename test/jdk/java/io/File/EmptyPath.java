@@ -109,7 +109,7 @@ public class EmptyPath {
 
     @Test
     public void getAbsoluteFile() {
-        assertEquals(p.toAbsolutePath(), f.getAbsoluteFile().toPath());
+        assertEquals(p.toAbsolutePath().toFile(), f.getAbsoluteFile());
     }
 
     @Test
@@ -226,8 +226,6 @@ public class EmptyPath {
         assertTrue(child.createNewFile());
         child.deleteOnExit();
 
-        assertTrue(Arrays.asList(f.list()).contains(child.getName()));
-
         File[] files = f.listFiles();
         for (File file : files)
             assertEquals(-1, f.toString().indexOf(File.separatorChar));
@@ -235,6 +233,9 @@ public class EmptyPath {
         Set<String> ioSet = Arrays.stream(files)
             .map(File::getName)
             .collect(Collectors.toSet());
+
+        assertTrue(ioSet.contains(child.getName()));
+
         Set<String> nioSet = Files.list(p)
             .map(Path::getFileName)
             .map(Path::toString)
