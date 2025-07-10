@@ -2200,7 +2200,7 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
     if (!try_allocate_directly_allocatable_regions(start_idx, req, obj, in_new_region)) {
       if (obj == nullptr) {
         obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
-                                                       steal_alloc_probes,,
+                                                       steal_alloc_probes,
                                                        req,
                                                        in_new_region,
                                                        any_replacement_eligible_in_probe_range);
