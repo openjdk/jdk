@@ -121,7 +121,7 @@ public class EmptyPath {
 
     @Test
     public void getCanonicalFile() throws IOException {
-        assertEquals(p.toRealPath(), f.getCanonicalFile().toPath());
+        assertEquals(p.toRealPath().toFile(), f.getCanonicalFile());
     }
 
     @Test
