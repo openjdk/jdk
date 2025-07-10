@@ -136,9 +136,6 @@
   void reduce_mul_fp_le128b(FloatRegister dst, BasicType bt, FloatRegister fsrc, FloatRegister vsrc,
                             unsigned vector_length_in_bytes, FloatRegister vtmp);
 
-  void reduce_mul_fp_gt128b(FloatRegister dst, BasicType bt, FloatRegister fsrc, FloatRegister vsrc,
-                            unsigned vector_length_in_bytes, FloatRegister vtmp);
-
   void reduce_non_strict_order_mul_fp_gt128b(FloatRegister dst, BasicType bt, FloatRegister fsrc,
                                              FloatRegister vsrc, unsigned vector_length_in_bytes,
                                              FloatRegister vtmp1, FloatRegister vtmp2);
