@@ -2252,7 +2252,7 @@ class DirectAllocatableRegionRefillClosure : public ShenandoahHeapRegionBreakabl
   // inclusive
   const uint _start_index;
   // exclusive
-  const uint _end_index;
+  const uint _probe_end_index;
   int _scanned_region;
   int _next_retire_eligible_region;
 public:
@@ -2265,7 +2265,7 @@ public:
   DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahHeapRegionAddress>* directly_allocatable_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
     : _directly_allocatable_regions(directly_allocatable_regions),
       _start_index(start_index),
-      _end_index((start_index + 3) % ShenandoahDirectlyAllocatableRegionCount),
+      _probe_end_index((start_index + 3) % ShenandoahDirectlyAllocatableRegionCount),
       _scanned_region(0),
       _next_retire_eligible_region(find_next_retire_eligible_region()),
       _req(req),
@@ -2274,7 +2274,7 @@ public:
       _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize) {}
 
   bool is_probing_region(const uint index) const {
-    return !(index >= _end_index && index < _start_index);
+    return !(index >= _probe_end_index && index < _start_index);
   }
 
   int find_next_retire_eligible_region() {
