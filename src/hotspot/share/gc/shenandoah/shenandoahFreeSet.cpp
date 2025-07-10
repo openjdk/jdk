@@ -2136,6 +2136,38 @@ HeapWord* ShenandoahFreeSet::allocate_humongous(ShenandoahAllocRequest& req) {
 }
 
 template<bool IS_TLAB>
+HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
+  uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region, bool &has_replacement_eligible_region) {
+  has_replacement_eligible_region = false;
+  HeapWord *obj = nullptr;
+  uint i = 0u;
+  while (i < probe_count) {
+    uint idx = (probe_start + i) % ShenandoahDirectlyAllocatableRegionCount;
+    ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
+    ShenandoahHeapRegion* r = nullptr;
+    if (!Atomic::load(&shared_region._eligible_for_replacement) && (r = Atomic::load(&shared_region._address)) != nullptr) {
+      if (r->reserved_for_direct_allocation()) {
+        obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
+        if (obj != nullptr) {
+          return obj;
+        }
+      }
+      if (!r->reserved_for_direct_allocation()) {
+        // The region should have been released from direct allocatable regions.
+        // It is rare race condition, mutator can retry on the same slot.
+        assert(Atomic::load(&shared_region._address) != r, "The direct allocatable region should have been replaced.");
+        continue;
+      }
+    }
+    has_replacement_eligible_region = has_replacement_eligible_region ||
+                                  Atomic::load(&shared_region._eligible_for_replacement) ||
+                                  r == nullptr ||
+                                  r->free() < PLAB::min_size() * HeapWordSize;
+    i++;
+  }
+  return obj;
+}
+template<bool IS_TLAB>
 HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
   shenandoah_assert_not_heaplocked();
   assert(req.is_mutator_alloc(), "Must be mutator allocation");
@@ -2146,54 +2178,34 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
   const uint start_idx = ShenandoahDirectlyAllocatableRegionAffinity::index();
   for (;;) {
     constexpr uint max_probes = 3;
-    uint idx = start_idx;
     HeapWord* obj = nullptr;
-    for (uint i = 0u; i < max_probes; ) {
-      ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
-      ShenandoahHeapRegion* r = nullptr;
-      if (!Atomic::load(&shared_region._eligible_for_replacement) && (r = Atomic::load(&shared_region._address)) != nullptr) {
-        if (r->reserved_for_direct_allocation()) {
-          obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
-          if (obj != nullptr) {
-            return obj;
-          }
-        }
-        if (!r->reserved_for_direct_allocation()) {
-          // The region should have been released from direct allocatable regions.
-          // It is rare race condition, mutator can retry on the same slot.
-          assert(Atomic::load(&shared_region._address) != r, "The direct allocatable region should have been replaced.");
-          continue;
-        }
-      }
-      i++;
-      idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
+    bool any_replacement_eligible_in_probe_range = false;
+    obj = cas_allocate_single_for_mutator<IS_TLAB>(start_idx, max_probes, req, in_new_region, any_replacement_eligible_in_probe_range);
+    if (obj != nullptr) {
+      return obj;
     }
-
-    // If any of the 3 consecutive directly allocatable regions is ready for retire and replacement,
-    // grab heap lock try to retire all ready-to-retire shared regions.
-    if (!try_allocate_directly_allocatable_regions(start_idx, req, obj, in_new_region)) {
-      if (obj == nullptr) {
-        //only tried 3 shared regions, try to steal from other shared regions before OOM
-        do {
-          ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
-          ShenandoahHeapRegion* r = nullptr;
-          if (!Atomic::load(&shared_region._eligible_for_replacement) &&
-              (r = Atomic::load(&shared_region._address)) != nullptr ) {
-            if (r->reserved_for_direct_allocation()) {
-              obj = par_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
-              if (obj != nullptr) break;
-            }
-            if (!r->reserved_for_direct_allocation()) {
-              // The region should have been released from direct allocatable regions.
-              // It is rare race condition, mutator can retry on the same slot.
-              assert(Atomic::load(&shared_region._address) != r, "The direct allocatable region should have been replaced.");
-              continue;
-            }
-          }
-          idx = (idx + 1) % ShenandoahDirectlyAllocatableRegionCount;
-        } while (idx != start_idx);
+    uint steal_alloc_start_idx = (start_idx + max_probes) % ShenandoahDirectlyAllocatableRegionCount;
+    uint steal_alloc_probes = ShenandoahDirectlyAllocatableRegionCount - max_probes;
+    if (!any_replacement_eligible_in_probe_range) {
+      //only tried 3 shared regions, try to steal from other shared regions before OOM
+      obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
+                                                     steal_alloc_probes,
+                                                     req,
+                                                     in_new_region,
+                                                     any_replacement_eligible_in_probe_range);
+      if (obj != nullptr) {
         return obj;
       }
+    }
+    if (!try_allocate_directly_allocatable_regions(start_idx, req, obj, in_new_region)) {
+      if (obj == nullptr) {
+        obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
+                                                       steal_alloc_probes,,
+                                                       req,
+                                                       in_new_region,
+                                                       any_replacement_eligible_in_probe_range);
+      }
+      return obj;
     }
     if (obj != nullptr) {
       _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
@@ -2310,6 +2322,7 @@ public:
         r->reserve_for_direct_allocation();
         OrderAccess::fence();
         Atomic::store(&shared_region._address, r);
+        OrderAccess::fence();
         Atomic::store(&shared_region._eligible_for_replacement, false);
         if (is_probing_region((uint) _next_retire_eligible_region)) {
           probing_region_refilled = true;
