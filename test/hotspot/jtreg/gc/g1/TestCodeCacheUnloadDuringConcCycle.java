@@ -87,7 +87,8 @@ public class TestCodeCacheUnloadDuringConcCycle {
 
         String[] parts = output.getStdout().split(AFTER_FIRST_CYCLE_MARKER);
 
-        final String codecacheGCStart = "Pause Young (Concurrent Start) (CodeCache GC Threshold)";
+        // Either "Threshold" or "Aggressive" CodeCache GC are fine for the test.
+        final String codecacheGCStart = "Pause Young (Concurrent Start) (CodeCache GC ";
 
         boolean success = parts.length == 2 && parts[1].indexOf(codecacheGCStart) != -1;
         Asserts.assertTrue(success, "Could not find a CodeCache GC Threshold GC after finishing the concurrent cycle");
