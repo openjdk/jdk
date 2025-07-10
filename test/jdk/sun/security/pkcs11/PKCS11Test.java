@@ -455,6 +455,7 @@ public abstract class PKCS11Test {
     }
 
     public static String getNssConfig() throws Exception {
+        nss_library = System.getProperty("CUSTOM_P11_LIBRARY_NAME", nss_library);
         String libdir = getNSSLibDir();
         if (libdir == null) {
             return null;
@@ -478,9 +479,17 @@ public abstract class PKCS11Test {
         String customConfigName = System.getProperty("CUSTOM_P11_CONFIG_NAME", "p11-nss.txt");
         System.setProperty("pkcs11test.nss.lib", libfile);
         System.setProperty("pkcs11test.nss.db", dbdir);
-        return (customConfig != null) ?
+        String configFilePath = (customConfig != null) ?
                 customConfig :
                 nssConfigDir + SEP + customConfigName;
+        String customConfigVariant = System.getProperty("CUSTOM_P11_CONFIG_VARIANT");
+        if (customConfigVariant != null) {
+            // Change, e.g., .../p11-nss.txt to .../p11-nss-sensitive.txt.
+            configFilePath = configFilePath.replaceFirst(
+                    "(\\.[^\\.]*)?$", "-" + customConfigVariant + "$1");
+        }
+        System.out.println("Configuration file: " + configFilePath);
+        return configFilePath;
     }
 
     // Generate a vector of supported elliptic curves of a given provider
