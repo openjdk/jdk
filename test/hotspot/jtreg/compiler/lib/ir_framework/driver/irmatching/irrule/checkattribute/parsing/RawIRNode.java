@@ -62,7 +62,7 @@ public class RawIRNode {
             if (IRNode.isVectorIRNode(node)) {
                 nodeRegex = regexForVectorIRNode(nodeRegex, vmInfo, bound);
             } else if (userPostfix.isValid()) {
-                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, userPostfix.value());
+                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, java.util.regex.Matcher.quoteReplacement(userPostfix.value()));
             }
         }
         return nodeRegex;
