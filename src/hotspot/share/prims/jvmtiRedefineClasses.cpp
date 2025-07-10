@@ -4088,7 +4088,7 @@ void VM_RedefineClasses::compute_matching_methods() {
       } else { // names don't match
         if (old_method->name()->fast_compare(new_method->name()) > 0) {
           // new method
-          assert(false, "unexpected added method at the end");
+          assert(false, "unexpected added method");
         } else {
           // deleted method
           assert(false, "unexpected deleted method");
