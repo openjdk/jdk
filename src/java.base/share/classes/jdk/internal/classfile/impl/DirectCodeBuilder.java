@@ -206,7 +206,6 @@ public final class DirectCodeBuilder
             } else {
                 buf.writeU2U2U2(startPc, endPc, handlerPc);
                 buf.writeIndexOrZero(h.catchTypeEntry());
-                handlersSize++;
             }
         }
         if (handlersSize < handlers.size())
