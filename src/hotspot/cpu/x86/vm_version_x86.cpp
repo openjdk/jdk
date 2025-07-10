@@ -1491,7 +1491,7 @@ void VM_Version::get_processor_features() {
         }
         FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
       }
-    }else{
+    } else {
       FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
 
@@ -1645,7 +1645,7 @@ void VM_Version::get_processor_features() {
         }
         FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
       }
-    }else{
+    } else {
       FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
     if (is_atom_family() || is_knights_family()) {

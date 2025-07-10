@@ -21,27 +21,19 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 8358592
  * @summary Regression test for -XX:+UseSSE42Intrinsics -XX:UseSSE=1 crash
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.debug
- * @requires os.arch == "x86_64"
- * @library /test/lib
- * @run main/othervm Test8358592
+ * @run main/othervm -XX:+UseSSE42Intrinsics -XX:UseSSE=1 compiler.arguments.TestUseSSE42IntrinsicsWithLowLevelSSE
  */
+package compiler.arguments;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+public class TestUseSSE42IntrinsicsWithLowLevelSSE {
 
-public class Test8358592 {
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-XX:+UseSSE42Intrinsics",
-            "-XX:UseSSE=1",
-            "-version"
-        );
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
+    public static void main(String[] args) {
+        System.out.println("passed");
     }
 }
