@@ -50,9 +50,6 @@ public final class LabelImpl
     private int bci;
 
     public LabelImpl(LabelContext labelContext, int bci) {
-        if (bci != -1) {
-            Util.checkU2(bci, "bci");
-        }
         this.labelContext = labelContext;
         this.bci = bci;
     }
@@ -66,7 +63,7 @@ public final class LabelImpl
     }
 
     public void setBCI(int bci) {
-        this.bci = Util.checkU2(bci, "bci");
+        this.bci = bci;
     }
 
     @Override
