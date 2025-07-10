@@ -570,6 +570,7 @@ public sealed interface ConstantPoolBuilder
      *
      * @param methodReference the bootstrap method
      * @param arguments the arguments
+     * @throws IllegalArgumentException if the number of arguments exceeds {@code 65535}
      */
     default BootstrapMethodEntry bsmEntry(DirectMethodHandleDesc methodReference,
                                           List<ConstantDesc> arguments) {
@@ -585,6 +586,7 @@ public sealed interface ConstantPoolBuilder
      *
      * @param methodReference the {@code MethodHandleEntry}
      * @param arguments the list of {@code LoadableConstantEntry}
+     * @throws IllegalArgumentException if the number of arguments exceeds {@code 65535}
      * @see BootstrapMethodEntry#bootstrapMethod()
      *      BootstrapMethodEntry::bootstrapMethod
      * @see BootstrapMethodEntry#arguments() BootstrapMethodEntry::arguments

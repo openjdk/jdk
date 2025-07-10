@@ -79,6 +79,7 @@ public sealed interface LineNumberTableAttribute
      * order instead.
      *
      * @param lines the line number descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds {@code 65535}
      */
     static LineNumberTableAttribute of(List<LineNumberInfo> lines) {
         return new UnboundAttribute.UnboundLineNumberTableAttribute(lines);

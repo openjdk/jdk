@@ -79,6 +79,7 @@ public sealed interface LocalVariableTypeTableAttribute
     /**
      * {@return a {@code LocalVariableTypeTable} attribute}
      * @param locals the local variable descriptions
+     * @throws IllegalArgumentException if the number of descriptions exceeds {@code 65535}
      */
     static LocalVariableTypeTableAttribute of(List<LocalVariableTypeInfo> locals) {
         return new UnboundAttribute.UnboundLocalVariableTypeTableAttribute(locals);

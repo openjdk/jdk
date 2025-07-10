@@ -68,6 +68,8 @@ public sealed interface RecordAttribute extends Attribute<RecordAttribute>, Clas
      * {@return a {@code Record} attribute}
      *
      * @param components the record components
+     * @throws IllegalArgumentException if the number of record components
+     *         exceeds {@code 65535}
      */
     static RecordAttribute of(List<RecordComponentInfo> components) {
         return new UnboundAttribute.UnboundRecordAttribute(components);
@@ -77,6 +79,8 @@ public sealed interface RecordAttribute extends Attribute<RecordAttribute>, Clas
      * {@return a {@code Record} attribute}
      *
      * @param components the record components
+     * @throws IllegalArgumentException if the number of record components
+     *         exceeds {@code 65535}
      */
     static RecordAttribute of(RecordComponentInfo... components) {
         return of(List.of(components));

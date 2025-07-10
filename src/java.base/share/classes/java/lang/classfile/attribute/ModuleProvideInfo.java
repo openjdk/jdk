@@ -64,6 +64,7 @@ public sealed interface ModuleProvideInfo
      * {@return a service provision description}
      * @param provides the service class interface
      * @param providesWith the service class implementations, must not be empty
+     * @throws IllegalArgumentException if the number of implementations exceeds {@code 65535}
      */
     static ModuleProvideInfo of(ClassEntry provides,
                                 List<ClassEntry> providesWith) {
@@ -74,6 +75,7 @@ public sealed interface ModuleProvideInfo
      * {@return a service provision description}
      * @param provides the service class interface
      * @param providesWith the service class implementations, must not be empty
+     * @throws IllegalArgumentException if the number of implementations exceeds {@code 65535}
      */
     static ModuleProvideInfo of(ClassEntry provides,
                                 ClassEntry... providesWith) {
@@ -85,7 +87,8 @@ public sealed interface ModuleProvideInfo
      * @param provides the service class interface
      * @param providesWith the service class implementations, must not be empty
      * @throws IllegalArgumentException if {@code provides} or any of {@code
-     *         providesWith} represents a primitive type
+     *         providesWith} represents a primitive type, or the number of
+     *         implementations exceeds {@code 65535}
      */
     static ModuleProvideInfo of(ClassDesc provides,
                                 List<ClassDesc> providesWith) {
@@ -97,7 +100,8 @@ public sealed interface ModuleProvideInfo
      * @param provides the service class interface
      * @param providesWith the service class implementations, must not be empty
      * @throws IllegalArgumentException if {@code provides} or any of {@code
-     *         providesWith} represents a primitive type
+     *         providesWith} represents a primitive type, or the number of
+     *         implementations exceeds {@code 65535}
      */
     static ModuleProvideInfo of(ClassDesc provides,
                                 ClassDesc... providesWith) {

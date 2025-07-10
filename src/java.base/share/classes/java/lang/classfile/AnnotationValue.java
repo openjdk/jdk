@@ -673,6 +673,8 @@ public sealed interface AnnotationValue {
      * on array values derived from Java source code.
      *
      * @param values the array elements
+     * @throws IllegalArgumentException if the length of array exceeds {@code
+     *         65535}
      */
     static OfArray ofArray(List<AnnotationValue> values) {
         return new AnnotationImpl.OfArrayImpl(values);
@@ -686,6 +688,8 @@ public sealed interface AnnotationValue {
      * on array values derived from Java source code.
      *
      * @param values the array elements
+     * @throws IllegalArgumentException if the length of array exceeds {@code
+     *         65535}
      */
     static OfArray ofArray(AnnotationValue... values) {
         return ofArray(List.of(values));
@@ -699,7 +703,8 @@ public sealed interface AnnotationValue {
      * @param value the annotation value
      * @throws IllegalArgumentException when the {@code value} parameter is not
      *         a primitive, a wrapper of primitive, a String, a ClassDesc,
-     *         an enum constant, or an array of one of these.
+     *         an enum constant, or an array of one of these; or an array has
+     *         length over {@code 65535}
      */
     static AnnotationValue of(Object value) {
         if (value instanceof String s) {

@@ -110,7 +110,7 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
      * @throws IllegalArgumentException if {@code opensFlags} is not in the
-     * range {@code [0, 65535]}
+     * range {@code [0, 65535]}, or the number of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageEntry opens, int opensFlags,
                              List<ModuleEntry> opensTo) {
@@ -125,7 +125,8 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_OPENS} location
+     *         {@link AccessFlag.Location#MODULE_OPENS} location, or the number
+     *         of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageEntry opens, Collection<AccessFlag> opensFlags,
                              List<ModuleEntry> opensTo) {
@@ -140,7 +141,7 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
      * @throws IllegalArgumentException if {@code opensFlags} is not in the
-     * range {@code [0, 65535]}
+     * range {@code [0, 65535]}, or the number of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageEntry opens,
                              int opensFlags,
@@ -156,7 +157,8 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the modules to which this package is opened, or empty if
      *               this is an unqualified open
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_OPENS} location
+     *         {@link AccessFlag.Location#MODULE_OPENS} location, or the number
+     *         of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageEntry opens,
                              Collection<AccessFlag> opensFlags,
@@ -171,7 +173,7 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the modules to which this package is opened, if it is a
      *                qualified open, or empty
      * @throws IllegalArgumentException if {@code opensFlags} is not in the
-     * range {@code [0, 65535]}
+     * range {@code [0, 65535]}, or the number of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageDesc opens, int opensFlags,
                              List<ModuleDesc> opensTo) {
@@ -187,7 +189,8 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the modules to which this package is opened, if it is a
      *               qualified open, or empty
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_OPENS} location
+     *         {@link AccessFlag.Location#MODULE_OPENS} location, or the number
+     *         of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageDesc opens, Collection<AccessFlag> opensFlags,
                              List<ModuleDesc> opensTo) {
@@ -201,7 +204,7 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the packages to which this package is opened, or empty if
      *               this is an unqualified open
      * @throws IllegalArgumentException if {@code opensFlags} is not in the
-     * range {@code [0, 65535]}
+     * range {@code [0, 65535]}, or the number of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageDesc opens,
                              int opensFlags,
@@ -216,7 +219,8 @@ public sealed interface ModuleOpenInfo
      * @param opensTo the packages to which this package is opened, or empty if
      *               this is an unqualified open
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_OPENS} location
+     *         {@link AccessFlag.Location#MODULE_OPENS} location, or the number
+     *         of modules exceeds {@code 65535}
      */
     static ModuleOpenInfo of(PackageDesc opens,
                              Collection<AccessFlag> opensFlags,

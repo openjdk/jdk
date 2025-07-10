@@ -88,6 +88,7 @@ public sealed interface CharacterRangeTableAttribute
      * {@link CodeBuilder#characterRange CodeBuilder::characterRange} instead.
      *
      * @param ranges the descriptions of the character ranges
+     * @throws IllegalArgumentException if the number of ranges exceeds {@code 65535}
      */
     static CharacterRangeTableAttribute of(List<CharacterRangeInfo> ranges) {
         return new UnboundAttribute.UnboundCharacterRangeTableAttribute(ranges);
