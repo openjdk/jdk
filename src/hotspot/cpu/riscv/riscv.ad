@@ -1994,6 +1994,9 @@ int Matcher::min_vector_size(const BasicType bt) {
   } else if (bt == T_BOOLEAN) {
     // To support vector api load/store mask.
     size = 2;
+    // To support vector type conversions between short and wider types.
+  } else if (bt == T_SHORT) {
+    size = 2;
   }
   if (size < 2) size = 2;
   return MIN2(size, max_size);
