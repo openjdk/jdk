@@ -22,6 +22,7 @@
  * questions.
  */
 
+#include "classfile/vmClasses.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -106,4 +107,13 @@ TEST_VM(CompressedKlass, test_good_address) {
   ASSERT_TRUE(CompressedKlassPointers::is_encodable(addr));
   addr = CompressedKlassPointers::klass_range_end() - alignment;
   ASSERT_TRUE(CompressedKlassPointers::is_encodable(addr));
+}
+
+TEST_VM(CompressedKlass, test_is_valid_narrow_klass) {
+  if (!UseCompressedClassPointers) {
+    return;
+  }
+  ASSERT_FALSE(CompressedKlassPointers::is_valid_narrow_klass_id(0));
+  narrowKlass nk_jlC = CompressedKlassPointers::encode((Klass*)vmClasses::Class_klass());
+  ASSERT_TRUE(CompressedKlassPointers::is_valid_narrow_klass_id(nk_jlC));
 }

@@ -149,15 +149,21 @@ private:
               "oop must be in heap bounds");
     check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
+    check(ShenandoahAsserts::_safe_unknown, obj, os::is_readable_pointer(obj),
+              "oop must be accessible");
 
     ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
-    Klass* obj_klass = ShenandoahForwarding::klass(obj);
+
+    narrowKlass nk = 0;
+    const Klass* obj_klass = nullptr;
+    const bool klass_valid = ShenandoahAsserts::extract_klass_safely(obj, nk, obj_klass);
+
+    check(ShenandoahAsserts::_safe_unknown, obj, klass_valid,
+           "Object klass pointer unreadable or invalid");
 
     // Verify that obj is not in dead space:
     {
       // Do this before touching obj->size()
-      check(ShenandoahAsserts::_safe_unknown, obj, obj_klass != nullptr,
-             "Object klass pointer should not be null");
       check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::contains(obj_klass),
              "Object klass pointer must go to metaspace");
 

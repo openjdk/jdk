@@ -67,9 +67,17 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  Klass* obj_klass = ShenandoahForwarding::klass(obj);
+  narrowKlass nk = 0;
+  const Klass* obj_klass = nullptr;
+  const bool klass_valid = extract_klass_safely(obj, nk, obj_klass);
+  const char* klass_text = "(invalid)";
+  if (klass_valid &&
+      os::is_readable_pointer(obj_klass) &&
+      Metaspace::contains(obj_klass)) {
+    klass_text = obj_klass->external_name();
+  }
 
-  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj_klass), obj_klass->external_name());
+  msg.append("  " PTR_FORMAT " - nk %u klass " PTR_FORMAT " %s\n", p2i(obj), nk, p2i(obj_klass), klass_text);
   msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
   msg.append("    %3s after update watermark\n",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
@@ -124,6 +132,10 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ResourceMark rm;
 
+  if (!os::is_readable_pointer(obj)) {
+    level = _safe_unknown;
+  }
+
   bool loc_in_heap = (loc != nullptr && heap->is_in_reserved(loc));
 
   ShenandoahMessageBuffer msg("%s; %s\n\n", phase, label);
@@ -131,7 +143,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   msg.append("Referenced from:\n");
   if (interior_loc != nullptr) {
     msg.append("  interior location: " PTR_FORMAT "\n", p2i(interior_loc));
-    if (loc_in_heap) {
+    if (loc_in_heap && os::is_readable_pointer(loc)) {
       print_obj(msg, loc);
     } else {
       print_non_obj(msg, interior_loc);
@@ -153,7 +165,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
     oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
     msg.append("Forwardee:\n");
     if (obj != fwd) {
-      if (level >= _safe_oop_fwd) {
+      if (level >= _safe_oop_fwd && os::is_readable_pointer(fwd)) {
         print_obj(msg, fwd);
       } else {
         print_obj_safe(msg, fwd);
@@ -214,6 +226,12 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
+  if (!heap->is_in(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object should be in active region area",
+                  file, line);
+  }
+
   // Since we may need the forwardee (with +COH) to extract the Klass*, check it first
   oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
@@ -262,18 +280,12 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     }
   }
 
-  // Extract klass safely
   const Klass* obj_klass = nullptr;
-  if (UseCompressedClassPointers) {
-    const narrowKlass nk = fwd->narrow_klass();
-    if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
-      print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Object narrow klass pointer invalid outside range",
-                    file,line);
-    }
-    obj_klass = CompressedKlassPointers::decode_without_asserts(nk);
-  } else {
-    obj_klass = fwd->klass_or_null();
+  narrowKlass nk = 0;
+  if (!extract_klass_safely(obj, nk, obj_klass)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object klass pointer invalid",
+                  file,line);
   }
 
   if (obj_klass == nullptr) {
@@ -288,15 +300,9 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file,line);
   }
 
-  if (obj_klass != fwd->klass_or_null()) {
+  if (!UseCompactObjectHeaders && obj_klass != fwd->klass_or_null()) {
     print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Forwardee klass disagrees with object class",
-                  file, line);
-  }
-
-  if (!heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object should be in active region area",
                   file, line);
   }
 
@@ -547,4 +553,32 @@ void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line
 
   ShenandoahMessageBuffer msg("Active(%d) & GC(%d) Generations aren't reconciled", agen->type(), ggen->type());
   report_vm_error(file, line, msg.buffer());
+}
+
+// Given a possibly invalid oop, extract narrowKlass (if UCCP) and Klass* from it safely, with checks.
+bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k) {
+  nk = 0;
+  k = nullptr;
+
+  if (!os::is_readable_pointer(obj)) {
+    return false;
+  }
+  if (UseCompressedClassPointers) {
+    if (UseCompactObjectHeaders) { // look in forwardee
+      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
+      if (!os::is_readable_pointer(fwd)) {
+        return false;
+      }
+      nk = fwd->mark().narrow_klass();
+    } else {
+      nk = obj->narrow_klass();
+    }
+    if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
+      return false;
+    }
+    k = CompressedKlassPointers::decode_not_null_without_asserts(nk);
+  } else {
+    k = obj->klass();
+  }
+  return k != nullptr;
 }
