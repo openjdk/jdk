@@ -149,6 +149,18 @@ public interface QuicTLSEngine {
     HandshakeState getHandshakeState();
 
     /**
+     * Returns true if the TLS handshake is considered complete.
+     * <p>
+     * The TLS handshake is considered complete when the TLS stack
+     * has reported that the handshake is complete. This happens when
+     * the TLS stack has both sent a {@code Finished} message and verified
+     * the peer's {@code Finished} message.
+     *
+     * @return true if TLS handshake is complete, false otherwise.
+     */
+    boolean isTLSHandshakeComplete();
+
+    /**
      * {@return the current sending key space (encryption level)}
      */
     KeySpace getCurrentSendKeySpace();

@@ -24,8 +24,10 @@ package sun.security.ssl;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.security.GeneralSecurityException;
 
+import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicVersion;
 
 public final class QuicTLSEngineImplAccessor {
@@ -42,5 +44,16 @@ public final class QuicTLSEngineImplAccessor {
                                 server_application_traffic_secret_0,
                                 CipherSuite.valueOf(negotiatedCipherSuite),
                                 clientMode);
+    }
+
+    // visible for testing
+    public static void completeHandshake(final QuicTLSEngineImpl engine) {
+        try {
+            final Field f = QuicTLSEngineImpl.class.getDeclaredField("handshakeState");
+            f.setAccessible(true);
+            f.set(engine, QuicTLSEngine.HandshakeState.HANDSHAKE_CONFIRMED);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

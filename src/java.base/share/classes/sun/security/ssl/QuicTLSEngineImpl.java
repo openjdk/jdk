@@ -350,6 +350,12 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             final ByteBuffer output)
             throws QuicKeyUnavailableException, AEADBadTagException,
             QuicTransportException, ShortBufferException {
+        if (keySpace == ONE_RTT && !isTLSHandshakeComplete()) {
+            // RFC-9001, section 5.7 specifies that the server or the client MUST NOT
+            // decrypt 1-RTT packets, even if 1-RTT keys are available, before the
+            // TLS handshake is complete.
+            throw new QuicKeyUnavailableException("QUIC TLS handshake not yet complete", ONE_RTT);
+        }
         final QuicKeyManager keyManager = keyManager(keySpace);
         keyManager.decryptPacket(packetNumber, keyPhase, packet, headerLength,
                 output);
@@ -859,6 +865,26 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
             }
         }
         return confirmed;
+    }
+
+    @Override
+    public boolean isTLSHandshakeComplete() {
+        final boolean isClient = getUseClientMode();
+        final HandshakeState hsState = this.handshakeState;
+        if (isClient) {
+            // the client has received TLS Finished message from server and
+            // has sent its own TLS Finished message and is waiting for the server
+            // to send QUIC HANDSHAKE_DONE frame.
+            // OR
+            // the client has received TLS Finished message from server and
+            // has sent its own TLS Finished message and has even received the
+            // QUIC HANDSHAKE_DONE frame.
+            // Either of these implies the TLS handshake is complete for the client
+            return hsState == NEED_RECV_HANDSHAKE_DONE || hsState == HANDSHAKE_CONFIRMED;
+        }
+        // on the server side the TLS handshake is complete only when the server has
+        // sent a TLS Finished message and received the client's Finished message.
+        return hsState == HANDSHAKE_CONFIRMED;
     }
 
     /**
