@@ -1886,29 +1886,22 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
   JavaThread* java_thread = nullptr;
   oop thread_oop;
-  tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
-  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
-  if (is_virtual) {
-    oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
-    if (carrier_thread == nullptr) {
-      return nullptr;
-    }
-    java_thread = java_lang_Thread::thread(carrier_thread);
-  }
-  if (java_thread == nullptr) {
+
+  bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop, true/*use_carrier*/);
+  if (!has_java_thread) {
     return nullptr;
   }
 
   class GetStackTraceHandshakeClosure : public HandshakeClosure {
   public:
-    const Handle _java_thread;
+    const Handle _thread_oop;
     int _depth;
     bool _retry_handshake;
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
-    GetStackTraceHandshakeClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceHandshakeClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+    GetStackTraceHandshakeClosure(Handle thread_oop) :
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _thread_oop(thread_oop), _depth(0), _retry_handshake(false),
         _methods(nullptr), _bcis(nullptr) {
     }
     ~GetStackTraceHandshakeClosure() {
@@ -1930,21 +1923,22 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
         return;
       }
 
-      JavaThread* thread = JavaThread::cast(th);
+      JavaThread* java_thread = JavaThread::cast(th);
 
-      if (!thread->has_last_Java_frame()) {
+      if (!java_thread->has_last_Java_frame()) {
         return;
       }
 
       bool carrier = false;
-      if (java_lang_VirtualThread::is_instance(_java_thread())) {
-        // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
-        const ContinuationEntry* ce = thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
-          return; // not mounted
+      if (java_lang_VirtualThread::is_instance(_thread_oop())) {
+        // Ensure _thread_oop is still mounted to java_thread.
+        const ContinuationEntry* ce = java_thread->vthread_continuation();
+        if (ce == nullptr || ce->cont_oop(java_thread) != java_lang_VirtualThread::continuation(_thread_oop())) {
+          // Target thread has been unmounted.
+          return;
         }
       } else {
-        carrier = (thread->vthread_continuation() != nullptr);
+        carrier = (java_thread->vthread_continuation() != nullptr);
       }
 
       const int max_depth = MaxJavaStackTraceDepth;
@@ -1956,7 +1950,7 @@ oop java_lang_Thread::async_get_stack_trace(jobject jthread, TRAPS) {
       _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
-      for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
+      for (vframeStream vfst(java_thread, false, false, carrier); // we don't process frames as we don't care about oops
            !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
            vfst.next()) {
 
