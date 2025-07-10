@@ -66,6 +66,7 @@ public class AttributeHolder {
 
     public void writeTo(BufWriterImpl buf) {
         int attributesCount = this.attributesCount;
+        Util.checkU2(attributesCount, "attributes count");
         buf.writeU2(attributesCount);
         for (int i = 0; i < attributesCount; i++) {
             Util.writeAttribute(buf, attributes[i]);

@@ -286,6 +286,7 @@ public final class Util {
     @ForceInline
     public static void writeAttributes(BufWriterImpl buf, List<? extends Attribute<?>> list) {
         int size = list.size();
+        Util.checkU2(size, "attributes count");
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
             writeAttribute(buf, list.get(i));
@@ -294,6 +295,7 @@ public final class Util {
 
     @ForceInline
     static void writeList(BufWriterImpl buf, Writable[] array, int size) {
+        Util.checkU2(size, "member count");
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
             array[i].writeTo(buf);
