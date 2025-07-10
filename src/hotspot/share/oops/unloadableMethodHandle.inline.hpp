@@ -88,29 +88,24 @@ oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
 
 void UnloadableMethodHandle::release() {
   switch (get_state()) {
+    case STRONG: {
+      _strong_handle.release(Universe::vm_global());
+    }
+    case WEAK: {
+      _weak_handle.release(Universe::vm_weak());
+    }
+    case PERMANENT: {
+      _method = nullptr;
+    }
+    case EMPTY: {
+      set_state(RELEASED);
+    }
     case RELEASED: {
       // Nothing to do.
       break;
     }
-    case EMPTY: {
-      set_state(RELEASED);
-      break;
-    }
-    case PERMANENT: {
-      _method = nullptr;
-      set_state(RELEASED);
-      break;
-    }
-    case STRONG:
-    case WEAK: {
-      _weak_handle.release(Universe::vm_weak());
-      _strong_handle.release(Universe::vm_global());
-      _method = nullptr;
-      set_state(RELEASED);
-      break;
-    }
     default:
-      ShouldNotReachHere();
+      assert(false, "Should not be here");
   }
 
   assert(_method == nullptr, "Should be");
@@ -146,6 +141,7 @@ bool UnloadableMethodHandle::is_safe() const {
       return _weak_handle.peek() != nullptr;
     }
     default:
+      assert(false, "Should not be here");
       return false;
   }
 }
@@ -171,7 +167,7 @@ inline void UnloadableMethodHandle::make_always_safe() {
       break;
     }
     default:
-      ShouldNotReachHere();
+      assert(false, "Should not be here");
   }
 
   assert(is_safe(), "Should be");
