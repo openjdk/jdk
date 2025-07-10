@@ -885,7 +885,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (headersType == HeadersType.SHORT && buffer.remaining() < 21) {
             return null;
         }
-        ByteBuffer cidbytes = switch (headersType) {
+        final ByteBuffer cidbytes = switch (headersType) {
             case LONG, SHORT -> peekConnectionBytes(headersType, buffer);
             default -> null;
         };
@@ -897,9 +897,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             return null;
         }
         if (debug.on()) {
-            var cidlen = cidbytes == null ? 0 : cidbytes.remaining();
             debug.log("headers(%s), connectionId(%d), datagram(%d)",
-                    headersType, cidlen, buffer.remaining());
+                    headersType, cidbytes.remaining(), buffer.remaining());
         }
         QuicPacketReceiver connection = findQuicConnectionFor(source, cidbytes, headersType == HeadersType.LONG);
         // check stateless reset
