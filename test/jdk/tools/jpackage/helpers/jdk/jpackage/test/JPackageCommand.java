@@ -967,12 +967,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         APP_CONTENT(new Builder("--app-content").multiple().create()),
         RESOURCE_DIR(new Builder("--resource-dir").create()),
         MAC_DMG_CONTENT(new Builder("--mac-dmg-content").multiple().create()),
-        RUNTIME_IMAGE(new Builder("--runtime-image").enable(cmd -> {
-            // External runtime image should be R/O unless it is runtime installer
-            // on macOS. On macOS runtime image will be signed ad-hoc or with
-            // real certificate when creating runtime installers.
-            return !(cmd.isRuntime() && TKit.isOSX());
-        }).create());
+        RUNTIME_IMAGE(new Builder("--runtime-image").create());
 
         ReadOnlyPathAssert(Function<JPackageCommand, List<Path>> getPaths) {
             this.getPaths = getPaths;

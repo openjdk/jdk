@@ -25,7 +25,6 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import java.nio.file.Files;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface MacPackage extends Package, MacPackageMixin {
@@ -43,36 +42,6 @@ public interface MacPackage extends Package, MacPackageMixin {
 
     default Path installDir() {
         return Path.of("/").resolve(relativeInstallDir());
-    }
-
-    default boolean isRuntimeImageJDKImage() {
-        if (isRuntimeInstaller()) {
-            Path runtimeImage = app().runtimeImage().orElseThrow();
-            Path p = runtimeImage.resolve("Contents/Home");
-            return !Files.exists(p);
-        }
-
-        return false;
-    }
-
-    // Returns true if signing is requested or JDK bundle is not signed
-    // or JDK image is provided.
-    default boolean isRuntimeJDKBundleNeedSigning() {
-        if (!isRuntimeInstaller()) {
-            return false;
-        }
-
-        if (app().sign()) {
-            return true;
-        }
-
-        if (isRuntimeImageJDKImage()) {
-            return true;
-        } else {
-            Path runtimeImage = app().runtimeImage().orElseThrow();
-            Path p = runtimeImage.resolve("Contents/_CodeSignature");
-            return !Files.exists(p);
-        }
     }
 
     public static MacPackage create(Package pkg, MacPackageMixin mixin) {

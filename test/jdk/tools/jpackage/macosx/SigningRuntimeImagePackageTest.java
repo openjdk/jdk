@@ -34,6 +34,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Executor;
+import jdk.jpackage.internal.util.FileUtils;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments.
@@ -62,7 +63,7 @@ import jdk.jpackage.test.Executor;
  * jpackagerTest keychain with
  * always allowed access to this keychain for user which runs test.
  * note:
- * "jpackage.openjdk.java.net" can be over-ridden by systerm property
+ * "jpackage.openjdk.java.net" can be over-ridden by system property
  * "jpackage.mac.signing.key.user.name", and
  * "jpackagerTest" can be over-ridden by system property
  * "jpackage.mac.signing.keychain"
@@ -99,7 +100,7 @@ public class SigningRuntimeImagePackageTest {
 
     private static void verifyRuntimeImageInDMG(JPackageCommand cmd,
                                                 boolean isRuntimeImageSigned,
-                                                int JDKBundleCertIndex) {
+                                                int jdkBundleCertIndex) {
         MacHelper.withExplodedDmg(cmd, dmgImage -> {
             Path launcherPath = ApplicationLayout.platformAppImage()
                     .resolveAt(dmgImage).launchersDirectory().resolve("libjli.dylib");
@@ -107,11 +108,11 @@ public class SigningRuntimeImagePackageTest {
             // we only need to verify JDK bundle.
             if (dmgImage.endsWith(cmd.name() + ".jdk")) {
                 SigningBase.verifyCodesign(launcherPath, isRuntimeImageSigned,
-                        JDKBundleCertIndex);
+                        jdkBundleCertIndex);
                 SigningBase.verifyCodesign(dmgImage, isRuntimeImageSigned,
-                        JDKBundleCertIndex);
+                        jdkBundleCertIndex);
                 if (isRuntimeImageSigned) {
-                    SigningBase.verifySpctl(dmgImage, "exec", JDKBundleCertIndex);
+                    SigningBase.verifySpctl(dmgImage, "exec", jdkBundleCertIndex);
                 }
             }
         });
@@ -131,9 +132,11 @@ public class SigningRuntimeImagePackageTest {
         }
     }
 
-    private static Path getRuntimeImagePath(boolean useJDKBundle,
-                                            boolean isRuntimeImageSigned,
-                                            int JDKBundleCertIndex) throws IOException {
+    // Creates runtime image or bundle based on input parameters to be used as
+    // input to jpackage. Returns path to created image or bundle.
+    private static Path createInputRuntimeImageOrBundle(boolean useJDKBundle,
+                                                        boolean isRuntimeImageSigned,
+                                                        int jdkBundleCertIndex) throws IOException {
         final Path runtimeBundleDir =
                 TKit.createTempDirectory("runtimebundle");
         final Path runtimeImageImage =
@@ -172,20 +175,21 @@ public class SigningRuntimeImagePackageTest {
                 ex.addArguments(
                     "--mac-sign",
                     "--mac-signing-keychain", SigningBase.getKeyChain(),
-                    "--mac-signing-key-user-name", SigningBase.getDevName(JDKBundleCertIndex));
+                    "--mac-signing-key-user-name", SigningBase.getDevName(jdkBundleCertIndex));
             }
 
             ex.execute();
 
-            JPackageCommand dummyCMD = new JPackageCommand();
-            dummyCMD.addArguments(
+            var cmd = new JPackageCommand()
+                .useToolProvider(true)
+                .dumpOutput(true)
+                .addArguments(
                 "--type", "dmg",
                 "--name", "foo",
-                "--dest", runtimeBundleDMG.toAbsolutePath().toString()
-                );
+                "--dest", runtimeBundleDMG.toAbsolutePath().toString());
 
-            MacHelper.withExplodedDmg(dummyCMD, dmgImage -> {
-                if (dmgImage.endsWith(dummyCMD.name() + ".jdk")) {
+            MacHelper.withExplodedDmg(cmd, dmgImage -> {
+                if (dmgImage.endsWith(cmd.name() + ".jdk")) {
                     Executor.of("cp", "-R")
                             .addArgument(dmgImage)
                             .addArgument(runtimeBundleBundle.toAbsolutePath().toString())
@@ -217,22 +221,21 @@ public class SigningRuntimeImagePackageTest {
     // 6) JDK image and --mac-sign is provided
     @Parameter({"false", "INVALID_INDEX", "ASCII_INDEX"})
     public static void test(boolean useJDKBundle,
-                            SigningBase.CertIndex JDKBundleCert,
+                            SigningBase.CertIndex jdkBundleCert,
                             SigningBase.CertIndex signCert) throws Exception {
-        final int JDKBundleCertIndex = JDKBundleCert.value();
+        final int jdkBundleCertIndex = jdkBundleCert.value();
         final int signCertIndex = signCert.value();
 
         final boolean isRuntimeImageSigned =
-            (JDKBundleCertIndex != SigningBase.CertIndex.INVALID_INDEX.value());
+            (jdkBundleCertIndex != SigningBase.CertIndex.INVALID_INDEX.value());
         final boolean isSigned =
             (signCertIndex != SigningBase.CertIndex.INVALID_INDEX.value());
 
         new PackageTest()
-                .forTypes(PackageType.MAC)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--runtime-image",
-                        getRuntimeImagePath(useJDKBundle,
-                            isRuntimeImageSigned, JDKBundleCertIndex));
+                        createInputRuntimeImageOrBundle(useJDKBundle,
+                            isRuntimeImageSigned, jdkBundleCertIndex));
                     // Remove --input parameter from jpackage command line as we don't
                     // create input directory in the test and jpackage fails
                     // if --input references non existant directory.
@@ -254,7 +257,7 @@ public class SigningRuntimeImagePackageTest {
                     if (isSigned)
                         certIndex = signCertIndex;
                     else if (isRuntimeImageSigned)
-                        certIndex = JDKBundleCertIndex;
+                        certIndex = jdkBundleCertIndex;
                     verifyRuntimeImageInDMG(cmd, isRuntimeImageSigned || isSigned,
                         certIndex);
                 })

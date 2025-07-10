@@ -95,7 +95,7 @@ public final class ErrorTest {
         INVALID_MAC_JDK_BUNDLE(cmd -> {
             // Missing "Contents/MacOS/libjli.dylib"
             try {
-                final Path runtimePath = TKit.createTempDirectory("invalidJDKBundle");
+                final Path runtimePath = TKit.createTempDirectory("invalid-jdk-bundle");
                 Files.createDirectories(runtimePath.resolve("Contents/Home"));
                 Files.createFile(runtimePath.resolve("Contents/Info.plist"));
                 return runtimePath.toAbsolutePath().toString();
@@ -106,7 +106,7 @@ public final class ErrorTest {
         INVALID_JDK_IMAGE(cmd -> {
             // Missing ""lib/*/libjli.dylib""
             try {
-                final Path runtimePath = TKit.createTempDirectory("invalidJDKImage");
+                final Path runtimePath = TKit.createTempDirectory("invalid-jdk-image");
                 Files.createDirectories(runtimePath.resolve("jmods"));
                 Files.createDirectories(runtimePath.resolve("lib"));
                 Files.createFile(runtimePath.resolve("lib/src.zip"));
@@ -634,13 +634,13 @@ public final class ErrorTest {
                 testSpec().noAppDesc().nativeType()
                         .addArgs("--runtime-image", Token.INVALID_MAC_JDK_BUNDLE.token())
                         .error("message.runtime-image-invalid", JPackageCommand.cannedArgument(cmd -> {
-                            return Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath();
+                            return Path.of(cmd.getArgumentValue("--runtime-image"));
                         }, Token.INVALID_MAC_JDK_BUNDLE.token()))
                         .error("message.runtime-image-invalid.advice"),
                 testSpec().noAppDesc().nativeType()
                         .addArgs("--runtime-image", Token.INVALID_JDK_IMAGE.token())
                         .error("message.runtime-image-invalid", JPackageCommand.cannedArgument(cmd -> {
-                            return Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath();
+                            return Path.of(cmd.getArgumentValue("--runtime-image"));
                         }, Token.INVALID_JDK_IMAGE.token()))
                         .error("message.runtime-image-invalid.advice")
         ).map(TestSpec.Builder::create).toList());

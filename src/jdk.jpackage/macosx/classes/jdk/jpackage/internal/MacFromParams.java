@@ -48,12 +48,15 @@ import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
+import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
 import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
@@ -178,6 +181,15 @@ final class MacFromParams {
                 .map(MacAppImageFileExtras::signed)
                 .ifPresent(builder::predefinedAppImageSigned);
 
+        // Make sure we have valid runtime image.
+        Path runtimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+        if (!isRuntimeImageJDKBundle(runtimeImage)
+                && !isRuntimeImageJDKImage(runtimeImage)) {
+            throw new ConfigException(
+                I18N.format("message.runtime-image-invalid", runtimeImage),
+                I18N.getString("message.runtime-image-invalid.advice"));
+        }
+
         return builder;
     }
 
@@ -193,6 +205,36 @@ final class MacFromParams {
         DMG_CONTENT.copyInto(params, pkgBuilder::dmgContent);
 
         return pkgBuilder.create();
+    }
+
+
+    // JDK bundle: "Contents/Home", "Contents/MacOS/libjli.dylib"
+    // and "Contents/Info.plist"
+    private static boolean isRuntimeImageJDKBundle(Path runtimeImage) {
+        Path path1 = runtimeImage.resolve("Contents/Home");
+        Path path2 = runtimeImage.resolve("Contents/MacOS/libjli.dylib");
+        Path path3 = runtimeImage.resolve("Contents/Info.plist");
+        return IOUtils.exists(path1)
+                && path1.toFile().list() != null
+                && path1.toFile().list().length > 0
+                && IOUtils.exists(path2)
+                && IOUtils.exists(path3);
+    }
+
+    // JDK image: "lib/*/libjli.dylib"
+    private static boolean isRuntimeImageJDKImage(Path runtimeImage) {
+        final Path jliName = Path.of("libjli.dylib");
+        try (Stream<Path> walk = Files.walk(runtimeImage.resolve("lib"))) {
+            final Path jli = walk
+                    .filter(file -> file.getFileName().equals(jliName))
+                    .findFirst()
+                    .get();
+            return IOUtils.exists(jli);
+        } catch (NoSuchElementException | NoSuchFileException ex) {
+            return false;
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private record WithExpiredCertificateException<T>(Optional<T> obj, Optional<ExpiredCertificateException> certEx) {

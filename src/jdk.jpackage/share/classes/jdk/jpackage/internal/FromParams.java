@@ -87,7 +87,7 @@ final class FromParams {
         VENDOR.copyInto(params, appBuilder::vendor);
         COPYRIGHT.copyInto(params, appBuilder::copyright);
         SOURCE_DIR.copyInto(params, appBuilder::srcDir);
-        PREDEFINED_RUNTIME_IMAGE.copyInto(params, appBuilder::runtimeImage);
+        PREDEFINED_RUNTIME_IMAGE.copyInto(params, appBuilder::runtimeImageDir);
         APP_CONTENT.copyInto(params, appBuilder::contentDirs);
 
         final var isRuntimeInstaller = isRuntimeInstaller(params);
