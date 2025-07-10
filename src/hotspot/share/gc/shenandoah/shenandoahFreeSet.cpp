@@ -2251,9 +2251,10 @@ class DirectAllocatableRegionRefillClosure : public ShenandoahHeapRegionBreakabl
   PaddedEnd<ShenandoahHeapRegionAddress>* _directly_allocatable_regions;
   // inclusive
   const uint _start_index;
-  // inclusive
+  // exclusive
   const uint _end_index;
-  int _next_retire_eligible_region = 0;
+  int _scanned_region;
+  int _next_retire_eligible_region;
 public:
   ShenandoahAllocRequest &_req;
   HeapWord* &_obj;
@@ -2264,28 +2265,29 @@ public:
   DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahHeapRegionAddress>* directly_allocatable_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
     : _directly_allocatable_regions(directly_allocatable_regions),
       _start_index(start_index),
-      _end_index((start_index + 2) % ShenandoahDirectlyAllocatableRegionCount),
+      _end_index((start_index + 3) % ShenandoahDirectlyAllocatableRegionCount),
       _req(req), _obj(obj),
       _in_new_region(in_new_region),
-      _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize) {
-    _next_retire_eligible_region = find_next_retire_eligible_region(start_index == 0 ? -1 : start_index - 1);
+      _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize),
+      _scanned_region(0),
+      _next_retire_eligible_region(find_next_retire_eligible_region()) {
   }
 
   bool is_probing_region(const uint index) const {
-    return !(index > _end_index && index < _start_index);
+    return !(index >= _end_index && index < _start_index);
   }
 
-  int find_next_retire_eligible_region(int current_retire_eligible_region) {
-    if (_next_retire_eligible_region == -1) return -1;
-    uint next = (current_retire_eligible_region + 1) % ShenandoahDirectlyAllocatableRegionCount;
-    while (next != _end_index) {
-      ShenandoahHeapRegion* region = Atomic::load(&_directly_allocatable_regions[next].address);
-      if (region != nullptr && region->free() > _min_req_byte_size && is_probing_region(next)) {
+  int find_next_retire_eligible_region() {
+    while (_scanned_region < ShenandoahDirectlyAllocatableRegionCount) {
+      uint idx = (_start_index + _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
+      _scanned_region++;
+      ShenandoahHeapRegion* region = Atomic::load(&_directly_allocatable_regions[idx].address);
+      if (region != nullptr && region->free() > _min_req_byte_size && is_probing_region(idx)) {
         probing_region_refilled = true;
       } else if (region == nullptr || region->free() < PLAB::min_size() * HeapWordSize) {
-        return (int) next;
+        // Found the first eligible region
+        return idx;
       }
-      next = (next + 1) % ShenandoahDirectlyAllocatableRegionCount;
     }
     return -1;
   }
@@ -2324,7 +2326,7 @@ public:
         if (is_probing_region((uint) _next_retire_eligible_region)) {
           probing_region_refilled = true;
         }
-        _next_retire_eligible_region = find_next_retire_eligible_region(_next_retire_eligible_region);
+        _next_retire_eligible_region = find_next_retire_eligible_region();
       }
     } else if (_obj == nullptr && r->affiliation() == YOUNG_GENERATION && r->is_regular() &&
                r->get_top_before_promote() == nullptr) {
