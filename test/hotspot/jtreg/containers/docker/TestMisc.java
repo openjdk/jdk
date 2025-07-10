@@ -26,6 +26,7 @@
  * @test
  * @summary Test miscellanous functionality related to JVM running in docker container
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

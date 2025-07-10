@@ -293,6 +293,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
+  develop(bool, VerifyInlineCaches, true,                                   \
+          "Verify Inline Caches")                                           \
+                                                                            \
   product(bool, InlineArrayCopy, true, DIAGNOSTIC,                          \
           "Inline arraycopy native that is known to be part of "            \
           "base library DLL")                                               \
@@ -948,10 +951,6 @@ const int ObjectAlignmentInBytes = 8;
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
-  develop(bool, GenerateSynchronizationCode, true,                          \
-          "generate locking/unlocking code for synchronized methods and "   \
-          "monitors")                                                       \
-                                                                            \
   product_pd(bool, ImplicitNullChecks, DIAGNOSTIC,                          \
           "Generate code for implicit null checks")                         \
                                                                             \
@@ -1567,9 +1566,7 @@ const int ObjectAlignmentInBytes = 8;
           range(0.0, 100.0)                                                 \
                                                                             \
   product(uintx, StartAggressiveSweepingAt, 10,                             \
-          "Start aggressive sweeping if X[%] of the code cache is free."    \
-          "Segmented code cache: X[%] of the non-profiled heap."            \
-          "Non-segmented code cache: X[%] of the total code cache")         \
+          "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
                                                                             \
   /* interpreter debugging */                                               \

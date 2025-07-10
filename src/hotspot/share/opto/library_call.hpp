@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_OPTO_LIBRARY_CALL_HPP
+#define SHARE_OPTO_LIBRARY_CALL_HPP
+
 #include "ci/ciMethod.hpp"
 #include "classfile/javaClasses.hpp"
 #include "opto/callGenerator.hpp"
@@ -417,3 +420,4 @@ class LibraryCallKit : public GraphKit {
   bool inline_blackhole();
 };
 
+#endif // SHARE_OPTO_LIBRARY_CALL_HPP
