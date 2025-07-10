@@ -2266,20 +2266,20 @@ public:
     : _directly_allocatable_regions(directly_allocatable_regions),
       _start_index(start_index),
       _end_index((start_index + 3) % ShenandoahDirectlyAllocatableRegionCount),
-      _req(req), _obj(obj),
-      _in_new_region(in_new_region),
-      _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize),
       _scanned_region(0),
-      _next_retire_eligible_region(find_next_retire_eligible_region()) {
-  }
+      _next_retire_eligible_region(find_next_retire_eligible_region()),
+      _req(req),
+      _obj(obj),
+      _in_new_region(in_new_region),
+      _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize) {}
 
   bool is_probing_region(const uint index) const {
     return !(index >= _end_index && index < _start_index);
   }
 
   int find_next_retire_eligible_region() {
-    while (_scanned_region < ShenandoahDirectlyAllocatableRegionCount) {
-      uint idx = (_start_index + _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
+    while (_scanned_region < (int) ShenandoahDirectlyAllocatableRegionCount) {
+      uint idx = (_start_index + (size_t) _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
       _scanned_region++;
       ShenandoahHeapRegion* region = Atomic::load(&_directly_allocatable_regions[idx].address);
       if (region != nullptr && region->free() > _min_req_byte_size && is_probing_region(idx)) {
