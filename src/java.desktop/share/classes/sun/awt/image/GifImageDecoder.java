@@ -342,6 +342,7 @@ public class GifImageDecoder extends ImageDecoder {
     private short[] prefix  = new short[4096];
     private byte[]  suffix  = new byte[4096];
     private byte[]  outCode = new byte[4097];
+    private boolean isSimpleSavedImageComparison;
 
     private static native void initIDs();
 
@@ -395,16 +396,7 @@ public class GifImageDecoder extends ImageDecoder {
         int off = y * global_width + x2;
         boolean save = (curframe.disposal_method == GifFrame.DISPOSAL_SAVE);
         if (trans_pixel >= 0 && !curframe.initialframe) {
-            boolean isSimple = saved_image != null && model.equals(saved_model);
-            if (isSimple) {
-                for (int a = 0; a < saved_image.length; a++) {
-                    if ((saved_image[a] & 0xff) == trans_pixel) {
-                        isSimple = false;
-                        break;
-                    }
-                }
-            }
-            if (isSimple) {
+            if (isSimpleSavedImageComparison) {
                 for (int i = rasbeg; i < rasend; i++, off++) {
                     byte pixel = rasline[i];
                     if ((pixel & 0xff) == trans_pixel) {
@@ -601,6 +593,16 @@ public class GifImageDecoder extends ImageDecoder {
                                    initCodeSize);
             }
             return false;
+        }
+
+        isSimpleSavedImageComparison = saved_image != null && model.equals(saved_model);
+        if (isSimpleSavedImageComparison) {
+            for (int a = 0; a < saved_image.length; a++) {
+                if ((saved_image[a] & 0xff) == trans_pixel) {
+                    isSimpleSavedImageComparison = false;
+                    break;
+                }
+            }
         }
         boolean ret = parseImage(x, y, width, height,
                                  interlace, initCodeSize,
