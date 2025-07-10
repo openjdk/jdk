@@ -104,7 +104,7 @@ public class ListTypeCheckTest {
                         al.add(o);
                         ListIterator iter2 = al.listIterator();
                         Object x2 = iter2.next();
-                        iter2.add("blah"); // "Test "add", should fail like the others.
+                        iter2.add("blah"); // Test "add", should fail like the others.
                         break;
                     default:
                         throw new Exception("test wrong");
