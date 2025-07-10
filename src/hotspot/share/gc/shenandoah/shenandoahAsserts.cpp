@@ -29,7 +29,10 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "oops/oop.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/os.hpp"
+#include "utilities/vmError.hpp"
 
 void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // Be extra safe. Only access data that is guaranteed to be safe:
@@ -205,25 +208,13 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
-  Klass* obj_klass = ShenandoahForwarding::klass(obj);
-  if (obj_klass == nullptr) {
+  if (!os::is_readable_pointer(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object klass pointer should not be null",
-                  file,line);
-  }
-
-  if (!Metaspace::contains(obj_klass)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object klass pointer must go to metaspace",
-                  file,line);
-  }
-
-  if (!heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object should be in active region area",
+                  "oop within heap bounds but at unreadable location",
                   file, line);
   }
 
+  // Since we may need the forwardee (with +COH) to extract the Klass*, check it first
   oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj != fwd) {
@@ -243,9 +234,9 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                     file, line);
     }
 
-    if (obj_klass != ShenandoahForwarding::klass(fwd)) {
+    if (!os::is_readable_pointer(fwd)) {
       print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Forwardee klass disagrees with object class",
+                    "Forwardee within heap bounds but at unreadable location",
                     file, line);
     }
 
@@ -269,6 +260,44 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                     "Multiple forwardings",
                     file, line);
     }
+  }
+
+  // Extract klass safely
+  const Klass* obj_klass = nullptr;
+  if (UseCompressedClassPointers) {
+    const narrowKlass nk = fwd->narrow_klass();
+    if (!CompressedKlassPointers::is_valid_narrow_klass_id(nk)) {
+      print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Object narrow klass pointer invalid outside range",
+                    file,line);
+    }
+    obj_klass = CompressedKlassPointers::decode_without_asserts(nk);
+  } else {
+    obj_klass = fwd->klass_or_null();
+  }
+
+  if (obj_klass == nullptr) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object klass pointer should not be null",
+                  file,line);
+  }
+
+  if (!Metaspace::contains(obj_klass)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object klass pointer must go to metaspace",
+                  file,line);
+  }
+
+  if (obj_klass != fwd->klass_or_null()) {
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Forwardee klass disagrees with object class",
+                  file, line);
+  }
+
+  if (!heap->is_in(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object should be in active region area",
+                  file, line);
   }
 
   // Do additional checks for special objects: their fields can hold metadata as well.
