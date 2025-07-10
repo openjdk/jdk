@@ -35,7 +35,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/access.hpp"
+#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
@@ -434,11 +434,9 @@ void KlassTrainingData::print_on(outputStream* st, bool name_only) const {
 
 KlassTrainingData::KlassTrainingData(InstanceKlass* klass) : TrainingData(klass) {
   assert(klass != nullptr, "");
-  oop* handle = oop_storage()->allocate();
-  if (handle == nullptr) {
-    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR, "Cannot allocate oop storage for mirror");
-  }
-  NativeAccess<>::oop_store(handle, klass->java_mirror());
+  // The OopHandle constructor will allocate a handle. We don't need to ever release it so we don't preserve
+  // the handle object.
+  OopHandle handle(Universe::vm_global(), klass->java_mirror());
   _holder = klass;
   assert(holder() == klass, "");
 }

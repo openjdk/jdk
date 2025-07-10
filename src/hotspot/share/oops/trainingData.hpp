@@ -32,7 +32,6 @@
 #include "compiler/compiler_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -453,9 +452,6 @@ class KlassTrainingData : public TrainingData {
   void remove_comp_dep(CompileTrainingData* ctd) {
     TrainingDataLocker::assert_locked();
      _comp_deps.remove_if_existing(ctd);
-  }
-  static OopStorage* oop_storage() {
-    return Universe::vm_global();
   }
  public:
   Symbol* name() const {
