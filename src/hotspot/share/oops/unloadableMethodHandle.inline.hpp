@@ -40,9 +40,9 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
   oop obj = get_unload_blocker(method);
   if (obj != nullptr) {
     _weak_handle = WeakHandle(Universe::vm_weak(), obj);
-    set_state(WEAK);
+    set_state(State::WEAK);
   } else {
-    set_state(PERMANENT);
+    set_state(State::PERMANENT);
   }
 
   assert(is_safe(), "Should be");
@@ -50,17 +50,17 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
 
 inline UnloadableMethodHandle::~UnloadableMethodHandle() {
   switch (get_state()) {
-    case STRONG: {
+    case State::STRONG: {
       _strong_handle.release(Universe::vm_global());
     }
-    case WEAK: {
+    case State::WEAK: {
       _weak_handle.release(Universe::vm_weak());
     }
-    case PERMANENT: {
+    case State::PERMANENT: {
       _method = nullptr;
-      set_state(RELEASED);
+      set_state(State::RELEASED);
     }
-    case RELEASED: {
+    case State::RELEASED: {
       // Nothing to do.
       break;
     }
@@ -105,16 +105,16 @@ oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
 
 bool UnloadableMethodHandle::is_safe() const {
   switch (get_state()) {
-    case PERMANENT:
-    case STRONG: {
+    case State::PERMANENT:
+    case State::STRONG: {
       // Definitely safe.
       return true;
     }
-    case RELEASED: {
+    case State::RELEASED: {
       // Definitely unsafe.
       return false;
     }
-    case WEAK: {
+    case State::WEAK: {
       // Safety: Caller should be a Java thread in proper state.
       // Otherwise, unloading can happen without coordinating with this thread.
       // (Access API would assert this too, but do not rely on it.)
@@ -138,14 +138,14 @@ inline void UnloadableMethodHandle::make_always_safe() {
   assert(is_safe(), "Should be");
 
   switch (get_state()) {
-    case PERMANENT:
-    case STRONG:
-    case RELEASED: {
+    case State::PERMANENT:
+    case State::STRONG:
+    case State::RELEASED: {
       // No action is needed.
       break;
     }
-    case WEAK: {
-      if (transit_state(WEAK, STRONG)) {
+    case State::WEAK: {
+      if (transit_state(State::WEAK, State::STRONG)) {
         // Do this only once, otherwise it leaks handles.
         oop obj = get_unload_blocker(_method);
         assert(obj != nullptr, "Should have one");

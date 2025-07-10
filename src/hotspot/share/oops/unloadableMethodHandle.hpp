@@ -65,12 +65,14 @@ class Method;
 class UnloadableMethodHandle {
   friend class VMStructs;
 private:
-  enum State {
+  enum class State {
     PERMANENT,
     WEAK,
     STRONG,
     RELEASED,
-  } volatile _state;
+  };
+
+  State volatile _state;
 
   Method* _method;
   WeakHandle _weak_handle;
