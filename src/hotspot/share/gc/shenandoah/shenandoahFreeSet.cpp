@@ -2176,34 +2176,39 @@ HeapWord* ShenandoahFreeSet::par_allocate_single_for_mutator(ShenandoahAllocRequ
   assert(req.type() == ShenandoahAllocRequest::_alloc_tlab || req.type() == ShenandoahAllocRequest::_alloc_shared, "Must be");
 
   const uint start_idx = ShenandoahDirectlyAllocatableRegionAffinity::index();
+  const uint max_probes = ShenandoahDirectAllocationMaxProbes;
   for (;;) {
-    constexpr uint max_probes = 3;
     HeapWord* obj = nullptr;
-    bool any_replacement_eligible_in_probe_range = false;
-    obj = cas_allocate_single_for_mutator<IS_TLAB>(start_idx, max_probes, req, in_new_region, any_replacement_eligible_in_probe_range);
+    bool any_replacement_eligible = false;
+    bool steal_alloc_done = false;
+    obj = cas_allocate_single_for_mutator<IS_TLAB>(start_idx, max_probes, req, in_new_region, any_replacement_eligible);
     if (obj != nullptr) {
       return obj;
     }
     uint steal_alloc_start_idx = (start_idx + max_probes) % ShenandoahDirectlyAllocatableRegionCount;
     uint steal_alloc_probes = ShenandoahDirectlyAllocatableRegionCount - max_probes;
-    if (!any_replacement_eligible_in_probe_range) {
-      //only tried 3 shared regions, try to steal from other shared regions before OOM
+    if (!any_replacement_eligible) {
+      // After probing max_probes times with CAS alloc failure, if there is no region eligible for replacement,
+      // Taking the lock and try to allocate direct allocation region will unlikely to successfully to replace any of them,
+      // therefore, it tries steal space from other allocation regions first.
+      steal_alloc_done = true;
       obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
                                                      steal_alloc_probes,
                                                      req,
                                                      in_new_region,
-                                                     any_replacement_eligible_in_probe_range);
+                                                     any_replacement_eligible);
       if (obj != nullptr) {
         return obj;
       }
     }
-    if (!try_allocate_directly_allocatable_regions(start_idx, req, obj, in_new_region)) {
+
+    if (!try_allocate_directly_allocatable_regions(start_idx, steal_alloc_done, req, obj, in_new_region)) {
       if (obj == nullptr) {
         obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
                                                        steal_alloc_probes,
                                                        req,
                                                        in_new_region,
-                                                       any_replacement_eligible_in_probe_range);
+                                                       any_replacement_eligible);
       }
       return obj;
     }
@@ -2253,6 +2258,7 @@ class DirectAllocatableRegionRefillClosure : public ShenandoahHeapRegionBreakabl
   const uint _start_index;
   // exclusive
   const uint _probe_end_index;
+  const bool _replace_all_eligible_regions;
   int _scanned_region;
   int _next_retire_eligible_region;
 public:
@@ -2262,10 +2268,11 @@ public:
   bool probing_region_refilled = false;
   const size_t _min_req_byte_size;
 
-  DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahDirectAllocationRegion>* direct_allocation_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
+  DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahDirectAllocationRegion>* direct_allocation_regions, uint start_index, bool replace_all_eligible_regions, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
     : _direct_allocation_regions(direct_allocation_regions),
       _start_index(start_index),
       _probe_end_index((start_index + 3) % ShenandoahDirectlyAllocatableRegionCount),
+      _replace_all_eligible_regions(replace_all_eligible_regions),
       _scanned_region(0),
       _next_retire_eligible_region(find_next_retire_eligible_region()),
       _req(req),
@@ -2278,7 +2285,9 @@ public:
   }
 
   int find_next_retire_eligible_region() {
-    while (_scanned_region < (int) ShenandoahDirectlyAllocatableRegionCount) {
+    int const max_regions_to_scan = static_cast<int>(_replace_all_eligible_regions ? ShenandoahDirectlyAllocatableRegionCount
+                                                                                   : ShenandoahDirectAllocationMaxProbes);
+    while (_scanned_region < max_regions_to_scan) {
       uint idx = (_start_index + (size_t) _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
       _scanned_region++;
       ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
@@ -2350,6 +2359,7 @@ public:
 };
 
 bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(uint start_index,
+                                                                  bool replace_all_eligible_regions,
                                                                   ShenandoahAllocRequest &req,
                                                                   HeapWord* &obj,
                                                                   bool &in_new_region) {
@@ -2358,7 +2368,7 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(uint start_ind
   shenandoah_assert_not_heaplocked();
 
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
-  DirectAllocatableRegionRefillClosure cl(_direct_allocation_regions, start_index, req, obj, in_new_region);
+  DirectAllocatableRegionRefillClosure cl(_direct_allocation_regions, start_index, replace_all_eligible_regions, req, obj, in_new_region);
   iterate_regions_for_alloc<true, false>(&cl, false);
   return cl.probing_region_refilled;
 }

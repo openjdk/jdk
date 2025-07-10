@@ -430,6 +430,7 @@ private:
   HeapWord* par_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
   bool try_allocate_directly_allocatable_regions(uint start_index,
+                                                 bool replace_all_eligible_regions,
                                                  ShenandoahAllocRequest &req,
                                                  HeapWord* &obj,
                                                  bool &in_new_region);
