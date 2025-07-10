@@ -35,6 +35,9 @@
  * Unless otherwise specified, passing {@code null} or an array or collection containing a {@code null} element as an
  * argument to a constructor or method of any Class-File API class or interface will cause a {@link NullPointerException}
  * to be thrown.
+ * <p>
+ * For methods that take {@code List} or array arguments in the Class-File API, an {@link IllegalArgumentException} will
+ * be thrown if the size of the argument list or array exceeds its limit in the {@code class} file format.
  *
  * <h2 id="reading">Reading Attributes</h2>
  * The general way to obtain attributes is through {@link AttributedElement}.  In addition to that, many attributes
