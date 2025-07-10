@@ -35,6 +35,7 @@ import jdk.test.lib.net.IPSupport;
 
 public class IPv4Only {
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         if (IPSupport.hasIPv4()) {
             System.out.println("Testing IPv4");
             Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
