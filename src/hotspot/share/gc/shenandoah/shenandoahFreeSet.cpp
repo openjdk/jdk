@@ -2278,10 +2278,7 @@ public:
         probing_region_refilled = true;
       } if (free_bytes < PLAB::min_size() * HeapWordSize) {
         assert(region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
-        ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(region, ShenandoahFreeSetPartitionId::Mutator);
-        region->release_from_direct_allocation();
         Atomic::store(&shared_region._eligible_for_replacement, true);
-        Atomic::store(&shared_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
         return idx;
       }
     }
@@ -2308,12 +2305,19 @@ public:
         _req.set_actual_size(actual_size);
       }
       if (_next_retire_eligible_region != -1) {
+        ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
+        ShenandoahHeapRegion *const original_region = Atomic::load(&shared_region._address);
         r->reserve_for_direct_allocation();
         OrderAccess::fence();
-        ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
         Atomic::store(&shared_region._address, r);
+        Atomic::store(&shared_region._eligible_for_replacement, false);
         if (is_probing_region((uint) _next_retire_eligible_region)) {
           probing_region_refilled = true;
+        }
+        if (original_region != nullptr) {
+          assert(original_region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
+          original_region->release_from_direct_allocation();
+          ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(original_region, ShenandoahFreeSetPartitionId::Mutator);
         }
         _next_retire_eligible_region = find_next_retire_eligible_region();
       }
