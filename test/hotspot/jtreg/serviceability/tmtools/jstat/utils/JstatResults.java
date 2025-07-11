@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.text.ParseException;
  * Results of running the jstat tool Concrete subclasses will detail the jstat
  * tool options
  */
-abstract public class JstatResults extends ToolResults {
+public abstract class JstatResults extends ToolResults {
 
     private static final float FLOAT_COMPARISON_TOLERANCE = 0.0011f;
 
@@ -181,5 +181,5 @@ abstract public class JstatResults extends ToolResults {
         return Math.abs(sum) <= FLOAT_COMPARISON_TOLERANCE;
     }
 
-    abstract public void assertConsistency();
+     public abstract void assertConsistency();
 }

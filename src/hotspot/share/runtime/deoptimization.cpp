@@ -1049,9 +1049,9 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   return bt;
 JRT_END
 
-class DeoptimizeMarkedClosure : public HandshakeClosure {
+class DeoptimizeMarkedHandshakeClosure : public HandshakeClosure {
  public:
-  DeoptimizeMarkedClosure() : HandshakeClosure("Deoptimize") {}
+  DeoptimizeMarkedHandshakeClosure() : HandshakeClosure("Deoptimize") {}
   void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
     jt->deoptimize_marked_methods();
@@ -1064,7 +1064,7 @@ void Deoptimization::deoptimize_all_marked() {
   // Make the dependent methods not entrant
   CodeCache::make_marked_nmethods_deoptimized();
 
-  DeoptimizeMarkedClosure deopt;
+  DeoptimizeMarkedHandshakeClosure deopt;
   if (SafepointSynchronize::is_at_safepoint()) {
     Threads::java_threads_do(&deopt);
   } else {
@@ -1274,11 +1274,11 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       InternalOOMEMark iom(THREAD);
-      obj = ak->allocate(len, THREAD);
+      obj = ak->allocate_instance(len, THREAD);
     } else if (k->is_objArray_klass()) {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k);
       InternalOOMEMark iom(THREAD);
-      obj = ak->allocate(sv->field_size(), THREAD);
+      obj = ak->allocate_instance(sv->field_size(), THREAD);
     }
 
     if (obj == nullptr) {
@@ -1826,7 +1826,7 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
 #if INCLUDE_JVMCI
 address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
   // there is no exception handler for this pc => deoptimize
-  nm->make_not_entrant("missing exception handler");
+  nm->make_not_entrant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER);
 
   // Use Deoptimization::deoptimize for all of its side-effects:
   // gathering traps statistics, logging...
@@ -2363,6 +2363,14 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       ShouldNotReachHere();
     }
 
+#if INCLUDE_JVMCI
+    // Deoptimization count is used by the CompileBroker to reason about compilations
+    // it requests so do not pollute the count for deoptimizations in non-default (i.e.
+    // non-CompilerBroker) compilations.
+    if (nm->jvmci_skip_profile_deopt()) {
+      update_trap_state = false;
+    }
+#endif
     // Setting +ProfileTraps fixes the following, on all platforms:
     // The result is infinite heroic-opt-uncommon-trap/deopt/recompile cycles, since the
     // recompile relies on a MethodData* to record heroic opt failures.
@@ -2455,7 +2463,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     // Recompile
     if (make_not_entrant) {
-      if (!nm->make_not_entrant("uncommon trap")) {
+      if (!nm->make_not_entrant(nmethod::InvalidationReason::UNCOMMON_TRAP)) {
         return; // the call did not change nmethod's state
       }
 
@@ -2473,7 +2481,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         trap_mdo->inc_tenure_traps();
       }
     }
-
     if (inc_recompile_count) {
       trap_mdo->inc_overflow_recompile_count();
       if ((uint)trap_mdo->overflow_recompile_count() >

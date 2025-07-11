@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,23 +184,39 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
 {
     int size;
     char *buf;
-    const char *format = "%s: %s";
     const char *error_string = gai_strerror(gai_error);
     if (error_string == NULL)
         error_string = "unknown error";
+    int enhancedExceptions = getEnhancedExceptionsAllowed(env);
+    if (enhancedExceptions == ENH_INIT_ERROR && (*env)->ExceptionCheck(env)) {
+        return;
+    }
 
-    size = strlen(format) + strlen(hostname) + strlen(error_string) + 2;
+    if (enhancedExceptions == ENH_ENABLED) {
+        size = strlen(hostname);
+    } else {
+        size = 0;
+    }
+    size += strlen(error_string) + 3;
+
     buf = (char *) malloc(size);
     if (buf) {
         jstring s;
-        snprintf(buf, size, format, hostname, error_string);
-        s = JNU_NewStringPlatform(env, buf);
-        if (s != NULL) {
-            jobject x = JNU_NewObjectByName(env,
+        int n;
+        if (enhancedExceptions == ENH_ENABLED) {
+            n = snprintf(buf, size, "%s: %s", hostname, error_string);
+        } else {
+            n = snprintf(buf, size, " %s", error_string);
+        }
+        if (n >= 0) {
+            s = JNU_NewStringPlatform(env, buf);
+            if (s != NULL) {
+                jobject x = JNU_NewObjectByName(env,
                                             "java/net/UnknownHostException",
                                             "(Ljava/lang/String;)V", s);
-            if (x != NULL)
-                (*env)->Throw(env, x);
+                if (x != NULL)
+                    (*env)->Throw(env, x);
+            }
         }
         free(buf);
     }

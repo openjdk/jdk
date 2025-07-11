@@ -22,13 +22,14 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.lang.invoke.CallSite;
-import java.util.Objects;
-
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.VMConstant;
+
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.util.Objects;
 
 /**
  * Represents a constant non-{@code null} object reference, within the compiler and across the
@@ -61,7 +62,26 @@ public interface HotSpotObjectConstant extends JavaConstant, HotSpotConstant, VM
      *            change
      * @return {@code null} if this constant does not represent a {@link CallSite} object
      */
-    JavaConstant getCallSiteTarget(Assumptions assumptions);
+    default JavaConstant getCallSiteTarget(Assumptions assumptions) {
+        Assumptions.AssumptionResult<JavaConstant> result = getCallSiteTarget();
+        if (!result.canRecordTo(assumptions)) {
+            return null;
+        }
+        result.recordTo(assumptions);
+        return result.getResult();
+    }
+
+    /**
+     * Gets the result of {@link CallSite#getTarget()} for the {@link CallSite} object represented
+     * by this constant. The target is bound to an assumption if this is not a fully initialized
+     * {@link ConstantCallSite}.
+     *
+     * @return a call-site target (possibly bound to an assumption) or {@code null} if this constant
+     * does not represent a {@link CallSite} object
+     */
+    default Assumptions.AssumptionResult<JavaConstant> getCallSiteTarget() {
+        throw new UnsupportedOperationException("getCallSiteTarget");
+    }
 
     /**
      * Determines if this constant represents an {@linkplain String#intern() interned} string.
