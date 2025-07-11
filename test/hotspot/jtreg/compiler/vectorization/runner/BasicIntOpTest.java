@@ -141,7 +141,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "rvv", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "zvbb", "true"},
         counts = {IRNode.POPCOUNT_VI, ">0"})
     public int[] vectorPopCount() {
         int[] res = new int[SIZE];

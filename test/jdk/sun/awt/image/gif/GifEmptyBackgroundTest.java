@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,21 @@
  * questions.
  */
 
-
 /*
  * @test
- *
- * @summary converted from VM Testbase nsk/jvmti/RawMonitorExit/rawmonexit003.
- * VM Testbase keywords: [quick, jpda, jvmti, noras]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test exercises JVMTI function RawMonitorExit(monitor).
- *     The test checks if the function returns JVMTI_ERROR_INVALID_MONITOR
- *     if the monitor is pointer to a string.
- * COMMENTS
- *     Fixed according to the bug:
- *         4431533: TEST_BUG: destroyed raw monitor can be occasionally valid
- *     Ported from JVMDI.
- *
- * @comment The test intentionally passes a bad argument to the function to verify error checking,
-            which causes a false positive from the ASAN lib
- * @requires !vm.asan
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm/native -agentlib:rawmonexit003 nsk.jvmti.RawMonitorExit.rawmonexit003
+ * @bug 8356137
+ * @summary This test verifies a non-zero transparent pixel in gifs works when
+ * the disposal method changes from 2 to 1
  */
 
+public class GifEmptyBackgroundTest {
+    public static void main(String[] args) throws Throwable {
+        GifBuilder.test(
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.restoreToBackgroundColor, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false) );
+    }
+}
