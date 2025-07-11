@@ -74,6 +74,7 @@ public class KeyCharTest extends Frame implements KeyListener {
         setVisible(true);
         requestFocus();
 
+        boolean wasNumlockPressed = false;
         try {
             robot.setAutoDelay(10);
             robot.setAutoWaitForIdle(true);
@@ -89,13 +90,16 @@ public class KeyCharTest extends Frame implements KeyListener {
             // Try again with a different numpad state.
             robot.keyPress(KeyEvent.VK_NUM_LOCK);
             robot.keyRelease(KeyEvent.VK_NUM_LOCK);
+            wasNumlockPressed = true;
 
             testKeyRange(robot, KeyEvent.VK_NUMPAD0, KeyEvent.VK_DIVIDE);
         } catch(Exception e){
             throw new RuntimeException("Exception while performing Robot actions.");
         } finally {
-            robot.keyPress(KeyEvent.VK_NUM_LOCK);
-            robot.keyRelease(KeyEvent.VK_NUM_LOCK);
+            if (wasNumlockPressed) {
+                robot.keyPress(KeyEvent.VK_NUM_LOCK);
+                robot.keyRelease(KeyEvent.VK_NUM_LOCK);
+            }
         }
    }
 
