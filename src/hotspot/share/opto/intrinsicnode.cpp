@@ -332,10 +332,10 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         clz = bt == T_INT ? clz - 32 : clz;
         result_bit_width = mask_bit_width - clz;
       }
-      // If number of bits required to accommodated mask value range is less than the
-      // full bit width of integral type, then MSB bit is guaranteed to be zero, thus
-      // compression result will never be a -ve value and we can safely set the
-      // lower bound of bit compression to zero.
+      // If the number of bits required to for the mask value range is less than the
+      // full bit width of the integral type, then the MSB bit is guaranteed to be zero,
+      // thus the compression result will never be a -ve value and we can safely set the
+      // lower bound of the bit compression to zero.
       lo = result_bit_width == mask_bit_width ? lo : 0L;
 
       assert(hi == (bt == T_INT) ? max_jint : max_jlong, "");
