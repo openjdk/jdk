@@ -49,7 +49,7 @@ public:
 
   static void vprintf_failure(SafeLevel level, oop obj, void *interior_loc, oop loc,
                               const char *phase, const char *file, int line, const char *fmt,
-                              va_list args);
+                              va_list args) ATTRIBUTE_PRINTF(8, 0);
 
   static void printf_failure(SafeLevel level, oop obj, void *interior_loc, oop loc,
                               const char *phase, const char *file, int line, const char *fmt, ...)
