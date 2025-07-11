@@ -2289,17 +2289,18 @@ public:
     int const max_regions_to_scan = static_cast<int>(_replace_all_eligible_regions ? ShenandoahDirectlyAllocatableRegionCount
                                                                                    : ShenandoahDirectAllocationMaxProbes);
     while (_scanned_region < max_regions_to_scan) {
-      uint idx = (_start_index + (size_t) _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
+      const uint idx = (_start_index + (size_t) _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
       _scanned_region++;
       ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
-      ShenandoahHeapRegion* region = Atomic::load(&shared_region._address);
+      const ShenandoahHeapRegion* r = nullptr;
       // Found the first eligible region
-      if (region == nullptr) return idx;
-      size_t free_bytes = region->free();
+      if (Atomic::load(&shared_region._eligible_for_replacement) ||
+          (r = Atomic::load(&shared_region._address)) == nullptr) return idx;
+      size_t free_bytes = r->free();
       if (free_bytes >= _min_req_byte_size && is_probing_region(idx)) {
         probing_region_refilled = true;
       } else if (free_bytes < PLAB::min_size() * HeapWordSize) {
-        assert(region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
+        assert(r->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
         Atomic::store(&shared_region._eligible_for_replacement, true);
         return idx;
       }
