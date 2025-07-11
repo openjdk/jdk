@@ -38,7 +38,11 @@ import jdk.jfr.internal.MirrorEvent;
 @Label("File Write")
 @Category("Java Application")
 @Description("Writing data to a file")
-@StackFilter({"java.io.FileOutputStream", "java.nio.channels.FileChannel", "java.io.DataOutputStream", "java.io.RandomAccessFile", "sun.nio.ch.FileChannelImpl"})
+@StackFilter({"java.nio.channels.FileChannel",
+              "java.io.DataOutputStream",
+              "java.io.FileOutputStream",
+              "java.io.RandomAccessFile",
+              "sun.nio.ch.FileChannelImpl"})
 @Throttle
 public final class FileWriteEvent extends MirrorEvent {
 

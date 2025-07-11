@@ -38,7 +38,10 @@ import jdk.jfr.internal.Type;
 @Label("Socket Write")
 @Category("Java Application")
 @Description("Writing data to a socket")
-@StackFilter({"java.io.OutputStream", "java.nio.channels.SocketChannel", "java.net.Socket$SocketOutputStream"})
+@StackFilter({"java.io.OutputStream",
+              "java.net.Socket$SocketOutputStream",
+              "java.nio.channels.SocketChannel",
+              "sun.nio.ch.SocketOutputStream"})
 @Throttle
 public final class SocketWriteEvent extends MirrorEvent {
 

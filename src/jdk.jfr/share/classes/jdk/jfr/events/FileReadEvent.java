@@ -38,7 +38,12 @@ import jdk.jfr.internal.MirrorEvent;
 @Label("File Read")
 @Category("Java Application")
 @Description("Reading data from a file")
-@StackFilter({"java.io.FileInputStream", "java.nio.channels.FileChannel", "java.io.DataInputStream", "java.io.InputStream", "java.io.RandomAccessFile", "sun.nio.ch.FileChannelImpl"})
+@StackFilter({"java.nio.channels.FileChannel",
+              "java.io.DataInputStream",
+              "java.io.FileInputStream",
+              "java.io.InputStream",
+              "java.io.RandomAccessFile",
+              "sun.nio.ch.FileChannelImpl"})
 @Throttle
 public final class FileReadEvent extends MirrorEvent {
 
