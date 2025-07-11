@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,7 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
 
   ResourceMark rm;
   stringStream ss;
-  r->print_on(&ss);
-
-  stringStream mw_ss;
-  obj->mark().print_on(&mw_ss);
+  StreamIndentor si(&ss);
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
@@ -77,21 +74,34 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
     klass_text = obj_klass->external_name();
   }
 
-  msg.append("  " PTR_FORMAT " - nk %u klass " PTR_FORMAT " %s\n", p2i(obj), nk, p2i(obj_klass), klass_text);
-  msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
-  msg.append("    %3s after update watermark\n",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
-  msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
-  msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
-  msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
-  if (heap->mode()->is_generational() && !obj->is_forwarded()) {
-    msg.append("  age: %d\n", obj->age());
+  ss.print_cr(PTR_FORMAT " - nk %u klass " PTR_FORMAT " %s\n", p2i(obj), nk, p2i(obj_klass), klass_text);
+  {
+    StreamIndentor si(&ss);
+    ss.print_cr("%3s allocated after mark start", ctx->allocated_after_mark_start(obj) ? "" : "not");
+    ss.print_cr("%3s after update watermark",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
+    ss.print_cr("%3s marked strong",              ctx->is_marked_strong(obj) ? "" : "not");
+    ss.print_cr("%3s marked weak",                ctx->is_marked_weak(obj) ? "" : "not");
+    ss.print_cr("%3s in collection set",          heap->in_collection_set(obj) ? "" : "not");
+    if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+      ss.print_cr("age: %d", obj->age());
+    }
+    ss.print_raw("mark: ");
+    obj->mark().print_on(&ss);
+    ss.cr();
+    ss.print_raw("region: ");
+    r->print_on(&ss);
+    ss.cr();
+    if (obj_klass == vmClasses::Class_klass()) {
+      ss.print_cr("mirrored klass:       " PTR_FORMAT, p2i(obj->metadata_field(java_lang_Class::klass_offset())));
+      ss.print_cr("mirrored array klass: " PTR_FORMAT, p2i(obj->metadata_field(java_lang_Class::array_klass_offset())));
+    }
   }
-  msg.append("  mark:%s\n", mw_ss.freeze());
-  msg.append("  region: %s", ss.freeze());
-  if (obj_klass == vmClasses::Class_klass()) {
-    msg.append("  mirrored klass:       " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::klass_offset())));
-    msg.append("  mirrored array klass: " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::array_klass_offset())));
-  }
+
+  static constexpr int num_bytes = 64;
+  const_address loc = cast_from_oop<const_address>(obj);
+  os::print_hex_dump(&ss, loc, loc + num_bytes, 8, true, 32, loc);
+
+  msg.append("%s", ss.base());
 }
 
 void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
