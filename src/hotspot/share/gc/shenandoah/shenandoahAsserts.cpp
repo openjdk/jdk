@@ -295,7 +295,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
   if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
     const Klass* klass = (const Klass*) fwd->metadata_field(java_lang_Class::klass_offset());
-    if (klass != nullptr && !Metaspace::klass_is_live(klass, false, &hint)) {
+    if (klass != nullptr && !Metaspace::klass_is_live(klass, false /* possibly not encodable */, &hint)) {
       printf_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                      file, line, "Mirrored instance klass " PTR_FORMAT ": invalid klass pointer or dead/invalid Klass (hint: %u)",
                      p2i(klass), (unsigned)hint);

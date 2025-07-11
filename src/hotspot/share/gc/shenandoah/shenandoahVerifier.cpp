@@ -263,18 +263,15 @@ private:
 
     if (obj_klass == vmClasses::Class_klass()) {
       const Klass* const klass = (const Klass*) fwd->metadata_field(java_lang_Class::klass_offset());
-      check(ShenandoahAsserts::_safe_oop, obj,
-            klass == nullptr || Metaspace::klass_is_live(klass,
-                                                         true, // grabbed off an object
-                                                         &hint),
-            "Instance class mirror should point to Metaspace");
-
+      check_v(ShenandoahAsserts::_safe_oop, obj,
+              klass == nullptr || Metaspace::klass_is_live(klass, false /* possibly not encodable */, &hint),
+             "Instance class mirror (" PTR_FORMAT "): invalid klass pointer or dead/invalid Klass (hint: %u)",
+             p2i(obj_klass), (unsigned)hint);
       const Klass* const array_klass = (const Klass*) fwd->metadata_field(java_lang_Class::array_klass_offset());
-      check(ShenandoahAsserts::_safe_oop, obj,
-            array_klass == nullptr || Metaspace::klass_is_live(klass,
-                                                               true, // since array klass
-                                                               &hint),
-            "Array class mirror should point to Metaspace");
+      check_v(ShenandoahAsserts::_safe_oop, obj,
+            array_klass == nullptr || Metaspace::klass_is_live(array_klass, true, &hint),
+            "Array class mirror (" PTR_FORMAT "): invalid klass pointer or dead/invalid Klass (hint: %u)",
+            p2i(array_klass), (unsigned)hint);
     }
 
     // ------------ obj and fwd are safe at this point --------------
