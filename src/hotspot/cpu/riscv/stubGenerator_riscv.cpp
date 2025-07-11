@@ -2605,26 +2605,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ld(used, Address(used_ptr));
     __ beqz(input_len, L_exit);
     __ mv(len, input_len);
-    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
     __ mv(block_size, 16); // 16 Byte a block for keys
-
-    // generate_aes_loadkeys
-    Label L_aes128, L_aes192, L_exit_loadkey;
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
-    __ beq(keylen, t2, L_aes192);
-
-    generate_aes_loadkeys(key, working_vregs, 15);
-    __ j(L_exit_loadkey);
-
-    __ bind(L_aes192);
-    generate_aes_loadkeys(key, working_vregs, 13);
-    __ j(L_exit_loadkey);
-
-    __ bind(L_aes128);
-    generate_aes_loadkeys(key, working_vregs, 11);
-    __ bind(L_exit_loadkey);
 
     // encrypt bytes left with last encryptedCounter
     Label L_judge_used, L_encrypt_slow, L_main_loop, L_inner_loop, L_store_Large_counter;
@@ -2646,14 +2627,31 @@ class StubGenerator: public StubCodeGenerator {
     __ j(L_judge_used);
 
     __ bind(L_main_loop);
-    __ mv(t0, 64); // we used bulk_width = 4, so we should compare len > 64 (Byte) 
-    __ blt(len, t0, L_inner_loop);
+    // generate_aes_loadkeys
+    Label L_aes128, L_aes192, L_exit_loadkey;
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
 
-    // CTR_large_block 
-    // 4 * 16 Bytes once a time
+    generate_aes_loadkeys(key, working_vregs, 15);
+    __ j(L_exit_loadkey);
+
+    __ bind(L_aes192);
+    generate_aes_loadkeys(key, working_vregs, 13);
+    __ j(L_exit_loadkey);
+
+    __ bind(L_aes128);
+    generate_aes_loadkeys(key, working_vregs, 11);
+    __ bind(L_exit_loadkey);
+
+    // CTR_large_block (4 * 16 Bytes once a time)
+    uint64_t maskIndex = 0x00000088ul; // 0b10001000
+    __ mv(t0, 64); // we used bulk_width = 4, so we should compare len > 64 (Byte)
+    __ blt(len, t0, L_inner_loop);
     // init aes_ctr counter input
     __ srli(len32, len, 2);
-    uint64_t maskIndex = 0x00000088ul; // 0b10001000
     __ li(t0, maskIndex);
     __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
     __ vmv_v_x(v0, t0);
@@ -2731,8 +2729,6 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_inner_loop);
     __ beqz(len, L_exit);
     __ mv(used, 0);
-    __ blt(len, block_size, L_encrypt_slow);
-    // TODO here len > 16 but len < 64, may loop less than 3 times 
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(v20, in);
 
@@ -2743,8 +2739,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetvli(x1, x0, Assembler::e8, Assembler::m1); // mu ma区别补充上
     __ vmv_v_x(v0, t0);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vmv_v_i(v16, 1);
-    __ vadd_vv(v31, v31, v16, Assembler::VectorMask::v0_t);    
+    __ vadd_vi(v31, v31, 1, Assembler::VectorMask::v0_t);
     __ vrev8_v(v16, v31);
     __ vse32_v(v16, counter);
 
@@ -2764,6 +2759,9 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_aes128_inner);
     generate_aes_encrypt(v31, working_vregs, 11);
     __ bind(L_fin_encrypt);
+
+    __ vse32_v(v31, saved_encrypted_ctr);
+    __ blt(len, block_size, L_encrypt_slow);
 
     __ vxor_vv(v31, v31, v20);
     __ vse32_v(v31, out); // to check vse32
