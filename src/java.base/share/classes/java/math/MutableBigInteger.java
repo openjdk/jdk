@@ -1967,18 +1967,26 @@ class MutableBigInteger {
             // Determine a right shift that is a multiple of n into finite double range.
             long shift;
             double rad;
-            if (bitLength > Double.MAX_EXPONENT) {
-                shift = bitLength - Double.MAX_EXPONENT;
+            // Try to shift as many bits as possible
+            // without losing precision in double's representation
+            if (bitLength > Double.PRECISION) {
+                shift = bitLength - Double.PRECISION;
                 int shiftExcess = (int) (shift % n);
 
-                // Shift the value into finite double range
-                rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
-                // Complete the shift to a multiple of n,
-                // avoiding to lose more bits than necessary.
-                if (shiftExcess != 0) {
-                    int shiftLack = n - shiftExcess;
-                    shift += shiftLack; // shift is long, no overflow
-                    rad /= Double.parseDouble("0x1p" + shiftLack);
+                if (bitLength - (shift - shiftExcess) <= Double.MAX_EXPONENT) {
+                    shift -= shiftExcess; // Adjust shift to a multiple of n
+                    // Shift the value into finite double range
+                    rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
+                } else { // this >> (shift - shiftExcess) could exceed finite double range, must lose precision
+                    // Shift the value into finite double range
+                    rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
+                    // Complete the shift to a multiple of n,
+                    // avoiding to lose more bits than necessary.
+                    if (shiftExcess != 0) {
+                        int shiftLack = n - shiftExcess;
+                        shift += shiftLack; // shift is long, no overflow
+                        rad /= Double.parseDouble("0x1p" + shiftLack);
+                    }
                 }
             } else {
                 shift = 0L;
