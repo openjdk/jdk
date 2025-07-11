@@ -25,11 +25,14 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -39,16 +42,10 @@ import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
 
 /**
- * A handler to process mandatory warnings, setting up a deferred diagnostic
+ * An aggregator for warnings, setting up a deferred diagnostic
  * to be printed at the end of the compilation if some warnings get suppressed
- * because too many warnings have already been generated.
- *
- * <p>
- * Note that the SuppressWarnings annotation can be used to suppress warnings
- * about conditions that would otherwise merit a warning. Such processing
- * is done when the condition is detected, and in those cases, no call is
- * made on any API to generate a warning at all. In consequence, this handler only
- * Returns to handle those warnings that JLS says must be generated.
+ * because the lint category is not enabled or too many warnings have already
+ * been generated.
  *
  * <p>
  * All warnings must be in the same {@link LintCategory} provided to the constructor.
@@ -58,12 +55,11 @@ import com.sun.tools.javac.util.JCDiagnostic.Warning;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class MandatoryWarningHandler {
+class WarningAggregator {
 
     /**
      * The kinds of different deferred diagnostics that might be generated
-     * if a mandatory warning is suppressed because too many warnings have
-     * already been output.
+     * if a warning is suppressed because too many warnings have already been output.
      *
      * The parameter is a fragment used to build an I18N message key for Log.
      */
@@ -105,64 +101,50 @@ public class MandatoryWarningHandler {
 
 
     /**
-     * Create a handler for mandatory warnings.
+     * Create an aggregator for warnings.
      *
      * @param log     The log on which to generate any diagnostics
      * @param source  Associated source file, or null for none
-     * @param verbose Specify whether or not detailed messages about
-     *                individual instances should be given, or whether an aggregate
-     *                message should be generated at the end of the compilation.
-     *                Typically set via  -Xlint:option.
-     * @param enforceMandatory
-     *                True if mandatory warnings and notes are being enforced.
      * @param lc      The lint category for all warnings
      */
-    public MandatoryWarningHandler(Log log, Source source, boolean verbose, boolean enforceMandatory, LintCategory lc) {
-        this(log, source, verbose, enforceMandatory, lc, null);
+    public WarningAggregator(Log log, Source source, LintCategory lc) {
+        this(log, source, lc, null);
     }
 
     /**
-     * Create a handler for mandatory warnings.
+     * Create an aggregator for warnings.
      *
      * @param log     The log on which to generate any diagnostics
      * @param source  Associated source file, or null for none
-     * @param verbose Specify whether or not detailed messages about
-     *                individual instances should be given, or whether an aggregate
-     *                message should be generated at the end of the compilation.
-     *                Typically set via  -Xlint:option.
-     * @param enforceMandatory
-     *                True if mandatory warnings and notes are being enforced.
      * @param lc      The lint category for all warnings
      * @param prefix  A common prefix for the set of message keys for the messages
      *                that may be generated, or null to infer from the lint category.
      */
-    public MandatoryWarningHandler(Log log, Source source, boolean verbose, boolean enforceMandatory, LintCategory lc, String prefix) {
+    public WarningAggregator(Log log, Source source, LintCategory lc, String prefix) {
         this.log = log;
         this.source = source;
-        this.verbose = verbose;
         this.prefix = prefix != null ? prefix : lc.option;
-        this.enforceMandatory = enforceMandatory;
         this.lintCategory = lc;
     }
 
     /**
-     * Report a mandatory warning.
+     * Aggregate a warning and determine whether to emit it.
      *
-     * @param pos source code position
-     * @param warnKey lint warning
+     * @param diagnostic the warning
+     * @param verbose whether the warning's lint category is enabled
+     * @return true if diagnostic should be emitted, otherwise false
      */
-    public void report(DiagnosticPosition pos, LintWarning warnKey) {
+    public boolean aggregate(JCDiagnostic diagnostic, boolean verbose) {
+        Assert.check(diagnostic.getLintCategory() == lintCategory);
         JavaFileObject currentSource = log.currentSourceFile();
-        Assert.check(warnKey.getLintCategory() == lintCategory);
-
         if (verbose) {
             if (sourcesWithReportedWarnings == null)
                 sourcesWithReportedWarnings = new HashSet<>();
-
             if (log.nwarnings < log.MaxWarnings) {
                 // generate message and remember the source file
-                logMandatoryWarning(pos, warnKey);
                 sourcesWithReportedWarnings.add(currentSource);
+                anyWarningEmitted = true;
+                return true;
             } else if (deferredDiagnosticKind == null) {
                 // set up deferred message
                 if (sourcesWithReportedWarnings.contains(currentSource)) {
@@ -194,30 +176,36 @@ public class MandatoryWarningHandler {
                 deferredDiagnosticArg = null;
             }
         }
+        return false;
     }
 
     /**
-     * Report any diagnostic that might have been deferred by previous calls of report().
+     * Build and return any accumulated aggregation notes.
      */
-    public void reportDeferredDiagnostic() {
+    public List<JCDiagnostic> aggregationNotes() {
+        List<JCDiagnostic> list = new ArrayList<>(2);
         if (deferredDiagnosticKind != null) {
             if (deferredDiagnosticArg == null) {
                 if (source != null) {
-                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), source);
+                    addNote(list, deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), source);
                 } else {
-                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix));
+                    addNote(list, deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix));
                 }
             } else {
                 if (source != null) {
-                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), deferredDiagnosticArg, source);
+                    addNote(list, deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), deferredDiagnosticArg, source);
                 } else {
-                    logMandatoryNote(deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), deferredDiagnosticArg);
+                    addNote(list, deferredDiagnosticSource, deferredDiagnosticKind.getKey(prefix), deferredDiagnosticArg);
                 }
             }
-
-            if (!verbose)
-                logMandatoryNote(deferredDiagnosticSource, prefix + ".recompile");
+            if (!anyWarningEmitted)
+                addNote(list, deferredDiagnosticSource, prefix + ".recompile");
         }
+        return list;
+    }
+
+    private void addNote(List<JCDiagnostic> list, JavaFileObject file, String msg, Object... args) {
+        list.add(log.diags.mandatoryNote(log.getSource(file), new Note(null, "compiler", msg, args)));
     }
 
     /**
@@ -225,12 +213,6 @@ public class MandatoryWarningHandler {
      */
     private final Log log;
     private final Source source;
-
-    /**
-     * Whether or not to report individual warnings, or simply to report a
-     * single aggregate warning at the end of the compilation.
-     */
-    private final boolean verbose;
 
     /**
      * The common prefix for all I18N message keys generated by this handler.
@@ -268,37 +250,16 @@ public class MandatoryWarningHandler {
     private Object deferredDiagnosticArg;
 
     /**
-     * True if mandatory warnings and notes are being enforced.
+     * Whether we have actually emitted a warning or just deferred everything.
+     * In the latter case, the "recompile" notice is included in the summary.
      */
-    private final boolean enforceMandatory;
+    private boolean anyWarningEmitted;
 
     /**
      * A LintCategory to be included in point-of-use diagnostics to indicate
      * how messages might be suppressed (i.e. with @SuppressWarnings).
      */
     private final LintCategory lintCategory;
-
-    /**
-     * Reports a mandatory warning to the log.  If mandatory warnings
-     * are not being enforced, treat this as an ordinary warning.
-     */
-    private void logMandatoryWarning(DiagnosticPosition pos, LintWarning warnKey) {
-        if (enforceMandatory)
-            log.mandatoryWarning(pos, warnKey);
-        else
-            log.warning(pos, warnKey);
-    }
-
-    /**
-     * Reports a mandatory note to the log.  If mandatory notes are
-     * not being enforced, treat this as an ordinary note.
-     */
-    private void logMandatoryNote(JavaFileObject file, String msg, Object... args) {
-        if (enforceMandatory)
-            log.mandatoryNote(file, new Note("compiler", msg, args));
-        else
-            log.note(file, new Note("compiler", msg, args));
-    }
 
     public void clear() {
         sourcesWithReportedWarnings = null;

@@ -1194,6 +1194,38 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
+double os::elapsed_process_cpu_time() {
+  FILETIME create;
+  FILETIME exit;
+  FILETIME kernel;
+  FILETIME user;
+
+  if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
+    return -1;
+  }
+
+  SYSTEMTIME user_total;
+  if (FileTimeToSystemTime(&user, &user_total) == 0) {
+    return -1;
+  }
+
+  SYSTEMTIME kernel_total;
+  if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
+    return -1;
+  }
+
+  double user_seconds =
+      double(user_total.wHour) * 3600.0 + double(user_total.wMinute) * 60.0 +
+      double(user_total.wSecond) + double(user_total.wMilliseconds) / 1000.0;
+
+  double kernel_seconds = double(kernel_total.wHour) * 3600.0 +
+                          double(kernel_total.wMinute) * 60.0 +
+                          double(kernel_total.wSecond) +
+                          double(kernel_total.wMilliseconds) / 1000.0;
+
+  return user_seconds + kernel_seconds;
+}
+
 jlong os::javaTimeMillis() {
   FILETIME wt;
   GetSystemTimeAsFileTime(&wt);
@@ -2608,14 +2640,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
-#endif
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT

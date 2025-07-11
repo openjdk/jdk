@@ -51,6 +51,15 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     AssumptionResult<Boolean> hasFinalizableSubclass();
 
     /**
+     * Returns true if this type represents an annotation interface.
+     *
+     * @return {@code true} if this type represents an annotation interface
+     */
+    default boolean isAnnotation() {
+        return (getModifiers() & java.lang.reflect.AccessFlag.ANNOTATION.mask()) != 0;
+    }
+
+    /**
      * Checks whether this type is an interface.
      *
      * @return {@code true} if this type is an interface
