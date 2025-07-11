@@ -121,7 +121,7 @@ requires.properties= \
     jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.5.2+1
+requiredVersion=8+2
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
