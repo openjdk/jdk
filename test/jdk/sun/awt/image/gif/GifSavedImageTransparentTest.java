@@ -28,12 +28,26 @@
  * and we're rendering on top of another frame we respect the new transparency.
  */
 
+import java.io.File;
 
 public class GifSavedImageTransparentTest {
     public static void main(String[] args) throws Throwable {
-        GifBuilder.test(
-                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, false),
-                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, true),
-                new GifBuilder.FrameDescription(GifBuilder.Disposal.doNotDispose, true) );
+        GifBuilder.FrameDescription[] frames =
+                new GifBuilder.FrameDescription[] {
+                        new GifBuilder.FrameDescription(
+                                GifBuilder.Disposal.doNotDispose, false),
+                        new GifBuilder.FrameDescription(
+                                GifBuilder.Disposal.doNotDispose, true),
+                        new GifBuilder.FrameDescription(
+                                GifBuilder.Disposal.doNotDispose, true)
+                };
+
+        File dir = null;
+
+        // un-comment to visually inspect the frames:
+//        dir = new File("8357034-frames");
+//        dir.mkdir();
+
+        GifBuilder.test(frames, dir);
     }
 }

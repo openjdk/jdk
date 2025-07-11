@@ -28,14 +28,26 @@
  * the disposal method changes from 2 to 1
  */
 
+import java.io.File;
+
 public class GifEmptyBackgroundTest {
     public static void main(String[] args) throws Throwable {
-        GifBuilder.test(
+        GifBuilder.FrameDescription[] frames =
+            new GifBuilder.FrameDescription[] {
                 new GifBuilder.FrameDescription(
                         GifBuilder.Disposal.restoreToBackgroundColor, false),
                 new GifBuilder.FrameDescription(
                         GifBuilder.Disposal.doNotDispose, false),
                 new GifBuilder.FrameDescription(
-                        GifBuilder.Disposal.doNotDispose, false) );
+                        GifBuilder.Disposal.doNotDispose, false)
+        };
+
+        File dir = null;
+
+        // un-comment to visually inspect the frames:
+//        dir = new File("8356137-frames");
+//        dir.mkdir();
+
+        GifBuilder.test(frames, dir);
     }
 }
