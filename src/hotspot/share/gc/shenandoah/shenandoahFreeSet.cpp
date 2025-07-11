@@ -2357,7 +2357,7 @@ public:
             _free_set->retire_region_when_eligible(original_region, ShenandoahFreeSetPartitionId::Mutator);
           }
           _next_retire_eligible_region = find_next_retire_eligible_region();
-        } else {
+        } else if (ac < PLAB::min_size_bytes()) {
           _free_set->retire_region_when_eligible(r, ShenandoahFreeSetPartitionId::Mutator);
         }
       }
