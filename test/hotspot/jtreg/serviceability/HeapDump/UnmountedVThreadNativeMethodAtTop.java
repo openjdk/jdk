@@ -47,7 +47,7 @@ import jdk.test.lib.hprof.parser.Reader;
 
 public class UnmountedVThreadNativeMethodAtTop {
 
-    public boolean done;
+    boolean done;
 
     /**
      * Test dumping the heap while a virtual thread is blocked entering a synchronized native method.
