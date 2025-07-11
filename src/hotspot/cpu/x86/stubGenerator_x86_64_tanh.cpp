@@ -302,7 +302,7 @@ ATTRIBUTE_ALIGNED(16) static const juint _T2_neg_f[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmTanh() {
-  StubGenStubId stub_id = StubGenStubId::dtanh_id;
+  StubId stub_id = StubId::stubgen_dtanh_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
