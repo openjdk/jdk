@@ -2298,7 +2298,7 @@ public:
       size_t free_bytes = region->free();
       if (free_bytes >= _min_req_byte_size && is_probing_region(idx)) {
         probing_region_refilled = true;
-      } if (free_bytes < PLAB::min_size() * HeapWordSize) {
+      } else if (free_bytes < PLAB::min_size() * HeapWordSize) {
         assert(region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
         Atomic::store(&shared_region._eligible_for_replacement, true);
         return idx;
