@@ -30,6 +30,8 @@ import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 import compiler.lib.ir_framework.driver.SuccessOnlyConstraintException;
 
+import java.util.regex.Matcher;
+
 /**
  * This class represents a "raw IR node" as read from a check attribute. It has a node part that either represents an
  * {@link IRNode} placeholder string or a user defined regex. In the former case, we could additionally have a user
@@ -62,7 +64,7 @@ public class RawIRNode {
             if (IRNode.isVectorIRNode(node)) {
                 nodeRegex = regexForVectorIRNode(nodeRegex, vmInfo, bound);
             } else if (userPostfix.isValid()) {
-                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, java.util.regex.Matcher.quoteReplacement(userPostfix.value()));
+                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, Matcher.quoteReplacement(userPostfix.value()));
             }
         }
         return nodeRegex;
