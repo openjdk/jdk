@@ -2261,6 +2261,7 @@ class DirectAllocatableRegionRefillClosure : public ShenandoahHeapRegionBreakabl
   const bool _replace_all_eligible_regions;
   int _scanned_region;
   int _next_retire_eligible_region;
+  ShenandoahFreeSet* const _free_set = ShenandoahHeap::heap()->free_set();
 public:
   ShenandoahAllocRequest &_req;
   HeapWord* &_obj;
@@ -2308,50 +2309,61 @@ public:
 
   bool heap_region_do(ShenandoahHeapRegion *r) {
     if (_next_retire_eligible_region == -1 && _obj != nullptr) return true;
+    size_t ac = _free_set->alloc_capacity(r);
+    if (ac < PLAB::min_size() * HeapWordSize) return false;
     if (r->reserved_for_direct_allocation()) return false;
     if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) {
       return false;
     }
 
-    if (r->is_empty() || r->is_trash()) {
+    if (r->is_empty() || r->is_trash() ||
+        ((r->is_regular() || r->is_regular_pinned()) &&
+         r->affiliation() == YOUNG_GENERATION &&
+         r->get_top_before_promote() == nullptr)) {
       r->try_recycle_under_lock();
-      r->set_affiliation(YOUNG_GENERATION);
-      r->make_regular_allocation(YOUNG_GENERATION);
-      ShenandoahHeap::heap()->generation_for(r->affiliation())->increment_affiliated_region_count();
-      if (_obj == nullptr) {
+      if (r->is_empty()) {
+        r->set_affiliation(YOUNG_GENERATION);
+        r->make_regular_allocation(YOUNG_GENERATION);
+        ShenandoahHeap::heap()->generation_for(r->affiliation())->increment_affiliated_region_count();
+      } else {
+        assert(r->is_affiliated(), "Region %zu that is not new should be affiliated", r->index());
+        if (r->affiliation() != YOUNG_GENERATION) {
+          assert(ShenandoahHeap::heap()->mode()->is_generational(), "%s region should only exists in generational mode."
+            , r->affiliation_name());
+          return false;
+        }
+      }
+      if (_obj == nullptr && ac >= _min_req_byte_size) {
         _in_new_region = r->is_empty();
         size_t actual_size = _req.size();
         _obj = _req.is_lab_alloc() ? r->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
         assert(_obj != nullptr, "Must have successfully allocated the object.");
         _req.set_actual_size(actual_size);
+        ac = _free_set->alloc_capacity(r);
       }
+
       if (_next_retire_eligible_region != -1) {
-        ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
-        ShenandoahHeapRegion *const original_region = Atomic::load(&shared_region._address);
-        r->reserve_for_direct_allocation();
-        OrderAccess::fence();
-        Atomic::store(&shared_region._address, r);
-        OrderAccess::fence();
-        Atomic::store(&shared_region._eligible_for_replacement, false);
-        if (is_probing_region((uint) _next_retire_eligible_region)) {
-          probing_region_refilled = true;
+        // After satisfying object allocation, the region still has space to fit a least one tlab.
+        if (ac >= PLAB::min_size()) {
+          ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
+          ShenandoahHeapRegion *const original_region = Atomic::load(&shared_region._address);
+          r->reserve_for_direct_allocation();
+          OrderAccess::fence();
+          Atomic::store(&shared_region._address, r);
+          OrderAccess::fence();
+          Atomic::store(&shared_region._eligible_for_replacement, false);
+          if (is_probing_region((uint) _next_retire_eligible_region)) {
+            probing_region_refilled = true;
+          }
+          if (original_region != nullptr) {
+            assert(original_region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
+            original_region->release_from_direct_allocation();
+            _free_set->retire_region_when_eligible(original_region, ShenandoahFreeSetPartitionId::Mutator);
+          }
+          _next_retire_eligible_region = find_next_retire_eligible_region();
+        } else {
+          _free_set->retire_region_when_eligible(r, ShenandoahFreeSetPartitionId::Mutator);
         }
-        if (original_region != nullptr) {
-          assert(original_region->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
-          original_region->release_from_direct_allocation();
-          ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(original_region, ShenandoahFreeSetPartitionId::Mutator);
-        }
-        _next_retire_eligible_region = find_next_retire_eligible_region();
-      }
-    } else if (_obj == nullptr && r->affiliation() == YOUNG_GENERATION && r->is_regular() &&
-               r->get_top_before_promote() == nullptr) {
-      size_t actual_size = _req.size();
-      _obj = _req.is_lab_alloc() ? r->allocate_lab(_req, actual_size) : r->allocate(actual_size, _req);
-      if (_obj != nullptr) {
-        _req.set_actual_size(actual_size);
-        _in_new_region = false;
-      } else {
-        ShenandoahHeap::heap()->free_set()->retire_region_when_eligible(r, ShenandoahFreeSetPartitionId::Mutator);
       }
     }
     return _next_retire_eligible_region == -1 && _obj != nullptr;
