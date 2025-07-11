@@ -73,7 +73,8 @@ public class GifComparison {
      *         Unit tests may further inspect this image to make sure certain
      *         conditions are met.
      */
-    public static BufferedImage run(URL srcURL, File frameDir) throws Throwable {
+    public static BufferedImage run(URL srcURL, File frameDir)
+            throws Throwable {
         System.out.println("Comparing ImageIO vs ToolkitImage rendering of " +
                 srcURL);
         ImageIOModel ioModel = new ImageIOModel(srcURL);

@@ -69,7 +69,8 @@ public class GifBuilder {
      * @param frameDir an optional directory to write all frames as PNGs to.
      *                 See {@link GifComparison#run(URL, File)}
      */
-    public static void test(FrameDescription[] frameDescriptions, File frameDir)
+    public static void test(FrameDescription[] frameDescriptions,
+                            File frameDir)
             throws Throwable {
         File file = createTestFile(frameDescriptions);
         try {
