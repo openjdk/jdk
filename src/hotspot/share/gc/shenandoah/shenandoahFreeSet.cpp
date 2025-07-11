@@ -2295,11 +2295,10 @@ public:
       const ShenandoahHeapRegion* r = nullptr;
       // Found the first eligible region
       if (Atomic::load(&shared_region._eligible_for_replacement) ||
-          (r = Atomic::load(&shared_region._address)) == nullptr) return idx;
-      size_t free_bytes = r->free();
-      if (free_bytes >= _min_req_byte_size && is_probing_region(idx)) {
-        probing_region_refilled = true;
-      } else if (free_bytes < PLAB::min_size() * HeapWordSize) {
+          (r = Atomic::load(&shared_region._address)) == nullptr) {
+        return idx;
+      }
+      if ( r->free() < PLAB::min_size() * HeapWordSize) {
         assert(r->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
         Atomic::store(&shared_region._eligible_for_replacement, true);
         return idx;
