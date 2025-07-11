@@ -308,10 +308,8 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       int result_bit_width;
       int mask_bit_width = bt == T_INT ? 32 : 64;
       if ((mask_type->lo_as_long() < 0L && mask_type->hi_as_long() >= -1L)) {
-        // Case B.1 Since mask value range includes -1 value, hence there is atleast one
-        // mask value for which iff all corresponding input bits are set then bit compression
-        // will result in a -ve value, therefore this case negates the possibility of
-        // strictly non-negative bit compression result.
+        // Case B.1 The mask value range includes -1, hence we may use all bits,
+        //          the result has the whole value range.
         result_bit_width = mask_bit_width;
       } else if (mask_type->hi_as_long() < -1L) {
         // Case B.2 Mask value range is strictly less than -1, this indicates presence of at least
