@@ -341,32 +341,21 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       assert(hi == (bt == T_INT) ? max_jint : max_jlong, "");
       assert((lo == (bt == T_INT) ? min_jint : min_jlong) || lo == 0, "");
 
-      // As per Rule 1, bit compression packs the source bits corresponding to
-      // set mask bits, hence for a non-negative input, result of compression will
-      // always be less that equal to input.
-      // e.g.
-      //    input = 0x0000F0F0
-      //    mask  = 0xFFFFFF00
-      // Lemma 1: For strictly non-negative input, result of compression will never be greater
-      // than input.
-      // Proof: Since input is a non-negative value, hence, its most significant bit will
-      // always be 0, thus even if corresponding MSB of mask is one results will be a +ve
-      // value. Bit compression discards the input bits corresponding zero mask bits, hence
-      // in order to consider all the set input bits, corresponding mask bits must also be
-      // set. If a mask bit corresponding to set input bit is zero then that input bit will
-      // not take part in bit compression, which means that maximum possible result value
-      // can never be greater than non-negative input.
-      //
-      // Rule 3:
-      // We can further constrain the upper bound of bit compression if number of bits which
-      // can be set to 1 is less than the maximum number of bits of integral type.
-      // by using following equation.
-      // res.hi = MIN(res.hi, (1UL << result_bit_width) - 1)
+      if (src_type->hi_as_long() >= 0) {
+        // Lemma 1: For strictly non-negative src, the result of the compression will never be
+        // greater than src.
+        // Proof: Since src is a non-negative value, its most significant bit is always 0.
+        // Thus even if the corresponding MSB of the mask is one, the result will be a +ve
+        // value. <the actual proof>
+        hi = src_type->hi_as_long();
+      }
 
-      // Using Lemma 1, for non-negative input, upper bound of bit compression is equal to input.
-      hi = src_type->hi_as_long() >= 0 ? src_type->hi_as_long() : hi;
-      // Tightening upper bound of bit compression as per Rule 3.
-      hi = result_bit_width < mask_bit_width ? MIN2((jlong)((1UL << result_bit_width) - 1L), hi) : hi;
+      if (result_bit_width < mask_bit_width) {
+        // Rule 3:
+        // We can further constrain the upper bound of bit compression if the number of bits
+        // which can be set to 1 is less than the maximum number of bits of integral type.
+        hi = MIN2((jlong)((1UL << result_bit_width) - 1L), hi);
+      }
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();
