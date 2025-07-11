@@ -560,17 +560,12 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 //------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
 const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
-  // no folding if one of operands is infinity or NaN, do not do constant folding
-  if(g_isfinite(t1->getf()) && g_isfinite(t2->getf())) {
+  // Half precision floating point subtraction follows the rules of IEEE 754
+  // applicable to other floating point types.
+  if (t1->isa_half_float_constant() != nullptr &&
+      t2->isa_half_float_constant() != nullptr)  {
     return TypeH::make(t1->getf() - t2->getf());
-  }
-  else if(g_isnan(t1->getf())) {
-    return t1;
-  }
-  else if(g_isnan(t2->getf())) {
-    return t2;
-  }
-  else {
+  } else {
     return Type::HALF_FLOAT;
   }
 }
@@ -1943,14 +1938,14 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
     if (ti->is_con()) {
-      return TypeInt::make(uabs(ti->get_con()));
+      return TypeInt::make(g_uabs(ti->get_con()));
     }
     break;
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
     if (tl->is_con()) {
-      return TypeLong::make(uabs(tl->get_con()));
+      return TypeLong::make(g_uabs(tl->get_con()));
     }
     break;
   }

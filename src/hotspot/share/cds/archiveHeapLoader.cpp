@@ -167,7 +167,7 @@ void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
                                                   MemRegion region) {
   narrowOop dt_encoded_bottom = info->encoded_heap_region_dumptime_address();
   narrowOop rt_encoded_bottom = CompressedOops::encode_not_null(cast_to_oop(region.start()));
-  log_info(cds)("patching heap embedded pointers: narrowOop 0x%8x -> 0x%8x",
+  log_info(aot)("patching heap embedded pointers: narrowOop 0x%8x -> 0x%8x",
                   (uint)dt_encoded_bottom, (uint)rt_encoded_bottom);
 
   // Optimization: if dumptime shift is the same as runtime shift, we can perform a
@@ -175,15 +175,15 @@ void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
   narrowOop* patching_start = (narrowOop*)region.start() + FileMapInfo::current_info()->heap_oopmap_start_pos();
   if (_narrow_oop_shift == CompressedOops::shift()) {
     uint32_t quick_delta = (uint32_t)rt_encoded_bottom - (uint32_t)dt_encoded_bottom;
-    log_info(cds)("CDS heap data relocation quick delta = 0x%x", quick_delta);
+    log_info(aot)("heap data relocation quick delta = 0x%x", quick_delta);
     if (quick_delta == 0) {
-      log_info(cds)("CDS heap data relocation unnecessary, quick_delta = 0");
+      log_info(aot)("heap data relocation unnecessary, quick_delta = 0");
     } else {
       PatchCompressedEmbeddedPointersQuick patcher(patching_start, quick_delta);
       bm.iterate(&patcher);
     }
   } else {
-    log_info(cds)("CDS heap data quick relocation not possible");
+    log_info(aot)("heap data quick relocation not possible");
     PatchCompressedEmbeddedPointers patcher(patching_start);
     bm.iterate(&patcher);
   }
@@ -301,12 +301,12 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   if (!mapinfo->read_region(loaded_region->_region_index, (char*)load_address, r->used(), /* do_commit = */ false)) {
     // There's no easy way to free the buffer, so we will fill it with zero later
     // in fill_failed_loaded_heap(), and it will eventually be GC'ed.
-    log_warning(cds)("Loading of heap region %d has failed. Archived objects are disabled", loaded_region->_region_index);
+    log_warning(aot)("Loading of heap region %d has failed. Archived objects are disabled", loaded_region->_region_index);
     _loading_failed = true;
     return false;
   }
   assert(r->mapped_base() == (char*)load_address, "sanity");
-  log_info(cds)("Loaded heap    region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT
+  log_info(aot)("Loaded heap    region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT
                 " size %6zu delta %zd",
                 loaded_region->_region_index, load_address, load_address + loaded_region->_region_size,
                 loaded_region->_region_size, loaded_region->_runtime_offset);
@@ -408,7 +408,7 @@ void ArchiveHeapLoader::finish_loaded_heap() {
 }
 
 void ArchiveHeapLoader::verify_loaded_heap() {
-  log_info(cds, heap)("Verify all oops and pointers in loaded heap");
+  log_info(aot, heap)("Verify all oops and pointers in loaded heap");
 
   ResourceMark rm;
   ResourceHashtable<uintptr_t, bool> table;
@@ -459,7 +459,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
 
   FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
-    log_info(cds, heap)("Patching native pointers in heap region");
+    log_info(aot, heap)("Patching native pointers in heap region");
     BitMapView bm = FileMapInfo::current_info()->ptrmap_view(MetaspaceShared::hp);
     PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->heap_ptrmap_start_pos());
     bm.iterate(&patcher);

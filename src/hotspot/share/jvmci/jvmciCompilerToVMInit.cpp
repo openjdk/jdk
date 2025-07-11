@@ -125,6 +125,7 @@ int CompilerToVM::Data::cardtable_shift;
 
 #ifdef X86
 int CompilerToVM::Data::L1_line_size;
+bool CompilerToVM::Data::supports_avx512_simd_sort;
 #endif
 
 size_t CompilerToVM::Data::vm_page_size;
@@ -144,6 +145,7 @@ address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
 address CompilerToVM::Data::dtanh;
+address CompilerToVM::Data::dcbrt;
 address CompilerToVM::Data::dexp;
 address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
@@ -256,6 +258,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
 #ifdef X86
   L1_line_size = VM_Version::L1_line_size();
+  supports_avx512_simd_sort = VM_Version::supports_avx512_simd_sort();
 #endif
 
   vm_page_size = os::vm_page_size();
@@ -285,6 +288,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   }
 
   SET_TRIGFUNC_OR_NULL(dtanh);
+  SET_TRIGFUNC_OR_NULL(dcbrt);
 
 #undef SET_TRIGFUNC_OR_NULL
 
@@ -339,7 +343,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   return vmIntrinsics;
 }
 
-#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_intx_flag, do_uintx_flag) \
+#define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_size_t_flag, do_intx_flag, do_uintx_flag) \
   do_int_flag(AllocateInstancePrefetchLines)                               \
   do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
@@ -350,7 +354,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(BootstrapJVMCI)                                             \
   do_bool_flag(CITime)                                                     \
   do_bool_flag(CITimeEach)                                                 \
-  do_uintx_flag(CodeCacheSegmentSize)                                      \
+  do_size_t_flag(CodeCacheSegmentSize)                                     \
   do_intx_flag(CodeEntryAlignment)                                         \
   do_int_flag(ContendedPaddingWidth)                                       \
   do_bool_flag(DontCompileHugeMethods)                                     \
@@ -537,16 +541,17 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JVMCIObject vmFlagObj = JVMCIENV->new_VMFlag(fname, ftype, value, JVMCI_CHECK_NULL); \
   JVMCIENV->put_object_at(vmFlags, i++, vmFlagObj);                                    \
 }
-#define ADD_BOOL_FLAG(name)  ADD_FLAG(bool, name, BOXED_BOOLEAN)
-#define ADD_INT_FLAG(name)   ADD_FLAG(int, name, BOXED_LONG)
-#define ADD_INTX_FLAG(name)  ADD_FLAG(intx, name, BOXED_LONG)
-#define ADD_UINTX_FLAG(name) ADD_FLAG(uintx, name, BOXED_LONG)
+#define ADD_BOOL_FLAG(name)   ADD_FLAG(bool, name, BOXED_BOOLEAN)
+#define ADD_INT_FLAG(name)    ADD_FLAG(int, name, BOXED_LONG)
+#define ADD_SIZE_T_FLAG(name) ADD_FLAG(size_t, name, BOXED_LONG)
+#define ADD_INTX_FLAG(name)   ADD_FLAG(intx, name, BOXED_LONG)
+#define ADD_UINTX_FLAG(name)  ADD_FLAG(uintx, name, BOXED_LONG)
 
-  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
+  len = 0 + PREDEFINED_CONFIG_FLAGS(COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG, COUNT_FLAG);
   JVMCIObjectArray vmFlags = JVMCIENV->new_VMFlag_array(len, JVMCI_CHECK_NULL);
   int i = 0;
   JVMCIObject value;
-  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INT_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
+  PREDEFINED_CONFIG_FLAGS(ADD_BOOL_FLAG, ADD_INT_FLAG, ADD_SIZE_T_FLAG, ADD_INTX_FLAG, ADD_UINTX_FLAG)
 
   JVMCIObjectArray vmIntrinsics = CompilerToVM::initialize_intrinsics(JVMCI_CHECK_NULL);
 

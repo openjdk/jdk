@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533 8343239 8318416 8346109
+ *           8331947 8281533 8343239 8318416 8346109 8359024
  * @summary  test generated docs for items declared using preview
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -104,7 +104,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="package">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Packages</span></div>
                     </div>
                     <div id="package.tabpanel" role="tabpanel" aria-labelledby="package-tab0">
@@ -122,7 +122,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="record-class">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Record Classes</span></div>
                     </div>
                     <div id="record-class.tabpanel" role="tabpanel" aria-labelledby="record-class-tab0">
@@ -139,7 +139,7 @@ public class TestPreview extends JavadocTester {
                     """,
                 """
                     <div id="method">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="table-tabs">
                     <div class="caption"><span>Methods</span></div>
                     </div>
                     <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">

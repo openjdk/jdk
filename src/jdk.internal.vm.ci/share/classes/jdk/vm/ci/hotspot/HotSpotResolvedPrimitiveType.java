@@ -297,6 +297,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public List<ResolvedJavaMethod> getAllMethods(boolean forceLink) {
+        return List.of();
+    }
+
+    @Override
     public ResolvedJavaMethod getClassInitializer() {
         return null;
     }
@@ -322,12 +327,15 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
 
     @Override
     public AnnotationData getAnnotationData(ResolvedJavaType type) {
+        checkIsAnnotation(type);
         return null;
     }
 
     @Override
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        return Collections.emptyList();
+        checkIsAnnotation(type1);
+        checkIsAnnotation(type2);
+        checkAreAnnotations(types);
+        return List.of();
     }
-
 }

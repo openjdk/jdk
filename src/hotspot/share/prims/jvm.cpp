@@ -2767,10 +2767,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     // creates the module graph, etc. It's safe to not start the other
     // threads which are launched by class static initializers
     // (ReferenceHandler, FinalizerThread and CleanerImpl).
-    if (log_is_enabled(Info, cds)) {
+    if (log_is_enabled(Info, aot)) {
       ResourceMark rm;
       oop t = JNIHandles::resolve_non_null(jthread);
-      log_info(cds)("JVM_StartThread() ignored: %s", t->klass()->external_name());
+      log_info(aot)("JVM_StartThread() ignored: %s", t->klass()->external_name());
     }
     return;
   }
@@ -2961,6 +2961,15 @@ JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   return JNIHandles::make_local(THREAD, trace);
 JVM_END
 
+JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
+#if INCLUDE_JVMTI
+  oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, THREAD);
+  return JNIHandles::make_local(THREAD, snapshot);
+#else
+  THROW_NULL(vmSymbols::java_lang_UnsupportedOperationException());
+#endif
+JVM_END
+
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))
   // We don't use a ThreadsListHandle here because the current thread
   // must be alive.
@@ -3031,9 +3040,17 @@ JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
   }
 JVM_END
 
+JVM_ENTRY(jobject, JVM_ReferenceGet(JNIEnv* env, jobject ref))
+  oop ref_oop = JNIHandles::resolve_non_null(ref);
+  // PhantomReference has its own implementation of get().
+  assert(!java_lang_ref_Reference::is_phantom(ref_oop), "precondition");
+  oop referent = java_lang_ref_Reference::weak_referent(ref_oop);
+  return JNIHandles::make_local(THREAD, referent);
+JVM_END
+
 JVM_ENTRY(jboolean, JVM_ReferenceRefersTo(JNIEnv* env, jobject ref, jobject o))
   oop ref_oop = JNIHandles::resolve_non_null(ref);
-  // PhantomReference has it's own implementation of refersTo().
+  // PhantomReference has its own implementation of refersTo().
   // See: JVM_PhantomReferenceRefersTo
   assert(!java_lang_ref_Reference::is_phantom(ref_oop), "precondition");
   oop referent = java_lang_ref_Reference::weak_referent_no_keepalive(ref_oop);
@@ -3463,7 +3480,7 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
     if (seed == 0) { // don't let this ever be zero.
       seed = 0x87654321;
     }
-    log_debug(cds)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
+    log_debug(aot)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
     return seed;
   } else {
     return 0;
@@ -3526,7 +3543,7 @@ JVM_ENTRY(jboolean, JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls))
       // If we cannot cache the class in AOT-initialized state, java.lang.invoke handles
       // must emit barriers to ensure class initialization during production run.
       ResourceMark rm(THREAD);
-      log_debug(cds)("NeedsClassInitBarrierForCDS: %s", k->external_name());
+      log_debug(aot)("NeedsClassInitBarrierForCDS: %s", k->external_name());
       return true;
     }
   }
