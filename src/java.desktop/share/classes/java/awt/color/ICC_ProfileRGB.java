@@ -123,11 +123,9 @@ public final class ICC_ProfileRGB extends ICC_Profile {
     /**
      * Constructs a new {@code ICC_ProfileRGB} from a
      * {@code BuiltinProfileInfo} object.
-     *
-     * @param  pdi
      */
-    ICC_ProfileRGB(BuiltinProfileInfo pdi) {
-        super(pdi);
+    ICC_ProfileRGB(BuiltinProfileInfo bpi) {
+        super(bpi);
     }
 
     /**

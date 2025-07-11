@@ -89,8 +89,8 @@ public final class ICC_ProfileGray extends ICC_Profile {
      * Constructs a new {@code ICC_ProfileGray} from a
      * {@code BuiltinProfileInfo} object.
      */
-    ICC_ProfileGray(BuiltinProfileInfo pdi) {
-        super(pdi);
+    ICC_ProfileGray(BuiltinProfileInfo bpi) {
+        super(bpi);
     }
 
     /**

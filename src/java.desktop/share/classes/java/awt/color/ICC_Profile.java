@@ -773,8 +773,8 @@ public sealed class ICC_Profile implements Serializable
      * Note: {@code BuiltinProfileInfo} is used for built-in profile
      * creation only, and all built-in profiles should be constructed using it.
      */
-    ICC_Profile(BuiltinProfileInfo pdi) {
-        builtInInfo = pdi;
+    ICC_Profile(BuiltinProfileInfo bpi) {
+        builtInInfo = bpi;
     }
 
     /**
