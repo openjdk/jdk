@@ -1752,20 +1752,22 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
         LOG_COLLECT_CONCURRENTLY(cause, "ignoring STW full GC");
         old_marking_started_before = old_marking_started_after;
       }
-    } else if (GCCause::is_codecache_requested_gc(cause) && op.marking_in_progress()) {
+    } else if (GCCause::is_codecache_requested_gc(cause)) {
         // For a CodeCache requested GC, before marking, progress is ensured as the
-        // following Remark pause unloads code (and signals the requestr such).
-        // Otherwise we must ensure that it is restarted later further below.
-        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
-        return true;
-    } else if (!GCCause::is_user_requested_gc(cause) && !GCCause::is_codecache_requested_gc(cause)) {
-      // For an "automatic" (not user-requested, non-codecache related) collection,
-      // we just need to ensure that progress is made.
+        // following Remark pause unloads code (and signals the requester such).
+        // Otherwise we must ensure that it is restarted.
+        if (op.marking_in_progress()) {
+          LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+          return true;
+        }
+        
+    } else if (!GCCause::is_user_requested_gc(cause)) {
+      // For an "automatic" (not user-requested) collection, we just need to
+      // ensure that progress is made.
       //
       // Request is finished if any of
       // (1) the VMOp successfully performed a GC,
-      // (2) a concurrent cycle was already in progress and we were
-      //     before the Remark pause for CodeCache requested GCs,
+      // (2) a concurrent cycle was already in progress,
       // (3) whitebox is controlling concurrent cycles,
       // (4) a new cycle was started (by this thread or some other), or
       // (5) a Full GC was performed.
@@ -1783,30 +1785,19 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
       }
-    } else {
-      // GC request that needs to ensure that a complete full collection has been
-      // performed before returning, but without waiting for more than needed.
-      //
-      // This may either be a user-requested GC (e.g. System.gc()) or a CodeCache
-      // requested collection where we already passed code unloading during a
-      // concurrent cycle.
-      //
-      // For these GCs a distinction needs to be made:
-      // - CodeCache related GCs "successfully" triggered a GC,
-      // - for other GCs (unlike non-UR), a successful VMOp implies a
-      //   new cycle was started. That's good, because it's not clear what we
-      //   should do otherwise.
-      //
-      // In both cases, immediately trying again just does back to back GCs.
+    } else {                    // User-requested GC.
+      // For a user-requested collection, we want to ensure that a complete
+      // full collection has been performed before returning, but without
+      // waiting for more than needed.
+
+      // For user-requested GCs (unlike non-UR), a successful VMOp implies a
+      // new cycle was started.  That's good, because it's not clear what we
+      // should do otherwise.  Trying again just does back to back GCs.
       // Can't wait for someone else to start a cycle.  And returning fails
       // to meet the goal of ensuring a full collection was performed.
-      bool is_codecache_gc = GCCause::is_codecache_requested_gc(cause);
-
-      assert(is_codecache_gc ||
-             !op.gc_succeeded() ||
+      assert(!op.gc_succeeded() ||
              (old_marking_started_before != old_marking_started_after),
-             "invariant: codecache gc: %s succeeded %s, started before %u, started after %u",
-             BOOL_TO_STR(is_codecache_gc),
+             "invariant: succeeded %s, started before %u, started after %u",
              BOOL_TO_STR(op.gc_succeeded()),
              old_marking_started_before, old_marking_started_after);
 
@@ -1841,7 +1832,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // wait &etc should have recognized as finishing this request.  This
       // differs from a non-user-request, where gc_succeeded does not imply
       // a new cycle was started.
-      assert(!op.gc_succeeded() || is_codecache_gc, "invariant");
+      assert(!op.gc_succeeded(), "invariant");
 
       if (op.cycle_already_in_progress()) {
         // If VMOp failed because a cycle was already in progress, it
