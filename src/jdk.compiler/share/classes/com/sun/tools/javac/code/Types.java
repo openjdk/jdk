@@ -2284,11 +2284,11 @@ public class Types {
     /// is obtained by obtaining innermost lexically enclosing class type of the
     /// previous type in the sequence.
     ///
-    /// Example: The type application `B<?>` is implicitly qualified and the
+    /// Example: The type expression `B` is implicitly qualified and the
     /// proper generic outer needs to be retrieved. Its site is `C.D` and its
     /// outer type is `A`.`asEnclosingSuper` will use the enclosing classes to
-    /// discover to discover for which type `A` can be seen as super of a type
-    /// in the sequence `C.D`:
+    /// discover for which type `A` can be seen as super of a type in the
+    /// sequence `C.D`:
     ///
     /// Can `A` be seen as super of `D`? No. Going to the next enclosing class.
     /// Can `A` be seen as super of `C`? Yes! Its outer results in `A<String>`.
