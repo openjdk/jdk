@@ -182,12 +182,14 @@ final class MacFromParams {
                 .ifPresent(builder::predefinedAppImageSigned);
 
         // Make sure we have valid runtime image.
-        Path runtimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-        if (!isRuntimeImageJDKBundle(runtimeImage)
-                && !isRuntimeImageJDKImage(runtimeImage)) {
-            throw new ConfigException(
-                I18N.format("message.runtime-image-invalid", runtimeImage),
-                I18N.getString("message.runtime-image-invalid.advice"));
+        if (PREDEFINED_RUNTIME_IMAGE.findIn(params).isPresent()) {
+            Path runtimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+            if (!isRuntimeImageJDKBundle(runtimeImage)
+                    && !isRuntimeImageJDKImage(runtimeImage)) {
+                throw new ConfigException(
+                    I18N.format("message.runtime-image-invalid", runtimeImage),
+                    I18N.getString("message.runtime-image-invalid.advice"));
+            }
         }
 
         return builder;
