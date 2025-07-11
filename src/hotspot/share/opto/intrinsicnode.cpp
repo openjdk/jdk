@@ -275,7 +275,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
     //   Case A.2.1 constant mask >= 0
     //     Result.Hi = mask, optimistically assuming all source bits
     //     read starting from least significant bit positions are 1.
-    //     Result.Lo = 0
+    //     Result.Lo = 0, because at least one bit in mask is zero.
     //   e.g.
     //    src = 0xXXXXXXXX (non-constant source)
     //    mask = 0x7FFFFFFF (constant mask >= 0)
