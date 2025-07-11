@@ -123,4 +123,3 @@ Java_TestCharArrayReleasing_testIt(JNIEnv *env, jclass cls, jint source_mode,
   }
 
 }
-

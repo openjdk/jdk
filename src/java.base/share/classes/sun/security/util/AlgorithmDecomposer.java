@@ -178,11 +178,11 @@ public class AlgorithmDecomposer {
      * Split a Cipher transformation of the form algorithm/mode/padding,
      * algorithm/mode or algorithm into its components.
      *
-     * Array components of a Cipher transformation:
+     * Components of a cipher transformation:
      *
-     * index 0: algorithm component (e.g. AES)
-     * index 1: feedback component (e.g. CFB)
-     * index 2: padding component (e.g. PKCS5Padding)
+     * 1) algorithm component (e.g., AES)
+     * 2) feedback component (e.g., CFB) - optional
+     * 3) padding component (e.g., PKCS5Padding) - optional
      */
     public static String[] getTransformationTokens(String transformation) {
         // check if the transformation contains algorithms with "/" in their
