@@ -27,7 +27,6 @@
 #include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"

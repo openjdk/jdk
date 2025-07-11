@@ -756,6 +756,11 @@ public class Gen extends JCTree.Visitor {
             }
             CondItem result = genCond(tree.expr, markBranches);
             code.endScopes(limit);
+            //make sure variables defined in the let expression are not included
+            //in the defined variables for jumps that go outside of this let
+            //expression:
+            undefineVariablesInChain(result.falseJumps, limit);
+            undefineVariablesInChain(result.trueJumps, limit);
             return result;
         } else {
             CondItem result = genExpr(_tree, syms.booleanType).mkCond();
@@ -763,6 +768,13 @@ public class Gen extends JCTree.Visitor {
             return result;
         }
     }
+        //where:
+        private void undefineVariablesInChain(Chain toClear, int limit) {
+            while (toClear != null) {
+                toClear.state.defined.excludeFrom(limit);
+                toClear = toClear.next;
+            }
+        }
 
     public Code getCode() {
         return code;
