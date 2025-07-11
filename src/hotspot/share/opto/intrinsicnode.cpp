@@ -283,9 +283,9 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
     //    result.lo = 0
 
     //   Case A.2.2) mask < 0
-    //     For constant mask strictly less than zero, maximum result value will be
-    //     same as mask value with its sign bit flipped, assuming all but last read
-    //     source bits are set to 1.
+    //     For constant mask strictly less than zero, the maximum result value will be
+    //     the same as the mask value with its sign bit flipped, assuming all source bits but the last
+    //     are set to 1.
     //
     //     To compute minimum result value we assume all but last read source bit as zero,
     //     this is because sign bit of result will always be set to 1 while other bit
