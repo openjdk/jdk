@@ -2169,12 +2169,20 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     String algName =
                             macData.getDigestAlgName().toUpperCase(Locale.ENGLISH);
                     if (algName.equals("PBMAC1")) {
-
                         byte[] salt = macData.getSalt();
+                        int keyLength = macData.getKeyLength();
+
+                        // PKCS12 implementations MUST NOT accept PBKDF2 KDF
+                        // params that omit the keyLength field.
+                        if (keyLength == -1) {
+                            throw new IOException("PMAC1 parameter parsing "
+                                + "error: missing keyLength field");
+                        }
+
                         PBMAC1ParameterSpec params =
                                 new PBMAC1ParameterSpec(salt,
                                 macData.getIterations(), macData.getkdfHmac(),
-                                macData.getHmac(), macData.getKeyLength());
+                                macData.getHmac(), keyLength);
                         processMacData(params, macData, password, authSafeData,
                                 "PBEWith" + macData.getHmac());
 

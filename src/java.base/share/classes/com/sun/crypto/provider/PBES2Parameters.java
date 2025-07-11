@@ -228,7 +228,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
 
         var kdfParams = new PBKDF2Parameters();
-        String kdfAlgo = kdfParams.parseKDF(kdf);
+        String kdfAlgo = kdfParams.init(kdf);
         salt = kdfParams.getSalt();
         iCount = kdfParams.getIterationCount();
         keysize = kdfParams.getKeyLength();

@@ -98,17 +98,16 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
     // the PBMAC1 algorithm name
     private String pbmac1AlgorithmName = null;
 
-    // the salt
     private byte[] salt = null;
 
-    // the iteration count
+    // Iteration count
     private int iCount = 0;
 
-    // the Hmac function used by the kdf
+    // Hmac function used by the kdf
     private String kdfHmac = null;
 
-    // the Hmac function
-    private String Hmac = null;
+    // Hmac function used to compute the MAC
+    private String hmacAlgo = null;
 
     // the key derivation function (default is HmacSHA1)
     private final ObjectIdentifier kdfAlgo_OID =
@@ -120,12 +119,12 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
     protected void engineInit(AlgorithmParameterSpec paramSpec)
         throws InvalidParameterSpecException
     {
-       if (!(paramSpec instanceof PBMAC1ParameterSpec)) {
-           throw new InvalidParameterSpecException
-               ("Inappropriate parameter specification");
-       }
-       salt = ((PBMAC1ParameterSpec)paramSpec).getSalt().clone();
-       iCount = ((PBMAC1ParameterSpec)paramSpec).getIterationCount();
+        if (!(paramSpec instanceof PBMAC1ParameterSpec)) {
+            throw new InvalidParameterSpecException
+                    ("Inappropriate parameter specification");
+        }
+        salt = ((PBMAC1ParameterSpec)paramSpec).getSalt().clone();
+        iCount = ((PBMAC1ParameterSpec)paramSpec).getIterationCount();
     }
 
     protected void engineInit(byte[] encoded)
@@ -134,7 +133,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
         DerValue pBMAC1_params = new DerValue(encoded);
         if (pBMAC1_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PMAC1 parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
+                    + "not an ASN.1 SEQUENCE tag");
         }
         DerValue[] Info = (new DerInputStream(pBMAC1_params.toByteArray()))
                 .getSequence(2);
@@ -155,31 +154,25 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
                         + "expecting the object identifier for a HmacSHA key "
                         + "derivation function");
             }
-            Hmac = o.stdName();
+            hmacAlgo = o.stdName();
 
         DerValue kdf = pBMAC1_params.data.getDerValue();
         var kdfParams = new PBKDF2Parameters();
-        String kdfAlgo = kdfParams.parseKDF(kdf);
+        String kdfAlgo = kdfParams.init(kdf);
         salt = kdfParams.getSalt();
         iCount = kdfParams.getIterationCount();
 
         // Key length SHOULD be the same size as the HMAC function output size.
         keyLength = kdfParams.getKeyLength();
 
-        // Implementations MUST NOT accept PBKDF2 KDF with params that
-        // omit the keyLength field.
-        if (keyLength == -1) {
-            throw new IOException("PMAC1 parameter parsing error: "
-                + "missing keyLength field");
-        }
         kdfHmac = kdfAlgo;
 
         if (pBMAC1_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBMAC1 parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
+                    + "not an ASN.1 SEQUENCE tag");
         }
 
-        pbmac1AlgorithmName = "PBMAC1With" + kdfAlgo + "And" +Hmac;
+        pbmac1AlgorithmName = "PBMAC1With" + kdfAlgo + "And" +hmacAlgo;
     }
 
     protected void engineInit(byte[] encoded, String decodingMethod)
@@ -195,7 +188,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
         if (paramSpec.isAssignableFrom(PBMAC1ParameterSpec.class)) {
             return paramSpec.cast(
                 new PBMAC1ParameterSpec(salt, iCount, kdfHmac,
-                        Hmac, keyLength));
+                        hmacAlgo, keyLength));
         } else {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");
