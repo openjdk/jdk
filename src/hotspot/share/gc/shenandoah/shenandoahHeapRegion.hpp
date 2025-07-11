@@ -261,8 +261,8 @@ private:
 
   HeapWord* volatile _update_watermark;
 
-  uint _age;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+  volatile uint _age;
+  CENSUS_NOISE(volatile uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
@@ -476,23 +476,30 @@ public:
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
   // Region ageing and rejuvenation
-  uint age() const { return _age; }
-  CENSUS_NOISE(uint youth() const { return _youth; })
+  uint age() const { return Atomic::load(&_age); }
+  CENSUS_NOISE(uint youth() const { return Atomic::load(&_youth); })
 
   void increment_age() {
-    const uint max_age = markWord::max_age;
-    assert(_age <= max_age, "Error");
-    if (_age++ >= max_age) {
-      _age = max_age;   // clamp
+    const uint current_age = age();
+    assert(current_age <= markWord::max_age, "Error");
+    if (current_age < markWord::max_age) {
+      const uint old = Atomic::cmpxchg(&_age, current_age, current_age + 1);
+      assert(old == current_age || old == 0u, "Only fail when any mutator reset the age.");
     }
   }
 
   void reset_age() {
-    CENSUS_NOISE(_youth += _age;)
-    _age = 0;
+    uint current = age();
+    uint old;
+    while ((old = current) != 0u &&
+          (current = Atomic::cmpxchg(&_age, old, 0u)) != old &&
+           current != 0u) { }
+    if (current != 0u) {
+      CENSUS_NOISE(Atomic::add(&_youth, current, memory_order_relaxed);)
+    }
   }
 
-  CENSUS_NOISE(void clear_youth() { _youth = 0; })
+  CENSUS_NOISE(void clear_youth() { Atomic::store(&_youth,  0u); })
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
