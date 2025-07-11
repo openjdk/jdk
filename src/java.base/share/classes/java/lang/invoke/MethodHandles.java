@@ -4307,7 +4307,7 @@ return mh1;
      * <ul>
      * <li>read write access modes for all {@code T}. On 32-bit platforms,
      *     access modes {@code get} and {@code set} for {@code long}, {@code
-     *     double} are supported but not atomic, as described in Section
+     *     double} are supported but may be non-atomic, as described in Section
      *     {@jls 17.7} of <cite>The Java Language Specification</cite>.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
