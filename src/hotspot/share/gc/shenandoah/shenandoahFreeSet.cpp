@@ -2187,7 +2187,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
     }
     uint steal_alloc_start_idx = (start_idx + max_probes) % ShenandoahDirectlyAllocatableRegionCount;
     uint steal_alloc_probes = ShenandoahDirectlyAllocatableRegionCount - max_probes;
-    if (!any_replacement_eligible) {
+    if (!any_replacement_eligible && ShenandoahDirectAllocationStealingAllowed) {
       // After probing max_probes times with CAS alloc failure, if there is no region eligible for replacement,
       // Taking the lock and try to allocate direct allocation region will unlikely to successfully to replace any of them,
       // therefore, it tries steal space from other allocation regions first.
@@ -2203,7 +2203,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
     }
 
     if (!try_allocate_directly_allocatable_regions(start_idx, steal_alloc_done, req, obj, in_new_region)) {
-      if (obj == nullptr) {
+      if (obj == nullptr && ShenandoahDirectAllocationStealingAllowed) {
         obj = cas_allocate_single_for_mutator<IS_TLAB>(steal_alloc_start_idx,
                                                        steal_alloc_probes,
                                                        req,
