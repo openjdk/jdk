@@ -15681,6 +15681,8 @@ void Assembler::pusha_uncached() { // 64bit
     // Push pair of original stack pointer along with remaining registers
     // at 16B aligned boundary.
     push2p(rax, r31);
+    // Restore the original contents of RAX register.
+    movq(rax, Address(rax));
     push2p(r30, r29);
     push2p(r28, r27);
     push2p(r26, r25);
