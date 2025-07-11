@@ -128,6 +128,6 @@ void KlassCleaningTask::work() {
   // All workers will help cleaning the classes,
   InstanceKlass* klass;
   while ((klass = claim_next_klass()) != nullptr) {
-    clean_klass(klass);
+    Klass::clean_weak_instanceklass_links(klass);
   }
 }
