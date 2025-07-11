@@ -87,9 +87,15 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
             target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
             Content list = HtmlTree.UL(HtmlStyles.previewFeatureList).addStyle(HtmlStyles.checkboxes);
             for (var jep : jeps) {
-                String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
-                Content label = new ContentBuilder(Text.of(jep.number() + ": "))
-                        .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
+                Content label;
+                if (jep.number() != 0) {
+                    String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
+                    label = new ContentBuilder(Text.of(jep.number() + ": "))
+                            .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
+                } else {
+                    // Pseudo-JEP created from javadoc tag - use description as label
+                    label = Text.of(jep.title());
+                }
                 list.add(HtmlTree.LI(getCheckbox(label, String.valueOf(index++), "feature-")));
             }
             Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
@@ -99,12 +105,13 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
     }
 
     @Override
-    protected void addContentsLinks(Content list) {
-        super.addContentsLinks(list);
+    protected List<Content> getIndexLinks() {
+        var list = super.getIndexLinks();
         var notes = builder.getElementNotes();
         if (!notes.isEmpty()) {
-            addContentsLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes", list);
+            list.add(getIndexLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes"));
         }
+        return list;
     }
 
     @Override
@@ -134,27 +141,14 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
                 .setDefaultTab(getTableCaption(headingKey))
                 .setRenderTabs(false);
         for (PreviewAPIListBuilder.JEP jep : builder.getJEPs()) {
-            table.addTab(Text.EMPTY, element -> jep == builder.getJEP(element));
+            table.addTab(Text.EMPTY, element -> jep.equals(builder.getJEP(element)));
         }
     }
 
     @Override
     protected Content getExtraContent(Element element) {
         PreviewAPIListBuilder.JEP jep = builder.getJEP(element);
-        if (jep != null) {
-            return Text.of(jep.title());
-        }
-        if (builder.previewFeatureTag != null) {
-            var desc = utils.getBlockTags(element, t -> t.getTagName().equals(builder.previewFeatureTag),
-                    UnknownBlockTagTree.class)
-                    .stream()
-                    .map(t -> getTagletWriterInstance(false).commentTagsToOutput(element, t.getContent()))
-                    .findFirst();
-            if (desc.isPresent()) {
-                return desc.get();
-            }
-        }
-        return Text.EMPTY;
+        return jep == null ? Text.EMPTY : Text.of(jep.title());
     }
 
     @Override

@@ -101,11 +101,12 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     }
 
     @Override
-    protected void addContentsLinks(Content list) {
+    protected List<Content> getIndexLinks() {
+        var list = super.getIndexLinks();
         if (!builder.getForRemoval().isEmpty()) {
-            addContentsLink(HtmlIds.FOR_REMOVAL, "doclet.Terminally_Deprecated", list);
+            list.addFirst(getIndexLink(HtmlIds.FOR_REMOVAL, "doclet.Terminally_Deprecated"));
         }
-        super.addContentsLinks(list);
+        return list;
     }
 
     @Override

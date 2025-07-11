@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
@@ -59,7 +60,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
     public record JEP(int number, String title, String status) implements Comparable<JEP> {
         @Override
         public int compareTo(JEP o) {
-            return number - o.number;
+            return number == o.number ? title.compareTo(o.title) : number - o.number;
         }
     }
 
@@ -118,6 +119,16 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
         if (utils.isPreviewAPI(element)) {
             if (previewFeatureTag != null
                     && utils.hasBlockTag(element, DocTree.Kind.UNKNOWN_BLOCK_TAG, previewFeatureTag)) {
+                var desc = utils.getBlockTags(element, t -> t.getTagName().equals(previewFeatureTag),
+                            UnknownBlockTagTree.class)
+                    .stream()
+                    .map(t -> t.getContent().toString().trim())
+                    .findFirst();
+                // Create pseudo-JEP for preview tag
+                desc.ifPresent(s -> {
+                    var jep = jeps.computeIfAbsent(s, s2 -> new JEP(0, s2, ""));
+                    elementJeps.put(element, jep);
+                });
                 return true;
             } else {
                 String feature = Objects.requireNonNull(utils.getPreviewFeature(element),

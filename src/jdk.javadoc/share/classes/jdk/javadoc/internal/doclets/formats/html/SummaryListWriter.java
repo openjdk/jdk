@@ -25,7 +25,10 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedSet;
+import java.util.function.Function;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -146,9 +149,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         addContentSelectors(content);
         if (showContentsList()) {
             content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
-            var ul= HtmlTree.UL(HtmlStyles.contentsList);
-            addContentsLinks(ul);
-            content.add(ul);
+            content.add(HtmlTree.UL(HtmlStyles.contentsList, getIndexLinks(), Function.identity()));
         }
         addSummaries(content);
         bodyContents.addMainContent(content);
@@ -173,30 +174,16 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Add the section links to the table of contents.
-     *
-     * @param list the table of contents list
-     */
-    protected void addContentsLinks(Content list) {
-        for (SummaryElementKind kind : SummaryElementKind.values()) {
-            if (builder.hasDocumentation(kind)) {
-                addContentsLink(HtmlIds.forSummaryKind(kind), getHeadingKey(kind), list);
-            }
-        }
-    }
-
-    /**
-     * Add the link for a page section to the table of contents.
+     * Returns a list item containing a link for the table of contents.
      *
      * @param id the id for the link
      * @param headingKey the key for the heading content
-     * @param content the content to which the index link will be added
+     * @return a list item containing an index link
      */
-    protected void addContentsLink(HtmlId id, String headingKey, Content content) {
+    protected Content getIndexLink(HtmlId id, String headingKey) {
         // The "contents-" + id value is used in JavaScript code to toggle visibility of the link.
-        var li = HtmlTree.LI(links.createLink(id,
+        return HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey))).setId(HtmlId.of("contents-" + id.name()));
-        content.add(li);
     }
 
     /**
@@ -207,17 +194,16 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Add the API summary tables that represent the main content of the page.
-     *
-     * @param content the content to add the tables to
+     * {@return a list of list items containing the links for the table of contents}
      */
-    protected void addSummaries(Content content) {
+    protected List<Content> getIndexLinks() {
+        var list = new ArrayList<Content>();
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (builder.hasDocumentation(kind)) {
-                addSummaryAPI(builder.getSet(kind), HtmlIds.forSummaryKind(kind),
-                        getHeadingKey(kind), getHeaderKey(kind), content);
+                list.add(getIndexLink(HtmlIds.forSummaryKind(kind), getHeadingKey(kind)));
             }
         }
+        return list;
     }
 
     /**
@@ -230,6 +216,20 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         HtmlTree body = getBody(getWindowTitle(title));
         bodyContents.setHeader(getHeader(pageMode));
         return body;
+    }
+
+    /**
+     * Add all API summary tables to the main content of the page.
+     *
+     * @param content the content to add the API summary tables to
+     */
+    protected void addSummaries(Content content) {
+        for (SummaryElementKind kind : SummaryElementKind.values()) {
+            if (builder.hasDocumentation(kind)) {
+                addSummaryAPI(builder.getSet(kind), HtmlIds.forSummaryKind(kind),
+                        getHeadingKey(kind), getHeaderKey(kind), content);
+            }
+        }
     }
 
     /**
@@ -324,14 +324,6 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
                                 .put(HtmlAttr.ONCLICK,
                                         "toggleGlobal(this, '" + id + "', 3)"))
                 .add(HtmlTree.SPAN(label));
-    }
-
-    /**
-     * Add an extra optional index link.
-     *
-     * @param target the content to which the link should be added
-     */
-    protected void addExtraIndexLink(Content target) {
     }
 
     /**
