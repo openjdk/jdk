@@ -839,7 +839,6 @@ private:
             region_progress = true;
           }
           // Otherwise, this is an old region in a young or mixed cycle.  Process it during a second phase, below.
-          // Don't bother to report pacing progress in this case.
         } else {
           // Because updating of references runs concurrently, it is possible that a FREE inactive region transitions
           // to a non-free active region while this loop is executing.  Whenever this happens, the changing of a region's

@@ -73,11 +73,6 @@ public:
   // Notify threads waiting for GC to complete.
   void notify_alloc_failure_waiters();
 
-  // This is called for every allocation. The control thread accumulates
-  // this value when idle. During the gc cycle, the control resets it
-  // and reports it to the pacer.
-  void pacing_notify_alloc(size_t words);
-
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
   size_t get_gc_id();
 };
