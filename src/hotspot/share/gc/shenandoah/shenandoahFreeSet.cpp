@@ -2320,19 +2320,15 @@ public:
         ((r->is_regular() || r->is_regular_pinned()) &&
          r->affiliation() == YOUNG_GENERATION &&
          r->get_top_before_promote() == nullptr)) {
-      r->try_recycle_under_lock();
-      if (r->is_empty()) {
+      if (r->is_empty() || r->is_trash()) {
+        r->try_recycle_under_lock();
         r->set_affiliation(YOUNG_GENERATION);
         r->make_regular_allocation(YOUNG_GENERATION);
         ShenandoahHeap::heap()->generation_for(r->affiliation())->increment_affiliated_region_count();
-      } else {
-        assert(r->is_affiliated(), "Region %zu that is not new should be affiliated", r->index());
-        if (r->affiliation() != YOUNG_GENERATION) {
-          assert(ShenandoahHeap::heap()->mode()->is_generational(), "%s region should only exists in generational mode."
-            , r->affiliation_name());
-          return false;
-        }
       }
+      assert(r->is_affiliated(), "Region %zu must be affiliated", r->index());
+      assert(r->affiliation() == YOUNG_GENERATION, "Region %zu must be affiliated with YOUNG_GENERATION", r->index());
+
       if (_obj == nullptr && ac >= _min_req_byte_size) {
         _in_new_region = r->is_empty();
         size_t actual_size = _req.size();
