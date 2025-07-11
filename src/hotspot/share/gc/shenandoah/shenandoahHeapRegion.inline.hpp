@@ -141,6 +141,7 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
       if (try_allocate(obj, size)) {
+        make_regular_allocation(req.affiliation());
         adjust_alloc_metadata(req.type(), size);
         return obj;
       }
@@ -166,6 +167,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
     }
     if (adjusted_size >= req.min_size()) {
       if (try_allocate(obj, adjusted_size)) {
+        make_regular_allocation(req.affiliation());
         actual_size = adjusted_size;
         adjust_alloc_metadata(req.type(), adjusted_size);
         return obj;
