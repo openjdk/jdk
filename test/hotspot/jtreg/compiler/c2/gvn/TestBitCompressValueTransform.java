@@ -32,6 +32,7 @@ package compiler.c2.gvn;
 
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
+import compiler.lib.generators.*;
 
 public class TestBitCompressValueTransform {
 
@@ -39,6 +40,33 @@ public class TestBitCompressValueTransform {
     public static final long field_L = 0x400_0000_0000_0000L;
     public static final int  gold_I = Integer.valueOf(Integer.compress(0x8000_0000, field_I));
     public static final long gold_L = Long.valueOf(Long.compress(0x8000_0000_0000_0000L, field_L));
+
+    public static RestrictableGenerator<Integer> GEN_I = Generators.G.ints();
+    public static RestrictableGenerator<Long> GEN_L = Generators.G.longs();
+
+    public final int LIMIT_I1 = GEN_I.next();
+    public final int LIMIT_I2 = GEN_I.next();
+    public final int LIMIT_I3 = GEN_I.next();
+    public final int LIMIT_I4 = GEN_I.next();
+    public final int LIMIT_I5 = GEN_I.next();
+    public final int LIMIT_I6 = GEN_I.next();
+    public final int LIMIT_I7 = GEN_I.next();
+    public final int LIMIT_I8 = GEN_I.next();
+
+    public final long LIMIT_L1 = GEN_L.next();
+    public final long LIMIT_L2 = GEN_L.next();
+    public final long LIMIT_L3 = GEN_L.next();
+    public final long LIMIT_L4 = GEN_L.next();
+    public final long LIMIT_L5 = GEN_L.next();
+    public final long LIMIT_L6 = GEN_L.next();
+    public final long LIMIT_L7 = GEN_L.next();
+    public final long LIMIT_L8 = GEN_L.next();
+
+    public final int BOUND_LO_I = GEN_I.next();
+    public final int BOUND_HI_I = GEN_I.next();
+
+    public final long BOUND_LO_L = GEN_L.next();
+    public final long BOUND_HI_L = GEN_L.next();
 
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
@@ -304,6 +332,342 @@ public class TestBitCompressValueTransform {
             res |= test15(0, 0);
         }
         Asserts.assertEQ(0, res);
+    }
+
+    @DontCompile
+    public int test16_interpreted(int src, int mask) {
+        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        int res = Integer.compress(src, mask);
+
+        if (res > LIMIT_I1) {
+            res += 1;
+        }
+        if (res > LIMIT_I2) {
+            res += 2;
+        }
+        if (res > LIMIT_I3) {
+            res += 4;
+        }
+        if (res > LIMIT_I4) {
+            res += 8;
+        }
+        if (res > LIMIT_I5) {
+            res += 16;
+        }
+        if (res > LIMIT_I6) {
+            res += 32;
+        }
+        if (res > LIMIT_I7) {
+            res += 64;
+        }
+        if (res > LIMIT_I8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    public int test16(int src, int mask) {
+        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        int res = Integer.compress(src, mask);
+
+        // Check the result with some random value ranges, if any of the
+        // following conditions incorrectly constant folds the result will
+        // not comply with the interpreter.
+
+        if (res > LIMIT_I1) {
+            res += 1;
+        }
+        if (res > LIMIT_I2) {
+            res += 2;
+        }
+        if (res > LIMIT_I3) {
+            res += 4;
+        }
+        if (res > LIMIT_I4) {
+            res += 8;
+        }
+        if (res > LIMIT_I5) {
+            res += 16;
+        }
+        if (res > LIMIT_I6) {
+            res += 32;
+        }
+        if (res > LIMIT_I7) {
+            res += 64;
+        }
+        if (res > LIMIT_I8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Run (test = "test16")
+    public void run16(RunInfo info) {
+        int actual = 0;
+        int expected = 0;
+
+        for (int i = 0; i < 10000; i++) {
+            int arg1 = GEN_I.next();
+            int arg2 = GEN_I.next();
+
+            actual += test16(arg1, arg2);
+            expected += test16_interpreted(arg1, arg2);
+        }
+        Asserts.assertEQ(actual, expected);
+    }
+
+    @DontCompile
+    public int test17_interpreted(int src, int mask) {
+        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        int res = Integer.expand(src, mask);
+
+        if (res > LIMIT_I1) {
+            res += 1;
+        }
+        if (res > LIMIT_I2) {
+            res += 2;
+        }
+        if (res > LIMIT_I3) {
+            res += 4;
+        }
+        if (res > LIMIT_I4) {
+            res += 8;
+        }
+        if (res > LIMIT_I5) {
+            res += 16;
+        }
+        if (res > LIMIT_I6) {
+            res += 32;
+        }
+        if (res > LIMIT_I7) {
+            res += 64;
+        }
+        if (res > LIMIT_I8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Test
+    @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    public int test17(int src, int mask) {
+        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        int res = Integer.expand(src, mask);
+
+        // Check the result with some random value ranges, if any of the
+        // following conditions incorrectly constant folds the result will
+        // not comply with the interpreter.
+
+        if (res > LIMIT_I1) {
+            res += 1;
+        }
+        if (res > LIMIT_I2) {
+            res += 2;
+        }
+        if (res > LIMIT_I3) {
+            res += 4;
+        }
+        if (res > LIMIT_I4) {
+            res += 8;
+        }
+        if (res > LIMIT_I5) {
+            res += 16;
+        }
+        if (res > LIMIT_I6) {
+            res += 32;
+        }
+        if (res > LIMIT_I7) {
+            res += 64;
+        }
+        if (res > LIMIT_I8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Run (test = "test17")
+    public void run17(RunInfo info) {
+        int actual = 0;
+        int expected = 0;
+
+        for (int i = 0; i < 10000; i++) {
+            int arg1 = GEN_I.next();
+            int arg2 = GEN_I.next();
+
+            actual += test16(arg1, arg2);
+            expected += test16_interpreted(arg1, arg2);
+        }
+        Asserts.assertEQ(actual, expected);
+    }
+
+    @DontCompile
+    public long test18_interpreted(long src, long mask) {
+        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        long res = Long.compress(src, mask);
+
+        if (res > LIMIT_L1) {
+            res += 1;
+        }
+        if (res > LIMIT_L2) {
+            res += 2;
+        }
+        if (res > LIMIT_L3) {
+            res += 4;
+        }
+        if (res > LIMIT_L4) {
+            res += 8;
+        }
+        if (res > LIMIT_L5) {
+            res += 16;
+        }
+        if (res > LIMIT_L6) {
+            res += 32;
+        }
+        if (res > LIMIT_L7) {
+            res += 64;
+        }
+        if (res > LIMIT_L8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    public long test18(long src, long mask) {
+        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        long res = Long.compress(src, mask);
+
+        // Check the result with some random value ranges, if any of the
+        // following conditions incorrectly constant folds the result will
+        // not comply with the interpreter.
+
+        if (res > LIMIT_L1) {
+            res += 1;
+        }
+        if (res > LIMIT_L2) {
+            res += 2;
+        }
+        if (res > LIMIT_L3) {
+            res += 4;
+        }
+        if (res > LIMIT_L4) {
+            res += 8;
+        }
+        if (res > LIMIT_L5) {
+            res += 16;
+        }
+        if (res > LIMIT_L6) {
+            res += 32;
+        }
+        if (res > LIMIT_L7) {
+            res += 64;
+        }
+        if (res > LIMIT_L8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Run (test = "test18")
+    public void run18(RunInfo info) {
+        long actual = 0;
+        long expected = 0;
+
+        for (int i = 0; i < 10000; i++) {
+            long arg1 = GEN_L.next();
+            long arg2 = GEN_L.next();
+
+            actual += test18(arg1, arg2);
+            expected += test18_interpreted(arg1, arg2);
+        }
+        Asserts.assertEQ(actual, expected);
+    }
+
+    @DontCompile
+    public long test19_interpreted(long src, long mask) {
+        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        long res = Long.expand(src, mask);
+
+        if (res > LIMIT_L1) {
+            res += 1;
+        }
+        if (res > LIMIT_L2) {
+            res += 2;
+        }
+        if (res > LIMIT_L3) {
+            res += 4;
+        }
+        if (res > LIMIT_L4) {
+            res += 8;
+        }
+        if (res > LIMIT_L5) {
+            res += 16;
+        }
+        if (res > LIMIT_L6) {
+            res += 32;
+        }
+        if (res > LIMIT_L7) {
+            res += 64;
+        }
+        if (res > LIMIT_L8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Test
+    @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
+    public long test19(long src, long mask) {
+        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        long res = Long.expand(src, mask);
+
+        // Check the result with some random value ranges, if any of the
+        // following conditions incorrectly constant folds the result will
+        // not comply with the interpreter.
+
+        if (res > LIMIT_L1) {
+            res += 1;
+        }
+        if (res > LIMIT_L2) {
+            res += 2;
+        }
+        if (res > LIMIT_L3) {
+            res += 4;
+        }
+        if (res > LIMIT_L4) {
+            res += 8;
+        }
+        if (res > LIMIT_L5) {
+            res += 16;
+        }
+        if (res > LIMIT_L6) {
+            res += 32;
+        }
+        if (res > LIMIT_L7) {
+            res += 64;
+        }
+        if (res > LIMIT_L8) {
+            res += 128;
+        }
+        return res;
+    }
+
+    @Run (test = "test19")
+    public void run19(RunInfo info) {
+        long actual = 0;
+        long expected = 0;
+
+        for (int i = 0; i < 10000; i++) {
+            long arg1 = GEN_L.next();
+            long arg2 = GEN_L.next();
+
+            actual += test19(arg1, arg2);
+            expected += test19_interpreted(arg1, arg2);
+        }
+        Asserts.assertEQ(actual, expected);
     }
 
     public static void main(String[] args) {
