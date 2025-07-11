@@ -2627,6 +2627,7 @@ class StubGenerator: public StubCodeGenerator {
     __ j(L_judge_used);
 
     __ bind(L_main_loop);
+
     // generate_aes_loadkeys
     Label L_aes128, L_aes192, L_exit_loadkey;
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -2650,6 +2651,7 @@ class StubGenerator: public StubCodeGenerator {
     uint64_t maskIndex = 0x00000088ul; // 0b10001000
     __ mv(t0, 64); // we used bulk_width = 4, so we should compare len > 64 (Byte)
     __ blt(len, t0, L_inner_loop);
+
     // init aes_ctr counter input
     __ srli(len32, len, 2);
     __ li(t0, maskIndex);
@@ -2658,7 +2660,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(v31, counter);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::ta);
-    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t);
+    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // Convert the big-endian counter into little-endian. for viota
     __ vsetvli(x0, len32, Assembler::e32, Assembler::m4);
     __ vmv_v_i(v16, 0);
     __ vaesz_vs(v16, v31);
@@ -2678,7 +2680,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vle32_v(v20, in);
 
     __ vmv_v_v(v24, v16);
-    __ vrev8_v(v24, v24, Assembler::VectorMask::v0_t);
+    __ vrev8_v(v24, v24, Assembler::VectorMask::v0_t); // convert the little-endian to big-endian
     __ vaesz_vs(v24, working_vregs[0]);
 
     Label L_aes128_loop, L_aes192_loop, L_exit_aes_loop;
@@ -2721,7 +2723,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // store counter after large block CTR
     __ bind(L_store_Large_counter);
-    __ vrev8_v(v16, v16);
+    __ vrev8_v(v16, v16, Assembler::VectorMask::v0_t); // convert little-endian to big-endian
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vse32_v(v19, counter);
 
@@ -2734,21 +2736,21 @@ class StubGenerator: public StubCodeGenerator {
 
     // calculate and store out the next counter
     __ vle32_v(v31, counter);
-    __ vrev8_v(v31, v31);
     __ li(t0, maskIndex);
-    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1); // mu ma区别补充上
+    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
     __ vmv_v_x(v0, t0);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // convert big-endien to little-endian
     __ vadd_vi(v31, v31, 1, Assembler::VectorMask::v0_t);
-    __ vrev8_v(v16, v31);
-    __ vse32_v(v16, counter);
+    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // convert little-endian to big-endian
+    __ vse32_v(v31, counter);
 
     // inner encrypt
     Label L_aes128_inner, L_aes192_inner, L_fin_encrypt;
     __ mv(t2, 52);
     __ blt(keylen, t2, L_aes128_inner);
     __ beq(keylen, t2, L_aes192_inner);
-    
+
     generate_aes_encrypt(v31, working_vregs, 15);
     __ j(L_fin_encrypt);
 
@@ -2764,7 +2766,7 @@ class StubGenerator: public StubCodeGenerator {
     __ blt(len, block_size, L_encrypt_slow);
 
     __ vxor_vv(v31, v31, v20);
-    __ vse32_v(v31, out); // to check vse32
+    __ vse32_v(v31, out);
     __ add(out, out, block_size);
     __ sub(len, len, block_size);
     __ add(in, in, block_size);
