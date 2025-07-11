@@ -618,14 +618,14 @@
   do_stub(preuniverse, atomic_add)                                      \
   do_entry(preuniverse, atomic_add, atomic_add_entry, atomic_add_entry) \
   do_stub(preuniverse, atomic_xchg)                                     \
-  do_entry(preuniverse, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry) \
+  do_entry(preuniverse, atomic_xchg, atomic_xchg_entry,                 \
+           atomic_xchg_entry)                                           \
   do_stub(preuniverse, atomic_cmpxchg)                                  \
   do_entry(preuniverse, atomic_cmpxchg, atomic_cmpxchg_entry,           \
            atomic_cmpxchg_entry)                                        \
   do_stub(preuniverse, atomic_cmpxchg_long)                             \
   do_entry(preuniverse, atomic_cmpxchg_long, atomic_cmpxchg_long_entry, \
            atomic_cmpxchg_long_entry)                                   \
-  do_stub(preuniverse, atomic_load_long)                                \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub, do_arch_blob,              \
                                     do_arch_entry, do_arch_entry_init)  \

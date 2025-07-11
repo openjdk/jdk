@@ -31,6 +31,7 @@
                                           do_arch_entry,                \
                                           do_arch_entry_init)           \
   do_arch_blob(preuniverse, 500)                                        \
+  do_stub(preuniverse, atomic_load_long)                                \
   do_arch_entry(Arm, preuniverse, atomic_load_long,                     \
                 atomic_load_long_entry, atomic_load_long_entry)         \
   do_stub(preuniverse, atomic_store_long)                               \
