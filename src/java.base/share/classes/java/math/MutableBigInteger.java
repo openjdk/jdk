@@ -2023,10 +2023,10 @@ class MutableBigInteger {
                     approxExp = Double.MIN_EXPONENT;
 
                 // Avoid to lose fraction bits
-                if (approxExp + 1 >= Double.PRECISION) {
+                if (approxExp >= Double.PRECISION - 1) {
                     r.copyValue(valueOf(approx, 0));
                 } else {
-                    int pow = Math.min(Double.PRECISION - (approxExp + 1), (int) (shift / n));
+                    int pow = Math.min((Double.PRECISION - 1) - approxExp, (int) (shift / n));
                     shift -= (long) pow * n;
                     r.copyValue(valueOf(approx, pow));
                 }
