@@ -120,7 +120,8 @@ public class GifComparison {
  */
 class ImageIOModel {
 
-    record Frame(int x, int y, int w, int h, String disposalMethod, int transparentColorIndex) {}
+    record Frame(int x, int y, int w, int h, String disposalMethod,
+                 int transparentColorIndex) {}
 
     private final URL url;
     private int width, height;
@@ -142,30 +143,42 @@ class ImageIOModel {
     private void initialize(ImageReader reader) throws Exception {
         reader.setInput(ImageIO.createImageInputStream(url.openStream()));
         IIOMetadata metadata = reader.getStreamMetadata();
-        IIOMetadataNode globalRoot = (IIOMetadataNode) metadata.getAsTree(metadata.getNativeMetadataFormatName());
+        IIOMetadataNode globalRoot = (IIOMetadataNode) metadata.getAsTree(
+                metadata.getNativeMetadataFormatName());
 
-        NodeList globalScreenDescriptor = globalRoot.getElementsByTagName("LogicalScreenDescriptor");
+        NodeList globalScreenDescriptor = globalRoot.getElementsByTagName(
+                "LogicalScreenDescriptor");
         if (globalScreenDescriptor.getLength() > 0) {
-            IIOMetadataNode screenDescriptor = (IIOMetadataNode) globalScreenDescriptor.item(0);
+            IIOMetadataNode screenDescriptor = (IIOMetadataNode)
+                    globalScreenDescriptor.item(0);
 
             if (screenDescriptor != null) {
-                width = Integer.parseInt(screenDescriptor.getAttribute("logicalScreenWidth"));
-                height = Integer.parseInt(screenDescriptor.getAttribute("logicalScreenHeight"));
+                width = Integer.parseInt(
+                        screenDescriptor.getAttribute("logicalScreenWidth"));
+                height = Integer.parseInt(
+                        screenDescriptor.getAttribute("logicalScreenHeight"));
             }
         }
 
-        NodeList globalColorTable = globalRoot.getElementsByTagName("GlobalColorTable");
+        NodeList globalColorTable = globalRoot.getElementsByTagName(
+                "GlobalColorTable");
         if (globalColorTable.getLength() > 0) {
-            IIOMetadataNode colorTable = (IIOMetadataNode) globalColorTable.item(0);
+            IIOMetadataNode colorTable = (IIOMetadataNode)
+                    globalColorTable.item(0);
 
             if (colorTable != null) {
-                String bgIndex = colorTable.getAttribute("backgroundColorIndex");
-                IIOMetadataNode colorEntry = (IIOMetadataNode) colorTable.getFirstChild();
+                String bgIndex = colorTable.getAttribute(
+                        "backgroundColorIndex");
+                IIOMetadataNode colorEntry = (IIOMetadataNode)
+                        colorTable.getFirstChild();
                 while (colorEntry != null) {
                     if (colorEntry.getAttribute("index").equals(bgIndex)) {
-                        int red = Integer.parseInt(colorEntry.getAttribute("red"));
-                        int green = Integer.parseInt(colorEntry.getAttribute("green"));
-                        int blue = Integer.parseInt(colorEntry.getAttribute("blue"));
+                        int red = Integer.parseInt(colorEntry.getAttribute(
+                                "red"));
+                        int green = Integer.parseInt(colorEntry.getAttribute(
+                                "green"));
+                        int blue = Integer.parseInt(colorEntry.getAttribute(
+                                "blue"));
 
                         backgroundColor = new Color(red, green, blue);
                         break;
@@ -179,12 +192,17 @@ class ImageIOModel {
         int frameCount = reader.getNumImages(true);
 
         for (int frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-            IIOMetadataNode root = (IIOMetadataNode) reader.getImageMetadata(frameIndex).getAsTree("javax_imageio_gif_image_1.0");
-            IIOMetadataNode gce = (IIOMetadataNode) root.getElementsByTagName("GraphicControlExtension").item(0);
+            IIOMetadataNode root = (IIOMetadataNode) reader.
+                    getImageMetadata(frameIndex).
+                    getAsTree("javax_imageio_gif_image_1.0");
+            IIOMetadataNode gce = (IIOMetadataNode) root.
+                    getElementsByTagName("GraphicControlExtension").item(0);
             NodeList children = root.getChildNodes();
             int transparentColorIndex = -1;
-            if ("TRUE".equalsIgnoreCase(gce.getAttribute("transparentColorFlag"))) {
-                transparentColorIndex = Integer.parseInt(gce.getAttribute("transparentColorIndex"));
+            if ("TRUE".equalsIgnoreCase(gce.getAttribute(
+                    "transparentColorFlag"))) {
+                transparentColorIndex = Integer.parseInt(gce.getAttribute(
+                        "transparentColorIndex"));
             }
 
             String disposalMethodStr = gce.getAttribute("disposalMethod");
@@ -194,16 +212,21 @@ class ImageIOModel {
             int frameWidth = width;
             int frameHeight = height;
 
-            for (int nodeIndex = 0; nodeIndex < children.getLength(); nodeIndex++) {
+            for (int nodeIndex = 0; nodeIndex < children.getLength();
+                 nodeIndex++) {
                 Node nodeItem = children.item(nodeIndex);
 
                 if (nodeItem.getNodeName().equals("ImageDescriptor")) {
                     NamedNodeMap map = nodeItem.getAttributes();
 
-                    frameX = Integer.parseInt(map.getNamedItem("imageLeftPosition").getNodeValue());
-                    frameY = Integer.parseInt(map.getNamedItem("imageTopPosition").getNodeValue());
-                    frameWidth = Integer.parseInt(map.getNamedItem("imageWidth").getNodeValue());
-                    frameHeight = Integer.parseInt(map.getNamedItem("imageHeight").getNodeValue());
+                    frameX = Integer.parseInt(map.getNamedItem(
+                            "imageLeftPosition").getNodeValue());
+                    frameY = Integer.parseInt(map.getNamedItem(
+                            "imageTopPosition").getNodeValue());
+                    frameWidth = Integer.parseInt(map.getNamedItem(
+                            "imageWidth").getNodeValue());
+                    frameHeight = Integer.parseInt(map.getNamedItem(
+                            "imageHeight").getNodeValue());
                     width = Math.max(width, frameX + frameWidth);
                     height = Math.max(height, frameY + frameHeight);
                 }
@@ -218,7 +241,8 @@ class ImageIOModel {
         ImageReader reader = ImageIO.getImageReadersByFormatName("gif").next();
         reader.setInput(ImageIO.createImageInputStream(url.openStream()));
         try {
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage image = new BufferedImage(width, height,
+                    BufferedImage.TYPE_INT_ARGB);
             BufferedImage previousImage = null;
 
             for (int a = 0; a <= frameIndex; a++) {
@@ -323,7 +347,9 @@ class AWTModel {
             public void setHints(int hintflags) {}
 
             @Override
-            public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize) {
+            public void setPixels(int x, int y, int w, int h,
+                                  ColorModel model, byte[] pixels, int off,
+                                  int scansize) {
                 try {
                     final int yMax = y + h;
                     final int xMax = x + w;
@@ -350,7 +376,9 @@ class AWTModel {
             }
 
             @Override
-            public void setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize) {}
+            public void setPixels(int x, int y, int w, int h,
+                                  ColorModel model, int[] pixels, int off,
+                                  int scansize) {}
 
             @Override
             public void imageComplete(int status) {
