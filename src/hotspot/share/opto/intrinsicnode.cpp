@@ -320,12 +320,12 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         // always be set to zero.
         result_bit_width = mask_bit_width - 1;
       } else {
+        assert(mask_type->lo_as_long() >= 0, "");
         // Case B.3 Mask value range only includes non-negative values. Since all integral
         // types honours an invariant that TypeInteger._lo <= TypeInteger._hi, thus computing
         // leading zero bits of upper bound of mask value will allow us to ascertain
         // optimistic upper bound of result i.e. all the bits other than leading zero bits
         // can be assumed holding 1 value.
-        assert(mask_type->lo_as_long() >= 0, "");
         jlong clz = count_leading_zeros(mask_type->hi_as_long());
         // Here, result of clz is w.r.t to long argument, hence for integer argument
         // we explicitly subtract 32 from the result.
