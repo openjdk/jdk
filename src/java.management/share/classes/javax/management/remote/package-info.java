@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,9 @@
  * <p>Interfaces for remote access to
  * JMX MBean servers.
  * This package defines the essential interfaces for making a JMX
- * MBean server manageable remotely. The specification of this
- * functionality is completed by Part III of the
- * <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
- * JMX Specification, version 1.4</a></p>
+ * MBean server manageable remotely.</p>
  *
- * <p>The JMX specification defines the notion of <b>connectors</b>.
+ * <p>JMX defines the notion of <b>connectors</b>.
  * A connector is attached to a JMX API MBean server and makes it
  * accessible to remote Java clients. The client end of a
  * connector exports essentially the same interface as the MBean
@@ -41,32 +38,17 @@
  * interface.</p>
  *
  * <p>A connector makes an MBean server remotely accessible through
- * a given protocol. The JMX Remote API allows the use of different
- * type of connectors:
+ * a given protocol.
  *
- *       <ul>
+ *      <ul>
  *        <li>The JMX Remote API defines a standard connector,
  *     the <b>RMI Connector</b>, which provides remote access to an
- *         MBeanServer through RMI.
+ *     MBeanServer through RMI.
  *
- *        <li>The JMX Remote API also defines an optional connector called
- *         <b>JMXMP Connector</b> implementing the JMX Message Protocol
- *     (JMXMP). As it is optional, it is not part of this bundle (see
- *     note below).
- *
- *        <li>User-defined connector protocols are also possible using the
+ *        <li>Other connector protocols are also possible using the
  *     {@link javax.management.remote.JMXConnectorFactory
- *     JMXConnectorFactory} and, optionally, the Generic Connector
- *     (not part of this bundle, see note below).
- *       </ul>
- *
- *       <p><u>Note</u>: the optional packages implementing
- *         the optional part of the <em>JMX Remote API</em>
- *         are not included in the <em>Java SE Platform</em>
- *         but are available from the <em>JMX Remote API
- *     <a href="https://www.oracle.com/technetwork/java/javasebusiness/downloads/java-archive-downloads-java-plat-419418.html">
- *     Reference Implementation</a></em>.</p>
- *
+ *     JMXConnectorFactory}.
+ *     </ul>
  *
  *       <h2>Connector addresses</h2>
  *

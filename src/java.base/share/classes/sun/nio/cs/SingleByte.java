@@ -95,7 +95,7 @@ public class SingleByte
             }
 
             if (isASCIICompatible) {
-                int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                 sp += n;
                 dp += n;
             }

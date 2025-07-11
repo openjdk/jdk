@@ -377,7 +377,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ verify_not_null_oop(rax);
 
   // search an exception handler (rax: exception oop, rdx: throwing pc)
-  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::handle_exception_from_callee_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_handle_exception_from_callee_id)));
   __ should_not_reach_here();
   guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
@@ -433,7 +433,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // remove the activation and dispatch to the unwind handler
   __ remove_frame(initial_frame_size_in_bytes());
-  __ jump(RuntimeAddress(Runtime1::entry_for(C1StubId::unwind_exception_id)));
+  __ jump(RuntimeAddress(Runtime1::entry_for(StubId::c1_unwind_exception_id)));
 
   // Emit the slow path assembly
   if (stub != nullptr) {
@@ -1387,7 +1387,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
         __ push(klass_RInfo);
         __ push(k_RInfo);
-        __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
+        __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
         __ pop(klass_RInfo);
         __ pop(klass_RInfo);
         // result is a boolean
@@ -1401,7 +1401,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
       __ push(klass_RInfo);
       __ push(k_RInfo);
-      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
+      __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
       __ pop(klass_RInfo);
       __ pop(k_RInfo);
       // result is a boolean
@@ -1480,7 +1480,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
     __ push(klass_RInfo);
     __ push(k_RInfo);
-    __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
+    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
     __ pop(klass_RInfo);
     __ pop(k_RInfo);
     // result is a boolean
@@ -2217,7 +2217,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   // exception object is not added to oop map by LinearScan
   // (LinearScan assumes that no oops are in fixed registers)
   info->add_register_oop(exceptionOop);
-  C1StubId unwind_id;
+  StubId unwind_id;
 
   // get current pc information
   // pc is only needed if the method has an exception handler, the unwind code does not need it.
@@ -2229,9 +2229,9 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   __ verify_not_null_oop(rax);
   // search an exception handler (rax: exception oop, rdx: throwing pc)
   if (compilation()->has_fpu_code()) {
-    unwind_id = C1StubId::handle_exception_id;
+    unwind_id = StubId::c1_handle_exception_id;
   } else {
-    unwind_id = C1StubId::handle_exception_nofpu_id;
+    unwind_id = StubId::c1_handle_exception_nofpu_id;
   }
   __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
 
@@ -2546,7 +2546,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
       __ push(src);
       __ push(dst);
-      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
+      __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_slow_subtype_check_id)));
       __ pop(dst);
       __ pop(src);
 
