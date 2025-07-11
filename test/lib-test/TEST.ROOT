@@ -29,7 +29,7 @@
 keys=randomness
 
 # Minimum jtreg version
-requiredVersion=7.5.2+1
+requiredVersion=8+2
 
 # Allow querying of various System properties in @requires clauses
 requires.extraPropDefns = ../jtreg-ext/requires/VMProps.java
