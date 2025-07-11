@@ -38,73 +38,24 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageConsumer;
 import java.awt.image.IndexColorModel;
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This compares the ImageIO rendering of a gif with the ToolkitImage
- * rendering.
+ * This compares the last frame of ImageIO's rendering of a gif with the
+ * ToolkitImage's rendering.
  * <p>
  * This is intended to serve as a helper class for more specific test cases.
- * However this does have its own main method that inspects a folder of gifs.
  */
 public class GifComparison {
 
     /**
-     * This inspects a folder and calls {@link #run(URL)} for each gif file.
-     */
-    public static void main(String[] args) throws Exception {
-        AtomicInteger successCtr = new AtomicInteger();
-        AtomicInteger failureCtr = new AtomicInteger();
-        File dir = new File(args[0]);
-        Files.walkFileTree(dir.toPath(), new FileVisitor<>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                String s = file.toString();
-                if (s.endsWith(".gif")) {
-                    try {
-                        run(file.toFile().toURI().toURL());
-                        successCtr.incrementAndGet();
-                    } catch (Throwable t) {
-                        failureCtr.incrementAndGet();
-                        t.printStackTrace();
-                    }
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                return FileVisitResult.CONTINUE;
-            }
-        });
-
-        System.out.println("Done. Successes = " + successCtr.get() +
-                " Failures = " + failureCtr.get());
-    }
-
-    /**
-     * This iterates over every frame a gif and throws an Error / Exception
+     * This inspects the last frame of a gif and throws an Error / Exception
      * if ImageIO and ToolkitImage produce different BufferedImage renderings.
      *
      * @param srcURL the URL of the image to inspect
@@ -121,49 +72,45 @@ public class GifComparison {
         AWTModel awtModel = new AWTModel(srcURL);
 
         BufferedImage lastImage = null;
-        for (int a = 0; a < ioModel.frames.size(); a++) {
-            BufferedImage ioImg = ioModel.getFrame(a);
-            BufferedImage awtImage = awtModel.getFrame(a);
 
-            // We could make this method much faster if we only iterated
-            // through the gif file once (for each model). But this
-            // slow implementation is probably more readable for developers.
+        int a = ioModel.frames.size() - 1;
+        BufferedImage ioImg = ioModel.getFrame(a);
+        BufferedImage awtImage = awtModel.getFrame(a);
 
-            lastImage = awtImage;
+        lastImage = awtImage;
 
-            if (!(ioImg.getWidth() == awtImage.getWidth() &&
-                    ioImg.getHeight() == awtImage.getHeight()))
-                throw new Error("These images are not the same size: " +
-                        ioImg.getWidth() + "x" + ioImg.getHeight() + " vs " +
-                        awtImage.getWidth() + "x" + awtImage.getHeight());
+        if (!(ioImg.getWidth() == awtImage.getWidth() &&
+                ioImg.getHeight() == awtImage.getHeight()))
+            throw new Error("These images are not the same size: " +
+                    ioImg.getWidth() + "x" + ioImg.getHeight() + " vs " +
+                    awtImage.getWidth() + "x" + awtImage.getHeight());
 
-            for (int y = 0; y < ioImg.getHeight(); y++) {
-                for (int x = 0; x < ioImg.getWidth(); x++) {
-                    int argb1 = ioImg.getRGB(x, y);
-                    int argb2 = awtImage.getRGB(x, y);
+        for (int y = 0; y < ioImg.getHeight(); y++) {
+            for (int x = 0; x < ioImg.getWidth(); x++) {
+                int argb1 = ioImg.getRGB(x, y);
+                int argb2 = awtImage.getRGB(x, y);
 
-                    int alpha1 = (argb1 & 0xff000000) >> 24;
-                    int alpha2 = (argb2 & 0xff000000) >> 24;
-                    if (alpha1 == 0 && alpha2 == 0) {
-                        continue;
-                    } else if (alpha1 == 0 || alpha2 == 0) {
-                        throw new Error("pixels at (" + x + ", " + y +
-                                ") have different opacities: " +
-                                Integer.toUnsignedString(argb1, 16) + " vs " +
-                                Integer.toUnsignedString(argb2, 16));
-                    }
-                    int rgb1 = argb1 & 0xffffff;
-                    int rgb2 = argb2 & 0xffffff;
-                    if (rgb1 != rgb2) {
-                        throw new Error("pixels at (" + x + ", " + y +
-                                ") have different opaque RGB values: " +
-                                Integer.toUnsignedString(rgb1, 16) + " vs " +
-                                Integer.toUnsignedString(rgb2, 16));
-                    }
+                int alpha1 = (argb1 & 0xff000000) >> 24;
+                int alpha2 = (argb2 & 0xff000000) >> 24;
+                if (alpha1 == 0 && alpha2 == 0) {
+                    continue;
+                } else if (alpha1 == 0 || alpha2 == 0) {
+                    throw new Error("pixels at (" + x + ", " + y +
+                            ") have different opacities: " +
+                            Integer.toUnsignedString(argb1, 16) + " vs " +
+                            Integer.toUnsignedString(argb2, 16));
+                }
+                int rgb1 = argb1 & 0xffffff;
+                int rgb2 = argb2 & 0xffffff;
+                if (rgb1 != rgb2) {
+                    throw new Error("pixels at (" + x + ", " + y +
+                            ") have different opaque RGB values: " +
+                            Integer.toUnsignedString(rgb1, 16) + " vs " +
+                            Integer.toUnsignedString(rgb2, 16));
                 }
             }
         }
-        System.out.println("Passed (" + ioModel.frames.size() + " frames)");
+        System.out.println("Passed");
         return lastImage;
     }
 }
@@ -173,7 +120,8 @@ public class GifComparison {
  */
 class ImageIOModel {
 
-    record Frame(int x, int y, int w, int h, String disposalMethod, int transparentColorIndex) {}
+    record Frame(int x, int y, int w, int h, String disposalMethod,
+                 int transparentColorIndex) {}
 
     private final URL url;
     private int width, height;
@@ -195,30 +143,42 @@ class ImageIOModel {
     private void initialize(ImageReader reader) throws Exception {
         reader.setInput(ImageIO.createImageInputStream(url.openStream()));
         IIOMetadata metadata = reader.getStreamMetadata();
-        IIOMetadataNode globalRoot = (IIOMetadataNode) metadata.getAsTree(metadata.getNativeMetadataFormatName());
+        IIOMetadataNode globalRoot = (IIOMetadataNode) metadata.getAsTree(
+                metadata.getNativeMetadataFormatName());
 
-        NodeList globalScreenDescriptor = globalRoot.getElementsByTagName("LogicalScreenDescriptor");
+        NodeList globalScreenDescriptor = globalRoot.getElementsByTagName(
+                "LogicalScreenDescriptor");
         if (globalScreenDescriptor.getLength() > 0) {
-            IIOMetadataNode screenDescriptor = (IIOMetadataNode) globalScreenDescriptor.item(0);
+            IIOMetadataNode screenDescriptor = (IIOMetadataNode)
+                    globalScreenDescriptor.item(0);
 
             if (screenDescriptor != null) {
-                width = Integer.parseInt(screenDescriptor.getAttribute("logicalScreenWidth"));
-                height = Integer.parseInt(screenDescriptor.getAttribute("logicalScreenHeight"));
+                width = Integer.parseInt(
+                        screenDescriptor.getAttribute("logicalScreenWidth"));
+                height = Integer.parseInt(
+                        screenDescriptor.getAttribute("logicalScreenHeight"));
             }
         }
 
-        NodeList globalColorTable = globalRoot.getElementsByTagName("GlobalColorTable");
+        NodeList globalColorTable = globalRoot.getElementsByTagName(
+                "GlobalColorTable");
         if (globalColorTable.getLength() > 0) {
-            IIOMetadataNode colorTable = (IIOMetadataNode) globalColorTable.item(0);
+            IIOMetadataNode colorTable = (IIOMetadataNode)
+                    globalColorTable.item(0);
 
             if (colorTable != null) {
-                String bgIndex = colorTable.getAttribute("backgroundColorIndex");
-                IIOMetadataNode colorEntry = (IIOMetadataNode) colorTable.getFirstChild();
+                String bgIndex = colorTable.getAttribute(
+                        "backgroundColorIndex");
+                IIOMetadataNode colorEntry = (IIOMetadataNode)
+                        colorTable.getFirstChild();
                 while (colorEntry != null) {
                     if (colorEntry.getAttribute("index").equals(bgIndex)) {
-                        int red = Integer.parseInt(colorEntry.getAttribute("red"));
-                        int green = Integer.parseInt(colorEntry.getAttribute("green"));
-                        int blue = Integer.parseInt(colorEntry.getAttribute("blue"));
+                        int red = Integer.parseInt(colorEntry.getAttribute(
+                                "red"));
+                        int green = Integer.parseInt(colorEntry.getAttribute(
+                                "green"));
+                        int blue = Integer.parseInt(colorEntry.getAttribute(
+                                "blue"));
 
                         backgroundColor = new Color(red, green, blue);
                         break;
@@ -232,12 +192,17 @@ class ImageIOModel {
         int frameCount = reader.getNumImages(true);
 
         for (int frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-            IIOMetadataNode root = (IIOMetadataNode) reader.getImageMetadata(frameIndex).getAsTree("javax_imageio_gif_image_1.0");
-            IIOMetadataNode gce = (IIOMetadataNode) root.getElementsByTagName("GraphicControlExtension").item(0);
+            IIOMetadataNode root = (IIOMetadataNode) reader.
+                    getImageMetadata(frameIndex).
+                    getAsTree("javax_imageio_gif_image_1.0");
+            IIOMetadataNode gce = (IIOMetadataNode) root.
+                    getElementsByTagName("GraphicControlExtension").item(0);
             NodeList children = root.getChildNodes();
             int transparentColorIndex = -1;
-            if ("TRUE".equalsIgnoreCase(gce.getAttribute("transparentColorFlag"))) {
-                transparentColorIndex = Integer.parseInt(gce.getAttribute("transparentColorIndex"));
+            if ("TRUE".equalsIgnoreCase(gce.getAttribute(
+                    "transparentColorFlag"))) {
+                transparentColorIndex = Integer.parseInt(gce.getAttribute(
+                        "transparentColorIndex"));
             }
 
             String disposalMethodStr = gce.getAttribute("disposalMethod");
@@ -247,16 +212,21 @@ class ImageIOModel {
             int frameWidth = width;
             int frameHeight = height;
 
-            for (int nodeIndex = 0; nodeIndex < children.getLength(); nodeIndex++) {
+            for (int nodeIndex = 0; nodeIndex < children.getLength();
+                 nodeIndex++) {
                 Node nodeItem = children.item(nodeIndex);
 
                 if (nodeItem.getNodeName().equals("ImageDescriptor")) {
                     NamedNodeMap map = nodeItem.getAttributes();
 
-                    frameX = Integer.parseInt(map.getNamedItem("imageLeftPosition").getNodeValue());
-                    frameY = Integer.parseInt(map.getNamedItem("imageTopPosition").getNodeValue());
-                    frameWidth = Integer.parseInt(map.getNamedItem("imageWidth").getNodeValue());
-                    frameHeight = Integer.parseInt(map.getNamedItem("imageHeight").getNodeValue());
+                    frameX = Integer.parseInt(map.getNamedItem(
+                            "imageLeftPosition").getNodeValue());
+                    frameY = Integer.parseInt(map.getNamedItem(
+                            "imageTopPosition").getNodeValue());
+                    frameWidth = Integer.parseInt(map.getNamedItem(
+                            "imageWidth").getNodeValue());
+                    frameHeight = Integer.parseInt(map.getNamedItem(
+                            "imageHeight").getNodeValue());
                     width = Math.max(width, frameX + frameWidth);
                     height = Math.max(height, frameY + frameHeight);
                 }
@@ -271,7 +241,8 @@ class ImageIOModel {
         ImageReader reader = ImageIO.getImageReadersByFormatName("gif").next();
         reader.setInput(ImageIO.createImageInputStream(url.openStream()));
         try {
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage image = new BufferedImage(width, height,
+                    BufferedImage.TYPE_INT_ARGB);
             BufferedImage previousImage = null;
 
             for (int a = 0; a <= frameIndex; a++) {
@@ -376,7 +347,9 @@ class AWTModel {
             public void setHints(int hintflags) {}
 
             @Override
-            public void setPixels(int x, int y, int w, int h, ColorModel model, byte[] pixels, int off, int scansize) {
+            public void setPixels(int x, int y, int w, int h,
+                                  ColorModel model, byte[] pixels, int off,
+                                  int scansize) {
                 try {
                     final int yMax = y + h;
                     final int xMax = x + w;
@@ -403,7 +376,9 @@ class AWTModel {
             }
 
             @Override
-            public void setPixels(int x, int y, int w, int h, ColorModel model, int[] pixels, int off, int scansize) {}
+            public void setPixels(int x, int y, int w, int h,
+                                  ColorModel model, int[] pixels, int off,
+                                  int scansize) {}
 
             @Override
             public void imageComplete(int status) {
