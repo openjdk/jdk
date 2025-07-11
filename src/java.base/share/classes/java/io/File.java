@@ -264,6 +264,7 @@ public class File
      */
     private File(String child, File parent) {
         assert parent.path != null;
+        assert (!parent.path.isEmpty());
         this.path = FS.resolve(parent.path, child);
         this.prefixLength = parent.prefixLength;
     }

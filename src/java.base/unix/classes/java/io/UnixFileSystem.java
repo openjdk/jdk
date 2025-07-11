@@ -117,7 +117,6 @@ final class UnixFileSystem extends FileSystem {
     @Override
     public String resolve(String parent, String child) {
         if (child.isEmpty()) return parent;
-        if (parent.isEmpty()) return child;
         if (child.charAt(0) == '/') {
             if (parent.equals("/")) return child;
             return trimSeparator(parent + child);
