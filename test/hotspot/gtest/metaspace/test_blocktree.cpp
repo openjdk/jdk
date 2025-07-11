@@ -33,6 +33,7 @@
 using metaspace::BlockTree;
 using metaspace::MemRangeCounter;
 using metaspace::MetaBlock;
+using metaspace::Zapper;
 
 struct TestedBlockTree : public BlockTree {
   void add_block(MetaWord* p, size_t word_size) {
@@ -65,6 +66,12 @@ static void create_nodes(const size_t sizes[], FeederBuffer& fb, TestedBlockTree
   } \
 }
 
+#ifdef ASSERT
+void check_node_zap(const MetaWord* p, size_t size) {
+  check_metaspace_zap(p + BlockTree::header_wordsize, size - BlockTree::header_wordsize);
+}
+#endif
+
 TEST_VM(metaspace, BlockTree_basic) {
 
   TestedBlockTree bt;
@@ -74,7 +81,7 @@ TEST_VM(metaspace, BlockTree_basic) {
   MetaWord* p = nullptr;
   MetaWord arr[10000];
 
-  ASSERT_LE(BlockTree::MinWordSize, (size_t)6); // Sanity check. Adjust if Node is changed.
+  ASSERT_LE(BlockTree::MinWordSize, (size_t)7); // Sanity check. Adjust if Node is changed.
 
   const size_t minws = BlockTree::MinWordSize;
 
@@ -94,14 +101,17 @@ TEST_VM(metaspace, BlockTree_basic) {
   };
 
   for (int i = 0; sizes[i] > 0; i++) {
+    DEBUG_ONLY(memset(arr, 0, sizes[i]);)
     bt.add_block(arr, sizes[i]);
     CHECK_BT_CONTENT(bt, 1, sizes[i]);
+    DEBUG_ONLY(check_node_zap(arr, sizes[i]);)
 
     DEBUG_ONLY(bt.verify();)
 
     MetaWord* p = bt.remove_block(sizes[i], &real_size);
     EXPECT_EQ(p, arr);
     EXPECT_EQ(real_size, (size_t)sizes[i]);
+    DEBUG_ONLY(check_node_zap(p, sizes[i]);)
     CHECK_BT_CONTENT(bt, 0, 0);
   }
 
@@ -138,6 +148,7 @@ static void test_find_nearest_fit_with_tree(const size_t sizes[], size_t request
   if (expected_size != SIZE_MAX) {
     EXPECT_NOT_NULL(p);
     EXPECT_EQ(real_size, expected_size);
+    DEBUG_ONLY(check_node_zap(p, real_size);)
   } else {
     EXPECT_NULL(p);
     EXPECT_0(real_size);

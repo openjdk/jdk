@@ -115,6 +115,22 @@ void ShenandoahAsserts::print_obj_safe(ShenandoahMessageBuffer& msg, void* loc) 
   }
 }
 
+void ShenandoahAsserts::vprintf_failure(SafeLevel level, oop obj, void *interior_loc, oop loc,
+                                        const char *phase, const char *file, int line, const char *fmt,
+                                        va_list args) {
+  stringStream ss(512);
+  ss.vprint(fmt, args);
+  print_failure(level, obj, interior_loc, loc, phase, ss.base(), file, line);
+}
+
+void ShenandoahAsserts::printf_failure(SafeLevel level, oop obj, void* interior_loc, oop loc,
+                                       const char* phase, const char* file, int line, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprintf_failure(level, obj, interior_loc, loc, phase, file, line, fmt, args);
+  va_end(args);
+}
+
 void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_loc, oop loc,
                                        const char* phase, const char* label,
                                        const char* file, int line) {
@@ -196,6 +212,7 @@ void ShenandoahAsserts::assert_in_heap_bounds_or_null(void* interior_loc, oop ob
 
 void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  Metaspace::FailureHint hint = Metaspace::FailureHint::unknown;
 
   // Step 1. Check that obj is correct.
   // After this step, it is safe to call heap_region_containing().
@@ -212,10 +229,10 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file,line);
   }
 
-  if (!Metaspace::contains(obj_klass)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object klass pointer must go to metaspace",
-                  file,line);
+  if (!Metaspace::klass_is_live(obj_klass, true, &hint)) {
+    printf_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                   file, line, "Object klass " PTR_FORMAT ": invalid klass pointer or dead/invalid Klass (hint: %u)",
+                   p2i(obj_klass), (unsigned)hint);
   }
 
   if (!heap->is_in(obj)) {
@@ -277,18 +294,17 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   // dead.
 
   if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
-    const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
-    if (klass != nullptr && !Metaspace::contains(klass)) {
-      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Mirrored instance class should point to Metaspace",
-                    file, line);
+    const Klass* klass = (const Klass*) fwd->metadata_field(java_lang_Class::klass_offset());
+    if (klass != nullptr && !Metaspace::klass_is_live(klass, false, &hint)) {
+      printf_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                     file, line, "Mirrored instance klass " PTR_FORMAT ": invalid klass pointer or dead/invalid Klass (hint: %u)",
+                     p2i(klass), (unsigned)hint);
     }
-
-    const Metadata* array_klass = fwd->metadata_field(java_lang_Class::array_klass_offset());
-    if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
-      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Mirrored array class should point to Metaspace",
-                    file, line);
+    const Klass* array_klass = (const Klass*) fwd->metadata_field(java_lang_Class::array_klass_offset());
+    if (array_klass != nullptr && !Metaspace::klass_is_live(array_klass, true, &hint)) {
+      printf_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                     file, line, "Mirrored array klass " PTR_FORMAT ": invalid klass pointer or dead/invalid Klass (hint: %u)",
+                     p2i(array_klass), (unsigned)hint);
     }
   }
 }

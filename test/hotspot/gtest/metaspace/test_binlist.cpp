@@ -57,6 +57,13 @@ struct TestedBinList : public BinListImpl<num_lists> {
   }
 };
 
+#ifdef ASSERT
+template <class BINLISTTYPE>
+void check_block_zap(const MetaWord* p, size_t size) {
+  check_metaspace_zap(p + BINLISTTYPE::header_wordsize, size - BINLISTTYPE::header_wordsize);
+}
+#endif
+
 template <class BINLISTTYPE>
 struct BinListBasicTest {
 
@@ -89,6 +96,7 @@ struct BinListBasicTest {
     EXPECT_EQ(p, arr);
     EXPECT_EQ((size_t)innocous_size, real_size);
     CHECK_BL_CONTENT(bl, 0, 0);
+    DEBUG_ONLY(check_block_zap<BINLISTTYPE>(p, real_size);)
     DEBUG_ONLY(bl.verify();)
 
   }
@@ -114,6 +122,7 @@ struct BinListBasicTest {
           EXPECT_EQ(p, arr);
           EXPECT_EQ((size_t)s1, real_size);
           CHECK_BL_CONTENT(bl, 0, 0);
+          DEBUG_ONLY(check_block_zap<BINLISTTYPE>(p, real_size);)
           DEBUG_ONLY(bl.verify();)
         } else {
           EXPECT_EQ(p, (MetaWord*)nullptr);
@@ -125,6 +134,7 @@ struct BinListBasicTest {
           EXPECT_EQ(p, arr);
           EXPECT_EQ((size_t)s1, real_size);
           CHECK_BL_CONTENT(bl, 0, 0);
+          DEBUG_ONLY(check_block_zap<BINLISTTYPE>(p, real_size);)
         }
       }
     }

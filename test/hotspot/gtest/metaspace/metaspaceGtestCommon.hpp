@@ -216,4 +216,7 @@ public:
 
 };
 
+// Check an area for being zapped with the metaspace zap pattern
+DEBUG_ONLY(void check_metaspace_zap(const MetaWord* start, size_t size);)
+
 #endif // GTEST_METASPACE_METASPACEGTESTCOMMON_HPP
