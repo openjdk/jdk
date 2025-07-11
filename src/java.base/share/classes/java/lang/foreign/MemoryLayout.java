@@ -278,7 +278,7 @@ import java.util.stream.Stream;
  * <ul>
  * <li>read write access modes for all {@code T}. On 32-bit platforms, access modes
  *     {@code get} and {@code set} for {@code long}, {@code double} and {@code MemorySegment}
- *     are supported but might lead to word tearing, as described in Section {@jls 17.7}.
+ *     are supported but not atomic, as described in Section {@jls 17.7}
  *     of <cite>The Java Language Specification</cite>.
  * <li>atomic update access modes for {@code int}, {@code long},
  *     {@code float}, {@code double} and {@link MemorySegment}.
