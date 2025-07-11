@@ -35,7 +35,8 @@ public class GifMaxLZWTableTest {
     public static void main(String[] args) throws Throwable {
         // this is frame #44 from
         // https://upload.wikimedia.org/wikipedia/commons/8/8b/Scanner-abdominal-portal.gif
-        URL srcURL = GifMaxLZWTableTest.class.getResource("Scanner-abdominal-portal.gif-44.gif");
+        URL srcURL = GifMaxLZWTableTest.class.getResource(
+                "Scanner-abdominal-portal.gif-44.gif");
         GifComparison.run(srcURL);
     }
 }
