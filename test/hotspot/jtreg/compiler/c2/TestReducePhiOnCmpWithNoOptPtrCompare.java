@@ -36,7 +36,6 @@ import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
 public class TestReducePhiOnCmpWithNoOptPtrCompare {
-    private int invocations = 0;
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-OptimizePtrCompare","-XX:+VerifyReduceAllocationMerges","-XX:+IgnoreUnrecognizedVMOptions");
@@ -44,7 +43,6 @@ public class TestReducePhiOnCmpWithNoOptPtrCompare {
 
     @Run(test = {"testReducePhiOnCmp_C2"})
     public void runner(RunInfo info) {
-        invocations++;
         Random random = info.getRandom();
         boolean cond = random.nextBoolean();
         int x = random.nextInt();
