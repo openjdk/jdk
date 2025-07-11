@@ -132,41 +132,6 @@ public class UnmountedVThreadNativeMethodAtTop {
         }
     }
 
-    /**
-     * Duplicate of VThreadBlockedAtOjectWait supposed to throw OOM
-     */
-    @Test
-    void VThreadBlockedAtOjectWait_DUP_FOR_OOM() throws Exception {
-        var lock = this;
-        var started = new CountDownLatch(1);
-        var vthread = Thread.ofVirtual().unstarted(() -> {
-            started.countDown();
-            try {
-                synchronized (lock) {
-                    while (!done) {
-                        lock.wait();
-                    }
-                }
-            } catch (InterruptedException e) { }
-        });
-        try {
-            vthread.start();
-
-            // wait for thread to start and wait
-            started.await();
-            await(vthread, Thread.State.WAITING);
-
-            Path dumpFile = dumpHeap();
-            verifyHeapDump(dumpFile);
-        } finally {
-            synchronized (lock) {
-                done = true;
-                lock.notify();
-            }
-            vthread.join();
-        }
-    }
-
     private Path dumpHeap() throws Exception {
         Path df = Files.createTempFile(Path.of("."), "dump", ".hprof");
         Files.delete(df);
