@@ -92,14 +92,18 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
     r->print_on(&ss);
     ss.cr();
     if (obj_klass == vmClasses::Class_klass()) {
-      ss.print_cr("mirrored klass:       " PTR_FORMAT, p2i(obj->metadata_field(java_lang_Class::klass_offset())));
-      ss.print_cr("mirrored array klass: " PTR_FORMAT, p2i(obj->metadata_field(java_lang_Class::array_klass_offset())));
+      const Klass* mk = (const Klass*) obj->metadata_field(java_lang_Class::klass_offset());
+      const bool mk_valid = Metaspace::contains(mk);
+      const Klass* amk = (const Klass*) obj->metadata_field(java_lang_Class::array_klass_offset());
+      const bool amk_valid = Metaspace::contains(amk);
+      ss.print_cr("mirrored klass:       " PTR_FORMAT " %s", p2i(mk), mk_valid ? "(in metaspace)" : "(invalid, not in metaspace)");
+      ss.print_cr("mirrored array klass: " PTR_FORMAT " %s", p2i(amk), amk_valid ? "(in metaspace)" : "(invalid, not in metaspace)");
     }
   }
 
   static constexpr int num_bytes = 64;
   const_address loc = cast_from_oop<const_address>(obj);
-  os::print_hex_dump(&ss, loc, loc + num_bytes, 8, true, 32, loc);
+  os::print_hex_dump(&ss, loc, loc + num_bytes, 4, true, 32, loc);
 
   msg.append("%s", ss.base());
 }
@@ -246,6 +250,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj != fwd) {
+
     // When Full GC moves the objects, we cannot trust fwdptrs. If we got here, it means something
     // tries fwdptr manipulation when Full GC is running. The only exception is using the fwdptr
     // that still points to the object itself.
@@ -293,19 +298,19 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   const Klass* obj_klass = nullptr;
   narrowKlass nk = 0;
   if (!extract_klass_safely(obj, nk, obj_klass)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer invalid",
                   file,line);
   }
 
   if (obj_klass == nullptr) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer should not be null",
                   file,line);
   }
 
   if (!Metaspace::contains(obj_klass)) {
-    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+    print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer must go to metaspace",
                   file,line);
   }
