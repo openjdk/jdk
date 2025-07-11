@@ -1187,7 +1187,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   static const size_t min_capacity = (size_t) (ShenandoahHeapRegion::region_size_bytes() * (1.0 - 1.0 / ShenandoahEvacWaste));
   size_t ac = alloc_capacity(r);
 
-  if (((result == nullptr) && (ac < min_capacity)) || (alloc_capacity(r) < PLAB::min_size() * HeapWordSize)) {
+  if (((result == nullptr) && (ac < min_capacity)) || (alloc_capacity(r) < PLAB::min_size_bytes())) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
     // Note that retire_from_partition() increases used to account for waste.
 
@@ -2160,9 +2160,9 @@ HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(
       }
     }
     has_replacement_eligible_region = has_replacement_eligible_region ||
-                                  Atomic::load(&shared_region._eligible_for_replacement) ||
-                                  r == nullptr ||
-                                  r->free() < PLAB::min_size() * HeapWordSize;
+                                      Atomic::load(&shared_region._eligible_for_replacement) ||
+                                      r == nullptr ||
+                                      r->free() < PLAB::min_size_bytes();
     i++;
   }
   return obj;
@@ -2246,7 +2246,7 @@ HeapWord* ShenandoahFreeSet::cas_allocate_in_for_mutator(ShenandoahHeapRegion* r
 
 void ShenandoahFreeSet::retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id) {
   const size_t ac = alloc_capacity(region);
-  if ((ac < PLAB::min_size() * HeapWordSize) &&
+  if ((ac < PLAB::min_size_bytes()) &&
       (_partitions.in_free_set(partition_id, region->index()))) {
     _partitions.retire_from_partition(partition_id, region->index(), region->used());
   }
@@ -2298,7 +2298,7 @@ public:
           (r = Atomic::load(&shared_region._address)) == nullptr) {
         return idx;
       }
-      if ( r->free() < PLAB::min_size() * HeapWordSize) {
+      if ( r->free() < PLAB::min_size_bytes()) {
         assert(r->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
         Atomic::store(&shared_region._eligible_for_replacement, true);
         return idx;
@@ -2310,7 +2310,7 @@ public:
   bool heap_region_do(ShenandoahHeapRegion *r) {
     if (_next_retire_eligible_region == -1 && _obj != nullptr) return true;
     size_t ac = _free_set->alloc_capacity(r);
-    if (ac < PLAB::min_size() * HeapWordSize) return false;
+    if (ac < PLAB::min_size_bytes()) return false;
     if (r->reserved_for_direct_allocation()) return false;
     if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) {
       return false;
@@ -2339,8 +2339,8 @@ public:
       }
 
       if (_next_retire_eligible_region != -1) {
-        // After satisfying object allocation, the region still has space to fit a least one tlab.
-        if (ac >= PLAB::min_size()) {
+        // After satisfying object allocation, the region still has space to fit at least one tlab.
+        if (ac >= ShenandoahHeapRegion::max_tlab_size_bytes()) {
           ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
           ShenandoahHeapRegion *const original_region = Atomic::load(&shared_region._address);
           r->reserve_for_direct_allocation();
