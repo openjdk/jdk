@@ -68,12 +68,9 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   const Klass* obj_klass = nullptr;
   const bool klass_valid = extract_klass_safely(obj, nk, obj_klass);
   const char* klass_text = "(invalid)";
-  if (klass_valid &&
-      os::is_readable_pointer(obj_klass) &&
-      Metaspace::contains(obj_klass)) {
+  if (klass_valid && os::is_readable_pointer(obj_klass) && Metaspace::contains(obj_klass)) {
     klass_text = obj_klass->external_name();
   }
-
   ss.print_cr(PTR_FORMAT " - nk %u klass " PTR_FORMAT " %s\n", p2i(obj), nk, p2i(obj_klass), klass_text);
   {
     StreamIndentor si(&ss);
@@ -100,11 +97,8 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
       ss.print_cr("mirrored array klass: " PTR_FORMAT " %s", p2i(amk), amk_valid ? "(in metaspace)" : "(invalid, not in metaspace)");
     }
   }
-
-  static constexpr int num_bytes = 64;
   const_address loc = cast_from_oop<const_address>(obj);
-  os::print_hex_dump(&ss, loc, loc + num_bytes, 4, true, 32, loc);
-
+  os::print_hex_dump(&ss, loc, loc + 64, 4, true, 32, loc);
   msg.append("%s", ss.base());
 }
 
@@ -246,11 +240,9 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
-  // Since we may need the forwardee (with +COH) to extract the Klass*, check it first
   oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj != fwd) {
-
     // When Full GC moves the objects, we cannot trust fwdptrs. If we got here, it means something
     // tries fwdptr manipulation when Full GC is running. The only exception is using the fwdptr
     // that still points to the object itself.
