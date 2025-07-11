@@ -49,7 +49,7 @@ import static jdk.test.lib.Utils.*;
  * @run junit LocaleTest
  */
 public class LocaleTest {
-    private static final Calendar TODAY  = new GregorianCalendar(2024, Calendar.APRIL, 22);
+    private static final Calendar TODAY = new GregorianCalendar(2024, Calendar.APRIL, 22);
     private static final String FORMAT = "%1$tY-%1$tB-%1$te %1$tA";
     // We want to limit the expected strings within US-ASCII charset, as
     // the native encoding is determined as such, which is used by
