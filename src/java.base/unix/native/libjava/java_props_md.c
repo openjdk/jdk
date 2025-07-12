@@ -253,6 +253,7 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
         if (mapLookup(country_names, country, std_country) == 0) {
             *std_country = malloc(strlen(country)+1);
             if (*std_country == NULL) {
+                free(temp);
                 free(encoding_variant);
                 JNU_ThrowOutOfMemoryError(env, NULL);
                 return 0;
