@@ -1134,15 +1134,13 @@ public class File
         if (ss == null) return null;
         int n = ss.length;
         File[] fs = new File[n];
-        boolean isEmpty = path.isEmpty();
-        // replace empty parent with "." to avoid assertion in private ctor
-        File parent = isEmpty ? new File(".") : this;
-        for (int i = 0; i < n; i++) {
-            fs[i] = new File(ss[i], parent);
-        }
-        if (isEmpty) {
+        if (path.isEmpty()) {
             for (int i = 0; i < n; i++) {
-                fs[i] = new File(fs[i].getName());
+                fs[i] = new File(ss[i]);
+            }
+        } else {
+            for (int i = 0; i < n; i++) {
+                fs[i] = new File(ss[i], this);
             }
         }
         return fs;
