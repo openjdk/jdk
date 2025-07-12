@@ -89,12 +89,8 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
     r->print_on(&ss);
     ss.cr();
     if (obj_klass == vmClasses::Class_klass()) {
-      const Klass* mk = (const Klass*) obj->metadata_field(java_lang_Class::klass_offset());
-      const bool mk_valid = Metaspace::contains(mk);
-      const Klass* amk = (const Klass*) obj->metadata_field(java_lang_Class::array_klass_offset());
-      const bool amk_valid = Metaspace::contains(amk);
-      ss.print_cr("mirrored klass:       " PTR_FORMAT " %s", p2i(mk), mk_valid ? "(in metaspace)" : "(invalid, not in metaspace)");
-      ss.print_cr("mirrored array klass: " PTR_FORMAT " %s", p2i(amk), amk_valid ? "(in metaspace)" : "(invalid, not in metaspace)");
+      msg.append("  mirrored klass:       " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::klass_offset())));
+      msg.append("  mirrored array klass: " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::array_klass_offset())));
     }
   }
   const_address loc = cast_from_oop<const_address>(obj);
