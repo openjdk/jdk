@@ -165,7 +165,6 @@ class MutableBigInteger {
      * Assume val is in the finite double range.
      */
     static MutableBigInteger valueOf(double val, int pow) {
-        val = Math.abs(val);
         // Translate the double into exponent and significand, according
         // to the formulae in JLS, Section 20.10.22.
         long valBits = Double.doubleToRawLongBits(val);
@@ -174,7 +173,7 @@ class MutableBigInteger {
                 ? (valBits & ((1L << 52) - 1)) << 1
                 : (valBits & ((1L << 52) - 1)) | (1L << 52));
         exponent -= 1075;
-        // At this point, val == significand * 2^exponent
+        // At this point, |val| == significand * 2^exponent
 
         long shiftL = (long) exponent + pow;
         int shift = (int) shiftL;
