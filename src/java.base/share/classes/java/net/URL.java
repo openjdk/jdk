@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.net.util.IPAddressUtil;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Class {@code URL} represents a Uniform Resource
@@ -1168,7 +1170,8 @@ public final class URL implements java.io.Serializable {
         URI uri = new URI(toString());
         if (authority != null && isBuiltinStreamHandler(handler)) {
             String s = IPAddressUtil.checkAuthority(this);
-            if (s != null) throw new URISyntaxException(authority, s);
+            if (s != null)
+                throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(authority)), s);
         }
         return uri;
     }

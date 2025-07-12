@@ -125,6 +125,12 @@ public class TestIRMatching {
                 GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 10)
         );
 
+        runCheck(
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 1),
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 2),
+                BadFailOnConstraint.create(AllocInstance.class, "allocNested()", 3)
+        );
+
         runCheck(BadFailOnConstraint.create(AllocArray.class, "allocArray()", 1),
                  BadFailOnConstraint.create(AllocArray.class, "allocArray()", 2),
                  GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 3),
@@ -963,6 +969,13 @@ class AllocInstance {
     public void allocInstance() {
         myClass = new MyClass();
     }
+
+    static class Nested {}
+    @Test
+    @IR(failOn = {IRNode.ALLOC_OF, "Nested"})
+    @IR(failOn = {IRNode.ALLOC_OF, "AllocInstance\\$Nested"})
+    @IR(failOn = {IRNode.ALLOC_OF, "AllocInst\\w+\\$Nested"})
+    public Nested allocNested() { return new Nested(); }
 }
 
 class AllocArray {

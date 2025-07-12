@@ -27,7 +27,11 @@ package java.io;
 
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Abstract class for reading character streams.  The only methods that a
@@ -196,6 +200,20 @@ public abstract class Reader implements Readable, Closeable {
                 cs.getChars(next, next + n, cbuf, off);
                 next += n;
                 return n;
+            }
+
+            @Override
+            public String readAllAsString() throws IOException {
+                ensureOpen();
+                int len = cs.length();
+                String result = cs.subSequence(next, len).toString();
+                next += result.length();
+                return result;
+            }
+
+            @Override
+            public List<String> readAllLines() throws IOException {
+                return readAllAsString().lines().toList();
             }
 
             @Override
@@ -381,6 +399,157 @@ public abstract class Reader implements Readable, Closeable {
      * @throws     IOException  If an I/O error occurs
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
+
+    /**
+     * Reads all remaining characters as lines of text. This method blocks until
+     * all remaining characters have been read and end of stream is detected,
+     * or an exception is thrown. This method does not close the reader.
+     *
+     * <p> When this reader reaches the end of the stream, further
+     * invocations of this method will return an empty list.
+     *
+     * <p> A <i>line</i> is either a sequence of zero or more characters
+     * followed by a line terminator, or it is a sequence of one or
+     * more characters followed by the end of the stream.
+     * A line does not include the line terminator.
+     *
+     * <p> A <i>line terminator</i> is one of the following:
+     * a line feed character {@code "\n"} (U+000A),
+     * a carriage return character {@code "\r"} (U+000D),
+     * or a carriage return followed immediately by a line feed
+     * {@code "\r\n"} (U+000D U+000A).
+     *
+     * <p> The behavior for the case where the reader is
+     * <i>asynchronously closed</i>, or the thread interrupted during the
+     * read, is highly reader specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the stream then it
+     * may do so after some, but not all, characters have been read.
+     * Consequently the stream may not be at end of stream and may
+     * be in an inconsistent state. It is strongly recommended that the reader
+     * be promptly closed if an I/O error occurs.
+     *
+     * @apiNote
+     * This method is intended for simple cases where it is appropriate and
+     * convenient to read the entire input into a list of lines. It is not
+     * suitable for reading input from an unknown origin, as this may result
+     * in the allocation of an arbitrary amount of memory.
+     *
+     * @return     the remaining characters as lines of text stored in an
+     *             unmodifiable {@code List} of {@code String}s in the order
+     *             they are read
+     *
+     * @throws     IOException  If an I/O error occurs
+     * @throws     OutOfMemoryError  If the number of remaining characters
+     *             exceeds the implementation limit for {@code String}.
+     *
+     * @see String#lines
+     * @see #readAllAsString
+     * @see java.nio.file.Files#readAllLines
+     *
+     * @since 25
+     */
+    public List<String> readAllLines() throws IOException {
+        List<String> lines = new ArrayList<>();
+        char[] cb = new char[1024];
+
+        int start = 0;
+        int pos = 0;
+        int limit = 0;
+        boolean skipLF = false;
+        int n;
+        while ((n = read(cb, pos, cb.length - pos)) != -1) {
+            limit = pos + n;
+            while (pos < limit) {
+                if (skipLF) {
+                    if (cb[pos] == '\n') {
+                        pos++;
+                        start++;
+                    }
+                    skipLF = false;
+                }
+                while (pos < limit) {
+                    char c = cb[pos++];
+                    if (c == '\n' || c == '\r') {
+                        lines.add(new String(cb, start, pos - 1 - start));
+                        skipLF = (c == '\r');
+                        start = pos;
+                        break;
+                    }
+                }
+                if (pos == limit) {
+                    int len = limit - start;
+                    if (len >= cb.length/2) {
+                        // allocate larger buffer and copy chars to beginning
+                        int newLength = ArraysSupport.newLength(cb.length,
+                                            TRANSFER_BUFFER_SIZE, cb.length);
+                        char[] tmp = new char[newLength];
+                        System.arraycopy(cb, start, tmp, 0, len);
+                        cb = tmp;
+                    } else if (start != 0 && len != 0) {
+                        // move fragment to beginning of buffer
+                        System.arraycopy(cb, start, cb, 0, len);
+                    }
+                    pos = limit = len;
+                    start = 0;
+                    break;
+                }
+            }
+        }
+        // add a string if EOS terminates the last line
+        if (limit > start)
+            lines.add(new String(cb, start, limit - start));
+
+        return Collections.unmodifiableList(lines);
+    }
+
+    /**
+     * Reads all remaining characters into a string. This method blocks until
+     * all remaining characters including all line separators have been read
+     * and end of stream is detected, or an exception is thrown. The resulting
+     * string will contain line separators as they appear in the stream. This
+     * method does not close the reader.
+     *
+     * <p> When this reader reaches the end of the stream, further
+     * invocations of this method will return an empty string.
+     *
+     * <p> The behavior for the case where the reader
+     * is <i>asynchronously closed</i>, or the thread interrupted during the
+     * read, is highly reader specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the stream then it
+     * may do so after some, but not all, characters have been read.
+     * Consequently the stream may not be at end of stream and may
+     * be in an inconsistent state. It is strongly recommended that the reader
+     * be promptly closed if an I/O error occurs.
+     *
+     * @apiNote
+     * This method is intended for simple cases where it is appropriate and
+     * convenient to read the entire input into a {@code String}. It is not
+     * suitable for reading input from an unknown origin, as this may result
+     * in the allocation of an arbitrary amount of memory.
+     *
+     * @return     a {@code String} containing all remaining characters
+     *
+     * @throws     IOException       If an I/O error occurs
+     * @throws     OutOfMemoryError  If the number of remaining characters
+     *                               exceeds the implementation limit for
+     *                               {@code String}.
+     *
+     * @see #readAllLines
+     * @see java.nio.file.Files#readString
+     *
+     * @since 25
+     */
+    public String readAllAsString() throws IOException {
+        StringBuilder result = new StringBuilder();
+        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
+        int nread;
+        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
+            result.append(cbuf, 0, nread);
+        }
+        return result.toString();
+    }
 
     /** Maximum skip-buffer size */
     private static final int maxSkipBufferSize = 8192;

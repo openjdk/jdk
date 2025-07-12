@@ -294,7 +294,7 @@ public:
     }
 
     PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
+    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
 
     // Scavenge OopStorages
     {
@@ -352,7 +352,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     young_gen->eden_space()->accumulate_statistics();
   }
 
-  heap->print_heap_before_gc();
+  heap->print_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
   assert(!NeverTenure || _tenuring_threshold == markWord::max_age + 1, "Sanity");
@@ -410,12 +410,11 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
-      reference_processor()->set_active_mt_degree(active_workers);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
 
       ParallelScavengeRefProcProxyTask task(reference_processor()->max_num_queues());
-      stats = reference_processor()->process_discovered_references(task, pt);
+      stats = reference_processor()->process_discovered_references(task, &ParallelScavengeHeap::heap()->workers(), pt);
 
       _gc_tracer.report_gc_reference_stats(stats);
       pt.print_all_references();
@@ -587,7 +586,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     Universe::verify("After GC");
   }
 
-  heap->print_heap_after_gc();
+  heap->print_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
