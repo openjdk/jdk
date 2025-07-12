@@ -392,6 +392,10 @@ size_t ShenandoahHeapRegion::get_plab_allocs() const {
   return Atomic::load(&_plab_allocs) * HeapWordSize;
 }
 
+bool ShenandoahHeapRegion::has_allocs() const {
+  return top() > bottom();
+}
+
 void ShenandoahHeapRegion::set_live_data(size_t s) {
   assert(Thread::current()->is_VM_thread(), "by VM thread");
   _live_data = (s >> LogHeapWordSize);

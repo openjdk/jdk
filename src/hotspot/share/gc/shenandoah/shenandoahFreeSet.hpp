@@ -543,7 +543,7 @@ public:
   template<bool IS_TLAB>
   HeapWord* try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
 
-  inline void retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
+  inline void retire_region_from_partition(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
 
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
 

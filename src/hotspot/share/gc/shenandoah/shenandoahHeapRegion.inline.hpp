@@ -300,7 +300,7 @@ inline bool ShenandoahHeapRegion::is_affiliated() const {
 }
 
 inline void ShenandoahHeapRegion::save_top_before_promote() {
-  _top_before_promoted = _top;
+  _top_before_promoted = top();
 }
 
 inline void ShenandoahHeapRegion::restore_top_before_promote() {

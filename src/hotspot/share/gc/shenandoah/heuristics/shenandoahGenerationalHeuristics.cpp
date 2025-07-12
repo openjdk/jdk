@@ -86,10 +86,10 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     }
     size_t garbage = region->garbage();
     total_garbage += garbage;
-    if (region->is_empty()) {
+    if (region->is_empty() || (region->reserved_for_direct_allocation() && !region->has_allocs())) {
       free_regions++;
       free += region_size_bytes;
-    } else if (region->is_regular()) {
+    } else if (region->is_regular() && region->has_allocs()) {
       if (!region->has_live()) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
