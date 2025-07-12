@@ -38,6 +38,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.text.DefaultEditorKit;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.TreeSet;
 
 public class PasswordFieldInputMapWordTest {
     public static void main(String[] args) throws Exception {
@@ -71,6 +74,22 @@ public class PasswordFieldInputMapWordTest {
             JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
     };
 
+    /**
+     * These are all the actions with "word" in their field name.
+     */
+    static Collection<String> wordActions = new TreeSet<>(Arrays.asList(
+            DefaultEditorKit.deleteNextWordAction,
+            DefaultEditorKit.deletePrevWordAction,
+            DefaultEditorKit.beginWordAction,
+            DefaultEditorKit.endWordAction,
+            DefaultEditorKit.selectionBeginWordAction,
+            DefaultEditorKit.selectionEndWordAction,
+            DefaultEditorKit.previousWordAction,
+            DefaultEditorKit.nextWordAction,
+            DefaultEditorKit.selectionPreviousWordAction,
+            DefaultEditorKit.selectionNextWordAction
+    ));
+
     private static void runTest() {
         JPasswordField field = new JPasswordField();
 
@@ -82,17 +101,7 @@ public class PasswordFieldInputMapWordTest {
             }
             for (KeyStroke keyStroke : inputMap.allKeys()) {
                 Object actionBinding = inputMap.get(keyStroke);
-                // these are all the actions with "word" in the name:
-                if (actionBinding == DefaultEditorKit.deleteNextWordAction ||
-                        actionBinding == DefaultEditorKit.deletePrevWordAction ||
-                        actionBinding == DefaultEditorKit.beginWordAction ||
-                        actionBinding == DefaultEditorKit.endWordAction ||
-                        actionBinding == DefaultEditorKit.selectionBeginWordAction ||
-                        actionBinding == DefaultEditorKit.selectionEndWordAction ||
-                        actionBinding == DefaultEditorKit.previousWordAction ||
-                        actionBinding == DefaultEditorKit.nextWordAction ||
-                        actionBinding == DefaultEditorKit.selectionPreviousWordAction ||
-                        actionBinding == DefaultEditorKit.selectionNextWordAction ) {
+                if (wordActions.contains(actionBinding)) {
                     if (testPassed) {
                         System.err.println("The following inputs/actions should not be available in a JPasswordField:");
                     }
