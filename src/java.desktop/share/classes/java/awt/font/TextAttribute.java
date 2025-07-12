@@ -40,13 +40,13 @@
 
 package java.awt.font;
 
-import jdk.internal.access.SharedSecrets;
-
 import java.io.InvalidObjectException;
 import java.io.Serial;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.HashMap;
 import java.util.Map;
+
+import jdk.internal.access.SharedSecrets;
 
 /**
  * The {@code TextAttribute} class defines attribute keys and
