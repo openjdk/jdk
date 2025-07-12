@@ -179,10 +179,10 @@ class MutableBigInteger {
         long shiftL = (long) exponent + pow;
         int shift = (int) shiftL;
         if (shift != shiftL) {
-            if (shiftL > 0)
+            if (shiftL > 0L)
                 throw new ArithmeticException("BigInteger Overflow");
 
-            shift = -Long.SIZE;
+            return new MutableBigInteger();
         }
 
         MutableBigInteger result;
