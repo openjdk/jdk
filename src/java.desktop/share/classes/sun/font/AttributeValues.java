@@ -83,6 +83,8 @@ public final class AttributeValues implements Cloneable {
     private byte bidiEmbedding; // 0
     private byte kerning; // 0
     private byte ligatures; // 0
+    private byte proportionalFigures; // 0
+    private byte tabularFigures; // 0
     private boolean strikethrough; // false
     private boolean swapColors; // false
 
@@ -192,6 +194,13 @@ public final class AttributeValues implements Cloneable {
     public void setLigatures(int f) {
       this.ligatures = (byte)f; update(ELIGATURES); }
 
+    public int getProportionalFigures() { return proportionalFigures; }
+    public void setProportionalFigures(int f) {
+      this.proportionalFigures = (byte)f; update(EPROPORTIONAL_FIGURES); }
+
+    public int getTabularFigures() { return tabularFigures; }
+    public void setTabularFigures(int f) {
+      this.tabularFigures = (byte)f; update(ETABULAR_FIGURES); }
 
     public AffineTransform getBaselineTransform() { return baselineTransform; }
     public AffineTransform getCharTransform() { return charTransform; }
@@ -535,6 +544,8 @@ public final class AttributeValues implements Cloneable {
                 case EKERNING: b.append(kerning); break;
                 case ELIGATURES: b.append(ligatures); break;
                 case ETRACKING: b.append(tracking); break;
+                case EPROPORTIONAL_FIGURES: b.append(proportionalFigures); break;
+                case ETABULAR_FIGURES: b.append(tabularFigures); break;
                 default: throw new InternalError();
                 }
                 if ((nondefault & ea.mask) == 0) {
@@ -593,6 +604,8 @@ public final class AttributeValues implements Cloneable {
         case EKERNING: kerning = src.kerning; break;
         case ELIGATURES: ligatures = src.ligatures; break;
         case ETRACKING: tracking = src.tracking; break;
+        case EPROPORTIONAL_FIGURES: proportionalFigures = src.proportionalFigures; break;
+        case ETABULAR_FIGURES: tabularFigures = src.tabularFigures; break;
         default: throw new InternalError();
         }
     }
@@ -622,6 +635,8 @@ public final class AttributeValues implements Cloneable {
         case EKERNING: return kerning == src.kerning;
         case ELIGATURES: return ligatures == src.ligatures;
         case ETRACKING: return tracking == src.tracking;
+        case EPROPORTIONAL_FIGURES: return proportionalFigures == src.proportionalFigures;
+        case ETABULAR_FIGURES: return tabularFigures == src.tabularFigures;
         default: throw new InternalError();
         }
     }
@@ -677,6 +692,8 @@ public final class AttributeValues implements Cloneable {
         case EKERNING: kerning = (byte)((Integer)o).intValue(); break;
         case ELIGATURES: ligatures = (byte)((Integer)o).intValue(); break;
         case ETRACKING: tracking = ((Number)o).floatValue(); break;
+        case EPROPORTIONAL_FIGURES: proportionalFigures = (byte) ((Number)o).intValue(); break;
+        case ETABULAR_FIGURES: tabularFigures = (byte) ((Number)o).intValue(); break;
         default: throw new InternalError();
         }
     }
@@ -717,6 +734,8 @@ public final class AttributeValues implements Cloneable {
         case EKERNING: return Integer.valueOf(kerning);
         case ELIGATURES: return Integer.valueOf(ligatures);
         case ETRACKING: return Float.valueOf(tracking);
+        case EPROPORTIONAL_FIGURES: return Integer.valueOf(proportionalFigures);
+        case ETABULAR_FIGURES: return Integer.valueOf(tabularFigures);
         default: throw new InternalError();
         }
     }
@@ -749,6 +768,8 @@ public final class AttributeValues implements Cloneable {
         case EKERNING: return kerning >= 0 && kerning <= 1;
         case ELIGATURES: return ligatures >= 0 && ligatures <= 1;
         case ETRACKING: return tracking >= -1 && tracking <= 10;
+        case EPROPORTIONAL_FIGURES: return proportionalFigures >= 0 && proportionalFigures <= 1;
+        case ETABULAR_FIGURES: return tabularFigures >= 0 && tabularFigures <= 1;
         default: throw new InternalError("unknown attribute: " + a);
         }
     }

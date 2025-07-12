@@ -40,13 +40,13 @@
 
 package java.awt.font;
 
+import jdk.internal.access.SharedSecrets;
+
 import java.io.InvalidObjectException;
 import java.io.Serial;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.HashMap;
 import java.util.Map;
-
-import jdk.internal.access.SharedSecrets;
 
 /**
  * The {@code TextAttribute} class defines attribute keys and
@@ -1111,4 +1111,50 @@ public final class TextAttribute extends Attribute {
      */
     public static final Float TRACKING_LOOSE =
         Float.valueOf(.04f);
+
+    /**
+     * Attribute key for enabling optional proportional figures. Values are
+     * instances of <b>{@code Integer}</b>. The default value is
+     * {@code 0}, which means do not use optional proportional figures.
+     *
+     * <p>The constant value {@link #PROPORTIONAL_FIGURES_ON} is defined.
+     *
+     * <p>Conflicts with {@link #TABULAR_FIGURES}
+     *
+     * @since 26
+     */
+    public static final TextAttribute PROPORTIONAL_FIGURES =
+        new TextAttribute("proportional-figures");
+
+    /**
+     * Request to enable proportional figures.
+     *
+     * @see #PROPORTIONAL_FIGURES
+     * @since 26
+     */
+    public static final Integer PROPORTIONAL_FIGURES_ON =
+        Integer.valueOf(1);
+
+    /**
+     * Attribute key for enabling optional tabular figures. Values are
+     * instances of <b>{@code Integer}</b>. The default value is
+     * {@code 0}, which means do not use optional tabular figures.
+     *
+     * <p>The constant value {@link #TABULAR_FIGURES_ON} is defined.
+     *
+     * <p>Conflicts with {@link #PROPORTIONAL_FIGURES}
+     *
+     * @since 26
+     */
+    public static final TextAttribute TABULAR_FIGURES =
+        new TextAttribute("tabular-figures");
+
+    /**
+     * Request to enable tabular figures.
+     *
+     * @see #TABULAR_FIGURES
+     * @since 26
+     */
+    public static final Integer TABULAR_FIGURES_ON =
+        Integer.valueOf(1);
 }

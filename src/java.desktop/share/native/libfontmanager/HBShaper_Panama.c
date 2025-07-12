@@ -61,6 +61,8 @@ static float euclidianDistance(float a, float b)
 
 #define TYPO_KERN 0x00000001
 #define TYPO_LIGA 0x00000002
+#define TYPO_PNUM 0x00000004
+#define TYPO_TNUM 0x00000008
 #define TYPO_RTL  0x80000000
 
 JDKEXPORT void jdk_hb_shape(
@@ -92,6 +94,8 @@ JDKEXPORT void jdk_hb_shape(
      int featureCount = 0;
      char* kern = (flags & TYPO_KERN) ? "kern" : "-kern";
      char* liga = (flags & TYPO_LIGA) ? "liga" : "-liga";
+     char* pnum = (flags & TYPO_PNUM) ? "pnum" : "-pnum";
+     char* tnum = (flags & TYPO_TNUM) ? "tnum" : "-tnum";
      unsigned int buflen;
 
      float devScale = 1.0f;
@@ -120,10 +124,12 @@ JDKEXPORT void jdk_hb_shape(
      int charCount = limit - offset;
      hb_buffer_add_utf16(buffer, chars, len, offset, charCount);
 
-     features = calloc(2, sizeof(hb_feature_t));
+     features = calloc(4, sizeof(hb_feature_t));
      if (features) {
          hb_feature_from_string(kern, -1, &features[featureCount++]);
          hb_feature_from_string(liga, -1, &features[featureCount++]);
+         hb_feature_from_string(pnum, -1, &features[featureCount++]);
+         hb_feature_from_string(tnum, -1, &features[featureCount++]);
      }
 
      hb_shape_full(hbfont, buffer, features, featureCount, 0);

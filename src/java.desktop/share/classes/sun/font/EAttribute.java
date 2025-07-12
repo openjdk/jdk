@@ -65,7 +65,9 @@ public enum EAttribute {
     EKERNING(KERNING),
     ELIGATURES(LIGATURES),
     ETRACKING(TRACKING),
-    EBASELINE_TRANSFORM(null);
+    EBASELINE_TRANSFORM(null),
+    EPROPORTIONAL_FIGURES(PROPORTIONAL_FIGURES),
+    ETABULAR_FIGURES(TABULAR_FIGURES);
 
     /* package */ final int mask;
     /* package */ final TextAttribute att;
