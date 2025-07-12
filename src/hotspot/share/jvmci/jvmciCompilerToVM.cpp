@@ -2890,11 +2890,12 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       JVMCIObject methodObject = thisEnv->get_HotSpotNmethod_method(obj);
       methodHandle mh(THREAD, thisEnv->asMethod(methodObject));
       jboolean isDefault = thisEnv->get_HotSpotNmethod_isDefault(obj);
+      jboolean profileDeopt = thisEnv->get_HotSpotNmethod_profileDeopt(obj);
       jlong compileIdSnapshot = thisEnv->get_HotSpotNmethod_compileIdSnapshot(obj);
       JVMCIObject name_string = thisEnv->get_InstalledCode_name(obj);
       const char* cstring = name_string.is_null() ? nullptr : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
-      result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
+      result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, profileDeopt, compileIdSnapshot, JVMCI_CHECK_0);
       JVMCINMethodHandle nmethod_handle(THREAD);
       nmethod* nm = JVMCIENV->get_nmethod(obj, nmethod_handle);
       if (result.is_null()) {

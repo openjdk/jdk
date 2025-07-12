@@ -976,7 +976,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   const LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(C1StubId::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(StubId::c1_new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -1011,7 +1011,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
 
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id,
+    stub = new SimpleExceptionStub(StubId::c1_throw_incompatible_class_change_error_id,
                                    LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
@@ -1019,7 +1019,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(StubId::c1_throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   // Following registers are used by slow_subtype_check:
   LIR_Opr tmp1 = FrameMap::R4_oop_opr; // super_klass
@@ -1053,7 +1053,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
 
 // Intrinsic for Class::isInstance
 address LIRGenerator::isInstance_entry() {
-  return Runtime1::entry_for(C1StubId::is_instance_of_id);
+  return Runtime1::entry_for(StubId::c1_is_instance_of_id);
 }
 
 

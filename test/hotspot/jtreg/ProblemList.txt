@@ -82,8 +82,6 @@ compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
-compiler/onSpinWait/TestOnSpinWaitAArch64.java 8360936 linux-aarch64,macosx-aarch64
-
 #############################################################################
 
 # :hotspot_gc
@@ -141,6 +139,8 @@ serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
 serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
 serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
+
+serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 

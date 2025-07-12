@@ -735,9 +735,6 @@ public:
   void clean_subklass();
 
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
-  static void clean_subklass_tree() {
-    clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
-  }
 
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.
