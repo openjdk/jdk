@@ -65,15 +65,17 @@ public class PasswordFieldInputMapWordTest {
         }
     }
 
+    static int[] inputMapConditions = new int[] {
+            JComponent.WHEN_IN_FOCUSED_WINDOW,
+            JComponent.WHEN_FOCUSED,
+            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+    };
+
     private static void runTest() {
         JPasswordField field = new JPasswordField();
 
         boolean testPassed = true;
-        for (int condition : new int[] {
-                JComponent.WHEN_IN_FOCUSED_WINDOW,
-                JComponent.WHEN_FOCUSED,
-                JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
-        }) {
+        for (int condition : inputMapConditions) {
             InputMap inputMap = field.getInputMap(condition);
             if (inputMap.allKeys() == null) {
                 continue;
