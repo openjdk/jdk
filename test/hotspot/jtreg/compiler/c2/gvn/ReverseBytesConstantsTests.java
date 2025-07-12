@@ -100,8 +100,9 @@ public class ReverseBytesConstantsTests {
         Asserts.assertEQ(Character.reverseBytes((char) 0x7080), testUS2());
         Asserts.assertEQ(Character.reverseBytes((char) 0x8070), testUS3());
         Asserts.assertEQ(Character.reverseBytes(C_CHAR), testUS4());
-        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_INT), testUS5());
-        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_SHORT), testUS6());
+        // TODO: uncomment after integration of  JDK-8362046
+        // Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_INT), testUS5());
+        // Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_SHORT), testUS6());
     }
 
     @Test
