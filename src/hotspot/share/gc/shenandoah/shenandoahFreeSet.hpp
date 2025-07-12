@@ -79,9 +79,10 @@ private:
   // are denoted in bytes.  Note that some regions that had been assigned to a particular partition at rebuild time
   // may have been retired following the rebuild.  The tallies for these regions are still reflected in _capacity[p]
   // and _used[p], even though the region may have been removed from the free set.
-  size_t volatile _capacity[UIntNumPartitions];
-  size_t volatile _used[UIntNumPartitions];
-  size_t volatile _region_counts[UIntNumPartitions];
+  size_t _capacity[UIntNumPartitions];
+  size_t _used[UIntNumPartitions];
+  size_t _available[UIntNumPartitions];
+  size_t _region_counts[UIntNumPartitions];
 
   // For each partition p, _left_to_right_bias is true iff allocations are normally made from lower indexed regions
   // before higher indexed regions.
@@ -200,6 +201,7 @@ public:
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
 
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
 
   inline void set_bias_from_left_to_right(ShenandoahFreeSetPartitionId which_partition, bool value) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
@@ -213,40 +215,58 @@ public:
 
   inline size_t capacity_of(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
-    return Atomic::load(_capacity + int(which_partition));
+    return _capacity[int(which_partition)];
   }
 
   inline size_t used_by(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
-    return Atomic::load(_used + int(which_partition));
+    return _used[int(which_partition)];
   }
 
   inline size_t available_in(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
-    return capacity_of(which_partition) - used_by(which_partition);
+    shenandoah_assert_heaplocked();
+    assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
+           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
+           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
+           partition_membership_name(ssize_t(which_partition)));
+    return _available[int(which_partition)];
   }
 
   // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
   // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to
   // enforce a consistency assert.
   inline size_t available_in_not_locked(ShenandoahFreeSetPartitionId which_partition) const {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    shenandoah_assert_not_heaplocked();
+#ifdef ASSERT
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
+    assert((_available[int(which_partition)] == FreeSetUnderConstruction) ||
+           (_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)]),
+           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
+           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
+           partition_membership_name(ssize_t(which_partition)));
+#endif
     return available_in(which_partition);
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+    shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "selected free set must be valid");
+    _capacity[int(which_partition)] = value;
+    _available[int(which_partition)] = value - _used[int(which_partition)];
     Atomic::store(_capacity + int(which_partition), value);
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+    shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "selected free set must be valid");
+    _used[int(which_partition)] = value;
+    _available[int(which_partition)] = _capacity[int(which_partition)] - value;
     Atomic::store(_used + int(which_partition), value);
   }
 
-  inline size_t count(ShenandoahFreeSetPartitionId which_partition) const {
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    return Atomic::load(_region_counts + int(which_partition));
-  }
+  inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[int(which_partition)]; }
 
   // Assure leftmost, rightmost, leftmost_empty, and rightmost_empty bounds are valid for all free sets.
   // Valid bounds honor all of the following (where max is the number of heap regions):
@@ -523,7 +543,12 @@ public:
   template<bool IS_TLAB>
   HeapWord* try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
 
-  void retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
+  inline void retire_region_when_eligible(ShenandoahHeapRegion *region, ShenandoahFreeSetPartitionId partition_id);
+
+  inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+
+  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
    *
