@@ -132,6 +132,7 @@ public sealed interface CodeBuilder
      * values require two slots.
      *
      * @param paramNo the index of the parameter
+     * @throws IndexOutOfBoundsException if the parameter index is out of bounds
      */
     int parameterSlot(int paramNo);
 
