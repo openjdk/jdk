@@ -160,7 +160,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     }
   } else {
     // We need unique and valid not null address
-    assert(_mutable_data = blob_end(), "sanity");
+    assert(_mutable_data == blob_end(), "sanity");
   }
 
   set_oop_maps(oop_maps);
@@ -177,6 +177,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _code_offset(_content_offset),
   _data_offset(size),
   _frame_size(0),
+  _mutable_data_size(0),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
   _frame_complete_offset(CodeOffsets::frame_never_safe),
@@ -185,7 +186,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
-  assert(_mutable_data = blob_end(), "sanity");
+  assert(_mutable_data == blob_end(), "sanity");
 }
 
 void CodeBlob::restore_mutable_data(address reloc_data) {
@@ -195,8 +196,11 @@ void CodeBlob::restore_mutable_data(address reloc_data) {
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
+  } else {
+    _mutable_data = blob_end(); // default value
   }
   if (_relocation_size > 0) {
+    assert(_mutable_data_size > 0, "relocation is part of mutable data section");
     memcpy((address)relocation_begin(), reloc_data, relocation_size());
   }
 }
