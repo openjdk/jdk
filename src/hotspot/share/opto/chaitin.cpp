@@ -1495,6 +1495,25 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
     }
   }
 
+  copy_lrg = _lrg_map.find(lrg._copy_bias2);
+  if (copy_lrg != 0) {
+    // If he has a color,
+    if(!_ifg->_yanked->test(copy_lrg)) {
+      OptoReg::Name reg = lrgs(copy_lrg).reg();
+      //  And it is legal for you,
+      if (is_legal_reg(lrg, reg, chunk))
+        return reg;
+    } else if( chunk == 0 ) {
+      // Choose a color which is legal for him
+      RegMask tempmask = lrg.mask();
+      tempmask.AND(lrgs(copy_lrg).mask());
+      tempmask.clear_to_sets(lrg.num_regs());
+      OptoReg::Name reg = find_first_set(lrg, tempmask, chunk);
+      if (OptoReg::is_valid(reg))
+        return reg;
+    }
+  }
+
   // If no bias info exists, just go with the register selection ordering
   if (lrg._is_vector || lrg.num_regs() == 2 || lrg.is_scalable()) {
     // Find an aligned set
@@ -1617,6 +1636,49 @@ uint PhaseChaitin::Select( ) {
         }
       }
     }
+
+    auto is_commutative_oper = [](MachNode* def) {
+      if (def) {
+        switch(def->ideal_Opcode()) {
+          case Op_AddI: case Op_AddL:
+          case Op_MulI: case Op_MulL:
+          case Op_XorI: case Op_XorL:
+          case Op_OrI:  case Op_OrL:
+          case Op_AndI: case Op_AndL:
+            return true;
+          default:
+            return false;
+        }
+      }
+      return false;
+    };
+
+    if (X86_ONLY(UseAPX) NOT_X86(false)) {
+      Node* def = lrg->_def;
+      MachNode* mdef = def->is_Mach() ? def->as_Mach() : nullptr;
+      uint16_t num_oprds = mdef != nullptr ? mdef->num_opnds() : 0;
+      if (num_oprds >= 2) {
+        Node* in1 = mdef->in(mdef->operand_index(1));
+        uint lrin1 = _lrg_map.find(in1);
+        // If a def does not interfere with first input's def,
+        // then bias its color towards its input's def.
+        if (lrin1 != 0 && lrg->_copy_bias == 0 && _ifg->test_edge_sq(lidx, lrin1) == 0) {
+          lrg->_copy_bias = lrin1;
+        }
+      }
+
+      if (is_commutative_oper(mdef)) {
+        assert(num_oprds >= 3, "");
+        Node* in2 = mdef->in(mdef->operand_index(2));
+        uint lrin2 = _lrg_map.find(in2);
+        // If a def does not interfere with second input's def,
+        // then bias its color towards its input's def.
+        if (lrin2 != 0 && lrg->_copy_bias2 == 0 && _ifg->test_edge_sq(lidx, lrin2) == 0) {
+          lrg->_copy_bias2 = lrin2;
+        }
+      }
+    }
+
     //assert(is_allstack == lrg->mask().is_AllStack(), "nbrs must not change AllStackedness");
     // Aligned pairs need aligned masks
     assert(!lrg->_is_vector || !lrg->_fat_proj, "sanity");
