@@ -129,7 +129,7 @@ public:
     { // Commit adjacent - higher address
       rtree->commit_region(addr + 2 * cs, cs, stack);
       R r[] = { {addr, 3 * cs} };
-      check(vmt,rmr, r);
+      check(vmt, rmr, r);
     }
 
     // Cleanup
