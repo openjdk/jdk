@@ -59,7 +59,6 @@ public:
 
 //------------------------------generate_uncommon_trap_blob--------------------
 UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
-  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
   CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
   if (blob != nullptr) {
     return blob->as_uncommon_trap_blob();
@@ -68,6 +67,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -288,8 +288,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
-  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)BlobId::c2_exception_id, name);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
   if (blob != nullptr) {
     return blob->as_exception_blob();
   }
@@ -297,6 +296,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
