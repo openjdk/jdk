@@ -26,6 +26,7 @@
 
 #include "gc/shared/fullGCForwarding.hpp"
 #include "oops/markWord.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"
 
 template <int BITS>
