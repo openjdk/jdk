@@ -126,7 +126,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:51];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:52];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -153,6 +153,7 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"NavigableTextAccessibility" forKey:@"dateeditor"];
     [rolesMap setObject:@"ComboBoxAccessibility" forKey:@"combobox"];
     [rolesMap setObject:@"TabGroupAccessibility" forKey:@"pagetablist"];
+    [rolesMap setObject:@"TabButtonAccessibility" forKey:@"pagetab"];
     [rolesMap setObject:@"ListAccessibility" forKey:@"list"];
     [rolesMap setObject:@"OutlineAccessibility" forKey:@"tree"];
     [rolesMap setObject:@"TableAccessibility" forKey:@"table"];
@@ -860,13 +861,7 @@ static jobject sAccessibilityClass = NULL;
 - (NSString *)accessibilityRoleDescription
 {
     // first ask AppKit for its accessible role description for a given AXRole
-    NSString *value = nil;
-
-    if ([[self javaRole] isEqualToString:@"pagetab"]) {
-        value = NSAccessibilityRoleDescription([self accessibilityRole], NSAccessibilityTabButtonSubrole);
-    } else {
-        value = NSAccessibilityRoleDescription([self accessibilityRole], nil);
-    }
+    NSString *value = NSAccessibilityRoleDescription([self accessibilityRole], nil);
 
     if (value == nil) {
         // query java if necessary
