@@ -377,7 +377,7 @@ void CompileQueue::delete_all() {
     } else {
       // Blocking task. By convention, it is the waiters responsibility
       // to delete the task. We cannot delete it here, because we do not
-      // coordinate with waiters. We will notify them later.
+      // coordinate with waiters. We will notify the waiters later.
     }
     current = current->next();
   }
