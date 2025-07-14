@@ -1307,6 +1307,7 @@ else its the cname?
  * @serial include
  */
 
+@SuppressWarnings("removal")
 final class SocketPermissionCollection extends PermissionCollection
     implements Serializable
 {
