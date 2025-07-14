@@ -26,26 +26,23 @@
  * @summary tests RegExp unicode case-insensitive match (?ui)
  * @bug 8360459
  * @library /lib/testlibrary/java/lang
- * @author Xueming Shen
- * @run testng CaseFoldingTest
+ * @run junit CaseFoldingTest
  */
 
 import java.nio.file.Files;
-
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CaseFoldingTest {
 
     @Test
-    public static void testUnicodeCaseInsensitiveMatch() throws Throwable {
+    void testUnicodeCaseInsensitiveMatch() throws Throwable {
         var testAll = true;   // true to test all codepoints defined in CaseFolding.txt
         var verbose = true;   // true to display all codepoints being tested
         var filter = "^.*; [CTS]; .*$";  // update C,T,S to test different type
@@ -57,8 +54,7 @@ public class CaseFoldingTest {
           0xfb05     // FB05 [lo: fb05, up: fb05]  FB06 [lo: fb06, up: fb06]
         );
 
-        var results = Files.readAllLines(UCDFiles.CASEFOLDING)
-            .stream()
+        var results = Files.lines(UCDFiles.CASEFOLDING)
             .filter(line -> !line.startsWith("#") && line.matches(filter))
             .map(line -> {
                 var strs = line.split("; ");
