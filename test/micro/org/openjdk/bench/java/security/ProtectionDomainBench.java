@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,23 +80,23 @@ public class ProtectionDomainBench {
             classNames = new String[numberOfClasses];
             cs = new CodeSource[numberOfCodeSources];
             long n = Thread.currentThread().threadId();
-//System.out.println("XXX " + n);
 
             for (int i = 0; i < numberOfCodeSources; i++) {
                 @SuppressWarnings("deprecation")
                 URL u = new URL("file:/tmp/duke" + i);
-                cs[i] = new CodeSource(u, (java.security.cert.Certificate[]) null);
+                cs[i] = new CodeSource(u,
+                        (java.security.cert.Certificate[]) null);
             }
 
             for (int i = 0; i < numberOfClasses; i++) {
                 classNames[i] = "B" + i + n;
-//System.out.println("YYY " + classNames[i] +" ");
-                compiledClasses[i] = InMemoryJavaCompiler.compile(classNames[i], B(i, n));
+                compiledClasses[i] =
+                        InMemoryJavaCompiler.compile(classNames[i], B(i, n));
             }
         }
     }
 
-    public class ProtectionDomainBenchLoader extends SecureClassLoader {
+    static class ProtectionDomainBenchLoader extends SecureClassLoader {
 
         ProtectionDomainBenchLoader() {
             super();
@@ -106,10 +106,13 @@ public class ProtectionDomainBench {
             super(parent);
         }
 
-        protected Class<?> findClass(MyState state, String name) throws ClassNotFoundException {
+        protected Class<?> findClass(MyState state, String name)
+                throws ClassNotFoundException {
             if (name.equals(state.classNames[state.index] /* "B" + index */)) {
                 assert state.compiledClasses[state.index]  != null;
-                return defineClass(name, state.compiledClasses[state.index] , 0, (state.compiledClasses[state.index]).length, state.cs[state.index % state.cs.length] );
+                return defineClass(name, state.compiledClasses[state.index], 0,
+                        (state.compiledClasses[state.index]).length,
+                        state.cs[state.index % state.cs.length] );
             } else {
                 return super.findClass(name);
             }
@@ -120,7 +123,8 @@ public class ProtectionDomainBench {
         ProtectionDomainBench.ProtectionDomainBenchLoader loader1 = new
                 ProtectionDomainBench.ProtectionDomainBenchLoader();
 
-        for (state.index = 0; state.index < state.compiledClasses.length; state.index++) {
+        for (state.index = 0; state.index < state.compiledClasses.length;
+                state.index++) {
             Class c = loader1.findClass(state, state.classNames[state.index]);
             state.loadedClasses[state.index] = c;
         }
