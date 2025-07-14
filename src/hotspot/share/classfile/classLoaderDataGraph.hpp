@@ -142,12 +142,13 @@ public:
 
 // An iterator that distributes Klasses to parallel worker threads.
 class ClassLoaderDataGraphKlassIteratorAtomic : public StackObj {
- Klass* volatile _next_klass;
- public:
+public:
+  uint _cmpxchgfail;
+  ClassLoaderData* volatile _cld;
+
   ClassLoaderDataGraphKlassIteratorAtomic();
-  Klass* next_klass();
- private:
-  static Klass* next_klass_in_cldg(Klass* klass);
+
+  ClassLoaderData* next();
 };
 
 #endif // SHARE_CLASSFILE_CLASSLOADERDATAGRAPH_HPP

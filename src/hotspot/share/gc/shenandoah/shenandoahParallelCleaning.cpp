@@ -51,6 +51,6 @@ void ShenandoahClassUnloadingTask::work(uint worker_id) {
   // processed if there was no unloading.
   if (_unloading_occurred) {
     ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::CLDUnlink, worker_id);
-    _klass_cleaning_task.work();
+    _klass_cleaning_task.work(worker_id);
   }
 }

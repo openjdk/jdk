@@ -54,16 +54,16 @@ public:
 
 // Cleans out the Klass tree from stale data.
 class KlassCleaningTask : public StackObj {
-  volatile bool _clean_klass_tree_claimed;
   ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
-
-  bool claim_clean_klass_tree_task();
-  InstanceKlass* claim_next_klass();
 
 public:
   KlassCleaningTask();
+  ~KlassCleaningTask();
 
-  void work();
+  uint _processed;
+  uint _num_clds_processed;
+
+  void work(uint worker_id);
 };
 
 #endif // SHARE_GC_SHARED_PARALLELCLEANING_HPP

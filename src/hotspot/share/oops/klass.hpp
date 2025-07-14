@@ -411,9 +411,9 @@ protected:
   virtual ModuleEntry* module() const = 0;
   virtual PackageEntry* package() const = 0;
 
+  void     set_next_sibling(Klass* s);
  protected:                                // internal accessors
   void     set_subklass(Klass* s);
-  void     set_next_sibling(Klass* s);
 
  private:
   static uint8_t compute_hash_slot(Symbol* s);

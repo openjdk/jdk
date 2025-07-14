@@ -56,6 +56,7 @@ public:
   // The constructor is run in the VMThread.
   G1ParallelCleaningTask(uint num_workers,
                          bool unloading_occurred);
+  ~G1ParallelCleaningTask();
 
   void work(uint worker_id);
 };
