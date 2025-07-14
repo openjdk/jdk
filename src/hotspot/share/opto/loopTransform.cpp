@@ -862,7 +862,7 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
 
   uint trip_count = cl->trip_count();
   // Note, max_juint is used to indicate unknown trip count.
-  assert(trip_count > 1, "one iteration loop should be optimized out already");
+  assert(trip_count > 1, "one-iteration loop should be optimized out already");
   assert(trip_count < max_juint, "exact trip_count should be less than max_juint.");
 
   // If nodes are depleted, some transform has miscalculated its needs.
@@ -3319,7 +3319,7 @@ void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_L
 }
 
 //------------------------------do_one_iteration_loop--------------------------
-// Convert one iteration loop into normal code.
+// Convert one-iteration loop into normal code.
 bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
   if (!_head->as_Loop()->is_valid_counted_loop(T_INT)) {
     return false; // Only for counted loop
@@ -3361,7 +3361,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Compute loop trip count if possible.
   compute_trip_count(phase);
 
-  // Convert one iteration loop into normal code.
+  // Convert one-iteration loop into normal code.
   if (do_one_iteration_loop(phase)) {
     return true;
   }

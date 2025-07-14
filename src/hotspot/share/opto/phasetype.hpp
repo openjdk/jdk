@@ -79,8 +79,10 @@
   flags(AFTER_POST_LOOP,                "After Post Loop") \
   flags(BEFORE_REMOVE_EMPTY_LOOP,       "Before Remove Empty Loop") \
   flags(AFTER_REMOVE_EMPTY_LOOP,        "After Remove Empty Loop") \
-  flags(BEFORE_ONE_ITERATION_LOOP,      "Before Replacing One Iteration Loop") \
-  flags(AFTER_ONE_ITERATION_LOOP,       "After Replacing One Iteration Loop") \
+  flags(BEFORE_ONE_ITERATION_LOOP,      "Before Replace One-Iteration Loop") \
+  flags(AFTER_ONE_ITERATION_LOOP,       "After Replace One-Iteration Loop") \
+  flags(BEFORE_DUPLICATE_LOOP_BACKEDGE, "Before Duplicate Loop Backedge") \
+  flags(AFTER_DUPLICATE_LOOP_BACKEDGE,  "After Duplicate Loop Backedge") \
   flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
   flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
   flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \

@@ -92,6 +92,8 @@ public enum CompilePhase {
     AFTER_REMOVE_EMPTY_LOOP(        "After Remove Empty Loop"),
     BEFORE_ONE_ITERATION_LOOP(      "Before Replacing One Iteration Loop"),
     AFTER_ONE_ITERATION_LOOP(       "After Replacing One Iteration Loop"),
+    BEFORE_DUPLICATE_LOOP_BACKEDGE( "Before Duplicate Loop Backedge"),
+    AFTER_DUPLICATE_LOOP_BACKEDGE(  "After Duplicate Loop Backedge"),
     PHASEIDEALLOOP1(                "PhaseIdealLoop 1"),
     PHASEIDEALLOOP2(                "PhaseIdealLoop 2"),
     PHASEIDEALLOOP3(                "PhaseIdealLoop 3"),
