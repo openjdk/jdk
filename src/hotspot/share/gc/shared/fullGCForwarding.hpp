@@ -127,7 +127,7 @@ class FullGCForwardingImpl : public AllStatic {
 
   // How many bits we use for the offset
   static constexpr int NUM_OFFSET_BITS = AVAILABLE_LOW_BITS - OFFSET_BITS_SHIFT;
-  static constexpr size_t BLOCK_SIZE_WORDS = 1l << NUM_OFFSET_BITS;
+  static constexpr size_t BLOCK_SIZE_WORDS = 1ll << NUM_OFFSET_BITS;
   static constexpr int BLOCK_SIZE_BYTES_SHIFT = NUM_OFFSET_BITS + LogHeapWordSize;
   static constexpr size_t MAX_OFFSET = BLOCK_SIZE_WORDS - 2;
   static constexpr uintptr_t OFFSET_MASK = right_n_bits(NUM_OFFSET_BITS) << OFFSET_BITS_SHIFT;
@@ -193,7 +193,14 @@ public:
 };
 
 extern template class FullGCForwardingImpl<markWord::klass_shift>;
+extern template void FullGCForwardingImpl<markWord::klass_shift>::maybe_init_fallback_table();
+extern template void FullGCForwardingImpl<markWord::klass_shift>::fallback_forward_to(HeapWord* from, HeapWord* to);
+extern template HeapWord* FullGCForwardingImpl<markWord::klass_shift>::fallback_forwardee(HeapWord* from);
+
 extern template class FullGCForwardingImpl<4>;
+extern template void FullGCForwardingImpl<4>::maybe_init_fallback_table();
+extern template void FullGCForwardingImpl<4>::fallback_forward_to(HeapWord* from, HeapWord* to);
+extern template HeapWord* FullGCForwardingImpl<4>::fallback_forwardee(HeapWord* from);
 
 using FullGCForwarding = FullGCForwardingImpl<markWord::klass_shift>;
 
