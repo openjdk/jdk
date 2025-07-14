@@ -59,6 +59,11 @@ public class CharBufferAsCharSequenceTest {
             ARGS.add(Arguments.of(buffer.slice(), buf, i, buf.length, "StringCharBuffer slice " + i + " to end"));
 
             if (i > 0) {
+                buffer = CharBuffer.wrap(buf, 1, buf.length - 1).slice();
+                buffer.position(i - 1);
+                ARGS.add(Arguments.of(buffer, buf, i, buf.length,
+                        "HeapCharBuffer slice/offset 1 index " + (i - 1) + " to end"));
+
                 int end = buf.length - i;
 
                 buffer = CharBuffer.wrap(buf, i, buf.length - (2 * i));
@@ -116,6 +121,16 @@ public class CharBufferAsCharSequenceTest {
         OfInt chars = actual.chars().iterator();
         for (int i = 0, j = stop - start; i < j; ++i) {
             assertEquals(expected[start + i], (char) chars.nextInt(), "chart at " + i + ": " + description);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testSubSequence(CharSequence actual, char[] expected, int start, int stop, String description) {
+        for (int i = 0; i < 7; ++i) {
+            assertEquals(new String(expected, start + i, stop - start - (2 * i)),
+                    actual.subSequence(i, actual.length() - i).toString(),
+                    "subsequence at index " + i + " for " + description);
         }
     }
 }
