@@ -2237,7 +2237,7 @@ public class Types {
     /// that can be seen as a supertype of one of those types.
     ///
     /// The sequence of types starts with `t` and the next type in the sequence
-    /// is obtained by calling `getEnclosingType()` on  the previous type in the
+    /// is obtained by calling `getEnclosingType()` on the previous type in the
     /// sequence.
     ///
     /// Example: The field `f` needs to be resolved. Its site is `Outer.Sub.I` and
@@ -2245,8 +2245,8 @@ public class Types {
     /// (examines only enclosing instances) to discover for which type `Sup` can be
     /// seen as super of in the sequence `Outer.Sub.I`.
     ///
-    /// Can `Sup` be seen as super of  `Outer.Sub.I`? No. Going to the next enclosing type .
-    /// Can `Sup` be seen as super of `Outer.Sub`? Yes! It’s outer results in `Sup<String>`.
+    /// Can `Sup` be seen as super of `Outer.Sub.I`? No. Going to the next enclosing type.
+    /// Can `Sup` be seen as super of `Outer.Sub`? Yes! Its outer results in `Sup<String>`.
     ///
     /// ```
     /// static class Sup<F> { public F f; }
@@ -2261,12 +2261,11 @@ public class Types {
     /// }
     /// ```
     ///
-    /// @implNote this is typically used to compute the implicit qualifier in a
+    /// @implNote This is typically used to compute the implicit qualifier in a
     /// method/field access expression.
     ///
     /// @param t a type
     /// @param sym a symbol
-    ///
     public Type asOuterSuper(Type t, Symbol sym) {
         Type t1 = t;
         while (!t1.hasTag(NONE)) {
@@ -2286,7 +2285,7 @@ public class Types {
     ///
     /// Example: The type expression `B` is implicitly qualified and the
     /// proper generic outer needs to be retrieved. Its site is `C.D` and its
-    /// outer type is `A`.`asEnclosingSuper` will use the enclosing classes to
+    /// outer type is `A`. `asEnclosingSuper` will use the enclosing classes to
     /// discover for which type `A` can be seen as super of a type in the
     /// sequence `C.D`:
     ///
@@ -2303,12 +2302,11 @@ public class Types {
     /// }
     /// ```
     ///
-    /// @implNote this is typically used to compute the implicit qualifier in
+    /// @implNote This is typically used to compute the implicit qualifier in
     /// a type expression.
     ///
     /// @param t a type
     /// @param sym a symbol
-    ///
     public Type asEnclosingSuper(Type t, Symbol sym) {
         Type t1 = t;
         while (!t1.hasTag(NONE)) {
