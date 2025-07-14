@@ -25,9 +25,42 @@
 #define SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP
 
 #include "gc/shared/fullGCForwarding.hpp"
+#include "logging/log.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/fastHash.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
+
+// We cannot use 0, because that may already be a valid base address in zero-based heaps.
+// 0x1 is safe because heap base addresses must be aligned by much larger alignment
+template <int BITS>
+HeapWord* const FullGCForwardingImpl<BITS>::UNUSED_BASE = reinterpret_cast<HeapWord*>(0x1);
+
+template <int BITS>
+HeapWord* FullGCForwardingImpl<BITS>::_heap_start = nullptr;
+template <int BITS>
+size_t FullGCForwardingImpl<BITS>::_heap_start_region_bias = 0;
+template <int BITS>
+size_t FullGCForwardingImpl<BITS>::_num_regions = 0;
+template <int BITS>
+uintptr_t FullGCForwardingImpl<BITS>::_region_mask = 0;
+template <int BITS>
+HeapWord** FullGCForwardingImpl<BITS>::_biased_bases = nullptr;
+template <int BITS>
+HeapWord** FullGCForwardingImpl<BITS>::_bases_table = nullptr;
+template <int BITS>
+size_t FullGCForwardingImpl<BITS>::_fallback_table_log2_start_size = 9; // 512 entries.
+template <int BITS>
+FallbackTable* FullGCForwardingImpl<BITS>::_fallback_table = nullptr;
+#ifndef PRODUCT
+template <int BITS>
+volatile uint64_t FullGCForwardingImpl<BITS>::_num_forwardings = 0;
+template <int BITS>
+volatile uint64_t FullGCForwardingImpl<BITS>::_num_fallback_forwardings = 0;
+#endif
 
 template <int BITS>
 bool FullGCForwardingImpl<BITS>::is_forwarded(oop obj) {
@@ -144,8 +177,173 @@ oop FullGCForwardingImpl<BITS>::forwardee(oop obj) {
 #endif
 }
 
-template class FullGCForwardingImpl<markWord::klass_shift>;
-// For testing, used in test_fullGCForwarding.cpp
-template class FullGCForwardingImpl<4>;
+static uintx hash(HeapWord* const& addr) {
+  uint64_t val = reinterpret_cast<uint64_t>(addr);
+  uint32_t hash = FastHash::get_hash32(static_cast<uint32_t>(val), static_cast<uint32_t>(val >> 32));
+  return hash;
+}
+
+struct ForwardingEntry {
+  HeapWord* _from;
+  HeapWord* _to;
+  ForwardingEntry(HeapWord* from, HeapWord* to) : _from(from), _to(to) {}
+};
+
+struct FallbackTableConfig {
+  using Value = ForwardingEntry;
+  static uintx get_hash(Value const& entry, bool* is_dead) {
+    return hash(entry._from);
+  }
+  static void* allocate_node(void* context, size_t size, Value const& value) {
+    return AllocateHeap(size, mtGC);
+  }
+  static void free_node(void* context, void* memory, Value const& value) {
+    FreeHeap(memory);
+  }
+};
+
+class FallbackTable : public ConcurrentHashTable<FallbackTableConfig, mtGC> {
+public:
+  explicit FallbackTable(size_t log2size) : ConcurrentHashTable(log2size) {}
+};
+
+class FallbackTableLookup : public StackObj {
+  ForwardingEntry const _entry;
+public:
+  explicit FallbackTableLookup(HeapWord* from) : _entry(from, nullptr) {}
+  uintx get_hash() const {
+    return hash(_entry._from);
+  }
+  bool equals(const ForwardingEntry* value) const {
+    return _entry._from == value->_from;
+  }
+  static bool is_dead(ForwardingEntry* value) { return false; }
+};
+
+template <int BITS>
+void FullGCForwardingImpl<BITS>::initialize(MemRegion heap) {
+#ifdef _LP64
+  _heap_start = heap.start();
+
+  size_t rounded_heap_size = MAX2(round_up_power_of_2(heap.byte_size()) / BytesPerWord, BLOCK_SIZE_WORDS);
+
+  _num_regions = rounded_heap_size / BLOCK_SIZE_WORDS;
+
+  _heap_start_region_bias = reinterpret_cast<uintptr_t>(_heap_start) >> BLOCK_SIZE_BYTES_SHIFT;
+  _region_mask = ~((static_cast<uintptr_t>(1) << BLOCK_SIZE_BYTES_SHIFT) - 1);
+
+  assert(_bases_table == nullptr, "should not be initialized yet");
+  assert(_fallback_table == nullptr, "should not be initialized yet");
+#endif
+}
+
+template <int BITS>
+void FullGCForwardingImpl<BITS>::begin() {
+#ifdef _LP64
+  assert(_bases_table == nullptr, "should not be initialized yet");
+  assert(_fallback_table == nullptr, "should not be initialized yet");
+
+  _fallback_table = nullptr;
+
+#ifndef PRODUCT
+  _num_forwardings = 0;
+  _num_fallback_forwardings = 0;
+#endif
+
+  size_t max = _num_regions;
+  _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
+  HeapWord** biased_start = _bases_table - _heap_start_region_bias;
+  _biased_bases = biased_start;
+  if (max == 1) {
+    // Optimize the case when the block-size >= heap-size.
+    // In this case we can use the heap-start as block-start,
+    // and don't risk that competing GC threads set a higher
+    // address as block-start, which would lead to unnecessary
+    // fallback-usage.
+    _bases_table[0] = _heap_start;
+  } else {
+    for (size_t i = 0; i < max; i++) {
+      _bases_table[i] = UNUSED_BASE;
+    }
+  }
+#endif
+}
+
+template <int BITS>
+void FullGCForwardingImpl<BITS>::end() {
+#ifndef PRODUCT
+  size_t fallback_table_size = _fallback_table != nullptr ? _fallback_table->get_mem_size(Thread::current()) : 0;
+  log_info(gc)("Total forwardings: " UINT64_FORMAT ", fallback forwardings: " UINT64_FORMAT
+                ", ratio: %f, memory used by fallback table: %zu%s, memory used by bases table: %zu%s",
+               _num_forwardings, _num_fallback_forwardings, static_cast<float>(_num_forwardings) / static_cast<float>(_num_fallback_forwardings),
+               byte_size_in_proper_unit(fallback_table_size),
+               proper_unit_for_byte_size(fallback_table_size),
+               byte_size_in_proper_unit(sizeof(HeapWord*) * _num_regions),
+               proper_unit_for_byte_size(sizeof(HeapWord*) * _num_regions));
+#endif
+#ifdef _LP64
+  assert(_bases_table != nullptr, "should be initialized");
+  FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
+  _bases_table = nullptr;
+  if (_fallback_table != nullptr) {
+    delete _fallback_table;
+    _fallback_table = nullptr;
+  }
+#endif
+}
+
+template <int BITS>
+void FullGCForwardingImpl<BITS>::maybe_init_fallback_table() {
+  if (_fallback_table == nullptr) {
+    FallbackTable* fallback_table = new FallbackTable(_fallback_table_log2_start_size);
+    FallbackTable* prev = Atomic::cmpxchg(&_fallback_table, static_cast<FallbackTable*>(nullptr), fallback_table);
+    if (prev != nullptr) {
+      // Another thread won, discard our table.
+      delete fallback_table;
+    }
+  }
+}
+
+template <int BITS>
+void FullGCForwardingImpl<BITS>::fallback_forward_to(HeapWord* from, HeapWord* to) {
+  assert(to != nullptr, "no null forwarding");
+  maybe_init_fallback_table();
+  assert(_fallback_table != nullptr, "should be initialized");
+  FallbackTableLookup lookup_f(from);
+  ForwardingEntry entry(from, to);
+  auto found_f = [&](ForwardingEntry* found) {
+    // If dupe has been found, override it with new value.
+    // This is also called when new entry is succussfully inserted.
+    if (found->_to != to) {
+      found->_to = to;
+    }
+  };
+  Thread* current_thread = Thread::current();
+  bool grow;
+  bool added = _fallback_table->insert_get(current_thread, lookup_f, entry, found_f, &grow);
+  NOT_PRODUCT(Atomic::inc(&_num_fallback_forwardings);)
+#ifdef ASSERT
+  assert(fallback_forwardee(from) != nullptr, "must have entered forwarding");
+  assert(fallback_forwardee(from) == to, "forwarding must be correct, added: %s, from: " PTR_FORMAT ", to: " PTR_FORMAT ", fwd: " PTR_FORMAT, BOOL_TO_STR(added), p2i(from), p2i(to), p2i(fallback_forwardee(from)));
+#endif
+  if (grow) {
+    _fallback_table->grow(current_thread);
+    log_debug(gc)("grow fallback table to size: %zu bytes", _fallback_table->get_mem_size(current_thread));
+  }
+}
+
+template <int BITS>
+HeapWord* FullGCForwardingImpl<BITS>::fallback_forwardee(HeapWord* from) {
+  assert(_fallback_table != nullptr, "fallback table must be present");
+  HeapWord* result;
+  FallbackTableLookup lookup_f(from);
+  auto found_f = [&](const ForwardingEntry* found) {
+    result = found->_to;
+  };
+  bool found = _fallback_table->get(Thread::current(), lookup_f, found_f);
+  assert(found, "something must have been found");
+  assert(result != nullptr, "must have found forwarding");
+  return result;
+}
 
 #endif // SHARE_GC_SHARED_FULLGCFORWARDING_INLINE_HPP

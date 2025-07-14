@@ -192,16 +192,6 @@ public:
   static oop forwardee(oop from);
 };
 
-extern template class FullGCForwardingImpl<markWord::klass_shift>;
-extern template void FullGCForwardingImpl<markWord::klass_shift>::maybe_init_fallback_table();
-extern template void FullGCForwardingImpl<markWord::klass_shift>::fallback_forward_to(HeapWord* from, HeapWord* to);
-extern template HeapWord* FullGCForwardingImpl<markWord::klass_shift>::fallback_forwardee(HeapWord* from);
-
-extern template class FullGCForwardingImpl<4>;
-extern template void FullGCForwardingImpl<4>::maybe_init_fallback_table();
-extern template void FullGCForwardingImpl<4>::fallback_forward_to(HeapWord* from, HeapWord* to);
-extern template HeapWord* FullGCForwardingImpl<4>::fallback_forwardee(HeapWord* from);
-
 using FullGCForwarding = FullGCForwardingImpl<markWord::klass_shift>;
 
 #endif // SHARE_GC_SHARED_FULLGCFORWARDING_HPP
