@@ -179,9 +179,6 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"asimd", "true"},
         applyIf = {"MaxVectorSize", ">=8"})
-    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_8, ">0"},
-        applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
-        applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Byte64() {
         ByteSelectFromTwoVectorKernel(ByteVector.SPECIES_64, ba, bb, bindex[0]);
     }
@@ -240,9 +237,6 @@ public class TestSelectFromTwoVectorOp {
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"asimd", "true"},
-        applyIf = {"MaxVectorSize", ">=8"})
-    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_4, ">0"},
-        applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Short64() {
         ShortSelectFromTwoVectorKernel(ShortVector.SPECIES_64, sa, sb, sindex[0]);
@@ -304,7 +298,7 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_2, ">0"},
-        applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true"},
         applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Int64() {
         IntSelectFromTwoVectorKernel(IntVector.SPECIES_64, ia, ib, iindex[0]);
@@ -357,7 +351,7 @@ public class TestSelectFromTwoVectorOp {
 
     @Test
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_2, ">0"},
-        applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true"},
         applyIf = {"MaxVectorSize", ">=8"})
     public static void selectFromTwoVector_Float64() {
         FloatSelectFromTwoVectorKernel(FloatVector.SPECIES_64, fa, fb, findex[0]);

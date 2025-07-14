@@ -1831,6 +1831,9 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       }
       break;
     case Op_SelectFromTwoVector:
+       if (size_in_bits < 128) {
+         return false;
+       }
        if ((size_in_bits < 512 && !VM_Version::supports_avx512vl())) {
          return false;
        }
