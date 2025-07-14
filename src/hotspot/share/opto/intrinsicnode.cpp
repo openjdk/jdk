@@ -277,8 +277,8 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         lo = 0L;
       } else {
         // preserve originally assigned hi (MAX_INT/LONG) and lo (MIN_INT/LONG) values.
-        assert(hi == (T_INT ? max_jint : max_jlong), "");
-        assert(lo == (T_INT ? min_jint : min_jlong), "");
+        assert(hi == (bt == T_INT ? max_jint : max_jlong), "");
+        assert(lo == (bt == T_INT ? min_jint : min_jlong), "");
       }
     } else {
       // Case A.2 bit expansion:-
@@ -312,7 +312,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         //
         hi = maskcon ^ lo;
         // lo still retains MIN_INT/LONG.
-        assert(lo == (T_INT ? min_jint : min_jlong), "");
+        assert(lo == (bt == T_INT ? min_jint : min_jlong), "");
       }
     }
   }
@@ -351,8 +351,8 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       // lower bound of the bit compression to zero.
       lo = result_bit_width == mask_bit_width ? lo : 0L;
 
-      assert(hi == (bt == T_INT) ? max_jint : max_jlong, "");
-      assert((lo == (bt == T_INT) ? min_jint : min_jlong) || lo == 0, "");
+      assert(hi == (bt == T_INT ? max_jint : max_jlong), "");
+      assert(lo == (bt == T_INT ? min_jint : min_jlong) || lo == 0, "");
 
       if (src_type->hi_as_long() >= 0) {
         // Lemma 1: For strictly non-negative src, the result of the compression will never be
