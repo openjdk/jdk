@@ -638,6 +638,13 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
   // (can't use the vtable because it is not guaranteed to be initialized yet)
   InstanceKlass* super = klass->java_super();
   while (super != nullptr) {
+    LogTarget(Debug, defaultmethods) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      StreamIndentor si(&ls, 2);
+      ls.print_cr("Checking superclass: %s", super->name()->as_C_string());
+    }
+
     for (int i = 0; i < super->methods()->length(); ++i) {
       Method* m = super->methods()->at(i);
       if (m->is_overpass() || m->is_static()) {
@@ -658,17 +665,47 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     if (super->default_methods() != nullptr) {
       for (int i = 0; i < super->default_methods()->length(); ++i) {
         Method* m = super->default_methods()->at(i);
+        LogTarget(Debug, defaultmethods) lt;
+        if (lt.is_enabled()) {
+          LogStream ls(lt);
+          StreamIndentor si(&ls, 4);
+          ls.print_cr("Processing super default: %s", m->name()->as_C_string());
+        }
         // m is a method that would have been a miranda if not for the
         // default method processing that occurred on behalf of our superclass,
         // so it's a method we want to re-examine in this new context.  That is,
         // unless we have a real implementation of it in the current class.
         if (!already_in_vtable_slots(slots, m)) {
+          LogTarget(Debug, defaultmethods) lt;
+          if (lt.is_enabled()) {
+            LogStream ls(lt);
+            StreamIndentor si(&ls, 6);
+            ls.print_cr("not already in vtable");
+          }
           Method* impl = klass->lookup_method(m->name(), m->signature());
           if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
+            if (lt.is_enabled()) {
+              LogStream ls(lt);
+              StreamIndentor si(&ls, 6);
+              ls.print_cr("appending empty vtable slot");
+            }
             slots->append(new EmptyVtableSlot(m));
+          } else {
+            if (lt.is_enabled()) {
+              LogStream ls(lt);
+              StreamIndentor si(&ls, 6);
+              ls.print_cr("found implementation: %s", impl->name_and_sig_as_C_string());
+            }
           }
         }
       }
+    } else {
+        LogTarget(Debug, defaultmethods) lt;
+        if (lt.is_enabled()) {
+          LogStream ls(lt);
+          StreamIndentor si(&ls, 4);
+          ls.print_cr("No super defaults found");
+        }
     }
     super = super->java_super();
   }
@@ -763,6 +800,12 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
         // first on searching, but overriding for invokevirtual needs
         // to find default method candidates for the same signature
         _family->set_target_if_empty(m);
+      }
+      LogTarget(Debug, defaultmethods) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        StreamIndentor si(&ls, 4);
+        ls.print_cr("Found candidate: %s", m->name_and_sig_as_C_string());
       }
     }
     return true;
@@ -859,6 +902,13 @@ void DefaultMethods::generate_default_methods(
     }
     log_debug(defaultmethods)("Creating defaults and overpasses...");
     create_defaults_and_exceptions(&empty_slots, klass, CHECK);
+  } else {
+      LogTarget(Debug, defaultmethods) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        StreamIndentor si(&ls, 2);
+        ls.print_cr("No empty slots found");
+      }
   }
   log_debug(defaultmethods)("Default method processing complete");
 }
