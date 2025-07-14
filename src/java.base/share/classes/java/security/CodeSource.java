@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public class CodeSource implements java.io.Serializable {
     private transient java.security.cert.Certificate[] certs = null;
 
     // cached SocketPermission used for matchLocation
+    @SuppressWarnings("removal")
     private transient SocketPermission sp;
 
     // for generating cert paths
@@ -269,9 +270,22 @@ public class CodeSource implements java.io.Serializable {
      *           equal to <i>codesource</i>'s protocol, ignoring case.
      *
      *     <li>  If this object's host (getLocation().getHost()) is not null,
-     *           then the SocketPermission
-     *           constructed with this object's host must imply the
-     *           SocketPermission constructed with <i>codesource</i>'s host.
+     *           then the following checks are made in order:
+     *           <ul>
+     *           <li> If this object's host was initialized with a single IP
+     *           address then one of <i>codesource</i>'s IP addresses must be
+     *           equal to this object's IP address.
+     *           <li> If this object's host is a wildcard domain (such as
+     *           *.example.com), then <i>codesource</i>'s canonical host name
+     *           (the name without any preceding *) must end with this object's
+     *           canonical host name. For example, *.example.com implies
+     *           *.foo.example.com.
+     *           <li> If this object's host was not initialized with a single
+     *           IP address, then one of this object's IP addresses must equal
+     *           one of <i>codesource</i>'s IP addresses or this object's
+     *           canonical host name must equal <i>codesource</i>'s canonical
+     *           host name.
+     *           </ul>
      *
      *     <li>  If this object's port (getLocation().getPort()) is not
      *           equal to -1 (that is, if a port is specified), it must equal
@@ -387,6 +401,7 @@ public class CodeSource implements java.io.Serializable {
      *
      * @param that {@code CodeSource} to compare against
      */
+    @SuppressWarnings("removal")
     private boolean matchLocation(CodeSource that) {
         if (location == null)
             return true;
