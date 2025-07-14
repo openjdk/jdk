@@ -675,6 +675,11 @@ void JvmtiExport::post_early_vm_start() {
 void JvmtiExport::post_vm_start() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_START, ("Trg VM start event triggered" ));
 
+  // The thread state might be incomplete if initialized in post_early_vm_start
+  // before classes are initialized. It should be updated now.
+  JavaThread *thread  = JavaThread::current();
+  thread->jvmti_thread_state()->update_thread_oop(thread);
+
   // can now enable some events
   JvmtiEventController::vm_start();
 
@@ -684,7 +689,6 @@ void JvmtiExport::post_vm_start() {
     if (!env->early_vmstart_env() && env->is_enabled(JVMTI_EVENT_VM_START)) {
       EVT_TRACE(JVMTI_EVENT_VM_START, ("Evt VM start event sent" ));
 
-      JavaThread *thread  = JavaThread::current();
       JvmtiThreadEventMark jem(thread);
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMStart callback = env->callbacks()->VMStart;

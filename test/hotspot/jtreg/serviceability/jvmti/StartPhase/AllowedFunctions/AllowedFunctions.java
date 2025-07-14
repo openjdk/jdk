@@ -29,6 +29,7 @@
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:AllowedFunctions AllowedFunctions
  * @run main/othervm/native -agentlib:AllowedFunctions=with_early_vmstart AllowedFunctions
+ * @run main/othervm/native -agentlib:AllowedFunctions=with_early_vmstart  -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n AllowedFunctions
  */
 
 public class AllowedFunctions {
