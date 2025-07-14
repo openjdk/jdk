@@ -26,10 +26,8 @@
  * @bug 8295803 8299689 8351435 8361613
  * @summary Tests System.console() returns correct Console (or null) from the expected
  *          module.
- * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
  * @build jdk.test.lib.Utils
- *        jdk.test.lib.JDKToolFinder
  *        jdk.test.lib.process.ProcessTools
  * @run junit ModuleSelectionTest
  */
@@ -62,7 +60,7 @@ public class ModuleSelectionTest {
 
     @ParameterizedTest
     @MethodSource("options")
-    void testWithoutExpect(String opts, String expected) throws Exception {
+    void testNonTTY(String opts) throws Exception {
         opts = opts +
             " --add-opens java.base/java.io=ALL-UNNAMED ModuleSelectionTest null";
         OutputAnalyzer output = ProcessTools.executeTestJava(opts.split(" "));
@@ -72,7 +70,7 @@ public class ModuleSelectionTest {
 
     @ParameterizedTest
     @MethodSource("options")
-    void testWithExpect(String opts, String expected) throws Exception {
+    void testTTY(String opts, String expected) throws Exception {
         // check "expect" command availability
         var expect = Paths.get("/usr/bin/expect");
         Assumptions.assumeTrue(Files.exists(expect) && Files.isExecutable(expect),

@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -45,14 +46,16 @@ import static jdk.test.lib.Utils.*;
  * @run junit DefaultCharsetTest
  */
 public class DefaultCharsetTest {
-    @ParameterizedTest
-    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "US-ASCII", "foo", ""})
-    void testDefaultCharset(String stdoutEncoding) throws Exception {
+    @BeforeAll
+    static void checkExpectAvailability() {
         // check "expect" command availability
         var expect = Paths.get("/usr/bin/expect");
         Assumptions.assumeTrue(Files.exists(expect) && Files.isExecutable(expect),
             "'" + expect + "' not found. Test ignored.");
-
+    }
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "US-ASCII", "foo", ""})
+    void testDefaultCharset(String stdoutEncoding) throws Exception {
         // invoking "expect" command
         OutputAnalyzer oa = ProcessTools.executeProcess(
             "expect",
