@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8257860
  * @summary SCDynamicStoreConfig works
  * @modules java.security.jgss/sun.security.krb5
- * @library /test/lib
+ * @library /test/lib /java/awt/regtesthelpers
  * @run main/manual/native TestDynamicStore
  * @requires (os.family == "mac")
  */
@@ -55,6 +55,16 @@ public class TestDynamicStore {
     }
 
     public static void main(String[] args) throws Exception {
+
+        // Show a popup to remind to run this test as sudo user
+        PassFailJFrame.builder()
+                .instructions("""
+                        This test MUST be run with SUDO user.\s
+
+                        Please press FAIL and RESTART the test if it is not,\s
+                        else press PASS and the test will be executed automatically""")
+                .build()
+                .awaitAndCheck();
 
         System.loadLibrary("TestDynamicStore");
 
