@@ -370,29 +370,27 @@ void CompileQueue::delete_all() {
   CompileTask* next = _first;
 
   // Iterate over all tasks in the compile queue
+  bool have_blocking_tasks = false;
   while (next != nullptr) {
     CompileTask* current = next;
     next = current->next();
-    bool found_waiter = false;
-    {
-      MutexLocker ct_lock(CompileTaskWait_lock);
-      assert(current->waiting_for_completion_count() <= 1, "more than one thread are waiting for task");
-      if (current->waiting_for_completion_count() > 0) {
-        // If another thread waits for this task, we must wake them up
-        // so they will stop waiting and free the task.
-        CompileTaskWait_lock->notify_all();
-        found_waiter = true;
-      }
-    }
-    if (!found_waiter) {
-      // If no one was waiting for this task, we need to delete it ourselves.
-      // In this case, the task is also certainly unlocked, because, again, there is no waiter.
-      // Otherwise, by convention, it's the waiters responsibility to delete the task.
+    if (!current->is_blocking()) {
+      // Queued non-blocking task. No waiters, delete it now.
       delete current;
+    } else {
+      // Blocking task. To avoid races with blocking waiters,
+      // we need to delegate the actual cleanup to them.
     }
   }
   _first = nullptr;
   _last = nullptr;
+
+  {
+    // Notify all blocking task waiters to wake up and delete
+    // all remaining blocking tasks.
+    MonitorLocker ml(Thread::current(), CompileTaskWait_lock);
+    ml.notify_all();
+  }
 
   // Wake up all threads that block on the queue.
   MethodCompileQueue_lock->notify_all();
@@ -1722,11 +1720,9 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   {
     MonitorLocker ml(thread, CompileTaskWait_lock);
     free_task = true;
-    task->inc_waiting_for_completion();
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
       ml.wait();
     }
-    task->dec_waiting_for_completion();
   }
 
   if (free_task) {
