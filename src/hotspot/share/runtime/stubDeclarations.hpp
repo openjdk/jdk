@@ -615,6 +615,17 @@
   do_blob(preuniverse)                                                  \
   do_stub(preuniverse, fence)                                           \
   do_entry(preuniverse, fence, fence_entry, fence_entry)                \
+  do_stub(preuniverse, atomic_add)                                      \
+  do_entry(preuniverse, atomic_add, atomic_add_entry, atomic_add_entry) \
+  do_stub(preuniverse, atomic_xchg)                                     \
+  do_entry(preuniverse, atomic_xchg, atomic_xchg_entry,                 \
+           atomic_xchg_entry)                                           \
+  do_stub(preuniverse, atomic_cmpxchg)                                  \
+  do_entry(preuniverse, atomic_cmpxchg, atomic_cmpxchg_entry,           \
+           atomic_cmpxchg_entry)                                        \
+  do_stub(preuniverse, atomic_cmpxchg_long)                             \
+  do_entry(preuniverse, atomic_cmpxchg_long, atomic_cmpxchg_long_entry, \
+           atomic_cmpxchg_long_entry)                                   \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub, do_arch_blob,              \
                                     do_arch_entry, do_arch_entry_init)  \
@@ -637,16 +648,6 @@
   do_stub(initial, catch_exception)                                     \
   do_entry(initial, catch_exception, catch_exception_entry,             \
            catch_exception_entry)                                       \
-  do_stub(initial, atomic_add)                                          \
-  do_entry(initial, atomic_add, atomic_add_entry, atomic_add_entry)     \
-  do_stub(initial, atomic_xchg)                                         \
-  do_entry(initial, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry)  \
-  do_stub(initial, atomic_cmpxchg)                                      \
-  do_entry(initial, atomic_cmpxchg, atomic_cmpxchg_entry,               \
-           atomic_cmpxchg_entry)                                        \
-  do_stub(initial, atomic_cmpxchg_long)                                 \
-  do_entry(initial, atomic_cmpxchg_long, atomic_cmpxchg_long_entry,     \
-           atomic_cmpxchg_long_entry)                                   \
   do_stub(initial, updateBytesCRC32)                                    \
   do_entry(initial, updateBytesCRC32, updateBytesCRC32,                 \
            updateBytesCRC32)                                            \
