@@ -45,8 +45,9 @@ import sun.nio.cs.UTF_8;
  * output streams then its console will exist and will typically be
  * connected to the keyboard and display from which the virtual machine
  * was launched.  If the virtual machine is started automatically, for
- * example by a background job scheduler, then it may not
- * have a console.
+ * example by a background job scheduler, or if one or both of the
+ * standard input or output has been redirected, then it may not have a
+ * console.
  * <p>
  * If this virtual machine has a console then it is represented by a
  * unique instance of this class which can be obtained by invoking the
