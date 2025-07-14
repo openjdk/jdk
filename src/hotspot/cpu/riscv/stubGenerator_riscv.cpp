@@ -2602,7 +2602,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
 
     Label L_tail, L_exit, L_loop, L_first_loop, L_ctr_group_loop;
-    __ ld(used, Address(used_ptr));
+    __ lw(used, Address(used_ptr));
     __ beqz(input_len, L_exit);
     __ mv(len, input_len);
     __ mv(block_size, 16); // 16 Byte a block for keys
@@ -2610,15 +2610,16 @@ class StubGenerator: public StubCodeGenerator {
     // encrypt bytes left with last encryptedCounter
     Label L_judge_used, L_encrypt_slow, L_main_loop, L_inner_loop, L_store_Large_counter;
     __ bind(L_judge_used);
+    __ beqz(used, L_main_loop);
     __ blt(used, block_size, L_encrypt_slow);
     __ j(L_main_loop);
 
     __ bind(L_encrypt_slow);
     __ add(rscratch2, saved_encrypted_ctr, used);
-    __ ld(rscratch1, Address(rscratch2));
-    __ ld(rscratch2, Address(in));
+    __ lbu(rscratch1, Address(rscratch2)); // TODO change to __ lb(rscratch1, Address(saved_encrypted_ctr, used));
+    __ lbu(rscratch2, Address(in));
     __ xorr(rscratch1, rscratch2, rscratch1);
-    __ sd(rscratch1, Address(out));
+    __ sb(rscratch1, Address(out));
     __ addi(in, in, 1);
     __ addi(out, out, 1);
     __ addi(used, used, 1);
@@ -2649,7 +2650,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // CTR_large_block (4 * 16 Bytes once a time)
     uint64_t maskIndex = 0x00000088ul; // 0b10001000
-    __ mv(t0, 64); // we used bulk_width = 4, so we should compare len > 64 (Byte)
+    __ mv(t0, 64); // we used bulk_width = 4, and should compare len > 64 (Byte)
     __ blt(len, t0, L_inner_loop);
 
     // init aes_ctr counter input
@@ -2670,7 +2671,7 @@ class StubGenerator: public StubCodeGenerator {
     __ j(L_first_loop);
 
     __ bind(L_loop);
-    __ mv(t0, 64); // we used bulk_width = 4, so we should compare len > 64 (Byte) 
+    __ mv(t0, 64); // we used bulk_width = 4, so we should compare len > 64 (Byte)
     __ blt(len, t0, L_store_Large_counter);
     __ srli(len32, len, 2);
     __ vsetvli(vlen, len32, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::ta);
@@ -2776,7 +2777,7 @@ class StubGenerator: public StubCodeGenerator {
     __ j(L_inner_loop);
 
     __ bind(L_exit);
-    __ sd(used, Address(used_ptr));
+    __ sw(used, Address(used_ptr));
     __ mv(x10, input_len);
     __ leave();
     __ ret();
