@@ -52,6 +52,7 @@ import static org.testng.Assert.assertEquals;
 
 public class TestUpcallStructScope extends NativeTestHelper {
     static final MethodHandle MH_do_upcall;
+    static final MethodHandle MH_do_upcall_ptr;
     static final MethodHandle MH_Consumer_accept;
     static final MethodHandle MH_BiConsumer_accept;
 
@@ -60,6 +61,10 @@ public class TestUpcallStructScope extends NativeTestHelper {
         MH_do_upcall = LINKER.downcallHandle(
                 findNativeOrThrow("do_upcall"),
                 FunctionDescriptor.ofVoid(C_POINTER, S_PDI_LAYOUT)
+        );
+        MH_do_upcall_ptr = LINKER.downcallHandle(
+                findNativeOrThrow("do_upcall_ptr"),
+                FunctionDescriptor.ofVoid(C_POINTER, S_PDI_LAYOUT, C_POINTER)
         );
 
         try {
@@ -78,7 +83,7 @@ public class TestUpcallStructScope extends NativeTestHelper {
     }
 
     private static MethodHandle methodHandle(BiConsumer<MemorySegment, MemorySegment> callback) {
-        return MH_Consumer_accept.bindTo(callback)
+        return MH_BiConsumer_accept.bindTo(callback)
                 .asType(MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
     }
 
@@ -106,7 +111,7 @@ public class TestUpcallStructScope extends NativeTestHelper {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment upcallStub = LINKER.upcallStub(target, upcallDesc, arena);
             MemorySegment argSegment = arena.allocate(S_PDI_LAYOUT);
-            MH_do_upcall.invoke(upcallStub, argSegment, argAddr);
+            MH_do_upcall_ptr.invoke(upcallStub, argSegment, argAddr);
         }
 
         // We've captured the address '42' from the upcall. This should have
