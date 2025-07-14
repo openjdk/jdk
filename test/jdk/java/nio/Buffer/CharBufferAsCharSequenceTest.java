@@ -22,6 +22,7 @@
  */
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.CharBuffer;
 import java.util.ArrayList;
@@ -106,10 +107,64 @@ public class CharBufferAsCharSequenceTest {
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
+    void testGetChars_neg_beg(CharSequence actual, char[] expected, int start, int stop, String description) {
+        char[] val = new char[16];
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(-1, 4, val, 1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testGetChars_neg_end(CharSequence actual, char[] expected, int start, int stop, String description) {
+        char[] val = new char[16];
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(0, -4, val, 1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testGetChars_end_before_beg(CharSequence actual, char[] expected, int start, int stop, String description) {
+        char[] val = new char[16];
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(3, 2, val, 1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testGetChars_dst_pos_neg(CharSequence actual, char[] expected, int start, int stop, String description) {
+        char[] val = new char[16];
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 3, val, -1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testGetChars_dst_pos_oob(CharSequence actual, char[] expected, int start, int stop, String description) {
+        char[] val = new char[16];
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length + 1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testGetChars_dst_length_oob(CharSequence actual, char[] expected, int start, int stop, String description) {
+        char[] val = new char[16];
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length - 2));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
     void testCharAt(CharSequence actual, char[] expected, int start, int stop, String description) {
         for (int i = 0, j = stop - start; i < j; ++i) {
             assertEquals(expected[start + i], actual.charAt(i), "chart at " + i + ": " + description);
         }
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testCharAt_negative(CharSequence actual, char[] expected, int start, int stop, String description) {
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.charAt(-1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testCharAt_too_long(CharSequence actual, char[] expected, int start, int stop, String description) {
+        assertThrows(IndexOutOfBoundsException.class, () -> actual.charAt(stop - start + 1));
     }
 
     @ParameterizedTest
