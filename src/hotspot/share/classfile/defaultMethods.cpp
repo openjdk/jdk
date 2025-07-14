@@ -683,7 +683,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
             ls.print_cr("not already in vtable");
           }
           Method* impl = klass->lookup_method(m->name(), m->signature());
-          if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
+          if (impl == nullptr || impl->is_overpass() || impl->is_static() || impl->is_private()) {
             if (lt.is_enabled()) {
               LogStream ls(lt);
               StreamIndentor si(&ls, 6);
