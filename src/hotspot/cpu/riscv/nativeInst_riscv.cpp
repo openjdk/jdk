@@ -66,7 +66,7 @@ class NativeFarCall: public NativeInstruction {
   void verify();
   void print();
 
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool set_destination_mt_safe(address dest);
   bool reloc_set_destination(address dest);
 
  private:
@@ -126,10 +126,9 @@ void NativeFarCall::print() {
   tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(addr_at(0)));
 }
 
-bool NativeFarCall::set_destination_mt_safe(address dest, bool assert_lock) {
+bool NativeFarCall::set_destination_mt_safe(address dest) {
   assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
-  assert(!assert_lock ||
-         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+  assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
@@ -247,8 +246,8 @@ void NativeCall::print() {
   NativeFarCall::at(addr_at(0))->print();;
 }
 
-bool NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
-  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest, assert_lock);
+bool NativeCall::set_destination_mt_safe(address dest) {
+  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest);
 }
 
 bool NativeCall::reloc_set_destination(address dest) {

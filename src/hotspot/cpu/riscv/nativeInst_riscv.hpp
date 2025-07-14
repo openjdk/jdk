@@ -141,7 +141,7 @@ class NativeCall: private NativeInstruction {
   void print();
 
   void set_destination(address dest);
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool set_destination_mt_safe(address dest);
   bool reloc_set_destination(address dest);
 
   static bool is_at(address addr);
