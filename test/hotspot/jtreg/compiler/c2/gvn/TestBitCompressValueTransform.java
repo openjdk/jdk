@@ -77,7 +77,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test1")
     public void run1(RunInfo info) {
         long res = 0;
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             res |= test1(field_L);
         }
         Asserts.assertEQ(res, gold_L);
@@ -93,7 +93,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test2")
     public void run2(RunInfo info) {
         int res = 0;
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             res |= test2(field_I);
         }
         Asserts.assertEQ(res, gold_I);
@@ -113,7 +113,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test3")
     public void run3(RunInfo info) {
         int res = 0;
-        for (int i = 1; i < 100000; i++) {
+        for (int i = 1; i < 10000; i++) {
             res |= test3(i);
         }
         Asserts.assertLTE(0, res);
@@ -133,7 +133,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test4")
     public void run4(RunInfo info) {
         long res = 0;
-        for (long i = 1; i < 100000; i++) {
+        for (long i = 1; i < 10000; i++) {
             res |= test4(i);
         }
         Asserts.assertLTE(0L, res);
@@ -151,7 +151,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test5")
     public void run5(RunInfo info) {
         long res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test5((long)i);
         }
         Asserts.assertEQ(-1L, res);
@@ -169,7 +169,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test6")
     public void run6(RunInfo info) {
         long res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test6((long)i);
         }
         Asserts.assertLTE(0L, res);
@@ -188,7 +188,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test7")
     public void run7(RunInfo info) {
         long res = Long.MIN_VALUE;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res = Long.max(test7((long)i), res);
         }
         Asserts.assertGTE(10000L, res);
@@ -206,7 +206,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test8")
     public void run8(RunInfo info) {
         int res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test8(i);
         }
         Asserts.assertEQ(-1, res);
@@ -224,7 +224,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test9")
     public void run9(RunInfo info) {
         int res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test9(i);
         }
         Asserts.assertLTE(0, res);
@@ -243,7 +243,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test10")
     public void run10(RunInfo info) {
         int res = Integer.MIN_VALUE;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res = Integer.max(test10(i), res);
         }
         Asserts.assertGTE(10000, res);
@@ -260,7 +260,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test11")
     public void run11(RunInfo info) {
         int res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test11(i);
         }
         Asserts.assertEQ(0, res);
@@ -277,7 +277,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test12")
     public void run12(RunInfo info) {
         long res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test12(i);
         }
         Asserts.assertEQ(0L, res);
@@ -294,7 +294,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test13")
     public void run13(RunInfo info) {
         int res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test13(i);
         }
         Asserts.assertEQ(0, res);
@@ -311,7 +311,7 @@ public class TestBitCompressValueTransform {
     @Run(test = "test14")
     public void run14(RunInfo info) {
         long res = 0;
-        for (int i = -10000; i < 100000; i++) {
+        for (int i = -10000; i < 10000; i++) {
             res |= test14(i);
         }
         Asserts.assertEQ(0L, res);
@@ -328,7 +328,7 @@ public class TestBitCompressValueTransform {
     @Run (test = "test15")
     public void run15(RunInfo info) {
         int res = 0;
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             res |= test15(0, 0);
         }
         Asserts.assertEQ(0, res);

@@ -252,53 +252,68 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
 
   // Case A) Constant mask
   if (mask_type->is_con()) {
-    // Case A.1 bit compression:-
-    // Result.Hi = popcount(1 << mask_bits - 1)
-    // Result.Lo = min iff mask == -1 assuming all source bits apart from most
-    //                                significant bit were set to 0
-    //       else
-    // Result.Lo = 0 iff atleast one mask bit is zero, corresponding source
-    // bit will be masked, hence result of bit compression will be a +ve
-    // value.
-    // e.g.
-    //  src = 0xXXXXXXXX (non-constant source)
-    //  mask = 0xEFFFFFFF (constant mask)
-    //  result.hi = 0x7FFFFFFF
-    //  result.lo = 0
     jlong maskcon = mask_type->get_con_as_long(bt);
     if (opc == Op_CompressBits) {
+      // Case A.1 bit compression:-
+      // For an outlier mask value of -1 upper bound of the result equals
+      // maximum integral value, for any other mask value its computed using
+      // following formula
+      //       Result.Hi = 1 << popcount(mask_bits) - 1
+      //
+      // For mask values other than -1, lower bound of the result is estimated
+      // as zero, by assuming at least one mask bit is zero and corresponding source
+      // bit will be masked, hence result of bit compression will always be
+      // non-negative value. For outlier mask value of -1, assume all source bits
+      // apart from most significant bit were set to 0, thereby resulting in
+      // a minimum integral value.
+      // e.g.
+      //  src = 0xXXXXXXXX (non-constant source)
+      //  mask = 0xEFFFFFFF (constant mask)
+      //  result.hi = 0x7FFFFFFF
+      //  result.lo = 0
       int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
-      hi = maskcon == -1L ? hi : (1UL << bitcount) - 1;
-      lo = maskcon == -1L ? lo : 0L;
+      if (maskcon != -1L) {
+        hi = (1UL << bitcount) - 1;
+        lo = 0L;
+      } else {
+        // preserve originally assigned hi (MAX_INT/LONG) and lo (MIN_INT/LONG) values.
+        assert(hi == (T_INT ? max_jint : max_jlong), "");
+        assert(lo == (T_INT ? min_jint : min_jlong), "");
+      }
     } else {
-    // Case A.2 bit expansion:-
-    //   Case A.2.1 constant mask >= 0
-    //     Result.Hi = mask, optimistically assuming all source bits
-    //     read starting from least significant bit positions are 1.
-    //     Result.Lo = 0, because at least one bit in mask is zero.
-    //   e.g.
-    //    src = 0xXXXXXXXX (non-constant source)
-    //    mask = 0x7FFFFFFF (constant mask >= 0)
-    //    result.hi = 0x7FFFFFFF
-    //    result.lo = 0
-
-    //   Case A.2.2) mask < 0
-    //     For constant mask strictly less than zero, the maximum result value will be
-    //     the same as the mask value with its sign bit flipped, assuming all source bits but the last
-    //     are set to 1.
-    //
-    //     To compute minimum result value we assume all but last read source bit as zero,
-    //     this is because sign bit of result will always be set to 1 while other bit
-    //     corresponding to set mask bit should be zero.
-    //   e.g.
-    //    src = 0xXXXXXXXX (non-constant source)
-    //    mask = 0xEFFFFFFF (constant mask)
-    //    result.hi = 0xEFFFFFFF ^ 0x80000000 = 0x6FFFFFFF
-    //    result.lo = 0x80000000
-    //
+      // Case A.2 bit expansion:-
       assert(opc == Op_ExpandBits, "");
-      hi = maskcon >= 0L ? maskcon : maskcon ^ lo;
-      lo = maskcon >= 0L ? 0L : lo;
+      if (maskcon >= 0L) {
+        //   Case A.2.1 constant mask >= 0
+        //     Result.Hi = mask, optimistically assuming all source bits
+        //     read starting from least significant bit positions are 1.
+        //     Result.Lo = 0, because at least one bit in mask is zero.
+        //   e.g.
+        //    src = 0xXXXXXXXX (non-constant source)
+        //    mask = 0x7FFFFFFF (constant mask >= 0)
+        //    result.hi = 0x7FFFFFFF
+        //    result.lo = 0
+        hi = maskcon;
+        lo = 0L;
+      } else {
+        //   Case A.2.2) mask < 0
+        //     For constant mask strictly less than zero, the maximum result value will be
+        //     the same as the mask value with its sign bit flipped, assuming all source bits
+        //     except the MSB bit are set(one).
+        //
+        //     To compute minimum result value we assume all but last read source bit as zero,
+        //     this is because sign bit of result will always be set to 1 while other bit
+        //     corresponding to set mask bit should be zero.
+        //   e.g.
+        //    src = 0xXXXXXXXX (non-constant source)
+        //    mask = 0xEFFFFFFF (constant mask)
+        //    result.hi = 0xEFFFFFFF ^ 0x80000000 = 0x6FFFFFFF
+        //    result.lo = 0x80000000
+        //
+        hi = maskcon ^ lo;
+        // lo still retains MIN_INT/LONG.
+        assert(lo == (T_INT ? min_jint : min_jlong), "");
+      }
     }
   }
 
@@ -344,23 +359,41 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         // greater than src.
         // Proof: Since src is a non-negative value, its most significant bit is always 0.
         // Thus even if the corresponding MSB of the mask is one, the result will be a +ve
-        // value. <the actual proof>
+        // value. There are three possible cases
+        //   a. All the mask bits corresponding to set source bits are unset(zero).
+        //   b. All the mask bits corresponding to set source bits are set(one)
+        //   c. Some mask bits corresponding to set source bits are set(one) while others are unset(zero)
+        //
+        // Case a. results into an allzero result, while Case b. gives us the upper bound which is equals source
+        // value, while for Case c. the result will lie within [0, src]
+        //
         hi = src_type->hi_as_long();
       }
 
       if (result_bit_width < mask_bit_width) {
         // Rule 3:
         // We can further constrain the upper bound of bit compression if the number of bits
-        // which can be set to 1 is less than the maximum number of bits of integral type.
+        // which can be set(one) is less than the maximum number of bits of integral type.
         hi = MIN2((jlong)((1UL << result_bit_width) - 1L), hi);
       }
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();
+      jlong min_mask = mask_type->lo_as_long();
       // Since mask here a range and not a constant value, hence being
       // conservative in determining the value range of result.
-      lo = mask_type->lo_as_long() >= 0L ? 0L : lo;
-      hi = mask_type->lo_as_long() >= 0L ? max_mask : hi;
+      if (min_mask >= 0L) {
+        // Lemma 2: Based on the integral type invariant ie. TypeInteger.lo <= TypeInteger.hi,
+        // if the lower bound of non-constant mask is a non-negative value then result can never
+        // be greater than the mask.
+        // Proof: Since lower bound of the mask is a non-negative value, hence most significant
+        // bit of its entire value must be unset(zero). Similar to the proof of Lemma1, upper and
+        // lower bounds of result will always match the bounds of the mask value range.
+        hi = max_mask;
+        lo = min_mask;
+      } else {
+        // preserve the lo and hi bounds estimated till now.
+      }
     }
   }
 
