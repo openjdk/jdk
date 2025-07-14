@@ -43,55 +43,60 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import org.openjdk.bench.util.InMemoryJavaCompiler;
 
-@State(Scope.Thread)
+@State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @Warmup(iterations = 5, time = 2)
 @Measurement(iterations = 5, time = 2)
 @BenchmarkMode(Mode.Throughput)
 public class ProtectionDomainBench {
-
     @Param({"100"})
-    public int numberOfClasses;
+    static int numberOfClasses;
 
     @Param({"10"})
-    public int numberOfCodeSources;
+    static int numberOfCodeSources;
 
-    static byte[][] compiledClasses;
-    static Class[] loadedClasses;
-    static String[] classNames;
-    static int index = 0;
-    static CodeSource[] cs;
+    @State(Scope.Thread)
+    public static class MyState {
 
-    static String B(int count) {
-        return "public class B" + count + " {"
-                + "   static int intField;"
-                + "   public static void compiledMethod() { "
-                + "       intField++;"
-                + "   }"
-                + "}";
-    }
+        byte[][] compiledClasses;
+        Class[] loadedClasses;
+        String[] classNames;
+        int index = 0;
+        CodeSource[] cs;
 
-    @Setup(Level.Trial)
-    public void setupClasses() throws Exception {
-        compiledClasses = new byte[numberOfClasses][];
-        loadedClasses = new Class[numberOfClasses];
-        classNames = new String[numberOfClasses];
-        cs = new CodeSource[numberOfCodeSources];
-
-        for (int i = 0; i < numberOfCodeSources; i++) {
-            @SuppressWarnings("deprecation")
-            URL u = new URL("file:/tmp/duke" + i);
-            cs[i] = new CodeSource(u, (java.security.cert.Certificate[]) null);
+        String B(int count, long n) {
+            return "public class B" + count + n +" {"
+                    + "   static int intField;"
+                    + "   public static void compiledMethod() { "
+                    + "       intField++;"
+                    + "   }"
+                    + "}";
         }
 
-        for (int i = 0; i < numberOfClasses; i++) {
-            classNames[i] = "B" + i;
-            compiledClasses[i] = InMemoryJavaCompiler.compile(classNames[i], B(i));
-        }
+        @Setup
+        public void setupClasses() throws Exception {
+            compiledClasses = new byte[numberOfClasses][];
+            loadedClasses = new Class[numberOfClasses];
+            classNames = new String[numberOfClasses];
+            cs = new CodeSource[numberOfCodeSources];
+            long n = Thread.currentThread().threadId();
+//System.out.println("XXX " + n);
 
+            for (int i = 0; i < numberOfCodeSources; i++) {
+                @SuppressWarnings("deprecation")
+                URL u = new URL("file:/tmp/duke" + i);
+                cs[i] = new CodeSource(u, (java.security.cert.Certificate[]) null);
+            }
+
+            for (int i = 0; i < numberOfClasses; i++) {
+                classNames[i] = "B" + i + n;
+//System.out.println("YYY " + classNames[i] +" ");
+                compiledClasses[i] = InMemoryJavaCompiler.compile(classNames[i], B(i, n));
+            }
+        }
     }
 
-    static class ProtectionDomainBenchLoader extends SecureClassLoader {
+    public class ProtectionDomainBenchLoader extends SecureClassLoader {
 
         ProtectionDomainBenchLoader() {
             super();
@@ -101,30 +106,29 @@ public class ProtectionDomainBench {
             super(parent);
         }
 
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.equals(classNames[index] /* "B" + index */)) {
-                assert compiledClasses[index]  != null;
-                return defineClass(name, compiledClasses[index] , 0, (compiledClasses[index]).length, cs[index % cs.length] );
+        protected Class<?> findClass(MyState state, String name) throws ClassNotFoundException {
+            if (name.equals(state.classNames[state.index] /* "B" + index */)) {
+                assert state.compiledClasses[state.index]  != null;
+                return defineClass(name, state.compiledClasses[state.index] , 0, (state.compiledClasses[state.index]).length, state.cs[state.index % state.cs.length] );
             } else {
                 return super.findClass(name);
             }
         }
     }
 
-    void work() throws ClassNotFoundException {
+    void work(MyState state) throws ClassNotFoundException {
         ProtectionDomainBench.ProtectionDomainBenchLoader loader1 = new
                 ProtectionDomainBench.ProtectionDomainBenchLoader();
 
-        for (index = 0; index < compiledClasses.length; index++) {
-            Class c = loader1.findClass(classNames[index]);
-            loadedClasses[index] = c;
+        for (state.index = 0; state.index < state.compiledClasses.length; state.index++) {
+            Class c = loader1.findClass(state, state.classNames[state.index]);
+            state.loadedClasses[state.index] = c;
         }
     }
 
     @Benchmark
     @Fork(value = 3)
-    public void noSecurityManager()  throws ClassNotFoundException {
-        work();
+    public void noSecurityManager(MyState state)  throws ClassNotFoundException {
+        work(state);
     }
 }
