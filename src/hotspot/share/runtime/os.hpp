@@ -372,7 +372,7 @@ class os: AllStatic {
   // exception processing)  There are guard pages, and above that shadow
   // pages for stack overflow checking.
   inline static bool uses_stack_guard_pages();
-  inline static bool must_commit_stack_guard_pages();
+  inline static bool must_allocate_stack_guard_pages();
   inline static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 

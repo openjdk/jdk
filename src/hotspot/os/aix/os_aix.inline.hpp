@@ -43,7 +43,7 @@ inline bool os::uses_stack_guard_pages() {
 // Whether or not calling code should/can commit/uncommit stack pages
 // before guarding them. Answer for AIX is definitely no, because memory
 // is automatically committed on touch.
-inline bool os::must_commit_stack_guard_pages() {
+inline bool os::must_allocate_stack_guard_pages() {
   assert(uses_stack_guard_pages(), "sanity check");
   return false;
 }

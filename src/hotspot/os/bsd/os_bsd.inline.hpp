@@ -38,17 +38,9 @@ inline bool os::uses_stack_guard_pages() {
   return true;
 }
 
-inline bool os::must_commit_stack_guard_pages() {
+inline bool os::must_allocate_stack_guard_pages() {
   assert(uses_stack_guard_pages(), "sanity check");
-#if !defined(__FreeBSD__) || __FreeBSD__ < 5
-  // Since FreeBSD 4 uses malloc() for allocating the thread stack
-  // there is no need to do anything extra to allocate the guard pages
   return false;
-#else
-  // FreeBSD 5+ uses mmap MAP_STACK for allocating the thread stacks.
-  // Must 'allocate' them or guard pages are ignored.
-  return true;
-#endif
 }
 
 // Bang the shadow pages if they need to be touched to be mapped.
