@@ -111,6 +111,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void do_full_collection(bool clear_all_soft_refs) override;
 
+  void print_tracing_info() const override;
+  void stop() override {};
+
 public:
   ParallelScavengeHeap() :
     CollectedHeap(),
@@ -212,7 +215,6 @@ public:
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
-  void print_tracing_info() const override;
 
   WorkerThreads* safepoint_workers() override { return &_workers; }
 
