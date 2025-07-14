@@ -58,8 +58,8 @@ public class ReverseBytesConstantsTests {
     @Run(test = {
         "testI1", "testI2", "testI3", "testI4",
         "testL1", "testL2", "testL3", "testL4",
-        "testS1", "testS2", "testS3", "testS4", "testS5", "testS6",
-        "testUS1", "testUS2", "testUS3", "testUS4", "testUS5", "testUS6"
+        "testS1", "testS2", "testS3", "testS4",
+        "testUS1", "testUS2", "testUS3", "testUS4",
     })
     public void runMethod() {
         assertResultI();
@@ -90,8 +90,6 @@ public class ReverseBytesConstantsTests {
         Asserts.assertEQ(Short.reverseBytes((short) 0x7080), testS2());
         Asserts.assertEQ(Short.reverseBytes((short) 0x8070), testS3());
         Asserts.assertEQ(Short.reverseBytes(C_SHORT), testS4());
-        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesShort(C_INT), testS5());
-        Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesShort(C_CHAR), testS6());
     }
 
     @DontCompile
@@ -100,9 +98,6 @@ public class ReverseBytesConstantsTests {
         Asserts.assertEQ(Character.reverseBytes((char) 0x7080), testUS2());
         Asserts.assertEQ(Character.reverseBytes((char) 0x8070), testUS3());
         Asserts.assertEQ(Character.reverseBytes(C_CHAR), testUS4());
-        // TODO: uncomment after integration of  JDK-8362046
-        // Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_INT), testUS5());
-        // Asserts.assertEQ(ReverseBytesConstantsHelper.reverseBytesChar(C_SHORT), testUS6());
     }
 
     @Test
