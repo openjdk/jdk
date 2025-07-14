@@ -367,27 +367,27 @@ void CompileQueue::add(CompileTask* task) {
  */
 void CompileQueue::delete_all() {
   MutexLocker mu(MethodCompileQueue_lock);
-  CompileTask* next = _first;
+  CompileTask* current = _first;
 
   // Iterate over all tasks in the compile queue
-  bool have_blocking_tasks = false;
-  while (next != nullptr) {
-    CompileTask* current = next;
-    next = current->next();
+  while (current != nullptr) {
     if (!current->is_blocking()) {
-      // Queued non-blocking task. No waiters, delete it now.
+      // Non-blocking task. No one is waiting for it, delete it now.
       delete current;
     } else {
-      // Blocking task. To avoid races with blocking waiters,
-      // we need to delegate the actual cleanup to them.
+      // Blocking task. By convention, it is the waiters responsibility
+      // to delete the task. We cannot delete it here, because we do not
+      // coordinate with waiters. We will notify them later.
     }
+    current = current->next();
   }
   _first = nullptr;
   _last = nullptr;
 
+  // Wake up all blocking task waiters to delete all remaining blocking
+  // tasks. This is not a performance sensitive path, so we do this
+  // unconditionally to simplify coding.
   {
-    // Notify all blocking task waiters to wake up and delete
-    // all remaining blocking tasks.
     MonitorLocker ml(Thread::current(), CompileTaskWait_lock);
     ml.notify_all();
   }
