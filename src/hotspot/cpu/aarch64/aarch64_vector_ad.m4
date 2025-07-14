@@ -5156,59 +5156,30 @@ BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
 // The Neon and SVE2 tbl instruction for two vector lookup requires both the source vectors to be
 // consecutive. The match rules for SelectFromTwoVector reserve two consecutive vector registers
 // for src1 and src2.
-// Four combinations of vector registers each for vselect_from_two_vectors_neon and
-// vselect_from_two_vectors_sve are chosen at random (two from volatile and two from non-volatile set)
-// which gives more freedom to the register allocator to choose the best pair of source registers
-// at that point.
+// Four combinations of vector registers for vselect_from_two_vectors are chosen at random
+// (two from volatile and two from non-volatile set) which gives more freedom to the register
+// allocator to choose the best pair of source registers at that point.
 dnl
-dnl SELECT_FROM_TWO_VECTORS_NEON($1,        $2        )
-dnl SELECT_FROM_TWO_VECTORS_NEON(first_reg, second_reg)
-define(`SELECT_FROM_TWO_VECTORS_NEON', `
-instruct vselect_from_two_vectors_neon_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
-                                             vReg index, vReg tmp) %{
-  predicate(UseSVE == 0 || (UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 16));
+dnl SELECT_FROM_TWO_VECTORS($1,        $2        )
+dnl SELECT_FROM_TWO_VECTORS(first_reg, second_reg)
+define(`SELECT_FROM_TWO_VECTORS', `
+instruct vselect_from_two_vectors_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+                                        vReg index, vReg tmp) %{
   effect(TEMP_DEF dst, TEMP tmp);
   match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  format %{ "vselect_from_two_vectors_Neon_$1_$2 $dst, $src1, $src2, $index\t# vector (8B/16B/4S/8S/2I/4I/2F/4F). KILL $tmp" %}
+  format %{ "vselect_from_two_vectors_$1_$2 $dst, $src1, $src2, $index\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_neon($dst$$FloatRegister, $src1$$FloatRegister,
-                                    $src2$$FloatRegister, $index$$FloatRegister,
-                                    $tmp$$FloatRegister, bt, /* isQ */ length_in_bytes == 16);
+    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister,
+                               $src2$$FloatRegister, $index$$FloatRegister,
+                               $tmp$$FloatRegister, bt, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
 
-dnl
-dnl SELECT_FROM_TWO_VECTORS_SVE($1,        $2        )
-dnl SELECT_FROM_TWO_VECTORS_SVE(first_reg, second_reg)
-define(`SELECT_FROM_TWO_VECTORS_SVE', `
-instruct vselect_from_two_vectors_sve_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
-                                            vReg index, vReg tmp) %{
-  predicate((UseSVE == 1 && Matcher::vector_length_in_bytes(n) == 8) || UseSVE == 2);
-  effect(TEMP_DEF dst, TEMP tmp);
-  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
-  format %{ "vselect_from_two_vectors_SVE_$1_$2 $dst, $src1, $src2, $index\t# KILL $tmp" %}
-  ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ select_from_two_vectors_sve($dst$$FloatRegister, $src1$$FloatRegister,
-                                   $src2$$FloatRegister, $index$$FloatRegister,
-                                   $tmp$$FloatRegister, get_reg_variant(this),
-                                   length_in_bytes);
-  %}
-  ins_pipe(pipe_slow);
-%}')dnl
-dnl
-// ----------------------------------- SelectFromTwoVector Neon ---------------------------------
-SELECT_FROM_TWO_VECTORS_NEON(10, 11)
-SELECT_FROM_TWO_VECTORS_NEON(12, 13)
-SELECT_FROM_TWO_VECTORS_NEON(17, 18)
-SELECT_FROM_TWO_VECTORS_NEON(23, 24)
-
-// ----------------------------------- SelectFromTwoVector SVE ----------------------------------
-SELECT_FROM_TWO_VECTORS_SVE(10, 11)
-SELECT_FROM_TWO_VECTORS_SVE(12, 13)
-SELECT_FROM_TWO_VECTORS_SVE(17, 18)
-SELECT_FROM_TWO_VECTORS_SVE(23, 24)
+SELECT_FROM_TWO_VECTORS(10, 11)
+SELECT_FROM_TWO_VECTORS(12, 13)
+SELECT_FROM_TWO_VECTORS(17, 18)
+SELECT_FROM_TWO_VECTORS(23, 24)
