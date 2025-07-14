@@ -2324,6 +2324,21 @@ public class RegExTest {
         check(p, "test\u00e4\u0300\u0323", true);
 
         Object[][] data = new Object[][] {
+        // JDK-8354490
+        // emoji + emoji_component pair forms a single grapheme but remains
+        // as 2 separate characters in nfc. match & find should still work with the
+        // CANON_EQ flag, as long as the character class is appropriately specified.
+        {"^[^/]*\\.[^/]*$", "\u2764\ufe0ffile.txt",    "m", true},
+        { "\\p{IsEmoji}",     "ab\u2764\ufe0fcd",      "f", true },
+        { "[\\p{IsEmoji}]",   "ab\u2764\ufe0fcd",      "f", true },
+        { "\\p{IsEmoji}\\p{IsEmoji_Component}",       "\u2764\ufe0f", "m", true },
+        { "[\\p{IsEmoji}\\p{IsEmoji_Component}]{2}",  "\u2764\ufe0f", "m", true },
+        // greek with extra combining character
+        {"\\p{IsGreek}", "\u1f80\u0345", "f", true},
+        {"[\\p{IsGreek}]", "\u1f80\u0345", "f", true},
+        {"\\p{IsGreek}\\p{IsAlphabetic}",             "\u1f80\u0345", "m", true},
+        {"\\p{IsAlphabetic}*",                        "\u1f80\u0345", "m", true},
+        {"[\\p{IsAlphabetic}]*",                      "\u1f80\u0345", "m", true},
 
         // JDK-4867170
         { "[\u1f80-\u1f82]", "ab\u1f80cd",             "f", true },

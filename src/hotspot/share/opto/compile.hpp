@@ -28,17 +28,18 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
-#include "compiler/compiler_globals.hpp"
-#include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/cHeapStringHolder.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/phasetype.hpp"
 #include "opto/phase.hpp"
+#include "opto/phasetype.hpp"
+#include "opto/printinlining.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -46,7 +47,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
-#include "opto/printinlining.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -308,7 +308,7 @@ class Compile : public Phase {
   InlineTree*           _ilt;                   // Ditto (temporary).
   address               _stub_function;         // VM entry for stub being compiled, or null
   const char*           _stub_name;             // Name of stub or adapter being compiled, or null
-  int                   _stub_id;               // unique id for stub or -1
+  StubId                   _stub_id;               // unique id for stub or NO_STUBID
   address               _stub_entry_point;      // Compile code entry for generated stub, or null
 
   // Control of this compilation.
@@ -572,7 +572,7 @@ public:
   InlineTree*       ilt() const                 { return _ilt; }
   address           stub_function() const       { return _stub_function; }
   const char*       stub_name() const           { return _stub_name; }
-  int               stub_id() const             { return _stub_id; }
+  StubId            stub_id() const             { return _stub_id; }
   address           stub_entry_point() const    { return _stub_entry_point; }
   void          set_stub_entry_point(address z) { _stub_entry_point = z; }
 
@@ -1145,7 +1145,7 @@ public:
   // convention.
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
-          int stub_id, int is_fancy_jump, bool pass_tls,
+          StubId stub_id, int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
   ~Compile();
