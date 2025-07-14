@@ -36,6 +36,8 @@
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
 import javax.swing.AbstractButton;
@@ -48,6 +50,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
 public class TestRadioAndCheckMenuItemWithIcon {
@@ -92,12 +95,22 @@ public class TestRadioAndCheckMenuItemWithIcon {
         g.fillRect(0, 0, img.getWidth(), img.getHeight());
         g.dispose();
 
+        BufferedImage img2 = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
+        Graphics g2 = img2.getGraphics();
+        g2.setColor(Color.red);
+        g2.fillRect(0, 0, img2.getWidth(), img2.getHeight());
+        g2.dispose();
+
         JFrame frame = new JFrame("RadioButtonWithImageIcon");
         ImageIcon imageIcon1 = new ImageIcon(img);
-        AbstractButton button1 = new JRadioButtonMenuItem("JRadioButtonMenuItem 1",
+        ImageIcon imageIcon2 = new ImageIcon(img2);
+        AbstractButton button1;
+        JRadioButtonMenuItem m1 = new JRadioButtonMenuItem("JRadioButtonMenuItem 1",
                 imageIcon1);
+        m1.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, ActionEvent.ALT_MASK|ActionEvent.CTRL_MASK|ActionEvent.SHIFT_MASK));
+        button1 = m1;
         button1.setSelected(true);
-        AbstractButton button2 = new JRadioButtonMenuItem("JRadioButtonMenuItem 2", imageIcon1);
+        AbstractButton button2 = new JRadioButtonMenuItem("JRadioButtonMenuItem 2", imageIcon2);
         AbstractButton button3 = new JRadioButtonMenuItem("JRadioButtonMenuItem 3");
 
         ButtonGroup buttonGroup = new ButtonGroup();
@@ -109,7 +122,9 @@ public class TestRadioAndCheckMenuItemWithIcon {
                 imageIcon1);
         check1.setSelected(true);
         AbstractButton check2 = new JCheckBoxMenuItem("JCheckBoxMenuItem 2", imageIcon1);
-        AbstractButton check3 = new JCheckBoxMenuItem("JCheckBoxMenuItem 3");
+        JCheckBoxMenuItem c3;
+        AbstractButton check3 = c3 = new JCheckBoxMenuItem("JCheckBoxMenuItem 3");
+        c3.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, ActionEvent.ALT_MASK|ActionEvent.CTRL_MASK|ActionEvent.SHIFT_MASK));
 
         JMenu topLevel = new JMenu("Menu");
 
@@ -122,6 +137,12 @@ public class TestRadioAndCheckMenuItemWithIcon {
         topLevel.add(check1);
         topLevel.add(check2);
         topLevel.add(check3);
+
+        AbstractButton menuitem1 = new JMenuItem("MenuItem1");
+        AbstractButton menuitem2 = new JMenuItem("MenuItem2", imageIcon1);
+        topLevel.addSeparator();
+        topLevel.add(menuitem1);
+        topLevel.add(menuitem2);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(topLevel);

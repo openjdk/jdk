@@ -926,14 +926,10 @@ public final class WindowsIconFactory implements Serializable
                                         getIconWidth(), getIconHeight(), backgroundState);
                                 skinWidth = getIconWidth();
                                 skin = xp.getSkin(c, part);
-                                if (icon == null) {
+                                if (icon == null || icon.getIconHeight() <= 16) {
                                     skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                                 } else {
-                                    if (icon.getIconHeight() > 16) {
-                                        skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
-                                    } else {
-                                        skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
-                                    }
+                                    skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
                                 }
                             }
                         }
@@ -943,7 +939,7 @@ public final class WindowsIconFactory implements Serializable
                     if (!isWindows11OrLater) {
                         icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     } else {
-                        icon.paintIcon(c, g, x + 6*OFFSET,
+                        icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
                                 y + OFFSET);
                     }
                 }
