@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
- 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.CharBuffer;
