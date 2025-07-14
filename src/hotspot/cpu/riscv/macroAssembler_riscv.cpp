@@ -4927,7 +4927,7 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  movptr(t1, ExternalAddress(CAST_FROM_FN_PTR(address, Thread::current)));
+  la(t1, ExternalAddress(CAST_FROM_FN_PTR(address, Thread::current)));
   jalr(t1);
   if (thread != c_rarg0) {
     mv(thread, c_rarg0);
