@@ -38,9 +38,9 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit CharBufferAsCharSequenceTest
  */
 public class CharBufferAsCharSequenceTest {
-    private static final List<Arguments> ARGS = new ArrayList<>();
 
-    static {
+    static List<Arguments> charBufferArguments() {
+        List<Arguments> args = new ArrayList<>();
         char[] buf = new char[1273];
         for (int i = 0; i < buf.length; ++i) {
             buf[i] = (char) i;
@@ -49,39 +49,36 @@ public class CharBufferAsCharSequenceTest {
 
         for (int i = 0; i < 29; i += 7) {
             CharBuffer buffer = CharBuffer.wrap(buf, i, buf.length - i);
-            ARGS.add(Arguments.of(buffer, buf, i, buf.length, "HeapCharBuffer index " + i + " to end"));
-            ARGS.add(Arguments.of(buffer.slice(), buf, i, buf.length, "HeapCharBuffer slice " + i + " to end"));
+            args.add(Arguments.of(buffer, buf, i, buf.length, "HeapCharBuffer index " + i + " to end"));
+            args.add(Arguments.of(buffer.slice(), buf, i, buf.length, "HeapCharBuffer slice " + i + " to end"));
 
-            ARGS.add(Arguments.of(CharBuffer.wrap(new String(buf, i, buf.length - i)), buf, i, buf.length,
+            args.add(Arguments.of(CharBuffer.wrap(new String(buf, i, buf.length - i)), buf, i, buf.length,
                     "StringCharBuffer index " + i + " to end"));
             buffer = CharBuffer.wrap(stringBuf);
             buffer.position(i);
-            ARGS.add(Arguments.of(buffer.slice(), buf, i, buf.length, "StringCharBuffer slice " + i + " to end"));
+            args.add(Arguments.of(buffer.slice(), buf, i, buf.length, "StringCharBuffer slice " + i + " to end"));
 
             if (i > 0) {
                 buffer = CharBuffer.wrap(buf, 1, buf.length - 1).slice();
                 buffer.position(i - 1);
-                ARGS.add(Arguments.of(buffer, buf, i, buf.length,
+                args.add(Arguments.of(buffer, buf, i, buf.length,
                         "HeapCharBuffer slice/offset 1 index " + (i - 1) + " to end"));
 
                 int end = buf.length - i;
 
                 buffer = CharBuffer.wrap(buf, i, buf.length - (2 * i));
-                ARGS.add(Arguments.of(buffer, buf, i, end, "HeapCharBuffer index " + i + " to " + end));
-                ARGS.add(Arguments.of(buffer.slice(), buf, i, end, "HeapCharBuffer slice " + i + " to " + end));
+                args.add(Arguments.of(buffer, buf, i, end, "HeapCharBuffer index " + i + " to " + end));
+                args.add(Arguments.of(buffer.slice(), buf, i, end, "HeapCharBuffer slice " + i + " to " + end));
 
-                ARGS.add(Arguments.of(CharBuffer.wrap(new String(buf, i, buf.length - (2 * i))), buf, i, end,
+                args.add(Arguments.of(CharBuffer.wrap(new String(buf, i, buf.length - (2 * i))), buf, i, end,
                         "StringCharBuffer index " + i + " to " + end));
                 buffer = CharBuffer.wrap(stringBuf);
                 buffer.position(i);
                 buffer.limit(end);
-                ARGS.add(Arguments.of(buffer.slice(), buf, i, end, "StringCharBuffer slice " + i + " to " + end));
+                args.add(Arguments.of(buffer.slice(), buf, i, end, "StringCharBuffer slice " + i + " to " + end));
             }
         }
-    }
-
-    static List<Arguments> charBufferArguments() {
-        return ARGS;
+        return args;
     }
 
     @ParameterizedTest
