@@ -55,4 +55,6 @@ public class UCDFiles {
         UCD_DIR.resolve("UnicodeData.txt");
     public static Path EMOJI_DATA =
         UCD_DIR.resolve("emoji").resolve("emoji-data.txt");
+    public static Path CASEFOLDING =
+        UCD_DIR.resolve("CaseFolding.txt");
 }
