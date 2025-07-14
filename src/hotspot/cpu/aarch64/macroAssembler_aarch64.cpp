@@ -856,7 +856,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 }
 
 // Check the entry target is always reachable from any branch.
-bool MacroAssembler::is_always_within_branch_range(Address entry) {
+static bool is_always_within_branch_range(Address entry) {
   if (AOTCodeCache::is_on_for_dump()) {
     return false;
   }

@@ -105,9 +105,6 @@ class MacroAssembler: public Assembler {
   static KlassDecodeMode klass_decode_mode();
 
  public:
-  // Check the entry target is always reachable from any branch.
-  static bool is_always_within_branch_range(Address entry);
-
   // Checks the decode mode and returns false if not compatible with preferred decoding mode.
   static bool check_klass_decode_mode(address base, int shift, const size_t range);
 
