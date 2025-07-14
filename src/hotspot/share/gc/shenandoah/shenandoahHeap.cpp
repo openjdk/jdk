@@ -1454,25 +1454,20 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
 
 size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
-
-  oop humongous_obj = cast_to_oop(start->bottom());
-  size_t size = humongous_obj->size();
-  size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-  size_t index = start->index() + required_regions - 1;
-
   assert(!start->has_live(), "liveness must be zero");
 
-  for(size_t i = 0; i < required_regions; i++) {
-    // Reclaim from tail. Otherwise, assertion fails when printing region to trace log,
-    // as it expects that every region belongs to a humongous region starting with a humongous start region.
-    ShenandoahHeapRegion* region = get_region(index --);
-
+  // Do not try to get the size of this humongous object. STW collections will
+  // have already unloaded classes, so the object may have a bad klass pointer.
+  int regions_trashed = 0;
+  ShenandoahHeapRegion* region = start;
+  do {
     assert(region->is_humongous(), "expect correct humongous start or continuation");
     assert(!region->is_cset(), "Humongous region should not be in collection set");
-
     region->make_trash_immediate();
-  }
-  return required_regions;
+    regions_trashed++;
+    region = get_region(region->index() + 1);
+  } while (region != nullptr && region->is_humongous_continuation());
+  return regions_trashed;
 }
 
 class ShenandoahCheckCleanGCLABClosure : public ThreadClosure {
