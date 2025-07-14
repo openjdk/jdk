@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,21 @@
  * questions.
  */
 
-import java.applet.Applet;
-import java.awt.HeadlessException;
-
 /*
  * @test
- * @summary Check HeadlessException occurrence when trying to create Applet
- *          in headless mode
- * @run main/othervm -Djava.awt.headless=true HeadlessApplet
+ * @bug 8356137
+ * @summary This test verifies a non-zero transparent pixel in gifs works when
+ * the disposal method changes from 2 to 1
  */
 
-public class HeadlessApplet {
-
-    public static void main(String args[]) {
-        boolean noExceptions = true;
-
-        try {
-            Applet a = new Applet();
-        } catch (HeadlessException e) {
-            noExceptions = false;
-        }
-
-        if (noExceptions) {
-            throw new RuntimeException("No HeadlessException occured when creating Applet in headless mode");
-        }
+public class GifEmptyBackgroundTest {
+    public static void main(String[] args) throws Throwable {
+        GifBuilder.test(
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.restoreToBackgroundColor, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false) );
     }
 }

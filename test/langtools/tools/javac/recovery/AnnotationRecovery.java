@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8270139
+ * @bug 8270139 8361445
  * @summary Verify error recovery w.r.t. annotations
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,8 +33,10 @@
  */
 
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import toolbox.JavacTask;
 import toolbox.Task.Expect;
@@ -107,6 +109,118 @@ public class AnnotationRecovery extends TestRunner {
 
         if (!Objects.equals(actual, expected)) {
             error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8361445
+    public void testSuppressWarningsErroneousAttribute1() throws Exception {
+        String code = """
+                      @SuppressWarnings(CONST)
+                      public class Test {
+                          public static final String CONST = "";
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:1:19: compiler.err.cant.resolve: kindname.variable, CONST, , ",
+                "1 error"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8361445
+    public void testSuppressWarningsErroneousAttribute2() throws Exception {
+        String code = """
+                      @SuppressWarnings(0)
+                      public class Test {
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:1:19: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)",
+                "1 error"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test //JDK-8361445
+    public void testSuppressWarningsErroneousAttribute3() throws Exception {
+        String[] attributeValues = {
+            "Test.BOOLEAN",
+            "Test.BYTE",
+            "Test.SHORT",
+            "Test.INT",
+            "Test.LONG",
+            "Test.FLOAT",
+            "Test.DOUBLE",
+            "Test.CHAR",
+            "Test.class",
+            "@Deprecated",
+            "E.A",
+        };
+        Set<String> variants = new HashSet<>();
+
+        for (String attributeValue : attributeValues) {
+            variants.add(attributeValue);
+            variants.add("{" + attributeValue + "}");
+        }
+
+        for (String attributeValue1 : attributeValues) {
+            for (String attributeValue2 : attributeValues) {
+                variants.add("{" + attributeValue1 + ", " + attributeValue2 + "}");
+            }
+        }
+
+        String code = """
+                      @SuppressWarnings($ATTRIBUTE_VALUE)
+                      public class Test {
+                          public static final boolean BOOLEAN = false;
+                          public static final byte BYTE = 0;
+                          public static final short SHORT = 0;
+                          public static final int INT = 0;
+                          public static final long LONG = 0l;
+                          public static final float FLOAT = 0.0;
+                          public static final double DOUBLE = 0.0;
+                          public static final char CHAR = '\0';
+                      }
+                      enum E {
+                          A
+                      }
+                      """;
+
+        for (String variant : variants) {
+            System.out.println("current variant: " + variant);
+            Path curPath = Path.of(".");
+            List<String> actual = new JavacTask(tb)
+                    .options("-XDrawDiagnostics", "-XDdev")
+                    .sources(code.replace("$ATTRIBUTE_VALUE", variant))
+                    .outdir(curPath)
+                    .run(Expect.FAIL)
+                    .getOutputLines(OutputKind.DIRECT);
+
+            if (actual.isEmpty() || !actual.get(actual.size() - 1).contains("error")) {
+                error("Incorrect actual errors: " + actual + " for variant: " + variant);
+            }
         }
     }
 
