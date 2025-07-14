@@ -33,7 +33,7 @@ import static java.util.Map.entry;
 
 public final class CaseFolding {
 
-    private static Map<Integer, Integer> expanded_casefolding = Map.ofEntries(
+    private static final Map<Integer, Integer> expanded_casefolding = Map.ofEntries(
 %%%Entries
     );
 
@@ -50,10 +50,10 @@ public final class CaseFolding {
      * character class is expected to be closed under simple case folding. See the standard for the
      * detailed explanation and example of "closed".
      * <p>
-     * RL1.5 states: To meet this requirement, an implementation that supports cse-sensitive matching should
+     * RL1.5 states: To meet this requirement, an implementation that supports case-sensitive matching should
      * <ol>
      * <li>Provide at least the simple, default Unicode case-insensitive matching, and</li>
-     * <li>Specify which character properties or constructs are closed under the matching.
+     * <li>Specify which character properties or constructs are closed under the matching.</li>
      * </ol>
      * <p>
      * In the {@code  Pattern} implementation, 5 types of constructs maybe case-sensitive when matching:

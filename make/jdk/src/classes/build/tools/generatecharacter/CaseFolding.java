@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 public class CaseFolding {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Throwable {
         if (args.length != 3) {
             System.err.println("Usage: java CaseFolding TemplateFile CaseFolding.txt CaseFolding.java");
             System.exit(1);
@@ -43,36 +43,31 @@ public class CaseFolding {
         var caseFoldingTxt = Paths.get(args[1]);
         var genSrcFile = Paths.get(args[2]);
         var supportedTypes = "^.*; [CTS]; .*$";
-        try (Stream<String> lines = Files.lines(caseFoldingTxt)) {
-            var caseFoldingEntries = lines.filter(line -> !line.startsWith("#") && line.matches(supportedTypes))
-                 .map(line -> {
-                    String[] cols = line.split("; ");
-                    return new String[] {cols[0], cols[1], cols[2]};
-                 })
-                .filter(cols -> {
-                    //  the folding case doesn't map back to the original char.
-                    var cp1 = Integer.parseInt(cols[0], 16);
-                    var cp2 = Integer.parseInt(cols[2], 16);
-                    return Character.toUpperCase(cp2) != cp1 && Character.toLowerCase(cp2) != cp1;
-                 })
-                .map(cols -> String.format("        entry(0x%s, 0x%s),", cols[0], cols[2]))
-                .collect(Collectors.joining("\n"))
-                .replaceFirst(",$", "");  // remove the last ','
+        var caseFoldingEntries = Files.lines(caseFoldingTxt)
+            .filter(line -> !line.startsWith("#") && line.matches(supportedTypes))
+            .map(line -> {
+                String[] cols = line.split("; ");
+                return new String[] {cols[0], cols[1], cols[2]};
+            })
+            .filter(cols -> {
+                //  the folding case doesn't map back to the original char.
+                var cp1 = Integer.parseInt(cols[0], 16);
+                var cp2 = Integer.parseInt(cols[2], 16);
+                return Character.toUpperCase(cp2) != cp1 && Character.toLowerCase(cp2) != cp1;
+            })
+            .map(cols -> String.format("        entry(0x%s, 0x%s)", cols[0], cols[2]))
+            .collect(Collectors.joining(",\n", "", ""));
 
-            // hack, hack, hack! the logic does not pick 0131. just add manually to support 'I's.
-            // 0049; T; 0131; # LATIN CAPITAL LETTER I
-            final String T_0x0131_0x49 = String.format("        entry(0x%04x, 0x%04x),\n", 0x0131, 0x49);
+        // hack, hack, hack! the logic does not pick 0131. just add manually to support 'I's.
+        // 0049; T; 0131; # LATIN CAPITAL LETTER I
+        final String T_0x0131_0x49 = String.format("        entry(0x%04x, 0x%04x),\n", 0x0131, 0x49);
 
-            // Generate .java file
-            Files.write(
-                genSrcFile,
-                Files.lines(templateFile)
-                    .map(line -> line.contains("%%%Entries") ? T_0x0131_0x49 + caseFoldingEntries : line)
-                    .collect(Collectors.toList()),
-                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        // Generate .java file
+        Files.write(
+            genSrcFile,
+            Files.lines(templateFile)
+                .map(line -> line.contains("%%%Entries") ? T_0x0131_0x49 + caseFoldingEntries : line)
+                .collect(Collectors.toList()),
+            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 }
