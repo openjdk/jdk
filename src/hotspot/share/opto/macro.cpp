@@ -94,8 +94,7 @@ void PhaseMacroExpand::migrate_outs(Node *old, Node *target) {
 }
 
 Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word) {
-  Node* cmp;
-  cmp = word;
+  Node* cmp = word;
   Node* bol = transform_later(new BoolNode(cmp, BoolTest::ne));
   IfNode* iff = new IfNode( ctrl, bol, PROB_MIN, COUNT_UNKNOWN );
   transform_later(iff);
