@@ -102,9 +102,8 @@ address NativeFarCall::reloc_destination() {
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr && code->is_nmethod(), "nmethod expected");
-  nmethod* nm = code->as_nmethod();
 
-  address stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, nm);
+  address stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
   if (stub_addr != nullptr) {
     stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
   }
@@ -152,8 +151,7 @@ bool NativeFarCall::reloc_set_destination(address dest) {
 
   address stub_addr = nullptr;
   if (code->is_nmethod()) {
-    nmethod* nm = code->as_nmethod();
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, nm);
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
   }
   if (stub_addr != nullptr) {
     MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
