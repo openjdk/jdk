@@ -1015,13 +1015,6 @@ public class Long256VectorTests extends AbstractVectorTest {
             })
     );
 
-        static final List<IntFunction<long[]>> LONG_GENERATORS_SATURATING_ASSOC = List.of(
-                withToString("long[i * 5]", (int s) -> {
-                    return fill(s * BUFFER_REPS,
-                                i -> (long)(i * 5));
-                })
-        );
-
     static final List<IntFunction<long[]>> LONG_SATURATING_GENERATORS = List.of(
             withToString("long[Long.MIN_VALUE]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1071,20 +1064,16 @@ public class Long256VectorTests extends AbstractVectorTest {
                 flatMap(fa -> LONG_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
-    static final List<List<IntFunction<long[]>>> LONG_SATURATING_GENERATOR_PAIRS_ASSOC =
-        Stream.of(LONG_GENERATORS_SATURATING_ASSOC.get(0)).
-                flatMap(fa -> LONG_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb))).
-                collect(Collectors.toList());
-
     static final List<List<IntFunction<long[]>>> LONG_SATURATING_GENERATOR_PAIRS =
         Stream.of(LONG_GENERATORS.get(0)).
                 flatMap(fa -> LONG_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<long[]>>> LONG_SATURATING_GENERATOR_TRIPLETS =
-           LONG_SATURATING_GENERATOR_PAIRS_ASSOC.stream().
-                   flatMap(pair -> LONG_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
-                   collect(Collectors.toList());
+            Stream.of(LONG_GENERATORS.get(1))
+                    .flatMap(fa -> LONG_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb)))
+                    .flatMap(pair -> LONG_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f)))
+                    .collect(Collectors.toList());
 
     @DataProvider
     public Object[][] boolUnaryOpProvider() {

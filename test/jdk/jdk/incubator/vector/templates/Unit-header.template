@@ -1297,13 +1297,6 @@ relativeError));
     );
 
 #if[!FP]
-        static final List<IntFunction<$type$[]>> $TYPE$_GENERATORS_SATURATING_ASSOC = List.of(
-                withToString("$type$[i * 5]", (int s) -> {
-                    return fill(s * BUFFER_REPS,
-                                i -> ($type$)(i * 5));
-                })
-        );
-
     static final List<IntFunction<$type$[]>> $TYPE$_SATURATING_GENERATORS = List.of(
             withToString("$type$[$Boxtype$.MIN_VALUE]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1355,20 +1348,16 @@ relativeError));
                 collect(Collectors.toList());
 
 #if[!FP]
-    static final List<List<IntFunction<$type$[]>>> $TYPE$_SATURATING_GENERATOR_PAIRS_ASSOC =
-        Stream.of($TYPE$_GENERATORS_SATURATING_ASSOC.get(0)).
-                flatMap(fa -> $TYPE$_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb))).
-                collect(Collectors.toList());
-
     static final List<List<IntFunction<$type$[]>>> $TYPE$_SATURATING_GENERATOR_PAIRS =
         Stream.of($TYPE$_GENERATORS.get(0)).
                 flatMap(fa -> $TYPE$_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<$type$[]>>> $TYPE$_SATURATING_GENERATOR_TRIPLETS =
-           $TYPE$_SATURATING_GENERATOR_PAIRS_ASSOC.stream().
-                   flatMap(pair -> $TYPE$_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
-                   collect(Collectors.toList());
+            Stream.of($TYPE$_GENERATORS.get(1))
+                    .flatMap(fa -> $TYPE$_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb)))
+                    .flatMap(pair -> $TYPE$_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f)))
+                    .collect(Collectors.toList());
 
 #end[!FP]
     @DataProvider
