@@ -36,72 +36,15 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 
-CompileTask*  CompileTask::_task_free_list = nullptr;
 int CompileTask::_active_tasks = 0;
 
-/**
- * Allocate a CompileTask, from the free list if possible.
- */
-CompileTask* CompileTask::allocate() {
-  MonitorLocker locker(CompileTaskAlloc_lock);
-  CompileTask* task = nullptr;
-
-  if (_task_free_list != nullptr) {
-    task = _task_free_list;
-    _task_free_list = task->next();
-    task->set_next(nullptr);
-  } else {
-    task = new CompileTask();
-    task->set_next(nullptr);
-    task->set_is_free(true);
-  }
-  assert(task->is_free(), "Task must be free.");
-  task->set_is_free(false);
-  _active_tasks++;
-  return task;
-}
-
-/**
-* Add a task to the free list.
-*/
-void CompileTask::free(CompileTask* task) {
-  MonitorLocker locker(CompileTaskAlloc_lock);
-  if (!task->is_free()) {
-    if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder))) {
-      JNIHandles::destroy_weak_global(task->_method_holder);
-    } else {
-      JNIHandles::destroy_global(task->_method_holder);
-    }
-    if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
-      os::free((void*) task->_failure_reason);
-    }
-    task->_failure_reason = nullptr;
-    task->_failure_reason_on_C_heap = false;
-
-    task->set_is_free(true);
-    task->set_next(_task_free_list);
-    _task_free_list = task;
-    _active_tasks--;
-    if (_active_tasks == 0) {
-      locker.notify_all();
-    }
-  }
-}
-
-void CompileTask::wait_for_no_active_tasks() {
-  MonitorLocker locker(CompileTaskAlloc_lock);
-  while (_active_tasks > 0) {
-    locker.wait();
-  }
-}
-
-void CompileTask::initialize(int compile_id,
-                             const methodHandle& method,
-                             int osr_bci,
-                             int comp_level,
-                             int hot_count,
-                             CompileTask::CompileReason compile_reason,
-                             bool is_blocking) {
+CompileTask::CompileTask(int compile_id,
+                         const methodHandle& method,
+                         int osr_bci,
+                         int comp_level,
+                         int hot_count,
+                         CompileReason compile_reason,
+                         bool is_blocking) {
   Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
@@ -133,6 +76,33 @@ void CompileTask::initialize(int compile_id,
   _arena_bytes = 0;
 
   _next = nullptr;
+
+  Atomic::add(&_active_tasks, 1, memory_order_relaxed);
+}
+
+CompileTask::~CompileTask() {
+  if (_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder)) {
+    JNIHandles::destroy_weak_global(_method_holder);
+  } else {
+    JNIHandles::destroy_global(_method_holder);
+  }
+  if (_failure_reason_on_C_heap && _failure_reason != nullptr) {
+    os::free((void*) _failure_reason);
+    _failure_reason = nullptr;
+    _failure_reason_on_C_heap = false;
+  }
+
+  if (Atomic::sub(&_active_tasks, 1, memory_order_relaxed) == 0) {
+    MonitorLocker wait_ml(CompileTaskWait_lock);
+    wait_ml.notify_all();
+  }
+}
+
+void CompileTask::wait_for_no_active_tasks() {
+  MonitorLocker locker(CompileTaskWait_lock);
+  while (Atomic::load(&_active_tasks) > 0) {
+    locker.wait();
+  }
 }
 
 /**
