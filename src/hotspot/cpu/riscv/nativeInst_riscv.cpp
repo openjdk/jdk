@@ -101,9 +101,13 @@ address NativeFarCall::reloc_destination() {
   assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != nullptr && code->is_nmethod(), "nmethod expected");
+  assert(code != nullptr, "Could not find the containing code blob");
 
-  address stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
+  address stub_addr = nullptr;
+  if (code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
+  }
+
   if (stub_addr != nullptr) {
     stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
   }

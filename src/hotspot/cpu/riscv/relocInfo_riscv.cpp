@@ -73,11 +73,11 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be a call here");
-  if (orig_addr == nullptr) {
-    if (NativeCall::is_at(addr())) {
-      return nativeCall_at(addr())->reloc_destination();
-    }
-  } else {
+  if (NativeCall::is_at(addr())) {
+    return nativeCall_at(addr())->reloc_destination();
+  }
+
+  if (orig_addr != nullptr) {
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
     // If call is branch to self, don't try to relocate it, just leave it
     // as branch to self. This happens during code generation if the code
@@ -86,6 +86,7 @@ address Relocation::pd_call_destination(address orig_addr) {
     new_addr = (new_addr == orig_addr) ? addr() : new_addr;
     return new_addr;
   }
+
   return MacroAssembler::pd_call_destination(addr());
 }
 
