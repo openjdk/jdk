@@ -572,7 +572,7 @@ class LoadStore {
         }
     }
 
-    SingleNest.DoubleNest double_nest = new SingleNest.DoubleNest();
+    SingleNest.DoubleNest doubleNest = new SingleNest.DoubleNest();
 
 
     @Test
@@ -760,7 +760,7 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
     public int loadDoubleNested() {
-        return double_nest.i;
+        return doubleNest.i;
     }
 
     @Test
@@ -783,6 +783,6 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
     public void storeDoubleNested() {
-        double_nest.i = 1;
+        doubleNest.i = 1;
     }
 }
