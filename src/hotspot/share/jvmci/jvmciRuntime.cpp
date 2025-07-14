@@ -743,6 +743,7 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
                                   bool is_default,
+                                  bool profile_deopt,
                                   FailedSpeculation** failed_speculations)
 {
   _failed_speculations = failed_speculations;
@@ -757,10 +758,12 @@ void JVMCINMethodData::initialize(int nmethod_mirror_index,
     _properties.bits._has_name = 0;
   }
   _properties.bits._is_default = is_default;
+  _properties.bits._profile_deopt = profile_deopt;
 }
 
 void JVMCINMethodData::copy(JVMCINMethodData* data) {
-  initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_properties.bits._is_default, data->_failed_speculations);
+  initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_properties.bits._is_default,
+             data->_properties.bits._profile_deopt, data->_failed_speculations);
 }
 
 void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
@@ -2082,6 +2085,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   char* failure_detail = nullptr;
 
   bool install_default = JVMCIENV->get_HotSpotNmethod_isDefault(nmethod_mirror) != 0;
+  bool profile_deopt = JVMCIENV->get_HotSpotNmethod_profileDeopt(nmethod_mirror) != 0;
   assert(JVMCIENV->isa_HotSpotNmethod(nmethod_mirror), "must be");
   JVMCIObject name = JVMCIENV->get_InstalledCode_name(nmethod_mirror);
   const char* nmethod_mirror_name = name.is_null() ? nullptr : JVMCIENV->as_utf8_string(name);
@@ -2150,6 +2154,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                         nmethod_entry_patch_offset,
                                                         nmethod_mirror_name,
                                                         install_default,
+                                                        profile_deopt,
                                                         failed_speculations);
       nm =  nmethod::new_nmethod(method,
                                  compile_id,

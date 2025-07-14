@@ -32,7 +32,7 @@
 #include "memory/allStatic.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/stubDeclarations.hpp"
+#include "runtime/stubInfo.hpp"
 #include "utilities/macros.hpp"
 
 class AdapterHandlerEntry;
@@ -45,44 +45,34 @@ class vframeStream;
 // Java exceptions), locking/unlocking mechanisms, statistical
 // information, etc.
 
-// define SharedStubId enum tags: wrong_method_id, etc
-
-#define SHARED_STUB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
-enum class SharedStubId :int {
-  NO_STUBID = -1,
-  SHARED_STUBS_DO(SHARED_STUB_ID_ENUM_DECLARE)
-  NUM_STUBIDS
-};
-#undef SHARED_STUB_ID_ENUM_DECLARE
-
 class SharedRuntime: AllStatic {
  private:
   // Declare shared stub fields
 #define SHARED_STUB_FIELD_DECLARE(name, type) \
-  static type        BLOB_FIELD_NAME(name);
+  static type*       BLOB_FIELD_NAME(name);
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DECLARE)
 #undef SHARED_STUB_FIELD_DECLARE
 
 #ifdef ASSERT
-  static bool is_resolve_id(SharedStubId id) {
-    return (id == SharedStubId::wrong_method_id ||
-            id == SharedStubId::wrong_method_abstract_id ||
-            id == SharedStubId::ic_miss_id ||
-            id == SharedStubId::resolve_opt_virtual_call_id ||
-            id == SharedStubId::resolve_virtual_call_id ||
-            id == SharedStubId::resolve_static_call_id);
+  static bool is_resolve_id(StubId id) {
+    return (id == StubId::shared_wrong_method_id ||
+            id == StubId::shared_wrong_method_abstract_id ||
+            id == StubId::shared_ic_miss_id ||
+            id == StubId::shared_resolve_opt_virtual_call_id ||
+            id == StubId::shared_resolve_virtual_call_id ||
+            id == StubId::shared_resolve_static_call_id);
   }
-  static bool is_polling_page_id(SharedStubId id) {
-    return (id == SharedStubId::polling_page_vectors_safepoint_handler_id ||
-            id == SharedStubId::polling_page_safepoint_handler_id ||
-            id == SharedStubId::polling_page_return_handler_id);
+  static bool is_polling_page_id(StubId id) {
+    return (id == StubId::shared_polling_page_vectors_safepoint_handler_id ||
+            id == StubId::shared_polling_page_safepoint_handler_id ||
+            id == StubId::shared_polling_page_return_handler_id);
   }
-  static bool is_throw_id(SharedStubId id) {
-    return (id == SharedStubId::throw_AbstractMethodError_id ||
-            id == SharedStubId::throw_IncompatibleClassChangeError_id ||
-            id == SharedStubId::throw_NullPointerException_at_call_id ||
-            id == SharedStubId::throw_StackOverflowError_id ||
-            id == SharedStubId::throw_delayed_StackOverflowError_id);
+  static bool is_throw_id(StubId id) {
+    return (id == StubId::shared_throw_AbstractMethodError_id ||
+            id == StubId::shared_throw_IncompatibleClassChangeError_id ||
+            id == StubId::shared_throw_NullPointerException_at_call_id ||
+            id == StubId::shared_throw_StackOverflowError_id ||
+            id == StubId::shared_throw_delayed_StackOverflowError_id);
   }
 #endif
 
@@ -92,18 +82,15 @@ class SharedRuntime: AllStatic {
   // counterpart the continuation do_enter method.
   static nmethod*            _cont_doYield_stub;
 
-  // Stub names indexed by SharedStubId
-  static const char *_stub_names[];
-
 #ifndef PRODUCT
   // Counters
   static int64_t _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
 #endif // !PRODUCT
 
  private:
-  static SafepointBlob* generate_handler_blob(SharedStubId id, address call_ptr);
-  static RuntimeStub*   generate_resolve_blob(SharedStubId id, address destination);
-  static RuntimeStub*   generate_throw_exception(SharedStubId id, address runtime_entry);
+  static SafepointBlob* generate_handler_blob(StubId id, address call_ptr);
+  static RuntimeStub*   generate_resolve_blob(StubId id, address destination);
+  static RuntimeStub*   generate_throw_exception(StubId id, address runtime_entry);
  public:
   static void generate_initial_stubs(void);
   static void generate_stubs(void);
@@ -118,9 +105,9 @@ class SharedRuntime: AllStatic {
 #endif
   static void init_adapter_library();
 
-  static const char *stub_name(SharedStubId id) {
-    assert(id > SharedStubId::NO_STUBID && id < SharedStubId::NUM_STUBIDS, "stub id out of range");
-    return _stub_names[(int)id];
+  static const char *stub_name(StubId id) {
+    assert(StubInfo::is_shared(id), "not a shared stub %s", StubInfo::name(id));
+    return StubInfo::name(id);
   }
 
   // max bytes for each dtrace string parameter
