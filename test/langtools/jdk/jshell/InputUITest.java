@@ -87,11 +87,11 @@ public class InputUITest extends UITesting {
 
     public void testUserInputWithCtrlDAndMultipleSnippets() throws Exception {
         doRunTest((inputSink, out) -> {
-            inputSink.write("IO.readln()\n\u0004");
+            inputSink.write("IO.readln()\n " + CTRL_D);
             waitOutput(out, patternQuote("==> null"));
             inputSink.write("IO.readln()\nAB\n");
             waitOutput(out, patternQuote("==> \"AB\""));
-            inputSink.write("System.in.read()\n\u0004");
+            inputSink.write("System.in.read()\n" + CTRL_D);
             waitOutput(out, patternQuote("==> -1"));
             inputSink.write("System.in.read()\nA\n");
             waitOutput(out, patternQuote("==> 65"));
