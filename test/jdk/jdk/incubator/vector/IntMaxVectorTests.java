@@ -1030,6 +1030,13 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             })
     );
 
+        static final List<IntFunction<int[]>> INT_GENERATORS_SATURATING_ASSOC = List.of(
+                withToString("int[i * 5]", (int s) -> {
+                    return fill(s * BUFFER_REPS,
+                                i -> (int)(i * 5));
+                })
+        );
+
     static final List<IntFunction<int[]>> INT_SATURATING_GENERATORS = List.of(
             withToString("int[Integer.MIN_VALUE]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1057,11 +1064,31 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             })
     );
 
+    static final List<IntFunction<int[]>> INT_SATURATING_GENERATORS_ASSOC = List.of(
+            withToString("int[Integer.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(Integer.MAX_VALUE));
+            }),
+            withToString("int[Integer.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(Integer.MAX_VALUE - 100));
+            }),
+            withToString("int[-1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(-1));
+            })
+    );
+
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<int[]>>> INT_GENERATOR_PAIRS =
         Stream.of(INT_GENERATORS.get(0)).
                 flatMap(fa -> INT_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+    static final List<List<IntFunction<int[]>>> INT_SATURATING_GENERATOR_PAIRS_ASSOC =
+        Stream.of(INT_GENERATORS_SATURATING_ASSOC.get(0)).
+                flatMap(fa -> INT_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<int[]>>> INT_SATURATING_GENERATOR_PAIRS =
@@ -1070,8 +1097,8 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<int[]>>> INT_SATURATING_GENERATOR_TRIPLETS =
-           Stream.of(INT_GENERATOR_PAIRS.get(0)).
-                   flatMap(pair -> INT_SATURATING_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+           INT_SATURATING_GENERATOR_PAIRS_ASSOC.stream().
+                   flatMap(pair -> INT_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                    collect(Collectors.toList());
 
     @DataProvider

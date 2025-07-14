@@ -1025,6 +1025,13 @@ public class Short512VectorTests extends AbstractVectorTest {
             })
     );
 
+        static final List<IntFunction<short[]>> SHORT_GENERATORS_SATURATING_ASSOC = List.of(
+                withToString("short[i * 5]", (int s) -> {
+                    return fill(s * BUFFER_REPS,
+                                i -> (short)(i * 5));
+                })
+        );
+
     static final List<IntFunction<short[]>> SHORT_SATURATING_GENERATORS = List.of(
             withToString("short[Short.MIN_VALUE]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1052,11 +1059,31 @@ public class Short512VectorTests extends AbstractVectorTest {
             })
     );
 
+    static final List<IntFunction<short[]>> SHORT_SATURATING_GENERATORS_ASSOC = List.of(
+            withToString("short[Short.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(Short.MAX_VALUE));
+            }),
+            withToString("short[Short.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(Short.MAX_VALUE - 100));
+            }),
+            withToString("short[-1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(-1));
+            })
+    );
+
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<short[]>>> SHORT_GENERATOR_PAIRS =
         Stream.of(SHORT_GENERATORS.get(0)).
                 flatMap(fa -> SHORT_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+    static final List<List<IntFunction<short[]>>> SHORT_SATURATING_GENERATOR_PAIRS_ASSOC =
+        Stream.of(SHORT_GENERATORS_SATURATING_ASSOC.get(0)).
+                flatMap(fa -> SHORT_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<short[]>>> SHORT_SATURATING_GENERATOR_PAIRS =
@@ -1065,8 +1092,8 @@ public class Short512VectorTests extends AbstractVectorTest {
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<short[]>>> SHORT_SATURATING_GENERATOR_TRIPLETS =
-           Stream.of(SHORT_GENERATOR_PAIRS.get(0)).
-                   flatMap(pair -> SHORT_SATURATING_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+           SHORT_SATURATING_GENERATOR_PAIRS_ASSOC.stream().
+                   flatMap(pair -> SHORT_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                    collect(Collectors.toList());
 
     @DataProvider

@@ -1035,6 +1035,13 @@ public class Byte256VectorTests extends AbstractVectorTest {
             })
     );
 
+        static final List<IntFunction<byte[]>> BYTE_GENERATORS_SATURATING_ASSOC = List.of(
+                withToString("byte[i * 5]", (int s) -> {
+                    return fill(s * BUFFER_REPS,
+                                i -> (byte)(i * 5));
+                })
+        );
+
     static final List<IntFunction<byte[]>> BYTE_SATURATING_GENERATORS = List.of(
             withToString("byte[Byte.MIN_VALUE]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1062,11 +1069,31 @@ public class Byte256VectorTests extends AbstractVectorTest {
             })
     );
 
+    static final List<IntFunction<byte[]>> BYTE_SATURATING_GENERATORS_ASSOC = List.of(
+            withToString("byte[Byte.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (byte)(Byte.MAX_VALUE));
+            }),
+            withToString("byte[Byte.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (byte)(Byte.MAX_VALUE - 100));
+            }),
+            withToString("byte[-1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (byte)(-1));
+            })
+    );
+
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<byte[]>>> BYTE_GENERATOR_PAIRS =
         Stream.of(BYTE_GENERATORS.get(0)).
                 flatMap(fa -> BYTE_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+    static final List<List<IntFunction<byte[]>>> BYTE_SATURATING_GENERATOR_PAIRS_ASSOC =
+        Stream.of(BYTE_GENERATORS_SATURATING_ASSOC.get(0)).
+                flatMap(fa -> BYTE_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<byte[]>>> BYTE_SATURATING_GENERATOR_PAIRS =
@@ -1075,8 +1102,8 @@ public class Byte256VectorTests extends AbstractVectorTest {
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<byte[]>>> BYTE_SATURATING_GENERATOR_TRIPLETS =
-           Stream.of(BYTE_GENERATOR_PAIRS.get(0)).
-                   flatMap(pair -> BYTE_SATURATING_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+           BYTE_SATURATING_GENERATOR_PAIRS_ASSOC.stream().
+                   flatMap(pair -> BYTE_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                    collect(Collectors.toList());
 
     @DataProvider

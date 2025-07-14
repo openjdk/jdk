@@ -1015,6 +1015,13 @@ public class Long64VectorTests extends AbstractVectorTest {
             })
     );
 
+        static final List<IntFunction<long[]>> LONG_GENERATORS_SATURATING_ASSOC = List.of(
+                withToString("long[i * 5]", (int s) -> {
+                    return fill(s * BUFFER_REPS,
+                                i -> (long)(i * 5));
+                })
+        );
+
     static final List<IntFunction<long[]>> LONG_SATURATING_GENERATORS = List.of(
             withToString("long[Long.MIN_VALUE]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1042,11 +1049,31 @@ public class Long64VectorTests extends AbstractVectorTest {
             })
     );
 
+    static final List<IntFunction<long[]>> LONG_SATURATING_GENERATORS_ASSOC = List.of(
+            withToString("long[Long.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (long)(Long.MAX_VALUE));
+            }),
+            withToString("long[Long.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (long)(Long.MAX_VALUE - 100));
+            }),
+            withToString("long[-1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (long)(-1));
+            })
+    );
+
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<long[]>>> LONG_GENERATOR_PAIRS =
         Stream.of(LONG_GENERATORS.get(0)).
                 flatMap(fa -> LONG_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+    static final List<List<IntFunction<long[]>>> LONG_SATURATING_GENERATOR_PAIRS_ASSOC =
+        Stream.of(LONG_GENERATORS_SATURATING_ASSOC.get(0)).
+                flatMap(fa -> LONG_SATURATING_GENERATORS_ASSOC.stream().map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<long[]>>> LONG_SATURATING_GENERATOR_PAIRS =
@@ -1055,8 +1082,8 @@ public class Long64VectorTests extends AbstractVectorTest {
                 collect(Collectors.toList());
 
     static final List<List<IntFunction<long[]>>> LONG_SATURATING_GENERATOR_TRIPLETS =
-           Stream.of(LONG_GENERATOR_PAIRS.get(0)).
-                   flatMap(pair -> LONG_SATURATING_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+           LONG_SATURATING_GENERATOR_PAIRS_ASSOC.stream().
+                   flatMap(pair -> LONG_SATURATING_GENERATORS_ASSOC.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                    collect(Collectors.toList());
 
     @DataProvider
