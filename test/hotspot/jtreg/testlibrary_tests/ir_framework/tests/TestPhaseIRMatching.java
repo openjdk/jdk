@@ -555,24 +555,24 @@ record Failure(String methodName, int irRuleId, CompilePhase compilePhase, Check
 class LoadStore {
     int i;
     float f;
-    interface I1{}
+    interface I1 {}
     static class Base implements I1 {
         int i;
     }
-    interface I2{}
+    interface I2 {}
     static class Derived extends Base implements I2 {
         long l;
     }
-    Base Lb = new Base();
-    Derived Ld = new Derived();
+    Base base = new Base();
+    Derived derived = new Derived();
 
-    static class SingleNest{
-        static class DoubleNest{
+    static class SingleNest {
+        static class DoubleNest {
             int i;
         }
     }
 
-    SingleNest.DoubleNest Ldn = new SingleNest.DoubleNest();
+    SingleNest.DoubleNest double_nest = new SingleNest.DoubleNest();
 
 
     @Test
@@ -653,7 +653,7 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$Base (ir_framework/tests/LoadStore$I1)+12 *
     public int loadWithInterface() {
-        return Lb.i;
+        return base.i;
     }
 
     @Test
@@ -681,7 +681,7 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$Base (ir_framework/tests/LoadStore$I1)+12 *
     public void storeWithInterface() {
-        Lb.i = 1;
+        base.i = 1;
     }
 
     @Test
@@ -709,7 +709,7 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$Derived (ir_framework/tests/LoadStore$I1,ir_framework/tests/LoadStore$I2)+24 *
     public long loadWithInterfaces() {
-        return Ld.l;
+        return derived.l;
     }
 
     @Test
@@ -737,7 +737,7 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$Derived (ir_framework/tests/LoadStore$I1,ir_framework/tests/LoadStore$I2)+24 *
     public void storeWithInterfaces() {
-        Ld.l = 1;
+        derived.l = 1;
     }
 
     @Test
@@ -760,7 +760,7 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
     public int loadDoubleNested() {
-        return Ldn.i;
+        return double_nest.i;
     }
 
     @Test
@@ -783,6 +783,6 @@ class LoadStore {
     )
     // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
     public void storeDoubleNested() {
-        Ldn.i = 1;
+        double_nest.i = 1;
     }
 }
