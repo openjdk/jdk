@@ -241,7 +241,7 @@ address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const Re
 address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr) {
   address bottom = rmr->base();
   address top = rmr->end();
-    tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
+  tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
     address committed_top = crgn.base() + crgn.size();
     if (committed_top < top) {
       // committed stack guard pages, skip them
