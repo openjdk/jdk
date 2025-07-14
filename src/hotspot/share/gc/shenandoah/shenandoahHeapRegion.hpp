@@ -465,6 +465,7 @@ public:
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
   size_t get_plab_allocs() const;
+  bool has_allocs() const;
 
   inline HeapWord* get_update_watermark() const;
   inline void set_update_watermark(HeapWord* w);
