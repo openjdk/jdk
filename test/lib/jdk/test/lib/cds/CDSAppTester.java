@@ -262,7 +262,7 @@ abstract public class CDSAppTester {
                                                              "class+load=debug",
                                                              "aot=debug",
                                                              "cds=debug",
-                                                             "cds+class=debug"));
+                                                             "aot+class=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
@@ -275,8 +275,9 @@ abstract public class CDSAppTester {
                                                    "-XX:AOTCacheOutput=" + aotCacheFile,
                                                    logToFile(aotCacheFileLog,
                                                              "class+load=debug",
-                                                             "cds=debug",
-                                                             "cds+class=debug"));
+                                                             "aot=debug",
+                                                             "aot+class=debug",
+                                                             "cds=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         OutputAnalyzer out =  executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
@@ -310,7 +311,7 @@ abstract public class CDSAppTester {
                                                              "cds=debug",
                                                              "cds+class=debug",
                                                              "aot+heap=warning",
-                                                             "cds+resolve=debug"));
+                                                             "aot+resolve=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
@@ -326,11 +327,11 @@ abstract public class CDSAppTester {
                                                    "-XX:AOTConfiguration=" + aotConfigurationFile,
                                                    "-XX:AOTCache=" + aotCacheFile,
                                                    logToFile(aotCacheFileLog,
-                                                             "aot=debug",
                                                              "cds=debug",
-                                                             "cds+class=debug",
+                                                             "aot=debug",
+                                                             "aot+class=debug",
                                                              "aot+heap=warning",
-                                                             "cds+resolve=debug"));
+                                                             "aot+resolve=debug"));
         cmdLine = addCommonVMArgs(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
@@ -377,7 +378,7 @@ abstract public class CDSAppTester {
                                                       "aot=debug",
                                                       "cds=debug",
                                                       "cds+class=debug",
-                                                      "cds+resolve=debug",
+                                                      "aot+resolve=debug",
                                                       "class+load=debug"));
           cmdLine = addCommonVMArgs(runMode, cmdLine);
         }

@@ -118,10 +118,9 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.jvmti", this::vmHasJVMTI);
         map.put("vm.cpu.features", this::cpuFeatures);
         map.put("vm.pageSize", this::vmPageSize);
-        map.put("vm.rtm.cpu", this::vmRTMCPU);
-        map.put("vm.rtm.compiler", this::vmRTMCompiler);
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
+        map.put("vm.cds.default.archive.available", this::vmCDSDefaultArchiveAvailable);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
@@ -418,34 +417,22 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return "true" if compiler in use supports RTM and "false" otherwise.
-     * Note: Lightweight locking does not support RTM (for now).
-     */
-    protected String vmRTMCompiler() {
-        boolean isRTMCompiler = false;
-
-        if (Compiler.isC2Enabled() &&
-            (Platform.isX86() || Platform.isX64() || Platform.isPPC()) &&
-            is_LM_LIGHTWEIGHT().equals("false")) {
-            isRTMCompiler = true;
-        }
-        return "" + isRTMCompiler;
-    }
-
-    /**
-     * @return true if VM runs RTM supported CPU and false otherwise.
-     */
-    protected String vmRTMCPU() {
-        return "" + CPUInfo.hasFeature("rtm");
-    }
-
-    /**
      * Check for CDS support.
      *
      * @return true if CDS is supported by the VM to be tested.
      */
     protected String vmCDS() {
         return "" + WB.isCDSIncluded();
+    }
+
+    /**
+     * Check for CDS default archive existence.
+     *
+     * @return true if CDS default archive classes.jsa exists in the JDK to be tested.
+     */
+    protected String vmCDSDefaultArchiveAvailable() {
+        Path archive = Paths.get(System.getProperty("java.home"), "lib", "server", "classes.jsa");
+        return "" + ("true".equals(vmCDS()) && Files.exists(archive));
     }
 
     /**
@@ -530,34 +517,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmPageSize() {
         return "" + WB.getVMPageSize();
-    }
-
-    /**
-     * @return LockingMode.
-     */
-    protected String vmLockingMode() {
-        return "" + WB.getIntVMFlag("LockingMode");
-    }
-
-    /**
-     * @return "true" if LockingMode == 0 (LM_MONITOR)
-     */
-    protected String is_LM_MONITOR() {
-        return "" + vmLockingMode().equals("0");
-    }
-
-    /**
-     * @return "true" if LockingMode == 1 (LM_LEGACY)
-     */
-    protected String is_LM_LEGACY() {
-        return "" + vmLockingMode().equals("1");
-    }
-
-    /**
-     * @return "true" if LockingMode == 2 (LM_LIGHTWEIGHT)
-     */
-    protected String is_LM_LIGHTWEIGHT() {
-        return "" + vmLockingMode().equals("2");
     }
 
     /**
