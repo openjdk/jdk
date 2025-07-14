@@ -757,6 +757,7 @@ class Assembler : public AbstractAssembler {
     VCTZH_OPCODE   = (4u  << OPCODE_SHIFT | 29u << 16 | 1538u),
     VCTZW_OPCODE   = (4u  << OPCODE_SHIFT | 30u << 16 | 1538u),
     VCTZD_OPCODE   = (4u  << OPCODE_SHIFT | 31u << 16 | 1538u),
+    VNEGW_OPCODE   = (4u  << OPCODE_SHIFT |  6u << 16 | 1538u),
 
     // Vector Floating-Point
     // not implemented yet
@@ -2372,6 +2373,7 @@ class Assembler : public AbstractAssembler {
   inline void vctzh(    VectorRegister d, VectorRegister b);
   inline void vctzw(    VectorRegister d, VectorRegister b);
   inline void vctzd(    VectorRegister d, VectorRegister b);
+  inline void vnegw(    VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);

@@ -4451,8 +4451,19 @@ instruct loadD(regD dst, memory mem)
 %}
 
 // max = java.lang.Math.max(float a, float b)
+instruct maxF_avx10_reg(regF dst, regF a, regF b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MaxF a b));
+  format %{ "maxF $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "maxF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4463,7 +4474,7 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -4476,8 +4487,19 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
 %}
 
 // max = java.lang.Math.max(double a, double b)
+instruct maxD_avx10_reg(regD dst, regD a, regD b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MaxD a b));
+  format %{ "maxD $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// max = java.lang.Math.max(double a, double b)
 instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{ "maxD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4488,7 +4510,7 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -4500,9 +4522,20 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRe
   ins_pipe( pipe_slow );
 %}
 
+// max = java.lang.Math.min(float a, float b)
+instruct minF_avx10_reg(regF dst, regF a, regF b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinF a b));
+  format %{ "minF $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // min = java.lang.Math.min(float a, float b)
 instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{ "minF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4513,7 +4546,7 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -4525,9 +4558,20 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
   ins_pipe( pipe_slow );
 %}
 
+// max = java.lang.Math.min(double a, double b)
+instruct minD_avx10_reg(regD dst, regD a, regD b) %{
+  predicate(VM_Version::supports_avx10_2());
+  match(Set dst (MinD a b));
+  format %{ "minD $dst, $a, $b" %}
+  ins_encode %{
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // min = java.lang.Math.min(double a, double b)
 instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
     format %{ "minD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
@@ -4538,7 +4582,7 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
@@ -6379,7 +6423,7 @@ instruct cmovI_rReg_rReg_memU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI sr
   ins_pipe(pipe_cmov_mem);
 %}
 
-instruct cmovI_rReg_rReg_memUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, memory src2) 
+instruct cmovI_rReg_rReg_memUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, memory src2)
 %{
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
@@ -6762,7 +6806,7 @@ instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
   %}
 %}
 
-instruct cmovL_regUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, rRegL src2) 
+instruct cmovL_regUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, rRegL src2)
 %{
   predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
@@ -6869,7 +6913,7 @@ instruct cmovL_rReg_rReg_memU_ndd(rRegL dst, cmpOpU cop, rFlagsRegU cr, rRegL sr
   ins_pipe(pipe_cmov_mem);
 %}
 
-instruct cmovL_rReg_rReg_memUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, memory src2) 
+instruct cmovL_rReg_rReg_memUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, memory src2)
 %{
   predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 (LoadL src2))));
