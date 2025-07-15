@@ -404,12 +404,18 @@ class BufferBlob: public RuntimeBlob {
 // AdapterBlob: used to hold C2I/I2C adapters
 
 class AdapterBlob: public BufferBlob {
+public:
+  static const int ENTRY_COUNT = 4;
 private:
-  AdapterBlob(int size, CodeBuffer* cb);
-
+  AdapterBlob(int size, CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  // _i2c_offset is always 0 so no need to store it
+  int _c2i_offset;
+  int _c2i_unverified_offset;
+  int _c2i_no_clinit_check_offset;
 public:
   // Creation
-  static AdapterBlob* create(CodeBuffer* cb);
+  static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
+  void get_offsets(int entry_offset[ENTRY_COUNT]);
 };
 
 //---------------------------------------------------------------------------------------------------
