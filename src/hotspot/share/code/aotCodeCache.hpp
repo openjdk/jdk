@@ -25,6 +25,8 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "runtime/stubInfo.hpp"
+
 /*
  * AOT Code Cache collects code from Code Cache and corresponding metadata
  * during application training run.
@@ -136,6 +138,7 @@ private:
 public:
   AOTCodeAddressTable() :
     _extrs_addr(nullptr),
+    _stubs_addr(nullptr),
     _shared_blobs_addr(nullptr),
     _C1_blobs_addr(nullptr),
     _extrs_length(0),
@@ -326,6 +329,7 @@ public:
   bool write_dbg_strings(CodeBlob& cb);
 #endif // PRODUCT
 
+  // save and restore API for non-enumerable code blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
                               uint id, const char* name,
@@ -334,6 +338,18 @@ public:
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
                                   uint id, const char* name,
+                                  int entry_offset_count = 0,
+                                  int* entry_offsets = nullptr) NOT_CDS_RETURN_(nullptr);
+
+  // save and restore API for enumerable code blobs
+  static bool store_code_blob(CodeBlob& blob,
+                              AOTCodeEntry::Kind entry_kind,
+                              BlobId id,
+                              int entry_offset_count = 0,
+                              int* entry_offsets = nullptr) NOT_CDS_RETURN_(false);
+
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
+                                  BlobId id,
                                   int entry_offset_count = 0,
                                   int* entry_offsets = nullptr) NOT_CDS_RETURN_(nullptr);
 

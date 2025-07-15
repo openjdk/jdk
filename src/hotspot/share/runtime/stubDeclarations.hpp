@@ -26,22 +26,60 @@
 #ifndef SHARE_RUNTIME_STUBDECLARATIONS_HPP
 #define SHARE_RUNTIME_STUBDECLARATIONS_HPP
 
+#include "code/codeBlob.hpp"
+#include "oops/klass.hpp"
 #include "utilities/macros.hpp"
 
-// macros for generating definitions and declarations for shared, c1
-// and opto blob fields and associated stub ids
-
-// Different shared stubs can have different blob types and may
-// include some JFR stubs
+// Macros for generating definitions and declarations for shared, c1,
+// opto and stubgen blobs and associated stub and entry ids.
 //
-// n.b resolve, handler and throw stubs must remain grouped in the
-// same order to allow id values to be range checked
+// The template macros that follow define blobs, stubs and entries in
+// each stub group. Invocations of the macros with different macro
+// arguments can be used to generate definitions and declarations of
+// types, data and methods/functions which support blob, stub and
+// entry management.
+//
+// In particular, they are used to generate 3 global enums that list
+// all blobs, stubs and entries across stub groups. They are also used
+// to generate local (per-stub group) enums listing every stub in the
+// group. The former are provided ot allow systematic management of
+// blobs, stubs and entries by generic code. The latter are used by
+// code which generates and consumes stubs in a specific group. An API
+// is provided to convert between global and local ids where needed
+// (see class StubInfo).
+
+// Shared stub declarations
+//
+// Every shared stub has a unique associated blob whose type must be
+// defined as part of the stub declaration. The blob type determines
+// how many entries are associated with the stub, normally 1. A build
+// may optionally include some JFR stubs.
+//
+// n.b resolve, handler and throw stubs must remain grouped
+// contiguously and in the same order so that id values can be range
+// checked
+//
+// Alongside the global and local enums, shared declations are used to
+// generate the following code elements in class SharedRuntime:
+//
+// Shared Stub blob fields
+//
+// Static field declarations/definitons for fields of class
+// SharedRuntime are generated to store shared blobs
+//
+// static <blobtype>* _<stubname>;
+//
+// Shared stub field names
+//
+// Stubs are provided with names in the format "Shared Runtime
+// <stubname> _blob".
+//
 
 #if INCLUDE_JFR
 // do_blob(name, type)
 #define SHARED_JFR_STUBS_DO(do_blob)                                   \
-  do_blob(jfr_write_checkpoint, RuntimeStub*)                          \
-  do_blob(jfr_return_lease, RuntimeStub*)                              \
+  do_blob(jfr_write_checkpoint, RuntimeStub)                           \
+  do_blob(jfr_return_lease, RuntimeStub)                               \
 
 #else
 #define SHARED_JFR_STUBS_DO(do_blob)
@@ -51,28 +89,33 @@
 //
 // do_blob(name, type)
 #define SHARED_STUBS_DO(do_blob)                                       \
-  do_blob(deopt, DeoptimizationBlob*)                                  \
+  do_blob(deopt, DeoptimizationBlob)                                   \
   /* resolve stubs */                                                  \
-  do_blob(wrong_method, RuntimeStub*)                                  \
-  do_blob(wrong_method_abstract, RuntimeStub*)                         \
-  do_blob(ic_miss, RuntimeStub*)                                       \
-  do_blob(resolve_opt_virtual_call, RuntimeStub*)                      \
-  do_blob(resolve_virtual_call, RuntimeStub*)                          \
-  do_blob(resolve_static_call, RuntimeStub*)                           \
+  do_blob(wrong_method, RuntimeStub)                                   \
+  do_blob(wrong_method_abstract, RuntimeStub)                          \
+  do_blob(ic_miss, RuntimeStub)                                        \
+  do_blob(resolve_opt_virtual_call, RuntimeStub)                       \
+  do_blob(resolve_virtual_call, RuntimeStub)                           \
+  do_blob(resolve_static_call, RuntimeStub)                            \
   /* handler stubs */                                                  \
-  do_blob(polling_page_vectors_safepoint_handler, SafepointBlob*)      \
-  do_blob(polling_page_safepoint_handler, SafepointBlob*)              \
-  do_blob(polling_page_return_handler, SafepointBlob*)                 \
+  do_blob(polling_page_vectors_safepoint_handler, SafepointBlob)       \
+  do_blob(polling_page_safepoint_handler, SafepointBlob)               \
+  do_blob(polling_page_return_handler, SafepointBlob)                  \
   /* throw stubs */                                                    \
-  do_blob(throw_AbstractMethodError, RuntimeStub*)                     \
-  do_blob(throw_IncompatibleClassChangeError, RuntimeStub*)            \
-  do_blob(throw_NullPointerException_at_call, RuntimeStub*)            \
-  do_blob(throw_StackOverflowError, RuntimeStub*)                      \
-  do_blob(throw_delayed_StackOverflowError, RuntimeStub*)              \
+  do_blob(throw_AbstractMethodError, RuntimeStub)                      \
+  do_blob(throw_IncompatibleClassChangeError, RuntimeStub)             \
+  do_blob(throw_NullPointerException_at_call, RuntimeStub)             \
+  do_blob(throw_StackOverflowError, RuntimeStub)                       \
+  do_blob(throw_delayed_StackOverflowError, RuntimeStub)               \
   /* other stubs */                                                    \
   SHARED_JFR_STUBS_DO(do_blob)                                         \
 
-// C1 stubs are always generated in a generic CodeBlob
+// C1 stub declarations
+//
+// C1 stubs are always generated in a unique associated generic
+// CodeBlob with a single entry. C1 stubs are stored in an array
+// indexed by local enum. So, no other code elements need to be
+// generated via this macro.
 
 #ifdef COMPILER1
 // client macro to operate on c1 stubs
@@ -118,14 +161,42 @@
 #define C1_STUBS_DO(do_blob)
 #endif
 
-// Opto stubs can be stored as entries with just an address or as
-// blobs of different types. The former may include some JVMTI stubs.
+// C2 stub declarations
 //
-// n.b. blobs and stub defines are generated in the order defined by
+// C2 stubs are always generated in a unique associated generic
+// CodeBlob and have a single entry. In some cases, including JVMTI
+// stubs, a standard code blob is employed and only the stub entry
+// address is retained. In others a specialized code blob with
+// stub-specific properties (e.g. frame size) is required so the blob
+// address needs to be stored. In these latter cases the declaration
+// includes the relevant storage type.
+//
+// n.b. blob and stub enum tags are generated in the order defined by
 // C2_STUBS_DO, allowing dependencies from any givem stub on its
 // predecessors to be guaranteed. That explains the initial placement
 // of the blob declarations and intermediate placement of the jvmti
 // stubs.
+//
+// Alongside the local and global enums, C2 declarations are used to
+// generate several elements of class OptoRuntime.
+//
+// C2 Stub blob/address fields
+//
+// Static field declarations/definitions for fields of class
+// OptoRuntime are generated to store either C2 blob or C2 blob entry
+// addresses:
+//
+// static <blobtype>* _<stubname>_Java;
+// static address _<stubname>;
+//
+// C2 stub blob/field names
+//
+// C2 stubs are provided with names in the format "C2 Runtime
+// <stubname> _blob".
+//
+// A stub creation method OptoRuntime::generate(ciEnv* env) is
+// generated which invokes the C2 compiler to generate each stub in
+// declaration order.
 
 #ifdef COMPILER2
 // do_jvmti_stub(name)
@@ -146,12 +217,20 @@
 // do_stub(name, fancy_jump, pass_tls, return_pc)
 // do_jvmti_stub(name)
 //
-// n.b. non-jvmti stubs may employ a special type of jump (0, 1 or 2)
-// and require access to TLS and the return pc. jvmti stubs always
-// employ jump 0, and require no special access
+// do_blob is used for stubs that are generated via direct invocation
+// of the assembler to write into a blob of the appropriate type
+//
+// do_stub is used for stubs that are generated as C2 compiler IR
+// intrinsics, using the supplied arguments to determine wheher nodes
+// in the IR graph employ a special type of jump (0, 1 or 2) or
+// provide access to TLS and the return pc.
+//
+// do_jvmti_stub generates a JVMTI stub as an IR intrinsic which
+// employs jump 0, and requires no special access
+
 #define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)                   \
-  do_blob(uncommon_trap, UncommonTrapBlob*)                            \
-  do_blob(exception, ExceptionBlob*)                                   \
+  do_blob(uncommon_trap, UncommonTrapBlob)                             \
+  do_blob(exception, ExceptionBlob)                                    \
   do_stub(new_instance, 0, true, false)                                \
   do_stub(new_array, 0, true, false)                                   \
   do_stub(new_array_nozero, 0, true, false)                            \
@@ -172,7 +251,9 @@
 #define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)
 #endif
 
-// Stub Generator Blobs and Stubs Overview
+// Stubgen stub declarations
+//
+// Stub Generator Blobs, Stubs and Entries Overview
 //
 // StubGenerator stubs do not require their own individual blob. They
 // are generated in batches into one of five distinct BufferBlobs:
@@ -183,75 +264,52 @@
 // 4) Compiler stubs
 // 5) Final stubs
 //
-// Creation of each successive BufferBlobs is staged to ensure that
+// Most StubGen stubs have a single entry point. However, in some
+// cases there are additional entry points.
+//
+// Creation of each successive BufferBlob is staged to ensure that
 // specific VM subsystems required by those stubs are suitably
-// initialized before generated code attempt to reference data or
+// initialized before generated code attempts to reference data or
 // addresses exported by those subsystems. The sequencing of
 // initialization must be taken into account when adding a new stub
 // declaration.
 //
-// StubGenerator stubs are declared using template macros, one set of
-// declarations per blob (see below), with arch-specific stubs for any
-// gven blob declared after generic stubs for that blob. Blobs are
-// created in a fixed order during startup, which is reflected in the
-// order of the declaration set. Stubs within a blob are currently
-// created in an order determined by the arch-specific generator code
-// which may not reflect the order of stub declarations. It is not
-// straightforward to enforce a strict ordering. not least because
-// arch-specific stub creation may need to be interleaved with generic
-// stub creation.
+// StubGen blobs, stubs and entries are declared using template
+// macros, grouped hierarchically by blob and stub, with arch-specific
+// stubs for any given blob declared after generic stubs for that
+// blob. Stub declarations must follow the blob start (do_blob)
+// declaration for their containing blob. Entry declarations must
+// follow the the stub start (do_stub) declaration for their
+// containing stub.
 //
-// Blob and stub declaration templates are used to generate a variety
-// of C++ code elements needed to manage stubs.
+// Blob and stub declarations are used to generate a variety of C++
+// code elements needed to manage stubs, including the global and
+// local blob, stub and entry enum types mentioned above. The blob
+// declaration order must reflect the order in which blob create
+// operations are invoked during startup. Stubs within a blob are
+// currently generated in an order determined by the arch-specific
+// generator code which may not always reflect the order of stub
+// declarations (it is not straightforward to enforce a strict
+// ordering, not least because arch-specific stub creation may need to
+// be interleaved with generic stub creation).
 //
-// Blob identifiers:
-//
-// public enum StubGenBlobId is generated to identify each of the
-// StubGenerator blobs in blob declaration order. This enum is
-// provided for use by client code to identify a specific blob. For a
-// blob declared with name <blob_name> the associated enum value is
-// StubGenBlobId::<blob_name>_id.
-//
-// Global stub identifiers:
-//
-// public enum StubGenStubId is generated to identify all declared
-// stubs across all blobs, sorted first by blob declaration order and
-// then within a blob by stub declaration order, generic stubs before
-// arch-specific stubs. This enum is provided for use by client code
-// to identify a specific stub, independent of the blob it belongs to.
-// For a stub declared with name <stub_name> the associated enum value
-// is StubGenStubId::<stub_name>_id.
-//
-// Blob-local stub identifiers:
-//
-// For each blob <blob_name>, public enum StubGenStubId_<blob_name> is
-// generated to enumerate all stubs within the blob in stub
-// declaration order, generic stubs before arch-specific stubs. This
-// enum is provided only in a non-product build and is intended for
-// internal use by class StubRoutines to validate stub declarations.
-// For a stub declared with name <stub_name> belonging to blob
-// <blob_name> the associated enum value is
-// StubGenStubId::<blob_name>_<stub_name>_id.
+// Alongside the global enums, the stubgen declarations are used to
+// define the following elements of class StubRoutines:
 //
 // Stub names and associated getters:
 //
-// Two private static fields are generated to hold the names of the
-// four generated blobs and all the generated stubs.
+// Name strings are generated for each blob where a blob declared with
+// name argument <blob_name> will be named using string "<blob_name>".
 //
-//  const char* StubRoutines::_blob_names[];
-//  const char* StubRoutines::_stub_names[];
-//
-// The entry in _blob_names for a blob declared with name <blob_name>
-// will be "<blob_name>".
-//
-// The entry in _stub_names for a stub declared with name <stub_name>
-// will be "<stub_name>".
+// Name strings are also generated for each stub where a stub declared
+// with name argument <stub_name> will be named using string
+// "<stub_name>".
 //
 // Corresponding public static lookup methods are generated to allow
 // names to be looked up by blob or global stub id.
 //
-//  const char* StubRoutines::get_blob_name(StubGenBlobId id)
-//  const char* StubRoutines::get_stub_name(StubGenStubId id)
+//  const char* StubRoutines::get_blob_name(BlobId id)
+//  const char* StubRoutines::get_stub_name(StubId id)
 //
 // These name lookup methods should be used by generic and
 // cpu-specific client code to ensure that blobs and stubs are
@@ -349,7 +407,6 @@
 //      static void set_f2i_fixup(address a) { _f2i_fixup = a; }
 //
 
-
 //--------------------------------------------------
 // Stub Generator Blob, Stub and Entry Declarations
 // -------------------------------------------------
@@ -415,15 +472,17 @@
 // given blob. This enum is private to the stub management code and
 // used to validate correct use of stubs within a given blob.
 //
-// The do_stub template receives a blob name and stub name as argument.
+// The do_stub template receives a blob name and stub name as
+// argument.
 //
 // do_stub(blob_name, stub_name)
 //
-// do_stub is primarily used to define a global enum tag for a stub
-// and a constant string name, both for use by client code. It is also
-// used to declare a tag within the blob-local enum type used to
-// validate correct use of stubs within their declared blob. Finally,
-// it is also used to declare a name for each stub.
+// do_stub is primarily used to define values associated with the stub
+// wiht name stub_name, a global enum tag for it and a constant string
+// name, both for use by client code. It is also used to declare a tag
+// within the blob-local enum type used to validate correct use of
+// stubs within their declared blob. Finally, it is also used to
+// declare a name string for the stub.
 //
 // The do_entry and do_entry_array templates receive 4 or 5 arguments
 //
@@ -452,6 +511,14 @@
 // multiple entries each of them stored in its own named field with
 // its own named getter. In the latter case multiple do_entry or
 // do_entry_init declarations are associated with the stub.
+//
+// All the above entry macros are used to declare enum tages that
+// identify the entry. Three different enums are generated via these
+// macros: a per-stub enum that indexes and provides a count for the
+// entries associated with the owning stub; a per-blob enume that
+// indexes and provides a count for the entries associated with the
+// owning blob; and a global enum that indexes and provides a count
+// for all entries associated with generated stubs.
 //
 // blob_name and stub_name are the names of the blob and stub to which
 // the entry belongs.
@@ -548,6 +615,17 @@
   do_blob(preuniverse)                                                  \
   do_stub(preuniverse, fence)                                           \
   do_entry(preuniverse, fence, fence_entry, fence_entry)                \
+  do_stub(preuniverse, atomic_add)                                      \
+  do_entry(preuniverse, atomic_add, atomic_add_entry, atomic_add_entry) \
+  do_stub(preuniverse, atomic_xchg)                                     \
+  do_entry(preuniverse, atomic_xchg, atomic_xchg_entry,                 \
+           atomic_xchg_entry)                                           \
+  do_stub(preuniverse, atomic_cmpxchg)                                  \
+  do_entry(preuniverse, atomic_cmpxchg, atomic_cmpxchg_entry,           \
+           atomic_cmpxchg_entry)                                        \
+  do_stub(preuniverse, atomic_cmpxchg_long)                             \
+  do_entry(preuniverse, atomic_cmpxchg_long, atomic_cmpxchg_long_entry, \
+           atomic_cmpxchg_long_entry)                                   \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub, do_arch_blob,              \
                                     do_arch_entry, do_arch_entry_init)  \
@@ -570,16 +648,6 @@
   do_stub(initial, catch_exception)                                     \
   do_entry(initial, catch_exception, catch_exception_entry,             \
            catch_exception_entry)                                       \
-  do_stub(initial, atomic_add)                                          \
-  do_entry(initial, atomic_add, atomic_add_entry, atomic_add_entry)     \
-  do_stub(initial, atomic_xchg)                                         \
-  do_entry(initial, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry)  \
-  do_stub(initial, atomic_cmpxchg)                                      \
-  do_entry(initial, atomic_cmpxchg, atomic_cmpxchg_entry,               \
-           atomic_cmpxchg_entry)                                        \
-  do_stub(initial, atomic_cmpxchg_long)                                 \
-  do_entry(initial, atomic_cmpxchg_long, atomic_cmpxchg_long_entry,     \
-           atomic_cmpxchg_long_entry)                                   \
   do_stub(initial, updateBytesCRC32)                                    \
   do_entry(initial, updateBytesCRC32, updateBytesCRC32,                 \
            updateBytesCRC32)                                            \
@@ -634,12 +702,13 @@
                                       do_entry, do_entry_init,          \
                                       do_entry_array,                   \
                                       do_arch_blob,                     \
-                                      do_arch_entry, do_arch_entry_init) \
+                                      do_arch_entry,                    \
+                                      do_arch_entry_init)               \
   do_blob(continuation)                                                 \
   do_stub(continuation, cont_thaw)                                      \
   do_entry(continuation, cont_thaw, cont_thaw, cont_thaw)               \
   do_stub(continuation, cont_preempt)                                   \
-  do_entry(continuation, cont_prempt, cont_preempt_stub,                \
+  do_entry(continuation, cont_preempt, cont_preempt_stub,               \
            cont_preempt_stub)                                           \
   do_stub(continuation, cont_returnBarrier)                             \
   do_entry(continuation, cont_returnBarrier, cont_returnBarrier,        \
@@ -648,7 +717,7 @@
   do_entry(continuation, cont_returnBarrierExc, cont_returnBarrierExc,  \
            cont_returnBarrierExc)                                       \
   /* merge in stubs and entries declared in arch header */              \
-  STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,  do_arch_blob,            \
+  STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub, do_arch_blob,             \
                                      do_arch_entry, do_arch_entry_init) \
   end_blob(continuation)                                                \
 
@@ -802,7 +871,7 @@
   do_entry(compiler, bigIntegerLeftShiftWorker,                         \
            bigIntegerLeftShiftWorker, bigIntegerLeftShift)              \
   /* merge in stubs and entries declared in arch header */              \
-  STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,  do_arch_blob,                \
+  STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub, do_arch_blob,                 \
                                      do_arch_entry, do_arch_entry_init) \
   end_blob(compiler)                                                    \
 
@@ -971,55 +1040,6 @@
   end_blob(final)                                                       \
 
 
-// Convenience macros for use by template implementations
-
-#define STUB_ID_NAME(base) base##_id
-
-// emit a runtime or stubgen stub field name
-
-#define STUB_FIELD_NAME(base) _##base
-
-// emit a runtime blob field name
-
-#define BLOB_FIELD_NAME(base) _##base##_blob
-
-// emit a stubgen blob field name
-
-#define STUBGEN_BLOB_FIELD_NAME(base) _ ## base ## _stubs_code
-
-// Convenience templates that emit nothing
-
-// ignore do_blob(blob_name, type) declarations
-#define DO_BLOB_EMPTY2(blob_name, type)
-
-// ignore do_blob(blob_name) and end_blob(blob_name) declarations
-#define DO_BLOB_EMPTY1(blob_name)
-
-// ignore do_stub(name, fancy_jump, pass_tls, return_pc) declarations
-#define DO_STUB_EMPTY4(name, fancy_jump, pass_tls, return_pc)
-
-// ignore do_jvmti_stub(name) declarations
-#define DO_JVMTI_STUB_EMPTY1(stub_name)
-
-// ignore do_stub(blob_name, stub_name) declarations
-#define DO_STUB_EMPTY2(blob_name, stub_name)
-
-// ignore do_entry(blob_name, stub_name, fieldname, getter_name) declarations
-#define DO_ENTRY_EMPTY4(blob_name, stub_name, fieldname, getter_name)
-
-// ignore do_entry(blob_name, stub_name, fieldname, getter_name, init_function) and
-// do_entry_array(blob_name, stub_name, fieldname, getter_name, count) declarations
-#define DO_ENTRY_EMPTY5(blob_name, stub_name, fieldname, getter_name, init_function)
-
-// ignore do_arch_blob(blob_name, size) declarations
-#define DO_ARCH_BLOB_EMPTY2(arch, size)
-
-// ignore do_arch_entry(arch, blob_name, stub_name, fieldname, getter_name) declarations
-#define DO_ARCH_ENTRY_EMPTY5(arch, blob_name, stub_name, field_name, getter_name)
-
-// ignore do_arch_entry(arch, blob_name, stub_name, fieldname, getter_name, init_function) declarations
-#define DO_ARCH_ENTRY_EMPTY6(arch, blob_name, stub_name, field_name, getter_name, init_function)
-
 // The whole shebang!
 //
 // client macro for emitting StubGenerator blobs, stubs and entries
@@ -1061,6 +1081,87 @@
                          do_arch_blob,                                  \
                          do_arch_entry, do_arch_entry_init)             \
 
+// Convenience macros for use by template implementations
+
+#define JOIN2(name, suffix)                     \
+  name ## _ ## suffix
+
+#define JOIN3(prefix, name, suffix)             \
+  prefix ## _ ## name ## _ ## suffix
+
+#define JOIN4(prefix, prefix2, name, suffix)            \
+  prefix ## _ ## prefix2 ## _ ## name ## _ ## suffix
+
+#define STUB_ID_NAME(base) JOIN2(base, id)
+
+// emit a runtime or stubgen stub field name
+
+#define STUB_FIELD_NAME(base) _##base
+
+// emit a runtime blob field name
+
+#define BLOB_FIELD_NAME(base) _## base ## _blob
+
+// emit a stubgen blob field name
+
+#define STUBGEN_BLOB_FIELD_NAME(base) _ ## base ## _stubs_code
+
+// first some macros that add an increment
+
+#define COUNT1(_1)                              \
+  + 1
+
+#define COUNT2(_1, _2)                          \
+  + 1
+
+#define COUNT4(_1, _2, _3, _4)                  \
+  + 1
+
+#define COUNT5(_1, _2, _3, _4, _5)              \
+  + 1
+
+#define COUNT6(_1, _2, _3, _4, _5, _6)          \
+  + 1
+
+#define SHARED_COUNT2(_1, type)                 \
+  + type :: ENTRY_COUNT
+
+#define STUBGEN_COUNT5(_1, _2, _3, _4, count)   \
+  + count
+
+// Convenience templates that emit nothing
+
+// ignore do_blob(blob_name, type) declarations
+#define DO_BLOB_EMPTY2(blob_name, type)
+
+// ignore do_blob(blob_name) and end_blob(blob_name) declarations
+#define DO_BLOB_EMPTY1(blob_name)
+
+// ignore do_stub(name, fancy_jump, pass_tls, return_pc) declarations
+#define DO_STUB_EMPTY4(name, fancy_jump, pass_tls, return_pc)
+
+// ignore do_jvmti_stub(name) declarations
+#define DO_JVMTI_STUB_EMPTY1(stub_name)
+
+// ignore do_stub(blob_name, stub_name) declarations
+#define DO_STUB_EMPTY2(blob_name, stub_name)
+
+// ignore do_entry(blob_name, stub_name, fieldname, getter_name) declarations
+#define DO_ENTRY_EMPTY4(blob_name, stub_name, fieldname, getter_name)
+
+// ignore do_entry(blob_name, stub_name, fieldname, getter_name, init_function) and
+// do_entry_array(blob_name, stub_name, fieldname, getter_name, count) declarations
+#define DO_ENTRY_EMPTY5(blob_name, stub_name, fieldname, getter_name, init_function)
+
+// ignore do_arch_blob(blob_name, size) declarations
+#define DO_ARCH_BLOB_EMPTY2(arch, size)
+
+// ignore do_arch_entry(arch, blob_name, stub_name, fieldname, getter_name) declarations
+#define DO_ARCH_ENTRY_EMPTY5(arch, blob_name, stub_name, field_name, getter_name)
+
+// ignore do_arch_entry(arch, blob_name, stub_name, fieldname, getter_name, init_function) declarations
+#define DO_ARCH_ENTRY_EMPTY6(arch, blob_name, stub_name, field_name, getter_name, init_function)
+
 // client macro to operate only on StubGenerator blobs
 
 #define STUBGEN_BLOBS_DO(do_blob)                                       \
@@ -1081,7 +1182,7 @@
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
 
-// client macro to operate only on StubGenerator blobs and stubs
+// client macros to operate only on StubGenerator blobs and stubs
 
 #define STUBGEN_BLOBS_STUBS_DO(do_blob, end_blob, do_stub)              \
   STUBGEN_ALL_DO(do_blob, end_blob,                                     \
@@ -1090,6 +1191,17 @@
                  DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5,DO_ARCH_ENTRY_EMPTY6)             \
+
+// client macro to operate only on StubGenerator generci and arch entries
+
+#define STUBGEN_ALL_ENTRIES_DO(do_entry, do_entry_init, do_entry_array, \
+                               do_arch_entry, do_arch_entry_init)       \
+  STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
+                 DO_STUB_EMPTY2,                                        \
+                 do_entry, do_entry_init,                               \
+                 do_entry_array,                                        \
+                 DO_ARCH_BLOB_EMPTY2,                                   \
+                 do_arch_entry, do_arch_entry_init)                     \
 
 // client macro to operate only on StubGenerator entries
 
