@@ -122,7 +122,7 @@ body.theme-dark {
     --navbar-background-color: #395A6F;
     --navbar-text-color: #ffffff;
     --subnav-background-color: #3d454d;
-    --subnav-link-color: #f5ae29;
+    --subnav-link-color: #d8dcdf;
     --member-heading-background-color: var(--subnav-background-color);
     --selected-background-color: #f8981d;
     --selected-text-color: #253441;
@@ -131,7 +131,7 @@ body.theme-dark {
     --even-row-color: #222528;
     --odd-row-color: #2d3135;
     --title-color: #fff;
-    --link-color: #e6a52a;
+    --link-color: #94badb;
     --link-color-active: #ffb45b;
     --toc-background-color: #31363c;
     --toc-highlight-color: var(--subnav-background-color);
@@ -154,7 +154,7 @@ body.theme-dark {
     --invalid-tag-background-color: #ffe6e6;
     --invalid-tag-text-color: #000000;
     div.main-grid img {
-        filter: invert(100%) sepia(4%) saturate(98%) hue-rotate(212deg) brightness(160%) contrast(160%);
+        filter: invert(100%) brightness(160%);
     }
 }
 
@@ -174,7 +174,7 @@ body.theme-dark {
         --navbar-background-color: #395A6F;
         --navbar-text-color: #ffffff;
         --subnav-background-color: #3d454d;
-        --subnav-link-color: #f5ae29;
+        --subnav-link-color: #d8dcdf;
         --member-heading-background-color: var(--subnav-background-color);
         --selected-background-color: #f8981d;
         --selected-text-color: #253441;
@@ -183,7 +183,7 @@ body.theme-dark {
         --even-row-color: #222528;
         --odd-row-color: #2d3135;
         --title-color: #fff;
-        --link-color: #e6a52a;
+        --link-color: #94badb;
         --link-color-active: #ffb45b;
         --toc-background-color: #31363c;
         --toc-highlight-color: var(--subnav-background-color);
@@ -206,7 +206,7 @@ body.theme-dark {
         --invalid-tag-background-color: #ffe6e6;
         --invalid-tag-text-color: #000000;
         div.main-grid img {
-            filter: invert(100%) sepia(4%) saturate(98%) hue-rotate(212deg) brightness(160%) contrast(160%);
+            filter: invert(100%) brightness(160%);
         }
     }
 
@@ -595,7 +595,7 @@ body.class-declaration-page section.detail > h3:target {
 }
 body.class-declaration-page section.detail:target > h3 > a.anchor-link > img,
 body.class-declaration-page section.detail > h3:target > a.anchor-link > img {
-    filter: invert(100%) sepia(4%) saturate(98%) hue-rotate(212deg) brightness(160%) contrast(160%);
+    filter: invert(100%) brightness(160%);
 }
 h1 > sup {
     font-size: small;
