@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jit.misctests.fpustack;
 
-import java.util.*;
-import java.awt.*;
-import nsk.share.TestFailure;
+/*
+ * @test
+ * @bug 8356137
+ * @summary This test verifies a non-zero transparent pixel in gifs works when
+ * the disposal method changes from 2 to 1
+ */
 
-interface ilayout {
-
-    public void formatNodes( Node[] n, Dimension d, FontMetrics fm );
-
+public class GifEmptyBackgroundTest {
+    public static void main(String[] args) throws Throwable {
+        GifBuilder.test(
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.restoreToBackgroundColor, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false),
+                new GifBuilder.FrameDescription(
+                        GifBuilder.Disposal.doNotDispose, false) );
+    }
 }

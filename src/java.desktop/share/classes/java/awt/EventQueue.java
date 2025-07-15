@@ -67,15 +67,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *        dispatched before event A.
  * </dl>
  * <p>
- * Some browsers partition applets in different code bases into
- * separate contexts, and establish walls between these contexts.
- * In such a scenario, there will be one {@code EventQueue}
- * per context. Other browsers place all applets into the same
- * context, implying that there will be only a single, global
- * {@code EventQueue} for all applets. This behavior is
- * implementation-dependent.  Consult your browser's documentation
- * for more information.
- * <p>
  * For information on the threading issues of the event dispatch
  * machinery, see <a href="doc-files/AWTThreadIssues.html#Autoshutdown"
  * >AWT Threading Issues</a>.

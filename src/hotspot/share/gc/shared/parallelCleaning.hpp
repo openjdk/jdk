@@ -66,10 +66,6 @@ private:
 
 public:
 
-  void clean_klass(InstanceKlass* ik) {
-    ik->clean_weak_instanceklass_links();
-  }
-
   void work();
 };
 
