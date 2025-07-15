@@ -2245,7 +2245,7 @@ public class Types {
      *    static class Sub extends Sup<String> {
      *        class I {
      *          void test() {
-     *              String f2 = f; // Sup<String>
+     *              String f2 = f; // Sup<String>::f
      *          }
      *        }
      *    }
@@ -2275,7 +2275,7 @@ public class Types {
      *
      * class C extends A<String> {
      *   static class D {
-     *      B b; // qualifier is A<String>.B
+     *      B b; // A<String>.B
      *   }
      * }
      *
