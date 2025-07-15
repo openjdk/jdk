@@ -1988,15 +1988,18 @@ int Matcher::min_vector_size(const BasicType bt) {
   int size;
   switch(bt) {
     case T_BOOLEAN:
-      // To support vector api load/store mask.
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
       size = 2;
       break;
     case T_BYTE:
-      // To support vector api shuffle/rearrange.
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
       size = 4;
       break;
     case T_SHORT:
-      // To support vector type conversions between short and wider types.
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
       size = 2;
       break;
     default:
