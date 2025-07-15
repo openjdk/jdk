@@ -47,11 +47,12 @@ public class CaseFoldingTest {
         var verbose = true;   // true to display all codepoints being tested
         var filter = "^.*; [CTS]; .*$";  // update C,T,S to test different type
         var excluded = Set.of(
-          // these 'S' characters failed for known reason, doesn;t map to each with with
-          // toUpperCase or toLowerCase, only map withcase-folding. exclude for now.
-          0x1fd3,    // 1FD3 [lo: 1fd3, up: 1fd3]  0390 [lo: 0390, up: 0390]
-          0x1fe3,    // 1FE3 [lo: 1fe3, up: 1fe3]  03B0 [lo: 03b0, up: 03b0]
-          0xfb05     // FB05 [lo: fb05, up: fb05]  FB06 [lo: fb06, up: fb06]
+            // these 'S' characters failed for known reason. they don't map to their
+            // fording form with toUpperCase or toLowerCase, only map with case-folding.
+            // exclude them for now.
+            0x1fd3,  // 1FD3 [lo: 1fd3, up: 1fd3]  0390 [lo: 0390, up: 0390]
+            0x1fe3,  // 1FE3 [lo: 1fe3, up: 1fe3]  03B0 [lo: 03b0, up: 03b0]
+            0xfb05   // FB05 [lo: fb05, up: fb05]  FB06 [lo: fb06, up: fb06]
         );
 
         var results = Files.lines(UCDFiles.CASEFOLDING)
@@ -138,6 +139,25 @@ public class CaseFoldingTest {
         }
 
         p = String.format("(?iu)[%s-%s]", cp_str, cp_str);
+        if (Pattern.compile(p).matcher(t).matches() == false) {
+            errors.add(String.format("     [FAILED] range:  %-20s  t: u+%04x  (%s)\n", p, folding, type));
+        }
+
+        // small range
+        var end_cp = cp + 16;
+        var end_cp_str = Character.isSupplementaryCodePoint(end_cp)
+                ? String.format("\\u%04x\\u%04x", (int)Character.highSurrogate(end_cp), (int)Character.lowSurrogate(end_cp))
+                : String.format("\\u%04x", end_cp);
+        p = String.format("(?iu)[%s-%s]", cp_str, end_cp_str);
+        if (Pattern.compile(p).matcher(t).matches() == false) {
+            errors.add(String.format("     [FAILED] range:  %-20s  t: u+%04x  (%s)\n", p, folding, type));
+        }
+
+        end_cp = cp + 128;  // bigger than the expanded_casefolding_map.
+        end_cp_str = Character.isSupplementaryCodePoint(end_cp)
+                ? String.format("\\u%04x\\u%04x", (int)Character.highSurrogate(end_cp), (int)Character.lowSurrogate(end_cp))
+                : String.format("\\u%04x", end_cp);
+        p = String.format("(?iu)[%s-%s]", cp_str, end_cp_str);
         if (Pattern.compile(p).matcher(t).matches() == false) {
             errors.add(String.format("     [FAILED] range:  %-20s  t: u+%04x  (%s)\n", p, folding, type));
         }

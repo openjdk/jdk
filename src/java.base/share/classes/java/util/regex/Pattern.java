@@ -5984,7 +5984,7 @@ NEXT:       while (i <= last) {
             if (inRange(lower, ch, upper))
                 return true;
             int up = Character.toUpperCase(ch);
-            int lo = Character.toLowerCase(ch);
+            int lo = Character.toLowerCase(up);
             if (inRange(lower, up, upper) ||
                 inRange(lower, lo, upper))
                 return true;
