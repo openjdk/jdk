@@ -57,14 +57,17 @@ public class TestDynamicStore {
     public static void main(String[] args) throws Exception {
 
         // Show a popup to remind to run this test as sudo user
-        PassFailJFrame.builder()
-                .instructions("""
-                        This test MUST be run with SUDO user.\s
+        // this will only trigger if sudo (root) user is not detected
+        if (!"root".equals(System.getProperty("user.name"))) {
+            PassFailJFrame.builder()
+                    .instructions("""
+                            This test MUST be run with SUDO user.\s
 
-                        Please press FAIL and RESTART the test if it is not,\s
-                        else press PASS and the test will be executed automatically""")
-                .build()
-                .awaitAndCheck();
+                            Please press FAIL and RESTART the test if it is not,\s
+                            else press PASS and the test will be executed automatically""")
+                    .build()
+                    .awaitAndCheck();
+        }
 
         System.loadLibrary("TestDynamicStore");
 
