@@ -90,8 +90,6 @@ static void check_inner(const ReservedMemoryRegion& rmr, R* regions, size_t regi
 class VirtualMemoryTrackerTest {
 public:
   static void test_add_committed_region_adjacent() {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
 
@@ -104,8 +102,10 @@ public:
     NativeCallStack stack2(&frame2, 1);
 
     // Fetch the added RMR for the space
-    ReservedMemoryRegion rmr = VirtualMemoryTracker::Instance::tree()->find_reserved_region(addr);
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
+    ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
 
     ASSERT_EQ(rmr.size(), size);
     ASSERT_EQ(rmr.base(), addr);
@@ -164,16 +164,16 @@ public:
     // Cleanup
     rtree->uncommit_region(addr, 3 * cs);
     ASSERT_EQ(rmr.committed_size(), 0u);
+
+    rtree->tree().remove_all();
   }
 
   static void test_add_committed_region_adjacent_overlapping() {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    rtree->tree().remove_all();
-
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+
+    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -253,16 +253,16 @@ public:
                 {addr + 3 * cs, 2 * cs} };
       check(rmr, r);
     }
+
+    rtree->tree().remove_all();
   }
 
   static void test_add_committed_region_overlapping() {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    rtree->tree().remove_all();
-
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+
+    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -419,6 +419,8 @@ public:
                 {addr + 2 * cs, cs} };
       check(rmr, r);
     }
+
+    rtree->tree().remove_all();
   }
 
   static void test_add_committed_region() {
@@ -433,13 +435,11 @@ public:
   }
 
   static void test_remove_uncommitted_region() {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-
-    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    rtree->tree().remove_all();
-
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+
+    RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -560,6 +560,8 @@ public:
       rtree->uncommit_region(addr, 3 * cs);
       check_empty(rmr);
     }
+
+    rtree->tree().remove_all();
   }
 };
 
