@@ -1431,6 +1431,14 @@ class ConsoleIOContext extends IOContext {
         private TestTerminal(InputStream input, OutputStream output, Size size) throws Exception {
             super(input, output, "ansi", size, size);
         }
+
+        @Override
+        public Attributes enterRawMode() {
+            Attributes res = super.enterRawMode();
+            res.setControlChar(ControlChar.VEOF, 4);
+            return res;
+        }
+
     }
 
     private static final class CompletionState {
