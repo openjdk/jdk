@@ -23,9 +23,9 @@
  */
 
 #include "opto/graphInvariants.hpp"
+#include "opto/rootnode.hpp"
 
-#include "rootnode.hpp"
-
+constexpr int LocalGraphInvariant::OutputStep;
 #ifndef PRODUCT
 
 void LocalGraphInvariant::LazyReachableCFGNodes::fill() {

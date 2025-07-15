@@ -25,8 +25,8 @@
 #ifndef SHARE_OPTO_GRAPHINVARIANTS_HPP
 #define SHARE_OPTO_GRAPHINVARIANTS_HPP
 
-#include "node.hpp"
 #include "memory/allocation.hpp"
+#include "opto/node.hpp"
 
 // An invariant that needs only a local view of the graph, around a given node.
 class LocalGraphInvariant : public ResourceObj {
