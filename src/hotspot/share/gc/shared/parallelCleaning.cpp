@@ -122,12 +122,12 @@ void KlassCleaningTask::work() {
 
   // One worker will clean the subklass/sibling klass tree.
   if (claim_clean_klass_tree_task()) {
-    Klass::clean_subklass_tree();
+    Klass::clean_weak_klass_links(true /* class_unloading_occurred */, false /* clean_alive_klasses */);
   }
 
   // All workers will help cleaning the classes,
   InstanceKlass* klass;
   while ((klass = claim_next_klass()) != nullptr) {
-    clean_klass(klass);
+    Klass::clean_weak_instanceklass_links(klass);
   }
 }

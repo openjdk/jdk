@@ -64,7 +64,7 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
                               decorations.decoration(decorator, buf, sizeof(buf)));
     if (written <= 0) {
       return -1;
-    } else if (static_cast<size_t>(written - 2) > _decorator_padding[decorator]) {
+    } else if ((written - 2) > _decorator_padding[decorator]) {
       _decorator_padding[decorator] = written - 2;
     }
     total_written += written;
@@ -168,6 +168,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
 }
 
 int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
+  FileLocker flocker(_stream);
   int written = write_internal(decorations, msg);
   return flush() ? written : -1;
 }
@@ -177,10 +178,7 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
     return 0;
   }
 
-  FileLocker flocker(_stream);
-  int written = write_internal(decorations, msg);
-
-  return flush() ? written : -1;
+  return write_blocking(decorations, msg);
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {

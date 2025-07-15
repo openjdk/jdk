@@ -186,8 +186,7 @@ public interface JMXConnectorServerMBean {
      * one new connection to this connector server.</p>
      *
      * <p>A given connector need not support the generation of client
-     * stubs.  However, the connectors specified by the JMX Remote API do
-     * (JMXMP Connector and RMI Connector).</p>
+     * stubs.  The RMI Connector does so.</p>
      *
      * @param env client connection parameters of the same sort that
      * can be provided to {@link JMXConnector#connect(Map)
