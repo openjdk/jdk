@@ -59,14 +59,11 @@ public class ResumeChecksClient extends SSLContextTemplate {
         CIPHER_SUITE,
         SIGNATURE_SCHEME
     }
+    static TestMode testMode;
 
     public static void main(String[] args) throws Exception {
-        new ResumeChecksClient(TestMode.valueOf(args[0])).test();
-    }
-
-    private final TestMode testMode;
-    public ResumeChecksClient(TestMode mode) {
-        this.testMode = mode;
+        testMode = TestMode.valueOf(args[0]);
+        new ResumeChecksClient().test();
     }
 
     private void test() throws Exception {
@@ -74,16 +71,14 @@ public class ResumeChecksClient extends SSLContextTemplate {
         SSLContext sslContext = createClientSSLContext();
         HexFormat hex = HexFormat.of();
         long firstStartTime = System.currentTimeMillis();
-        SSLSession firstSession = connect(sslContext, server.port, testMode,
-            false);
+        SSLSession firstSession = connect(sslContext, server.port, true);
         System.err.println("firstStartTime = " + firstStartTime);
         System.err.println("firstId = " + hex.formatHex(firstSession.getId()));
         System.err.println("firstSession.getCreationTime() = " +
             firstSession.getCreationTime());
 
         long secondStartTime = System.currentTimeMillis();
-        SSLSession secondSession = connect(sslContext, server.port, testMode,
-            true);
+        SSLSession secondSession = connect(sslContext, server.port, false);
         System.err.println("secondStartTime = " + secondStartTime);
         // Note: Ids will never match with TLS 1.3 due to spec
         System.err.println("secondId = " + hex.formatHex(secondSession.getId()));
@@ -112,7 +107,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
             }
             break;
         default:
-            throw new RuntimeException("unknown mode: " + testMode);
+            throw new AssertionError("unknown mode: " + testMode);
         }
     }
 
@@ -148,51 +143,31 @@ public class ResumeChecksClient extends SSLContextTemplate {
     }
 
     private static SSLSession connect(SSLContext sslContext, int port,
-        TestMode mode, boolean second) {
+        boolean first) {
 
         try {
             SSLSocket sock = (SSLSocket)
                 sslContext.getSocketFactory().createSocket();
             SSLParameters params = sock.getSSLParameters();
 
-            switch (mode) {
-            case BASIC:
-                // do nothing to ensure resumption works
-                break;
-            case VERSION_2_TO_3:
-                if (second) {
-                    params.setProtocols(new String[] {"TLSv1.3"});
-                } else {
-                    params.setProtocols(new String[] {"TLSv1.2"});
-                }
-                break;
-            case VERSION_3_TO_2:
-                if (second) {
-                    params.setProtocols(new String[] {"TLSv1.2"});
-                } else {
-                    params.setProtocols(new String[] {"TLSv1.3"});
-                }
-                break;
-            case CIPHER_SUITE:
-                if (second) {
-                    params.setCipherSuites(
-                        new String[] {"TLS_AES_256_GCM_SHA384"});
-                } else {
-                    params.setCipherSuites(
-                        new String[] {"TLS_AES_128_GCM_SHA256"});
-                }
-                break;
-            case SIGNATURE_SCHEME:
-                AlgorithmConstraints constraints =
-                    params.getAlgorithmConstraints();
-                if (second) {
-                    params.setAlgorithmConstraints(new NoSig("ecdsa"));
-                } else {
-                    params.setAlgorithmConstraints(new NoSig("rsa"));
-                }
-                break;
-            default:
-                throw new RuntimeException("unknown mode: " + mode);
+            switch (testMode) {
+                case BASIC -> {}  // do nothing
+                case VERSION_2_TO_3 -> params.setProtocols(new String[]{
+                    first ? "TLSv1.3" : "TLSv1.2"});
+                case VERSION_3_TO_2 -> params.setProtocols(new String[]{
+                    first ? "TLSv1.2" : "TLSv1.3"});
+                case CIPHER_SUITE -> params.setCipherSuites(
+                    new String[]{
+                        !first ? "TLS_AES_128_GCM_SHA256" :
+                            "TLS_AES_256_GCM_SHA384"});
+                case SIGNATURE_SCHEME ->
+                    params.setAlgorithmConstraints(new NoSig(
+                        first ? "ecdsa_secp384r1_sha384" :
+                            "ecdsa_secp521r1_sha512"));
+
+                default ->
+                    throw new AssertionError("unknown mode: " +
+                        testMode);
             }
             sock.setSSLParameters(params);
             sock.connect(new InetSocketAddress("localhost", port));
@@ -290,7 +265,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
 
     private static class Server extends SSLContextTemplate {
         public int port;
-        private SSLServerSocket ssock;
+        private final SSLServerSocket ssock;
         ExecutorService threadPool = Executors.newFixedThreadPool(1);
         CountDownLatch serverLatch = new CountDownLatch(1);
 
@@ -311,8 +286,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
                                 new ServerThread((SSLSocket) ssock.accept()));
                         } while (true);
                     } catch (Exception ex) {
-                        System.err.println("Server Down");
-                        ex.printStackTrace();
+                        throw new AssertionError("Server Down", ex);
                     } finally {
                         threadPool.close();
                     }
@@ -344,7 +318,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
                     out.flush();
                     out.close();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    throw new AssertionError("Server thread error", e);
                 }
             }
         }

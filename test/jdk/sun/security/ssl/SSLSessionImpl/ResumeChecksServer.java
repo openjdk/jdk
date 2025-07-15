@@ -50,6 +50,8 @@ import java.security.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import sun.security.x509.X509CertImpl;
 
@@ -66,33 +68,25 @@ public class ResumeChecksServer extends SSLContextTemplate {
     }
 
     static CountDownLatch latch = new CountDownLatch(1);
+    static TestMode testMode;
+    static int serverPort;
 
     public static void main(String[] args) throws Exception {
-        new ResumeChecksServer(TestMode.valueOf(args[0])).test();
-    }
-
-    private final TestMode testMode;
-
-    public ResumeChecksServer(TestMode testMode) {
-        this.testMode = testMode;
+        testMode = TestMode.valueOf(args[0]);
+        new ResumeChecksServer().test();
     }
 
     private void test() throws Exception {
-        SSLSession firstSession;
-        SSLSession secondSession = null;
-
-        SSLContext sslContext = createServerSSLContext();
-        ServerSocketFactory fac = sslContext.getServerSocketFactory();
-        SSLServerSocket ssock = (SSLServerSocket)
-            fac.createServerSocket(0);
-
+        SSLSession firstSession, secondSession;
         HexFormat hex = HexFormat.of();
+
+        serverPort = new Server().port;
+        latch.await();
+        Client c = new Client(serverPort);
+
+        System.out.println("Waiting for connection");
         long firstStartTime = System.currentTimeMillis();
-        try {
-            firstSession = connect(ssock, testMode, null);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        firstSession = c.test();
 
         System.err.println("firstStartTime = " + firstStartTime);
         System.err.println("firstId = " + hex.formatHex(firstSession.getId()));
@@ -100,13 +94,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
             firstSession.getCreationTime());
 
         long secondStartTime = System.currentTimeMillis();
-        try {
-            secondSession = connect(ssock, testMode, firstSession);
-        } catch (SSLHandshakeException ex) {
-            // this is expected
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        secondSession = c.test();
 
         System.err.println("secondStartTime = " + secondStartTime);
         // Note: Ids will never match with TLS 1.3 due to spec
@@ -117,12 +105,13 @@ public class ResumeChecksServer extends SSLContextTemplate {
         switch (testMode) {
         case BASIC:
             // fail if session is not resumed
-            if (secondSession.getCreationTime() < secondStartTime) {
+            if (firstSession.getCreationTime() !=
+                secondSession.getCreationTime()) {
                 throw new RuntimeException("Session was not reused");
             }
 
             // Fail if session's certificates are not restored correctly.
-            if (!java.util.Arrays.equals(
+            if (!Arrays.equals(
                     firstSession.getLocalCertificates(),
                     secondSession.getLocalCertificates())) {
                 throw new RuntimeException("Certificates do not match");
@@ -144,7 +133,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
             }
             break;
         default:
-            throw new RuntimeException("unknown mode: " + testMode);
+            throw new AssertionError("unknown mode: " + testMode);
         }
     }
 
@@ -174,139 +163,138 @@ public class ResumeChecksServer extends SSLContextTemplate {
         }
     }
 
-    private static SSLSession connect(SSLServerSocket ssock,
-            TestMode mode, SSLSession firstSession) throws Exception {
-
-        boolean second = firstSession != null;
-
-        try {
-            System.out.println("Waiting for connection");
-            new Thread(new Client(ssock.getLocalPort())).start();
-            latch.countDown();
-            SSLSocket sock = (SSLSocket) ssock.accept();
-            SSLParameters params = sock.getSSLParameters();
-
-            switch (mode) {
-            case BASIC:
-                // do nothing to ensure resumption works
-                break;
-            case CLIENT_AUTH:
-                if (second) {
-                    params.setNeedClientAuth(true);
-                } else {
-                    params.setNeedClientAuth(false);
-                }
-                break;
-            case VERSION_2_TO_3:
-                if (second) {
-                    params.setProtocols(new String[] {"TLSv1.3"});
-                } else {
-                    params.setProtocols(new String[] {"TLSv1.2"});
-                }
-                break;
-            case VERSION_3_TO_2:
-                if (second) {
-                    params.setProtocols(new String[] {"TLSv1.2"});
-                } else {
-                    params.setProtocols(new String[] {"TLSv1.3"});
-                }
-                break;
-            case CIPHER_SUITE:
-                if (second) {
-                    params.setCipherSuites(
-                        new String[] {"TLS_AES_128_GCM_SHA256"});
-                } else {
-                    params.setCipherSuites(
-                        new String[] {"TLS_AES_256_GCM_SHA384"});
-                }
-                break;
-            case SIGNATURE_SCHEME:
-                params.setNeedClientAuth(true);
-                AlgorithmConstraints constraints =
-                    params.getAlgorithmConstraints();
-                if (second) {
-                    params.setAlgorithmConstraints(
-                            new NoSig("ecdsa_secp384r1_sha384"));
-                } else {
-                    params.setAlgorithmConstraints(
-                            new NoSig("ecdsa_secp521r1_sha512"));
-                }
-                break;
-            case LOCAL_CERTS:
-                if (second) {
-                    // Add first session's certificate signature
-                    // algorithm to constraints so local certificates
-                    // can't be restored from the session ticket.
-                    params.setAlgorithmConstraints(
-                            new NoSig(X509CertImpl.toImpl((X509CertImpl)
-                                            firstSession.getLocalCertificates()[0])
-                                    .getSigAlgName()));
-                }
-                break;
-            default:
-                throw new RuntimeException("unknown mode: " + mode);
-            }
-            sock.setSSLParameters(params);
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(sock.getInputStream()));
-            String line = reader.readLine();
-            System.out.println("server read: " + line);
-            PrintWriter out = new PrintWriter(
-                new OutputStreamWriter(sock.getOutputStream()));
-            out.println(line);
-            out.flush();
-            out.close();
-            SSLSession result = sock.getSession();
-            sock.close();
-            return result;
-        } catch (SSLHandshakeException ex) {
-            if (!second) {
-                throw ex;
-            }
-        }
-        return null;
-    }
-
-    private static class Client extends SSLContextTemplate implements Runnable {
-
+    private static class Client extends SSLContextTemplate {
         private final int port;
         private final SSLContext sc;
+        public SSLSession session;
 
-        Client(int port) {
-            try {
-                sc = createClientSSLContext();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        Client(int port) throws Exception {
+            sc = createClientSSLContext();
             this.port = port;
         }
 
-        public void run() {
+        public SSLSession test() throws Exception {
             SSLSocket sock = null;
-            try {
-                latch.await();
-                while (sock == null) {
-                    try {
-                        sock = (SSLSocket) sc.getSocketFactory().createSocket();
-                    } catch (IOException e) {
-                        // If the server never starts, test will timeout.
-                        System.err.println("client trying again to connect");
-                        Thread.sleep(500);
-                    }
+            latch.await();
+            do {
+                try {
+                    sock = (SSLSocket) sc.getSocketFactory().createSocket();
+                } catch (IOException e) {
+                    // If the server never starts, test will time out.
+                    System.err.println("client trying again to connect");
+                    Thread.sleep(500);
                 }
-                sock.connect(new InetSocketAddress("localhost", port));
-                PrintWriter out = new PrintWriter(
-                    new OutputStreamWriter(sock.getOutputStream()));
-                out.println("message");
-                out.flush();
-                BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(sock.getInputStream()));
-                String inMsg = reader.readLine();
-                System.out.println("Client received: " + inMsg);
-                out.close();
-                sock.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } while (sock == null);
+            sock.connect(new InetSocketAddress("localhost", port));
+            PrintWriter out = new PrintWriter(
+                new OutputStreamWriter(sock.getOutputStream()));
+            out.println("message");
+            out.flush();
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(sock.getInputStream()));
+            String inMsg = reader.readLine();
+            System.out.println("Client received: " + inMsg);
+            out.close();
+            session = sock.getSession();
+            sock.close();
+            return session;
+        }
+    }
+
+    // The server will only have two connections each tests
+    private static class Server extends SSLContextTemplate {
+        public int port;
+        ExecutorService threadPool = Executors.newFixedThreadPool(1);
+        // Stores the certs from the first connection in mode LOCAL_CERTS
+        static X509CertImpl localCerts;
+        // first connection to the server
+        static boolean first = true;
+
+        Server() throws Exception {
+            SSLContext sc = createServerSSLContext();
+            ServerSocketFactory fac = sc.getServerSocketFactory();
+            SSLServerSocket ssock = (SSLServerSocket) fac.createServerSocket(0);
+            port = ssock.getLocalPort();
+
+            // Thread to allow multiple clients to connect
+            new Thread(() -> {
+                try {
+                    System.err.println("Server starting to accept");
+                    latch.countDown();
+                    do {
+                        threadPool.submit(new ServerThread(ssock.accept()));
+                    } while (true);
+                } catch (Exception ex) {
+                    throw new AssertionError("Server Down", ex);
+                } finally {
+                    threadPool.close();
+                }
+            }).start();
+        }
+
+        static class ServerThread implements Runnable {
+            final SSLSocket sock;
+
+            ServerThread(Socket s) {
+                this.sock = (SSLSocket) s;
+                System.err.println("(Server) client connection on port " +
+                    sock.getPort());
+            }
+
+            public void run() {
+                try {
+                    SSLParameters params = sock.getSSLParameters();
+                    switch (testMode) {
+                        case BASIC -> {}  // do nothing
+                        case CLIENT_AUTH -> params.setNeedClientAuth(!first);
+                        case VERSION_2_TO_3 -> params.setProtocols(new String[]{
+                            first ? "TLSv1.3" : "TLSv1.2"});
+                        case VERSION_3_TO_2 -> params.setProtocols(new String[]{
+                            first ? "TLSv1.2" : "TLSv1.3"});
+                        case CIPHER_SUITE -> params.setCipherSuites(
+                            new String[]{
+                                !first ? "TLS_AES_128_GCM_SHA256" :
+                                    "TLS_AES_256_GCM_SHA384"});
+                        case SIGNATURE_SCHEME -> {
+                            params.setNeedClientAuth(true);
+                            params.setAlgorithmConstraints(new NoSig(
+                                first ? "ecdsa_secp384r1_sha384" :
+                                    "ecdsa_secp521r1_sha512"));
+                        }
+                        case LOCAL_CERTS -> {
+                            if (!first) {
+                                // Add first session's certificate signature
+                                // algorithm to constraints so local certificates
+                                // can't be restored from the session ticket.
+                                params.setAlgorithmConstraints(
+                                    new NoSig(X509CertImpl.toImpl(localCerts)
+                                        .getSigAlgName()));
+                            }
+                        }
+                        default ->
+                            throw new AssertionError("unknown mode: " +
+                                testMode);
+                    }
+                    sock.setSSLParameters(params);
+                    BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(sock.getInputStream()));
+                    String line = reader.readLine();
+                    System.err.println("server read: " + line);
+                    PrintWriter out = new PrintWriter(
+                        new OutputStreamWriter(sock.getOutputStream()));
+                    out.println(line);
+                    out.flush();
+                    out.close();
+                    SSLSession session = sock.getSession();
+                    if (testMode == TestMode.LOCAL_CERTS && first) {
+                        localCerts = (X509CertImpl) session.
+                            getLocalCertificates()[0];
+                    }
+                    first = false;
+                    System.err.println("server socket closed: " + session);
+                } catch (Exception e) {
+                    throw new AssertionError("Server error", e);
+                }
             }
         }
     }
