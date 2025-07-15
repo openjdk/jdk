@@ -299,7 +299,7 @@ public:
   bool about_to_start_mixed_phase() const;
 
   // Record the start and end of the actual collection part of the evacuation pause.
-  void record_pause_start_time();
+  void record_gc_pause_start_time();
   void record_young_collection_start();
   void record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure);
 

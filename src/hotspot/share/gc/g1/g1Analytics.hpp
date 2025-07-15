@@ -44,9 +44,7 @@ class G1Analytics: public CHeapObj<mtGC> {
   TruncatedSeq _concurrent_mark_cleanup_times_ms;
 
   TruncatedSeq _alloc_rate_ms_seq;
-  double       _prev_collection_pause_end_ms;
-  double       _gc_cpu_time_pause_end_ms;
-  double       _concurrent_gc_cpu_time_ms;
+  double        _prev_collection_pause_end_ms;
 
   TruncatedSeq _concurrent_refine_rate_ms_seq;
   TruncatedSeq _dirtied_cards_rate_ms_seq;
@@ -122,22 +120,6 @@ public:
 
   void set_prev_collection_pause_end_ms(double ms) {
     _prev_collection_pause_end_ms = ms;
-  }
-
-  void set_gc_cpu_time_pause_end_ms(double ms) {
-    _gc_cpu_time_pause_end_ms = ms;
-  }
-
-  double gc_cpu_time_pause_end_ms() const {
-    return _gc_cpu_time_pause_end_ms;
-  }
-
-  void set_concurrent_gc_cpu_time_ms(double ms) {
-    _concurrent_gc_cpu_time_ms = ms;
-  }
-
-  double concurrent_gc_cpu_time_ms() const {
-    return _concurrent_gc_cpu_time_ms;
   }
 
   void report_concurrent_mark_remark_times_ms(double ms);

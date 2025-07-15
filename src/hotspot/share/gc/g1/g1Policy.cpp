@@ -569,7 +569,7 @@ void G1Policy::revise_young_list_target_length(size_t card_rs_length, size_t cod
 }
 
 void G1Policy::record_full_collection_start() {
-  record_pause_start_time();
+  record_gc_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
@@ -667,19 +667,13 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
   return live_bytes < threshold;
 }
 
-void G1Policy::record_pause_start_time() {
+void G1Policy::record_gc_pause_start_time() {
   Ticks now = Ticks::now();
   phase_times()->record_cur_collection_start_sec(now.seconds());
-
-  double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_pause_end_ms();
-  double cur_gc_cpu_time_ms = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
-
-  double concurrent_gc_cpu_time_ms = cur_gc_cpu_time_ms - prev_gc_cpu_pause_end_ms;
-  _analytics->set_concurrent_gc_cpu_time_ms(concurrent_gc_cpu_time_ms);
 }
 
 void G1Policy::record_young_collection_start() {
-  record_pause_start_time();
+  record_gc_pause_start_time();
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -705,7 +699,7 @@ void G1Policy::record_concurrent_mark_init_end() {
 void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double start_time_sec = phase_times()->cur_collection_start_sec();
-  double elapsed_time_ms = (end_time_sec - start_time_sec)*1000.0;
+  double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
   record_pause(G1GCPauseType::Remark, start_time_sec, end_time_sec);
 }
@@ -1370,9 +1364,6 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
   }
 
   update_time_to_mixed_tracking(gc_type, start, end);
-
-  double elapsed_gc_cpu_time = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
-  _analytics->set_gc_cpu_time_pause_end_ms(elapsed_gc_cpu_time);
 }
 
 void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
