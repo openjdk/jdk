@@ -117,5 +117,7 @@ public class TestMenuMnemonicLinuxAndMac {
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        frame.toFront();
+        frame.requestFocus();
     }
 }
