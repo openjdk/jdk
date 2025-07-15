@@ -55,6 +55,11 @@ public class TestPreviewTag  extends JavadocTester {
                 "api");
         checkExit(Exit.OK);
 
+        checkOutput(Output.OUT, true,
+                """
+                        warning: Multiple preview notes in otherPreviewMethod.
+                            * @previewNote    Extra note tag triggers a warning""");
+
         checkOrder("api/package-summary.html",
                 """
                         PreviewApi</a><sup class="preview-mark"><a href="PreviewApi.html#preview-api.PreviewApi">PREVIEW</a>""",

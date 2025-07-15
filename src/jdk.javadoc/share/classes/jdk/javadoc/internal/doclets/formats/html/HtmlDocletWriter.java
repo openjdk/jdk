@@ -2500,6 +2500,10 @@ public abstract class HtmlDocletWriter {
                 List<? extends UnknownBlockTagTree> tags = utils.getBlockTags(forWhat,
                         t -> t.getTagName().equals(previewNoteTag), UnknownBlockTagTree.class);
                 if (tags != null && !tags.isEmpty()) {
+                    if (tags.size() > 1) {
+                        messages.warning(utils.getCommentHelper(forWhat).getDocTreePath(tags.get(1)),
+                                "doclet.PreviewMultipleNotes", utils.getSimpleName(forWhat));
+                    }
                     var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
                     previewDiv.setId(htmlIds.forPreviewSection(forWhat));
                     previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment,

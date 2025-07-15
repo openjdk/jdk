@@ -41,6 +41,7 @@ public class OtherApi {
     *
     * @previewFeature Second preview feature
     * @previewNote    Alternative preview note for second preview feature.
+    * @previewNote    Extra note tag triggers a warning
     */
     public void otherPreviewMethod() {}
 
