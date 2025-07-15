@@ -89,7 +89,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     if (region->is_empty()) {
       free_regions++;
       free += region_size_bytes;
-    } else if (region->is_regular() && region->has_allocs() && region->get_live_data_bytes() < region->used()) {
+    } else if (region->is_regular() && region->has_allocs()) {
       if (!region->has_live()) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
