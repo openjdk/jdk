@@ -163,10 +163,6 @@ source %{
   bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
     return false;
   }
-
-  bool Matcher::gather_scatter_needs_vector_index(BasicType bt) {
-    return !is_subword_type(bt);
-  }
 %}
 
 // All VEC instructions

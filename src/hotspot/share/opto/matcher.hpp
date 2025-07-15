@@ -338,9 +338,6 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
-  // Return true if vector gather-load/scatter-store needs vector index as input.
-  static bool gather_scatter_needs_vector_index(BasicType bt);
-
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes

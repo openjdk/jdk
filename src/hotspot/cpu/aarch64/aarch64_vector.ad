@@ -357,12 +357,6 @@ source %{
     return false;
   }
 
-  // SVE requires vector indices for gather-load/scatter-store operations
-  // on all data types.
-  bool Matcher::gather_scatter_needs_vector_index(BasicType bt) {
-    return UseSVE > 0;
-  }
-
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n) {
     assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
@@ -5282,10 +5276,10 @@ instruct extractD(vRegD dst, vReg src, immI idx) %{
 // ---------------------------- Vector Slice ------------------------
 
 instruct vslice_neon(vReg dst, vReg src1, vReg src2, immI index) %{
-   predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
-   match(Set dst (VectorSlice (Binary src1 src2) index));
-   format %{ "vslice_neon $dst, $src1, $src2, $index" %}
-   ins_encode %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (VectorSlice (Binary src1 src2) index));
+  format %{ "vslice_neon $dst, $src1, $src2, $index" %}
+  ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     uint scale = type2aelembytes(Matcher::vector_element_basic_type(this));
     __ ext($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
@@ -5296,10 +5290,10 @@ instruct vslice_neon(vReg dst, vReg src1, vReg src2, immI index) %{
 %}
 
 instruct vslice_sve(vReg dst_src1, vReg src2, immI index) %{
-   predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
-   match(Set dst_src1 (VectorSlice (Binary dst_src1 src2) index));
-   format %{ "vslice_sve $dst_src1, $dst_src1, $src2, $index" %}
-   ins_encode %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (VectorSlice (Binary dst_src1 src2) index));
+  format %{ "vslice_sve $dst_src1, $dst_src1, $src2, $index" %}
+  ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint scale = type2aelembytes(Matcher::vector_element_basic_type(this));
     __ sve_ext($dst_src1$$FloatRegister, $src2$$FloatRegister,

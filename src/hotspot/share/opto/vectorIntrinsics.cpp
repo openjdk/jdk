@@ -1497,17 +1497,15 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Get other index vectors if they are not nullptr for subword gather operation.
-  Node* idx_vect1 = nullptr;
-  Node* idx_vect2 = nullptr;
-  Node* idx_vect3 = nullptr;
+  Node* indexes1 = nullptr;
+  Node* indexes2 = nullptr;
+  Node* indexes3 = nullptr;
   if (!is_scatter && needs_vector_index) {
     // Get the second index vector if it is not nullptr.
     Node* idx1 = argument(10);
     if (gvn().type(idx1) != TypePtr::NULL_PTR) {
-      idx_vect1 = unbox_vector(idx1, vbox_idx_type, T_INT, idx_num_elem);
-      if (idx_vect1 == nullptr) {
-        set_map(old_map);
-        set_sp(old_sp);
+      indexes1 = unbox_vector(idx1, vbox_idx_type, T_INT, idx_num_elem);
+      if (indexes1 == nullptr) {
         return false;
       }
     }
@@ -1518,16 +1516,12 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     if (gvn().type(idx2) != TypePtr::NULL_PTR) {
       assert(elem_bt == T_BYTE, "Only byte gather needs more than 2 index vectors");
       if (gvn().type(idx3) == TypePtr::NULL_PTR) {
-        set_map(old_map);
-        set_sp(old_sp);
         return false;
       }
 
-      idx_vect2 = unbox_vector(idx2, vbox_idx_type, T_INT, idx_num_elem);
-      idx_vect3 = unbox_vector(idx3, vbox_idx_type, T_INT, idx_num_elem);
-      if (idx_vect2 == nullptr || idx_vect3 == nullptr) {
-        set_map(old_map);
-        set_sp(old_sp);
+      indexes2 = unbox_vector(idx2, vbox_idx_type, T_INT, idx_num_elem);
+      indexes3 = unbox_vector(idx3, vbox_idx_type, T_INT, idx_num_elem);
+      if (indexes2 == nullptr || indexes3 == nullptr) {
         return false;
       }
     }
@@ -1564,13 +1558,13 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     Node* vload = nullptr;
     if (mask != nullptr) {
       if (is_subword_type(elem_bt)) {
-        vload = gen_gather_load_masked_subword(addr, indexes, idx_vect1, idx_vect2, idx_vect3, mask, vector_type);
+        vload = gen_gather_load_masked_subword(addr, indexes, indexes1, indexes2, indexes3, mask, vector_type);
       } else {
         vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, indexes, mask));
       }
     } else {
       if (is_subword_type(elem_bt)) {
-        vload = gen_gather_load_subword(addr, indexes, idx_vect1, idx_vect2, idx_vect3, vector_type);
+        vload = gen_gather_load_subword(addr, indexes, indexes1, indexes2, indexes3, vector_type);
       } else {
         vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, indexes));
       }
