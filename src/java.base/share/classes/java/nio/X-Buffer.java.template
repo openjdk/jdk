@@ -950,7 +950,7 @@ public abstract sealed class $Type$Buffer
         return get(index, dst, 0, dst.length);
     }
 
-    private $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
+    $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
         if (
 #if[char]
             isAddressable() &&
@@ -1150,9 +1150,13 @@ public abstract sealed class $Type$Buffer
 #if[char]
         } else { // src.isAddressable() == false
             assert StringCharBuffer.class.isInstance(src);
-            int posMax = pos + n;
-            for (int i = pos, j = srcPos; i < posMax; i++, j++)
-                put(i, src.get(j));
+            if (this.hb != null && src instanceof StringCharBuffer scb) {
+                scb.getArray(srcPos, this.hb, pos, n);
+            } else {
+                int posMax = pos + n;
+                for (int i = pos, j = srcPos; i < posMax; i++, j++)
+                    put(i, src.get(j));
+            }
         }
 #end[char]
 #else[rw]

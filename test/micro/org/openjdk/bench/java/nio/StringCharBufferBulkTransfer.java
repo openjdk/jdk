@@ -41,12 +41,13 @@ import org.openjdk.jmh.annotations.Warmup;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(1)
-public class StringCharBufferBulkGet {
+public class StringCharBufferBulkTransfer {
     private static final int LENGTH = 16384;
 
     char[] buf = new char[LENGTH];
     CharBuffer cb = CharBuffer.wrap(new String(buf));
     char[] dst = new char[LENGTH];
+    CharBuffer cbw = CharBuffer.allocate(LENGTH);
 
     @Benchmark
     public void absoluteBulkGet() {
@@ -62,5 +63,10 @@ public class StringCharBufferBulkGet {
     @Benchmark
     public void getChars() {
         cb.getChars(0, LENGTH, dst, 0);
+    }
+
+    @Benchmark
+    public void absoluteBulkPut() {
+        cbw.put(0, cb, 0, dst.length);
     }
 }

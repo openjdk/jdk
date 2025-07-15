@@ -97,34 +97,12 @@ final class StringCharBuffer                                  // package-private
         return str.charAt(index + offset);
     }
 
-    // Override bulk get methods for better performance
-
     @Override
-    public CharBuffer get(int index, char[] dst, int dstOffset, int length) {
+    CharBuffer getArray(int index, char[] dst, int dstOffset, int length) {
         // Note: the variable "offset" is defined and set in the superclass
         int srcOffset = offset + index;
-        Objects.checkFromIndexSize(srcOffset, length, offset + limit());
-        Objects.checkFromIndexSize(dstOffset, length, dst.length);
         str.getChars(srcOffset, srcOffset + length, dst, dstOffset);
         return this;
-    }
-
-    @Override
-    public CharBuffer get(char[] dst, int dstOffset, int length) {
-        int pos = position();
-        get(pos, dst, dstOffset, length);
-        position(pos + length);
-        return this;
-    }
-
-    @Override
-    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        // Check [srcBegin,srcEnd) is a subset of [0, limit() - position())
-        int pos = position();
-        int lim = limit();
-        Objects.checkFromToIndex(srcBegin, srcEnd, lim - pos);
-
-        get(pos + srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     public final CharBuffer put(char c) {
