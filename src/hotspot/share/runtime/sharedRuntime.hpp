@@ -143,10 +143,30 @@ class SharedRuntime: AllStatic {
     tty->print_cr("");
   }
 
+  static void print_primitive(jfloat x) {
+    tty->print("[%f] ", x);
+  }
+
+  static void print_primitive(jdouble x) {
+    tty->print("[%lf] ", x);
+  }
+
+  static void print_primitive(jchar x) {
+    tty->print("[%c] ", x);
+  }
+
+  static void print_primitive(jint x) {
+    tty->print("[%d] ", x);
+  }
+
+  static void print_primitive(jlong x) {
+    tty->print("[%ld] ", x);
+  }
+
   template <typename T, typename... Rest>
   static void debug_print_t(T arg, Rest... args) {
     // TODO we could use a polymorphic function here to have a different behavior depending on type
-    tty->print("[%d] ", arg);
+    print_primitive(arg);
     debug_print_t(args...);
   }
 

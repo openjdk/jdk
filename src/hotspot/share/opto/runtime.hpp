@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_RUNTIME_HPP
 #define SHARE_OPTO_RUNTIME_HPP
 
+#include "c1/c1_ValueType.hpp"
 #include "code/codeBlob.hpp"
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
@@ -741,10 +742,13 @@ private:
   template <class ...Args>
   struct ArgWriter;
 
+  template <class ...Args>
+  struct ArgCounter;
+
   template <typename... TT>
   static const TypeFunc* debug_print_Type() {
     // create input type (domain)
-    int num_args      = 1 + sizeof...(TT);
+    int num_args      = 1 + ArgCounter<TT...>::count();
     int argcnt = num_args;
     const Type** fields = TypeTuple::fields(argcnt);
     int argp = TypeFunc::Parms;
@@ -775,6 +779,43 @@ private:
  static void          initialize_types();
 };
 
+template <typename T>
+struct TypeMap;
+
+template <>
+struct TypeMap<jint> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = TypeInt::INT;
+  }
+  static uint arg_width() { return 1; }
+};
+
+template <>
+struct TypeMap<jlong> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = TypeLong::LONG;
+    fields[(*argp)++] = Type::HALF;
+  }
+  static uint arg_width() { return 2; }
+};
+
+template <>
+struct TypeMap<jfloat> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = Type::FLOAT;
+  }
+  static uint arg_width() { return 1; }
+};
+
+template <>
+struct TypeMap<jdouble> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = Type::DOUBLE;
+    fields[(*argp)++] = Type::HALF;
+  }
+  static uint arg_width() { return 2; }
+};
+
 template <>
 struct OptoRuntime::ArgWriter<> {
   static void put(const Type** fields, int* argp) {}
@@ -783,8 +824,20 @@ struct OptoRuntime::ArgWriter<> {
 template <class T, class ...Args>
 struct OptoRuntime::ArgWriter<T, Args...> {
   static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = TypeInt::INT; // TODO replace by a polymorphic version
+    TypeMap<T>::put(fields, argp);
     ArgWriter<Args...>::put(fields, argp);
+  }
+};
+
+template <>
+struct OptoRuntime::ArgCounter<> {
+  static uint count() { return 0; }
+};
+
+template <class T, class ...Args>
+struct OptoRuntime::ArgCounter<T, Args...> {
+  static uint count() {
+    return TypeMap<T>::arg_width() + ArgCounter<Args...>::count();
   }
 };
 
