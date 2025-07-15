@@ -402,7 +402,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   ObjectWaiter* dequeue_waiter();
   void      dequeue_specific_waiter(ObjectWaiter* waiter);
   void      enter_internal(JavaThread* current);
+  void      enter_internal_self_park(JavaThread* current, bool do_timed_parked);
   void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
+  void      reenter_internal_self_park(JavaThread* current);
+  void      enter_or_reenter_internal(JavaThread* current, ObjectWaiter* current_node = nullptr);
   void      entry_list_build_dll(JavaThread* current);
   void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
   ObjectWaiter* entry_list_tail(JavaThread* current);
