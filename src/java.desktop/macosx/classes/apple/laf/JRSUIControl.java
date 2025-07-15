@@ -124,7 +124,7 @@ public final class JRSUIControl {
         private long cfDictionaryPtr;
         JRSUIControlDisposerRecord(long ptr) {
             cfDictionaryPtr = ptr;
-        } 
+        }
 
         public synchronized void dispose() {
             if (cfDictionaryPtr == 0) {
