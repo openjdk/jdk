@@ -311,7 +311,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // Also used for carrier threads to clear/restore _thread.
   void set_thread(JavaThread* thread);
   oop get_thread_oop();
-  void update_thread_oop_during_vm_start(JavaThread* thread);
+
+  void update_thread_oop_during_vm_start();
 
   inline bool is_virtual() { return _is_virtual; } // the _thread is virtual
 

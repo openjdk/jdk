@@ -679,7 +679,7 @@ void JvmtiExport::post_vm_start() {
   // before classes are initialized. It should be updated now.
   JavaThread *thread  = JavaThread::current();
   if (thread->jvmti_thread_state() != nullptr) {
-    thread->jvmti_thread_state()->update_thread_oop_during_vm_start(thread);
+    thread->jvmti_thread_state()->update_thread_oop_during_vm_start();
   }
 
   // can now enable some events

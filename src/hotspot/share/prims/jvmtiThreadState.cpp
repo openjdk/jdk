@@ -1041,11 +1041,10 @@ oop JvmtiThreadState::get_thread_oop() {
   return _thread_oop_h.resolve();
 }
 
-void JvmtiThreadState::update_thread_oop_during_vm_start(JavaThread* thread) {
-  assert(thread->threadObj() != nullptr, "santity check");
-  if (thread->jvmti_thread_state()->get_thread_oop() == nullptr) {
-    _thread_oop_h.release(JvmtiExport::jvmti_oop_storage());
-    _thread_oop_h = OopHandle(JvmtiExport::jvmti_oop_storage(), thread->threadObj());
+void JvmtiThreadState::update_thread_oop_during_vm_start() {
+  assert(_thread->threadObj() != nullptr, "santity check");
+  if (get_thread_oop() == nullptr) {
+    _thread_oop_h.replace(_thread->threadObj());
   }
 }
 
