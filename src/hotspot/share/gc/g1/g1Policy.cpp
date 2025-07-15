@@ -1262,8 +1262,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
     } else if (_g1h->is_user_requested_concurrent_full_gc(cause) ||
-               (cause == GCCause::_codecache_GC_threshold) ||
-               (cause == GCCause::_codecache_GC_aggressive) ||
+               GCCause::is_codecache_requested_gc(cause) ||
                (cause == GCCause::_wb_breakpoint)) {
       // Initiate a concurrent start.  A concurrent start must be a young only
       // GC, so the collector state must be updated to reflect this.
@@ -1277,8 +1276,16 @@ void G1Policy::decide_on_concurrent_start_pause() {
       abandon_collection_set_candidates();
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
+      const char* requester;
+      if (cause == GCCause::_wb_breakpoint) {
+          requester = "run_to breakpoint";
+      } else if (GCCause::is_codecache_requested_gc(cause)) {
+          requester = "codecache";
+      } else {
+          requester = "user";
+      }
       log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
-                          (cause == GCCause::_wb_breakpoint) ? "run_to breakpoint" : "user");
+                          requester);
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles

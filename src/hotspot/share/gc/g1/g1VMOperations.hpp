@@ -45,7 +45,7 @@ public:
 
 class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
   bool _transient_failure;
-  bool _marking_in_progress;
+  bool _mark_in_progress;
   bool _cycle_already_in_progress;
   bool _whitebox_attached;
   bool _terminating;
@@ -60,7 +60,7 @@ public:
   virtual bool doit_prologue();
   virtual void doit();
   bool transient_failure() const { return _transient_failure; }
-  bool marking_in_progress() const { return _marking_in_progress; }
+  bool mark_in_progress() const { return _mark_in_progress; }
   bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
   bool whitebox_attached() const { return _whitebox_attached; }
   bool terminating() const { return _terminating; }

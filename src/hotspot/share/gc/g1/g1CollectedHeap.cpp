@@ -1692,11 +1692,10 @@ static bool gc_counter_less_than(uint x, uint y) {
 #define LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, result) \
   LOG_COLLECT_CONCURRENTLY(cause, "complete %s", BOOL_TO_STR(result))
 
-static bool wait_for_completion(GCCause::Cause cause,
-                                uint old_marking_started_before,
-                                uint old_marking_completed_before,
-                                uint old_marking_started_after,
-                                uint old_marking_completed_after) {
+bool G1CollectedHeap::wait_full_mark_finished(GCCause::Cause cause,
+                                              uint old_marking_started_before,
+                                              uint old_marking_started_after,
+                                              uint old_marking_completed_after) {
   // Request is finished if a full collection (concurrent or stw)
   // was started after this request and has completed, e.g.
   // started_before < completed_after.
@@ -1712,7 +1711,7 @@ static bool wait_for_completion(GCCause::Cause cause,
     // while completed_now < started_after.
     LOG_COLLECT_CONCURRENTLY(cause, "wait");
     MonitorLocker ml(G1OldGCCount_lock);
-    while (gc_counter_less_than(old_marking_completed_before,
+    while (gc_counter_less_than(_old_marking_cycles_completed,
                                 old_marking_started_after)) {
       ml.wait();
     }
@@ -1726,7 +1725,8 @@ static bool wait_for_completion(GCCause::Cause cause,
   return false;
 }
 
-static bool should_retry_vm_op(GCCause::Cause cause, VM_G1TryInitiateConcMark* op) {
+static bool should_retry_vm_op(GCCause::Cause cause,
+                               VM_G1TryInitiateConcMark* op) {
   if (op->cycle_already_in_progress()) {
     // If VMOp failed because a cycle was already in progress, it
     // is now complete.  But it didn't finish this user-requested
@@ -1813,34 +1813,36 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // For a CodeCache requested GC, before marking, progress is ensured as the
       // following Remark pause unloads code (and signals the requester such).
       // Otherwise we must ensure that it is restarted.
-      if (op.marking_in_progress()) {
+      //
+      // For a CodeCache requested GC, a successful GC operation means that
+      // (1) marking is in progress (i.e. the VMOp started the marking or a
+      //     Remark pause is pending from a different VM op),
+      // (2) a new cycle was started (by this thread or some other), or
+      // (3) a Full GC was performed.
+      //
+      // Cases (2) and (3) are detected together by a change to
+      // _old_marking_cycles_started.
+      //
+      // Compared to other non-user requested GCs, we do not consider being
+      // in whitebox as sufficient too because we might be anywhere within that
+      // cycle.
+      if (op.mark_in_progress() ||
+          (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
       }
 
-      log_debug(gc)("before-wait: cause %s mark-in-progress %d cycle-in-progress %d succeded %d st-before %d cpl-before %d st-after %d cpl-after %d",
-                    GCCause::to_string(cause), op.marking_in_progress(), op.cycle_already_in_progress(), op.gc_succeeded(),
-                    old_marking_started_before, _old_marking_cycles_completed, old_marking_started_after, old_marking_completed_after);
-      if (wait_for_completion(cause,
-                              old_marking_started_before,
-                              _old_marking_cycles_completed,
-                              old_marking_started_after,
-                              old_marking_completed_after)) {
+      if (wait_full_mark_finished(cause,
+                                  old_marking_started_before,
+                                  old_marking_started_after,
+                                  old_marking_completed_after)) {
         return true;
       }
-
-      log_debug(gc)("after-wait: cause %s mark-in-progress %d cycle-in-progress %d succeded %d st-before %d cpl-before %d st-after %d cpl-after %d",
-                    GCCause::to_string(cause), op.marking_in_progress(), op.cycle_already_in_progress(), op.gc_succeeded(),
-                    old_marking_started_before, _old_marking_cycles_completed, old_marking_started_after, old_marking_completed_after);
 
       if (should_retry_vm_op(cause, &op)) {
         continue;
       }
-      log_debug(gc)("transient-fail: cause %s mark-in-progress %d cycle-in-progress %d succeded %d st-before %d cpl-before %d st-after %d cpl-after %d",
-                    GCCause::to_string(cause), op.marking_in_progress(), op.cycle_already_in_progress(), op.gc_succeeded(),
-                    old_marking_started_before, _old_marking_cycles_completed, old_marking_started_after, old_marking_completed_after);
-
-    } else if (!GCCause::is_user_requested_gc(cause)) {
+     } else if (!GCCause::is_user_requested_gc(cause)) {
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.
       //
@@ -1880,11 +1882,10 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
              BOOL_TO_STR(op.gc_succeeded()),
              old_marking_started_before, old_marking_started_after);
 
-      if (wait_for_completion(cause,
-                              old_marking_started_before,
-                              _old_marking_cycles_completed,
-                              old_marking_started_after,
-                              old_marking_completed_after)) {
+      if (wait_full_mark_finished(cause,
+                                  old_marking_started_before,
+                                  old_marking_started_after,
+                                  old_marking_completed_after)) {
         return true;
       }
 
