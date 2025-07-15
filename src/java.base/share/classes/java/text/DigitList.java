@@ -301,7 +301,7 @@ final class DigitList implements Cloneable {
      */
     void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
         FloatingDecimal.BinaryToASCIIConverter fdConverter =
-                Boolean.getBoolean("decimal.format.compat")
+                Boolean.getBoolean("jdk.compat.DecimalFormat")
                         ? FloatingDecimal.getCompatBinaryToASCIIConverter(source)
                         : FloatingDecimal.getBinaryToASCIIConverter(source);
         boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
