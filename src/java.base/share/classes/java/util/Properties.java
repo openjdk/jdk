@@ -75,7 +75,7 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * non-{@code String} key or value, the call will fail. Similarly,
  * the call to the {@code propertyNames} or {@code list} method
  * will fail if it is called on a "compromised" {@code Properties}
- * object that contains a non-{@code String} key.
+ * object that contains a non-{@code String} key or value.
  *
  * <p>
  * The iterators returned by the {@code iterator} method of this class's
@@ -1215,8 +1215,8 @@ public class Properties extends Hashtable<Object,Object> {
      * This method is useful for debugging.
      *
      * @param   out   an output stream.
-     * @throws  ClassCastException if any key in this property list
-     *          is not a string.
+     * @throws  ClassCastException if either a key or a value
+     *          in this property list is not a string.
      */
     public void list(PrintStream out) {
         out.println("-- listing properties --");
@@ -1237,8 +1237,8 @@ public class Properties extends Hashtable<Object,Object> {
      * This method is useful for debugging.
      *
      * @param   out   an output stream.
-     * @throws  ClassCastException if any key in this property list
-     *          is not a string.
+     * @throws  ClassCastException if either a key or a value
+     *          in this property list is not a string.
      * @since   1.1
      */
     /*
