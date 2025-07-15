@@ -90,10 +90,10 @@ static void check_inner(const ReservedMemoryRegion& rmr, R* regions, size_t regi
 class VirtualMemoryTrackerTest {
 public:
   static void test_add_committed_region_adjacent() {
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -167,12 +167,13 @@ public:
   }
 
   static void test_add_committed_region_adjacent_overlapping() {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
     rtree->tree().remove_all();
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -255,13 +256,13 @@ public:
   }
 
   static void test_add_committed_region_overlapping() {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
     rtree->tree().remove_all();
 
     size_t size  = 0x01000000;
-
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -432,12 +433,13 @@ public:
   }
 
   static void test_remove_uncommitted_region() {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
     rtree->tree().remove_all();
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
