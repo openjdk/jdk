@@ -109,16 +109,16 @@ private:
       __ push2p(r30, r31);
     } else {
       if (_result != rax) {
-        __ paired_push(rax);
+        __ push(rax);
       }
-      __ paired_push(rcx);
-      __ paired_push(rdx);
-      __ paired_push(rdi);
-      __ paired_push(rsi);
-      __ paired_push(r8);
-      __ paired_push(r9);
-      __ paired_push(r10);
-      __ paired_push(r11);
+      __ push(rcx);
+      __ push(rdx);
+      __ push(rdi);
+      __ push(rsi);
+      __ push(r8);
+      __ push(r9);
+      __ push(r10);
+      __ push(r11);
     }
 
     if (_xmm_spill_size != 0) {
@@ -195,19 +195,19 @@ private:
         __ popp(rax);
       }
     } else {
-      __ paired_pop(r11);
-      __ paired_pop(r10);
-      __ paired_pop(r9);
-      __ paired_pop(r8);
-      __ paired_pop(rsi);
-      __ paired_pop(rdi);
-      __ paired_pop(rdx);
-      __ paired_pop(rcx);
+      __ pop(r11);
+      __ pop(r10);
+      __ pop(r9);
+      __ pop(r8);
+      __ pop(rsi);
+      __ pop(rdi);
+      __ pop(rdx);
+      __ pop(rcx);
       if (_result != rax) {
         if (_result != noreg) {
           __ movptr(_result, rax);
         }
-        __ paired_pop(rax);
+        __ pop(rax);
       }
     }
   }
