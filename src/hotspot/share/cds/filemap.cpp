@@ -2019,7 +2019,8 @@ bool FileMapHeader::validate() {
   if (prop != nullptr) {
     if (has_aot_linked_classes()) {
       MetaspaceShared::report_loading_error("%s has aot-linked classes. It cannot be used when the "
-                     "java.system.class.loader property is specified.", CDSConfig::type_of_archive_being_loaded());
+                                            "java.system.class.loader property is specified.",
+                                            CDSConfig::type_of_archive_being_loaded());
       return false;
     }
     aot_log_warning(aot)("Archived non-system classes are disabled because the "
