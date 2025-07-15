@@ -1027,7 +1027,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* currentNod
       do_timed_parked = true;
     }
   } else {
-    // Re-enter path
+    // Reenter path
     assert(current != nullptr, "invariant");
     assert(current->thread_state() != _thread_blocked, "invariant");
     assert(currentNode != nullptr, "invariant");
@@ -1124,7 +1124,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* currentNod
 
     return;
   } else {
-    // Re-enter path
+    // Reenter path
     // Current has acquired the lock -- Unlink current from the _entry_list.
     assert(has_owner(current), "invariant");
     assert_mark_word_consistency();
