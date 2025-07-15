@@ -103,7 +103,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     size_t garbage = region->garbage();
     total_garbage += garbage;
 
-    if (region->is_empty() || (region->reserved_for_direct_allocation() && !region->has_allocs())) {
+    if (region->is_empty()) {
       free_regions++;
       free += ShenandoahHeapRegion::region_size_bytes();
     } else if (region->is_regular() && region->has_allocs()) {
