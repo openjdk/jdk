@@ -22,8 +22,11 @@
  */
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +62,21 @@ public class CharBufferAsCharSequenceTest {
             buffer.position(i);
             args.add(Arguments.of(buffer.slice(), buf, i, buf.length, "StringCharBuffer slice " + i + " to end"));
 
+            CharBuffer lehbbAsCB = ByteBuffer.allocate(buf.length * 2)
+                                             .order(ByteOrder.LITTLE_ENDIAN)
+                                             .asCharBuffer()
+                                             .put(buf)
+                                             .position(i);
+            args.add(Arguments.of(lehbbAsCB, buf, i, buf.length, "LE HeapByteBuffer as CharBuffer index " + i + " to end"));
+
+            CharBuffer behbdAsCB = ByteBuffer.allocateDirect(buf.length * 2)
+                                             .order(ByteOrder.BIG_ENDIAN)
+                                             .asCharBuffer()
+                                             .put(buf)
+                                             .position(i);
+            args.add(Arguments.of(behbdAsCB, buf, i, buf.length,
+                    "BE DirectByteBuffer as CharBuffer index " + i + " to end"));
+
             if (i > 0) {
                 buffer = CharBuffer.wrap(buf, 1, buf.length - 1).slice();
                 buffer.position(i - 1);
@@ -77,6 +95,26 @@ public class CharBufferAsCharSequenceTest {
                 buffer.position(i);
                 buffer.limit(end);
                 args.add(Arguments.of(buffer.slice(), buf, i, end, "StringCharBuffer slice " + i + " to " + end));
+
+                CharBuffer behbbAsCB = ByteBuffer.allocate(buf.length * 2)
+                                                 .order(ByteOrder.BIG_ENDIAN)
+                                                 .asCharBuffer()
+                                                 .put(buf)
+                                                 .position(1)
+                                                 .slice()
+                                                 .position(i - 1)
+                                                 .limit(end - 1);
+                args.add(Arguments.of(behbbAsCB, buf, i, buf.length - i, "BE HeapByteBuffer as CharBuffer index " + i + " to " + end));
+
+                CharBuffer ledbbAsCB = ByteBuffer.allocateDirect(buf.length * 2)
+                                                 .order(ByteOrder.LITTLE_ENDIAN)
+                                                 .asCharBuffer()
+                                                 .put(buf)
+                                                 .position(1)
+                                                 .slice()
+                                                 .position(i - 1)
+                                                 .limit(end - 1);
+                args.add(Arguments.of(ledbbAsCB, buf, i, buf.length - i, "LE DirectByteBuffer as CharBuffer index " + i + " to " + end));
             }
         }
         return args;
@@ -174,6 +212,26 @@ public class CharBufferAsCharSequenceTest {
         for (int i = 0, j = stop - start; i < j; ++i) {
             assertEquals(expected[start + i], (char) chars.nextInt(), "chart at " + i + ": " + description);
         }
+        assertFalse(chars.hasNext(), "chars has more elements than expected " + description);
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testCodePoints(CharSequence actual, char[] expected, int start, int stop, String description) {
+        OfInt codePoints = actual.codePoints().iterator();
+        for (int i = 0, j = stop - start; i < j; ++i) {
+            char c1 = expected[start + i];
+            int expectedCodePoint = c1;
+            if (Character.isHighSurrogate(c1) && (i + 1) < j) {
+                char c2 = expected[i + 1];
+                if (Character.isLowSurrogate(c2)) {
+                    expectedCodePoint = Character.toCodePoint(c1, c2);
+                    ++i;
+                }
+            }
+            assertEquals(expectedCodePoint, codePoints.nextInt(), "code point at " + i + ": " + description);
+        }
+        assertFalse(codePoints.hasNext(), "codePoints has more elements than expected " + description);
     }
 
     @ParameterizedTest
