@@ -1985,20 +1985,28 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  int max_size = max_vector_size(bt);
-  // Limit the min vector size to 8 bytes.
-  int size = 8 / type2aelembytes(bt);
-  if (bt == T_BYTE) {
-    // To support vector api shuffle/rearrange.
-    size = 4;
-  } else if (bt == T_BOOLEAN) {
-    // To support vector api load/store mask.
-    size = 2;
-  } else if (bt == T_SHORT) {
-    // To support vector type conversions between short and wider types.
-    size = 2;
+  int size;
+  switch(bt) {
+    case T_BOOLEAN:
+      // To support vector api load/store mask.
+      size = 2;
+      break;
+    case T_BYTE:
+      // To support vector api shuffle/rearrange.
+      size = 4;
+      break;
+    case T_SHORT:
+      // To support vector type conversions between short and wider types.
+      size = 2;
+      break;
+    default:
+      // Limit the min vector length to 64-bit.
+      size = 8 / type2aelembytes(bt);
+      // The number of elements in a vector should be at least 2.
+      size = MAX2(size, 2);
   }
-  if (size < 2) size = 2;
+
+  int max_size = max_vector_size(bt);
   return MIN2(size, max_size);
 }
 
