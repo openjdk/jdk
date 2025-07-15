@@ -600,7 +600,14 @@ bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
 }
 
 void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
-  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED);
+  long cntr = 0;
+  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED) {
+    if (cntr++ > 1000) {
+      // yield to avoid busy waiting
+      os::naked_yield();
+    }
+  }
+
 }
 
 void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
