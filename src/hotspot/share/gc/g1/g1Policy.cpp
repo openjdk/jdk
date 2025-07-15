@@ -58,7 +58,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _old_gen_alloc_tracker(),
   _ihop_control(create_ihop_control(&_old_gen_alloc_tracker, &_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
-  _full_collection_start_sec(0.0),
   _young_list_desired_length(0),
   _young_list_target_length(0),
   _eden_surv_rate_group(new G1SurvRateGroup()),
@@ -74,8 +73,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _g1h(nullptr),
   _phase_times_timer(gc_timer),
   _phase_times(nullptr),
-  _mark_remark_start_sec(0),
-  _mark_cleanup_start_sec(0),
   _tenuring_threshold(MaxTenuringThreshold),
   _max_survivor_regions(0),
   _survivors_age_table(true)
@@ -572,7 +569,7 @@ void G1Policy::revise_young_list_target_length(size_t card_rs_length, size_t cod
 }
 
 void G1Policy::record_full_collection_start() {
-  _full_collection_start_sec = os::elapsedTime();
+  record_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
@@ -605,7 +602,8 @@ void G1Policy::record_full_collection_end() {
 
   _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
 
-  record_pause(G1GCPauseType::FullGC, _full_collection_start_sec, end_sec);
+  double start_time_sec = phase_times()->cur_collection_start_sec();
+  record_pause(G1GCPauseType::FullGC, start_time_sec, end_sec);
 }
 
 static void log_refinement_stats(const char* kind, const G1ConcurrentRefineStats& stats) {
@@ -669,8 +667,19 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
   return live_bytes < threshold;
 }
 
-void G1Policy::record_young_collection_start() {
+void G1Policy::record_pause_start_time() {
   Ticks now = Ticks::now();
+  phase_times()->record_cur_collection_start_sec(now.seconds());
+
+  double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_pause_end_ms();
+  double cur_gc_cpu_time_ms = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
+
+  double concurrent_gc_cpu_time_ms = cur_gc_cpu_time_ms - prev_gc_cpu_pause_end_ms;
+  _analytics->set_concurrent_gc_cpu_time_ms(concurrent_gc_cpu_time_ms);
+}
+
+void G1Policy::record_young_collection_start() {
+  record_pause_start_time();
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -680,8 +689,6 @@ void G1Policy::record_young_collection_start() {
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
          max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
   assert_used_and_recalculate_used_equal(_g1h);
-
-  phase_times()->record_cur_collection_start_sec(now.seconds());
 
   // do that for any other surv rate groups
   _eden_surv_rate_group->stop_adding_regions();
@@ -695,19 +702,12 @@ void G1Policy::record_concurrent_mark_init_end() {
   collector_state()->set_in_concurrent_start_gc(false);
 }
 
-void G1Policy::record_concurrent_mark_remark_start() {
-  _mark_remark_start_sec = os::elapsedTime();
-}
-
 void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
-  double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
+  double start_time_sec = phase_times()->cur_collection_start_sec();
+  double elapsed_time_ms = (end_time_sec - start_time_sec)*1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-  record_pause(G1GCPauseType::Remark, _mark_remark_start_sec, end_time_sec);
-}
-
-void G1Policy::record_concurrent_mark_cleanup_start() {
-  _mark_cleanup_start_sec = os::elapsedTime();
+  record_pause(G1GCPauseType::Remark, start_time_sec, end_time_sec);
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
@@ -1321,10 +1321,11 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   collector_state()->set_clearing_bitmap(true);
 
   double end_sec = os::elapsedTime();
-  double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
+  double start_sec = phase_times()->cur_collection_start_sec();
+  double elapsed_time_ms = (end_sec - start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
 
-  record_pause(G1GCPauseType::Cleanup, _mark_cleanup_start_sec, end_sec);
+  record_pause(G1GCPauseType::Cleanup, start_sec, end_sec);
 }
 
 void G1Policy::abandon_collection_set_candidates() {
@@ -1369,6 +1370,9 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
   }
 
   update_time_to_mixed_tracking(gc_type, start, end);
+
+  double elapsed_gc_cpu_time = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
+  _analytics->set_gc_cpu_time_pause_end_ms(elapsed_gc_cpu_time);
 }
 
 void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
