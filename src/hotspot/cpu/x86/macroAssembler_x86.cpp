@@ -6011,7 +6011,7 @@ void MacroAssembler::evpbroadcast(BasicType type, XMMRegister dst, Register src,
   }
 }
 
-// Encode given `char[]`/`byte[]` to `byte[]` in ISO_8859_1 or ASCII
+// Encode given char[]/byte[] to byte[] in ISO_8859_1 or ASCII
 //
 // @IntrinsicCandidate
 // int sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(

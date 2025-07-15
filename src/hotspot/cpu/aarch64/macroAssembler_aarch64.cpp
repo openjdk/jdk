@@ -6422,13 +6422,13 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 // Intrinsic for
 //
 // - sun.nio.cs.ISO_8859_1.Encoder#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes `char[]` to `byte[]` in ISO-8859-1
+//   Encodes char[] to byte[] in ISO-8859-1
 //
 // - java.lang.StringCoding#encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes `byte[]` (containing UTF-16) to `byte[]` in ISO-8859-1
+//   Encodes byte[] (containing UTF-16) to byte[] in ISO-8859-1
 //
 // - java.lang.StringCoding#encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len)
-//   Encodes `char[]` to `byte[]` in ASCII
+//   Encodes char[] to byte[] in ASCII
 //
 // This version always returns the number of characters copied, and does not
 // clobber the 'len' register. A successful copy will complete with the post-
