@@ -29,11 +29,8 @@ package java.lang;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
-
-import static java.util.Objects.requireNonNull;
-import static jdk.internal.util.Preconditions.AIOOBE_FORMATTER;
-import static jdk.internal.util.Preconditions.checkFromIndexSize;
 
 /**
  * Utility class for string encoding and decoding.
@@ -101,7 +98,7 @@ class StringCoding {
      *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
     static int countPositives(byte[] ba, int off, int len) {
-        checkFromIndexSize(off, len, requireNonNull(ba, "ba").length, AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, Objects.requireNonNull(ba, "ba").length, Preconditions.AIOOBE_FORMATTER);
         return countPositives0(ba, off, len);
     }
 
@@ -146,20 +143,24 @@ class StringCoding {
      * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
      *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
-    static int encodeISOArray(byte[] sa, int sp, byte[] da, int dp, int len) {
-        checkFromIndexSize(sp, len << 1, requireNonNull(sa, "sa").length, AIOOBE_FORMATTER);
-        checkFromIndexSize(dp, len, requireNonNull(da, "da").length, AIOOBE_FORMATTER);
+    static int encodeISOArray(byte[] sa, int sp,
+                              byte[] da, int dp, int len) {
+        Objects.requireNonNull(sa, "sa");
+        Objects.requireNonNull(da, "da");
+        Preconditions.checkFromIndexSize(sp, len << 1, sa.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(dp, len, da.length, Preconditions.AIOOBE_FORMATTER);
         return encodeISOArray0(sa, sp, da, dp, len);
     }
 
     @IntrinsicCandidate
-    private static int encodeISOArray0(byte[] sa, int sp, byte[] da, int dp, int len) {
+    private static int encodeISOArray0(byte[] sa, int sp,
+                                       byte[] da, int dp, int len) {
         int i = 0;
         for (; i < len; i++) {
             char c = StringUTF16.getChar(sa, sp++);
             if (c > '\u00FF')
                 break;
-            da[dp++] = (byte) c;
+            da[dp++] = (byte)c;
         }
         return i;
     }
@@ -179,20 +180,24 @@ class StringCoding {
      * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
      *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
-    static int encodeAsciiArray(char[] sa, int sp, byte[] da, int dp, int len) {
-        checkFromIndexSize(sp, len, requireNonNull(sa, "sa").length, AIOOBE_FORMATTER);
-        checkFromIndexSize(dp, len, requireNonNull(da, "da").length, AIOOBE_FORMATTER);
+    static int encodeAsciiArray(char[] sa, int sp,
+                                byte[] da, int dp, int len) {
+        Objects.requireNonNull(sa, "sa");
+        Objects.requireNonNull(da, "da");
+        Preconditions.checkFromIndexSize(sp, len, sa.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(dp, len, da.length, Preconditions.AIOOBE_FORMATTER);
         return encodeAsciiArray0(sa, sp, da, dp, len);
     }
 
     @IntrinsicCandidate
-    private static int encodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len) {
+    private static int encodeAsciiArray0(char[] sa, int sp,
+                                         byte[] da, int dp, int len) {
         int i = 0;
         for (; i < len; i++) {
             char c = sa[sp++];
             if (c >= '\u0080')
                 break;
-            da[dp++] = (byte) c;
+            da[dp++] = (byte)c;
         }
         return i;
     }

@@ -31,16 +31,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-
-import static java.util.Objects.requireNonNull;
-import static jdk.internal.util.Preconditions.AIOOBE_FORMATTER;
-import static jdk.internal.util.Preconditions.checkFromIndexSize;
 
 public class ISO_8859_1
     extends Charset
@@ -161,9 +158,12 @@ public class ISO_8859_1
          * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
          *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
          */
-        private static int encodeISOArray(char[] sa, int sp, byte[] da, int dp, int len) {
-            checkFromIndexSize(sp, len, requireNonNull(sa, "sa").length, AIOOBE_FORMATTER);
-            checkFromIndexSize(dp, len, requireNonNull(da, "da").length, AIOOBE_FORMATTER);
+        private static int encodeISOArray(char[] sa, int sp,
+                                          byte[] da, int dp, int len) {
+            Objects.requireNonNull(sa, "sa");
+            Objects.requireNonNull(da, "da");
+            Preconditions.checkFromIndexSize(sp, len, sa.length, Preconditions.AIOOBE_FORMATTER);
+            Preconditions.checkFromIndexSize(dp, len, da.length, Preconditions.AIOOBE_FORMATTER);
             return encodeISOArray0(sa, sp, da, dp, len);
         }
 
@@ -174,7 +174,7 @@ public class ISO_8859_1
                 char c = sa[sp++];
                 if (c > '\u00FF')
                     break;
-                da[dp++] = (byte) c;
+                da[dp++] = (byte)c;
             }
             return i;
         }
