@@ -8888,8 +8888,7 @@ instruct TailCalljmpInd(IPRegP jump_target, inline_cache_regP method_ptr) %{
   match(TailCall jump_target method_ptr);
 
   ins_cost(CALL_COST);
-  format %{ "MOV    Rexception_pc, LR\n\t"
-            "jump   $jump_target  \t! $method_ptr holds method" %}
+  format %{ "jump   $jump_target  \t! $method_ptr holds method" %}
   ins_encode %{
     __ jump($jump_target$$Register);
   %}
@@ -8935,7 +8934,8 @@ instruct ForwardExceptionjmp()
   match(ForwardException);
   ins_cost(CALL_COST);
 
-  format %{ "b    forward_exception_stub" %}
+  format %{ "MOV  Rexception_pc, LR\n\t"
+            "b    forward_exception_entry" %}
   ins_encode %{
     __ mov(Rexception_pc, LR);
     // OK to trash Rtemp, because Rtemp is used by stub
