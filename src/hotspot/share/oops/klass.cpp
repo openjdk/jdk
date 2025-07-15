@@ -749,14 +749,17 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_weak_instanceklass_links();
-
-      // JVMTI RedefineClasses creates previous versions that are not in
-      // the class hierarchy, so process them here.
-      while ((ik = ik->previous_versions()) != nullptr) {
-        ik->clean_weak_instanceklass_links();
-      }
+      clean_weak_instanceklass_links(ik);
     }
+  }
+}
+
+void Klass::clean_weak_instanceklass_links(InstanceKlass* ik) {
+  ik->clean_weak_instanceklass_links();
+  // JVMTI RedefineClasses creates previous versions that are not in
+  // the class hierarchy, so process them here.
+  while ((ik = ik->previous_versions()) != nullptr) {
+    ik->clean_weak_instanceklass_links();
   }
 }
 
