@@ -259,13 +259,16 @@ public final class SourceLauncher {
             }
         } catch (IllegalAccessException e) {
             throw new Fault(Errors.CantAccessMainMethod(mainClassName));
-        } catch (InvocationTargetException e) {
+        } catch (InvocationTargetException exception) {
             // remove stack frames for source launcher
-            int invocationFrames = e.getStackTrace().length;
-            Throwable target = e.getCause();
-            StackTraceElement[] targetTrace = target.getStackTrace();
-            target.setStackTrace(Arrays.copyOfRange(targetTrace, 0, targetTrace.length - invocationFrames));
-            throw e;
+            Throwable cause = exception.getCause();
+            if (cause == null) throw exception;
+            StackTraceElement[] elements = cause.getStackTrace();
+            int range = elements.length - exception.getStackTrace().length;
+            if (range >= 0) {
+                cause.setStackTrace(Arrays.copyOfRange(elements, 0, range));
+            }
+            throw exception;
         }
 
         return mainClass;
