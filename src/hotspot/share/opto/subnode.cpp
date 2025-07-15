@@ -2023,10 +2023,12 @@ const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
 
 static const Type* reverse_bytes(int opcode, const Type* con) {
   switch (opcode) {
-    case Op_ReverseBytesS:  return TypeInt::make(byteswap(checked_cast<jshort>(con->is_int()->get_con())));
-    case Op_ReverseBytesUS: return TypeInt::make(byteswap(checked_cast<jchar>(con->is_int()->get_con())));
-    case Op_ReverseBytesI:  return TypeInt::make(byteswap(checked_cast<jint>(con->is_int()->get_con())));
-    case Op_ReverseBytesL:  return TypeLong::make(byteswap(checked_cast<jlong>(con->is_long()->get_con())));
+    // It is valid in bytecode to load any int and pass it to a method that expects a smaller type (i.e., short, char).
+    // Let's cast the value to match the Java behavior.
+    case Op_ReverseBytesS:  return TypeInt::make(byteswap(static_cast<jshort>(con->is_int()->get_con())));
+    case Op_ReverseBytesUS: return TypeInt::make(byteswap(static_cast<jchar>(con->is_int()->get_con())));
+    case Op_ReverseBytesI:  return TypeInt::make(byteswap(con->is_int()->get_con()));
+    case Op_ReverseBytesL:  return TypeLong::make(byteswap(con->is_long()->get_con()));
     default: ShouldNotReachHere();
   }
 }
