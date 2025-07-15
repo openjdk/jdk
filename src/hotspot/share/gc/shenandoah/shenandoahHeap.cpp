@@ -1452,22 +1452,23 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
-size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
+size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
   assert(!start->has_live(), "liveness must be zero");
 
   // Do not try to get the size of this humongous object. STW collections will
-  // have already unloaded classes, so the object may have a bad klass pointer.
-  int regions_trashed = 0;
+  // have already unloaded classes, so an unmarked object may have a bad klass pointer.
   ShenandoahHeapRegion* region = start;
+  size_t index = region->index();
   do {
-    assert(region->is_humongous(), "expect correct humongous start or continuation");
+    assert(region->is_humongous(), "Expect correct humongous start or continuation");
     assert(!region->is_cset(), "Humongous region should not be in collection set");
     region->make_trash_immediate();
-    regions_trashed++;
-    region = get_region(region->index() + 1);
+    region = get_region(++index);
   } while (region != nullptr && region->is_humongous_continuation());
-  return regions_trashed;
+
+  // Return number of regions trashed
+  return index - start->index();
 }
 
 class ShenandoahCheckCleanGCLABClosure : public ThreadClosure {
