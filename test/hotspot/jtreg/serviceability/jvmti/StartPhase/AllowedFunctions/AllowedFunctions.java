@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:AllowedFunctions AllowedFunctions
  * @run main/othervm/native -agentlib:AllowedFunctions=with_early_vmstart AllowedFunctions
- * @run main/othervm/native -agentlib:AllowedFunctions=with_early_vmstart  -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n AllowedFunctions
+ * @run main/othervm/native -agentlib:AllowedFunctions=with_early_vmstart -Xrunjdwp:transport=dt_socket,address=0,server=y,suspend=n AllowedFunctions
  */
 
 public class AllowedFunctions {
