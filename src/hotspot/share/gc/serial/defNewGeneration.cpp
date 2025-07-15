@@ -615,15 +615,23 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
                                      NMethodToOopClosure::FixRelocations,
                                      false /* keepalive_nmethods */);
 
-    // Processing old-to-young pointers before relocating other kinds of roots.
+    // Starting tracing from roots, there are 4 kinds of roots in young-gc.
+    //
+    // 1. old-to-young pointers; processing them before relocating other kinds
+    // of roots.
     _old_gen->scan_old_to_young_refs();
 
-    // During young-gc, visit all (strong+weak) clds with the same closure.
+    // 2. CLD; visit all (strong+weak) clds with the same closure, because we
+    // don't perform class unloading during young-gc.
     ClassLoaderDataGraph::cld_do(&cld_cl);
 
+    // 3. Threads stack frames and nmethods.
+    // Only nmethods that contain pointers into-young need to be processed
+    // during young-gc, and they are tracked in ScavengableNMethods
     Threads::oops_do(&oop_cl, &nmethod_cl);
     ScavengableNMethods::nmethods_do(&nmethod_cl);
 
+    // 4. VM internal roots.
     OopStorageSet::strong_oops_do(&oop_cl);
   }
 

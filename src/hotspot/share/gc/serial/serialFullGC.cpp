@@ -489,10 +489,15 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
                                             !NMethodToOopClosure::FixRelocations,
                                             true);
 
+    // Start tracing from roots, there are 3 kinds of roots in full-gc.
+    //
+    // 1. CLD.
     ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
 
+    // 2. Threads stack frames and active nmethods in them.
     Threads::oops_do(&follow_root_closure, &mark_code_closure);
 
+    // 3. VM internal roots.
     OopStorageSet::strong_oops_do(&follow_root_closure);
   }
 
@@ -721,15 +726,19 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
+    // Remap roots
+    // 1. CLD
     ClassLoaderDataGraph::cld_do(&adjust_cld_closure);
 
+    // 2. Threads stack frames and all nmethods
     Threads::oops_do(&adjust_pointer_closure, nullptr);
-
-    OopStorageSet::strong_oops_do(&adjust_pointer_closure);
-
     NMethodToOopClosure nmethod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
     CodeCache::nmethods_do(&nmethod_cl);
 
+    // 3. VM internal roots
+    OopStorageSet::strong_oops_do(&adjust_pointer_closure);
+
+    // 4. VM internal weak roots
     WeakProcessor::oops_do(&adjust_pointer_closure);
 
     adjust_marks();
