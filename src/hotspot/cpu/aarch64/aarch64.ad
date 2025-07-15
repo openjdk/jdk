@@ -1765,10 +1765,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // n.b. frame size includes space for return pc and rfp
   const int framesize = C->output()->frame_size_in_bytes();
 
-  // insert a nop at the start of the prolog so we can patch in a
-  // branch if we need to invalidate the method later
-  __ nop();
-
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
 
@@ -1888,7 +1884,7 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 

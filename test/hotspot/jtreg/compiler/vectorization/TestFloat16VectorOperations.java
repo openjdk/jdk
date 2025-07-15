@@ -37,6 +37,7 @@ import compiler.lib.ir_framework.*;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
 import static java.lang.Float.*;
+import java.util.Arrays;
 import jdk.test.lib.*;
 import compiler.lib.generators.Generator;
 import static compiler.lib.generators.Generators.G;
@@ -46,8 +47,10 @@ public class TestFloat16VectorOperations {
     private short[] input2;
     private short[] input3;
     private short[] output;
-    private static short SCALAR_FP16 = (short)0x7777;
+    private static short FP16_SCALAR = (short)0x7777;
     private static final int LEN = 2048;
+
+    private static final Float16 FP16_CONST = Float16.valueOf(1023.0f);
 
     public static void main(String args[]) {
         // Test with default MaxVectorSize
@@ -60,10 +63,14 @@ public class TestFloat16VectorOperations {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:MaxVectorSize=64");
     }
 
-    public static boolean assertResults(short expected, short actual) {
-        Float16 expected_fp16 = shortBitsToFloat16(expected);
-        Float16 actual_fp16 = shortBitsToFloat16(actual);
-        return !expected_fp16.equals(actual_fp16);
+    public static void assertResults(int arity, short ... values) {
+        assert values.length == (arity + 2);
+        Float16 expected_fp16 = shortBitsToFloat16(values[arity]);
+        Float16 actual_fp16 = shortBitsToFloat16(values[arity + 1]);
+        if(!expected_fp16.equals(actual_fp16)) {
+            String inputs = Arrays.toString(Arrays.copyOfRange(values, 0, arity - 1));
+            throw new AssertionError("Result Mismatch!, input = " + inputs + " actual = " + actual_fp16 +  " expected = " + expected_fp16);
+        }
     }
 
     public TestFloat16VectorOperations() {
@@ -84,9 +91,9 @@ public class TestFloat16VectorOperations {
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.ADD_VHF, ">= 1"},
+    @IR(counts = {IRNode.ADD_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.ADD_VHF, ">= 1"},
+    @IR(counts = {IRNode.ADD_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorAddFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -98,18 +105,16 @@ public class TestFloat16VectorOperations {
     public void checkResultAdd() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) + float16ToFloat(input2[i]));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(2, input1[i], input2[i], expected, output[i]);
         }
     }
 
+
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.SUB_VHF, ">= 1"},
+    @IR(counts = {IRNode.SUB_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.SUB_VHF, ">= 1"},
+    @IR(counts = {IRNode.SUB_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorSubFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -121,18 +126,16 @@ public class TestFloat16VectorOperations {
     public void checkResultSub() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) - float16ToFloat(input2[i]));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(2, input1[i], input2[i], expected, output[i]);
         }
     }
 
+
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.MUL_VHF, ">= 1"},
+    @IR(counts = {IRNode.MUL_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.MUL_VHF, ">= 1"},
+    @IR(counts = {IRNode.MUL_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorMulFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -144,18 +147,15 @@ public class TestFloat16VectorOperations {
     public void checkResultMul() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) * float16ToFloat(input2[i]));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(2, input1[i], input2[i], expected, output[i]);
         }
     }
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.DIV_VHF, ">= 1"},
+    @IR(counts = {IRNode.DIV_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.DIV_VHF, ">= 1"},
+    @IR(counts = {IRNode.DIV_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorDivFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -167,18 +167,15 @@ public class TestFloat16VectorOperations {
     public void checkResultDiv() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) / float16ToFloat(input2[i]));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(2, input1[i], input2[i], expected, output[i]);
         }
     }
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.MIN_VHF, ">= 1"},
+    @IR(counts = {IRNode.MIN_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.MIN_VHF, ">= 1"},
+    @IR(counts = {IRNode.MIN_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorMinFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -190,18 +187,15 @@ public class TestFloat16VectorOperations {
     public void checkResultMin() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(Math.min(float16ToFloat(input1[i]), float16ToFloat(input2[i])));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(2, input1[i], input2[i], expected, output[i]);
         }
     }
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.MAX_VHF, ">= 1"},
+    @IR(counts = {IRNode.MAX_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.MAX_VHF, ">= 1"},
+    @IR(counts = {IRNode.MAX_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorMaxFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -213,18 +207,15 @@ public class TestFloat16VectorOperations {
     public void checkResultMax() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(Math.max(float16ToFloat(input1[i]), float16ToFloat(input2[i])));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(2, input1[i], input2[i], expected, output[i]);
         }
     }
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.SQRT_VHF, ">= 1"},
+    @IR(counts = {IRNode.SQRT_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.SQRT_VHF, ">= 1"},
+    @IR(counts = {IRNode.SQRT_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorSqrtFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -236,18 +227,15 @@ public class TestFloat16VectorOperations {
     public void checkResultSqrt() {
         for (int i = 0; i < LEN; ++i) {
             short expected = float16ToRawShortBits(sqrt(shortBitsToFloat16(input1[i])));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input = " + input1[i] +
-                                           " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(1, input1[i], expected, output[i]);
         }
     }
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.FMA_VHF, ">= 1"},
+    @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.FMA_VHF, ">= 1"},
+    @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorFmaFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -261,22 +249,19 @@ public class TestFloat16VectorOperations {
         for (int i = 0; i < LEN; ++i) {
             short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]),
                                                        shortBitsToFloat16(input3[i])));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           "input3 = " + input3[i] + " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(3, input1[i], input2[i], input3[i], expected, output[i]);
         }
     }
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.FMA_VHF, " >= 1"},
+    @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.FMA_VHF, ">= 1"},
+    @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorFmaFloat16ScalarMixedConstants() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(SCALAR_FP16),
+            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(FP16_SCALAR),
                                                   shortBitsToFloat16(floatToFloat16(3.0f))));
         }
     }
@@ -284,21 +269,18 @@ public class TestFloat16VectorOperations {
     @Check(test="vectorFmaFloat16ScalarMixedConstants")
     public void checkResultFmaScalarMixedConstants() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(SCALAR_FP16),
+            short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(FP16_SCALAR),
                                                        shortBitsToFloat16(floatToFloat16(3.0f))));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + SCALAR_FP16 +
-                                           "input3 = 3.0 " + "output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(2, input1[i], FP16_SCALAR, expected, output[i]);
         }
     }
 
 
     @Test
     @Warmup(50)
-    @IR(counts = {IRNode.FMA_VHF, " >= 1"},
+    @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
-    @IR(counts = {IRNode.FMA_VHF, ">= 1"},
+    @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorFmaFloat16MixedConstants() {
         short input3 = floatToFloat16(3.0f);
@@ -307,15 +289,13 @@ public class TestFloat16VectorOperations {
         }
     }
 
+
     @Check(test="vectorFmaFloat16MixedConstants")
     public void checkResultFmaMixedConstants() {
         short input3 = floatToFloat16(3.0f);
         for (int i = 0; i < LEN; ++i) {
             short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]), shortBitsToFloat16(input3)));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
-                                           "input3 = " + input3 + " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(3, input1[i], input2[i], input3, expected, output[i]);
         }
     }
 
@@ -341,10 +321,118 @@ public class TestFloat16VectorOperations {
         short input3 = floatToFloat16(3.0f);
         for (int i = 0; i < LEN; ++i) {
             short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1), shortBitsToFloat16(input2), shortBitsToFloat16(input3)));
-            if (assertResults(expected, output[i])) {
-                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1 + " input2 = " + input2 +
-                                           "input3 = " + input3 + " output = " + output[i] + " expected = " + expected);
-            }
+            assertResults(3, input1, input2, input3, expected, output[i]);
+        }
+    }
+
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.ADD_VHF, " >0 "},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
+    @IR(counts = {IRNode.ADD_VHF, " >0 "},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    public void vectorAddConstInputFloat16() {
+         for (int i = 0; i < LEN; ++i) {
+             output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input1[i]), FP16_CONST));
+         }
+     }
+
+    @Check(test="vectorAddConstInputFloat16")
+    public void checkResultAddConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(float16ToFloat(input1[i]) + FP16_CONST.floatValue());
+            assertResults(2, input1[i], float16ToRawShortBits(FP16_CONST), expected, output[i]);
+        }
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.SUB_VHF, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorSubConstInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(subtract(shortBitsToFloat16(input1[i]), FP16_CONST));
+        }
+    }
+
+    @Check(test="vectorSubConstInputFloat16")
+    public void checkResultSubConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(float16ToFloat(input1[i]) - FP16_CONST.floatValue());
+            assertResults(2, input1[i], float16ToRawShortBits(FP16_CONST), expected, output[i]);
+        }
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MUL_VHF, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorMulConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(multiply(FP16_CONST, shortBitsToFloat16(input2[i])));
+        }
+    }
+
+    @Check(test="vectorMulConstantInputFloat16")
+    public void checkResultMulConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(FP16_CONST.floatValue() * float16ToFloat(input2[i]));
+            assertResults(2, float16ToRawShortBits(FP16_CONST), input2[i], expected, output[i]);
+        }
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.DIV_VHF, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorDivConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(divide(FP16_CONST, shortBitsToFloat16(input2[i])));
+        }
+    }
+
+    @Check(test="vectorDivConstantInputFloat16")
+    public void checkResultDivConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(FP16_CONST.floatValue() / float16ToFloat(input2[i]));
+            assertResults(2, float16ToRawShortBits(FP16_CONST), input2[i], expected, output[i]);
+        }
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MAX_VHF, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorMaxConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(max(FP16_CONST, shortBitsToFloat16(input2[i])));
+        }
+    }
+
+    @Check(test="vectorMaxConstantInputFloat16")
+    public void checkResultMaxConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(Math.max(FP16_CONST.floatValue(), float16ToFloat(input2[i])));
+            assertResults(2, float16ToRawShortBits(FP16_CONST), input2[i], expected, output[i]);
+        }
+    }
+
+    @Test
+    @Warmup(50)
+    @IR(counts = {IRNode.MIN_VHF, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorMinConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(min(FP16_CONST, shortBitsToFloat16(input2[i])));
+        }
+    }
+
+    @Check(test="vectorMinConstantInputFloat16")
+    public void checkResultMinConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(Math.min(FP16_CONST.floatValue(), float16ToFloat(input2[i])));
+            assertResults(2, float16ToRawShortBits(FP16_CONST), input2[i], expected, output[i]);
         }
     }
 }
