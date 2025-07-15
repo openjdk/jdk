@@ -48,7 +48,7 @@ public class CaseFoldingTest {
         var filter = "^.*; [CTS]; .*$";  // update C,T,S to test different type
         var excluded = Set.of(
             // these 'S' characters failed for known reason. they don't map to their
-            // fording form with toUpperCase or toLowerCase, only map with case-folding.
+            // folding form with toUpperCase or toLowerCase, only map with case-folding.
             // exclude them for now.
             0x1fd3,  // 1FD3 [lo: 1fd3, up: 1fd3]  0390 [lo: 0390, up: 0390]
             0x1fe3,  // 1FE3 [lo: 1fe3, up: 1fe3]  03B0 [lo: 03b0, up: 03b0]
