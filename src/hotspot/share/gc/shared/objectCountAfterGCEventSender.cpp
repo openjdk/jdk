@@ -24,33 +24,33 @@
 
 
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/objectCountEventSender.hpp"
+#include "gc/shared/objectCountAfterGCEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/heapInspection.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_SERVICES
 
-bool ObjectCountEventSender::should_send_event() {
+bool ObjectCountAfterGCEventSender::should_send_event() {
 #if INCLUDE_JFR
-  return _should_send_requestable_event || EventObjectCount::is_enabled();
+  return _should_send_requestable_event || EventObjectCountAfterGC::is_enabled();
 #else
   return false;
 #endif // INCLUDE_JFR
 }
 
-bool ObjectCountEventSender::_should_send_requestable_event = false;
+bool ObjectCountAfterGCEventSender::_should_send_requestable_event = false;
 
-void ObjectCountEventSender::enable_requestable_event() {
+void ObjectCountAfterGCEventSender::enable_requestable_event() {
   _should_send_requestable_event = true;
 }
 
-void ObjectCountEventSender::disable_requestable_event() {
+void ObjectCountAfterGCEventSender::disable_requestable_event() {
   _should_send_requestable_event = false;
 }
 
 template <typename T>
-void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp) {
+void ObjectCountAfterGCEventSender::send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp) {
   T event(UNTIMED);
   if (event.should_commit()) {
     event.set_starttime(timestamp);
@@ -63,12 +63,12 @@ void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, ju
   }
 }
 
-void ObjectCountEventSender::send(const KlassInfoEntry* entry, const Ticks& timestamp) {
+void ObjectCountAfterGCEventSender::send(const KlassInfoEntry* entry, const Ticks& timestamp) {
   Klass* klass = entry->klass();
   jlong count = entry->count();
   julong total_size = entry->words() * BytesPerWord;
 
-  send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
+  send_event_if_enabled<EventObjectCountAfterGC>(klass, count, total_size, timestamp);
 }
 
 #endif // INCLUDE_SERVICES

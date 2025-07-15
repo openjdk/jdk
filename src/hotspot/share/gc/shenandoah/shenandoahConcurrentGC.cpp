@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -35,6 +36,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
@@ -769,6 +771,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded();
   }
+
+  ShenandoahIsAliveClosure is_alive;
+  ShenandoahHeap::heap()->tracer()->report_object_count(&is_alive, ShenandoahHeap::heap()->workers());
 
   if (!heap->cancelled_gc()) {
     _mark.finish_mark();
