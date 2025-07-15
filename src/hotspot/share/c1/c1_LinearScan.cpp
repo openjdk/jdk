@@ -6450,7 +6450,6 @@ const char* LinearScanStatistic::counter_name(int counter_idx) {
     case counter_misc_inst:       return "other instructions";
     case counter_other_inst:      return "misc. instructions";
 
-
     // counter for different types of moves
     case counter_move_total:      return "total moves";
     case counter_move_reg_reg:    return "register->register";
