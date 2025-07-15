@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8172970
+ * @bug 8172970 8362203
  * @summary Verify the functions that are allowed to operate in the start phase
  * with and without can_generate_early_vmstart capability.
  * @requires vm.jvmti

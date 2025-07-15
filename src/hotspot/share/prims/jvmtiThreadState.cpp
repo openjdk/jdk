@@ -1041,10 +1041,9 @@ oop JvmtiThreadState::get_thread_oop() {
   return _thread_oop_h.resolve();
 }
 
-void JvmtiThreadState::update_thread_oop(JavaThread* thread) {
-  assert(thread->threadObj() != nullptr, "Should threadObj be already initialized");
-  if (thread->jvmti_thread_state() != nullptr
-         && thread->jvmti_thread_state()->get_thread_oop() == nullptr) {
+void JvmtiThreadState::update_thread_oop_during_vm_start(JavaThread* thread) {
+  assert(thread->threadObj() != nullptr, "santity check");
+  if (thread->jvmti_thread_state()->get_thread_oop() == nullptr) {
     _thread_oop_h.release(JvmtiExport::jvmti_oop_storage());
     _thread_oop_h = OopHandle(JvmtiExport::jvmti_oop_storage(), thread->threadObj());
   }
