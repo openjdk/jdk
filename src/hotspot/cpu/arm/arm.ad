@@ -8891,10 +8891,6 @@ instruct TailCalljmpInd(IPRegP jump_target, inline_cache_regP method_ptr) %{
   format %{ "MOV    Rexception_pc, LR\n\t"
             "jump   $jump_target  \t! $method_ptr holds method" %}
   ins_encode %{
-    __ mov(Rexception_pc, LR);   // this is used only to call
-                                 // StubRoutines::forward_exception_entry()
-                                 // which expects PC of exception in
-                                 // R5. FIXME?
     __ jump($jump_target$$Register);
   %}
   ins_pipe(tail_call);
@@ -8941,6 +8937,7 @@ instruct ForwardExceptionjmp()
 
   format %{ "b    forward_exception_stub" %}
   ins_encode %{
+    __ mov(Rexception_pc, LR);
     // OK to trash Rtemp, because Rtemp is used by stub
     __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
   %}
