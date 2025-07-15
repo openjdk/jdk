@@ -41,7 +41,7 @@ class FullGCForwardingTest : public testing::Test {
   // Real size of fake heap, considering alignment.
   static const int FAKE_HEAP_SIZE_UNALIGNED = FAKE_HEAP_SIZE + FAKE_HEAP_ALIGNMENT;
   // Bit-pattern which must not change.
-  static const uintptr_t BIT_PATTERN = 0xA5A5A5A5A5A5A5A0;
+  static const uintptr_t BIT_PATTERN = LP64_ONLY(0xA5A5A5A5A5A5A5A0) NOT_LP64(0xA5A5A5A0);
   // Number of bits used for forwarding.
   static const int NUM_FWD_BITS = 4;
   // Forwarding bit mask.
