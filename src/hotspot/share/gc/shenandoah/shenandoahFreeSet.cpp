@@ -1439,6 +1439,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       _heap->old_generation()->clear_cards_for(r);
     }
     _heap->generation_for(r->affiliation())->increment_affiliated_region_count();
+    _partitions.decrease_empty_region_counts(_partitions.membership(r->index()), (size_t) 1);
+    recompute_total_affiliated();
 #ifdef ASSERT
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
