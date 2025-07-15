@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,24 @@
  * questions.
  */
 
-import javax.swing.JApplet;
-import java.awt.HeadlessException;
-
 /*
  * @test
- * @summary Check that JApplet constructor throws HeadlessException in headless mode
- * @run main/othervm -Djava.awt.headless=true HeadlessJApplet
+ * @bug 8361214
+ * @summary An anonymous class is erroneously being classify as an abstract class
+ * @compile AnonymousLabeledAsAbstractTest.java
  */
 
-public class HeadlessJApplet {
-    public static void main(String args[]) {
-        boolean exceptions = false;
-        try {
-            new JApplet();
-        } catch (HeadlessException e) {
-            exceptions = true;
-        }
-        if (!exceptions)
-            throw new RuntimeException("HeadlessException did not occur when expected");
+class AnonymousLabeledAsAbstractTest {
+    abstract class Base<T> {}
+    abstract class Derived1<T> extends Base<T> {}
+    abstract class Derived2<T> extends Base<T> {
+        Derived2(Derived1<T> obj){}
     }
+    abstract class Derived3<T> extends Base<T> {
+        Derived3(Derived2<T> obj){}
+    }
+
+    Base<String> obj = new Derived2<>(new Derived1<>(){}){};
+    Base<String> obj2 = new Derived3<String>(new Derived2<>(new Derived1<>(){}){}){};
+    Base<String> obj3 = new Derived3<>(new Derived2<>(new Derived1<>(){}){}){};
 }

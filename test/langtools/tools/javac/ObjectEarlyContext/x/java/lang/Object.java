@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,15 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jit.misctests.fpustack;
 
-import nsk.share.TestFailure;
+package java.lang;
 
-public class Node {
-
-        double x = 0.0;
-        double y = 0.0;
-
-        String lbl;
-
+public class Object {
+    public Object() {
+        foo(); // valid, not in early constructor context
     }
+
+    void foo() { }
+}
