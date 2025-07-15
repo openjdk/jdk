@@ -339,7 +339,6 @@ public:
 
 struct ShenandoahDirectAllocationRegion {
   ShenandoahHeapRegion* volatile _address = nullptr;
-  bool volatile                  _eligible_for_replacement = true;
 };
 
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
