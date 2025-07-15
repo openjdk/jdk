@@ -1692,6 +1692,63 @@ static bool gc_counter_less_than(uint x, uint y) {
 #define LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, result) \
   LOG_COLLECT_CONCURRENTLY(cause, "complete %s", BOOL_TO_STR(result))
 
+static bool wait_for_completion(GCCause::Cause cause,
+                                uint old_marking_started_before,
+                                uint old_marking_completed_before,
+                                uint old_marking_started_after,
+                                uint old_marking_completed_after) {
+  // Request is finished if a full collection (concurrent or stw)
+  // was started after this request and has completed, e.g.
+  // started_before < completed_after.
+  if (gc_counter_less_than(old_marking_started_before,
+                           old_marking_completed_after)) {
+    LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+    return true;
+  }
+
+  if (old_marking_started_after != old_marking_completed_after) {
+    // If there is an in-progress cycle (possibly started by us), then
+    // wait for that cycle to complete, e.g.
+    // while completed_now < started_after.
+    LOG_COLLECT_CONCURRENTLY(cause, "wait");
+    MonitorLocker ml(G1OldGCCount_lock);
+    while (gc_counter_less_than(old_marking_completed_before,
+                                old_marking_started_after)) {
+      ml.wait();
+    }
+    // Request is finished if the collection we just waited for was
+    // started after this request.
+    if (old_marking_started_before != old_marking_started_after) {
+      LOG_COLLECT_CONCURRENTLY(cause, "complete after wait");
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool should_retry_vm_op(GCCause::Cause cause, VM_G1TryInitiateConcMark* op) {
+  if (op->cycle_already_in_progress()) {
+    // If VMOp failed because a cycle was already in progress, it
+    // is now complete.  But it didn't finish this user-requested
+    // GC, so try again.
+    LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
+    return true;
+  } else if (op->whitebox_attached()) {
+    // If WhiteBox wants control, wait for notification of a state
+    // change in the controller, then try again.  Don't wait for
+    // release of control, since collections may complete while in
+    // control.  Note: This won't recognize a STW full collection
+    // while waiting; we can't wait on multiple monitors.
+    LOG_COLLECT_CONCURRENTLY(cause, "whitebox control stall");
+    MonitorLocker ml(ConcurrentGCBreakpoints::monitor());
+    if (ConcurrentGCBreakpoints::is_controlled()) {
+      ml.wait();
+    }
+    return true;
+  }
+  return false;
+}
+
 bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
                                                uint gc_counter,
                                                uint old_marking_started_before) {
@@ -1753,14 +1810,36 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
         old_marking_started_before = old_marking_started_after;
       }
     } else if (GCCause::is_codecache_requested_gc(cause)) {
-        // For a CodeCache requested GC, before marking, progress is ensured as the
-        // following Remark pause unloads code (and signals the requester such).
-        // Otherwise we must ensure that it is restarted.
-        if (op.marking_in_progress()) {
-          LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
-          return true;
-        }
-        
+      // For a CodeCache requested GC, before marking, progress is ensured as the
+      // following Remark pause unloads code (and signals the requester such).
+      // Otherwise we must ensure that it is restarted.
+      if (op.marking_in_progress()) {
+        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+        return true;
+      }
+
+      log_debug(gc)("before-wait: cause %s mark-in-progress %d cycle-in-progress %d succeded %d st-before %d cpl-before %d st-after %d cpl-after %d",
+                    GCCause::to_string(cause), op.marking_in_progress(), op.cycle_already_in_progress(), op.gc_succeeded(),
+                    old_marking_started_before, _old_marking_cycles_completed, old_marking_started_after, old_marking_completed_after);
+      if (wait_for_completion(cause,
+                              old_marking_started_before,
+                              _old_marking_cycles_completed,
+                              old_marking_started_after,
+                              old_marking_completed_after)) {
+        return true;
+      }
+
+      log_debug(gc)("after-wait: cause %s mark-in-progress %d cycle-in-progress %d succeded %d st-before %d cpl-before %d st-after %d cpl-after %d",
+                    GCCause::to_string(cause), op.marking_in_progress(), op.cycle_already_in_progress(), op.gc_succeeded(),
+                    old_marking_started_before, _old_marking_cycles_completed, old_marking_started_after, old_marking_completed_after);
+
+      if (should_retry_vm_op(cause, &op)) {
+        continue;
+      }
+      log_debug(gc)("transient-fail: cause %s mark-in-progress %d cycle-in-progress %d succeded %d st-before %d cpl-before %d st-after %d cpl-after %d",
+                    GCCause::to_string(cause), op.marking_in_progress(), op.cycle_already_in_progress(), op.gc_succeeded(),
+                    old_marking_started_before, _old_marking_cycles_completed, old_marking_started_after, old_marking_completed_after);
+
     } else if (!GCCause::is_user_requested_gc(cause)) {
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.
@@ -1801,31 +1880,12 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
              BOOL_TO_STR(op.gc_succeeded()),
              old_marking_started_before, old_marking_started_after);
 
-      // Request is finished if a full collection (concurrent or stw)
-      // was started after this request and has completed, e.g.
-      // started_before < completed_after.
-      if (gc_counter_less_than(old_marking_started_before,
-                               old_marking_completed_after)) {
-        LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
+      if (wait_for_completion(cause,
+                              old_marking_started_before,
+                              _old_marking_cycles_completed,
+                              old_marking_started_after,
+                              old_marking_completed_after)) {
         return true;
-      }
-
-      if (old_marking_started_after != old_marking_completed_after) {
-        // If there is an in-progress cycle (possibly started by us), then
-        // wait for that cycle to complete, e.g.
-        // while completed_now < started_after.
-        LOG_COLLECT_CONCURRENTLY(cause, "wait");
-        MonitorLocker ml(G1OldGCCount_lock);
-        while (gc_counter_less_than(_old_marking_cycles_completed,
-                                    old_marking_started_after)) {
-          ml.wait();
-        }
-        // Request is finished if the collection we just waited for was
-        // started after this request.
-        if (old_marking_started_before != old_marking_started_after) {
-          LOG_COLLECT_CONCURRENTLY(cause, "complete after wait");
-          return true;
-        }
       }
 
       // If VMOp was successful then it started a new cycle that the above
@@ -1834,23 +1894,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // a new cycle was started.
       assert(!op.gc_succeeded(), "invariant");
 
-      if (op.cycle_already_in_progress()) {
-        // If VMOp failed because a cycle was already in progress, it
-        // is now complete.  But it didn't finish this user-requested
-        // GC, so try again.
-        LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
-        continue;
-      } else if (op.whitebox_attached()) {
-        // If WhiteBox wants control, wait for notification of a state
-        // change in the controller, then try again.  Don't wait for
-        // release of control, since collections may complete while in
-        // control.  Note: This won't recognize a STW full collection
-        // while waiting; we can't wait on multiple monitors.
-        LOG_COLLECT_CONCURRENTLY(cause, "whitebox control stall");
-        MonitorLocker ml(ConcurrentGCBreakpoints::monitor());
-        if (ConcurrentGCBreakpoints::is_controlled()) {
-          ml.wait();
-        }
+      if (should_retry_vm_op(cause, &op)) {
         continue;
       }
     }
