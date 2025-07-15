@@ -192,6 +192,12 @@ public:
   static oop forwardee(oop from);
 };
 
+#ifdef _LP64
 using FullGCForwarding = FullGCForwardingImpl<markWord::klass_shift>;
+#else
+// On 32 bit, the BITS template argument is not used, but we still need
+// to pass a value.
+using FullGCForwarding = FullGCForwardingImpl<0>;
+#endif
 
 #endif // SHARE_GC_SHARED_FULLGCFORWARDING_HPP
