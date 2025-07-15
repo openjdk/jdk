@@ -2075,20 +2075,6 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   vmv_x_s(result, v_result);
   beqz(cnt, DONE);
 
-  mv(t1, max_vec_len - 1);
-  subw(t1, t1, cnt);
-  vslidedown_vx(v_coeffs, v_coeffs, t1);
-  vmv_x_s(pow31_highest, v_coeffs);
-
-  mulw(result, result, pow31_highest);
-  vslidedown_vi(v_coeffs, v_coeffs, 1);
-  arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
-  vmul_vv(v_src, v_src, v_coeffs);
-  vredsum_vs(v_sum, v_src, v_zred);
-  vmv_x_s(t0, v_sum);
-  addw(result, result, t0);
-  j(DONE);
-
   bind(SCALAR_TAIL);
   shadd(ary_end, cnt, ary, t0, elsize_shift);
 
