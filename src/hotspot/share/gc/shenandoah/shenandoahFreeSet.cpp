@@ -525,6 +525,10 @@ void ShenandoahRegionPartitions::decrease_empty_region_counts(ShenandoahFreeSetP
   _empty_region_counts[int(which_partition)] -= regions;
 }
 
+void ShenandoahRegionPartitions::one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition) {
+  decrease_empty_region_counts(partition, (size_t) 1);
+}
+
 // All members of partition between low_idx and high_idx inclusive have been removed.
 void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
   ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx) {
@@ -670,8 +674,8 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
     _membership[int(partition)].clear_bit(idx);
   }
   size_t num_regions = high_idx + 1 - low_idx;
-  _region_counts[int(partition)] -= num_regions;
-  _empty_region_counts[int(partition)] -= num_regions;
+  decrease_region_counts(partition, num_regions);
+  decrease_empty_region_counts(partition, num_regions);
   shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx);
 }
 
@@ -1439,8 +1443,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       _heap->old_generation()->clear_cards_for(r);
     }
     _heap->generation_for(r->affiliation())->increment_affiliated_region_count();
-    _partitions.decrease_empty_region_counts(_partitions.membership(r->index()), (size_t) 1);
-    recompute_total_affiliated();
+    if (_heap->mode()->is_generational()) {
+      _heap->global_generation()->increment_affiliated_region_count();
+    }
+
 #ifdef ASSERT
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
@@ -1563,11 +1569,11 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
     size_t idx = r->index();
     request_generation->increase_used(r->free());
-    if (in_new_region) {
-      _partitions.decrease_empty_region_counts(orig_partition, 1);
-    }
     if (_heap->mode()->is_generational()) {
       _heap->global_generation()->increase_used(r->free());
+    }
+    if ((result != nullptr) && in_new_region) {
+      _partitions.one_region_is_no_longer_empty(orig_partition);
     }
     _partitions.retire_from_partition(orig_partition, idx, r->used());
     _partitions.assert_bounds();
@@ -1673,6 +1679,10 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     r->set_top(r->bottom() + used_words);
   }
   generation->increase_affiliated_region_count(num);
+  if (_heap->mode()->is_generational()) {
+    _heap->global_generation()->increase_affiliated_region_count(num);
+  }
+
   if (remainder != 0) {
     // Record this remainder as allocation waste
     _heap->notify_mutator_alloc_words(ShenandoahHeapRegion::region_size_words() - remainder, true);
@@ -1701,6 +1711,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
   recompute_total_young_used();
   recompute_total_global_used();
+  recompute_total_affiliated();
   return _heap->get_region(beg)->bottom();
 }
 

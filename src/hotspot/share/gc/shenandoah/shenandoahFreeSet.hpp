@@ -158,9 +158,7 @@ public:
     _membership[int(p)].set_bit(idx);
   }
 
-  inline void one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition) {
-    _empty_region_counts[int(partition)] -= 1;
-  }
+  inline void one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition);
 
   // Set the Mutator intervals, usage, and capacity according to arguments.  Reset the Collector intervals, used, capacity
   // to represent empty Collector free set.  We use this at the end of rebuild_free_set() to avoid the overhead of making
