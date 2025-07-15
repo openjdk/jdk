@@ -44,7 +44,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -260,27 +259,8 @@ public class EmptyPath {
     }
 
     @Test
-    @DisabledOnOs({OS.WINDOWS})
-    public void mkdirsNotWindows() {
-        // The empty parent causes the child to be resolved against the
-        // system-dependent directory, the Unix default for which is "/"
-        File child = new File(f, "child");
-        assertEquals("/child", child.toString());
-        assertFalse(child.mkdirs());
-    }
-
-    @Test
-    @EnabledOnOs({OS.WINDOWS})
-    public void mkdirsWindows() {
-        // The empty parent causes the child to be resolved against the
-        // system-dependent directory, the Windows default for which is "\\"
-        String childName = "child" + System.nanoTime();
-        File child = new File(f, childName);
-        assertEquals("\\" + childName, child.toString());
-        if (!child.exists()) {
-            assertTrue(child.mkdirs());
-            assertTrue(child.delete());
-        }
+    public void mkdirs() {
+        assertFalse(f.mkdirs());
     }
 
     @Test
