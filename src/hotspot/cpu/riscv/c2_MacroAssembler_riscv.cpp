@@ -1994,19 +1994,23 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
 
 void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register result,
                                           Register tmp1, Register tmp2, Register tmp3,
-                                          Register tmp4, Register tmp5, Register tmp6,
                                           BasicType eltype)
 {
   assert(UseRVV, "sanity");
+  assert(MaxVectorSize >= 16, "sanity");
   assert(StubRoutines::riscv::arrays_hashcode_powers_of_31() != nullptr, "sanity");
-  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, t0, t1);
 
-  const int nof_vec_elems = MaxVectorSize;
+  // The MaxVectorSize should have been set by detecting RVV max vector register
+  // size when check UseRVV (i.e. MaxVectorSize == VM_Version::_initial_vector_length).
+  // Let's use T_INT as all hashCode calculations eventually deal with ints.
+  const int ints_in_vec_reg = MaxVectorSize/arrays_hashcode_elsize(T_INT);
+
   const int elsize_bytes = arrays_hashcode_elsize(eltype);
   const int elsize_shift = exact_log2(elsize_bytes);
-  const int vec_step_bytes = nof_vec_elems << elsize_shift;
-  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                           + sizeof(jint);
+  const int lmul = 4;
+  const int max_vec_len = ints_in_vec_reg * lmul;
+  const int MAX_VEC_MASK = ~(max_vec_len-1);
 
   switch (eltype) {
   case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode_v(unsigned byte) {"); break;
@@ -2018,14 +2022,10 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
     ShouldNotReachHere();
   }
 
-  const int scalar_stride = 4;
-  const Register pow31_4 = tmp1;
-  const Register pow31_3 = tmp2;
-  const Register pow31_2 = tmp3;
-  const Register chunks  = tmp4;
-  const Register chunks_end = chunks;
+  const Register pow31_highest  = tmp1;
+  const Register ary_end = tmp2;
+  const Register consumed = tmp3;
 
-  const Register pows31  = tmp1;
   const VectorRegister v_coeffs =  v4;
   const VectorRegister v_src    =  v8;
   const VectorRegister v_sum    = v12;
@@ -2034,35 +2034,32 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const VectorRegister v_tmp    = v24;
   const VectorRegister v_zred   = v28;
 
-  Label DONE, TAIL, TAIL_LOOP, WIDE_TAIL, WIDE_LOOP, VEC_LOOP;
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                           + sizeof(jint);
+  Label VEC_LOOP, DONE, SCALAR_TAIL, SCALAR_TAIL_LOOP;
 
-  // result has a value initially
+  // NB: at this point (a) 'result' already has some value,
+  // (b) 'cnt' is not 0 or 1, see java code for details.
 
-  beqz(cnt, DONE);
+  andi(t1, cnt, MAX_VEC_MASK);
+  beqz(t1, SCALAR_TAIL);
 
-  andi(chunks, cnt, ~(nof_vec_elems-1));
-  beqz(chunks, WIDE_TAIL);
+  vsetvli(t0, x0, Assembler::e64, Assembler::m8);
+  vmv_v_x(v0, x0);
+  vmv_v_x(v8, x0);
+  vmv_v_x(v16, x0);
+  vmv_v_x(v24, x0);
 
-  subw(cnt, cnt, chunks);
-  slli(chunks_end, chunks, elsize_shift);
-  add(chunks_end, ary, chunks_end);
-
-  // load pre-calculated powers of 31:
-  //   31^^MaxVectorSize             ==> scalar register
-  //   31^^(MaxVectorSize-1)...31^^0 ==> vector registers
-  la(tmp3, ExternalAddress(adr_pows31));
-  lw(pows31, Address(tmp3, -1 * sizeof(jint)));
-  mv(t1, nof_vec_elems);
-  vsetvli(t0, t1, Assembler::e32, Assembler::m4);
-  vle32_v(v_coeffs, tmp3);
-  // clear vector registers used in intermediate calculations
-  vmv_v_i(v_sum, 0);
-  vmv_v_i(v_powmax, 0);
-  vmv_v_i(v_result, 0);
+  // load pre-calculated data
+  la(t1, ExternalAddress(adr_pows31));
+  lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
+  vsetvli(x0, x0, Assembler::e32, Assembler::m4);
+  vle32_v(v_coeffs, t1); // 31^^(MaxVectorSize-1)...31^^0
   // set initial values
-  vmv_s_x(v_powmax, pows31);
   vmv_s_x(v_result, result);
-  vmv_s_x(v_zred, x0);
+  vmv_s_x(v_powmax, pow31_highest);
+
+  vsetvli(consumed, cnt, Assembler::e32, Assembler::m4);
 
   bind(VEC_LOOP);
   vmul_vv(v_result, v_result, v_powmax);
@@ -2070,52 +2067,38 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   vmul_vv(v_src, v_src, v_coeffs);
   vredsum_vs(v_sum, v_src, v_zred);
   vadd_vv(v_result, v_result, v_sum);
-  addi(ary, ary, vec_step_bytes);
-  bne(ary, chunks_end, VEC_LOOP);
-  // finally remember calculated result value in scalar register
+  shadd(ary, consumed, ary, t0, elsize_shift);
+  subw(cnt, cnt, consumed);
+  andi(t1, cnt, MAX_VEC_MASK);
+  bne(t1, x0, VEC_LOOP);
+
   vmv_x_s(result, v_result);
   beqz(cnt, DONE);
 
-  bind(WIDE_TAIL);
-  andi(chunks, cnt, ~(scalar_stride-1));
-  beqz(chunks, TAIL);
+  mv(t1, max_vec_len - 1);
+  subw(t1, t1, cnt);
+  vslidedown_vx(v_coeffs, v_coeffs, t1);
+  vmv_x_s(pow31_highest, v_coeffs);
 
-  mv(pow31_4, 923521);           // [31^^4]
-  mv(pow31_3,  29791);           // [31^^3]
-  mv(pow31_2,    961);           // [31^^2]
-
-  shadd(chunks_end, chunks, ary, chunks, elsize_shift);
-  andi(cnt, cnt, scalar_stride-1);      // don't forget about tail!
-
-  bind(WIDE_LOOP);
-  mulw(result, result, pow31_4); // 31^^4 * h
-  arrays_hashcode_elload(t0,   Address(ary, 0 * elsize_bytes), eltype);
-  arrays_hashcode_elload(t1,   Address(ary, 1 * elsize_bytes), eltype);
-  arrays_hashcode_elload(tmp5, Address(ary, 2 * elsize_bytes), eltype);
-  arrays_hashcode_elload(tmp6, Address(ary, 3 * elsize_bytes), eltype);
-  mulw(t0, t0, pow31_3);         // 31^^3 * ary[i+0]
+  mulw(result, result, pow31_highest);
+  vslidedown_vi(v_coeffs, v_coeffs, 1);
+  arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
+  vmul_vv(v_src, v_src, v_coeffs);
+  vredsum_vs(v_sum, v_src, v_zred);
+  vmv_x_s(t0, v_sum);
   addw(result, result, t0);
-  mulw(t1, t1, pow31_2);         // 31^^2 * ary[i+1]
-  addw(result, result, t1);
-  slli(t0, tmp5, 5);             // optimize 31^^1 * ary[i+2]
-  subw(tmp5, t0, tmp5);          // with ary[i+2]<<5 - ary[i+2]
-  addw(result, result, tmp5);
-  addw(result, result, tmp6);    // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
-                                 //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
-  addi(ary, ary, elsize_bytes * scalar_stride);
-  bne(ary, chunks_end, WIDE_LOOP);
-  beqz(cnt, DONE);
+  j(DONE);
 
-  bind(TAIL);
-  shadd(chunks_end, cnt, ary, chunks, elsize_shift);
+  bind(SCALAR_TAIL);
+  shadd(ary_end, cnt, ary, t0, elsize_shift);
 
-  bind(TAIL_LOOP);
+  bind(SCALAR_TAIL_LOOP);
   arrays_hashcode_elload(t0, Address(ary), eltype);
   slli(t1, result, 5);           // optimize 31 * result
   subw(result, t1, result);      // with result<<5 - result
   addw(result, result, t0);
   addi(ary, ary, elsize_bytes);
-  bne(ary, chunks_end, TAIL_LOOP);
+  bne(ary, ary_end, SCALAR_TAIL_LOOP);
 
   bind(DONE);
   BLOCK_COMMENT("} // arrays_hashcode_v");

@@ -98,9 +98,7 @@
                        Register tmp5, Register tmp6,
                        BasicType eltype);
   void arrays_hashcode_v(Register ary, Register cnt, Register result,
-                         Register tmp1, Register tmp2,
-                         Register tmp3, Register tmp4,
-                         Register tmp5, Register tmp6,
+                         Register tmp1, Register tmp2, Register tmp3,
                          BasicType eltype);
   // helper functions for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
