@@ -69,8 +69,8 @@ public class CaseFoldingTest {
                 if (testAll) {
                     return true;
                 }
-                // the case's folding codepoint doesn't map back to the original codepoint.
-                 return Character.toUpperCase(cp2) != cp1 && Character.toLowerCase(cp2) != cp1;
+                // the folding codepoint doesn't map back to the original codepoint.
+                return Character.toUpperCase(cp2) != cp1 && Character.toLowerCase(cp2) != cp1;
             })
             .flatMap(cps -> {
                 // test slice, single & range
@@ -123,8 +123,8 @@ public class CaseFoldingTest {
 
     private static void testCaseFolding0(int cp, int folding, ArrayList<String> errors, String type) {
         var cp_str = Character.isSupplementaryCodePoint(cp)
-                ? String.format("\\u%04x\\u%04x", (int)Character.highSurrogate(cp), (int)Character.lowSurrogate(cp))
-                : String.format("\\u%04x", cp);
+            ? String.format("\\u%04x\\u%04x", (int)Character.highSurrogate(cp), (int)Character.lowSurrogate(cp))
+            : String.format("\\u%04x", cp);
 
         var t = new String(Character.toChars(folding));
         var p = String.format("(?iu)%s", cp_str);

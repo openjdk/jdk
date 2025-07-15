@@ -33,9 +33,14 @@ import static java.util.Map.entry;
 
 public final class CaseFolding {
 
-    private static final Map<Integer, Integer> expanded_casefolding = Map.ofEntries(
+    private static final Map<Integer, Integer> expanded_case_map = Map.ofEntries(
 %%%Entries
     );
+
+    private static final int[] expanded_case_cps = expanded_case_map.keySet()
+      .stream()
+      .mapToInt(Integer::intValue)
+      .toArray();
 
     private CaseFolding()  {}
 
@@ -96,18 +101,16 @@ public final class CaseFolding {
      *         those already in the range
      */
     public static int[] getClassRangeClosingCharacters(int start, int end) {
-        int[] expanded = new int[expanded_casefolding.size()];
-        int cp = start;
+        int[] expanded = new int[expanded_case_cps.length];
         int off = 0;
-        while (cp <= end && off < expanded.length) {
-            if (expanded_casefolding.containsKey(cp)) {
-                int folding = expanded_casefolding.get(cp);
-                if (folding < start || folding > end)
+        for (int cp : expanded_case_cps) {
+            if (cp >= start && cp <= end) {
+                int folding = expanded_case_map.get(cp);
+                if (folding < start || folding > end) {
                     expanded[off++] = folding;
+                }
             }
-            cp++;
         }
         return Arrays.copyOf(expanded, off);
     }
-
 }
