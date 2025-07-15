@@ -431,7 +431,6 @@ class KlassTrainingData : public TrainingData {
 
   // cross-link to live klass, or null if not loaded or encountered yet
   InstanceKlass* _holder;
-  jobject _holder_mirror;   // extra link to prevent unloading by GC
 
   DepList<CompileTrainingData*> _comp_deps; // compiles that depend on me
 
@@ -454,7 +453,6 @@ class KlassTrainingData : public TrainingData {
     TrainingDataLocker::assert_locked();
      _comp_deps.remove_if_existing(ctd);
   }
-
  public:
   Symbol* name() const {
     precond(has_holder());

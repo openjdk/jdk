@@ -53,10 +53,12 @@ class JVMCINMethodData : public ResourceObj {
     struct {
       // Is HotSpotNmethod.name non-null? If so, the value is
       // embedded in the end of this object.
-      uint8_t _has_name   : 1,
+      uint8_t _has_name      : 1,
       // HotSpotNmethod.isDefault (e.g., compilation scheduled by CompileBroker)
-              _is_default : 1,
-                          : 6;
+              _is_default    : 1,
+      // HotSpotNmethod.profileDeopt
+              _profile_deopt : 1,
+                             : 5;
     } bits;
   };
 
@@ -87,6 +89,7 @@ class JVMCINMethodData : public ResourceObj {
                    int nmethod_entry_patch_offset,
                    const char* nmethod_mirror_name,
                    bool is_default,
+                   bool profile_deopt,
                    FailedSpeculation** failed_speculations);
 
   void* operator new(size_t size, const char* nmethod_mirror_name) {
@@ -100,12 +103,14 @@ public:
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
                                   bool is_default,
+                                  bool profile_deopt,
                                   FailedSpeculation** failed_speculations) {
     JVMCINMethodData* result = new (nmethod_mirror_name) JVMCINMethodData();
     result->initialize(nmethod_mirror_index,
                        nmethod_entry_patch_offset,
                        nmethod_mirror_name,
                        is_default,
+                       profile_deopt,
                        failed_speculations);
     return result;
   }
@@ -152,6 +157,10 @@ public:
 
   bool is_default() {
     return _properties.bits._is_default;
+  }
+
+  bool profile_deopt() {
+    return _properties.bits._profile_deopt;
   }
 };
 

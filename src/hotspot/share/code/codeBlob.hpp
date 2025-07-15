@@ -247,7 +247,7 @@ public:
   // Sizes
   int size() const               { return _size; }
   int header_size() const        { return _header_size; }
-  int relocation_size() const    { return pointer_delta_as_int((address) relocation_end(), (address) relocation_begin()); }
+  int relocation_size() const    { return _relocation_size; }
   int content_size() const       { return pointer_delta_as_int(content_end(), content_begin()); }
   int code_size() const          { return pointer_delta_as_int(code_end(), code_begin()); }
 
@@ -457,6 +457,7 @@ class RuntimeStub: public RuntimeBlob {
   void* operator new(size_t s, unsigned size) throw();
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static RuntimeStub* new_runtime_stub(
     const char* stub_name,
@@ -559,6 +560,7 @@ class DeoptimizationBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 4 JVMTI_ONLY(+ 2);
   // Creation
   static DeoptimizationBlob* create(
     CodeBuffer* cb,
@@ -689,6 +691,7 @@ class SafepointBlob: public SingletonBlob {
   );
 
  public:
+  static const int ENTRY_COUNT = 1;
   // Creation
   static SafepointBlob* create(
     CodeBuffer* cb,

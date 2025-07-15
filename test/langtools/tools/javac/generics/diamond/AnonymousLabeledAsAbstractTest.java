@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,27 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jit.misctests.fpustack;
 
-import java.util.*;
-import java.awt.*;
-import java.applet.Applet;
-import nsk.share.TestFailure;
+/*
+ * @test
+ * @bug 8361214
+ * @summary An anonymous class is erroneously being classify as an abstract class
+ * @compile AnonymousLabeledAsAbstractTest.java
+ */
 
-public class layout implements ilayout {
-    public  void formatNodes( Node[] nodes, Dimension d, FontMetrics fm )   {
-        int h = d.height/2 - 10 ;
-
-        double alpha = -Math.PI/2;
-        for ( int j = 0; j < nodes.length; j++) {
-            Node n = nodes[j];
-            int w = d.width/2 - fm.stringWidth( n.lbl )/2;
-
-            n.x = d.width/2 + (int)(w*Math.cos( alpha ));
-
-            n.y = d.height/2 + (int)(h*Math.sin( alpha ));
-            alpha += 2*Math.PI/nodes.length;
-        }
+class AnonymousLabeledAsAbstractTest {
+    abstract class Base<T> {}
+    abstract class Derived1<T> extends Base<T> {}
+    abstract class Derived2<T> extends Base<T> {
+        Derived2(Derived1<T> obj){}
+    }
+    abstract class Derived3<T> extends Base<T> {
+        Derived3(Derived2<T> obj){}
     }
 
+    Base<String> obj = new Derived2<>(new Derived1<>(){}){};
+    Base<String> obj2 = new Derived3<String>(new Derived2<>(new Derived1<>(){}){}){};
+    Base<String> obj3 = new Derived3<>(new Derived2<>(new Derived1<>(){}){}){};
 }
