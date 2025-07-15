@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2150,8 +2150,6 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error THREAD_NOT_SUSPENDED)
             (Error OPAQUE_FRAME      "Attempted to return early from a frame "
                                      "corresponding to a native method, "
-                                     "the thread is a suspended virtual thread and the target "
-                                     "VM is unable to force its current frame to return, "
                                      "or the implementation is unable to provide this "
                                      "functionality on this frame.")
             (Error NO_MORE_FRAMES)
@@ -2625,6 +2623,10 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
             (Error INVALID_SLOT)
+            (Error OPAQUE_FRAME      "Attempted to get the value of local variables in a frame "
+                                     "corresponding to a native method, "
+                                     "or the implementation is unable to provide this "
+                                     "functionality on this frame.")
             (Error VM_DEAD)
         )
     )
@@ -2662,9 +2664,11 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_THREAD)
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
-            (Error OPAQUE_FRAME      "The thread is a suspended virtual thread and the target VM "
-                                     "does not support setting the value of local "
-                                     "variables in the frame.")
+            (Error INVALID_SLOT)
+            (Error OPAQUE_FRAME      "Attempted to set the value of local variables in a frame "
+                                     "corresponding to a native method, "
+                                     "or the implementation is unable to provide this "
+                                     "functionality on this frame.")
             (Error VM_DEAD)
         )
     )
@@ -2714,9 +2718,9 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error THREAD_NOT_SUSPENDED)
             (Error NO_MORE_FRAMES)
             (Error OPAQUE_FRAME      "If one or more of the frames to pop is a native "
-                                     "method or its caller is a native method, or the "
-                                     "thread is a suspended virtual thread and the implementation "
-                                     "was unable to pop the frames.")
+                                     "method or its caller is a native method, "
+                                     "or the implementation is unable to provide this "
+                                     "functionality on this frame.")
             (Error NOT_IMPLEMENTED)
             (Error VM_DEAD)
         )
