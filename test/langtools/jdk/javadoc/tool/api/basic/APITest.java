@@ -212,6 +212,7 @@ class APITest {
             "resource-files/right.svg",
             "resource-files/stylesheet.css",
             "resource-files/x.svg",
+            "resource-files/toggle.svg",
             "resource-files/fonts/dejavu.css",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff2",
@@ -242,6 +243,7 @@ class APITest {
             "script-files/script.js",
             "script-files/search.js",
             "script-files/search-page.js",
+            "script-files/toc.js",
             "tag-search-index.js",
             "type-search-index.js"
     ));
@@ -262,4 +264,3 @@ class APITest {
                          && !s.equals("system-properties.html"))
             .collect(Collectors.toSet());
 }
-

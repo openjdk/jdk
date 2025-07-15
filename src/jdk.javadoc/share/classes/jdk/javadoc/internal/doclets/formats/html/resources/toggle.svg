@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+-->
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <polygon points="50,12.5 75,37.5 25,37.5"/>
+    <polygon points="25,62.5 75,62.5 50,87.5"/>
+</svg>

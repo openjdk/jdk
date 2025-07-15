@@ -115,6 +115,8 @@ public class HtmlIds {
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
+    static final String TOC_ORDER_TOGGLE = "toc-lexical-order-toggle";
+    static final HtmlId TOC_LIST = HtmlId.of("toc-list");
     private static final String FIELDS_INHERITANCE = "fields-inherited-from-class-";
     private static final String METHODS_INHERITANCE = "methods-inherited-from-class-";
     private static final String NESTED_CLASSES_INHERITANCE = "nested-classes-inherited-from-class-";
