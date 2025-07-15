@@ -2637,7 +2637,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
         // be collected in the near future.
         if (r->is_trash() || !r->is_affiliated()) {
           // OLD regions that have available memory are already in the old_collector free set.
-          assert(r->is_empty(), "Not affiliated implies region %zu is empty", r->index());
+          assert(r->is_empty() || r->is_trash(), "Not affiliated implies region %zu is empty", r->index());
           if (idx < old_collector_low_idx) {
             old_collector_low_idx = idx;
           }
