@@ -190,8 +190,8 @@ class StringCoding {
     }
 
     @IntrinsicCandidate
-    private static int encodeAsciiArray0(char[] sa, int sp,
-                                         byte[] da, int dp, int len) {
+    static int encodeAsciiArray0(char[] sa, int sp,
+                                 byte[] da, int dp, int len) {
         int i = 0;
         for (; i < len; i++) {
             char c = sa[sp++];
