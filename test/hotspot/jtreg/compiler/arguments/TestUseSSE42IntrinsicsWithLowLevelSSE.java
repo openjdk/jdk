@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jit.misctests.fpustack;
 
-import java.util.*;
-import java.awt.*;
-import nsk.share.TestFailure;
+/**
+ * @test
+ * @bug 8358592
+ * @summary Regression test for -XX:+UseSSE42Intrinsics -XX:UseSSE=1 crash
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires vm.debug
+ * @run main/othervm -XX:+UseSSE42Intrinsics -XX:UseSSE=1 compiler.arguments.TestUseSSE42IntrinsicsWithLowLevelSSE
+ */
+package compiler.arguments;
 
-interface ilayout {
+public class TestUseSSE42IntrinsicsWithLowLevelSSE {
 
-    public void formatNodes( Node[] n, Dimension d, FontMetrics fm );
-
+    public static void main(String[] args) {
+        System.out.println("passed");
+    }
 }

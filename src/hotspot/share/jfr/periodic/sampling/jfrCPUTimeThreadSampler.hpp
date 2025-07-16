@@ -95,14 +95,16 @@ public:
 
 class JfrCPUSamplerThread;
 
+class JfrCPUSamplerThrottle;
+
 class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   friend class JfrRecorder;
  private:
 
   JfrCPUSamplerThread* _sampler;
 
-  void create_sampler(double rate, bool auto_adapt);
-  void set_rate_value(double rate, bool auto_adapt);
+  void create_sampler(JfrCPUSamplerThrottle& throttle);
+  void set_throttle_value(JfrCPUSamplerThrottle& throttle);
 
   JfrCPUTimeThreadSampling();
   ~JfrCPUTimeThreadSampling();
@@ -111,10 +113,13 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static JfrCPUTimeThreadSampling* create();
   static void destroy();
 
-  void update_run_state(double rate, bool auto_adapt);
+  void update_run_state(JfrCPUSamplerThrottle& throttle);
+
+  static void set_rate(JfrCPUSamplerThrottle& throttle);
 
  public:
-  static void set_rate(double rate, bool auto_adapt);
+  static void set_rate(double rate);
+  static void set_period(u8 nanos);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
@@ -140,7 +145,8 @@ private:
   static void destroy();
 
  public:
-  static void set_rate(double rate, bool auto_adapt);
+  static void set_rate(double rate);
+  static void set_period(u8 nanos);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);

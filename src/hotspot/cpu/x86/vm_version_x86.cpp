@@ -440,7 +440,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits apx_f
     __ jcc(Assembler::equal, vector_save_restore);
 
-#ifndef PRODUCT
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -457,7 +456,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
-#endif
     __ bind(vector_save_restore);
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
@@ -1022,8 +1020,6 @@ void VM_Version::get_processor_features() {
   if (UseAPX && !apx_supported) {
     warning("UseAPX is not supported on this CPU, setting it to false");
     FLAG_SET_DEFAULT(UseAPX, false);
-  } else if (FLAG_IS_DEFAULT(UseAPX)) {
-    FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
   }
 
   if (!UseAPX) {
@@ -1481,16 +1477,6 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
         }
       }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
-      }
     }
 
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
@@ -1534,16 +1520,6 @@ void VM_Version::get_processor_features() {
       } else {
         UseXmmI2D = false;
       }
-    }
-    if (supports_sse4_2()) {
-      if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-      }
-    } else {
-      if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
 
     // some defaults for AMD family 15h
@@ -1633,16 +1609,6 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
-      }
     }
     if (is_atom_family() || is_knights_family()) {
 #ifdef COMPILER2
@@ -1703,7 +1669,16 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif
-
+  if (supports_sse4_2()) {
+    if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
+    }
+  } else {
+    if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+    }
+    FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
+  }
   if (UseSSE42Intrinsics) {
     if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       UseVectorizedMismatchIntrinsic = true;
@@ -3151,17 +3126,11 @@ bool VM_Version::os_supports_apx_egprs() {
   if (!supports_apx_f()) {
     return false;
   }
-  // Enable APX support for product builds after
-  // completion of planned features listed in JDK-8329030.
-#if !defined(PRODUCT)
   if (_cpuid_info.apx_save[0] != egpr_test_value() ||
       _cpuid_info.apx_save[1] != egpr_test_value()) {
     return false;
   }
   return true;
-#else
-  return false;
-#endif
 }
 
 uint VM_Version::cores_per_cpu() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,22 @@
  * questions.
  */
 
-import javax.swing.JApplet;
-import java.awt.HeadlessException;
-
 /*
  * @test
- * @summary Check that JApplet constructor throws HeadlessException in headless mode
- * @run main/othervm -Djava.awt.headless=true HeadlessJApplet
+ * @bug 8357472
+ * @summary NPE in Types.containsType for type variable used as a qualifier
+ * @compile T8357472.java
  */
 
-public class HeadlessJApplet {
-    public static void main(String args[]) {
-        boolean exceptions = false;
-        try {
-            new JApplet();
-        } catch (HeadlessException e) {
-            exceptions = true;
+class T8357472 {
+    class A<T> {
+        protected class B<V> {}
+
+        public static <T, M extends A<T>> void f(Object g) {
+            @SuppressWarnings("unchecked")
+            M.B<?> mapping = (M.B<?>) g;
+            M.B<?>[] mapping2 = new M.B[1];
+            mapping2[0] = mapping;
         }
-        if (!exceptions)
-            throw new RuntimeException("HeadlessException did not occur when expected");
     }
 }

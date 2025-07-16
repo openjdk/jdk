@@ -29,8 +29,6 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 
-import java.applet.Applet;
-
 import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.KeyboardFocusManager;
@@ -916,10 +914,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("removal")
         boolean isInPopup(Component src) {
             for (Component c=src; c!=null; c=c.getParent()) {
-                if (c instanceof Applet || c instanceof Window) {
+                if (c instanceof Window) {
                     break;
                 } else if (c instanceof JPopupMenu) {
                     return true;
@@ -1131,7 +1128,6 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("removal")
         public void stateChanged(ChangeEvent ev) {
             if (!(UIManager.getLookAndFeel() instanceof BasicLookAndFeel)) {
                 uninstall();
@@ -1171,8 +1167,6 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                         invoker = ((JFrame)c).getRootPane();
                     } else if(c instanceof JDialog) {
                         invoker = ((JDialog)c).getRootPane();
-                    } else if(c instanceof JApplet) {
-                        invoker = ((JApplet)c).getRootPane();
                     } else {
                         while (!(c instanceof JComponent)) {
                             if (c == null) {
