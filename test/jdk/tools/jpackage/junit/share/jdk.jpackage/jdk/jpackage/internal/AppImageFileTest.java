@@ -117,7 +117,7 @@ public class AppImageFileTest {
                     List.of(), false, null, Optional.empty(), null, Map.of());
 
             final var app = new Application.Stub(null, null, version, null, null,
-                    Optional.empty(), Optional.empty(), List.of(), null, Optional.empty(),
+                    Optional.empty(), List.of(), null, Optional.empty(),
                     new ApplicationLaunchers(mainLauncher, additionalLaunchers).asList(), extra);
 
             return new AppImageFile(app);
