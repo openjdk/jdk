@@ -1175,9 +1175,15 @@ public class File
         String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
-        for (String s : ss)
-            if ((filter == null) || filter.accept(this, s))
-                files.add(new File(s, this));
+        if (path.isEmpty()) {
+            for (String s : ss)
+                if ((filter == null) || filter.accept(this, s))
+                    files.add(new File(s));
+        } else {
+            for (String s : ss)
+                if ((filter == null) || filter.accept(this, s))
+                    files.add(new File(s, this));
+        }
         return files.toArray(new File[files.size()]);
     }
 
@@ -1208,10 +1214,18 @@ public class File
         String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
-        for (String s : ss) {
-            File f = new File(s, this);
-            if ((filter == null) || filter.accept(f))
-                files.add(f);
+        if (path.isEmpty()) {
+            for (String s : ss) {
+                File f = new File(s);
+                if ((filter == null) || filter.accept(f))
+                    files.add(f);
+            }
+        } else {
+            for (String s : ss) {
+                File f = new File(s, this);
+                if ((filter == null) || filter.accept(f))
+                    files.add(f);
+            }
         }
         return files.toArray(new File[files.size()]);
     }
