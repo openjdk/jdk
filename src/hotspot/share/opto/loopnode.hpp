@@ -742,7 +742,7 @@ public:
   // Micro-benchmark spamming.  Remove empty loops.
   bool do_remove_empty_loop( PhaseIdealLoop *phase );
 
-  // Convert one iteration loop into normal code.
+  // Convert one-iteration loop into normal code.
   bool do_one_iteration_loop( PhaseIdealLoop *phase );
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can

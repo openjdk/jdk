@@ -42,7 +42,7 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
  *
  * AquaRootPaneUI is a singleton object
  */
-public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
+public final class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
     private static final RecyclableSingleton<AquaRootPaneUI> sRootPaneUI = new RecyclableSingletonFromDefaultConstructor<AquaRootPaneUI>(AquaRootPaneUI.class);
     static final boolean sUseScreenMenuBar = AquaMenuBarUI.getScreenMenuBarProperty();
 
@@ -50,6 +50,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         return sRootPaneUI.get();
     }
 
+    @Override
     public void installUI(final JComponent c) {
         super.installUI(c);
         c.addAncestorListener(this);
@@ -80,6 +81,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         }
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         c.removeAncestorListener(this);
 
@@ -97,6 +99,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * because it holds the JMenuBar.  So, if a new layered pane was added, listen to it.
      * If a new JMenuBar was added, tell the menu bar UI, because it will need to update the menu bar.
      */
+    @Override
     public void componentAdded(final ContainerEvent e) {
         if (e.getContainer() instanceof JRootPane) {
             final JRootPane root = (JRootPane)e.getContainer();
@@ -125,6 +128,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * Likewise, when the layered pane is removed from the root pane, stop listening to it.
      * If the JMenuBar is removed, tell the menu bar UI to clear the menu bar.
      */
+    @Override
     public void componentRemoved(final ContainerEvent e) {
         if (e.getContainer() instanceof JRootPane) {
             final JRootPane root = (JRootPane)e.getContainer();
@@ -156,6 +160,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * And, if a JMenuBar was added before the root pane was added to the window, we now need
      * to notify the menu bar UI.
      */
+    @Override
     public void ancestorAdded(final AncestorEvent event) {
         // this is so we can handle window activated and deactivated events so
         // our swing controls can color/enable/disable/focus draw correctly
@@ -178,27 +183,36 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * before it was removed.  By the time ancestorRemoved was called, the JRootPane has already been removed
      */
 
+    @Override
     public void ancestorRemoved(final AncestorEvent event) { }
+    @Override
     public void ancestorMoved(final AncestorEvent event) { }
 
+    @Override
     public void windowActivated(final WindowEvent e) {
         updateComponentTreeUIActivation((Component)e.getSource(), Boolean.TRUE);
     }
 
+    @Override
     public void windowDeactivated(final WindowEvent e) {
         updateComponentTreeUIActivation((Component)e.getSource(), Boolean.FALSE);
     }
 
+    @Override
     public void windowOpened(final WindowEvent e) { }
+    @Override
     public void windowClosing(final WindowEvent e) { }
 
+    @Override
     public void windowClosed(final WindowEvent e) {
         // We know the window is closed so remove the listener.
         final Window w = e.getWindow();
         w.removeWindowListener(this);
     }
 
+    @Override
     public void windowIconified(final WindowEvent e) { }
+    @Override
     public void windowDeiconified(final WindowEvent e) { }
     public void windowStateChanged(final WindowEvent e) { }
     public void windowGainedFocus(final WindowEvent e) { }
