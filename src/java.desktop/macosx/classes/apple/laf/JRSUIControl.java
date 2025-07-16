@@ -126,10 +126,7 @@ public final class JRSUIControl {
             cfDictionaryPtr = ptr;
         }
 
-        public synchronized void dispose() {
-            if (cfDictionaryPtr == 0) {
-                return;
-            }
+        public void dispose() {
             try {
                 disposeCFDictionary(cfDictionaryPtr);
             } catch (Throwable t) {
