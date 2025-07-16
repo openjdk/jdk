@@ -271,12 +271,13 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       //  mask = 0xEFFFFFFF (constant mask)
       //  result.hi = 0x7FFFFFFF
       //  result.lo = 0
-      int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
       if (maskcon != -1L) {
+        int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
         hi = (1UL << bitcount) - 1;
         lo = 0L;
       } else {
-        // preserve originally assigned hi (MAX_INT/LONG) and lo (MIN_INT/LONG) values.
+        // preserve originally assigned hi (MAX_INT/LONG) and lo (MIN_INT/LONG) values
+        // for unknown source bits.
         assert(hi == (bt == T_INT ? max_jint : max_jlong), "");
         assert(lo == (bt == T_INT ? min_jint : min_jlong), "");
       }
@@ -387,10 +388,12 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         // if the lower bound of non-constant mask is a non-negative value then result can never
         // be greater than the mask.
         // Proof: Since lower bound of the mask is a non-negative value, hence most significant
-        // bit of its entire value must be unset(zero). Similar to the proof of Lemma1, upper and
-        // lower bounds of result will always match the bounds of the mask value range.
+        // bit of its entire value must be unset(zero). If all the lower order 'n' source bits
+        // where n corresponds to popcount of mask are set(ones) then upper bound of the result equals
+        // mask. In order to compute the lower bound, we pssimistically assume all the lower order 'n'
+        // source bits are unset(zero) there by resuling into a zero value.
         hi = max_mask;
-        lo = min_mask;
+        lo = 0;
       } else {
         // preserve the lo and hi bounds estimated till now.
       }
