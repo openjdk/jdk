@@ -85,7 +85,7 @@ final class PackageBuilder {
                 version = Optional.ofNullable(version).orElseGet(app::version),
                 Optional.ofNullable(aboutURL),
                 Optional.ofNullable(licenseFile),
-                Optional.ofNullable(predefinedAppOrRuntimeImage),
+                Optional.ofNullable(predefinedAppImage),
                 relativeInstallDir);
     }
 
@@ -143,13 +143,13 @@ final class PackageBuilder {
         return Optional.ofNullable(licenseFile);
     }
 
-    PackageBuilder predefinedAppOrRuntimeImage(Path v) {
-        predefinedAppOrRuntimeImage = v;
+    PackageBuilder predefinedAppImage(Path v) {
+        predefinedAppImage = v;
         return this;
     }
 
-    Optional<Path> predefinedAppOrRuntimeImage() {
-        return Optional.ofNullable(predefinedAppOrRuntimeImage);
+    Optional<Path> predefinedAppImage() {
+        return Optional.ofNullable(predefinedAppImage);
     }
 
     PackageBuilder installDir(Path v) {
@@ -241,7 +241,7 @@ final class PackageBuilder {
     private String version;
     private String aboutURL;
     private Path licenseFile;
-    private Path predefinedAppOrRuntimeImage;
+    private Path predefinedAppImage;
     private Path installDir;
 
     private final PackageType type;

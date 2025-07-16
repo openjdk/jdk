@@ -117,7 +117,7 @@ final class MacPackagingPipeline {
                 })
                 .pkgContextMapper(appContext -> {
                     final var withPredefinedAppOrRuntimeImage =
-                        pkg.flatMap(Package::predefinedAppOrRuntimeImage).isPresent();
+                        pkg.flatMap(Package::predefinedAppImage).isPresent();
                     return new TaskContextProxy(appContext, false, withPredefinedAppOrRuntimeImage);
                 })
                 .appImageLayoutForPackaging(MacPackagingPipeline::packagingLayout)
@@ -220,7 +220,7 @@ final class MacPackagingPipeline {
             throw new IllegalArgumentException();
         }
         return toSupplier(() -> {
-            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppOrRuntimeImage(
+            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppImage(
                     Objects.requireNonNull(env.appImageDir())).installDir(Path.of("/foo")).create();
         }).get();
     }
@@ -450,7 +450,7 @@ final class MacPackagingPipeline {
 
     private static boolean isRuntimeImageJDKImage(Package pkg) {
         if (pkg.isRuntimeInstaller()) {
-            Path runtimeImage = pkg.predefinedAppOrRuntimeImage().orElseThrow();
+            Path runtimeImage = pkg.predefinedAppImage().orElseThrow();
             Path p = runtimeImage.resolve("Contents/Home");
             return !Files.exists(p);
         }
@@ -472,7 +472,7 @@ final class MacPackagingPipeline {
         if (isRuntimeImageJDKImage(pkg)) {
             return true;
         } else {
-            Path runtimeImage = pkg.predefinedAppOrRuntimeImage().orElseThrow();
+            Path runtimeImage = pkg.predefinedAppImage().orElseThrow();
             Path p = runtimeImage.resolve("Contents/_CodeSignature");
             return !Files.exists(p);
         }

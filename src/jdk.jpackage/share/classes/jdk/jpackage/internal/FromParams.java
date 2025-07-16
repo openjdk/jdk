@@ -143,7 +143,7 @@ final class FromParams {
         VERSION.copyInto(params, builder::version);
         ABOUT_URL.copyInto(params, builder::aboutURL);
         LICENSE_FILE.findIn(params).map(Path::of).ifPresent(builder::licenseFile);
-        builder.predefinedAppOrRuntimeImage(getPredefinedAppOrRuntimeImage(params));
+        builder.predefinedAppImage(getPredefinedAppOrRuntimeImage(params));
         INSTALL_DIR.findIn(params).map(Path::of).ifPresent(builder::installDir);
 
         return builder;

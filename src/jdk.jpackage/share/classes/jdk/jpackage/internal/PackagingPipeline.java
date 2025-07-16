@@ -437,7 +437,7 @@ final class PackagingPipeline {
             srcAppImageDesc = new AppImageDesc(appImageLayoutForPackaging, env.appImageDir());
             dstAppImageDesc = srcAppImageDesc;
         } else {
-            srcAppImageDesc = new AppImageDesc(pkg.app().imageLayout(), pkg.predefinedAppOrRuntimeImage().orElseGet(() -> {
+            srcAppImageDesc = new AppImageDesc(pkg.app().imageLayout(), pkg.predefinedAppImage().orElseGet(() -> {
                 // Can't create app image without runtime builder.
                 throw new UnsupportedOperationException();
             }));
