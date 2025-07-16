@@ -21,10 +21,6 @@
  * questions.
  */
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
@@ -35,6 +31,10 @@ import java.util.PrimitiveIterator.OfInt;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -134,53 +134,68 @@ public class CharBufferAsCharSequenceTest {
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testGetChars_range(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsRange(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         actual.getChars(1, 5, val, 3);
 
         for (int i = 0; i < 4; ++i) {
             assertEquals(expected[i + start + 1], val[i + 3], "val at offset of " + i + " from " + description);
         }
+        // test that calling getChars did not move the position
+        assertEquals(expected[start], actual.charAt(0), "first char after calling getChars: " + description);
     }
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testGetChars_neg_beg(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsAll(CharSequence actual, char[] expected, int start, int stop, String description) {
+        char[] val = new char[stop - start];
+        actual.getChars(0, val.length, val, 0);
+
+        for (int i = 0; i < val.length; ++i) {
+            assertEquals(expected[i + start], val[i], "val at offset of " + i + " from " + description);
+        }
+        // test that calling getChars did not move the position
+        assertEquals(expected[start], actual.charAt(0), "first char after calling getChars: " + description);
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
+    void testGetCharsNegativeSourceBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(-1, 4, val, 1));
     }
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testGetChars_neg_end(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsNegativeSourceEnd(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(0, -4, val, 1));
     }
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testGetChars_end_before_beg(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsSourceEndBeforeBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(3, 2, val, 1));
     }
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testGetChars_dst_pos_neg(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsNegativeDestBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 3, val, -1));
     }
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testGetChars_dst_pos_oob(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsDestBegOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length + 1));
     }
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testGetChars_dst_length_oob(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsDestLengthOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length - 2));
     }
@@ -195,13 +210,13 @@ public class CharBufferAsCharSequenceTest {
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testCharAt_negative(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testCharAtNegativePos(CharSequence actual, char[] expected, int start, int stop, String description) {
         assertThrows(IndexOutOfBoundsException.class, () -> actual.charAt(-1));
     }
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
-    void testCharAt_too_long(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testCharAtPosOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         assertThrows(IndexOutOfBoundsException.class, () -> actual.charAt(stop - start + 1));
     }
 
