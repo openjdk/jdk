@@ -238,11 +238,27 @@ public class EmptyPath {
 
     @Test
     public void listFilesFileFilter() throws IOException {
+        FileFilter ff = new FileFilter() {
+            public boolean accept(File pathname) { return true; }
+        };
+        listFiles(x -> x.listFiles(ff));
+    }
+
+    @Test
+    public void listFilesNullFileFilter() throws IOException {
         listFiles(x -> x.listFiles((FileFilter)null));
     }
 
     @Test
     public void listFilesFilenameFilter() throws IOException {
+        FilenameFilter fnf = new FilenameFilter() {
+            public boolean accept(File dir, String name) { return true; }
+        };
+        listFiles(x -> x.listFiles(fnf));
+    }
+
+    @Test
+    public void listFilesNullFilenameFilter() throws IOException {
         listFiles(x -> x.listFiles((FilenameFilter)null));
     }
 
