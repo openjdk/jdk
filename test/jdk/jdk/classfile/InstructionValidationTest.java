@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8341277
+ * @bug 8341277 8361102
  * @summary Testing ClassFile instruction argument validation.
  * @run junit InstructionValidationTest
  */
@@ -32,23 +32,76 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.instruction.*;
-import java.lang.constant.ClassDesc;
-import java.lang.reflect.Parameter;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
 
+import helpers.TestUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
+import static helpers.TestConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.classfile.Opcode.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InstructionValidationTest {
+
+    @Test
+    void testOpcodeInCodeBuilder() {
+        TestUtil.runCodeHandler(cob -> {
+            var mref = cob.constantPool().methodRefEntry(CD_System, "exit", MTD_INT_VOID);
+            var fref = cob.constantPool().fieldRefEntry(CD_System, "out", CD_PrintStream);
+            var label = cob.newLabel();
+
+            // Sanity
+            cob.iconst_0();
+            assertDoesNotThrow(() -> cob.invoke(INVOKESTATIC, mref));
+            assertDoesNotThrow(() -> cob.fieldAccess(GETSTATIC, fref));
+            cob.pop();
+            assertDoesNotThrow(() -> cob.branch(GOTO, label));
+
+            // Opcode NPE
+            assertThrows(NullPointerException.class, () -> cob.invoke(null, mref));
+            assertThrows(NullPointerException.class, () -> cob.fieldAccess(null, fref));
+            assertThrows(NullPointerException.class, () -> cob.branch(null, label));
+
+            // Opcode IAE
+            assertThrows(IllegalArgumentException.class, () -> cob.invoke(IFNE, mref));
+            assertThrows(IllegalArgumentException.class, () -> cob.fieldAccess(JSR, fref));
+            assertThrows(IllegalArgumentException.class, () -> cob.branch(CHECKCAST, label));
+
+            // Wrap up
+            cob.labelBinding(label);
+            cob.return_();
+        });
+    }
+
+    @Test
+    void testLongJump() {
+        TestUtil.runCodeHandler(cob -> {
+            assertThrows(NullPointerException.class, () -> cob.goto_w(null));
+            // Ensures nothing redundant is written in case of failure
+            cob.return_();
+        });
+    }
+
+    @Test
+    void testSwitch() {
+        TestUtil.runCodeHandler(cob -> {
+            assertThrows(NullPointerException.class, () -> cob.tableswitch(-1, 1, cob.startLabel(), null));
+            assertThrows(NullPointerException.class, () -> cob.lookupswitch(cob.startLabel(), null));
+            assertThrows(NullPointerException.class, () -> cob.tableswitch(-1, 1, cob.startLabel(), Collections.singletonList(null)));
+            assertThrows(NullPointerException.class, () -> cob.lookupswitch(cob.startLabel(), Collections.singletonList(null)));
+            assertThrows(NullPointerException.class, () -> cob.tableswitch(-1, 1, null, List.of()));
+            assertThrows(NullPointerException.class, () -> cob.lookupswitch(null, List.of()));
+            // Ensures nothing redundant is written in case of failure
+            cob.return_();
+        });
+    }
 
     @Test
     void testArgumentConstant() {
@@ -63,6 +116,14 @@ class InstructionValidationTest {
         assertThrows(IllegalArgumentException.class, () -> ConstantInstruction.ofArgument(SIPUSH, (int) Short.MAX_VALUE + 1));
         assertThrows(IllegalArgumentException.class, () -> ConstantInstruction.ofArgument(BIPUSH, (int) Byte.MIN_VALUE - 1));
         assertThrows(IllegalArgumentException.class, () -> ConstantInstruction.ofArgument(BIPUSH, (int) Byte.MAX_VALUE + 1));
+
+        TestUtil.runCodeHandler(cob -> {
+            assertThrows(IllegalArgumentException.class, () -> cob.sipush((int) Short.MIN_VALUE - 1));
+            assertThrows(IllegalArgumentException.class, () -> cob.sipush((int) Short.MAX_VALUE + 1));
+            assertThrows(IllegalArgumentException.class, () -> cob.bipush((int) Byte.MIN_VALUE - 1));
+            assertThrows(IllegalArgumentException.class, () -> cob.bipush((int) Byte.MAX_VALUE + 1));
+            cob.return_();
+        });
     }
 
     /**
@@ -163,26 +224,15 @@ class InstructionValidationTest {
     // CodeBuilder can fail with IAE due to other reasons, so we cannot check
     // "success" but can ensure things fail fast
     static void ensureFailFast(int value, Consumer<CodeBuilder> action) {
-        // Can fail with AssertionError instead of IAE
         Consumer<CodeBuilder> checkedAction = cob -> {
-            action.accept(cob);
-            fail("Bad slot access did not fail fast: "  + value);
+            assertThrows(IllegalArgumentException.class, () -> action.accept(cob));
+            cob.return_();
         };
-        var cf = ClassFile.of();
-        CodeTransform noopCodeTransform = CodeBuilder::with;
-        // Direct builders
-        assertThrows(IllegalArgumentException.class, () -> cf.build(ClassDesc.of("Test"), clb -> clb
-                .withMethodBody("test", MTD_void, ACC_STATIC, checkedAction)));
-        // Chained builders
-        assertThrows(IllegalArgumentException.class, () -> cf.build(ClassDesc.of("Test"), clb -> clb
-                .withMethodBody("test", MTD_void, ACC_STATIC, cob -> cob
-                        .transforming(CodeTransform.ACCEPT_ALL, checkedAction))));
-        var classTemplate = cf.build(ClassDesc.of("Test"), clb -> clb
-                .withMethodBody("test", MTD_void, ACC_STATIC, CodeBuilder::return_));
-        // Indirect builders
-        assertThrows(IllegalArgumentException.class, () -> cf.transformClass(cf.parse(classTemplate),
-                ClassTransform.transformingMethodBodies(CodeTransform.endHandler(checkedAction)
-                        .andThen(noopCodeTransform))));
+        try {
+            TestUtil.runCodeHandler(checkedAction);
+        } catch (Throwable _) {
+            System.out.printf("Erroneous value %d%n", value);
+        }
     }
 
     static void check(boolean fails, Executable exec) {
@@ -200,7 +250,10 @@ class InstructionValidationTest {
         IncrementInstruction.of(0, Short.MIN_VALUE);
         for (int i : new int[] {Short.MIN_VALUE - 1, Short.MAX_VALUE + 1}) {
             assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(0, i));
-            ensureFailFast(i, cob -> cob.iinc(0, i));
+            TestUtil.runCodeHandler(cob -> {
+                assertThrows(IllegalArgumentException.class, () -> cob.iinc(0, i));
+                cob.return_();
+            });
         }
     }
 
@@ -215,5 +268,14 @@ class InstructionValidationTest {
         assertThrows(IllegalArgumentException.class, () -> NewMultiArrayInstruction.of(ce, -1));
         assertThrows(IllegalArgumentException.class, () -> NewMultiArrayInstruction.of(ce, Integer.MIN_VALUE));
         assertThrows(IllegalArgumentException.class, () -> NewMultiArrayInstruction.of(ce, Integer.MAX_VALUE));
+
+        TestUtil.runCodeHandler(cob -> {
+            assertThrows(IllegalArgumentException.class, () -> cob.multianewarray(ce, 0));
+            assertThrows(IllegalArgumentException.class, () -> cob.multianewarray(ce, 0x100));
+            assertThrows(IllegalArgumentException.class, () -> cob.multianewarray(ce, -1));
+            assertThrows(IllegalArgumentException.class, () -> cob.multianewarray(ce, Integer.MIN_VALUE));
+            assertThrows(IllegalArgumentException.class, () -> cob.multianewarray(ce, Integer.MAX_VALUE));
+            cob.return_();
+        });
     }
 }

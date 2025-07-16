@@ -159,6 +159,16 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
+    public void isAnnotationTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            boolean expected = c.isAnnotation();
+            boolean actual = type.isAnnotation();
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
     public void isInterfaceTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
@@ -1267,25 +1277,59 @@ public class TestResolvedJavaType extends TypeUniverse {
         return method.getAnnotation(SIGNATURE_POLYMORPHIC_CLASS) != null;
     }
 
+    private static void getAnnotationDataExpectedToFail(Annotated annotated, ResolvedJavaType... annotationTypes) {
+        try {
+            if (annotationTypes.length == 1) {
+                annotated.getAnnotationData(annotationTypes[0]);
+            } else {
+                var tail = Arrays.copyOfRange(annotationTypes, 2, annotationTypes.length);
+                annotated.getAnnotationData(annotationTypes[0], annotationTypes[1], tail);
+            }
+            String s = Stream.of(annotationTypes).map(ResolvedJavaType::toJavaName).collect(Collectors.joining(", "));
+            throw new AssertionError("Expected IllegalArgumentException for retrieving (" + s + " from " + annotated);
+        } catch (IllegalArgumentException iae) {
+            assertTrue(iae.getMessage(), iae.getMessage().contains("not an annotation interface"));
+        }
+    }
+
     /**
      * Tests that {@link AnnotationData} obtained from a {@link Class}, {@link Method} or
      * {@link Field} matches {@link AnnotatedElement#getAnnotations()} for the corresponding JVMCI
      * object.
      *
-     * @param annotated a {@link Class}, {@link Method} or {@link Field} object
+     * @param annotatedElement a {@link Class}, {@link Method} or {@link Field} object
      */
-    public static void getAnnotationDataTest(AnnotatedElement annotated) throws Exception {
-        testGetAnnotationData(annotated, List.of(annotated.getAnnotations()));
+    public static void getAnnotationDataTest(AnnotatedElement annotatedElement) throws Exception {
+        Annotated annotated = toAnnotated(annotatedElement);
+        ResolvedJavaType objectType = metaAccess.lookupJavaType(Object.class);
+        ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
+        getAnnotationDataExpectedToFail(annotated, objectType);
+        getAnnotationDataExpectedToFail(annotated, suppressWarningsType, objectType);
+        getAnnotationDataExpectedToFail(annotated, suppressWarningsType, suppressWarningsType, objectType);
+
+        // Check that querying a missing annotation returns null or an empty list
+        assertNull(annotated.getAnnotationData(suppressWarningsType));
+        List<AnnotationData> data = annotated.getAnnotationData(suppressWarningsType, suppressWarningsType);
+        assertTrue(data.toString(), data.isEmpty());
+        data = annotated.getAnnotationData(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
+        assertTrue(data.toString(), data.isEmpty());
+
+        testGetAnnotationData(annotatedElement, annotated, List.of(annotatedElement.getAnnotations()));
     }
 
-    private static void testGetAnnotationData(AnnotatedElement annotated, List<Annotation> annotations) throws AssertionError {
+    private static void testGetAnnotationData(AnnotatedElement annotatedElement, Annotated annotated, List<Annotation> annotations) throws AssertionError {
+        ResolvedJavaType suppressWarningsType = metaAccess.lookupJavaType(SuppressWarnings.class);
         for (Annotation a : annotations) {
-            AnnotationData ad = toAnnotated(annotated).getAnnotationData(metaAccess.lookupJavaType(a.annotationType()));
+            var annotationType = metaAccess.lookupJavaType(a.annotationType());
+            AnnotationData ad = annotated.getAnnotationData(annotationType);
             assertAnnotationsEquals(a, ad);
 
             // Check that encoding/decoding produces a stable result
-            AnnotationData ad2 = toAnnotated(annotated).getAnnotationData(metaAccess.lookupJavaType(a.annotationType()));
+            AnnotationData ad2 = annotated.getAnnotationData(annotationType);
             assertEquals(ad, ad2);
+
+            List<AnnotationData> annotationData = annotated.getAnnotationData(annotationType, suppressWarningsType, suppressWarningsType);
+            assertEquals(1, annotationData.size());
         }
         if (annotations.size() < 2) {
             return;
@@ -1298,7 +1342,7 @@ public class TestResolvedJavaType extends TypeUniverse {
                             subList(2, i + 1).//
                             stream().map(a -> metaAccess.lookupJavaType(a.annotationType())).//
                             toArray(ResolvedJavaType[]::new);
-            List<AnnotationData> annotationData = toAnnotated(annotated).getAnnotationData(type1, type2, types);
+            List<AnnotationData> annotationData = annotated.getAnnotationData(type1, type2, types);
             assertEquals(2 + types.length, annotationData.size());
 
             for (int j = 0; j < annotationData.size(); j++) {

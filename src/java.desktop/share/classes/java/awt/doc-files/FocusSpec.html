@@ -81,7 +81,6 @@
       across platforms.  This document has the following sections:
     <ul>
       <li><a href=#Overview>Overview of KeyboardFocusManager</a>
-      <li><a href=#BrowserContexts>KeyboardFocusManager and Browser Contexts</a>
       <li><a href=#KeyEventDispatcher>KeyEventDispatcher</a>
       <li><a href=#FocusEventAndWindowEvent>FocusEvent and WindowEvent</a>
       <li><a href=#EventDelivery>Event Delivery</a>
@@ -211,22 +210,6 @@
 
 <code>KeyboardFocusManager</code> is an abstract class. AWT provides a default
 implementation in the <code>DefaultKeyboardFocusManager</code> class.
-
-
-<a id="BrowserContexts"></a>
-<h2>KeyboardFocusManager and Browser Contexts</h2>
-<p>
-Some browsers partition applets in different code bases into separate
-contexts, and establish walls between these contexts. Each thread and
-each Component is associated with a particular context and cannot
-interfere with threads or access Components in other contexts. In such
-a scenario, there will be one KeyboardFocusManager per context. Other
-browsers place all applets into the same context, implying that there
-will be only a single, global KeyboardFocusManager for all
-applets. This behavior is implementation-dependent. Consult your
-browser's documentation for more information. No matter how many
-contexts there may be, however, there can never be more than one focus
-owner, focused Window, or active Window, per ClassLoader.
 
 
 <a id="KeyEventDispatcher"></a>

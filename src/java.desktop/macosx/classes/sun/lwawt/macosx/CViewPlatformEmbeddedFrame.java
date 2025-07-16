@@ -37,7 +37,7 @@ import sun.java2d.SurfaceData;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.PlatformWindow;
 
-public class CViewPlatformEmbeddedFrame implements PlatformWindow {
+public final class CViewPlatformEmbeddedFrame implements PlatformWindow {
 
     private CPlatformView view;
     private LWWindowPeer peer;

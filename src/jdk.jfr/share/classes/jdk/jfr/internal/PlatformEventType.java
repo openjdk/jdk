@@ -204,7 +204,11 @@ public final class PlatformEventType extends Type {
         if (isCPUTimeMethodSampling) {
             this.cpuRate = rate;
             if (isEnabled()) {
-                JVM.setCPUThrottle(rate.rate(), rate.autoAdapt());
+                if (rate.isRate()) {
+                    JVM.setCPURate(rate.rate());
+                } else {
+                    JVM.setCPUPeriod(rate.periodNanos());
+                }
             }
         }
     }
@@ -270,8 +274,12 @@ public final class PlatformEventType extends Type {
                 long p = enabled ? period : 0;
                 JVM.setMethodSamplingPeriod(getId(), p);
             } else if (isCPUTimeMethodSampling) {
-                TimespanRate r = enabled ? cpuRate : new TimespanRate(0, false);
-                JVM.setCPUThrottle(r.rate(), r.autoAdapt());
+                TimespanRate r = enabled ? cpuRate : TimespanRate.OFF;
+                if (r.isRate()) {
+                    JVM.setCPURate(r.rate());
+                } else {
+                    JVM.setCPUPeriod(r.periodNanos());
+                }
             } else {
                 JVM.setEnabled(getId(), enabled);
             }
