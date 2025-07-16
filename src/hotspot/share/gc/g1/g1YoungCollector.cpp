@@ -815,7 +815,7 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 }
 
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
-  const double pause_start_time_ms = phase_times()->cur_pause_start_sec() * 1000.0;
+  const double pause_start_time_ms = policy()->cur_pause_start_sec() * 1000.0;
 
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 

@@ -76,6 +76,8 @@ class G1Policy: public CHeapObj<mtGC> {
 
   GCPolicyCounters* _policy_counters;
 
+  double _cur_pause_start_sec;
+
   // Desired young gen length without taking actually available free regions into
   // account.
   volatile uint _young_list_desired_length;
@@ -130,6 +132,10 @@ public:
 
   void record_card_rs_length(size_t card_rs_length) {
     _card_rs_length = card_rs_length;
+  }
+
+  double cur_pause_start_sec() const {
+    return _cur_pause_start_sec;
   }
 
   double predict_base_time_ms(size_t pending_cards) const;
