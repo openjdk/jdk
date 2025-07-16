@@ -828,7 +828,7 @@ public:
   static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
   static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
-  size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
+  size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
 
   static inline void increase_object_age(oop obj, uint additional_age);
 
