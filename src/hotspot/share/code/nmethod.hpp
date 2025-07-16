@@ -914,9 +914,9 @@ public:
     return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
 
-  // Returns true if a JVMCI compiled method is non-default,
-  // i.e., not triggered by CompilerBroker
-  bool is_jvmci_hosted() const;
+  // Returns true if the runtime should NOT collect deoptimization profile for a JVMCI
+  // compiled method
+  bool jvmci_skip_profile_deopt() const;
 #endif
 
   void oops_do(OopClosure* f) { oops_do(f, false); }
