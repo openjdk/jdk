@@ -93,8 +93,8 @@ public final class JRSUIControl {
 
     private final HashMap<Key, DoubleValue> nativeMap;
     private final HashMap<Key, DoubleValue> changes;
-    private long cfDictionaryPtr;
-    private Object disposerReferent = new Object();
+    private final long cfDictionaryPtr;
+    private final Object disposerReferent = new Object();
 
     private long priorEncodedProperties;
     private long currentEncodedProperties;
@@ -121,7 +121,7 @@ public final class JRSUIControl {
 
     private static class JRSUIControlDisposerRecord implements DisposerRecord {
 
-        private long cfDictionaryPtr;
+        private final long cfDictionaryPtr;
         JRSUIControlDisposerRecord(long ptr) {
             cfDictionaryPtr = ptr;
         }
@@ -131,7 +131,6 @@ public final class JRSUIControl {
                 disposeCFDictionary(cfDictionaryPtr);
             } catch (Throwable t) {
             }
-            cfDictionaryPtr = 0;
         }
     }
 
