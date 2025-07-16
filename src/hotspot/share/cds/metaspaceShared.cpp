@@ -1428,7 +1428,7 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
 MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,
                                                bool use_requested_addr) {
   if (use_requested_addr && static_mapinfo->requested_base_address() == nullptr) {
-    report_loading_error("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.");
+    aot_log_info(aot)("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.");
     return MAP_ARCHIVE_MMAP_FAILURE;
   }
 
@@ -1436,12 +1436,12 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       // For product build only -- this is for benchmarking the cost of doing relocation.
       // For debug builds, the check is done below, after reserving the space, for better test coverage
       // (see comment below).
-      report_loading_error("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
+      aot_log_info(aot)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
       return MAP_ARCHIVE_MMAP_FAILURE;
     });
 
   if (ArchiveRelocationMode == 2 && !use_requested_addr) {
-    report_loading_error("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
+    aot_log_info(aot)("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
     return MAP_ARCHIVE_MMAP_FAILURE;
   };
 
