@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.Path;
@@ -214,7 +215,15 @@ public class EmptyPath {
 
     @Test
     public void list() throws IOException {
-        String[] files = f.list();
+        list(f.list());
+    }
+
+    @Test
+    public void listFilenameFilter() throws IOException {
+        list(f.list((FilenameFilter)null));
+    }
+
+    private void list(String[] files) throws IOException {
         assertNotNull(files);
         Set<String> ioSet = new HashSet(Arrays.asList(files));
         Set<String> nioSet = new HashSet();
@@ -365,5 +374,10 @@ public class EmptyPath {
     @Test
     public void toURI() {
         assertEquals(f.toPath().toUri(), f.toURI());
+    }
+
+    @Test
+    public void toURL() throws MalformedURLException {
+        assertEquals(f.toPath().toUri().toURL(), f.toURL());
     }
 }
