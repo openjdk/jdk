@@ -127,11 +127,17 @@ public class TestCastMethods {
         // from S 64
             // to X 64
             makePair(SSPEC64, BSPEC64),
+            makePair(SSPEC64, ISPEC64),
+            makePair(SSPEC64, ISPEC64, true),
+            makePair(SSPEC64, FSPEC64),
             // to X 128
             makePair(SSPEC64, BSPEC128),
             makePair(SSPEC64, ISPEC128),
             makePair(SSPEC64, ISPEC128, true),
+            makePair(SSPEC64, LSPEC128),
+            makePair(SSPEC64, LSPEC128, true),
             makePair(SSPEC64, FSPEC128),
+            makePair(SSPEC64, DSPEC128),
             // to X 256
             makePair(SSPEC64, BSPEC256),
             makePair(SSPEC64, ISPEC256),
@@ -156,7 +162,10 @@ public class TestCastMethods {
             makePair(SSPEC128, BSPEC128),
             makePair(SSPEC128, ISPEC128),
             makePair(SSPEC128, ISPEC128, true),
+            makePair(SSPEC128, LSPEC128),
+            makePair(SSPEC128, LSPEC128, true),
             makePair(SSPEC128, FSPEC128),
+            makePair(SSPEC128, DSPEC128),
             // to X 256
             makePair(SSPEC128, BSPEC256),
             makePair(SSPEC128, ISPEC256),
@@ -228,6 +237,7 @@ public class TestCastMethods {
         // ====== from I ======
         // from I 64
             // to X 64
+            makePair(ISPEC64, SSPEC64),
             makePair(ISPEC64, FSPEC64),
             // to X 128
             makePair(ISPEC64, LSPEC128),
@@ -299,10 +309,12 @@ public class TestCastMethods {
         // ====== from L ======
         // from L 128
             // to X 64
+            makePair(LSPEC128, SSPEC64),
             makePair(LSPEC128, ISPEC64),
             makePair(LSPEC128, FSPEC64),
             makePair(LSPEC128, DSPEC64),
             // to X 128
+            makePair(LSPEC128, SSPEC128),
             makePair(LSPEC128, ISPEC128),
             makePair(LSPEC128, FSPEC128),
             makePair(LSPEC128, DSPEC128),
@@ -369,6 +381,7 @@ public class TestCastMethods {
         // ====== from F ======
         // from F 64
             // to X 64
+            makePair(FSPEC64, SSPEC64),
             makePair(FSPEC64, ISPEC64),
             // to X 128
             makePair(FSPEC64, ISPEC128),
@@ -433,10 +446,12 @@ public class TestCastMethods {
         // ====== from D ======
         // from D 128
             // to X 64
+            makePair(DSPEC128, SSPEC64),
             makePair(DSPEC128, ISPEC64),
             makePair(DSPEC128, LSPEC64),
             makePair(DSPEC128, FSPEC64),
             // to X 128
+            makePair(DSPEC128, SSPEC128),
             makePair(DSPEC128, ISPEC128),
             makePair(DSPEC128, LSPEC128),
             makePair(DSPEC128, FSPEC128),

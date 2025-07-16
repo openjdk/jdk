@@ -25,11 +25,11 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/klassFactory.hpp"
@@ -1283,7 +1283,47 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   const char* const file_name = file_name_for_class_name(class_name,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
-  ClassLoaderExt::record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
+  record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
+}
+
+void ClassLoader::record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined) {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+
+  oop loader = result->class_loader();
+  if (SystemDictionary::is_system_class_loader(loader)) {
+    AOTClassLocationConfig::dumptime_set_has_app_classes();
+  } else if (SystemDictionary::is_platform_class_loader(loader)) {
+    AOTClassLocationConfig::dumptime_set_has_platform_classes();
+  } else {
+    precond(loader == nullptr);
+  }
+
+  if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+    if (!AOTClassLocationConfig::dumptime()->is_valid_classpath_index(classpath_index, result)) {
+      classpath_index = -1;
+    }
+  }
+
+  AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
+  result->set_shared_classpath_index(classpath_index);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && result->defined_by_boot_loader() &&
+      classpath_index < 0 && redefined) {
+    // When dumping the heap (which happens only during static dump), classes for the built-in
+    // loaders are always loaded from known locations (jimage, classpath or modulepath),
+    // so classpath_index should always be >= 0.
+    // The only exception is when a java agent is used during dump time (for testing
+    // purposes only). If a class is transformed by the agent, the AOTClassLocation of
+    // this class may point to an unknown location. This may break heap object archiving,
+    // which requires all the boot classes to be from known locations. This is an
+    // uncommon scenario (even in test cases). Let's simply disable heap object archiving.
+    ResourceMark rm;
+    log_warning(aot)("heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
+                     result->external_name());
+    CDSConfig::disable_heap_dumping();
+  }
+#endif // INCLUDE_CDS_JAVA_HEAP
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {
@@ -1307,6 +1347,17 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
       ik->set_shared_classpath_index(0);
     }
   }
+}
+
+void ClassLoader::append_boot_classpath(ClassPathEntry* new_entry) {
+  if (CDSConfig::is_using_archive()) {
+    warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
+    FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+    if (DynamicArchive::is_mapped()) {
+      FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+    }
+  }
+  add_to_boot_append_entries(new_entry);
 }
 #endif // INCLUDE_CDS
 

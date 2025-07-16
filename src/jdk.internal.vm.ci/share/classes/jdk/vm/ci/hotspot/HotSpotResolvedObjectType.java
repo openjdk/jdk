@@ -81,6 +81,13 @@ public interface HotSpotResolvedObjectType extends ResolvedJavaType {
     AssumptionResult<ResolvedJavaMethod> findUniqueConcreteMethod(ResolvedJavaMethod method);
 
     /**
+     * Gets the runtime representation of the {@link Class} object of this type.
+     */
+    default JavaConstant getJavaMirror() {
+        throw new UnsupportedOperationException("getJavaMirror");
+    }
+
+    /**
      * Performs a fast-path check that this type is resolved in the context of a given accessing
      * class. A negative result does not mean this type is not resolved with respect to
      * {@code accessingClass}. That can only be determined by
