@@ -2549,8 +2549,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // TODO add comment
-  // TODO should we be more specific? ie checking that it is a constant -> probably not
+  // If changed AndI/AndL inputs, check RShift users for "(x & mask) >> shift" reordering
   if (use_op == Op_AndI || use_op == Op_AndL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
