@@ -49,6 +49,9 @@ import org.testng.annotations.Test;
 import org.testng.Assert;
 import org.testng.TestNG;
 
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+
 @Test
 public class JImageReadTest {
 
@@ -333,32 +336,23 @@ public class JImageReadTest {
      */
     @Test
     static void test5_imageReaderEndianness() throws IOException {
-        ImageReader nativeReader = ImageReader.open(imageFile);
-        Assert.assertEquals(nativeReader.getByteOrder(), ByteOrder.nativeOrder());
-
-        try {
-            ImageReader leReader = ImageReader.open(imageFile, ByteOrder.LITTLE_ENDIAN);
-            Assert.assertEquals(leReader.getByteOrder(), ByteOrder.LITTLE_ENDIAN);
-            leReader.close();
-        } catch (IOException io) {
-            // IOException expected if LITTLE_ENDIAN not the nativeOrder()
-            Assert.assertNotEquals(ByteOrder.nativeOrder(), ByteOrder.LITTLE_ENDIAN);
+        // Will be opened with native byte order.
+        try (ImageReader nativeReader = ImageReader.open(imageFile)) {
+            // Just ensure something works as expected.
+            Assert.assertNotNull(nativeReader.findNode("/"));
+        } catch (IOException expected) {
+            Assert.fail("Reader should be openable with native byte order.");
         }
 
-        try {
-            ImageReader beReader = ImageReader.open(imageFile, ByteOrder.BIG_ENDIAN);
-            Assert.assertEquals(beReader.getByteOrder(), ByteOrder.BIG_ENDIAN);
-            beReader.close();
-        } catch (IOException io) {
-            // IOException expected if LITTLE_ENDIAN not the nativeOrder()
-            Assert.assertNotEquals(ByteOrder.nativeOrder(), ByteOrder.BIG_ENDIAN);
+        ByteOrder otherOrder = ByteOrder.nativeOrder() == BIG_ENDIAN ? LITTLE_ENDIAN : BIG_ENDIAN;
+        try (ImageReader badReader = ImageReader.open(imageFile, otherOrder)) {
+            Assert.fail("Reader should not be openable with the wrong byte order.");
+        } catch (IOException expected) {
         }
-
-        nativeReader.close();
     }
-    // main method to run standalone from jtreg
 
-    @Test(enabled=false)
+    // main method to run standalone from jtreg
+    @Test(enabled = false)
     @Parameters({"x"})
     @SuppressWarnings("raw_types")
     public static void main(@Optional String[] args) {

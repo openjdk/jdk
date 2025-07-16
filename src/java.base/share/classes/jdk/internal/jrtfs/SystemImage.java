@@ -58,7 +58,6 @@ abstract class SystemImage {
         if (modulesImageExists) {
             // open a .jimage and build directory structure
             final ImageReader image = ImageReader.open(moduleImageFile);
-            image.getRootDirectory();
             return new SystemImage() {
                 @Override
                 Node findNode(String path) throws IOException {
