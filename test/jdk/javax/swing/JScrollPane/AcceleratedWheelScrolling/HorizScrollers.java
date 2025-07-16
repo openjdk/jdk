@@ -69,7 +69,6 @@ public class HorizScrollers {
     public static void main(String[] args) throws Exception {
         checkNimbusLaf();
         PassFailJFrame.builder()
-                .title("HorizScrollers Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(45)
                 .testTimeOut(10)
