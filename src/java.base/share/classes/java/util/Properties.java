@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,12 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * {@code Properties} object.  Their use is strongly discouraged as they
  * allow the caller to insert entries whose keys or values are not
  * {@code Strings}.  The {@code setProperty} method should be used
- * instead.  If the {@code store} or {@code save} method is called
+ * instead. If the {@code store}, {@code save} or {@code list} method is called
  * on a "compromised" {@code Properties} object that contains a
  * non-{@code String} key or value, the call will fail. Similarly,
- * the call to the {@code propertyNames} or {@code list} method
+ * the call to the {@code propertyNames} method
  * will fail if it is called on a "compromised" {@code Properties}
- * object that contains a non-{@code String} key or value.
+ * object that contains a non-{@code String} key.
  *
  * <p>
  * The iterators returned by the {@code iterator} method of this class's
