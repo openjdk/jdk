@@ -5,12 +5,17 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
  */
 
-const LABEL_ALPHA  = "${doclet.lexical}";
-const LABEL_SOURCE = "${doclet.sort_to_source}";
+const LABEL_ALPHA  = "Sort lexicographically";
+const LABEL_SOURCE = "Sort by source order";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("toc-lexical-order-toggle");
-  const toc = document.querySelector("nav.toc ol.toc-list");
+  const sidebarNav = document.querySelector(".main-grid nav.toc")
+                   || Array.from(document.querySelectorAll("nav.toc"))
+                           .find(n => !n.closest("#navbar-top"));
+  if (!sidebarNav) return;
+
+  const btn = sidebarNav.querySelector("#toc-lexical-order-toggle");
+  const toc = sidebarNav.querySelector("ol.toc-list");
   if (!btn || !toc) return;
   const img = btn.querySelector("img");
 
@@ -60,4 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
                   : "source";
     reorder(newMode);
   });
+
+  btn.blur();
 });
