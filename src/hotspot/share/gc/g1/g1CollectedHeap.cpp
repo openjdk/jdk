@@ -1815,17 +1815,18 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // Otherwise we must ensure that it is restarted.
       //
       // For a CodeCache requested GC, a successful GC operation means that
-      // (1) marking is in progress (i.e. the VMOp started the marking or a
-      //     Remark pause is pending from a different VM op),
+      // (1) marking is in progress. I.e. the VMOp started the marking or a
+      //     Remark pause is pending from a different VM op; we will potentially
+      //     abort a mixed phase if needed.
       // (2) a new cycle was started (by this thread or some other), or
       // (3) a Full GC was performed.
       //
       // Cases (2) and (3) are detected together by a change to
       // _old_marking_cycles_started.
       //
-      // Compared to other non-user requested GCs, we do not consider being
+      // Compared to other "automatic" GCs (see below), we do not consider being
       // in whitebox as sufficient too because we might be anywhere within that
-      // cycle.
+      // cycle and we need to make progress.
       if (op.mark_in_progress() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
@@ -1854,11 +1855,6 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       // (5) a Full GC was performed.
       // Cases (4) and (5) are detected together by a change to
       // _old_marking_cycles_started.
-      //
-      // Note that (1) does not imply (4).  If we're still in the mixed
-      // phase of an earlier concurrent collection, the request to make the
-      // collection a concurrent start won't be honored.  If we don't check for
-      // both conditions we'll spin doing back-to-back collections.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
           op.whitebox_attached() ||

@@ -1230,6 +1230,17 @@ void G1Policy::initiate_conc_mark() {
   collector_state()->set_initiate_conc_mark_if_possible(false);
 }
 
+static const char* requester_for_mixed_abort(GCCause::Cause cause) {
+  if (cause == GCCause::_wb_breakpoint) {
+    return "run_to breakpoint";
+  } else if (GCCause::is_codecache_requested_gc(cause)) {
+    return "codecache";
+  } else {
+    assert(G1CollectedHeap::heap()->is_user_requested_concurrent_full_gc(cause), "must be");
+    return "user";
+  }
+}
+
 void G1Policy::decide_on_concurrent_start_pause() {
   // We are about to decide on whether this pause will be a
   // concurrent start pause.
@@ -1276,16 +1287,8 @@ void G1Policy::decide_on_concurrent_start_pause() {
       abandon_collection_set_candidates();
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
-      const char* requester;
-      if (cause == GCCause::_wb_breakpoint) {
-          requester = "run_to breakpoint";
-      } else if (GCCause::is_codecache_requested_gc(cause)) {
-          requester = "codecache";
-      } else {
-          requester = "user";
-      }
       log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
-                          requester);
+                          requester_for_mixed_abort(cause));
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles
