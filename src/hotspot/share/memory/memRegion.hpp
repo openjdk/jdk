@@ -63,7 +63,7 @@ public:
   MemRegion minus(const MemRegion mr2) const;
 
   HeapWord* start() const { return _start; }
-  HeapWord* end() const  { return _start + _word_size; }
+  HeapWord* end() const   { return _start + _word_size; }
   HeapWord* last() const  { return _start + _word_size - 1; }
 
   void set_start(HeapWord* start) { _start = start; }
