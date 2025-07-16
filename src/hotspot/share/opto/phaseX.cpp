@@ -2549,6 +2549,14 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  if (use_op == Op_ConvL2D) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvD2L) {
+        worklist.push(u);
+      }
+    }
+  }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
   // - if the changed input is the offset, check constant-offset AddP users for
