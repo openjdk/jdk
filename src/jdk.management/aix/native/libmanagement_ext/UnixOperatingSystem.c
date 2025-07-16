@@ -76,7 +76,6 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
     }
 
     double load = (double)(user_diff + sys_diff) / total;
-    fflush(stdout);
     last_cpu_load = load;
     last_sample_time = now;
     cpu_total_old = cpu_total;
