@@ -150,13 +150,11 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
             displayReconfigContext = ptr;
         }
 
-        public synchronized void dispose() {
-            if (displayReconfigContext != 0L) {
-                try {
-                    deregisterDisplayReconfiguration(displayReconfigContext);
-                } catch (Throwable t) {
-                    // Runs on disposer thread, can't allow an exception to escape.
-                }
+        public void dispose() {
+            try {
+                deregisterDisplayReconfiguration(displayReconfigContext);
+            } catch (Throwable t) {
+                // Runs on disposer thread, can't allow an exception to escape.
             }
         }
     }
