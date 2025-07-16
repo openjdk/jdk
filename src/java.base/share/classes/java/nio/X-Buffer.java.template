@@ -950,6 +950,10 @@ public abstract sealed class $Type$Buffer
         return get(index, dst, 0, dst.length);
     }
 
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
     $Type$Buffer getArray(int index, $type$[] dst, int offset, int length) {
         if (
 #if[char]
@@ -976,6 +980,12 @@ public abstract sealed class $Type$Buffer
                 Reference.reachabilityFence(this);
             }
         } else {
+#if[char]
+            // StringCharBuffer overrides getArray(), so verify that a
+            // non-addressable CharBuffer here is not a StringCharBuffer
+            if (!isAddressable())
+                assert !StringCharBuffer.class.isInstance(this);
+#end[char]
             int end = offset + length;
             for (int i = offset, j = index; i < end; i++, j++) {
                 dst[i] = get(j);
@@ -1116,6 +1126,10 @@ public abstract sealed class $Type$Buffer
         return this;
     }
 
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
     void putBuffer(int pos, $Type$Buffer src, int srcPos, int n) {
 #if[rw]
         Object srcBase = src.base();
@@ -1346,6 +1360,10 @@ public abstract sealed class $Type$Buffer
         return put(index, src, 0, src.length);
     }
 
+    //
+    // This method does not perform bounds checking which it expects
+    // will have been done by the caller
+    //
     $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
 #if[rw]
         if (
