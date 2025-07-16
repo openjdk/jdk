@@ -229,7 +229,7 @@ class NativeMovRegMem: public NativeInstruction {
 
 inline NativeMovRegMem* nativeMovRegMem_at(address addr) {
   Unimplemented();
-  return (NativeMovRegMem*)0;
+  return (NativeMovRegMem*)nullptr;
 }
 
 class NativeJump: public NativeInstruction {
