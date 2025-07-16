@@ -582,6 +582,7 @@ public class AllocationMergesNestedPhiTests {
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------------------
+
     @DontCompile
     int testMultiParentPhi_Interp(boolean cond1, int x, int y) { return testMultiParentPhi(cond1, x, y); }
 

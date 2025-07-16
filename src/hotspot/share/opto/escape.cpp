@@ -462,11 +462,11 @@ bool ConnectionGraph::compute_escape() {
 // if at least one scalar replaceable allocation participates in the merge.
 bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
   bool found_sr_allocate = false;
-  int nof_input_phi_nodes = 0;
+  bool input_phi_node_exists = false;
   for (uint i = 1; i < ophi->req(); i++) {
     if (ophi->in(i)->is_Phi()) {
       // ignore phi node with more than one input phi node
-      if (++nof_input_phi_nodes > 1) {
+      if (input_phi_node_exists) {
         NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Phi %d. More than one input phi node.", ophi->_idx);)
         return false;
       }
@@ -566,9 +566,10 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint phi_nest_level) const
       return false;
     } else if (use->is_Phi()) {
       if (n->_idx == use->_idx) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Self loop nested Phi");)
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce self loop nested Phi");)
         return false;
       } else if (!can_reduce_phi_check_inputs(use->as_Phi()) || !can_reduce_check_users(use->as_Phi(), phi_nest_level+1)) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce parent Phi %d on invocation %d. Nested Phi %d isn't reducible.", n->_idx, _invocation, use->_idx);)
         return false;
       }
     } else if (use->is_CastPP()) {
