@@ -2990,7 +2990,7 @@ static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
         err_msg("Expected non-primitive type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  if (index < 0 || index > iklass->total_fields_count()) {
+  if (index < 0 || index >= iklass->total_fields_count()) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
         err_msg("Field index %d out of bounds for %s", index, klass->external_name()));
   }
@@ -3000,8 +3000,12 @@ static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
 C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index))
   requireInHotSpot("asReflectionField", JVMCI_CHECK_NULL);
   Klass* klass = UNPACK_PAIR(Klass, klass);
-  InstanceKlass* iklass = check_field(klass, index, JVMCIENV);
+  InstanceKlass* iklass = check_field(klass, index, JVMCI_CHECK_NULL);
   fieldDescriptor fd(iklass, index);
+  if (fd.is_injected()) {
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException,
+        err_msg("Cannot get Field for injected %s.%s", klass->external_name(), fd.name()->as_C_string()));
+  }
   oop reflected = Reflection::new_field(&fd, CHECK_NULL);
   return JNIHandles::make_local(THREAD, reflected);
 C2V_END
