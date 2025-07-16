@@ -151,11 +151,7 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
         }
 
         public void dispose() {
-            try {
-                deregisterDisplayReconfiguration(displayReconfigContext);
-            } catch (Throwable t) {
-                // Runs on disposer thread, can't allow an exception to escape.
-            }
+            deregisterDisplayReconfiguration(displayReconfigContext);
         }
     }
 
