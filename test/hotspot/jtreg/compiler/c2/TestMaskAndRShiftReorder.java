@@ -25,7 +25,7 @@
  * @test
  * @bug 8361700
  * @summary An expression of the form "(x & mask) >> shift", where the mask
- *          is a constant, should be reordered to "(x >> shift) & (mask >> shift)"
+ *          is a constant, should be transformed to "(x >> shift) & (mask >> shift)"
  *          VerifyIterativeGVN checks that this optimization was applied
  * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,compiler.c2.TestMaskAndRShiftReorder::test
