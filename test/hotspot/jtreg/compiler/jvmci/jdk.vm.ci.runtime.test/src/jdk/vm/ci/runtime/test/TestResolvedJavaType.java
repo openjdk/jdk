@@ -1110,6 +1110,7 @@ public class TestResolvedJavaType extends TypeUniverse {
         if (clinit != null) {
             assertEquals(0, clinit.getAnnotations().length);
             assertEquals(0, clinit.getDeclaredAnnotations().length);
+            assertNull(runtime.getMirror(clinit));
         }
         return clinit;
     }
