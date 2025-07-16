@@ -41,7 +41,6 @@ import javax.swing.UIManager;
  * @key headful
  * @requires (os.family == "linux" | os.family == "mac")
  * @library /javax/swing/regtesthelpers
- * @build Util
  * @summary Verifies if menu mnemonic toggle on Alt press in GTK and Aqua LAF
  * @run main TestMenuMnemonicLinuxAndMac
  */
