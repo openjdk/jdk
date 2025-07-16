@@ -49,7 +49,6 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/modules.hpp"
@@ -837,11 +836,10 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       struct stat st;
       if (os::stat(AOTCache, &st) != 0) {
         tty->print_cr("AOTCache creation failed: %s", AOTCache);
-        vm_exit(0);
       } else {
         tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
-        vm_exit(0);
       }
+      vm_direct_exit(0);
     }
   }
 }
@@ -1288,6 +1286,10 @@ void MetaspaceShared::report_loading_error(const char* format, ...) {
   LogStream ls_cds(level, LogTagSetMapping<LOG_TAGS(cds)>::tagset());
 
   LogStream& ls = CDSConfig::new_aot_flags_used() ? ls_aot : ls_cds;
+  if (!ls.is_enabled()) {
+    return;
+  }
+
   va_list ap;
   va_start(ap, format);
 
@@ -1426,7 +1428,7 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
 MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo,
                                                bool use_requested_addr) {
   if (use_requested_addr && static_mapinfo->requested_base_address() == nullptr) {
-    aot_log_info(aot)("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.");
+    report_loading_error("Archive(s) were created with -XX:SharedBaseAddress=0. Always map at os-selected address.");
     return MAP_ARCHIVE_MMAP_FAILURE;
   }
 
@@ -1434,12 +1436,12 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       // For product build only -- this is for benchmarking the cost of doing relocation.
       // For debug builds, the check is done below, after reserving the space, for better test coverage
       // (see comment below).
-      aot_log_info(aot)("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
+      report_loading_error("ArchiveRelocationMode == 1: always map archive(s) at an alternative address");
       return MAP_ARCHIVE_MMAP_FAILURE;
     });
 
   if (ArchiveRelocationMode == 2 && !use_requested_addr) {
-    aot_log_info(aot)("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
+    report_loading_error("ArchiveRelocationMode == 2: never map archive(s) at an alternative address");
     return MAP_ARCHIVE_MMAP_FAILURE;
   };
 
@@ -2014,10 +2016,7 @@ void MetaspaceShared::initialize_shared_spaces() {
 
     TrainingData::print_archived_training_data_on(tty);
 
-    if (AOTCodeCache::is_on_for_use()) {
-      tty->print_cr("\n\nAOT Code");
-      AOTCodeCache::print_on(tty);
-    }
+    AOTCodeCache::print_on(tty);
 
     // collect shared symbols and strings
     CountSharedSymbols cl;

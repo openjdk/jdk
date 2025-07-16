@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2016, 2025, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -173,7 +173,7 @@
 #define __ _masm->
 
 address StubGenerator::generate_libmCos() {
-  StubGenStubId stub_id = StubGenStubId::dcos_id;
+  StubId stub_id = StubId::stubgen_dcos_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 

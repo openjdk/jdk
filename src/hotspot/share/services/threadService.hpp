@@ -631,4 +631,11 @@ class JavaThreadSleepState : public JavaThreadStatusChanger {
   }
 };
 
+
+// jdk.internal.vm.ThreadSnapshot support
+class ThreadSnapshotFactory: AllStatic {
+public:
+  JVMTI_ONLY(static oop get_thread_snapshot(jobject jthread, TRAPS);)
+};
+
 #endif // SHARE_SERVICES_THREADSERVICE_HPP

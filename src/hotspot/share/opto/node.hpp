@@ -1633,6 +1633,7 @@ protected:
 
   // Grow array to required capacity
   void maybe_grow(uint i) {
+    _nesting.check(_a); // Check if a potential reallocation in the arena is safe
     if (i >= _max) {
       grow(i);
     }
@@ -1884,7 +1885,15 @@ protected:
   INode *_inodes;    // Array storage for the stack
   Arena *_a;         // Arena to allocate in
   ReallocMark _nesting; // Safety checks for arena reallocation
+
+  void maybe_grow() {
+    _nesting.check(_a); // Check if a potential reallocation in the arena is safe
+    if (_inode_top >= _inode_max) {
+      grow();
+    }
+  }
   void grow();
+
 public:
   Node_Stack(int size) {
     size_t max = (size > OptoNodeListSize) ? size : OptoNodeListSize;
@@ -1907,7 +1916,7 @@ public:
   }
   void push(Node *n, uint i) {
     ++_inode_top;
-    grow();
+    maybe_grow();
     INode *top = _inode_top; // optimization
     top->node = n;
     top->indx = i;

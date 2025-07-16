@@ -75,6 +75,7 @@ class CStrikeDisposer extends FontStrikeDisposer {
         super(font2D, desc);
     }
 
+    @Override
     public synchronized void dispose() {
         if (!disposed) {
             if (pNativeScalerContext != 0L) {

@@ -24,6 +24,7 @@
 
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/recorder/jfrEventSetting.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -168,6 +169,17 @@ NO_TRANSITION(jboolean, jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_ty
   JfrEventThrottler::configure(static_cast<JfrEventId>(event_type_id), event_sample_size, period_ms);
   return JNI_TRUE;
 NO_TRANSITION_END
+
+JVM_ENTRY_NO_ENV(void, jfr_set_cpu_rate(JNIEnv* env, jclass jvm, jdouble rate))
+  JfrEventSetting::set_enabled(JfrCPUTimeSampleEvent, rate > 0);
+  JfrCPUTimeThreadSampling::set_rate(rate);
+JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_set_cpu_period(JNIEnv* env, jclass jvm, jlong period_nanos))
+  assert(period_nanos >= 0, "invariant");
+  JfrEventSetting::set_enabled(JfrCPUTimeSampleEvent, period_nanos > 0);
+  JfrCPUTimeThreadSampling::set_period(period_nanos);
+JVM_END
 
 NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong event_type_id, jlong value))
   JfrEventSetting::set_miscellaneous(event_type_id, value);

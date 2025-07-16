@@ -1339,8 +1339,7 @@ public class JEditorPane extends JTextComponent {
     /**
      * This is invoked every time the registries are accessed. Loading
      * is done this way instead of via a static as the static is only
-     * called once when running in plugin resulting in the entries only
-     * appearing in the first applet.
+     * called once when running in an AppContext.
      */
     private static void loadDefaultKitsIfNecessary() {
         if (SwingUtilities.appContextGet(kitTypeRegistryKey) == null) {

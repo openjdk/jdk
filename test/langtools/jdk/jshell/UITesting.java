@@ -52,6 +52,7 @@ public class UITesting {
     protected static final String REDRAW_PROMPT = "\n\r?" + PROMPT;
     protected static final String UP = "\033[A";
     protected static final String DOWN = "\033[B";
+    protected static final String CTRL_D = "\u0004";
     private final boolean laxLineEndings;
 
     public UITesting() {
@@ -106,10 +107,18 @@ public class UITesting {
         });
 
         Writer inputSink = new OutputStreamWriter(input.createOutput(), StandardCharsets.UTF_8) {
+            boolean closed = false;
             @Override
             public void write(String str) throws IOException {
+                if (closed) return; // prevents exception thrown due to closed writer
                 super.write(str);
                 flush();
+            }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                closed = true;
             }
         };
 

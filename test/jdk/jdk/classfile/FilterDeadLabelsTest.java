@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
 
 /*
  * @test
+ * @bug 8361908
  * @summary Testing filtering of dead labels.
  * @run junit FilterDeadLabelsTest
  */
 
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.CodeBuilder;
@@ -40,6 +43,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static java.lang.constant.ConstantDescs.*;
 
 class FilterDeadLabelsTest {
 
@@ -69,6 +74,21 @@ class FilterDeadLabelsTest {
         code.findAttribute(Attributes.localVariableTable()).ifPresent(a -> assertTrue(a.localVariables().isEmpty()));
         code.findAttribute(Attributes.localVariableTypeTable()).ifPresent(a -> assertTrue(a.localVariableTypes().isEmpty()));
         code.findAttribute(Attributes.characterRangeTable()).ifPresent(a -> assertTrue(a.characterRangeTable().isEmpty()));
+    }
+
+    @Test // JDK-8361908
+    void testFilterMixedExceptionCatch() {
+        var cc = ClassFile.of(ClassFile.DeadLabelsOption.DROP_DEAD_LABELS);
+        var code = cc.parse(cc.build(CD_Void, clb ->
+                clb.withMethodBody("m", MTD_void, 0, cob -> {
+                    cob.return_();
+                    var l = cob.newBoundLabel();
+                    cob.pop().return_();
+                    cob.exceptionCatch(cob.startLabel(), l, l, Optional.empty());
+                    cob.exceptionCatch(cob.newLabel(), l, l, CD_Exception);
+                }))).methods().get(0).code().get();
+        assertEquals(1, code.exceptionHandlers().size(), () -> code.exceptionHandlers().toString());
+        assertEquals(Optional.empty(), code.exceptionHandlers().getFirst().catchType());
     }
 
     @ParameterizedTest

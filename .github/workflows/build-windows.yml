@@ -54,6 +54,10 @@ on:
       make-arguments:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
 
 env:
   # These are needed to make the MSYS2 bash work properly
@@ -63,7 +67,7 @@ env:
 jobs:
   build-windows:
     name: build
-    runs-on: windows-2019
+    runs-on: windows-2025
     defaults:
       run:
         shell: bash
@@ -102,7 +106,7 @@ jobs:
         id: toolchain-check
         run: |
           set +e
-          '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          '/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
           if [ $? -eq 0 ]; then
             echo "Toolchain is already installed"
             echo "toolchain-installed=true" >> $GITHUB_OUTPUT
@@ -115,7 +119,7 @@ jobs:
         run: |
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
-            modify --quiet --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise' \
             --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.msvc-toolset-architecture }}
         if: steps.toolchain-check.outputs.toolchain-installed != 'true'
 
@@ -139,6 +143,7 @@ jobs:
           # Set PATH to "", so just GITHUB_PATH is included
           PATH: ''
         shell: env /usr/bin/bash --login -eo pipefail {0}
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Build'
         id: build
@@ -147,9 +152,11 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}

@@ -209,8 +209,6 @@ class MacroAssembler: public Assembler {
   void align(uint modulus, uint target);
 
   void post_call_nop();
-  // A 5 byte nop that is safe for patching (see patch_verified_entry)
-  void fat_nop();
 
   // Stack frame creation/removal
   void enter();
