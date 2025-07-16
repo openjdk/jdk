@@ -248,18 +248,18 @@ public class ResumeChecksServer extends SSLContextTemplate {
                         case BASIC -> {}  // do nothing
                         case CLIENT_AUTH -> params.setNeedClientAuth(!first);
                         case VERSION_2_TO_3 -> params.setProtocols(new String[]{
-                            first ? "TLSv1.3" : "TLSv1.2"});
-                        case VERSION_3_TO_2 -> params.setProtocols(new String[]{
                             first ? "TLSv1.2" : "TLSv1.3"});
+                        case VERSION_3_TO_2 -> params.setProtocols(new String[]{
+                            first ? "TLSv1.3" : "TLSv1.2"});
                         case CIPHER_SUITE -> params.setCipherSuites(
                             new String[]{
-                                !first ? "TLS_AES_128_GCM_SHA256" :
-                                    "TLS_AES_256_GCM_SHA384"});
+                                first ? "TLS_AES_256_GCM_SHA384" :
+                                    "TLS_AES_128_GCM_SHA256"});
                         case SIGNATURE_SCHEME -> {
                             params.setNeedClientAuth(true);
                             params.setAlgorithmConstraints(new NoSig(
-                                first ? "ecdsa_secp384r1_sha384" :
-                                    "ecdsa_secp521r1_sha512"));
+                                first ? "ecdsa_secp521r1_sha512" :
+                                    "ecdsa_secp384r1_sha384"));
                         }
                         case LOCAL_CERTS -> {
                             if (!first) {
