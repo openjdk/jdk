@@ -45,7 +45,7 @@ public interface WinExePackage extends Package, WinExePackageMixin {
                 pkg.version(),
                 pkg.aboutURL(),
                 pkg.licenseFile(),
-                pkg.predefinedAppImage(),
+                pkg.predefinedAppOrRuntimeImage(),
                 pkg.relativeInstallDir());
     }
 }

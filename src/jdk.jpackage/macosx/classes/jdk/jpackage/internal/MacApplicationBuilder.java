@@ -181,7 +181,7 @@ final class MacApplicationBuilder {
         return value;
     }
 
-    public String validatedBundleIdentifier() throws ConfigException {
+    private String validatedBundleIdentifier() throws ConfigException {
         final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
             return app.mainLauncher()
                     .flatMap(Launcher::startupInfo)

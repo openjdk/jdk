@@ -46,7 +46,7 @@ final class MacPackageBuilder {
 
     MacPackage create() throws ConfigException {
         final var pkg = pkgBuilder.create();
-        return MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+        return MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppOrRuntimeImage().map(v -> predefinedAppImageSigned)));
     }
 
     private final PackageBuilder pkgBuilder;

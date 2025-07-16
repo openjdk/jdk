@@ -46,6 +46,7 @@ import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.NoSuchFileException;
@@ -152,7 +153,7 @@ final class MacFromParams {
                 signingBuilder.entitlementsResourceName("sandbox.plist");
             }
 
-            final var bundleIdentifier = appBuilder.validatedBundleIdentifier();
+            final var bundleIdentifier = appBuilder.create().bundleIdentifier();
             app.mainLauncher().flatMap(Launcher::startupInfo).ifPresentOrElse(
                 signingBuilder::signingIdentifierPrefix,
                 () -> {
@@ -216,11 +217,11 @@ final class MacFromParams {
         Path path1 = runtimeImage.resolve("Contents/Home");
         Path path2 = runtimeImage.resolve("Contents/MacOS/libjli.dylib");
         Path path3 = runtimeImage.resolve("Contents/Info.plist");
-        return IOUtils.exists(path1)
-                && path1.toFile().list() != null
-                && path1.toFile().list().length > 0
-                && IOUtils.exists(path2)
-                && IOUtils.exists(path3);
+        return Files.exists(path1) &&
+                    Optional.ofNullable(path1.toFile().list())
+                            .map(list -> list.length > 0).orElse(false) &&
+                    Files.exists(path2) &&
+                    Files.exists(path3);
     }
 
     // JDK image: "lib/*/libjli.dylib"
@@ -231,11 +232,11 @@ final class MacFromParams {
                     .filter(file -> file.getFileName().equals(jliName))
                     .findFirst()
                     .get();
-            return IOUtils.exists(jli);
+            return Files.exists(jli);
         } catch (NoSuchElementException | NoSuchFileException ex) {
             return false;
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            throw new UncheckedIOException(ex);
         }
     }
 

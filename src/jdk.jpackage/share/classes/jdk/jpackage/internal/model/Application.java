@@ -89,17 +89,6 @@ public interface Application extends BundleSpec {
     Optional<Path> srcDir();
 
     /**
-     * Gets the runtime image directory of this runtime image or bundle if
-     * available or an empty {@link Optional} instance.
-     * <p>
-     * Runtime image directory is a directory with the runtime image or bundle
-     * for runtime installers.
-     *
-     * @return the runtime image directory of this runtime image or bundle
-     */
-    Optional<Path> runtimeImageDir();
-
-    /**
      * Gets the input content directories of this application.
      * <p>
      * Contents of the content directories will be copied as-is into the dedicated
@@ -256,7 +245,7 @@ public interface Application extends BundleSpec {
      * Default implementation of {@link Application} interface.
      */
     record Stub(String name, String description, String version, String vendor, String copyright, Optional<Path> srcDir,
-            Optional<Path> runtimeImageDir, List<Path> contentDirs, AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
+            List<Path> contentDirs, AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
             List<Launcher> launchers,  Map<String, String> extraAppImageFileData) implements Application {
     }
 }

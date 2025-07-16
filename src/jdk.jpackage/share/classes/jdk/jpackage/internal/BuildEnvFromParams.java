@@ -48,7 +48,7 @@ final class BuildEnvFromParams {
         if (app.isRuntime()) {
             builder.appImageDir(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params));
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
-            builder.appImageDir(StandardBundlerParam.getPredefinedAppImage(params));
+            builder.appImageDir(StandardBundlerParam.getPredefinedAppOrRuntimeImage(params));
         } else if (pkg.isPresent()) {
             builder.appImageDirForPackage();
         } else {

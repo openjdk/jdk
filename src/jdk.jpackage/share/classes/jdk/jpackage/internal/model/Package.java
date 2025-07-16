@@ -148,13 +148,14 @@ public interface Package extends BundleSpec {
     Optional<Path> licenseFile();
 
     /**
-     * Gets the path to a directory with the application app image of this package
-     * if available or an empty {@link Optional} instance otherwise.
+     * Gets the path to a directory with the application app image or runtime
+     * image of this package if available or an empty {@link Optional} instance
+     * otherwise.
      *
      * @return the path to a directory with the application app image of this
      *         package
      */
-    Optional<Path> predefinedAppImage();
+    Optional<Path> predefinedAppOrRuntimeImage();
 
     /**
      * Gets the unresolved source app image layout of the application of this package.
@@ -325,7 +326,7 @@ public interface Package extends BundleSpec {
      * Default implementation of {@link Package} interface.
      */
     record Stub(Application app, PackageType type, String packageName, String description, String version,
-            Optional<String> aboutURL, Optional<Path> licenseFile, Optional<Path> predefinedAppImage,
+            Optional<String> aboutURL, Optional<Path> licenseFile, Optional<Path> predefinedAppOrRuntimeImage,
             Path relativeInstallDir) implements Package {
     }
 }

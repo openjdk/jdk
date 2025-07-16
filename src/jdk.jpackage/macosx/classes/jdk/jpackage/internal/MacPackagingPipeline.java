@@ -117,9 +117,9 @@ final class MacPackagingPipeline {
                     return new TaskContextProxy(appContext, true, false);
                 })
                 .pkgContextMapper(appContext -> {
-                    final var isRuntimeInstaller = pkg.map(Package::isRuntimeInstaller).orElse(false);
-                    final var withPredefinedAppImage = pkg.flatMap(Package::predefinedAppImage).isPresent();
-                    return new TaskContextProxy(appContext, false, isRuntimeInstaller || withPredefinedAppImage);
+                    final var withPredefinedAppOrRuntimeImage =
+                        pkg.flatMap(Package::predefinedAppOrRuntimeImage).isPresent();
+                    return new TaskContextProxy(appContext, false, withPredefinedAppOrRuntimeImage);
                 })
                 .appImageLayoutForPackaging(MacPackagingPipeline::packagingLayout)
                 .task(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
@@ -166,13 +166,13 @@ final class MacPackagingPipeline {
                         .addDependent(BuildApplicationTaskID.CONTENT).add();
 
         builder.task(MacBuildApplicationTaskID.SIGN)
-                .appImageAction(MacPackagingPipeline::signApplicationBundle)
+                .appImageAction(MacPackagingPipeline::sign)
                 .addDependencies(builder.taskGraphSnapshot().getAllTailsOf(PrimaryTaskID.BUILD_APPLICATION_IMAGE))
                 .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
                 .add();
 
         builder.task(MacCopyAppImageTaskID.COPY_SIGN)
-                .appImageAction(MacPackagingPipeline::signApplicationBundle)
+                .appImageAction(MacPackagingPipeline::sign)
                 .addDependencies(builder.taskGraphSnapshot().getAllTailsOf(PrimaryTaskID.COPY_APP_IMAGE))
                 .addDependent(PrimaryTaskID.COPY_APP_IMAGE)
                 .add();
@@ -208,7 +208,7 @@ final class MacPackagingPipeline {
 
                 if (isRuntimeJDKBundleNeedSigning(p)) {
                     builder.task(MacCopyAppImageTaskID.SIGN_RUNTIME_BUNDLE)
-                            .packageAction(MacPackagingPipeline::signRuntimeBundle)
+                            .appImageAction(MacPackagingPipeline::sign)
                             .add();
                 }
             }
@@ -230,7 +230,7 @@ final class MacPackagingPipeline {
             throw new IllegalArgumentException();
         }
         return toSupplier(() -> {
-            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppImage(
+            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppOrRuntimeImage(
                     Objects.requireNonNull(env.appImageDir())).installDir(Path.of("/foo")).create();
         }).get();
     }
@@ -358,27 +358,19 @@ final class MacPackagingPipeline {
                 .saveToFile(infoPlistFile);
     }
 
-    private static void signRuntimeBundle(PackageBuildEnv<MacPackage, AppImageLayout> env) throws IOException {
-        sign(env.pkg().app(), env.env(), env.resolvedLayout().rootDirectory());
-    }
-
-    private static void signApplicationBundle(AppImageBuildEnv<MacApplication, MacApplicationLayout> env) throws IOException {
-        sign(env.app(), env.env(), env.resolvedLayout().rootDirectory());
-    }
-
-    private static void sign(final MacApplication app,
-            final BuildEnv env, final Path appImageDir) throws IOException {
+    private static void sign(AppImageBuildEnv<MacApplication, AppImageLayout> env) throws IOException {
 
         final var codesignConfigBuilder = CodesignConfig.build();
-        app.signingConfig().ifPresent(codesignConfigBuilder::from);
+        env.app().signingConfig().ifPresent(codesignConfigBuilder::from);
 
-        if (app.sign() && app.signingConfig().flatMap(AppImageSigningConfig::entitlements).isEmpty()) {
-            final var entitlementsDefaultResource = app.signingConfig().map(
+        if (env.app().sign() && env.app().signingConfig().flatMap(AppImageSigningConfig::entitlements).isEmpty()) {
+            final var entitlementsDefaultResource = env.app().signingConfig().map(
                     AppImageSigningConfig::entitlementsResourceName).orElseThrow();
 
-            final var entitlementsFile = env.configDir().resolve(app.name() + ".entitlements");
+            final var entitlementsFile = env.env().configDir()
+                    .resolve(env.app().name() + ".entitlements");
 
-            env.createResource(entitlementsDefaultResource)
+            env.env().createResource(entitlementsDefaultResource)
                     .setCategory(I18N.getString("resource.entitlements"))
                     .saveToFile(entitlementsFile);
 
@@ -386,12 +378,18 @@ final class MacPackagingPipeline {
         }
 
         final Runnable signAction = () -> {
-            AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(appImageDir);
+            AppImageSigner
+                    .createSigner(env.app(), codesignConfigBuilder.create())
+                    .accept(env.resolvedLayout().rootDirectory());
         };
 
-        app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
-            toBiConsumer(TempKeychain::withKeychain).accept(unused -> signAction.run(), keychain);
-        }, signAction);
+        env.app().signingConfig()
+                .flatMap(AppImageSigningConfig::keychain)
+                .map(Keychain::new)
+                .ifPresentOrElse(keychain -> {
+                    toBiConsumer(TempKeychain::withKeychain)
+                            .accept(unused -> signAction.run(), keychain);
+                }, signAction);
     }
 
     private static void writeCFBundleDocumentTypes(XMLStreamWriter xml,
@@ -468,7 +466,7 @@ final class MacPackagingPipeline {
 
     private static boolean isRuntimeImageJDKImage(Package pkg) {
         if (pkg.isRuntimeInstaller()) {
-            Path runtimeImage = ((MacPackage)pkg).app().runtimeImageDir().orElseThrow();
+            Path runtimeImage = pkg.predefinedAppOrRuntimeImage().orElseThrow();
             Path p = runtimeImage.resolve("Contents/Home");
             return !Files.exists(p);
         }
@@ -490,7 +488,7 @@ final class MacPackagingPipeline {
         if (isRuntimeImageJDKImage(pkg)) {
             return true;
         } else {
-            Path runtimeImage = ((MacPackage)pkg).app().runtimeImageDir().orElseThrow();
+            Path runtimeImage = pkg.predefinedAppOrRuntimeImage().orElseThrow();
             Path p = runtimeImage.resolve("Contents/_CodeSignature");
             return !Files.exists(p);
         }

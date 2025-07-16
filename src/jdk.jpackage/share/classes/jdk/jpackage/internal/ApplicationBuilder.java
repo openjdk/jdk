@@ -75,7 +75,6 @@ final class ApplicationBuilder {
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
                 Optional.ofNullable(srcDir),
-                Optional.ofNullable(runtimeImageDir),
                 Optional.ofNullable(contentDirs).orElseGet(List::of),
                 appImageLayout, Optional.ofNullable(runtimeBuilder), launchersAsList, Map.of());
     }
@@ -148,11 +147,6 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder runtimeImageDir(Path v) {
-        runtimeImageDir = v;
-        return this;
-    }
-
     ApplicationBuilder contentDirs(List<Path> v) {
         contentDirs = v;
         return this;
@@ -193,7 +187,6 @@ final class ApplicationBuilder {
     private String vendor;
     private String copyright;
     private Path srcDir;
-    private Path runtimeImageDir;
     private List<Path> contentDirs;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
