@@ -29,8 +29,11 @@ import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
+import java.util.Objects;
 import java.util.Set;
 import javax.net.ssl.*;
+
+import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.util.DisabledAlgorithmConstraints;
 import static sun.security.util.DisabledAlgorithmConstraints.*;
 
@@ -146,6 +149,52 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                 withDefaultCertPathConstraints);
     }
 
+    /**
+     * Returns an {@link AlgorithmConstraints} instance that uses the
+     * constraints configured for the given {@code engine} in addition
+     * to the platform configured constraints.
+     *
+     * @param engine QuicTLSEngine used to determine the constraints
+     * @param withDefaultCertPathConstraints whether or not to apply the
+     *                                       default certpath algorithm constraints too
+     * @return a AlgorithmConstraints instance
+     * @throws NullPointerException if {@code engine} is null
+     */
+    static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
+                                        boolean withDefaultCertPathConstraints) {
+        Objects.requireNonNull(engine, "QuicTLSEngine");
+        final AlgorithmConstraints userSpecifiedConstraints =
+                getUserSpecifiedConstraints(engine);
+        return wrap(userSpecifiedConstraints, withDefaultCertPathConstraints);
+    }
+
+    /**
+     * Returns an {@link AlgorithmConstraints} instance that uses the
+     * constraints configured for the given {@code engine} in addition
+     * to the platform configured constraints.
+     * <p>
+     * If the given {@code allowedAlgorithms} is non-null then the returned
+     * {@code AlgorithmConstraints} will only permit those allowed algorithms.
+     *
+     * @param engine QuicTLSEngine used to determine the constraints
+     * @param supportedAlgorithms the algorithms that are supported. can be null.
+     * @param withDefaultCertPathConstraints whether or not to apply the default certpath
+     *                                       algorithm constraints too
+     * @return a AlgorithmConstraints instance
+     * @throws NullPointerException if {@code engine} is null
+     */
+    static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
+                                        String[] supportedAlgorithms,
+                                        boolean withDefaultCertPathConstraints) {
+        Objects.requireNonNull(engine, "QuicTLSEngine");
+        final AlgorithmConstraints userSpecifiedConstraints =
+                getUserSpecifiedConstraints(engine);
+        return new SSLAlgorithmConstraints(
+                nullIfDefault(userSpecifiedConstraints),
+                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
+                withDefaultCertPathConstraints);
+    }
+
     private static AlgorithmConstraints nullIfDefault(
             AlgorithmConstraints constraints) {
         return constraints == DEFAULT ? null : constraints;
@@ -188,6 +237,17 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             return socket.getSSLParameters().getAlgorithmConstraints();
         }
 
+        return null;
+    }
+
+    private static AlgorithmConstraints getUserSpecifiedConstraints(
+            QuicTLSEngine quicEngine) {
+        if (quicEngine != null) {
+            if (quicEngine instanceof QuicTLSEngineImpl engineImpl) {
+                return engineImpl.getAlgorithmConstraints();
+            }
+            return quicEngine.getSSLParameters().getAlgorithmConstraints();
+        }
         return null;
     }
 
