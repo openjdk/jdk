@@ -1491,12 +1491,12 @@ following targets are known to work:</p>
 </tr>
 </tbody>
 </table>
-<p><code>BASE_OS</code> must be one of "OEL6" for Oracle Enterprise
-Linux 6 or "Fedora" (if not specified "OEL6" will be the default). If
-the base OS is "Fedora" the corresponding Fedora release can be
-specified with the help of the <code>BASE_OS_VERSION</code> option (with
-"27" as default version). If the build is successful, the new devkits
-can be found in the <code>build/devkit/result</code> subdirectory:</p>
+<p><code>BASE_OS</code> must be one of <code>OL</code> for Oracle
+Enterprise Linux or <code>Fedora</code>. If the base OS is
+<code>Fedora</code> the corresponding Fedora release can be specified
+with the help of the <code>BASE_OS_VERSION</code> option. If the build
+is successful, the new devkits can be found in the
+<code>build/devkit/result</code> subdirectory:</p>
 <pre><code>cd make/devkit
 make TARGETS=&quot;ppc64le-linux-gnu aarch64-linux-gnu&quot; BASE_OS=Fedora BASE_OS_VERSION=21
 ls -1 ../../build/devkit/result/
