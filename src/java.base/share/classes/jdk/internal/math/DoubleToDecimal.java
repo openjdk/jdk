@@ -333,6 +333,7 @@ public final class DoubleToDecimal extends ToDecimal {
             boolean upin = vbl + out <= sp10 << 2;
             boolean wpin = (tp10 << 2) + out <= vbr;
             if (upin != wpin) {
+                /* Exactly one of u' or w' lies in Rv */
                 return toChars(str, index, upin ? sp10 : tp10, k, fd, sp10 << 2 == vb, wpin);
             }
         }
@@ -350,6 +351,7 @@ public final class DoubleToDecimal extends ToDecimal {
         boolean uin = vbl + out <= s << 2;
         boolean win = (t << 2) + out <= vbr;
         if (uin != win) {
+            /* Exactly one of u or w lies in Rv */
             return toChars(str, index, uin ? s : t, k + dk, fd, s << 2 == vb, win);
         }
         /*
