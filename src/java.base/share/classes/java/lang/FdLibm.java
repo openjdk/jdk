@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import jdk.internal.vm.annotation.Stable;
+
 /**
  * Port of the "Freely Distributable Math Library", version 5.3, from
  * C to Java.
@@ -451,7 +453,8 @@ final class FdLibm {
          */
         private static final double
             pio4  =  0x1.921fb54442d18p-1,  // 7.85398163397448278999e-01
-            pio4lo=  0x1.1a62633145c07p-55, // 3.06161699786838301793e-17
+            pio4lo=  0x1.1a62633145c07p-55; // 3.06161699786838301793e-17
+        @Stable private static final double
             T[] = {
              0x1.5555555555563p-2,  //  3.33333333333334091986e-01
              0x1.111111110fe7ap-3,  //  1.33333333333201242699e-01
@@ -546,6 +549,7 @@ final class FdLibm {
         /*
          * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi
          */
+        @Stable
         private static final int[] two_over_pi = {
             0xA2F983, 0x6E4E44, 0x1529FC, 0x2757D1, 0xF534DD, 0xC0DB62,
             0x95993C, 0x439041, 0xFE5163, 0xABDEBB, 0xC561B7, 0x246E3A,
@@ -560,6 +564,7 @@ final class FdLibm {
             0x4D7327, 0x310606, 0x1556CA, 0x73A8C9, 0x60E27B, 0xC08C6B,
         };
 
+        @Stable
         private static final int[] npio2_hw = {
             0x3FF921FB, 0x400921FB, 0x4012D97C, 0x401921FB, 0x401F6A7A, 0x4022D97C,
             0x4025FDBB, 0x402921FB, 0x402C463A, 0x402F6A7A, 0x4031475C, 0x4032D97C,
@@ -809,6 +814,7 @@ final class FdLibm {
 
         private static final int init_jk[] = {2, 3, 4, 6}; // initial value for jk
 
+        @Stable
         private static final double PIo2[] = {
             0x1.921fb4p0,    // 1.57079625129699707031e+00
             0x1.4442dp-24,   // 7.54978941586159635335e-08
@@ -1232,6 +1238,7 @@ final class FdLibm {
     static final class Atan {
         private Atan() {throw new UnsupportedOperationException();}
 
+        @Stable
         private static final double atanhi[] = {
             0x1.dac670561bb4fp-2,  // atan(0.5)hi 4.63647609000806093515e-01
             0x1.921fb54442d18p-1,  // atan(1.0)hi 7.85398163397448278999e-01
@@ -1239,6 +1246,7 @@ final class FdLibm {
             0x1.921fb54442d18p0,   // atan(inf)hi 1.57079632679489655800e+00
         };
 
+        @Stable
         private static final double atanlo[] = {
             0x1.a2b7f222f65e2p-56, // atan(0.5)lo 2.26987774529616870924e-17
             0x1.1a62633145c07p-55, // atan(1.0)lo 3.06161699786838301793e-17
@@ -1246,6 +1254,7 @@ final class FdLibm {
             0x1.1a62633145c07p-54, // atan(inf)lo 6.12323399573676603587e-17
         };
 
+        @Stable
         private static final double aT[] = {
              0x1.555555555550dp-2, //  3.33333333333329318027e-01
             -0x1.999999998ebc4p-3, // -1.99999999998764832476e-01
@@ -2430,13 +2439,16 @@ final class FdLibm {
     static final class Exp {
         private Exp() {throw new UnsupportedOperationException();}
 
+        @Stable
         private static final double[] half = {0.5, -0.5,};
         private static final double huge    = 1.0e+300;
         private static final double twom1000=     0x1.0p-1000;             //  9.33263618503218878990e-302 = 2^-1000
         private static final double o_threshold=  0x1.62e42fefa39efp9;     //  7.09782712893383973096e+02
         private static final double u_threshold= -0x1.74910d52d3051p9;     // -7.45133219101941108420e+02;
+        @Stable
         private static final double[] ln2HI   ={  0x1.62e42feep-1,         //  6.93147180369123816490e-01
                                                  -0x1.62e42feep-1};        // -6.93147180369123816490e-01
+        @Stable
         private static final double[] ln2LO   ={  0x1.a39ef35793c76p-33,   //  1.90821492927058770002e-10
                                                  -0x1.a39ef35793c76p-33};  // -1.90821492927058770002e-10
         private static final double invln2 =      0x1.71547652b82fep0;     //  1.44269504088896338700e+00
