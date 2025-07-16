@@ -109,7 +109,7 @@ public class ProtectionDomainBench {
         protected Class<?> findClass(MyState state, String name)
                 throws ClassNotFoundException {
             if (name.equals(state.classNames[state.index] /* "B" + index */)) {
-                assert state.compiledClasses[state.index]  != null;
+                assert state.compiledClasses[state.index] != null;
                 return defineClass(name, state.compiledClasses[state.index], 0,
                         (state.compiledClasses[state.index]).length,
                         state.cs[state.index % state.cs.length] );
@@ -132,7 +132,7 @@ public class ProtectionDomainBench {
 
     @Benchmark
     @Fork(value = 3)
-    public void noSecurityManager(MyState state)  throws ClassNotFoundException {
+    public void noSecurityManager(MyState state) throws ClassNotFoundException {
         work(state);
     }
 }
