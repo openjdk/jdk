@@ -44,7 +44,9 @@ TEST_OTHER_VM(G1FreeRegionList, length) {
 
   // Create a fake heap. It does not need to be valid, as the G1HeapRegion constructor
   // does not access it.
-  MemRegion heap(nullptr, num_regions_in_test * G1HeapRegion::GrainWords);
+  int val = 1;
+  HeapWord* ptr = reinterpret_cast<HeapWord*>(&val);
+  MemRegion heap(ptr, num_regions_in_test * G1HeapRegion::GrainWords);
 
   // Allocate a fake BOT because the G1HeapRegion constructor initializes
   // the BOT.

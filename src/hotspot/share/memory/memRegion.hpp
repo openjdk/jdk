@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,7 @@ public:
   MemRegion minus(const MemRegion mr2) const;
 
   HeapWord* start() const { return _start; }
-  // in the gtests we call end() with a _start == nullptr so adjust the addition to avoid ub
-  HeapWord* end() const   { return reinterpret_cast<HeapWord*>(reinterpret_cast<uintptr_t>(_start) + (_word_size * sizeof(HeapWord))); }
+  HeapWord* end() const { return _start + _word_size; }
   HeapWord* last() const  { return _start + _word_size - 1; }
 
   void set_start(HeapWord* start) { _start = start; }
