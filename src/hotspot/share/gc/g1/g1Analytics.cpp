@@ -73,6 +73,8 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
     _concurrent_mark_cleanup_times_ms(NumPrevPausesForHeuristics),
     _alloc_rate_ms_seq(TruncatedSeqLength),
     _prev_collection_pause_end_ms(0.0),
+    _gc_cpu_time_pause_end_ms(),
+    _concurrent_gc_cpu_time_ms(),
     _concurrent_refine_rate_ms_seq(TruncatedSeqLength),
     _dirtied_cards_rate_ms_seq(TruncatedSeqLength),
     _dirtied_cards_in_thread_buffers_seq(TruncatedSeqLength),
@@ -163,8 +165,17 @@ void G1Analytics::compute_pause_time_ratios(double end_time_sec, double pause_ti
   _long_term_pause_time_ratio = gc_pause_time_ms / long_interval_ms;
   _long_term_pause_time_ratio = clamp(_long_term_pause_time_ratio, 0.0, 1.0);
 
+  uint num_cpus = (uint)os::active_processor_count();
+  num_cpus = MIN2(num_cpus, MAX2(ConcGCThreads, ParallelGCThreads));
+
   double short_interval_ms = (end_time_sec - most_recent_gc_end_time_sec()) * 1000.0;
-  _short_term_pause_time_ratio = pause_time_ms / short_interval_ms;
+
+  // This estimates the wall-clock time "lost" by application mutator threads due to concurrent GC
+  // activity. We do not account for contention on other shared resources such as memory bandwidth and
+  // caches, therefore underestimate the impact of the concurrent GC activity on mutator threads.
+  double concurrent_gc_impact_time = _concurrent_gc_cpu_time_ms / num_cpus;
+
+  _short_term_pause_time_ratio = (pause_time_ms + concurrent_gc_impact_time) / short_interval_ms;
   _short_term_pause_time_ratio = clamp(_short_term_pause_time_ratio, 0.0, 1.0);
 }
 

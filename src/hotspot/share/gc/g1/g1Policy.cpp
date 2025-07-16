@@ -670,6 +670,12 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
 void G1Policy::record_gc_pause_start_time() {
   Ticks now = Ticks::now();
   phase_times()->record_cur_collection_start_sec(now.seconds());
+
+  double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_pause_end_ms();
+  double cur_gc_cpu_time_ms = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
+
+  double concurrent_gc_cpu_time_ms = cur_gc_cpu_time_ms - prev_gc_cpu_pause_end_ms;
+  _analytics->set_concurrent_gc_cpu_time_ms(concurrent_gc_cpu_time_ms);
 }
 
 void G1Policy::record_young_collection_start() {
@@ -1364,6 +1370,9 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
   }
 
   update_time_to_mixed_tracking(gc_type, start, end);
+
+  double elapsed_gc_cpu_time = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
+  _analytics->set_gc_cpu_time_pause_end_ms(elapsed_gc_cpu_time);
 }
 
 void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
