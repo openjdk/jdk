@@ -486,9 +486,6 @@ void Compilation::compile_method() {
     // install code
     PhaseTraceTime timeit(_t_codeinstall);
     install_code(frame_size);
-  } else {
-    // nothing else to do
-    env()->task()->mark_success();
   }
 
   if (log() != nullptr) // Print code cache state into compiler log
