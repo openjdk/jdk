@@ -4374,8 +4374,7 @@ operand immI8()
 // 8 bit signed value (simm8), or #simm8 LSL 8.
 operand immI8_shift8()
 %{
-  predicate((n->get_int() <= 127 && n->get_int() >= -128) ||
-            (n->get_int() <= 32512 && n->get_int() >= -32768 && (n->get_int() & 0xff) == 0));
+  predicate(Assembler::operand_valid_for_sve_dup_immediate((int64_t)n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4386,9 +4385,19 @@ operand immI8_shift8()
 // 8 bit signed value (simm8), or #simm8 LSL 8.
 operand immL8_shift8()
 %{
-  predicate((n->get_long() <= 127 && n->get_long() >= -128) ||
-            (n->get_long() <= 32512 && n->get_long() >= -32768 && (n->get_long() & 0xff) == 0));
+  predicate(Assembler::operand_valid_for_sve_dup_immediate(n->get_long()));
   match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 8 bit signed value (simm8), or #simm8 LSL 8.
+operand immH8_shift8()
+%{
+  predicate(Assembler::operand_valid_for_sve_dup_immediate((int64_t)n->geth()));
+  match(ConH);
 
   op_cost(0);
   format %{ %}
