@@ -574,8 +574,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _bitmap_region_special(false),
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
-  _collection_set(nullptr),
-  _evac_tracker(new ShenandoahEvacuationTracker())
+  _collection_set(nullptr)
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
@@ -1391,7 +1390,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Copy the object:
-  evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
@@ -1401,7 +1399,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // Successfully evacuated. Our copy is now the public one!
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
-    evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -1455,23 +1452,27 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
-size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
+size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
+
+  oop humongous_obj = cast_to_oop(start->bottom());
+  size_t size = humongous_obj->size();
+  size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+  size_t index = start->index() + required_regions - 1;
+
   assert(!start->has_live(), "liveness must be zero");
 
-  // Do not try to get the size of this humongous object. STW collections will
-  // have already unloaded classes, so an unmarked object may have a bad klass pointer.
-  ShenandoahHeapRegion* region = start;
-  size_t index = region->index();
-  do {
-    assert(region->is_humongous(), "Expect correct humongous start or continuation");
-    assert(!region->is_cset(), "Humongous region should not be in collection set");
-    region->make_trash_immediate();
-    region = get_region(++index);
-  } while (region != nullptr && region->is_humongous_continuation());
+  for(size_t i = 0; i < required_regions; i++) {
+    // Reclaim from tail. Otherwise, assertion fails when printing region to trace log,
+    // as it expects that every region belongs to a humongous region starting with a humongous start region.
+    ShenandoahHeapRegion* region = get_region(index --);
 
-  // Return number of regions trashed
-  return index - start->index();
+    assert(region->is_humongous(), "expect correct humongous start or continuation");
+    assert(!region->is_cset(), "Humongous region should not be in collection set");
+
+    region->make_trash_immediate();
+  }
+  return required_regions;
 }
 
 class ShenandoahCheckCleanGCLABClosure : public ThreadClosure {
@@ -1630,11 +1631,6 @@ void ShenandoahHeap::print_tracing_info() const {
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
-
-    evac_tracker()->print_global_on(&ls);
-
-    ls.cr();
-    ls.cr();
 
     phase_timings()->print_global_on(&ls);
 
