@@ -97,7 +97,7 @@ final class StandardBundlerParam {
     static final BundlerParamInfo<ExternalApplication> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
             ExternalApplication.class, params -> {
                 if (hasPredefinedAppImage(params)) {
-                    var appImage = getPredefinedAppOrRuntimeImage(params);
+                    var appImage = getpredefinedAppImage(params);
                     return AppImageFile.load(appImage, PLATFORM_APPLICATION_LAYOUT);
                 } else {
                     return null;
@@ -535,7 +535,7 @@ final class StandardBundlerParam {
 
     // Returns predefined application image or in case of runtime installer
     // returns predefined runtime image.
-    static Path getPredefinedAppOrRuntimeImage(Map<String, ? super Object> params) {
+    static Path getpredefinedAppImage(Map<String, ? super Object> params) {
         Path appOrRuntimeImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
         if (appOrRuntimeImage != null && !Files.exists(appOrRuntimeImage)) {
             throw new RuntimeException(
