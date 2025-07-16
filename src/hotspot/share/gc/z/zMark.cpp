@@ -532,13 +532,13 @@ bool ZMark::try_steal(ZMarkContext* context) {
   return try_steal_local(context) || try_steal_global(context);
 }
 
-class ZMarkFlushStacksClosure : public HandshakeClosure {
+class ZMarkFlushStacksHandshakeClosure : public HandshakeClosure {
 private:
   ZMark* const _mark;
   bool         _flushed;
 
 public:
-  ZMarkFlushStacksClosure(ZMark* mark)
+  ZMarkFlushStacksHandshakeClosure(ZMark* mark)
     : HandshakeClosure("ZMarkFlushStacks"),
       _mark(mark),
       _flushed(false) {}
@@ -585,7 +585,7 @@ public:
 };
 
 bool ZMark::flush() {
-  ZMarkFlushStacksClosure cl(this);
+  ZMarkFlushStacksHandshakeClosure cl(this);
   VM_ZMarkFlushOperation vm_cl(&cl);
   Handshake::execute(&cl);
   VMThread::execute(&vm_cl);
@@ -956,7 +956,7 @@ bool ZMark::try_end() {
   }
 
   // Try end marking
-  ZMarkFlushStacksClosure cl(this);
+  ZMarkFlushStacksHandshakeClosure cl(this);
   Threads::non_java_threads_do(&cl);
 
   // Check if non-java threads have any pending marking
