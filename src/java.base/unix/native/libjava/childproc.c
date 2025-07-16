@@ -359,15 +359,6 @@ childProcess(void *arg)
     const ChildStuff* p = (const ChildStuff*) arg;
     int fail_pipe_fd = p->fail[1];
 
-    if (p->sendAlivePing) {
-        /* Child shall signal aliveness to parent at the very first
-         * moment. */
-        int code = CHILD_IS_ALIVE;
-        if (writeFully(fail_pipe_fd, &code, sizeof(code)) != sizeof(code)) {
-            goto WhyCantJohnnyExec;
-        }
-    }
-
 #ifdef DEBUG
     jtregSimulateCrash(0, 6);
 #endif

@@ -282,23 +282,6 @@ Java_java_lang_ProcessImpl_init(JNIEnv *env, jclass clazz)
     setSIGCHLDHandler(env);
 }
 
-
-#ifndef WIFEXITED
-#define WIFEXITED(status) (((status)&0xFF) == 0)
-#endif
-
-#ifndef WEXITSTATUS
-#define WEXITSTATUS(status) (((status)>>8)&0xFF)
-#endif
-
-#ifndef WIFSIGNALED
-#define WIFSIGNALED(status) (((status)&0xFF) > 0 && ((status)&0xFF00) == 0)
-#endif
-
-#ifndef WTERMSIG
-#define WTERMSIG(status) ((status)&0x7F)
-#endif
-
 #ifndef VERSION_STRING
 #error VERSION_STRING must be defined
 #endif
@@ -389,27 +372,6 @@ static void
 throwIOException(JNIEnv *env, int errnum, const char *externalDetail)
 {
   throwIOExceptionImpl(env, errnum, externalDetail, "");
-}
-
-/**
- * Throws an IOException with a message composed from the result of waitpid status.
- */
-static void throwExitCause(JNIEnv *env, int pid, int status, int mode) {
-    char ebuf[128];
-    if (WIFEXITED(status)) {
-        snprintf(ebuf, sizeof ebuf,
-            "Failed to exec spawn helper: pid: %d, exit code: %d",
-            pid, WEXITSTATUS(status));
-    } else if (WIFSIGNALED(status)) {
-        snprintf(ebuf, sizeof ebuf,
-            "Failed to exec spawn helper: pid: %d, signal: %d",
-            pid, WTERMSIG(status));
-    } else {
-        snprintf(ebuf, sizeof ebuf,
-            "Failed to exec spawn helper: pid: %d, status: 0x%08x",
-            pid, status);
-    }
-    throwInternalIOException(env, 0, ebuf, mode);
 }
 
 #ifdef DEBUG_PROCESS
@@ -748,18 +710,6 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     c->redirectErrorStream = redirectErrorStream;
     c->mode = mode;
 
-    /* In posix_spawn mode, require the child process to signal aliveness
-     * right after it comes up. This is because there are implementations of
-     * posix_spawn() which do not report failed exec()s back to the caller
-     * (e.g. glibc, see JDK-8223777). In those cases, the fork() will have
-     * worked and successfully started the child process, but the exec() will
-     * have failed. There is no way for us to distinguish this from a target
-     * binary just exiting right after start.
-     *
-     * Note that we could do this additional handshake in all modes but for
-     * prudence only do it when it is needed (in posix_spawn mode). */
-    c->sendAlivePing = (mode == MODE_POSIX_SPAWN) ? 1 : 0;
-
     resultPid = startChild(env, process, c, phelperpath);
     assert(resultPid != 0);
 
@@ -779,37 +729,19 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     }
     close(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec  (childproc.c)  */
 
-    /* If we expect the child to ping aliveness, wait for it. */
-    if (c->sendAlivePing) {
-        switch(readFully(fail[0], &errnum, sizeof(errnum))) {
-        case 0: /* First exec failed; */
-            {
-                int tmpStatus = 0;
-                int p = waitpid(resultPid, &tmpStatus, 0);
-                throwExitCause(env, p, tmpStatus, c->mode);
-                goto Catch;
-            }
-        case sizeof(errnum):
-            if (errnum != CHILD_IS_ALIVE) {
-                /* This can happen if the spawn helper encounters an error
-                 * before or during the handshake with the parent. */
-                throwInternalIOException(env, 0,
-                                         "Bad code from spawn helper (Failed to exec spawn helper)",
-                                         c->mode);
-                goto Catch;
-            }
-            break;
-        default:
-          throwInternalIOException(env, errno, "Read failed", c->mode);
-            goto Catch;
-        }
-    }
-
     switch (readFully(fail[0], &errnum, sizeof(errnum))) {
     case 0: break; /* Exec succeeded */
     case sizeof(errnum):
         waitpid(resultPid, NULL, 0);
-        throwIOException(env, errnum, "Exec failed");
+        if (mode == MODE_POSIX_SPAWN) {
+            /* This can happen if the spawn helper encounters an error
+             * before or during the handshake with the parent. */
+            throwInternalIOException(env, 0,
+                                     "Bad code from spawn helper (Failed to exec spawn helper)",
+                                     c->mode);
+        } else {
+            throwIOException(env, errnum, "Exec failed");
+        }
         goto Catch;
     default:
         throwInternalIOException(env, errno, "Read failed", c->mode);
