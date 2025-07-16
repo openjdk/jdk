@@ -29,6 +29,7 @@ import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -56,7 +57,7 @@ public class JcstressRunner {
         try {
             artifacts = ArtifactResolver.resolve(JcstressRunner.class);
         } catch (ArtifactResolverException e) {
-            throw new Error("TESTBUG: Can not resolve artifacts for "
+            throw new SkippedException("TESTBUG: Can not resolve artifacts for "
                             + JcstressRunner.class.getName(), e);
         }
         return artifacts.get("org.openjdk.jcstress.jcstress-tests-all-" + VERSION)
