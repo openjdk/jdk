@@ -58,6 +58,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _old_gen_alloc_tracker(),
   _ihop_control(create_ihop_control(&_old_gen_alloc_tracker, &_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
+  _cur_pause_start_sec(0.0),
   _young_list_desired_length(0),
   _young_list_target_length(0),
   _eden_surv_rate_group(new G1SurvRateGroup()),
@@ -569,7 +570,7 @@ void G1Policy::revise_young_list_target_length(size_t card_rs_length, size_t cod
 }
 
 void G1Policy::record_full_collection_start() {
-  record_gc_pause_start_time();
+  record_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
@@ -602,7 +603,7 @@ void G1Policy::record_full_collection_end() {
 
   _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
 
-  double start_time_sec = phase_times()->cur_collection_start_sec();
+  double start_time_sec = cur_pause_start_sec();
   record_pause(G1GCPauseType::FullGC, start_time_sec, end_sec);
 }
 
@@ -648,7 +649,7 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
 
   // Record mutator's card logging rate.
   double mut_start_time = _analytics->prev_collection_pause_end_ms();
-  double mut_end_time = phase_times()->cur_collection_start_sec() * MILLIUNITS;
+  double mut_end_time = cur_pause_start_sec() * MILLIUNITS;
   double mut_time = mut_end_time - mut_start_time;
   // Unlike above for conc-refine rate, here we should not require a
   // non-empty sample, since an application could go some time with only
@@ -667,9 +668,9 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
   return live_bytes < threshold;
 }
 
-void G1Policy::record_gc_pause_start_time() {
+void G1Policy::record_pause_start_time() {
   Ticks now = Ticks::now();
-  phase_times()->record_cur_collection_start_sec(now.seconds());
+  _cur_pause_start_sec = now.seconds();
 
   double prev_gc_cpu_pause_end_ms = _analytics->gc_cpu_time_pause_end_ms();
   double cur_gc_cpu_time_ms = _g1h->elapsed_gc_cpu_time() * MILLIUNITS;
@@ -679,7 +680,7 @@ void G1Policy::record_gc_pause_start_time() {
 }
 
 void G1Policy::record_young_collection_start() {
-  record_gc_pause_start_time();
+  record_pause_start_time();
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
@@ -704,7 +705,7 @@ void G1Policy::record_concurrent_mark_init_end() {
 
 void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
-  double start_time_sec = phase_times()->cur_collection_start_sec();
+  double start_time_sec = cur_pause_start_sec();
   double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
   record_pause(G1GCPauseType::Remark, start_time_sec, end_time_sec);
@@ -795,7 +796,7 @@ double G1Policy::logged_cards_processing_time() const {
 void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure) {
   G1GCPhaseTimes* p = phase_times();
 
-  double start_time_sec = phase_times()->cur_collection_start_sec();
+  double start_time_sec = cur_pause_start_sec();
   double end_time_sec = Ticks::now().seconds();
   double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
@@ -1321,7 +1322,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   collector_state()->set_clearing_bitmap(true);
 
   double end_sec = os::elapsedTime();
-  double start_sec = phase_times()->cur_collection_start_sec();
+  double start_sec = cur_pause_start_sec();
   double elapsed_time_ms = (end_sec - start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
 
