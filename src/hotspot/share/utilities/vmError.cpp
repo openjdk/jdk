@@ -818,7 +818,11 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
       if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
-        st->print(" (sent by kill)");
+        if (HandshakeTimeoutIndicator) {
+          st->print(" (sent by handshake timeout handler)");
+        } else {
+          st->print(" (sent by kill)");
+        }
       }
     } else {
       if (should_report_bug(_id)) {

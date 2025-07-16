@@ -1343,3 +1343,7 @@ std::add_rvalue_reference_t<T> declval() noexcept;
 bool IEEE_subnormal_handling_OK();
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
+
+//----------------------------------------------------------------------------------------------------
+// Indicate VMError::report() that SIGILL came from handshake timeout handler
+extern bool HandshakeTimeoutIndicator;

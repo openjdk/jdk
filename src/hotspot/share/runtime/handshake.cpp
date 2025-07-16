@@ -46,6 +46,8 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
+bool HandshakeTimeoutIndicator = false;
+
 class HandshakeOperation : public CHeapObj<mtThread> {
   friend class HandshakeState;
  protected:
@@ -201,6 +203,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
   }
 
   if (target != nullptr) {
+    HandshakeTimeoutIndicator = true;
     if (os::signal_thread(target, SIGILL, "cannot be handshaked")) {
       // Give target a chance to report the error and terminate the VM.
       os::naked_sleep(3000);
