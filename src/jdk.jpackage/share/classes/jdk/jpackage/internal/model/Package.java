@@ -148,16 +148,8 @@ public interface Package extends BundleSpec {
     Optional<Path> licenseFile();
 
     /**
-     * Gets the path to a directory with the predefined app image of this package if
-     * available or an empty {@link Optional} instance otherwise.
-     * <p>
-     * If {@link #isRuntimeInstaller()} returns {@code true}, the method returns the
-     * path to a directory with the predefined runtime. The layout of this directory
-     * should be of {@link RuntimeLayout} type.
-     * <p>
-     * If {@link #isRuntimeInstaller()} returns {@code false}, the method returns
-     * the path to a directory with the predefined application image. The layout of
-     * this directory should be of {@link ApplicationLayout} type.
+     * Gets the path to a directory with the application app image of this package
+     * if available or an empty {@link Optional} instance otherwise.
      *
      * @return the path to a directory with the application app image of this
      *         package

@@ -438,8 +438,14 @@ final class PackagingPipeline {
             dstAppImageDesc = srcAppImageDesc;
         } else {
             srcAppImageDesc = new AppImageDesc(pkg.app().imageLayout(), pkg.predefinedAppImage().orElseGet(() -> {
-                // Can't create app image without runtime builder.
-                throw new UnsupportedOperationException();
+                // No predefined app image and no runtime builder.
+                // This should be runtime packaging.
+                if (pkg.isRuntimeInstaller()) {
+                    return env.appImageDir();
+                } else {
+                    // Can't create app image without runtime builder.
+                    throw new UnsupportedOperationException();
+                }
             }));
 
             if (taskConfig.get(CopyAppImageTaskID.COPY).action().isEmpty()) {
