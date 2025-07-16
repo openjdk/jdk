@@ -261,12 +261,15 @@ public final class SourceLauncher {
             throw new Fault(Errors.CantAccessMainMethod(mainClassName));
         } catch (InvocationTargetException exception) {
             // remove stack frames for source launcher
+            StackTraceElement[] invocationElements = exception.getStackTrace();
+            if (invocationElements == null) throw exception;
             Throwable cause = exception.getCause();
             if (cause == null) throw exception;
-            StackTraceElement[] elements = cause.getStackTrace();
-            int range = elements.length - exception.getStackTrace().length;
+            StackTraceElement[] causeElements = cause.getStackTrace();
+            if (causeElements == null) throw exception;
+            int range = causeElements.length - invocationElements.length;
             if (range >= 0) {
-                cause.setStackTrace(Arrays.copyOfRange(elements, 0, range));
+                cause.setStackTrace(Arrays.copyOfRange(causeElements, 0, range));
             }
             throw exception;
         }
