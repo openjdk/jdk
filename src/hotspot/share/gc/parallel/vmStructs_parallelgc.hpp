@@ -40,6 +40,7 @@
   /* Parallel GC fields */                                                                                                           \
   /**********************/                                                                                                           \
   nonstatic_field(PSVirtualSpace,              _alignment,                                    const size_t)                          \
+  nonstatic_field(PSVirtualSpace,              _page_size,                                    const size_t)                          \
   nonstatic_field(PSVirtualSpace,              _reserved_low_addr,                            char*)                                 \
   nonstatic_field(PSVirtualSpace,              _reserved_high_addr,                           char*)                                 \
   nonstatic_field(PSVirtualSpace,              _committed_low_addr,                           char*)                                 \
