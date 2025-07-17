@@ -29,7 +29,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 @SuppressWarnings("serial") // JDK implementation class
-public class CCustomCursor extends Cursor {
+public final class CCustomCursor extends Cursor {
     static Dimension sMaxCursorSize;
     static Dimension getMaxCursorSize() {
         if (sMaxCursorSize != null) return sMaxCursorSize;
