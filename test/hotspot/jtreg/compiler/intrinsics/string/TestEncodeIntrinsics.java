@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,22 @@
  * @library /test/lib
  *
  * @run main/othervm/timeout=1200 --add-opens=java.base/sun.nio.cs=ALL-UNNAMED -Xbatch -Xmx256m compiler.intrinsics.string.TestEncodeIntrinsics
+ */
+
+/*
+ * @test
+ * @summary Verify `sun.nio.cs.ISO_8859_1.Encoder::encodeISOArray` intrinsic
+ *          Java wrapper checks by enabling the ones in the compiler intrinsic
+ *          using `-XX:+VerifyIntrinsicChecks`
+ * @key randomness
+ * @library /test/lib
+ * @comment `vm.debug == true` is required since `VerifyIntrinsicChecks` is a
+ *          development flag
+ * @requires vm.debug == true
+ * @run main/othervm/timeout=1200
+ *      -XX:+VerifyIntrinsicChecks
+ *      --add-opens=java.base/sun.nio.cs=ALL-UNNAMED -Xbatch -Xmx256m
+ *      compiler.intrinsics.string.TestEncodeIntrinsics
  */
 
 package compiler.intrinsics.string;
