@@ -200,7 +200,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
     }
 
     /**
-     * {@return count of bytes read from the quick stream so far}
+     * {@return count of bytes read from the QUIC stream so far}
      */
     public long receivedQuicBytes() {
         return receivedQuicBytes;
@@ -214,7 +214,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
      *
      * @implSpec
      *    The implementation of this method calls
-     *    {@snippet lang=java
+     *    {@snippet lang=java :
      *    connectionError(throwable, error.code(), throwable.getMessage());
      *    }
      *
@@ -232,12 +232,6 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
      *
      * The implementation of this method is supposed to close all
      * exchanges, cancel all push promises, and close the connection.
-     *
-     * @implSpec
-     *    The implementation of this method calls
-     *    {@snippet lang=java
-     *    connectionError(throwable, error.code(), throwable.getMessage());
-     *    }
      *
      * @param throwable an exception to be relayed to the multi exchange
      *                  through the completable future chain
