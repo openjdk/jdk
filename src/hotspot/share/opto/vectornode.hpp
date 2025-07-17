@@ -104,6 +104,7 @@ class VectorNode : public TypeNode {
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
+  static bool is_maskall_type(const TypeLong* type, int vlen);
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
@@ -1383,9 +1384,10 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
   VectorMaskToLongNode(Node* mask, const Type* ty):
     VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
   virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_MaskAll(PhaseGVN* phase);
   virtual uint  ideal_reg() const { return Op_RegL; }
   virtual Node* Identity(PhaseGVN* phase);
-  Node* Identity_MaskAll(PhaseGVN* phase);
 };
 
 class VectorLongToMaskNode : public VectorNode {
@@ -1777,6 +1779,7 @@ class VectorLoadMaskNode : public VectorNode {
 
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 class VectorStoreMaskNode : public VectorNode {
@@ -1796,6 +1799,7 @@ class VectorMaskCastNode : public VectorNode {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
+  Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 

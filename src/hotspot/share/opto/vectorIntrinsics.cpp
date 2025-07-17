@@ -73,15 +73,6 @@ static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
 
-static bool is_maskall_type(const TypeLong* type, int vlen) {
-  if (!type->is_con()) {
-    return false;
-  }
-  long mask = (-1ULL >> (64 - vlen));
-  long bit  = type->get_con() & mask;
-  return bit == 0 || bit == mask;
-}
-
 bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicType elem_bt,
                                                  VectorMaskUseType mask_use_type, bool has_scalar_args) {
   bool is_supported = true;
@@ -694,23 +685,25 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   VectorMaskUseType checkFlags = (VectorMaskUseType)(is_mask ? VecMaskUseAll : VecMaskNotUsed);
   int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : Op_Replicate;
 
+  if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
+    // If the input long sets or unsets all lanes and Replicate is supported,
+    // generate a MaskAll or Replicate instead.
+
+    // The "maskAll" API uses the corresponding integer types for floating-point data.
+    BasicType maskall_bt = elem_bt == T_DOUBLE ? T_LONG : (elem_bt == T_FLOAT ? T_INT: elem_bt);
+    if (!(opc == Op_VectorLongToMask &&
+          VectorNode::is_maskall_type(bits_type, num_elem) &&
+          arch_supports_vector(Op_Replicate, num_elem, maskall_bt, checkFlags, true /*has_scalar_args*/))) {
+      log_if_needed("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
+                      num_elem, type2name(elem_bt),
+                      is_mask ? 1 : 0,
+                      bcast_mode);
+      return false; // not supported
+    }
+  }
+
   Node* broadcast = nullptr;
   Node* bits = argument(3);
-  BasicType converted_elem_bt = elem_bt == T_DOUBLE ? T_LONG : (elem_bt == T_FLOAT ? T_INT: elem_bt);
-  // If bits sets or unsets all lanes, convert VectorLongToMask to Replicate.
-  if (opc == Op_VectorLongToMask &&
-      is_maskall_type(bits_type, num_elem) &&
-      arch_supports_vector(Op_Replicate, num_elem, converted_elem_bt, checkFlags, true /*has_scalar_args*/)) {
-    opc = Op_Replicate;
-    elem_bt = converted_elem_bt;
-    bits = gvn().longcon((bits_type->get_con() & 1L) == 0L ? 0L : -1L);
-  } else if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
-    log_if_needed("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
-                    num_elem, type2name(elem_bt),
-                    is_mask ? 1 : 0,
-                    bcast_mode);
-    return false; // not supported
-  }
   Node* elem = bits;
 
   if (opc == Op_VectorLongToMask) {
