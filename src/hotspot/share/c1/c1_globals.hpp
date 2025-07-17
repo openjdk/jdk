@@ -212,9 +212,6 @@
   develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
-  develop(bool, TimeEachLinearScan, false,                                  \
-          "print detailed timing of each LinearScan run")                   \
-                                                                            \
   develop(bool, CountLinearScan, false,                                     \
           "collect statistic counters during LinearScan")                   \
                                                                             \

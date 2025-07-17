@@ -493,7 +493,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         API,
         /** Flag for not-supported-in-source-X errors.
          */
-        SOURCE_LEVEL;
+        SOURCE_LEVEL,
+        /** Flag for warnings that cannot be disabled */
+        STRICT;
     }
 
     private final DiagnosticSource source;

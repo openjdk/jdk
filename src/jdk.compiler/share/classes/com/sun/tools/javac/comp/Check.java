@@ -3707,7 +3707,7 @@ public class Check {
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
-            log.mandatoryWarning(pos, Warnings.SunProprietary(s));
+            log.warning(pos, Warnings.SunProprietary(s));
         }
     }
 

@@ -37,7 +37,7 @@ import java.awt.Transparency;
  * SurfaceData with a cached MTL Texture and the code to create
  * the accelerated surfaces.
  */
-public class MTLSurfaceDataProxy extends SurfaceDataProxy {
+public final class MTLSurfaceDataProxy extends SurfaceDataProxy {
     public static SurfaceDataProxy createProxy(SurfaceData srcData,
                                                MTLGraphicsConfig dstConfig)
     {
