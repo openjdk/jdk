@@ -36,7 +36,6 @@ import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.internal.model.MacPackage.RUNTIME_PACKAGE_LAYOUT;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -72,7 +71,6 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
-import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -99,15 +97,7 @@ final class MacPackagingPipeline {
     }
 
     static AppImageLayout packagingLayout(Package pkg) {
-        if (pkg.isRuntimeInstaller()) {
-            if (isRuntimeImageJDKImage(pkg)) {
-                return RUNTIME_PACKAGE_LAYOUT.resolveAt(pkg.relativeInstallDir().getFileName());
-            } else {
-                return RuntimeLayout.DEFAULT.resolveAt(pkg.relativeInstallDir().getFileName());
-            }
-        } else {
-            return pkg.appImageLayout().resolveAt(pkg.relativeInstallDir().getFileName());
-        }
+        return pkg.appImageLayout().resolveAt(pkg.relativeInstallDir().getFileName());
     }
 
     static PackagingPipeline.Builder build(Optional<Package> pkg) {
@@ -116,9 +106,9 @@ final class MacPackagingPipeline {
                     return new TaskContextProxy(appContext, true, false);
                 })
                 .pkgContextMapper(appContext -> {
-                    final var withPredefinedAppOrRuntimeImage =
-                        pkg.flatMap(Package::predefinedAppImage).isPresent();
-                    return new TaskContextProxy(appContext, false, withPredefinedAppOrRuntimeImage);
+                    final var isRuntimeInstaller = pkg.map(Package::isRuntimeInstaller).orElse(false);
+                    final var withPredefinedAppImage = pkg.flatMap(Package::predefinedAppImage).isPresent();
+                    return new TaskContextProxy(appContext, false, isRuntimeInstaller || withPredefinedAppImage);
                 })
                 .appImageLayoutForPackaging(MacPackagingPipeline::packagingLayout)
                 .task(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
@@ -149,9 +139,11 @@ final class MacPackagingPipeline {
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
+                        .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist)
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
+                        .appImageAction(MacPackagingPipeline::copyJliLib)
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacBuildApplicationTaskID.FA_ICONS)
@@ -188,19 +180,26 @@ final class MacPackagingPipeline {
                 disabledTasks.add(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT);
                 builder.task(MacCopyAppImageTaskID.REPLACE_APP_IMAGE_FILE).applicationAction(createWriteAppImageFileAction()).add();
                 builder.appImageLayoutForPackaging(Package::appImageLayout);
-            } else if (p.isRuntimeInstaller() || ((MacPackage)p).predefinedAppImageSigned().orElse(false)) {
-                // If this is a runtime package or a signed predefined app image,
-                // don't create ".package" file and don't sign it.
-                disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
-                disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
-                if (isRuntimeImageJDKImage(p)) {
-                    builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
-                            .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist)
-                           .add();
-                    builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
-                            .appImageAction(MacPackagingPipeline::copyJliLib)
-                            .add();
+            } else if (p.isRuntimeInstaller()) {
+                boolean predefinedRuntimeSigned = p.predefinedAppImage()
+                        .map(MacBundle::new)
+                        .filter(MacBundle::isValid)
+                        .map(MacBundle::isSigned)
+                        .orElse(false);
+                if (((MacPackage)p).app().sign() && predefinedRuntimeSigned) {
+                    // This is runtime package without explicit signing requested and the predefined app image is a signed bundle.
+                    // Disable signing and all alterations of the input bundle.
+                    disabledTasks.addAll(List.of(MacCopyAppImageTaskID.values()));
+                } else {
+                    // Don't create ".package" file.
+                    disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);                    
                 }
+            } else if (((MacPackage)p).predefinedAppImageSigned().orElse(false)) {
+                // This is a signed predefined app image.
+                // Don't create ".package" file.
+                disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
+                // Don't sign the image.
+                disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
             }
 
             for (final var taskId : disabledTasks) {
