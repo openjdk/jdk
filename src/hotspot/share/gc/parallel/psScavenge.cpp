@@ -410,12 +410,11 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
-      reference_processor()->set_active_mt_degree(active_workers);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
 
       ParallelScavengeRefProcProxyTask task(reference_processor()->max_num_queues());
-      stats = reference_processor()->process_discovered_references(task, pt);
+      stats = reference_processor()->process_discovered_references(task, &ParallelScavengeHeap::heap()->workers(), pt);
 
       _gc_tracer.report_gc_reference_stats(stats);
       pt.print_all_references();

@@ -1014,7 +1014,7 @@ else
   else ifeq ($(EXTERNAL_BUILDJDK), false)
     # When not cross compiling, the BUILD_JDK is the interim jdk image, and
     # the javac launcher is needed.
-    jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.compiler-gendata: jdk.compiler-launchers java.base-launchers
     jdk.javadoc-gendata: jdk.compiler-launchers
   endif
 

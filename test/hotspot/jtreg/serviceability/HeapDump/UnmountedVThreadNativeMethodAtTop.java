@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import jdk.test.lib.hprof.model.ThreadObject;
 import jdk.test.lib.hprof.parser.Reader;
 
 public class UnmountedVThreadNativeMethodAtTop {
+
+    boolean done;
 
     /**
      * Test dumping the heap while a virtual thread is blocked entering a synchronized native method.
@@ -96,7 +98,9 @@ public class UnmountedVThreadNativeMethodAtTop {
             started.countDown();
             try {
                 synchronized (lock) {
-                    lock.wait();
+                    while (!done) {
+                        lock.wait();
+                    }
                 }
             } catch (InterruptedException e) { }
         });
@@ -109,11 +113,11 @@ public class UnmountedVThreadNativeMethodAtTop {
 
             Path dumpFile = dumpHeap();
             verifyHeapDump(dumpFile);
-
+        } finally {
             synchronized (lock) {
+                done = true;
                 lock.notify();
             }
-        } finally {
             vthread.join();
         }
     }

@@ -561,8 +561,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
  *      RFC 5646: Tags for Identifying Languages
- * @spec https://unicode.org/reports/tr35/
- *      Unicode Locale Data Markup Language
+ * @spec https://www.unicode.org/reports/tr35
+ *      Unicode Locale Data Markup Language (LDML)
  * @see Builder
  * @see ResourceBundle
  * @see java.text.Format
@@ -1687,14 +1687,14 @@ public final class Locale implements Cloneable, Serializable {
      * {@return a case folded IETF BCP 47 language tag}
      *
      * <p>This method formats a language tag into one with case convention
-     * that adheres to section 2.1.1. Formatting of Language Tags of RFC5646.
+     * that adheres to section 2.1.1. Formatting of Language Tags of RFC 5646.
      * This format is defined as: <i>All subtags, including extension and private
      * use subtags, use lowercase letters with two exceptions: two-letter
      * and four-letter subtags that neither appear at the start of the tag
      * nor occur after singletons. Such two-letter subtags are all
      * uppercase (as in the tags "en-CA-x-ca" or "sgn-BE-FR") and four-
      * letter subtags are titlecase (as in the tag "az-Latn-x-latn").</i> As
-     * legacy tags, (defined as "grandfathered" in RFC5646) are not always well-formed, this method
+     * legacy tags, (defined as "grandfathered" in RFC 5646) are not always well-formed, this method
      * will simply case fold a legacy tag to match the exact case convention
      * for the particular tag specified in the respective
      * {@link ##legacy_tags Legacy tags} table.
@@ -1720,15 +1720,15 @@ public final class Locale implements Cloneable, Serializable {
      * <p>As the formatting of the case convention is dependent on the
      * positioning of certain subtags, callers of this method should ensure
      * that the language tag is well-formed, (conforming to section 2.1. Syntax
-     * of RFC5646).
+     * of RFC 5646).
      *
      * @param languageTag the IETF BCP 47 language tag.
      * @throws IllformedLocaleException if {@code languageTag} is not well-formed
      * @throws NullPointerException if {@code languageTag} is {@code null}
      * @spec https://www.rfc-editor.org/rfc/rfc5646.html#section-2.1
-     *       RFC5646 2.1. Syntax
+     *       RFC 5646: 2.1. Syntax
      * @spec https://www.rfc-editor.org/rfc/rfc5646#section-2.1.1
-     *       RFC5646 2.1.1. Formatting of Language Tags
+     *       RFC 5646: 2.1.1. Formatting of Language Tags
      * @since 21
      */
     public static String caseFoldLanguageTag(String languageTag) {
