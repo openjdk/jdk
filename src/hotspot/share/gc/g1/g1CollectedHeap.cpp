@@ -1252,7 +1252,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _allocator = new G1Allocator(this);
 
   _heap_sizing_policy = G1HeapSizingPolicy::create(this, _policy->analytics());
-  _heap_sizing_policy->initialize();
 
   _humongous_object_threshold_in_words = humongous_threshold_for(G1HeapRegion::GrainWords);
 
@@ -2958,8 +2957,6 @@ void G1CollectedHeap::retire_mutator_alloc_region(G1HeapRegion* alloc_region,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(alloc_region->is_eden(), "all mutator alloc regions should be eden");
 
-  alloc_region->record_activity();  // Record the activity of the alloc region
-
   collection_set()->add_eden_region(alloc_region);
   increase_used(allocated_bytes);
   _eden.add_used_bytes(allocated_bytes);
@@ -3021,8 +3018,6 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
 void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
                                              size_t allocated_bytes,
                                              G1HeapRegionAttr dest) {
-  alloc_region->record_activity();  // Record the activity of the alloc region
-
   _bytes_used_during_gc += allocated_bytes;
   if (dest.is_old()) {
     old_set_add(alloc_region);

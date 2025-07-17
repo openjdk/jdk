@@ -28,9 +28,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.hpp"
-#endif // INCLUDE_G1GC
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "logging/log.hpp"
