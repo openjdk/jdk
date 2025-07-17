@@ -882,13 +882,6 @@ public final class WindowsIconFactory implements Serializable
                 Icon icon = getIcon();
                 int skinWidth = -1;
 
-                // Windows 10 and Windows 11 have different layout for
-                // radiobutton/checkbox menuitem if image icon is present.
-                // Windows 10 doesn't show bullet/checkmark and just highlight
-                // the image icon whereas Windows 11 show bullet/checkmark
-                // beside imageicon so this check is necessary to differentiate
-                boolean isWindows11OrLater = Integer.parseInt(System.getProperty("os.name")
-                                                    .replaceAll("[^0-9]", "")) >= 11;
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
                     AbstractButton b = (AbstractButton) c;
@@ -914,34 +907,21 @@ public final class WindowsIconFactory implements Serializable
                         if (xp != null) {
                             Skin skin;
                             skin =  xp.getSkin(c, backgroundPart);
-                            if (!isWindows11OrLater) {
-                                skin.paintSkin(g, x, y,
-                                        getIconWidth(), getIconHeight(), backgroundState);
-                                if (icon == null) {
-                                    skin = xp.getSkin(c, part);
-                                    skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
-                                }
+                            skin.paintSkin(g, x, y,
+                                    getIconWidth(), getIconHeight(), backgroundState);
+                            skinWidth = getIconWidth();
+                            skin = xp.getSkin(c, part);
+                            if (icon == null || icon.getIconHeight() <= 16) {
+                                skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                             } else {
-                                skin.paintSkin(g, x, y,
-                                        getIconWidth(), getIconHeight(), backgroundState);
-                                skinWidth = getIconWidth();
-                                skin = xp.getSkin(c, part);
-                                if (icon == null || icon.getIconHeight() <= 16) {
-                                    skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
-                                } else {
-                                    skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
-                                }
+                                skin.paintSkin(g, x + OFFSET, y + icon.getIconHeight() / 2, state);
                             }
                         }
                     }
                 }
                 if (icon != null) {
-                    if (!isWindows11OrLater) {
-                        icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
-                    } else {
-                        icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
-                                y + OFFSET);
-                    }
+                    icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
+                                   y + OFFSET);
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(

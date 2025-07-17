@@ -245,9 +245,7 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         paintCheckIcon(g, lh, lr, holdc, foreground);
         paintIcon(g, lh, lr, holdc);
 
-        boolean isWindows11OrLater = Integer.parseInt(System.getProperty("os.name")
-                                                    .replaceAll("[^0-9]", "")) >= 11;
-        if (isWindows11OrLater && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
+        if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
 
             rect.x += lh.getAfterCheckIconGap();
@@ -264,7 +262,7 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
                           lr.getTextRect(), lh.getText());
             }
         }
-        if (isWindows11OrLater && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
+        if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getAccRect();
             rect.x += lh.getAfterCheckIconGap();
             lr.setAccRect(rect);
