@@ -4305,10 +4305,11 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T}. On 32-bit platforms,
-     *     access modes {@code get} and {@code set} for {@code long}, {@code
-     *     double} are supported but may be non-atomic, as described in Section
-     *     {@jls 17.7} of <cite>The Java Language Specification</cite>.
+     * <li>read write access modes for all {@code T}.  Access modes {@code get}
+     *     and {@code set} for {@code long} and {@code double} are supported but
+     *     have no atomicity guarantee; in particular, the situation described
+     *     in Section {@jls 17.7} of <cite>The Java Language
+     *     Specification</cite> may happen.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional
