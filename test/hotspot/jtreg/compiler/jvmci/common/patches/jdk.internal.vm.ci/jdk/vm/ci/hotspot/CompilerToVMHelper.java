@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ public class CompilerToVMHelper {
     }
     private static class InstalledCodeStub extends HotSpotNmethod {
         private InstalledCodeStub(HotSpotResolvedJavaMethodImpl method, String name, long address, long entryPoint) {
-            super(method, name, false, 0);
+            super(method, name, false, true, 0);
             this.address = address;
             this.entryPoint = entryPoint;
         }

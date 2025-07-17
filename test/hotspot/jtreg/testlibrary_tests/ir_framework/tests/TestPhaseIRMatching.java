@@ -60,6 +60,7 @@ public class TestPhaseIRMatching {
     public static void main(String[] args) {
         run(Basics.class);
         run(NoCompilationOutput.class);
+        run(LoadStore.class);
     }
 
     private static void run(Class<?> testClass) {
@@ -547,5 +548,241 @@ record Failure(String methodName, int irRuleId, CompilePhase compilePhase, Check
                                                   .thenComparing(Failure::compilePhase)
                                                   .thenComparing(Failure::checkAttributeType)
                                                   .thenComparing(Failure::constraintId)).collect(Collectors.toList());
+    }
+}
+
+// Test load and store regexes
+class LoadStore {
+    int i;
+    float f;
+    interface I1 {}
+    static class Base implements I1 {
+        int i;
+    }
+    interface I2 {}
+    static class Derived extends Base implements I2 {
+        long l;
+    }
+    Base base = new Base();
+    Derived derived = new Derived();
+
+    static class SingleNest {
+        static class DoubleNest {
+            int i;
+        }
+    }
+
+    SingleNest.DoubleNest doubleNest = new SingleNest.DoubleNest();
+
+
+    @Test
+    @IR(failOn = {IRNode.LOAD_OF_CLASS, ".*", IRNode.STORE_OF_CLASS, ".*"})
+    public void triviallyFailBoth() {
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_OF_CLASS, "LoadS[a-z]+", "1",
+            IRNode.LOAD_OF_CLASS, "Load.tore", "1",
+            IRNode.LOAD_OF_CLASS, "LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "tests/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "/tests/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "ir_framework/tests/LoadStore", "1",
+            IRNode.LOAD_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore", "1",  // To assert it's the whole qualification
+            IRNode.LOAD_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.LOAD_OF_CLASS, "oadStore",
+            IRNode.LOAD_OF_CLASS, "LoadStor",
+            IRNode.LOAD_OF_CLASS, "/ir_framework/tests/LoadStore",
+            IRNode.LOAD_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore+12 *
+    public float simpleLoad() {
+        return f;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_OF_CLASS, "LoadS[a-z]+", "1",
+            IRNode.STORE_OF_CLASS, "Load.tore", "1",
+            IRNode.STORE_OF_CLASS, "LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "/tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "ir_framework/tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore", "1",
+            IRNode.STORE_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.STORE_OF_CLASS, "oadStore",
+            IRNode.STORE_OF_CLASS, "LoadStor",
+            IRNode.STORE_OF_CLASS, "/ir_framework/tests/LoadStore",
+            IRNode.STORE_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore+12 *
+    public void simpleStore() {
+        i = 1;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_I_OF_CLASS, "Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "LoadS[a-z]+\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "Load.tore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "/tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.LOAD_I_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.LOAD_I_OF_CLASS, "/Base",
+            IRNode.LOAD_I_OF_CLASS, "oadStore\\$Base",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$Bas",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore",
+            IRNode.LOAD_I_OF_CLASS, "/ir_framework/tests/LoadStore\\$Base",
+            IRNode.LOAD_I_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Base (ir_framework/tests/LoadStore$I1)+12 *
+    public int loadWithInterface() {
+        return base.i;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_I_OF_CLASS, "Base", "1",
+            IRNode.STORE_I_OF_CLASS, "\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "LoadS[a-z]+\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "Load.tore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "/tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Base", "1",
+            IRNode.STORE_I_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.STORE_I_OF_CLASS, "/Base",
+            IRNode.STORE_I_OF_CLASS, "oadStore\\$Base",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$Bas",
+            IRNode.STORE_I_OF_CLASS, "LoadStore",
+            IRNode.STORE_I_OF_CLASS, "/ir_framework/tests/LoadStore\\$Base",
+            IRNode.STORE_I_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Base (ir_framework/tests/LoadStore$I1)+12 *
+    public void storeWithInterface() {
+        base.i = 1;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_L_OF_CLASS, "Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "LoadS[a-z]+\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "Load.tore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "/tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.LOAD_L_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.LOAD_L_OF_CLASS, "/Derived",
+            IRNode.LOAD_L_OF_CLASS, "oadStore\\$Derived",
+            IRNode.LOAD_L_OF_CLASS, "LoadStore\\$Derive",
+            IRNode.LOAD_L_OF_CLASS, "LoadStore",
+            IRNode.LOAD_L_OF_CLASS, "/ir_framework/tests/LoadStore\\$Derived",
+            IRNode.LOAD_L_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Derived (ir_framework/tests/LoadStore$I1,ir_framework/tests/LoadStore$I2)+24 *
+    public long loadWithInterfaces() {
+        return derived.l;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_L_OF_CLASS, "Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "LoadS[a-z]+\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "Load.tore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "/tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "(?<=[@: ])ir_framework/tests/LoadStore\\$Derived", "1",
+            IRNode.STORE_L_OF_CLASS, "(?<=[@: ])[\\w\\$/]*tests[\\w\\$/]*", "1",
+        },
+        failOn = {
+            IRNode.STORE_L_OF_CLASS, "/Derived",
+            IRNode.STORE_L_OF_CLASS, "oadStore\\$Derived",
+            IRNode.STORE_L_OF_CLASS, "LoadStore\\$Derive",
+            IRNode.STORE_L_OF_CLASS, "LoadStore",
+            IRNode.STORE_L_OF_CLASS, "/ir_framework/tests/LoadStore\\$Derived",
+            IRNode.STORE_L_OF_CLASS, "(?<=[@: ])[\\w\\$]*tests[\\w\\$]*",
+        }
+    )
+    // @ir_framework/tests/LoadStore$Derived (ir_framework/tests/LoadStore$I1,ir_framework/tests/LoadStore$I2)+24 *
+    public void storeWithInterfaces() {
+        derived.l = 1;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.LOAD_I_OF_CLASS, "DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.LOAD_I_OF_CLASS, "ir_framework/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+        },
+        failOn = {
+            IRNode.LOAD_I_OF_CLASS, "SingleNest",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore",
+            IRNode.LOAD_I_OF_CLASS, "LoadStore\\$SingleNest",
+        }
+    )
+    // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
+    public int loadDoubleNested() {
+        return doubleNest.i;
+    }
+
+    @Test
+    @IR(counts = {
+            IRNode.STORE_I_OF_CLASS, "DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+            IRNode.STORE_I_OF_CLASS, "ir_framework/tests/LoadStore\\$SingleNest\\$DoubleNest", "1",
+        },
+        failOn = {
+            IRNode.STORE_I_OF_CLASS, "SingleNest",
+            IRNode.STORE_I_OF_CLASS, "LoadStore",
+            IRNode.STORE_I_OF_CLASS, "LoadStore\\$SingleNest",
+        }
+    )
+    // @ir_framework/tests/LoadStore$SingleNest$DoubleNest+12 *
+    public void storeDoubleNested() {
+        doubleNest.i = 1;
     }
 }

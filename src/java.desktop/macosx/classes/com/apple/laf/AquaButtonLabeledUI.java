@@ -46,10 +46,11 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
     private static final RecyclableSizingIcon smallIcon = new RecyclableSizingIcon(16);
     private static final RecyclableSizingIcon miniIcon = new RecyclableSizingIcon(14);
 
-    protected static class RecyclableSizingIcon extends RecyclableSingleton<Icon> {
+    protected static final class RecyclableSizingIcon extends RecyclableSingleton<Icon> {
         final int iconSize;
         public RecyclableSizingIcon(final int iconSize) { this.iconSize = iconSize; }
 
+        @Override
         protected Icon getInstance() {
             return new ImageIcon(new BufferedImage(iconSize, iconSize, BufferedImage.TYPE_INT_ARGB_PRE));
         }
@@ -61,6 +62,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
         widgetBorder = getPainter();
     }
 
+    @Override
     public void applySizeFor(final JComponent c, final Size newSize) {
         super.applySizeFor(c, newSize);
         widgetBorder = (AquaButtonBorder)widgetBorder.deriveBorderForSize(newSize);
@@ -74,6 +76,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
         return regularIcon.get();
     }
 
+    @Override
     protected void setThemeBorder(final AbstractButton b) {
         super.setThemeBorder(b);
 
@@ -86,6 +89,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
 
     protected abstract AquaButtonBorder getPainter();
 
+    @Override
     public synchronized void paint(final Graphics g, final JComponent c) {
         final AbstractButton b = (AbstractButton)c;
         final ButtonModel model = b.getModel();
@@ -192,6 +196,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
     /**
      * The preferred size of the button
      */
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         if (c.getComponentCount() > 0) { return null; }
 
@@ -244,12 +249,14 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
             return painter;
         }
 
+        @Override
         protected void doButtonPaint(final AbstractButton b, final ButtonModel model, final Graphics g, final int x, final int y, final int width, final int height) {
             painter.state.set(AquaUtilControlSize.getUserSizeFrom(b));
             ((ValueState)painter.state).setValue(model.isSelected() ? isIndeterminate(b) ? 2 : 1 : 0); // 2=mixed, 1=on, 0=off
             super.doButtonPaint(b, model, g, x, y, width, height);
         }
 
+        @Override
         protected State getButtonState(final AbstractButton b, final ButtonModel model) {
             final State state = super.getButtonState(b, model);
 
