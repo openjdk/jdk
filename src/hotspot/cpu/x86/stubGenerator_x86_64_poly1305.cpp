@@ -916,15 +916,15 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ enter();
 
   // Save all 'SOE' registers
-  __ paired_push(rbx);
+  __ push_ppx(rbx);
   #ifdef _WIN64
-  __ paired_push(rsi);
-  __ paired_push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
   #endif
-  __ paired_push(r12);
-  __ paired_push(r13);
-  __ paired_push(r14);
-  __ paired_push(r15);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
 
   // Register Map
   const Register input        = rdi; // msg
@@ -1016,15 +1016,15 @@ address StubGenerator::generate_poly1305_processBlocks() {
   // Write output
   poly1305_limbs_out(a0, a1, a2, accumulator, t0, t1);
 
-  __ paired_pop(r15);
-  __ paired_pop(r14);
-  __ paired_pop(r13);
-  __ paired_pop(r12);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
   #ifdef _WIN64
-  __ paired_pop(rdi);
-  __ paired_pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
   #endif
-  __ paired_pop(rbx);
+  __ pop_ppx(rbx);
 
   __ leave();
   __ ret(0);
@@ -1169,7 +1169,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Setup stack frame
   // Save rbp and rsp
-  __ paired_push(rbp);
+  __ push_ppx(rbp);
   __ movq(rbp, rsp);
   // Align stack and reserve space
   __ andq(rsp, -32);
@@ -1483,7 +1483,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Save rbp and rsp; clear stack frame
     __ movq(rsp, rbp);
-    __ paired_pop(rbp);
+    __ pop_ppx(rbp);
 
 }
 

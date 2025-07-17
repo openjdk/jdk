@@ -795,7 +795,7 @@ void MacroAssembler::pop_d(XMMRegister r) {
   addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
-void MacroAssembler::paired_push(Register src) {
+void MacroAssembler::push_ppx(Register src) {
   if (VM_Version::supports_apx_f()) {
     pushp(src);
   } else {
@@ -803,7 +803,7 @@ void MacroAssembler::paired_push(Register src) {
   }
 }
 
-void MacroAssembler::paired_pop(Register dst) {
+void MacroAssembler::pop_ppx(Register dst) {
   if (VM_Version::supports_apx_f()) {
     popp(dst);
   } else {

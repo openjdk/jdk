@@ -41,16 +41,16 @@ void x86_generate_icache_fence(MacroAssembler* _masm) {
       __ sfence();
       break;
     case 4:
-      __ paired_push(rax);
-      __ paired_push(rbx);
-      __ paired_push(rcx);
-      __ paired_push(rdx);
+      __ push_ppx(rax);
+      __ push_ppx(rbx);
+      __ push_ppx(rcx);
+      __ push_ppx(rdx);
       __ xorptr(rax, rax);
       __ cpuid();
-      __ paired_pop(rdx);
-      __ paired_pop(rcx);
-      __ paired_pop(rbx);
-      __ paired_pop(rax);
+      __ pop_ppx(rdx);
+      __ pop_ppx(rcx);
+      __ pop_ppx(rbx);
+      __ pop_ppx(rax);
       break;
     case 5:
       __ serialize();
