@@ -1029,14 +1029,17 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
 
     /**
-     * Gets the allocation to give the root View.  Due
-     * to an unfortunate set of historical events this
-     * method is inappropriately named.  The Rectangle
-     * returned has nothing to do with visibility.
+     * Gets the allocation (that is the allocated size) for the root view.
+     * <p>
+     * The returned rectangle is unrelated to visibility.
+     * It is used to set the size of the root view.
+     * <p>
      * The component must have a non-zero positive size for
      * this translation to be computed.
      *
      * @return the bounding box for the root view
+     * @see View#paint
+     * @see View#setSize
      */
     protected Rectangle getVisibleEditorRect() {
         Rectangle alloc = editor.getBounds();

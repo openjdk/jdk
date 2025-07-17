@@ -1125,7 +1125,7 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 
 void os::print_jvmti_agent_info(outputStream* st) {
 #if INCLUDE_JVMTI
-  const JvmtiAgentList::Iterator it = JvmtiAgentList::all();
+  JvmtiAgentList::Iterator it = JvmtiAgentList::all();
   if (it.has_next()) {
     st->print_cr("JVMTI agents:");
   } else {

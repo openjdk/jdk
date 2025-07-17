@@ -31,7 +31,7 @@ import java.awt.Container;
 
 /**
  * This interface is implemented by components that have a single
- * JRootPane child: JDialog, JFrame, JWindow, JApplet, JInternalFrame.
+ * JRootPane child: JDialog, JFrame, JWindow, JInternalFrame.
  * The methods in  this interface are just <i>covers</i> for the JRootPane
  * properties, e.g. <code>getContentPane()</code> is generally implemented
  * like this:<pre>
@@ -46,7 +46,7 @@ import java.awt.Container;
  * as <code>frame.getContentPane().add(child)</code>.
  * <p>
  * As a convenience, the standard classes that implement this interface
- * (such as {@code JFrame}, {@code JDialog}, {@code JWindow}, {@code JApplet},
+ * (such as {@code JFrame}, {@code JDialog}, {@code JWindow},
  * and {@code JInternalFrame}) have their {@code add}, {@code remove},
  * and {@code setLayout} methods overridden, so that they delegate calls
  * to the corresponding methods of the {@code ContentPane}.
@@ -62,7 +62,7 @@ import java.awt.Container;
  * The behavior of the <code>add</code> and
  * <code>setLayout</code> methods for
  * <code>JFrame</code>, <code>JDialog</code>, <code>JWindow</code>,
- * <code>JApplet</code> and <code>JInternalFrame</code> is controlled by
+ * and <code>JInternalFrame</code> is controlled by
  * the <code>rootPaneCheckingEnabled</code> property. If this property is
  * true (the default), then calls to these methods are
   * forwarded to the <code>contentPane</code>; if false, these
@@ -73,7 +73,6 @@ import java.awt.Container;
  * @see JFrame
  * @see JDialog
  * @see JWindow
- * @see JApplet
  * @see JInternalFrame
  *
  * @author Hans Muller
