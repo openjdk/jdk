@@ -60,8 +60,13 @@ define SetTestOpt
   endif
 endef
 
+AGENT_PREFIX := lib
+AGENT_EXT := .so
+
 # Setup _NT_SYMBOL_PATH on Windows, which points to our pdb files.
 ifeq ($(call isTargetOs, windows), true)
+  AGENT_PREFIX :=
+  AGENT_EXT := .dll
   ifndef _NT_SYMBOL_PATH
     SYMBOL_PATH := $(call PathList, $(sort $(patsubst %/, %, $(dir $(wildcard \
         $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb))))))
@@ -71,6 +76,9 @@ ifeq ($(call isTargetOs, windows), true)
   endif
 endif
 
+ifeq ($(call isTargetOs, macosx), true)
+    AGENT_EXT := .dyLib
+endif
 ################################################################################
 
 # This is the JDK that we will test
@@ -204,7 +212,7 @@ $(eval $(call SetTestOpt,AOT_JDK,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
-        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY MAX_MEM RUN_PROBLEM_LISTS \
+        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY JVMTI_STRESS_AGENT MAX_MEM RUN_PROBLEM_LISTS \
         RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT AOT_JDK $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
@@ -875,6 +883,15 @@ define SetupRunJtregTestBody
 	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
     ))
   endif
+
+  ifneq ($$(JTREG_JVMTI_STRESS_AGENT), )
+    AGENT := $${AGENT_PREFIX}JvmtiStressAgent${AGENT_EXT}=$${JTREG_JVMTI_STRESS_AGENT}
+    $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:${TEST_IMAGE_DIR}/hotspot/jtreg/native/$${AGENT}'
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
+    ))
+  endif
+
 
   ifneq ($$(JTREG_LAUNCHER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += $$(JTREG_LAUNCHER_OPTIONS)
