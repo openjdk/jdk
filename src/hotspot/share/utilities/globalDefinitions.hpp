@@ -1350,4 +1350,3 @@ extern intptr_t HandshakeTimedOutThread;
 extern intptr_t SafepointTimedOutThread;
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
-
