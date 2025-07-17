@@ -59,7 +59,7 @@ public interface MacApplication extends Application, MacApplicationMixin {
             suffix = ".jdk";
         } else {
             suffix = ".app";
-        }        
+        }
         return Path.of(Application.super.appImageDirName().toString() + suffix);
     }
 
