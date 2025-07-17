@@ -392,11 +392,10 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 26.
      *
-     * @since 26
-     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se26/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 26 Edition</cite></a>
+     * @since 26
      */
     RELEASE_26(70),
 
@@ -436,7 +435,7 @@ public enum ClassFileFormatVersion {
      * JEP 12: Preview Features</a>
      * @see <a href="https://docs.oracle.com/javase/specs">
      * <cite>Java SE Specifications</cite></a>
-     * @since 25
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.LANGUAGE_MODEL, reflective = true)
     CURRENT_PREVIEW(ClassFile.latestMajorVersion());
@@ -459,7 +458,7 @@ public enum ClassFileFormatVersion {
      * supported by future Java SE releases}  Returns {@code false} only for
      * {@link #CURRENT_PREVIEW}.
      *
-     * @since 25
+     * @since 26
      */
     public boolean isSupported() {
         return this != CURRENT_PREVIEW;

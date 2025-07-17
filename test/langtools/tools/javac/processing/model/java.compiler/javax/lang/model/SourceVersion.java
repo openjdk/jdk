@@ -467,11 +467,10 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 26.
      *
-     * @since 26
-     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se26/html/index.html">
      * <cite>The Java Language Specification, Java SE 26 Edition</cite></a>
+     * @since 26
      */
     RELEASE_26,
     RELEASE_27,
@@ -507,7 +506,7 @@ public enum SourceVersion {
      * JEP 12: Preview Features</a>
      * @see <a href="https://docs.oracle.com/javase/specs">
      * <cite>Java SE Specifications</cite></a>
-     * @since 25
+     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.LANGUAGE_MODEL, reflective = true)
     CURRENT_PREVIEW;
@@ -793,7 +792,7 @@ public enum SourceVersion {
      * will be supported by future Java SE releases}  Returns {@code false} only
      * for {@link #CURRENT_PREVIEW}.
      *
-     * @since 25
+     * @since 26
      */
     public boolean isSupported() {
         return this != CURRENT_PREVIEW;
