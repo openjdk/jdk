@@ -353,7 +353,7 @@ public interface JavaLangAccess {
      * @return the newly created string
      * @throws IllegalArgumentException for malformed or unmappable bytes.
      */
-    String newStringUTF8NoReplacementChar(byte[] bytes, int off, int len);
+    String newStringUTF8(byte[] bytes, int off, int len) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -379,13 +379,13 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * Encode the given string into a sequence of bytes using UTF-8.
+     * Encode the given string into a sequence of bytes using utf-8.
      *
      * @param s the string to encode
-     * @return the encoded bytes in UTF-8
+     * @return the encoded bytes in utf-8
      * @throws IllegalArgumentException for malformed surrogates
      */
-    byte[] getBytesUTF8NoReplacementChar(String s);
+    byte[] getBytesUTF8(String s) throws CharacterCodingException;
 
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by

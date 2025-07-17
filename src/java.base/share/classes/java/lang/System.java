@@ -2141,12 +2141,12 @@ public final class System {
                 return String.getBytes(s, cs);
             }
 
-            public String newStringUTF8NoReplacementChar(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoReplacementChar(bytes, off, len, true);
+            public String newStringUTF8(byte[] bytes, int off, int len) throws CharacterCodingException {
+                return String.newStringUTF8(bytes, off, len, true);
             }
 
-            public byte[] getBytesUTF8NoReplacementChar(String s) {
-                return String.getBytesUTF8NoReplacementChar(s);
+            public byte[] getBytesUTF8(String s) throws CharacterCodingException {
+                return String.getBytesUTF8(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
