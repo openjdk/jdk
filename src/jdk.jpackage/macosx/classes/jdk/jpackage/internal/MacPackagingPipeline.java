@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,6 +73,7 @@ import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
@@ -182,22 +184,27 @@ final class MacPackagingPipeline {
                         .applicationAction(createWriteAppImageFileAction()).add();
                 builder.appImageLayoutForPackaging(Package::appImageLayout);
             } else if (p.isRuntimeInstaller()) {
-                
+
                 builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
                         .appImageAction(MacPackagingPipeline::copyJliLib).add();
-                
-                boolean predefinedRuntimeSigned = p.predefinedAppImage()
-                        .map(MacBundle::new)
-                        .filter(MacBundle::isValid)
-                        .map(MacBundle::isSigned)
-                        .orElse(false);
-                if (((MacPackage)p).app().sign() && predefinedRuntimeSigned) {
-                    // This is runtime package without explicit signing requested and the predefined app image is a signed bundle.
-                    // Disable signing and all alterations of the input bundle.
+
+                final var predefinedRuntimeBundle = Optional.of(
+                        new MacBundle(p.predefinedAppImage().orElseThrow())).filter(MacBundle::isValid);
+
+                // Don't create ".package" file.
+                disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
+
+                if (predefinedRuntimeBundle.isPresent()) {
+                    // The predefined app image is a macOS bundle.
+                    // Disable all alterations of the input bundle, but keep the signing enabled.
                     disabledTasks.addAll(List.of(MacCopyAppImageTaskID.values()));
-                } else {
-                    // Don't create ".package" file.
-                    disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);                    
+                    disabledTasks.remove(MacCopyAppImageTaskID.COPY_SIGN);
+                }
+
+                if (predefinedRuntimeBundle.map(MacBundle::isSigned).orElse(false) && !((MacPackage)p).app().sign()) {
+                    // The predefined app image is a signed bundle; explicit signing is not requested for the package.
+                    // Disable the signing, i.e. don't re-sign the input bundle.
+                    disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
                 }
             } else if (((MacPackage)p).predefinedAppImageSigned().orElse(false)) {
                 // This is a signed predefined app image.
@@ -231,14 +238,28 @@ final class MacPackagingPipeline {
 
     private static void copyAppImage(MacPackage pkg, AppImageDesc srcAppImage,
             AppImageDesc dstAppImage) throws IOException {
-        PackagingPipeline.copyAppImage(srcAppImage, dstAppImage, !pkg.predefinedAppImageSigned().orElse(false));
+
+        boolean predefinedAppImageSigned = pkg.predefinedAppImageSigned().orElse(false);
+
+        var inputRootDirectory = srcAppImage.resolvedAppImagelayout().rootDirectory();
+
+        if (pkg.isRuntimeInstaller() && MacBundle.isDirectoryMacBundle(inputRootDirectory)) {
+            // Building runtime package from the input runtime bundle.
+            // Copy the input bundle verbatim.
+            FileUtils.copyRecursive(
+                    inputRootDirectory,
+                    dstAppImage.resolvedAppImagelayout().rootDirectory(),
+                    LinkOption.NOFOLLOW_LINKS);
+        } else {
+            PackagingPipeline.copyAppImage(srcAppImage, dstAppImage, !predefinedAppImageSigned);
+        }
     }
 
     private static void copyJliLib(
             AppImageBuildEnv<MacApplication, AppImageLayout> env) throws IOException {
-        
+
         final var runtimeBundle = runtimeBundle(env);
-        
+
         final var jliName = Path.of("libjli.dylib");
 
         try (var walk = Files.walk(env.resolvedLayout().runtimeDirectory().resolve("lib"))) {
@@ -274,7 +295,7 @@ final class MacPackagingPipeline {
             AppImageBuildEnv<MacApplication, AppImageLayout> env) throws IOException {
 
         final var app = env.app();
-        
+
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());
         data.put("CF_BUNDLE_NAME", app.bundleName());
@@ -287,17 +308,17 @@ final class MacPackagingPipeline {
         final String template;
         final String publicName;
         final String category;
-        
+
         if (app.isRuntime()) {
             template = "RuntimeBundle-Info.plist.template";
             publicName = "RuntimeBundle-Info.plist";
-            category = "resource.runtime-bundle-info-plist"; 
-        } else {            
+            category = "resource.runtime-bundle-info-plist";
+        } else {
             template = "Runtime-Info.plist.template";
             publicName = "Runtime-Info.plist";
             category = "resource.runtime-info-plist";
         }
-        
+
         env.env().createResource(template)
                 .setPublicName(publicName)
                 .setCategory(I18N.getString(category))
@@ -443,7 +464,7 @@ final class MacPackagingPipeline {
             writeStringArray(xml, "NSExportableTypes", fa.nsExportableTypes());
         }));
     }
-    
+
     private static MacBundle runtimeBundle(AppImageBuildEnv<MacApplication, AppImageLayout> env) {
         if (env.app().isRuntime()) {
             return new MacBundle(env.resolvedLayout().rootDirectory());
