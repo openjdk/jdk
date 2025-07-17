@@ -278,9 +278,8 @@ import java.util.stream.Stream;
  * <ul>
  * <li>read write access modes for all {@code T}.  Access modes {@code get} and
  *     {@code set} for {@code long}, {@code double} and {@code MemorySegment}
- *     are supported but have no atomicity guarantee; in particular, the
- *     situation described in Section {@jls 17.7} of <cite>The Java Language
- *     Specification</cite> may happen.
+ *     are supported but have no atomicity guarantee, as described in Section
+ *     {@jls 17.7} of <cite>The Java Language Specification</cite>.
  * <li>atomic update access modes for {@code int}, {@code long},
  *     {@code float}, {@code double} and {@link MemorySegment}.
  *     (Future major platform releases of the JDK may support additional
