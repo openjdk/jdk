@@ -61,7 +61,9 @@
 //    (p3*xh^3)_high+[(p3*xl*(3*x*xh+xl^2))+(p3*xh^3)_low],
 // where x=xh+xl, (xh are the leading 17 bits of x), and
 //    (p3*xh^3)_high=RN(x+p3*xh^3)-x
-// (error bound for polynomial expansion is below 0.51 ulp)
+//
+// Error bound:
+//  0.51 ulp
 //
 // Special cases:
 //  sinh(NaN) = quiet NaN, and raise invalid exception
