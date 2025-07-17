@@ -335,19 +335,6 @@ void NativeMovConstReg::print() {
                 p2i(instruction_address()), data());
 }
 
-//-------------------------------------------------------------------
-
-int NativeMovRegMem::offset() const  {
-  Unimplemented();
-  return 0;
-}
-
-void NativeMovRegMem::set_offset(int x) { Unimplemented(); }
-
-void NativeMovRegMem::verify() {
-  Unimplemented();
-}
-
 //--------------------------------------------------------------------------------
 
 void NativeJump::verify() { }
