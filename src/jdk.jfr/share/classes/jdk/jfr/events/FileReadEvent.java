@@ -43,6 +43,7 @@ import jdk.jfr.internal.MirrorEvent;
               "java.io.FileInputStream",
               "java.io.InputStream",
               "java.io.RandomAccessFile",
+              "sun.nio.ch.ChannelInputStream",
               "sun.nio.ch.FileChannelImpl"})
 @Throttle
 public final class FileReadEvent extends MirrorEvent {

@@ -41,7 +41,9 @@ import jdk.jfr.internal.MirrorEvent;
 @StackFilter({"java.nio.channels.FileChannel",
               "java.io.DataOutputStream",
               "java.io.FileOutputStream",
+              "java.io.OutputStream",
               "java.io.RandomAccessFile",
+              "sun.nio.ch.ChannelOutputStream",
               "sun.nio.ch.FileChannelImpl"})
 @Throttle
 public final class FileWriteEvent extends MirrorEvent {

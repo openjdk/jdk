@@ -39,10 +39,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,33 +89,70 @@ public class TestIOTopFrame {
     }
 
     private static void testFileRead() throws Exception {
-        printTestDescription(EVENT_FILE_READ, "RandomAccessFile and FileInputStream");
+        printTestDescription(EVENT_FILE_READ, "RandomAccessFile, FileInputStream, Files.newInputStream and Files.newByteChannel");
         File f1 = new File("testFileRead-1.bin");
         writeRAF(f1);
         File f2 = new File("testFileRead-2.bin");
-        writeStream(f2);
+        writeFileStream(f2);
+        Path p = Path.of("testFileRead-3.bin");
+        writeFilesNew(p);
         try (Recording r = new Recording()) {
             r.enable(EVENT_FILE_READ).withStackTrace();
             r.start();
             readRAF(f1);
-            readStream(f2);
+            readFileStream(f2);
+            readFilesNew(p);
             r.stop();
-            assertTopFrames(r, "readRAF", 20, "readStream", 8);
+            assertTopFrames(r, "readFilesNew", 1, "readRAF", 20, "readStream", 15);
+        }
+    }
+
+    private static void readFileStream(File f) throws Exception {
+        try (FileInputStream fis = new FileInputStream(f)) {
+            readStream(fis);
+        }
+    }
+
+    private static void writeFileStream(File f) throws Exception {
+        try (FileOutputStream fos = new FileOutputStream(f)) {
+            writeStream(fos);
+        }
+    }
+
+    private static void readFilesNew(Path p) throws Exception {
+        ByteBuffer b = ByteBuffer.allocateDirect(1000);
+        try (SeekableByteChannel channel = Files.newByteChannel(p)) {
+            channel.read(b); // 1
+        }
+        try (InputStream is = Files.newInputStream(p)) {
+            readStream(is);
         }
     }
 
     private static void testFileWrite() throws Exception {
-        printTestDescription(EVENT_FILE_WRITE + ", " + EVENT_FILE_FORCE, "RandomAccessFile and FileInputStream");
+        printTestDescription(EVENT_FILE_WRITE + ", " + EVENT_FILE_FORCE, "RandomAccessFile, FileInputStream, Files.newOutputStream and Files.newByteChanneland");
         File f = new File("testFileWrite.bin");
         try (Recording r = new Recording()) {
             r.enable(EVENT_FILE_WRITE).withStackTrace();
             r.enable(EVENT_FILE_FORCE).withStackTrace();
             r.start();
             writeRAF(f);
-            writeStream(f);
+            writeFileStream(f);
             writeAsync(f);
+            writeFilesNew(f.toPath());
             r.stop();
-            assertTopFrames(r, "writeRAF", 17, "writeStream", 3, "writeAsync", 1);
+            assertTopFrames(r, "writeFilesNew", 1, "writeRAF", 17, "writeStream", 6, "writeAsync", 1);
+        }
+    }
+
+    private static void writeFilesNew(Path p) throws Exception {
+        ByteBuffer b = ByteBuffer.allocateDirect(1000);
+        OpenOption[] options = { StandardOpenOption.CREATE, StandardOpenOption.WRITE };
+        try (SeekableByteChannel channel = Files.newByteChannel(p, options)) {
+            channel.write(b); // 1
+        }
+        try (OutputStream os = Files.newOutputStream(p, options)) {
+            writeStream(os);
         }
     }
 
@@ -122,13 +162,11 @@ public class TestIOTopFrame {
         channel.force(true);
     }
 
-    private static void writeStream(File f) throws Exception {
+    private static void writeStream(OutputStream os) throws Exception {
         byte[] bytes = new byte[200];
-        try (FileOutputStream fos = new FileOutputStream(f)) {
-            fos.write(67); // 1
-            fos.write(bytes); // 2
-            fos.write(bytes, 0, 1); // 3
-        }
+        os.write(67); // 1
+        os.write(bytes); // 2
+        os.write(bytes, 0, 1); // 3
     }
 
     private static void writeRAF(File file) throws Exception {
@@ -156,18 +194,16 @@ public class TestIOTopFrame {
         }
     }
 
-    private static void readStream(File f) throws Exception {
+    private static void readStream(InputStream is) throws Exception {
         byte[] bytes = new byte[10];
-        try (FileInputStream fis = new FileInputStream(f)) {
-            fis.read(); // 1
-            fis.read(bytes); // 2
-            fis.read(bytes, 0, 3); // 3
-            fis.readNBytes(2); // 4
-            fis.readNBytes(bytes, 0, 1); // 5
-            byte[] leftOver = fis.readAllBytes(); // 6, 7, 8
-            if (leftOver.length < 1) {
-                throw new Exception("Expected some bytes to be read");
-            }
+        is.read(); // 1
+        is.read(bytes); // 2
+        is.read(bytes, 0, 3); // 3
+        is.readNBytes(2); // 4
+        is.readNBytes(bytes, 0, 1); // 5
+        byte[] leftOver = is.readAllBytes(); // 6, 7, 8 or 6, 7 for Files.newInputStream
+        if (leftOver.length < 1) {
+            throw new Exception("Expected some bytes to be read");
         }
     }
 
@@ -197,7 +233,7 @@ public class TestIOTopFrame {
             FileChannel fc = raf.getChannel();
             fc.read(buffers[0]); // 19
             if (fc.read(buffers) < 1) { // 20
-                throw new Exception("Expected som bytes to be read");
+                throw new Exception("Expected some bytes to be read");
             };
         }
     }
@@ -224,7 +260,7 @@ public class TestIOTopFrame {
         try (SocketChannel sc = ssc.accept()) {
             sc.read(buffers[0]); // 1
             sc.read(buffers); // 2
-            try (InputStream is = sc.socket().getInputStream();) {
+            try (InputStream is = sc.socket().getInputStream()) {
                 readSocket(is);
             }
         } catch (Exception ioe) {
