@@ -175,7 +175,7 @@ final class MacFromParams {
                 .map(MacAppImageFileExtras::new)
                 .map(MacAppImageFileExtras::signed)
                 .ifPresent(builder::predefinedAppImageSigned);
-        
+
         PREDEFINED_RUNTIME_IMAGE.findIn(params)
                 .map(MacBundle::new)
                 .filter(MacBundle::isValid)
