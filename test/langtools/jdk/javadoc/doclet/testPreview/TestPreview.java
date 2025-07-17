@@ -335,10 +335,10 @@ public class TestPreview extends JavadocTester {
                 """
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
-                    <li id="contents-preview-api-notes"><a href="#preview-api-notes">Preview API Notes</a></li>
-                    <li id="contents-interface"><a href="#interface">Interfaces</a></li>""",
+                    <li id="contents-interface"><a href="#interface">Interfaces</a></li>
+                    <li id="contents-preview-api-notes"><a href="#preview-api-notes">Permanent APIs affected by Preview Features</a></li>""",
                 """
-                    <div class="caption"><span>Elements containing Preview Notes</span></div>""",
+                    <div class="caption"><span>Permanent APIs affected by Preview Features</span></div>""",
                 """
                     <div class="col-summary-item-name even-row-color preview-api-notes preview-api-notes-tab1\
                     "><a href="p/NonPrevieFeature.html" title="interface in p">p.NonPrevieFeature</a></div>

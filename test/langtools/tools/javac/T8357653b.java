@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,29 @@
  * questions.
  */
 
-import javax.swing.JApplet;
-import java.awt.HeadlessException;
-
 /*
  * @test
- * @summary Check that JApplet constructor throws HeadlessException in headless mode
- * @run main/othervm -Djava.awt.headless=true HeadlessJApplet
+ * @bug 8357653
+ * @summary Inner classes of type parameters emitted as raw types in signatures
+ * @compile T8357653b.java
  */
 
-public class HeadlessJApplet {
-    public static void main(String args[]) {
-        boolean exceptions = false;
-        try {
-            new JApplet();
-        } catch (HeadlessException e) {
-            exceptions = true;
+class T8357653b {
+    class A<T> {
+        class B<W> {
+            public T rett() { return null; }
         }
-        if (!exceptions)
-            throw new RuntimeException("HeadlessException did not occur when expected");
+    }
+
+    class C extends A<String> {
+        static class D {
+            {
+                B<?> b = null;
+                String s = b.rett();
+
+                B<?>[] b2 = new B[1];
+                String s2 = b2[0].rett();
+            }
+        }
     }
 }

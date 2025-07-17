@@ -3759,7 +3759,7 @@ public class Check {
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
             deferredLintHandler.report(_l -> {
-                log.mandatoryWarning(pos, Warnings.SunProprietary(s));
+                log.warning(pos, Warnings.SunProprietary(s));
             });
         }
     }

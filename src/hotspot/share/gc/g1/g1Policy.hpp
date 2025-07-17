@@ -77,7 +77,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   GCPolicyCounters* _policy_counters;
 
-  double _full_collection_start_sec;
+  double _cur_pause_start_sec;
 
   // Desired young gen length without taking actually available free regions into
   // account.
@@ -140,6 +140,10 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
+  double cur_pause_start_sec() const {
+    return _cur_pause_start_sec;
+  }
+
   double predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const;
 
   // Base time contains handling remembered sets and constant other time of the
@@ -199,11 +203,6 @@ private:
   STWGCTimer*     _phase_times_timer;
   // Lazily initialized
   mutable G1GCPhaseTimes* _phase_times;
-
-  // This set of variables tracks the collector efficiency, in order to
-  // determine whether we should initiate a new marking.
-  double _mark_remark_start_sec;
-  double _mark_cleanup_start_sec;
 
   // Updates the internal young gen maximum and target and desired lengths.
   // If no parameters are passed, predict pending cards, card set remset length and
@@ -316,6 +315,7 @@ public:
   bool about_to_start_mixed_phase() const;
 
   // Record the start and end of the actual collection part of the evacuation pause.
+  void record_pause_start_time();
   void record_young_collection_start();
   void record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure);
 
@@ -326,12 +326,9 @@ public:
   // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end();
 
-  // Record start and end of remark.
-  void record_concurrent_mark_remark_start();
   void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
-  void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
   bool next_gc_should_be_mixed() const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jshell.execution.impl;
 
-/**
- * Provides the classes necessary to create an applet and the classes an applet
- * uses to communicate with its applet context.
- * <p>
- * The applet framework involves two entities: the <i>applet</i> and the
- * <i>applet context</i>. An applet is an embeddable window (see the Panel
- * class) with a few extra methods that the applet context can use to
- * initialize, start, and stop the applet.
- * <p>
- * The applet context is an application that is responsible for loading and
- * running applets. For example, the applet context could be a Web browser or an
- * applet development environment.
- * <p>
- * This package has been deprecated and may be removed in
- * a future version of the Java Platform. There is no replacement.
- * All of the classes and interfaces in this package have been terminally
- * deprecated.
- * Users are advised to migrate their applications to other technologies.
- *
- * @since 1.0
- */
-package java.applet;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class RestartableInputStream extends FilterInputStream {
+
+    private final AtomicBoolean closed = new AtomicBoolean();
+
+    public RestartableInputStream(InputStream delegate) {
+        super(delegate);
+    }
+
+    @Override
+    public void close() throws IOException {
+        closed.set(true);
+        super.close();
+    }
+
+    public boolean isClosed() {
+        return closed.get();
+    }
+}
