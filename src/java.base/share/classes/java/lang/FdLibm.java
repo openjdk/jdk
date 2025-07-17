@@ -2256,12 +2256,14 @@ final class FdLibm {
 
                 // Compute ss = s_h + s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5)
 
-                final double BP[]    = {1.0,
-                                       1.5};
-                final double DP_H[]  = {0.0,
-                                        0x1.2b80_34p-1};        // 5.84962487220764160156e-01
-                final double DP_L[]  = {0.0,
-                                        0x1.cfde_b43c_fd006p-27};// 1.35003920212974897128e-08
+                // final double BP[]    = {1.0,
+                //                       1.5};
+                // final double DP_H[]  = {0.0,
+                //                        0x1.2b80_34p-1};        // 5.84962487220764160156e-01
+                final double DP_H1   = 0x1.2b80_34p-1;
+                // final double DP_L[]  = {0.0,
+                //                        0x1.cfde_b43c_fd006p-27};// 1.35003920212974897128e-08
+                final double DP_L1 = 0x1.cfde_b43c_fd006p-27;
 
                 // Poly coefs for (3/2)*(log(x)-2s-2/3*s**3
                 final double L1      =  0x1.3333_3333_33303p-1;  //  5.99999999999994648725e-01
@@ -2270,15 +2272,17 @@ final class FdLibm {
                 final double L4      =  0x1.1746_0a91_d4101p-2;  //  2.72728123808534006489e-01
                 final double L5      =  0x1.d864_a93c_9db65p-3;  //  2.30660745775561754067e-01
                 final double L6      =  0x1.a7e2_84a4_54eefp-3;  //  2.06975017800338417784e-01
-                u = x_abs - BP[k];               // BP[0]=1.0, BP[1]=1.5
-                v = 1.0 / (x_abs + BP[k]);
+
+                double BP_k = 1.0 + 0.5*k; // BP[0]=1.0, BP[1]=1.5
+                u = x_abs - BP_k;
+                v = 1.0 / (x_abs + BP_k);
                 ss = u * v;
                 s_h = ss;
                 s_h = __LO(s_h, 0);
                 // t_h=x_abs + BP[k] High
                 t_h = 0.0;
                 t_h = __HI(t_h, ((ix >> 1) | 0x20000000) + 0x00080000 + (k << 18) );
-                t_l = x_abs - (t_h - BP[k]);
+                t_l = x_abs - (t_h - BP_k);
                 s_l = v * ((u - s_h * t_h) - s_h * t_l);
                 // Compute log(x_abs)
                 s2 = ss * ss;
@@ -2296,12 +2300,12 @@ final class FdLibm {
                 p_h = __LO(p_h, 0);
                 p_l = v - (p_h - u);
                 z_h = CP_H * p_h;             // CP_H + CP_L = 2/(3*log2)
-                z_l = CP_L * p_h + p_l * CP + DP_L[k];
+                z_l = CP_L * p_h + p_l * CP + DP_L1*k;
                 // log2(x_abs) = (ss + ..)*2/(3*log2) = n + DP_H + z_h + z_l
                 t = (double)n;
-                t1 = (((z_h + z_l) + DP_H[k]) + t);
+                t1 = (((z_h + z_l) + DP_H1*k) + t);
                 t1 = __LO(t1, 0);
-                t2 = z_l - (((t1 - t) - DP_H[k]) - z_h);
+                t2 = z_l - (((t1 - t) - DP_H1*k) - z_h);
             }
 
             // Split up y into (y1 + y2) and compute (y1 + y2) * (t1 + t2)
