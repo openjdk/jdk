@@ -773,7 +773,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
   }
 
   ShenandoahIsAliveClosure is_alive;
-  ShenandoahHeap::heap()->tracer()->report_object_count(&is_alive, ShenandoahHeap::heap()->workers());
+  heap->tracer()->report_object_count(&is_alive, heap->workers());
 
   if (!heap->cancelled_gc()) {
     _mark.finish_mark();
