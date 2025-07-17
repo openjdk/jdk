@@ -83,7 +83,6 @@ class BuilderTryCatchTest {
         });
     }
 
-
     @Test
     void testTryCatchCatchAll() throws Throwable {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {
