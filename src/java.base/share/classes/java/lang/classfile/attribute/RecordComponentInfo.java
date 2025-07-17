@@ -90,6 +90,7 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component field descriptor string
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds {@code 65535}
      */
     static RecordComponentInfo of(Utf8Entry name,
                                   Utf8Entry descriptor,
@@ -103,6 +104,7 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component field descriptor sting
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds {@code 65535}
      */
     static RecordComponentInfo of(Utf8Entry name,
                                   Utf8Entry descriptor,
@@ -116,6 +118,7 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component symbolic field descriptor
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds {@code 65535}
      */
     static RecordComponentInfo of(String name,
                                   ClassDesc descriptor,
@@ -131,6 +134,7 @@ public sealed interface RecordComponentInfo
      * @param name the component name
      * @param descriptor the component symbolic field descriptor
      * @param attributes the component attributes
+     * @throws IllegalArgumentException if the number of attributes exceeds {@code 65535}
      */
     static RecordComponentInfo of(String name,
                                   ClassDesc descriptor,

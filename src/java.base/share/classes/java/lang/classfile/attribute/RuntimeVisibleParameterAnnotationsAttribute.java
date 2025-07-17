@@ -88,6 +88,8 @@ public sealed interface RuntimeVisibleParameterAnnotationsAttribute
      * some synthetic or implicit parameters.
      *
      * @param parameterAnnotations a list of run-time visible annotations for each parameter
+     * @throws IllegalArgumentException if the number of parameters exceeds {@code 255},
+     *         or the number of annotations on any parameter exceeds {@code 65535}
      */
     static RuntimeVisibleParameterAnnotationsAttribute of(List<List<Annotation>> parameterAnnotations) {
         return new UnboundAttribute.UnboundRuntimeVisibleParameterAnnotationsAttribute(parameterAnnotations);

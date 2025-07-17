@@ -83,6 +83,8 @@ public sealed interface StackMapFrameInfo
      * @param target the location of the frame
      * @param locals the complete list of frame locals
      * @param stack the complete frame stack
+     * @throws IllegalArgumentException if the number of types in {@code locals}
+     *         or {@code stack} exceeds {@code 65535}
      */
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,

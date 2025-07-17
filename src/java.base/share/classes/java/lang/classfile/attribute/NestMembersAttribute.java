@@ -72,6 +72,7 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      * {@return a {@code NestMembers} attribute}
      *
      * @param nestMembers the member classes of the nest
+     * @throws IllegalArgumentException if the number of member classes exceeds {@code 65535}
      */
     static NestMembersAttribute of(List<ClassEntry> nestMembers) {
         return new UnboundAttribute.UnboundNestMembersAttribute(nestMembers);
@@ -81,6 +82,7 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      * {@return a {@code NestMembers} attribute}
      *
      * @param nestMembers the member classes of the nest
+     * @throws IllegalArgumentException if the number of member classes exceeds {@code 65535}
      */
     static NestMembersAttribute of(ClassEntry... nestMembers) {
         return of(List.of(nestMembers));
@@ -90,7 +92,8 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      * {@return a {@code NestMembers} attribute}
      *
      * @param nestMembers the member classes of the nest
-     * @throws IllegalArgumentException if any of {@code nestMembers} is primitive
+     * @throws IllegalArgumentException if any of {@code nestMembers} is primitive,
+     *         or if the number of member classes exceeds {@code 65535}
      */
     static NestMembersAttribute ofSymbols(List<ClassDesc> nestMembers) {
         return of(Util.entryList(nestMembers));
@@ -100,7 +103,8 @@ public sealed interface NestMembersAttribute extends Attribute<NestMembersAttrib
      * {@return a {@code NestMembers} attribute}
      *
      * @param nestMembers the member classes of the nest
-     * @throws IllegalArgumentException if any of {@code nestMembers} is primitive
+     * @throws IllegalArgumentException if any of {@code nestMembers} is primitive,
+     *         or if the number of member classes exceeds {@code 65535}
      */
     static NestMembersAttribute ofSymbols(ClassDesc... nestMembers) {
         // List version does defensive copy
