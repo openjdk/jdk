@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2242,13 +2243,61 @@ void MacroAssembler::null_check(Register reg, int offset) {
   }
 }
 
+
+bool MacroAssembler::should_relocate_to_codecache(relocInfo::relocType rtype) {
+  return (rtype == relocInfo::virtual_call_type ||
+          rtype == relocInfo::opt_virtual_call_type  ||
+          rtype == relocInfo::static_call_type ||
+          rtype == relocInfo::internal_word_type ||
+          rtype == relocInfo::section_word_type ||
+          rtype == relocInfo::poll_type ||
+          rtype == relocInfo::poll_return_type);
+}
+
+// Determine whether the target address is fixed and does not require relocation.
+bool MacroAssembler::should_use_fixed_address(relocInfo::relocType rtype) {
+  return (rtype == relocInfo::runtime_call_type ||
+          rtype == relocInfo::external_word_type ||
+          rtype == relocInfo::runtime_call_w_cp_type);
+}
+
+#ifdef ASSERT
+bool MacroAssembler::unqualified_type(relocInfo::relocType rtype) {
+  return (rtype == relocInfo::none ||
+          // The following relocation types may be relocated in heap:
+          rtype == relocInfo::oop_type ||
+          rtype == relocInfo::metadata_type ||
+          rtype == relocInfo::entry_guard_type ||
+          rtype == relocInfo::barrier_type ||
+          // The following relocation types may need to override `fix_relocation_after_move()`:
+          rtype == relocInfo::static_stub_type ||
+          rtype == relocInfo::trampoline_stub_type ||
+          rtype == relocInfo::post_call_nop_type);
+}
+#endif
+
 // MacroAssembler protected routines needed to implement
 // public methods
 
 void MacroAssembler::mov(Register r, Address dest) {
   code_section()->relocate(pc(), dest.rspec());
-  uint64_t imm64 = (uint64_t)dest.target();
-  movptr(r, imm64);
+  if ((should_use_fixed_address(dest.rspec().type()) && is_adrp_reachable(dest.target())) ||
+      should_relocate_to_codecache(dest.rspec().type())) {
+    uint64_t offset;
+    // We can use ADRP here because
+    // - In cases handled by should_relocate_to_codecache(), the total size of
+    //   the code cache cannot exceed 2Gb (ADRP limit is 4GB)
+    // - In cases handled by should_use_fixed_address(), the target address is
+    //   fixed and will not be modified at runtime.
+    adrp(r, dest.target(), offset);
+    add(r, r, offset);
+  } else {
+#ifdef ASSERT
+    assert((should_use_fixed_address(dest.rspec().type()) && !is_adrp_reachable(dest.target())) ||
+           unqualified_type(dest.rspec().type()), "unhandled rtype");
+#endif
+    movptr(r, (uint64_t)dest.target());
+  }
 }
 
 // Move a constant pointer into r.  In AArch64 mode the virtual
@@ -5739,14 +5788,16 @@ address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype
   return mark;
 }
 
-void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
-  relocInfo::relocType rtype = dest.rspec().reloc()->type();
+bool MacroAssembler::is_adrp_reachable(const address target) {
   uint64_t low_page = (uint64_t)CodeCache::low_bound() >> 12;
   uint64_t high_page = (uint64_t)(CodeCache::high_bound()-1) >> 12;
-  uint64_t dest_page = (uint64_t)dest.target() >> 12;
+  uint64_t dest_page = (uint64_t)target >> 12;
   int64_t offset_low = dest_page - low_page;
   int64_t offset_high = dest_page - high_page;
+  return (offset_high >= -(1<<20) && offset_low < (1<<20));
+}
 
+void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
   assert(is_valid_AArch64_address(dest.target()), "bad address");
   assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
 
@@ -5754,7 +5805,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   code_section()->relocate(inst_mark(), dest.rspec());
   // 8143067: Ensure that the adrp can reach the dest from anywhere within
   // the code cache so that if it is relocated we know it will still reach
-  if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
+  if (MacroAssembler::is_adrp_reachable(dest.target())) {
     _adrp(reg1, dest.target());
   } else {
     uint64_t target = (uint64_t)dest.target();
