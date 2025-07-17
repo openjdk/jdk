@@ -143,7 +143,7 @@ final class MacPackagingPipeline {
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
-                        .appImageAction(MacPackagingPipeline::copyJliLib)
+                        .noaction()
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacBuildApplicationTaskID.FA_ICONS)
@@ -178,9 +178,14 @@ final class MacPackagingPipeline {
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
                 disabledTasks.add(CopyAppImageTaskID.COPY);
                 disabledTasks.add(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT);
-                builder.task(MacCopyAppImageTaskID.REPLACE_APP_IMAGE_FILE).applicationAction(createWriteAppImageFileAction()).add();
+                builder.task(MacCopyAppImageTaskID.REPLACE_APP_IMAGE_FILE)
+                        .applicationAction(createWriteAppImageFileAction()).add();
                 builder.appImageLayoutForPackaging(Package::appImageLayout);
             } else if (p.isRuntimeInstaller()) {
+                
+                builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
+                        .appImageAction(MacPackagingPipeline::copyJliLib).add();
+                
                 boolean predefinedRuntimeSigned = p.predefinedAppImage()
                         .map(MacBundle::new)
                         .filter(MacBundle::isValid)
@@ -444,36 +449,6 @@ final class MacPackagingPipeline {
             return new MacBundle(env.resolvedLayout().rootDirectory());
         } else {
             return new MacBundle(((MacApplicationLayout)env.resolvedLayout()).runtimeRootDirectory());
-        }
-    }
-
-    private static boolean isRuntimeImageJDKImage(Package pkg) {
-        if (pkg.isRuntimeInstaller()) {
-            Path runtimeImage = pkg.predefinedAppImage().orElseThrow();
-            Path p = runtimeImage.resolve("Contents/Home");
-            return !Files.exists(p);
-        }
-
-        return false;
-    }
-
-    // Returns true if signing is requested or JDK bundle is not signed
-    // or JDK image is provided.
-    private static boolean isRuntimeJDKBundleNeedSigning(Package pkg) {
-        if (!pkg.isRuntimeInstaller()) {
-            return false;
-        }
-
-        if (((MacPackage)pkg).app().sign()) {
-            return true;
-        }
-
-        if (isRuntimeImageJDKImage(pkg)) {
-            return true;
-        } else {
-            Path runtimeImage = pkg.predefinedAppImage().orElseThrow();
-            Path p = runtimeImage.resolve("Contents/_CodeSignature");
-            return !Files.exists(p);
         }
     }
 
