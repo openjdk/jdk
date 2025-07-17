@@ -1517,12 +1517,15 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 }
 
 nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
+  // Locks required to be held by caller to ensure the nmethod
+  // is not modified or purged from code cache during relocation
+  assert_lock_strong(CompiledIC_lock);
+  assert_lock_strong(Compile_lock);
+  assert_lock_strong(CodeCache_lock);
+
   if (!is_relocatable()) {
     return nullptr;
   }
-
-  MutexLocker ml_Compile_lock(Compile_lock);
-  MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   run_nmethod_entry_barrier();
   nmethod* nm_copy = new (size(), code_blob_type) nmethod(*this);
@@ -1630,11 +1633,8 @@ bool nmethod::is_relocatable() {
     return false;
   }
 
-  {
-    CompiledICLocker ic_locker(this);
-    if (has_evol_metadata()) {
-      return false;
-    }
+  if (has_evol_metadata()) {
+    return false;
   }
 
   return true;
