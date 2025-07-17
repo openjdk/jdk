@@ -626,7 +626,7 @@ csize_t CodeBuffer::total_relocation_size() const {
   return (csize_t) align_up(total, HeapWordSize);
 }
 
-csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const {
+csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit) const {
   csize_t buf_offset = 0;
   csize_t code_end_so_far = 0;
   csize_t code_point_so_far = 0;
@@ -635,10 +635,6 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
   assert(buf_limit % HeapWordSize == 0, "buf must be evenly sized");
 
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
-    if (only_inst && (n != (int)SECT_INSTS)) {
-      // Need only relocation info for code.
-      continue;
-    }
     // pull relocs out of each section
     const CodeSection* cs = code_section(n);
     assert(!(cs->is_empty() && cs->locs_count() > 0), "sanity");
@@ -705,7 +701,7 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
     buf_offset += sizeof(relocInfo);
   }
 
-  assert(only_inst || code_end_so_far == total_content_size(), "sanity");
+  assert(code_end_so_far == total_content_size(), "sanity");
 
   return buf_offset;
 }
@@ -721,7 +717,7 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
   }
   // if dest is null, this is just the sizing pass
   //
-  buf_offset = copy_relocations_to(buf, buf_limit, false);
+  buf_offset = copy_relocations_to(buf, buf_limit);
 
   return buf_offset;
 }
