@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177
+ * @bug 8350177 8362171
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -376,6 +376,18 @@ public class TestSubwordTruncation {
         }
     }
 
+    int intField;
+    short shortField;
+
+    @Test
+    @IR(counts = { IRNode.MOD_I, ">0" })
+    public void testMod() {
+        for (int i = 1; i < SIZE; i++) {
+            for (int j = 1; j < 204; j++) {
+                shortField %= intField | 1;
+            }
+        }
+    }
 
     public static void main(String[] args) {
         TestFramework.run();

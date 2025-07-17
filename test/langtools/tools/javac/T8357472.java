@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,27 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jit.misctests.fpustack;
 
-import java.util.*;
-import java.awt.*;
-import java.applet.Applet;
-import nsk.share.TestFailure;
+/*
+ * @test
+ * @bug 8357472
+ * @summary NPE in Types.containsType for type variable used as a qualifier
+ * @compile T8357472.java
+ */
 
-public class layout implements ilayout {
-    public  void formatNodes( Node[] nodes, Dimension d, FontMetrics fm )   {
-        int h = d.height/2 - 10 ;
+class T8357472 {
+    class A<T> {
+        protected class B<V> {}
 
-        double alpha = -Math.PI/2;
-        for ( int j = 0; j < nodes.length; j++) {
-            Node n = nodes[j];
-            int w = d.width/2 - fm.stringWidth( n.lbl )/2;
-
-            n.x = d.width/2 + (int)(w*Math.cos( alpha ));
-
-            n.y = d.height/2 + (int)(h*Math.sin( alpha ));
-            alpha += 2*Math.PI/nodes.length;
+        public static <T, M extends A<T>> void f(Object g) {
+            @SuppressWarnings("unchecked")
+            M.B<?> mapping = (M.B<?>) g;
+            M.B<?>[] mapping2 = new M.B[1];
+            mapping2[0] = mapping;
         }
     }
-
 }

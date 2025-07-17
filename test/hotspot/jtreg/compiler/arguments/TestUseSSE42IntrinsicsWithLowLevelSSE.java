@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,19 @@
  * questions.
  */
 
-import java.applet.Applet;
-import java.awt.HeadlessException;
-
-/*
+/**
  * @test
- * @summary Check HeadlessException occurrence when trying to create Applet
- *          in headless mode
- * @run main/othervm -Djava.awt.headless=true HeadlessApplet
+ * @bug 8358592
+ * @summary Regression test for -XX:+UseSSE42Intrinsics -XX:UseSSE=1 crash
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires vm.debug
+ * @run main/othervm -XX:+UseSSE42Intrinsics -XX:UseSSE=1 compiler.arguments.TestUseSSE42IntrinsicsWithLowLevelSSE
  */
+package compiler.arguments;
 
-public class HeadlessApplet {
+public class TestUseSSE42IntrinsicsWithLowLevelSSE {
 
-    public static void main(String args[]) {
-        boolean noExceptions = true;
-
-        try {
-            Applet a = new Applet();
-        } catch (HeadlessException e) {
-            noExceptions = false;
-        }
-
-        if (noExceptions) {
-            throw new RuntimeException("No HeadlessException occured when creating Applet in headless mode");
-        }
+    public static void main(String[] args) {
+        System.out.println("passed");
     }
 }
