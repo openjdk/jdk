@@ -100,7 +100,8 @@ body {
     --search-input-text-color: #000000;
     --search-input-placeholder-color: #757575;
     /* Highlight color for active search tag target */
-    --search-tag-highlight-color: #ffff66;
+    --search-tag-background-color: #ffff66;
+    --search-tag-text-color: var(--block-text-color);
     /* Copy button colors and filters */
     --button-border-color: #b0b8c8;
     --button-active-filter: brightness(96%);
@@ -147,7 +148,8 @@ body.theme-dark {
     --search-input-background-color: #303030;
     --search-input-text-color: #d0d0d0;
     --search-input-placeholder-color: #979797;
-    --search-tag-highlight-color: #ffff66;
+    --search-tag-background-color: #c6c61e;
+    --search-tag-text-color: #282828;
     --button-border-color: #909090;
     --button-active-filter: brightness(96%);
     --button-focus-filter: brightness(104%);
@@ -199,7 +201,8 @@ body.theme-dark {
         --search-input-background-color: #303030;
         --search-input-text-color: #d0d0d0;
         --search-input-placeholder-color: #979797;
-        --search-tag-highlight-color: #ffff66;
+        --search-tag-background-color: #c6c61e;
+        --search-tag-text-color: #282828;
         --button-border-color: #909090;
         --button-active-filter: brightness(96%);
         --button-focus-filter: brightness(104%);
@@ -247,7 +250,8 @@ body.theme-dark {
         --search-input-background-color: #ffffff;
         --search-input-text-color: #000000;
         --search-input-placeholder-color: #757575;
-        --search-tag-highlight-color: #ffff66;
+        --search-tag-background-color: #ffff66;
+        --search-tag-text-color: var(--block-text-color);
         --button-border-color: #b0b8c8;
         --button-active-filter: brightness(96%);
         --button-focus-filter: brightness(104%);
@@ -1369,11 +1373,13 @@ kbd {
     font-weight: bold;
 }
 .search-tag-result:target {
-    background-color:var(--search-tag-highlight-color);
+    background-color:var(--search-tag-background-color);
+    color:var(--search-tag-text-color);
 }
 dd > span:target,
 h1 > span:target {
-    background-color: var(--search-tag-highlight-color);
+    background-color: var(--search-tag-background-color);
+    color:var(--search-tag-text-color);
 }
 section.class-description dd > span:target,
 section.class-description h1 > span:target {
