@@ -2549,8 +2549,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // If changed Op_ConvL2D inputs, check for redundant ConvD2L->ConvL2D->ConvD2L sequences
-  if (use_op == Op_ConvL2D) {
+  // Check for redundant ConvD2L->ConvL2D->ConvD2L sequences
+  if (n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       if (u->Opcode() == Op_ConvD2L) {
