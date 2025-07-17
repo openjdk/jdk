@@ -211,7 +211,6 @@ public class StopThreadTest {
                 log("TestTask.run: caught expected AssertionError from method A()");
                 seenExceptionFromA = true;
             }
-            Thread.interrupted();
             if (!seenExceptionFromA && !preemptableVirtualThread()) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method A()");
             }
@@ -224,7 +223,6 @@ public class StopThreadTest {
                 log("TestTask.run: caught expected AssertionError from method B()");
                 seenExceptionFromB = true;
             }
-            Thread.interrupted();
             if (!seenExceptionFromB) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method B()");
             }
@@ -237,7 +235,6 @@ public class StopThreadTest {
                 log("TestTask.run: caught expected AssertionError from method C()");
                 seenExceptionFromC = true;
             }
-            Thread.interrupted();
             if (!seenExceptionFromC) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method C()");
             }
