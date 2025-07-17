@@ -273,13 +273,22 @@
  * accepting constant pool entries.
  *
  * <h3>Consistency checks, syntax checks and verification</h3>
+ * The Class-File API performs checks to ensure arguments are representable in
+ * the {@code class} file format.  A value that is lost when it is built to a
+ * {@code class} file and re-parsed to a model is rejected with an {@link
+ * IllegalArgumentException}.  For example, a negative value or a value over
+ * {@code 65535} is lost when built to a {@code u2} (JVMS {@jvms 4}) item, with
+ * the range {@code [0, 65535]}.  In particular, any variable-sized table
+ * exceeding its maximum representable size is rejected.
+ * <p>
  * No consistency checks are performed while building or transforming classfiles
- * (except for null arguments checks). All builders and classfile elements factory
- * methods accepts the provided information without implicit validation.
- * However, fatal inconsistencies (like for example invalid code sequence or
+ * (except for null and representable arguments checks). All builders and
+ * classfile elements factory methods accepts the provided information without
+ * implicit validation, as long as they are representable in the {@code class}
+ * file format.  However, fatal inconsistencies (like invalid code sequence or
  * unresolved labels) affects internal tools and may cause exceptions later in
  * the classfile building process.  These fatal exceptions are thrown as
- * {@link IllegalArgumentException}.
+ * {@code IllegalArgumentException}.
  * <p>
  * Using nominal descriptors assures the right serial form is applied by the
  * ClassFile API library based on the actual context. Also these nominal
@@ -294,9 +303,9 @@
  * <p>
  * On the other hand it is possible to use builders methods and factories accepting
  * constant pool entries directly. Constant pool entries can be constructed also
- * directly from raw values, with no additional conversions or validations.
- * Following example uses intentionally wrong class name form and it is applied
- * without any validation or conversion.
+ * directly from raw values, with no additional conversions or validations, as
+ * long as they are representable.  Following example uses intentionally wrong
+ * class name form, which is applied without any validation or conversion.
  * {@snippet lang=java :
  * var invalidClassEntry = constantPoolBuilder.classEntry(
  *                             constantPoolBuilder.utf8Entry("mypackage.MyClass"));
