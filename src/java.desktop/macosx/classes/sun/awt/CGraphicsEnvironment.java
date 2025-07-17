@@ -95,7 +95,7 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
 
     /** Reference to the display reconfiguration callback context. */
     private final long displayReconfigContext;
-    private Object disposerReferent = new Object();
+    private final Object disposerReferent = new Object();
 
     // list of invalidated graphics devices (those which were removed)
     private List<WeakReference<CGraphicsDevice>> oldDevices = new ArrayList<>();
@@ -144,7 +144,7 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     private static class CGEDisposerRecord implements DisposerRecord {
-        private long displayReconfigContext;
+        private final long displayReconfigContext;
 
         CGEDisposerRecord(long ptr) {
             displayReconfigContext = ptr;
