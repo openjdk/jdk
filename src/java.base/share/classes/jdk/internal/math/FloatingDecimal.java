@@ -61,6 +61,44 @@ public class FloatingDecimal{
     static final int    INT_DECIMAL_DIGITS = 9;
 
     /**
+     * Converts a double precision floating point value to a <code>String</code>.
+     *
+     * @param d The double precision value.
+     * @return The value converted to a <code>String</code>.
+     */
+    public static String toJavaFormatString(double d) {
+        return getBinaryToASCIIConverter(d).toJavaFormatString();
+    }
+
+    /**
+     * Converts a single precision floating point value to a <code>String</code>.
+     *
+     * @param f The single precision value.
+     * @return The value converted to a <code>String</code>.
+     */
+    public static String toJavaFormatString(float f) {
+        return getBinaryToASCIIConverter(f).toJavaFormatString();
+    }
+
+    /**
+     * Appends a double precision floating point value to an <code>Appendable</code>.
+     * @param d The double precision value.
+     * @param buf The <code>Appendable</code> with the value appended.
+     */
+    public static void appendTo(double d, Appendable buf) {
+        getBinaryToASCIIConverter(d).appendTo(buf);
+    }
+
+    /**
+     * Appends a single precision floating point value to an <code>Appendable</code>.
+     * @param f The single precision value.
+     * @param buf The <code>Appendable</code> with the value appended.
+     */
+    public static void appendTo(float f, Appendable buf) {
+        getBinaryToASCIIConverter(f).appendTo(buf);
+    }
+
+    /**
      * Converts a <code>String</code> to a double precision floating point value.
      *
      * @param s The <code>String</code> to convert.
@@ -96,6 +134,31 @@ public class FloatingDecimal{
         String toJavaFormatString();
 
         /**
+         * Appends a floating point value to an <code>Appendable</code>.
+         * @param buf The <code>Appendable</code> to receive the value.
+         */
+        void appendTo(Appendable buf);
+
+        /**
+         * Retrieves the decimal exponent most closely corresponding to this value.
+         * @return The decimal exponent.
+         */
+        int getDecimalExponent();
+
+        /**
+         * Retrieves the value as an array of digits.
+         * @param digits The digit array.
+         * @return The number of valid digits copied into the array.
+         */
+        int getDigits(char[] digits);
+
+        /**
+         * Indicates the sign of the value.
+         * @return {@code value < 0.0}.
+         */
+        boolean isNegative();
+
+        /**
          * Indicates whether the value is either infinite or not a number.
          *
          * @return <code>true</code> if and only if the value is <code>NaN</code>
@@ -125,14 +188,42 @@ public class FloatingDecimal{
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private final String image;
+        private final boolean isNegative;
 
-        public ExceptionalBinaryToASCIIBuffer(String image) {
+        public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
             this.image = image;
+            this.isNegative = isNegative;
         }
 
         @Override
         public String toJavaFormatString() {
             return image;
+        }
+
+        @Override
+        public void appendTo(Appendable buf) {
+            if (buf instanceof StringBuilder) {
+                ((StringBuilder) buf).append(image);
+            } else if (buf instanceof StringBuffer) {
+                ((StringBuffer) buf).append(image);
+            } else {
+                assert false;
+            }
+        }
+
+        @Override
+        public int getDecimalExponent() {
+            throw new IllegalArgumentException("Exceptional value does not have an exponent");
+        }
+
+        @Override
+        public int getDigits(char[] digits) {
+            throw new IllegalArgumentException("Exceptional value does not have digits");
+        }
+
+        @Override
+        public boolean isNegative() {
+            return isNegative;
         }
 
         @Override
@@ -154,11 +245,11 @@ public class FloatingDecimal{
     private static final String INFINITY_REP = "Infinity";
     private static final String NAN_REP = "NaN";
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP);
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP);
-    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP);
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[]{'0'});
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[]{'0'});
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
+    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP, false);
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new char[]{'0'});
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new char[]{'0'});
 
     /**
      * A buffered implementation of <code>BinaryToASCIIConverter</code>.
@@ -168,8 +259,8 @@ public class FloatingDecimal{
         private int decExponent;
         private int firstDigitIndex;
         private int nDigits;
-        private final byte[] digits;
-        private final byte[] buffer = new byte[26];
+        private final char[] digits;
+        private final char[] buffer = new char[26];
 
         //
         // The fields below provide additional information about the result of
@@ -189,13 +280,13 @@ public class FloatingDecimal{
          * <code>BinaryToASCIIBuffer</code> may be thread-local and reused
          */
         BinaryToASCIIBuffer(){
-            this.digits = new byte[20];
+            this.digits = new char[20];
         }
 
         /**
          * Creates a specialized value (positive and negative zeros).
          */
-        BinaryToASCIIBuffer(boolean isNegative, byte[] digits){
+        BinaryToASCIIBuffer(boolean isNegative, char[] digits){
             this.isNegative = isNegative;
             this.decExponent  = 0;
             this.digits = digits;
@@ -207,6 +298,34 @@ public class FloatingDecimal{
         public String toJavaFormatString() {
             int len = getChars(buffer);
             return new String(buffer, 0, len);
+        }
+
+        @Override
+        public void appendTo(Appendable buf) {
+            int len = getChars(buffer);
+            if (buf instanceof StringBuilder) {
+                ((StringBuilder) buf).append(buffer, 0, len);
+            } else if (buf instanceof StringBuffer) {
+                ((StringBuffer) buf).append(buffer, 0, len);
+            } else {
+                assert false;
+            }
+        }
+
+        @Override
+        public int getDecimalExponent() {
+            return decExponent;
+        }
+
+        @Override
+        public int getDigits(char[] digits) {
+            System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
+            return this.nDigits;
+        }
+
+        @Override
+        public boolean isNegative() {
+            return isNegative;
         }
 
         @Override
@@ -271,12 +390,12 @@ public class FloatingDecimal{
                     ivalue /= 10;
                 }
                 while ( ivalue != 0){
-                    digits[digitno--] = (byte) (c+'0');
+                    digits[digitno--] = (char)(c+'0');
                     decExponent++;
                     c = ivalue%10;
                     ivalue /= 10;
                 }
-                digits[digitno] = (byte) (c+'0');
+                digits[digitno] = (char)(c+'0');
             } else {
                 // same algorithm as above (same bugs, too )
                 // but using long arithmetic.
@@ -288,19 +407,19 @@ public class FloatingDecimal{
                     lvalue /= 10L;
                 }
                 while ( lvalue != 0L ){
-                    digits[digitno--] = (byte) (c+'0');
+                    digits[digitno--] = (char)(c+'0');
                     decExponent++;
                     c = (int)(lvalue%10L);
                     lvalue /= 10;
                 }
-                digits[digitno] = (byte) (c+'0');
+                digits[digitno] = (char)(c+'0');
             }
             this.decExponent = decExponent+1;
             this.firstDigitIndex = digitno;
             this.nDigits = this.digits.length - digitno;
         }
 
-        private void dtoa( int binExp, long fractBits, int nSignificantBits)
+        private void dtoa( int binExp, long fractBits, int nSignificantBits, boolean isCompatibleFormat)
         {
             assert fractBits > 0 ; // fractBits here can't be zero or negative
             assert (fractBits & FRACT_HOB)!=0  ; // Hi-order bit should be set
@@ -494,7 +613,7 @@ public class FloatingDecimal{
                         // oops. Usually ignore leading zero.
                         decExp--;
                     } else {
-                        digits[ndigit++] = (byte) ('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     //
                     // HACK! Java spec sez that we always have at least
@@ -502,7 +621,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if (decExp < -3 || decExp >= 8){
+                    if ( !isCompatibleFormat ||decExp < -3 || decExp >= 8 ){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -522,7 +641,7 @@ public class FloatingDecimal{
                             low = true;
                             high = true;
                         }
-                        digits[ndigit++] = (byte) ('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     lowDigitDifference = (b<<1) - tens;
                     exactDecimalConversion  = (b == 0);
@@ -548,7 +667,7 @@ public class FloatingDecimal{
                         // oops. Usually ignore leading zero.
                         decExp--;
                     } else {
-                        digits[ndigit++] = (byte) ('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     //
                     // HACK! Java spec sez that we always have at least
@@ -556,7 +675,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if (decExp < -3 || decExp >= 8){
+                    if ( !isCompatibleFormat || decExp < -3 || decExp >= 8 ){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -576,7 +695,7 @@ public class FloatingDecimal{
                             low = true;
                             high = true;
                         }
-                        digits[ndigit++] = (byte) ('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     lowDigitDifference = (b<<1) - tens;
                     exactDecimalConversion  = (b == 0);
@@ -609,7 +728,7 @@ public class FloatingDecimal{
                     // oops. Usually ignore leading zero.
                     decExp--;
                 } else {
-                    digits[ndigit++] = (byte) ('0' + q);
+                    digits[ndigit++] = (char)('0' + q);
                 }
                 //
                 // HACK! Java spec sez that we always have at least
@@ -617,7 +736,7 @@ public class FloatingDecimal{
                 // Thus we will need more than one digit if we're using
                 // E-form
                 //
-                if (decExp < -3 || decExp >= 8){
+                if (!isCompatibleFormat || decExp < -3 || decExp >= 8 ){
                     high = low = false;
                 }
                 while( ! low && ! high ){
@@ -626,7 +745,7 @@ public class FloatingDecimal{
                     Mval = Mval.multBy10(); //Mval = Mval.mult( 10 );
                     low  = (Bval.cmp( Mval ) < 0);
                     high = tenSval.addAndCmp(Bval,Mval)<=0;
-                    digits[ndigit++] = (byte) ('0' + q);
+                    digits[ndigit++] = (char)('0' + q);
                 }
                 if ( high && low ){
                     Bval = Bval.leftShift(1);
@@ -680,7 +799,7 @@ public class FloatingDecimal{
                 }
                 // else fall through.
             }
-            digits[i] = (byte) (q + 1);
+            digits[i] = (char) (q + 1);
             decimalDigitsRoundedUp = true;
         }
 
@@ -713,6 +832,14 @@ public class FloatingDecimal{
             }
         }
 
+        private static int insignificantDigits(long insignificant) {
+            int i;
+            for ( i = 0; insignificant >= 10L; i++ ) {
+                insignificant /= 10L;
+            }
+            return i;
+        }
+
         /**
          * Calculates
          * <pre>
@@ -733,7 +860,6 @@ public class FloatingDecimal{
          *  for ( i = 0; insignificant >= 10L; i++ )
          *         insignificant /= 10L;
          */
-        @Stable
         private static final int[] insignificantDigitsNumber = {
             0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3,
             4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7,
@@ -744,7 +870,6 @@ public class FloatingDecimal{
         };
 
         // approximately ceil( log2( long5pow[i] ) )
-        @Stable
         private static final int[] N_5_BITS = {
                 0,
                 3,
@@ -775,7 +900,7 @@ public class FloatingDecimal{
                 61,
         };
 
-        private int getChars(byte[] result) {
+        private int getChars(char[] result) {
             assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
             int i = 0;
             if (isNegative) {
@@ -789,7 +914,7 @@ public class FloatingDecimal{
                 i += charLength;
                 if (charLength < decExponent) {
                     charLength = decExponent - charLength;
-                    Arrays.fill(result,i,i+charLength, (byte) '0');
+                    Arrays.fill(result,i,i+charLength,'0');
                     i += charLength;
                     result[i++] = '.';
                     result[i++] = '0';
@@ -807,7 +932,7 @@ public class FloatingDecimal{
                 result[i++] = '0';
                 result[i++] = '.';
                 if (decExponent != 0) {
-                    Arrays.fill(result, i, i-decExponent, (byte) '0');
+                    Arrays.fill(result, i, i-decExponent, '0');
                     i -= decExponent;
                 }
                 System.arraycopy(digits, firstDigitIndex, result, i, nDigits);
@@ -831,15 +956,15 @@ public class FloatingDecimal{
                 }
                 // decExponent has 1, 2, or 3, digits
                 if (e <= 9) {
-                    result[i++] = (byte) (e + '0');
+                    result[i++] = (char) (e + '0');
                 } else if (e <= 99) {
-                    result[i++] = (byte) (e / 10 + '0');
-                    result[i++] = (byte) (e % 10 + '0');
+                    result[i++] = (char) (e / 10 + '0');
+                    result[i++] = (char) (e % 10 + '0');
                 } else {
-                    result[i++] = (byte) (e / 100 + '0');
+                    result[i++] = (char) (e / 100 + '0');
                     e %= 100;
-                    result[i++] = (byte) (e / 10 + '0');
-                    result[i++] = (byte) (e % 10 + '0');
+                    result[i++] = (char) (e / 10 + '0');
+                    result[i++] = (char) (e % 10 + '0');
                 }
             }
             return i;
@@ -848,7 +973,12 @@ public class FloatingDecimal{
     }
 
     private static final ThreadLocal<BinaryToASCIIBuffer> threadLocalBinaryToASCIIBuffer =
-            ThreadLocal.withInitial(BinaryToASCIIBuffer::new);
+            new ThreadLocal<BinaryToASCIIBuffer>() {
+                @Override
+                protected BinaryToASCIIBuffer initialValue() {
+                    return new BinaryToASCIIBuffer();
+                }
+            };
 
     private static BinaryToASCIIBuffer getBinaryToASCIIBuffer() {
         return threadLocalBinaryToASCIIBuffer.get();
@@ -1570,7 +1700,6 @@ public class FloatingDecimal{
          * All the positive powers of 10 that can be
          * represented exactly in double/float.
          */
-        @Stable
         private static final double[] SMALL_10_POW = {
             1.0e0,
             1.0e1, 1.0e2, 1.0e3, 1.0e4, 1.0e5,
@@ -1580,17 +1709,14 @@ public class FloatingDecimal{
             1.0e21, 1.0e22
         };
 
-        @Stable
         private static final float[] SINGLE_SMALL_10_POW = {
             1.0e0f,
             1.0e1f, 1.0e2f, 1.0e3f, 1.0e4f, 1.0e5f,
             1.0e6f, 1.0e7f, 1.0e8f, 1.0e9f, 1.0e10f
         };
 
-        @Stable
         private static final double[] BIG_10_POW = {
             1e16, 1e32, 1e64, 1e128, 1e256 };
-        @Stable
         private static final double[] TINY_10_POW = {
             1e-16, 1e-32, 1e-64, 1e-128, 1e-256 };
 
@@ -1603,14 +1729,21 @@ public class FloatingDecimal{
      * Returns a <code>BinaryToASCIIConverter</code> for a <code>double</code>.
      * The returned object is a <code>ThreadLocal</code> variable of this class.
      *
-     * @param d The double precision value to convert.
+     * @param d      The double precision value to convert.
+     * @param compat    compatibility with releases < JDK 21
      * @return The converter.
      */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
+    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean compat) {
+        return compat
+                ? getCompatBinaryToASCIIConverter(d, true)
+                : getBinaryToASCIIConverter(d);
+    }
+
+    private static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
         assert Double.isFinite(d);
 
         FormattedFPDecimal dec = FormattedFPDecimal.split(d);
-        BinaryToASCIIBuffer buf = new BinaryToASCIIBuffer();
+        BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
 
         buf.nDigits = dec.getPrecision();
         buf.decExponent = dec.getExp() + buf.nDigits;
@@ -1619,10 +1752,10 @@ public class FloatingDecimal{
         buf.decimalDigitsRoundedUp = dec.getAway();
 
         long f = dec.getSignificand();
-        byte[] digits = buf.digits;
+        char[] digits = buf.digits;
         for (int i = buf.nDigits - 1; i >= 0; --i) {
             long q = f / 10;
-            digits[i] = (byte) ((f - 10 * q) + '0');
+            digits[i] = (char) ((f - 10 * q) + '0');
             f = q;
         }
         return buf;
@@ -1633,7 +1766,7 @@ public class FloatingDecimal{
      * Should be removed in the future, along with its dependent methods and
      * fields (> 550 lines).
      */
-    public static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d) {
+    private static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d, boolean isCompatibleFormat) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
@@ -1669,7 +1802,47 @@ public class FloatingDecimal{
         BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
         buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
-        buf.dtoa(binExp, fractBits, nSignificantBits);
+        buf.dtoa(binExp, fractBits, nSignificantBits, isCompatibleFormat);
+        return buf;
+    }
+
+    private static BinaryToASCIIConverter getBinaryToASCIIConverter(float f) {
+        int fBits = Float.floatToRawIntBits( f );
+        boolean isNegative = (fBits&FloatConsts.SIGN_BIT_MASK) != 0;
+        int fractBits = fBits&FloatConsts.SIGNIF_BIT_MASK;
+        int binExp = (fBits&FloatConsts.EXP_BIT_MASK) >> SINGLE_EXP_SHIFT;
+        // Discover obvious special cases of NaN and Infinity.
+        if ( binExp == (FloatConsts.EXP_BIT_MASK>>SINGLE_EXP_SHIFT) ) {
+            if ( fractBits == 0L ){
+                return isNegative ? B2AC_NEGATIVE_INFINITY : B2AC_POSITIVE_INFINITY;
+            } else {
+                return B2AC_NOT_A_NUMBER;
+            }
+        }
+        // Finish unpacking
+        // Normalize denormalized numbers.
+        // Insert assumed high-order bit for normalized numbers.
+        // Subtract exponent bias.
+        int  nSignificantBits;
+        if ( binExp == 0 ){
+            if ( fractBits == 0 ){
+                // not a denorm, just a 0!
+                return isNegative ? B2AC_NEGATIVE_ZERO : B2AC_POSITIVE_ZERO;
+            }
+            int leadingZeros = Integer.numberOfLeadingZeros(fractBits);
+            int shift = leadingZeros-(31-SINGLE_EXP_SHIFT);
+            fractBits <<= shift;
+            binExp = 1 - shift;
+            nSignificantBits =  32 - leadingZeros; // recall binExp is  - shift count.
+        } else {
+            fractBits |= SINGLE_FRACT_HOB;
+            nSignificantBits = SINGLE_EXP_SHIFT+1;
+        }
+        binExp -= FloatConsts.EXP_BIAS;
+        BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
+        buf.setSign(isNegative);
+        // call the routine that actually does all the hard work.
+        buf.dtoa(binExp, ((long)fractBits)<<(EXP_SHIFT-SINGLE_EXP_SHIFT), nSignificantBits, true);
         return buf;
     }
 

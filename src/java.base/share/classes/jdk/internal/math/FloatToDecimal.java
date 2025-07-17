@@ -304,6 +304,7 @@ public final class FloatToDecimal extends ToDecimal {
             boolean upin = vbl + out <= sp10 << 2;
             boolean wpin = (tp10 << 2) + out <= vbr;
             if (upin != wpin) {
+                /* Exactly one of u' or w' lies in Rv */
                 return toChars(str, index, upin ? sp10 : tp10, k);
             }
         }
@@ -326,7 +327,8 @@ public final class FloatToDecimal extends ToDecimal {
          * See section 9.3 of [1].
          */
         int cmp = vb - (s + t << 1);
-        return toChars(str, index, cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk);
+        boolean away = cmp > 0 || cmp == 0 && (s & 0x1) != 0;
+        return toChars(str, index, away ? t : s, k + dk);
     }
 
     /*

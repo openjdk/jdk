@@ -288,6 +288,8 @@ final class DigitList implements Cloneable {
         set(isNegative, source, maximumFractionDigits, true);
     }
 
+    private static final boolean COMPAT = Boolean.getBoolean("jdk.compat.DecimalFormat");
+
     /**
      * Set the digit list to a representation of the given double value.
      * This method supports both fixed-point and exponential notation.
@@ -301,9 +303,7 @@ final class DigitList implements Cloneable {
      */
     void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
         FloatingDecimal.BinaryToASCIIConverter fdConverter =
-                Boolean.getBoolean("jdk.compat.DecimalFormat")
-                        ? FloatingDecimal.getCompatBinaryToASCIIConverter(source)
-                        : FloatingDecimal.getBinaryToASCIIConverter(source);
+                FloatingDecimal.getBinaryToASCIIConverter(source, COMPAT);
         boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
         boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
         assert !fdConverter.isExceptional();
