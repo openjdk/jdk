@@ -147,7 +147,15 @@ final class MacFromParams {
                 signingBuilder.entitlementsResourceName("sandbox.plist");
             }
 
-            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresent(signingBuilder::signingIdentifierPrefix);
+            final var bundleIdentifier = appBuilder.create().bundleIdentifier();
+            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresentOrElse(
+                signingBuilder::signingIdentifierPrefix,
+                () -> {
+                    // Runtime installer does not have main launcher, so use
+                    // 'bundleIdentifier' as prefix by default.
+                    signingBuilder.signingIdentifierPrefix(
+                        bundleIdentifier + ".");
+                });
             SIGN_IDENTIFIER_PREFIX.copyInto(params, signingBuilder::signingIdentifierPrefix);
 
             ENTITLEMENTS.copyInto(params, signingBuilder::entitlements);
