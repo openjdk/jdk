@@ -136,6 +136,7 @@ public final class CStrike extends PhysicalStrike {
         return nativeStrikePtr;
     }
 
+    @Override
     @SuppressWarnings("removal")
     protected synchronized void finalize() throws Throwable {
         if (nativeStrikePtr != 0) {
@@ -183,6 +184,7 @@ public final class CStrike extends PhysicalStrike {
         return new Point2D.Float(getGlyphAdvance(glyphCode), 0.0f);
     }
 
+    @Override
     Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
         GeneralPath gp = getGlyphOutline(glyphCode, 0f, 0f);
         Rectangle2D r2d = gp.getBounds2D();
@@ -200,6 +202,7 @@ public final class CStrike extends PhysicalStrike {
     }
 
     // pt, result in device space
+    @Override
     void getGlyphImageBounds(int glyphCode, Point2D.Float pt, Rectangle result) {
         Rectangle2D.Float floatRect = new Rectangle2D.Float();
 
@@ -221,16 +224,19 @@ public final class CStrike extends PhysicalStrike {
         getNativeGlyphImageBounds(getNativeStrikePtr(), glyphCode, floatRect, x, y);
     }
 
+    @Override
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
         return getNativeGlyphOutline(getNativeStrikePtr(), glyphCode, x, y);
     }
 
     // should implement, however not called though any path that is publicly exposed
+    @Override
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
         throw new Error("not implemented yet");
     }
 
     // called from the Sun2D renderer
+    @Override
     long getGlyphImagePtr(int glyphCode) {
         synchronized (glyphInfoCache) {
             long ptr = glyphInfoCache.get(glyphCode);
@@ -250,6 +256,7 @@ public final class CStrike extends PhysicalStrike {
     }
 
     // called from the Sun2D renderer
+    @Override
     void getGlyphImagePtrs(int[] glyphCodes, long[] images, int len) {
         synchronized (glyphInfoCache) {
             // fill the image pointer array with existing pointers
@@ -361,7 +368,7 @@ public final class CStrike extends PhysicalStrike {
     // This class stores glyph pointers, and is indexed based on glyph codes,
     // and negative unicode values.  See the comments in
     // CCharToGlyphMapper for more details on our glyph code strategy.
-    private static class GlyphInfoCache extends CStrikeDisposer {
+    private static final class GlyphInfoCache extends CStrikeDisposer {
         private static final int FIRST_LAYER_SIZE = 256;
         private static final int SECOND_LAYER_SIZE = 16384; // 16384 = 128x128
 
@@ -428,6 +435,7 @@ public final class CStrike extends PhysicalStrike {
             generalCache.put(Integer.valueOf(index), Long.valueOf(value));
         }
 
+        @Override
         public synchronized void dispose() {
             // rdar://problem/5204197
             // Note that sun.font.Font2D.getStrike() actively disposes
@@ -476,7 +484,7 @@ public final class CStrike extends PhysicalStrike {
             }
         }
 
-        private static class SparseBitShiftingTwoLayerArray {
+        private static final class SparseBitShiftingTwoLayerArray {
             final long[][] cache;
             final int shift;
             final int secondLayerLength;
@@ -505,7 +513,7 @@ public final class CStrike extends PhysicalStrike {
         }
     }
 
-    private static class GlyphAdvanceCache {
+    private static final class GlyphAdvanceCache {
         private static final int FIRST_LAYER_SIZE = 256;
         private static final int SECOND_LAYER_SIZE = 16384; // 16384 = 128x128
 
@@ -558,7 +566,7 @@ public final class CStrike extends PhysicalStrike {
             generalCache.put(Integer.valueOf(index), Float.valueOf(value));
         }
 
-        private static class SparseBitShiftingTwoLayerArray {
+        private static final class SparseBitShiftingTwoLayerArray {
             final float[][] cache;
             final int shift;
             final int secondLayerLength;

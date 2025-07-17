@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,27 @@
  * questions.
  */
 
-package java.applet;
+package sun.net.util;
 
-/**
- * The {@code AudioClip} interface is a simple abstraction for playing a sound
- * clip. Multiple {@code AudioClip} items can be playing at the same time, and
- * the resulting sound is mixed together to produce a composite.
- *
- * @author Arthur van Hoff
- * @since 1.0
- * @deprecated The Applet API is deprecated, no replacement.
- */
-@Deprecated(since = "9", forRemoval = true)
-public interface AudioClip {
+import sun.net.ApplicationProxy;
+
+import java.net.Proxy;
+
+public final class ProxyUtil {
+
+    private ProxyUtil() {}
 
     /**
-     * Starts playing this audio clip. Each time this method is called, the clip
-     * is restarted from the beginning.
+     * Creates a new {@link Proxy} instance for the given proxy iff it is
+     * neither null, {@link Proxy#NO_PROXY Proxy.NO_PROXY}, an
+     * {@link ApplicationProxy} instance, nor already a {@code Proxy} instance.
      */
-    void play();
+    public static Proxy copyProxy(Proxy proxy) {
+        return proxy == null
+                || proxy.getClass() == Proxy.class
+                || proxy instanceof ApplicationProxy
+                ? proxy
+                : new Proxy(proxy.type(), proxy.address());
+    }
 
-    /**
-     * Starts playing this audio clip in a loop.
-     */
-    void loop();
-
-    /**
-     * Stops playing this audio clip.
-     */
-    void stop();
 }

@@ -35,7 +35,7 @@ import javax.swing.plaf.basic.BasicMenuItemUI;
 import apple.laf.JRSUIConstants.Size;
 
 // TODO: no screen menu bar for now
-public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.Client/*, ScreenMenuItemUI*/ {
+public final class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.Client/*, ScreenMenuItemUI*/ {
     static final int kPlain = 0, kCheckBox = 1, kRadioButton = 2;
     static final String[] sPropertyPrefixes = { "MenuItem", "CheckBoxMenuItem", "RadioButtonMenuItem" };
 
@@ -57,6 +57,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
 
     // The only real difference between the three is which property prefix it returns
     // and therefore which icons!
+    @Override
     protected String getPropertyPrefix() {
         return sPropertyPrefixes[fType];
     }
@@ -99,14 +100,17 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
         menuItem.addMenuDragMouseListener(menuDragMouseListener);
     }
 
+    @Override
     protected void paintMenuItem(final Graphics g, final JComponent c, final Icon localCheckIcon, final Icon localArrowIcon, final Color background, final Color foreground, final int localDefaultTextIconGap) {
         AquaMenuPainter.instance().paintMenuItem(this, g, c, localCheckIcon, localArrowIcon, background, foreground, disabledForeground, selectionForeground, localDefaultTextIconGap, acceleratorFont);
     }
 
+    @Override
     protected Dimension getPreferredMenuItemSize(final JComponent c, final Icon localCheckIcon, final Icon localArrowIcon, final int localDefaultTextIconGap) {
         return AquaMenuPainter.instance().getPreferredMenuItemSize(c, localCheckIcon, localArrowIcon, localDefaultTextIconGap, acceleratorFont);
     }
 
+    @Override
     public void update(final Graphics g, final JComponent c) {
         if (c.isOpaque()) {
             // sja fix ((PenGraphics)g).alphaClearRect(0,0,c.getWidth(),c.getHeight());
@@ -119,6 +123,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
         paint(g, c);
     }
 
+    @Override
     public void paintBackground(final Graphics g, final JComponent c, final int menuWidth, final int menuHeight) {
         if ((c.getParent() instanceof JMenuBar)) return;
         final Color oldColor = g.getColor();
@@ -146,6 +151,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
         g.setColor(oldColor);
     }
 
+    @Override
     protected void doClick(final MenuSelectionManager msm) {
         final Dimension size = menuItem.getSize();
         AquaUtils.blinkMenu(new AquaUtils.Selectable() {
@@ -158,7 +164,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
     }
 
     static final IndeterminateListener INDETERMINATE_LISTENER = new IndeterminateListener();
-    static class IndeterminateListener implements PropertyChangeListener {
+    static final class IndeterminateListener implements PropertyChangeListener {
         static final String CLIENT_PROPERTY_KEY = "JMenuItem.selectedState";
 
         static void install(final JMenuItem menuItem) {
@@ -170,6 +176,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
             menuItem.removePropertyChangeListener(CLIENT_PROPERTY_KEY, INDETERMINATE_LISTENER);
         }
 
+        @Override
         public void propertyChange(final PropertyChangeEvent evt) {
             final String key = evt.getPropertyName();
             if (!CLIENT_PROPERTY_KEY.equalsIgnoreCase(key)) return;
