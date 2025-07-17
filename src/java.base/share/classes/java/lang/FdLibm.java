@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,8 @@ final class FdLibm {
         private static final double
             pio4  =  0x1.921fb54442d18p-1,  // 7.85398163397448278999e-01
             pio4lo=  0x1.1a62633145c07p-55; // 3.06161699786838301793e-17
-        @Stable private static final double
+        @Stable
+        private static final double
             T[] = {
              0x1.5555555555563p-2,  //  3.33333333333334091986e-01
              0x1.111111110fe7ap-3,  //  1.33333333333201242699e-01
@@ -812,6 +813,7 @@ final class FdLibm {
          * to produce the hexadecimal values shown.
          */
 
+        @Stable
         private static final int init_jk[] = {2, 3, 4, 6}; // initial value for jk
 
         @Stable
