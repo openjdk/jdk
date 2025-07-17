@@ -1013,6 +1013,15 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
 
 // Set the java.lang.Module module field in the java_lang_Class mirror
 void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Handle mirror, Handle module) {
+  if (CDSConfig::is_using_preloaded_classes()) {
+    oop archived_module = java_lang_Class:: module(mirror());
+    if (archived_module != nullptr) {
+      precond(module() == nullptr || module() == archived_module);
+      precond(MetaspaceShared::is_shared_static((void*)k));
+      return;
+    }
+  }
+
   if (module.is_null()) {
     // During startup, the module may be null only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
@@ -1052,9 +1061,11 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
-  GrowableArray<Klass*>* mirror_list =
-    new (mtClass) GrowableArray<Klass*>(40, mtClass);
-  set_fixup_mirror_list(mirror_list);
+  if (!CDSConfig::is_using_preloaded_classes()) {
+    GrowableArray<Klass*>* mirror_list =
+      new (mtClass) GrowableArray<Klass*>(40, mtClass);
+    set_fixup_mirror_list(mirror_list);
+  }
 
   GrowableArray<Klass*>* module_list =
     new (mtModule) GrowableArray<Klass*>(500, mtModule);
@@ -1155,6 +1166,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
       create_scratch_mirror(k, CHECK);
     }
   } else {
+    assert(!CDSConfig::is_using_preloaded_classes(), "should not come here");
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
   }
@@ -1200,7 +1212,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle protection_domain, TRAPS) {
   // Postpone restoring archived mirror until java.lang.Class is loaded. Please
   // see more details in vmClasses::resolve_all().
-  if (!vmClasses::Class_klass_loaded()) {
+  if (!vmClasses::Class_klass_loaded() && !CDSConfig::is_using_preloaded_classes()) {
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
     return true;

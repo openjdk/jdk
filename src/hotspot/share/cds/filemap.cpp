@@ -1859,6 +1859,11 @@ bool FileMapInfo::validate_aot_class_linking() {
   if (header()->has_aot_linked_classes()) {
     const char* archive_type = CDSConfig::type_of_archive_being_loaded();
     CDSConfig::set_has_aot_linked_classes(true);
+    if (is_static()) {
+      // The aot-linked classes in the dynamic archive don't have archived mirror/package/protection domain, so they
+      // cannot be preloaded.
+      CDSConfig::set_has_preloaded_classes(true);
+    }
     if (JvmtiExport::should_post_class_file_load_hook()) {
       aot_log_error(aot)("%s has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.",
                      archive_type);
