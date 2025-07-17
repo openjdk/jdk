@@ -107,8 +107,8 @@ public final class CPrinterJob extends RasterPrinterJob {
     //  PageFormat data is passed in and set on the fNSPrintInfo on a per call
     //  basis.
     private long fNSPrintInfo = -1;
-    private Object fNSPrintInfoLock = new Object();
-    private Object disposerReferent = new Object();
+    private final Object fNSPrintInfoLock = new Object();
+    private final Object disposerReferent = new Object();
 
     static {
         // AWT has to be initialized for the native code to function correctly.
@@ -638,22 +638,14 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     static class NSPrintInfoDisposer implements DisposerRecord {
 
-        private long fNSPrintInfo;
-        private Object lock;
+        private final long fNSPrintInfo;
 
-        NSPrintInfoDisposer(Object l, long ptr) {
-            lock = l;
+        NSPrintInfoDisposer(long ptr) {
             fNSPrintInfo = ptr;
         }
 
-
         public void dispose() {
-            synchronized (lock) {
-                if (fNSPrintInfo != -1) {
-                    CPrinterJob.disposeNSPrintInfo(fNSPrintInfo);
-                }
-                fNSPrintInfo = -1;
-            }
+            CPrinterJob.disposeNSPrintInfo(fNSPrintInfo);
         }
     }
 
@@ -666,7 +658,7 @@ public final class CPrinterJob extends RasterPrinterJob {
             if (fNSPrintInfo == -1) {
                 fNSPrintInfo = createNSPrintInfo();
                 Disposer.addRecord(disposerReferent,
-                                   new NSPrintInfoDisposer(fNSPrintInfoLock, fNSPrintInfo));
+                                   new NSPrintInfoDisposer(fNSPrintInfo));
             }
             return fNSPrintInfo;
         }
