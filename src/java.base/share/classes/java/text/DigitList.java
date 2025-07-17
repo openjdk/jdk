@@ -288,6 +288,20 @@ final class DigitList implements Cloneable {
         set(isNegative, source, maximumFractionDigits, true);
     }
 
+    /*
+     * This compatibility option will only be available for a *very* limited
+     * number of releases.
+     * It restores the original behavior to help migrating to the new one,
+     * and is used by adding
+     *      -Djdk.compat.DecimalFormat=true
+     * to the launcher's command line.
+     *
+     * The new behavior differs from the old one only in very rare cases,
+     * so migration should be painless.
+     *
+     * When this option is removed, the old behavior, including relevant
+     * fields and methods, will be removed as well.
+     */
     private static final boolean COMPAT = Boolean.getBoolean("jdk.compat.DecimalFormat");
 
     /**
