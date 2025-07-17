@@ -681,11 +681,6 @@ void G1Policy::record_pause_start_time() {
 
 void G1Policy::record_young_collection_start() {
   record_pause_start_time();
-  _cur_pause_start_sec = now.seconds();
-}
-
-void G1Policy::record_young_collection_start() {
-  record_pause_start_time();
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
   // every time we calculate / recalculate the target young length.
