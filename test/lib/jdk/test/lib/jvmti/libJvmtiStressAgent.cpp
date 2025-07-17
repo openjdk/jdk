@@ -28,7 +28,7 @@
 
 
 
-#define :qJVMTI_AGENT_NAME "JvmtiStressAgent"
+#define JVMTI_AGENT_NAME "JvmtiStressAgent"
 
 
 typedef struct {
