@@ -1,6 +1,0 @@
-#Last test run info
-#Wed Jul 16 16:03:07 CST 2025
-configName=regtest
-finishTime=1752652987833
-startTime=1752652986357
-testURLs=applications/jcstress/countdownlatch.java
