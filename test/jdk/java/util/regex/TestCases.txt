@@ -1273,3 +1273,28 @@ true 11111111 1 1111
 ^(1{2,})\1+$
 11111111
 true 11111111 1 1111
+
+//
+(?ui)\u00df
+\u1e9e
+true \u1e9e 0
+
+(?ui)[\u00df]
+\u1e9e
+true \u1e9e 0
+
+(?ui)[\u00df-\u00df]
+\u1e9e
+true \u1e9e 0
+
+(?ui)\u1e9e
+\u00df
+true \u00df 0
+
+(?ui)[\u1e9e]
+\u00df
+true \u00df 0
+
+(?ui)[\u1e9e-\u1e9e]
+\u00df
+true \u00df 0

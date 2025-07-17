@@ -1134,8 +1134,14 @@ public class File
         if (ss == null) return null;
         int n = ss.length;
         File[] fs = new File[n];
-        for (int i = 0; i < n; i++) {
-            fs[i] = new File(ss[i], this);
+        if (path.isEmpty()) {
+            for (int i = 0; i < n; i++) {
+                fs[i] = new File(ss[i]);
+            }
+        } else {
+            for (int i = 0; i < n; i++) {
+                fs[i] = new File(ss[i], this);
+            }
         }
         return fs;
     }
