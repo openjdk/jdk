@@ -961,7 +961,7 @@ void LibraryCallKit::generate_string_range_check(Node* array,
   generate_limit_guard(offset, count, load_array_length(array), bailout);
 
   if (bailout->req() > 1) {
-    bailout = _gvn.transform(bailout);
+    bailout = (RegionNode*) _gvn.transform(bailout);
     if (halt) {
       Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
       Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
