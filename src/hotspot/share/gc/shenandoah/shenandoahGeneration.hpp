@@ -164,6 +164,9 @@ private:
                      shenandoah_generation_name(_type), result, original_result);
       }
     } else {
+      if (problem_count > 0) {
+        log_info(gc)("Used for generation %s is back in sync: %zu", shenandoah_generation_name(_type), result);
+      }
       problem_count = 0;
     }
 #endif
@@ -197,11 +200,11 @@ private:
   // Set the capacity of the generation, returning the value set
   size_t set_capacity(size_t byte_size);
 
-  void set_used(size_t region_count, size_t byte_count) {
+  void set_used(size_t affiliated_region_count, size_t byte_count) {
     Atomic::store(&_used, byte_count);
-    Atomic::store(&_affiliated_region_count, region_count);
+    Atomic::store(&_affiliated_region_count, affiliated_region_count);
 #ifdef KELVIN_SCAFFOLDING
-    log_info(gc)("%s:set_used(regions: %zu, bytes: %zu)", shenandoah_generation_name(_type), region_count, byte_count);
+    log_info(gc)("%s:set_used(regions: %zu, bytes: %zu)", shenandoah_generation_name(_type), affiliated_region_count, byte_count);
 #endif
   }
 

@@ -135,7 +135,13 @@ public:
   void configure_plab_for_current_thread(const ShenandoahAllocRequest &req);
 
   // See description in field declaration
-  void set_region_balance(ssize_t balance) { _region_balance = balance; }
+  void set_region_balance(ssize_t balance) {
+#define KELVIN_BALANCIO
+#ifdef KELVIN_BALANCIO
+    log_info(gc)("OldGen::set_region_balance(%zd)", balance);
+#endif
+    _region_balance = balance;
+  }
   ssize_t get_region_balance() const { return _region_balance; }
   // See description in field declaration
   void set_promotion_potential(size_t val) { _promotion_potential = val; };

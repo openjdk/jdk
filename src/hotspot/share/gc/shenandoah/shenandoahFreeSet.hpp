@@ -579,8 +579,11 @@ private:
 
   // Set max_capacity for young and old generations
   void establish_generation_sizes(size_t young_region_count, size_t old_region_count,
-                                                   size_t young_used_regions, size_t old_used_regions,
-                                                   size_t young_used_bytes, size_t old_used_bytes);
+                                  size_t affiliated_young_regions, size_t affiliated_old_regions,
+                                  size_t young_used_bytes, size_t old_used_bytes);
+
+  void reestablish_generation_sizes(size_t young_region_count, size_t old_region_count);
+
   size_t get_usable_free_words(size_t free_bytes) const;
 
   // log status, assuming lock has already been acquired by the caller.

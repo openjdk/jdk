@@ -984,9 +984,20 @@ size_t ShenandoahGeneration::used_regions() const {
   }
   size_t original_result = Atomic::load(&_affiliated_region_count);
 #ifdef KELVIN_SCAFFOLDING
+  static int problem_count = 0;
   if (result != original_result) {
-        log_info(gc)("Problem with used for generation %s, freeset thinks %zu, generation thinks: %zu",
-                     shenandoah_generation_name(_type), result, original_result);
+    log_info(gc)("Problem with used regions for generation %s, freeset thinks %zu, generation thinks: %zu",
+                 shenandoah_generation_name(_type), result, original_result);
+    if (problem_count++ > 8) {
+      assert(result == original_result, "Out of sync in used_regions for generation %s, freeset: %zu, generation: %zu",
+             shenandoah_generation_name(_type), result, original_result);
+    }
+  } else {
+    if (problem_count > 0) {
+      problem_count = 0;
+      log_info(gc)("used regions for generation %s is back in sync: %zu",
+                   shenandoah_generation_name(_type), result);
+    }
   }
 #endif
   return result;

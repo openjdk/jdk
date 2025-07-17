@@ -650,6 +650,10 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
   const double max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
                                  bound_on_old_reserve: MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent) / double(100 - ShenandoahOldEvacRatioPercent),
                                                             bound_on_old_reserve);
+#define KELVIN_REBALANCE
+#ifdef KELVIN_REBALANCE
+  log_info(gc)("compute_old_gen_balance(%zu, %zu)", old_xfer_limit, old_cset_regions);
+#endif
 
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
@@ -690,6 +694,9 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
     const size_t old_surplus = (max_old_available - old_reserve) / region_size_bytes;
     const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_cset_regions;
     const size_t old_region_surplus = MIN2(old_surplus, unaffiliated_old_regions);
+#ifdef KELVIN_REBALANCE
+    log_info(gc)("surplus of old, transferring %zd regions to young", old_region_surplus);
+#endif
     old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
   } else {
     // We are running a deficit which we'd like to fill from young.
@@ -703,6 +710,9 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
     // on young-gen memory, we restrict the xfer. Old-gen collection activities will be
     // curtailed if the budget is restricted.
     const size_t old_region_deficit = MIN2(old_need, max_old_region_xfer);
+#ifdef KELVIN_REBALANCE
+    log_info(gc)("deficit of old, transferring %zd regions to old", old_region_deficit);
+#endif
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
   }
 }
