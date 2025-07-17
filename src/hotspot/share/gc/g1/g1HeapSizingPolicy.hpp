@@ -119,7 +119,6 @@ public:
   size_t full_collection_resize_amount(bool& expand, size_t allocation_word_size);
 
   // Time-based sizing methods
-  static void initialize();
   static jlong uncommit_delay() { return _uncommit_delay_ms; }
   size_t evaluate_heap_resize(bool& expand);
 

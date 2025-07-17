@@ -41,11 +41,6 @@
 // Initialize static member
 jlong G1HeapSizingPolicy::_uncommit_delay_ms = 0;
 
-void G1HeapSizingPolicy::initialize() {
-  // Flag values are available at this point
-  _uncommit_delay_ms = (jlong)G1UncommitDelayMillis;
-}
-
 G1HeapSizingPolicy* G1HeapSizingPolicy::create(const G1CollectedHeap* g1h, const G1Analytics* analytics) {
   return new G1HeapSizingPolicy(g1h, analytics);
 }
@@ -58,6 +53,8 @@ G1HeapSizingPolicy::G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analy
   _gc_cpu_usage_deviation_counter((G1CPUUsageExpandThreshold / 2) + 1),
   _recent_cpu_usage_deltas(long_term_count_limit()),
   _long_term_count(0) {
+  // Initialize static uncommit delay from flag value
+  _uncommit_delay_ms = (jlong)G1UncommitDelayMillis;
 }
 
 void G1HeapSizingPolicy::reset_cpu_usage_tracking_data() {

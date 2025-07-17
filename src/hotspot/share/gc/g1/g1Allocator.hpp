@@ -32,7 +32,6 @@
 
 class G1EvacInfo;
 class G1NUMA;
-class G1HeapSizingPolicy;
 
 // Interface to keep track of which regions G1 is currently allocating into. Provides
 // some accessors (e.g. allocating into them, or getting their occupancy).

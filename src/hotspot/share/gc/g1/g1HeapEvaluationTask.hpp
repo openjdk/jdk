@@ -25,20 +25,23 @@
 #ifndef SHARE_GC_G1_G1HEAPEVALUATIONTASK_HPP
 #define SHARE_GC_G1_G1HEAPEVALUATIONTASK_HPP
 
-#include "runtime/task.hpp"  // Changed from g1ServiceThread.hpp
+#include "runtime/task.hpp"
 #include "gc/g1/g1_globals.hpp"
 
 class G1CollectedHeap;
 class G1HeapSizingPolicy;
 
-// Time-based heap evaluation task that runs during idle periods
-class G1HeapEvaluationTask : public PeriodicTask {  // Changed from G1ServiceTask
+// Time-based heap evaluation task that runs during idle periods.
+// Uses PeriodicTask rather than G1ServiceTask due to build compatibility issues
+// in JDK 25+. PeriodicTask's 10ms granularity is adequate for heap evaluation
+// which typically runs on intervals of seconds or longer.
+class G1HeapEvaluationTask : public PeriodicTask {
   G1CollectedHeap* _g1h;
   G1HeapSizingPolicy* _heap_sizing_policy;
 
 public:
   G1HeapEvaluationTask(G1CollectedHeap* g1h, G1HeapSizingPolicy* heap_sizing_policy);
-  virtual void task() override;  // Changed from execute() to task()
+  virtual void task() override;
 };
 
 #endif // SHARE_GC_G1_G1HEAPEVALUATIONTASK_HPP

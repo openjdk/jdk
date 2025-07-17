@@ -641,12 +641,6 @@ void VM_PrintCompileQueue::doit() {
   CompileBroker::print_compile_queues(_out);
 }
 
-#if INCLUDE_G1GC
-void VM_G1ShrinkHeap::doit() {
-  _g1h->shrink(_bytes);
-}
-#endif // INCLUDE_G1GC
-
 #if INCLUDE_SERVICES
 void VM_PrintClassHierarchy::doit() {
   KlassHierarchy::print_class_hierarchy(_out, _print_interfaces, _print_subclasses, _classname);

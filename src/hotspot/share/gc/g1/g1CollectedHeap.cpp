@@ -1,4 +1,3 @@
-﻿
 /*
  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -39,8 +38,6 @@
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
-#include "gc/g1/g1HeapSizingPolicy.hpp"  // Include this first to avoid include cycle
-#include "gc/g1/g1HeapEvaluationTask.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
@@ -48,10 +45,12 @@
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapEvaluationTask.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1InitLogger.hpp"
@@ -1075,7 +1074,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
                            shrink_bytes, shrunk_bytes, num_regions_removed);
   if (num_regions_removed > 0) {
-    log_info(gc, heap)("Heap shrink completed: uncommitted %u regions (%zuMB), heap size now %zuMB",
+    log_info(gc, heap)("Heap shrink flagged: uncommitted %u regions (%zuMB), heap size now %zuMB",
                        num_regions_removed, shrunk_bytes / M, capacity() / M);
     log_debug(gc, heap)("Heap shrink details: requested=%zuB attempted=%zuB actual=%zuB "
                         "regions_removed=%u heap_capacity=%zuB",
@@ -1508,7 +1507,7 @@ jint G1CollectedHeap::initialize() {
     // PeriodicTask will be enrolled after G1 is fully initialized in post_initialize()
     log_debug(gc, init)("G1 Time-Based Heap Evaluation task created (PeriodicTask)");
   } else {
-    _heap_evaluation_task = nullptr;
+    assert(_heap_evaluation_task == nullptr, "pre-condition");
   }
 
   // Here we allocate the dummy G1HeapRegion that is required by the
@@ -1572,7 +1571,7 @@ void G1CollectedHeap::post_initialize() {
   ref_processing_init();
 
   // Enroll the heap evaluation task after G1 is fully initialized
-  if (G1UseTimeBasedHeapSizing && _heap_evaluation_task != nullptr) {
+  if (G1UseTimeBasedHeapSizing) {
     _heap_evaluation_task->enroll();  // PeriodicTask enroll() starts the task
     log_debug(gc, init)("G1 Time-Based Heap Evaluation task enrolled (PeriodicTask)");
   }

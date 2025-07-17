@@ -119,7 +119,7 @@ void G1HeapRegion::unlink_from_list() {
 
 void G1HeapRegion::hr_clear(bool clear_space) {
   set_top(bottom());
-  record_activity(); // Record region initialization
+  record_activity(); // Update timestamp when region becomes available
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
