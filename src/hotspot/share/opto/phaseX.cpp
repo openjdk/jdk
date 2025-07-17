@@ -2549,11 +2549,18 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // Check for redundant ConvD2L->ConvL2D->ConvD2L sequences
-  if (n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) {
+  // Check for redundant conversion patterns:
+  // ConvD2L->ConvL2D->ConvD2L
+  // ConvF2I->ConvI2F->ConvF2I
+  // ConvF2L->ConvL2F->ConvF2L
+  // ConvI2F->ConvF2I->ConvI2F
+  if ((n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) ||
+      (n->Opcode() == Op_ConvF2I && use_op == Op_ConvI2F) ||
+      (n->Opcode() == Op_ConvF2L && use_op == Op_ConvL2F) ||
+      (n->Opcode() == Op_ConvI2F && use_op == Op_ConvF2I)) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_ConvD2L) {
+      if (u->Opcode() == n->Opcode()) {
         worklist.push(u);
       }
     }
