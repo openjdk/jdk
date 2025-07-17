@@ -70,7 +70,7 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * {@code Properties} object.  Their use is strongly discouraged as they
  * allow the caller to insert entries whose keys or values are not
  * {@code Strings}.  The {@code setProperty} method should be used
- * instead. If the {@code store}, {@code save} or {@code list} method is called
+ * instead. If the {@code store}, {@code save}, or {@code list} method is called
  * on a "compromised" {@code Properties} object that contains a
  * non-{@code String} key or value, the call will fail. Similarly,
  * the call to the {@code propertyNames} method
