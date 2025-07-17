@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class G1CollectorState {
   bool _mark_or_rebuild_in_progress;
 
   // The marking bitmap is currently being cleared or about to be cleared.
-  bool _clearing_bitmap;
+  bool _clear_bitmap_in_progress;
 
   // Set during a full gc pause.
   bool _in_full_gc;
@@ -83,7 +83,7 @@ public:
 
     _mark_in_progress(false),
     _mark_or_rebuild_in_progress(false),
-    _clearing_bitmap(false),
+    _clear_bitmap_in_progress(false),
     _in_full_gc(false) { }
 
   // Phase setters
@@ -98,7 +98,7 @@ public:
 
   void set_mark_in_progress(bool v) { _mark_in_progress = v; }
   void set_mark_or_rebuild_in_progress(bool v) { _mark_or_rebuild_in_progress = v; }
-  void set_clearing_bitmap(bool v) { _clearing_bitmap = v; }
+  void set_clear_bitmap_in_progress(bool v) { _clear_bitmap_in_progress = v; }
 
   // Phase getters
   bool in_young_only_phase() const { return _in_young_only_phase && !_in_full_gc; }
@@ -113,7 +113,7 @@ public:
 
   bool mark_in_progress() const { return _mark_in_progress; }
   bool mark_or_rebuild_in_progress() const { return _mark_or_rebuild_in_progress; }
-  bool clearing_bitmap() const { return _clearing_bitmap; }
+  bool clear_bitmap_in_progress() const { return _clear_bitmap_in_progress; }
 
   // Calculate GC Pause Type from internal state.
   G1GCPauseType young_gc_pause_type(bool concurrent_operation_is_full_mark) const;

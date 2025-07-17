@@ -38,7 +38,7 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 
-public class MTLDrawImage extends DrawImage {
+public final class MTLDrawImage extends DrawImage {
 
     @Override
     protected void renderImageXform(SunGraphics2D sg, Image img,

@@ -32,6 +32,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
@@ -201,8 +202,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  // Default to max heap size.
-  _soft_max_size = _num_regions * reg_size_bytes;
+  _soft_max_size = SoftMaxHeapSize;
 
   _committed = _initial_size;
 
@@ -524,7 +524,7 @@ void ShenandoahHeap::initialize_mode() {
 }
 
 void ShenandoahHeap::initialize_heuristics() {
-  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
+  _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity());
   _global_generation->initialize_heuristics(mode());
 }
 
@@ -1452,27 +1452,23 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
-size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) {
+size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
-
-  oop humongous_obj = cast_to_oop(start->bottom());
-  size_t size = humongous_obj->size();
-  size_t required_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
-  size_t index = start->index() + required_regions - 1;
-
   assert(!start->has_live(), "liveness must be zero");
 
-  for(size_t i = 0; i < required_regions; i++) {
-    // Reclaim from tail. Otherwise, assertion fails when printing region to trace log,
-    // as it expects that every region belongs to a humongous region starting with a humongous start region.
-    ShenandoahHeapRegion* region = get_region(index --);
-
-    assert(region->is_humongous(), "expect correct humongous start or continuation");
+  // Do not try to get the size of this humongous object. STW collections will
+  // have already unloaded classes, so an unmarked object may have a bad klass pointer.
+  ShenandoahHeapRegion* region = start;
+  size_t index = region->index();
+  do {
+    assert(region->is_humongous(), "Expect correct humongous start or continuation");
     assert(!region->is_cset(), "Humongous region should not be in collection set");
-
     region->make_trash_immediate();
-  }
-  return required_regions;
+    region = get_region(++index);
+  } while (region != nullptr && region->is_humongous_continuation());
+
+  // Return number of regions trashed
+  return index - start->index();
 }
 
 class ShenandoahCheckCleanGCLABClosure : public ThreadClosure {
