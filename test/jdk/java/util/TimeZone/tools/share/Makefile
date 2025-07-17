@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@
 TZDATA = ../../../../../../../src/java.base/share/data/tzdata
 TZDATA_VER = `grep '^tzdata' $(TZDATA)/VERSION`
 TZNAME = africa antarctica asia australasia europe northamerica \
-	solar87 solar88 solar89 southamerica \
-	backward
+	southamerica backward
 TZFILES = $(addprefix $(TZDATA)/, $(TZNAME))
 ALIASLIST = aliases.txt
 DISPLAYNAMES = displaynames.txt

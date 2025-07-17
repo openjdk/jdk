@@ -49,6 +49,7 @@ private:
   // These oops are managed by SafepointOp
   oop                _continuation;  // jdk.internal.vm.Continuation instance
   stackChunkOop      _tail;
+  bool               _done;
 
   ContinuationWrapper(const ContinuationWrapper& cont); // no copy constructor
 
@@ -58,6 +59,7 @@ private:
 
   void disallow_safepoint() {
     #ifdef ASSERT
+      assert(!_done, "");
       assert(_continuation != nullptr, "");
       _current_thread = Thread::current();
       if (_current_thread->is_Java_thread()) {
@@ -69,17 +71,20 @@ private:
   void allow_safepoint() {
     #ifdef ASSERT
       // we could have already allowed safepoints in done
-      if (_continuation != nullptr && _current_thread->is_Java_thread()) {
+      if (!_done && _current_thread->is_Java_thread()) {
         JavaThread::cast(_current_thread)->dec_no_safepoint_count();
       }
     #endif
   }
 
+  ContinuationWrapper(JavaThread* thread, ContinuationEntry* entry, oop continuation);
+
 public:
   void done() {
     allow_safepoint(); // must be done first
-    _continuation = nullptr;
-    _tail = (stackChunkOop)badOop;
+    _done = true;
+    *reinterpret_cast<intptr_t*>(&_continuation) = badHeapOopVal;
+    *reinterpret_cast<intptr_t*>(&_tail) = badHeapOopVal;
   }
 
   class SafepointOp : public StackObj {
@@ -92,10 +97,8 @@ public:
     }
     inline ~SafepointOp() { // reload oops
       _cont._continuation = _conth();
-      if (_cont._tail != nullptr) {
-        _cont._tail = jdk_internal_vm_Continuation::tail(_cont._continuation);
-       }
-       _cont.disallow_safepoint();
+      _cont._tail = jdk_internal_vm_Continuation::tail(_cont._continuation);
+      _cont.disallow_safepoint();
     }
   };
 
@@ -111,9 +114,7 @@ public:
   stackChunkOop tail() const         { return _tail; }
   void set_tail(stackChunkOop chunk) { _tail = chunk; }
 
-  inline oop parent();
   inline bool is_preempted();
-  inline void set_preempted(bool value);
   inline void read();
   inline void write();
 
@@ -125,6 +126,11 @@ public:
   intptr_t* entryFP() const { return _entry->entry_fp(); }
   address   entryPC() const { return _entry->entry_pc(); }
   int argsize()       const { assert(_entry->argsize() >= 0, ""); return _entry->argsize(); }
+  int entry_frame_extension() const {
+    // the entry frame is extended if the bottom frame has stack arguments
+    assert(_entry->argsize() >= 0, "");
+    return _entry->argsize() == 0 ? _entry->argsize() : _entry->argsize() + frame::metadata_words_at_top;
+  }
   void set_argsize(int value) { _entry->set_argsize(value); }
 
   bool is_empty() const { return last_nonempty_chunk() == nullptr; }
@@ -139,36 +145,22 @@ public:
 #endif
 };
 
-inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continuation)
-  : _thread(thread), _entry(thread->last_continuation()), _continuation(continuation)
-  {
+inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, ContinuationEntry* entry, oop continuation)
+  : _thread(thread), _entry(entry), _continuation(continuation), _done(false) {
   assert(oopDesc::is_oop(_continuation),
          "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
-  assert(_continuation == _entry->cont_oop(), "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: "
-         INTPTR_FORMAT, p2i((oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop()), p2i(entrySP()));
   disallow_safepoint();
   read();
 }
+
+inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continuation)
+  : ContinuationWrapper(thread, thread->last_continuation(), continuation) {}
 
 inline ContinuationWrapper::ContinuationWrapper(oop continuation)
-  : _thread(nullptr), _entry(nullptr), _continuation(continuation)
-  {
-  assert(oopDesc::is_oop(_continuation),
-         "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
-  disallow_safepoint();
-  read();
-}
-
-inline oop ContinuationWrapper::parent() {
-  return jdk_internal_vm_Continuation::parent(_continuation);
-}
+  : ContinuationWrapper(nullptr, nullptr, continuation) {}
 
 inline bool ContinuationWrapper::is_preempted() {
   return jdk_internal_vm_Continuation::is_preempted(_continuation);
-}
-
-inline void ContinuationWrapper::set_preempted(bool value) {
-  jdk_internal_vm_Continuation::set_preempted(_continuation, value);
 }
 
 inline void ContinuationWrapper::read() {

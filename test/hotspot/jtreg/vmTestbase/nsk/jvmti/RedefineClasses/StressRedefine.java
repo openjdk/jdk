@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-//package nsk.jvmti.RedefineClasses.StressRedefine;
 package nsk.jvmti.RedefineClasses;
 
 
@@ -41,7 +40,7 @@ import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.Tests;
 
-import vm.share.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 /**
  * There is a data structure named "dictionary" in class BlockFreelist. It stores
@@ -199,22 +198,11 @@ public class StressRedefine extends GCTestBase {
     }
 
     private static ThreadFactory virtualThreadFactory() {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            java.lang.reflect.Method factory = clazz.getMethod("factory");
-            return (ThreadFactory) factory.invoke(builder);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Thread.ofVirtual().factory();
     }
 
     private static byte[] generateAndCompile() {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
-        sources.put(GenerateSourceHelper.CLASS_NAME, GenerateSourceHelper.generateSource());
-        return InMemoryJavaCompiler.compile(sources).values().iterator().next();
+        return InMemoryJavaCompiler.compile(GenerateSourceHelper.CLASS_NAME, GenerateSourceHelper.generateSource());
     }
 
     // Auxiliary classloader. Used only once at the beginning.

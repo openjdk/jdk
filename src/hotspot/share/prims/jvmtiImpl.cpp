@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/nmethod.hpp"
@@ -41,6 +40,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -89,134 +89,28 @@ JvmtiAgentThread::call_start_function() {
     _start_fn(_env->jvmti_external(), jni_environment(), (void*)_start_arg);
 }
 
-
-//
-// class GrowableCache - private methods
-//
-
-void GrowableCache::recache() {
-  int len = _elements->length();
-
-  FREE_C_HEAP_ARRAY(address, _cache);
-  _cache = NEW_C_HEAP_ARRAY(address,len+1, mtInternal);
-
-  for (int i=0; i<len; i++) {
-    _cache[i] = _elements->at(i)->getCacheValue();
-    //
-    // The cache entry has gone bad. Without a valid frame pointer
-    // value, the entry is useless so we simply delete it in product
-    // mode. The call to remove() will rebuild the cache again
-    // without the bad entry.
-    //
-    if (_cache[i] == NULL) {
-      assert(false, "cannot recache NULL elements");
-      remove(i);
-      return;
-    }
-  }
-  _cache[len] = NULL;
-
-  _listener_fun(_this_obj,_cache);
-}
-
-bool GrowableCache::equals(void* v, GrowableElement *e2) {
-  GrowableElement *e1 = (GrowableElement *) v;
-  assert(e1 != NULL, "e1 != NULL");
-  assert(e2 != NULL, "e2 != NULL");
-
-  return e1->equals(e2);
-}
-
-//
-// class GrowableCache - public methods
-//
-
-GrowableCache::GrowableCache() {
-  _this_obj       = NULL;
-  _listener_fun   = NULL;
-  _elements       = NULL;
-  _cache          = NULL;
-}
-
-GrowableCache::~GrowableCache() {
-  clear();
-  delete _elements;
-  FREE_C_HEAP_ARRAY(address, _cache);
-}
-
-void GrowableCache::initialize(void *this_obj, void listener_fun(void *, address*) ) {
-  _this_obj       = this_obj;
-  _listener_fun   = listener_fun;
-  _elements       = new (mtServiceability) GrowableArray<GrowableElement*>(5, mtServiceability);
-  recache();
-}
-
-// number of elements in the collection
-int GrowableCache::length() {
-  return _elements->length();
-}
-
-// get the value of the index element in the collection
-GrowableElement* GrowableCache::at(int index) {
-  GrowableElement *e = (GrowableElement *) _elements->at(index);
-  assert(e != NULL, "e != NULL");
-  return e;
-}
-
-int GrowableCache::find(GrowableElement* e) {
-  return _elements->find(e, GrowableCache::equals);
-}
-
-// append a copy of the element to the end of the collection
-void GrowableCache::append(GrowableElement* e) {
-  GrowableElement *new_e = e->clone();
-  _elements->append(new_e);
-  recache();
-}
-
-// remove the element at index
-void GrowableCache::remove (int index) {
-  GrowableElement *e = _elements->at(index);
-  assert(e != NULL, "e != NULL");
-  _elements->remove(e);
-  delete e;
-  recache();
-}
-
-// clear out all elements, release all heap space and
-// let our listener know that things have changed.
-void GrowableCache::clear() {
-  int len = _elements->length();
-  for (int i=0; i<len; i++) {
-    delete _elements->at(i);
-  }
-  _elements->clear();
-  recache();
-}
-
 //
 // class JvmtiBreakpoint
 //
 
 JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
     : _method(m_method), _bci((int)location) {
-  assert(_method != NULL, "No method for breakpoint.");
+  assert(_method != nullptr, "No method for breakpoint.");
   assert(_bci >= 0, "Negative bci for breakpoint.");
-  oop class_holder_oop  = _method->method_holder()->klass_holder();
+  oop class_holder_oop = _method->method_holder()->klass_holder();
   _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), class_holder_oop);
+}
+
+JvmtiBreakpoint::JvmtiBreakpoint(const JvmtiBreakpoint& bp)
+    : _method(bp._method), _bci(bp._bci) {
+  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), bp._class_holder.resolve());
 }
 
 JvmtiBreakpoint::~JvmtiBreakpoint() {
   _class_holder.release(JvmtiExport::jvmti_oop_storage());
 }
 
-void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
-  _method   = bp._method;
-  _bci      = bp._bci;
-  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), bp._class_holder.resolve());
-}
-
-bool JvmtiBreakpoint::equals(JvmtiBreakpoint& bp) {
+bool JvmtiBreakpoint::equals(const JvmtiBreakpoint& bp) const {
   return _method   == bp._method
     &&   _bci      == bp._bci;
 }
@@ -226,6 +120,7 @@ address JvmtiBreakpoint::getBcp() const {
 }
 
 void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
+  assert(!_method->is_old(), "the breakpoint method shouldn't be old");
   ((Method*)_method->*meth_act)(_bci);
 
   // add/remove breakpoint to/from versions of the method that are EMCP.
@@ -236,7 +131,7 @@ void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
 
   // search previous versions if they exist
   for (InstanceKlass* pv_node = ik->previous_versions();
-       pv_node != NULL;
+       pv_node != nullptr;
        pv_node = pv_node->previous_versions()) {
     Array<Method*>* methods = pv_node->methods();
 
@@ -277,8 +172,8 @@ void JvmtiBreakpoint::clear() {
 void JvmtiBreakpoint::print_on(outputStream* out) const {
 #ifndef PRODUCT
   ResourceMark rm;
-  const char *class_name  = (_method == NULL) ? "NULL" : _method->klass_name()->as_C_string();
-  const char *method_name = (_method == NULL) ? "NULL" : _method->name()->as_C_string();
+  const char *class_name  = (_method == nullptr) ? "null" : _method->klass_name()->as_C_string();
+  const char *method_name = (_method == nullptr) ? "null" : _method->name()->as_C_string();
   out->print("Breakpoint(%s,%s,%d,%p)", class_name, method_name, _bci, getBcp());
 #endif
 }
@@ -289,8 +184,16 @@ void JvmtiBreakpoint::print_on(outputStream* out) const {
 //
 // Modify the Breakpoints data structure at a safepoint
 //
+// The caller of VM_ChangeBreakpoints operation should ensure that
+// _bp.method is preserved until VM_ChangeBreakpoints is processed.
 
 void VM_ChangeBreakpoints::doit() {
+  if (_bp->method()->is_old()) {
+    // The bp->_method became old because VMOp with class redefinition happened for this class
+    // after JvmtiBreakpoint was created but before JVM_ChangeBreakpoints started.
+    // All class breakpoints are cleared during redefinition, so don't set/clear this breakpoint.
+   return;
+  }
   switch (_operation) {
   case SET_BREAKPOINT:
     _breakpoints->set_at_safepoint(*_bp);
@@ -309,8 +212,8 @@ void VM_ChangeBreakpoints::doit() {
 // a JVMTI internal collection of JvmtiBreakpoint
 //
 
-JvmtiBreakpoints::JvmtiBreakpoints(void listener_fun(void *,address *)) {
-  _bps.initialize(this,listener_fun);
+JvmtiBreakpoints::JvmtiBreakpoints()
+    : _elements(5, mtServiceability) {
 }
 
 JvmtiBreakpoints:: ~JvmtiBreakpoints() {}
@@ -320,9 +223,9 @@ void JvmtiBreakpoints::print() {
   LogTarget(Trace, jvmti) log;
   LogStream log_stream(log);
 
-  int n = _bps.length();
-  for (int i=0; i<n; i++) {
-    JvmtiBreakpoint& bp = _bps.at(i);
+  int n = length();
+  for (int i = 0; i < n; i++) {
+    JvmtiBreakpoint& bp = at(i);
     log_stream.print("%d: ", i);
     bp.print_on(&log_stream);
     log_stream.cr();
@@ -334,9 +237,9 @@ void JvmtiBreakpoints::print() {
 void JvmtiBreakpoints::set_at_safepoint(JvmtiBreakpoint& bp) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  int i = _bps.find(bp);
+  int i = find(bp);
   if (i == -1) {
-    _bps.append(bp);
+    append(bp);
     bp.set();
   }
 }
@@ -344,56 +247,46 @@ void JvmtiBreakpoints::set_at_safepoint(JvmtiBreakpoint& bp) {
 void JvmtiBreakpoints::clear_at_safepoint(JvmtiBreakpoint& bp) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  int i = _bps.find(bp);
+  int i = find(bp);
   if (i != -1) {
-    _bps.remove(i);
+    remove(i);
     bp.clear();
   }
 }
 
-int JvmtiBreakpoints::length() { return _bps.length(); }
-
 int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
-  if ( _bps.find(bp) != -1) {
-     return JVMTI_ERROR_DUPLICATE;
+  if (find(bp) != -1) {
+    return JVMTI_ERROR_DUPLICATE;
   }
+
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
+  methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
   return JVMTI_ERROR_NONE;
 }
 
 int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
-  if ( _bps.find(bp) == -1) {
-     return JVMTI_ERROR_NOT_FOUND;
+  if (find(bp) == -1) {
+    return JVMTI_ERROR_NOT_FOUND;
   }
 
+  // Ensure that bp._method is not deallocated before VM_ChangeBreakpoints::doit().
+  methodHandle mh(Thread::current(), bp.method());
   VM_ChangeBreakpoints clear_breakpoint(VM_ChangeBreakpoints::CLEAR_BREAKPOINT, &bp);
   VMThread::execute(&clear_breakpoint);
   return JVMTI_ERROR_NONE;
 }
 
 void JvmtiBreakpoints::clearall_in_class_at_safepoint(Klass* klass) {
-  bool changed = true;
-  // We are going to run thru the list of bkpts
-  // and delete some.  This deletion probably alters
-  // the list in some implementation defined way such
-  // that when we delete entry i, the next entry might
-  // no longer be at i+1.  To be safe, each time we delete
-  // an entry, we'll just start again from the beginning.
-  // We'll stop when we make a pass thru the whole list without
-  // deleting anything.
-  while (changed) {
-    int len = _bps.length();
-    changed = false;
-    for (int i = 0; i < len; i++) {
-      JvmtiBreakpoint& bp = _bps.at(i);
-      if (bp.method()->method_holder() == klass) {
-        bp.clear();
-        _bps.remove(i);
-        // This changed 'i' so we have to start over.
-        changed = true;
-        break;
-      }
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+
+  // Go backwards because this removes entries that are freed.
+  for (int i = length() - 1; i >= 0; i--) {
+    JvmtiBreakpoint& bp = at(i);
+    if (bp.method()->method_holder() == klass) {
+      bp.clear();
+      remove(i);
     }
   }
 }
@@ -402,26 +295,19 @@ void JvmtiBreakpoints::clearall_in_class_at_safepoint(Klass* klass) {
 // class JvmtiCurrentBreakpoints
 //
 
-JvmtiBreakpoints *JvmtiCurrentBreakpoints::_jvmti_breakpoints  = NULL;
-address *         JvmtiCurrentBreakpoints::_breakpoint_list    = NULL;
-
+JvmtiBreakpoints *JvmtiCurrentBreakpoints::_jvmti_breakpoints  = nullptr;
 
 JvmtiBreakpoints& JvmtiCurrentBreakpoints::get_jvmti_breakpoints() {
-  if (_jvmti_breakpoints != NULL) return (*_jvmti_breakpoints);
-  _jvmti_breakpoints = new JvmtiBreakpoints(listener_fun);
-  assert(_jvmti_breakpoints != NULL, "_jvmti_breakpoints != NULL");
+  if (_jvmti_breakpoints == nullptr) {
+    JvmtiBreakpoints* breakpoints = new JvmtiBreakpoints();
+    if (!Atomic::replace_if_null(&_jvmti_breakpoints, breakpoints)) {
+      // already created concurently
+      delete breakpoints;
+    }
+  }
   return (*_jvmti_breakpoints);
 }
 
-void  JvmtiCurrentBreakpoints::listener_fun(void *this_obj, address *cache) {
-  JvmtiBreakpoints *this_jvmti = (JvmtiBreakpoints *) this_obj;
-  assert(this_jvmti != NULL, "this_jvmti != NULL");
-
-  debug_only(int n = this_jvmti->length(););
-  assert(cache[n] == NULL, "cache must be NULL terminated");
-
-  set_breakpoint_list(cache);
-}
 
 ///////////////////////////////////////////////////////////////
 //
@@ -438,7 +324,7 @@ VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint dept
   , _index(index)
   , _type(type)
   , _value(value)
-  , _jvf(NULL)
+  , _jvf(nullptr)
   , _set(set)
   , _self(self)
   , _result(JVMTI_ERROR_NONE)
@@ -451,9 +337,9 @@ VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint dept
 // This may cause unexpected consequences like CFLH or class-init JVMTI events.
 // It is better to avoid such a behavior.
 bool VM_BaseGetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* thread) {
-  assert(ty_sign != NULL, "type signature must not be NULL");
-  assert(thread != NULL, "thread must not be NULL");
-  assert(klass != NULL, "klass must not be NULL");
+  assert(ty_sign != nullptr, "type signature must not be null");
+  assert(thread != nullptr, "thread must not be null");
+  assert(klass != nullptr, "klass must not be null");
 
   int len = (int) strlen(ty_sign);
   if (ty_sign[0] == JVM_SIGNATURE_CLASS &&
@@ -545,7 +431,7 @@ bool VM_BaseGetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   }
 
   jobject jobj = _value.l;
-  if (_set && slot_type == T_OBJECT && jobj != NULL) { // NULL reference is allowed
+  if (_set && slot_type == T_OBJECT && jobj != nullptr) { // null reference is allowed
     // Check that the jobject class matches the return type signature.
     oop obj = JNIHandles::resolve_external_guard(jobj);
     NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
@@ -606,7 +492,7 @@ bool VM_GetOrSetLocal::doit_prologue() {
 
 void VM_BaseGetOrSetLocal::doit() {
   _jvf = get_java_vframe();
-  if (_jvf == NULL) {
+  if (_jvf == nullptr) {
     return;
   };
 
@@ -745,15 +631,15 @@ bool VM_BaseGetOrSetLocal::allow_nested_vm_operations() const {
 
 // Constructor for non-object getter
 VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, bool self)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false, self),
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, _DEFAULT_VALUE, false, self),
     _thread(thread),
-    _eb(false, NULL, NULL)
+    _eb(false, nullptr, nullptr)
 {
 }
 
 // Constructor for object or non-object setter
 VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value, bool self)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true, self),
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, value, true, self),
     _thread(thread),
     _eb(type == T_OBJECT, JavaThread::current(), thread)
 {
@@ -769,7 +655,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_threa
 
 vframe *VM_GetOrSetLocal::get_vframe() {
   if (!_thread->has_last_Java_frame()) {
-    return NULL;
+    return nullptr;
   }
   RegisterMap reg_map(_thread,
                       RegisterMap::UpdateMap::include,
@@ -777,7 +663,7 @@ vframe *VM_GetOrSetLocal::get_vframe() {
                       RegisterMap::WalkContinuation::include);
   vframe *vf = JvmtiEnvBase::get_cthread_last_java_vframe(_thread, &reg_map);
   int d = 0;
-  while ((vf != NULL) && (d < _depth)) {
+  while ((vf != nullptr) && (d < _depth)) {
     vf = vf->java_sender();
     d++;
   }
@@ -786,19 +672,19 @@ vframe *VM_GetOrSetLocal::get_vframe() {
 
 javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
   vframe* vf = get_vframe();
-  if (!(_self || _thread->is_carrier_thread_suspended())) {
+  if (!_self && !_thread->is_suspended() && !_thread->is_carrier_thread_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    return NULL;
+    return nullptr;
   }
-  if (vf == NULL) {
+  if (vf == nullptr) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
-    return NULL;
+    return nullptr;
   }
   javaVFrame *jvf = (javaVFrame*)vf;
 
   if (!vf->is_java_frame()) {
     _result = JVMTI_ERROR_OPAQUE_FRAME;
-    return NULL;
+    return nullptr;
   }
   return jvf;
 }
@@ -816,7 +702,7 @@ VM_GetReceiver::VM_GetReceiver(
 // Constructor for non-object getter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
                                                              jint index, BasicType type, bool self)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false, self)
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, _DEFAULT_VALUE, false, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -825,7 +711,7 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 // Constructor for object or non-object setter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
                                                              jint index, BasicType type, jvalue value, bool self)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true, self)
+  : VM_BaseGetOrSetLocal(nullptr, depth, index, type, value, true, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -841,48 +727,29 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 }
 
 javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
-  Thread* cur_thread = Thread::current();
-  oop cont = java_lang_VirtualThread::continuation(_vthread_h());
-  assert(cont != NULL, "vthread contintuation must not be NULL");
-
-  javaVFrame* jvf = NULL;
   JavaThread* java_thread = JvmtiEnvBase::get_JavaThread_or_null(_vthread_h());
-  bool is_cont_mounted = (java_thread != NULL);
+  bool is_cont_mounted = (java_thread != nullptr);
 
   if (!(_self || JvmtiVTSuspender::is_vthread_suspended(_vthread_h()))) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    return NULL;
+    return nullptr;
   }
+  javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
 
-  if (is_cont_mounted) {
-    vframeStream vfs(java_thread);
-
-    if (!vfs.at_end()) {
-      jvf = vfs.asJavaVFrame();
-      jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
-    }
-  } else {
-    vframeStream vfs(cont);
-
-    if (!vfs.at_end()) {
-      jvf = vfs.asJavaVFrame();
-      jvf = JvmtiEnvBase::check_and_skip_hidden_frames(_vthread_h(), jvf);
-    }
-  }
   int d = 0;
-  while ((jvf != NULL) && (d < _depth)) {
+  while ((jvf != nullptr) && (d < _depth)) {
     jvf = jvf->java_sender();
     d++;
   }
 
-  if (d < _depth || jvf == NULL) {
+  if (d < _depth || jvf == nullptr) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
-    return NULL;
+    return nullptr;
   }
 
   if ((_set && !is_cont_mounted) || !jvf->is_java_frame()) {
     _result = JVMTI_ERROR_OPAQUE_FRAME;
-    return NULL;
+    return nullptr;
   }
   return jvf;
 }
@@ -891,40 +758,6 @@ VM_VirtualThreadGetReceiver::VM_VirtualThreadGetReceiver(
     JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth, bool self)
     : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0, self) {}
 
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-// class JvmtiSuspendControl - see comments in jvmtiImpl.hpp
-//
-
-bool JvmtiSuspendControl::suspend(JavaThread *java_thread) {
-  return java_thread->java_suspend();
-}
-
-bool JvmtiSuspendControl::resume(JavaThread *java_thread) {
-  return java_thread->java_resume();
-}
-
-void JvmtiSuspendControl::print() {
-#ifndef PRODUCT
-  ResourceMark rm;
-  LogStreamHandle(Trace, jvmti) log_stream;
-  log_stream.print("Suspended Threads: [");
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-#ifdef JVMTI_TRACE
-    const char *name   = JvmtiTrace::safe_get_thread_name(thread);
-#else
-    const char *name   = "";
-#endif /*JVMTI_TRACE */
-    log_stream.print("%s(%c ", name, thread->is_suspended() ? 'S' : '_');
-    if (!thread->has_last_Java_frame()) {
-      log_stream.print("no stack");
-    }
-    log_stream.print(") ");
-  }
-  log_stream.print_cr("]");
-#endif
-}
 
 JvmtiDeferredEvent JvmtiDeferredEvent::compiled_method_load_event(
     nmethod* nm) {
@@ -982,11 +815,11 @@ void JvmtiDeferredEvent::post() {
     case TYPE_DYNAMIC_CODE_GENERATED: {
       JvmtiExport::post_dynamic_code_generated_internal(
         // if strdup failed give the event a default name
-        (_event_data.dynamic_code_generated.name == NULL)
+        (_event_data.dynamic_code_generated.name == nullptr)
           ? "unknown_code" : _event_data.dynamic_code_generated.name,
         _event_data.dynamic_code_generated.code_begin,
         _event_data.dynamic_code_generated.code_end);
-      if (_event_data.dynamic_code_generated.name != NULL) {
+      if (_event_data.dynamic_code_generated.name != nullptr) {
         // release our copy
         os::free((void *)_event_data.dynamic_code_generated.name);
       }
@@ -995,9 +828,9 @@ void JvmtiDeferredEvent::post() {
     case TYPE_CLASS_UNLOAD: {
       JvmtiExport::post_class_unload_internal(
         // if strdup failed give the event a default name
-        (_event_data.class_unload.name == NULL)
+        (_event_data.class_unload.name == nullptr)
           ? "unknown_class" : _event_data.class_unload.name);
-      if (_event_data.class_unload.name != NULL) {
+      if (_event_data.class_unload.name != nullptr) {
         // release our copy
         os::free((void *)_event_data.class_unload.name);
       }
@@ -1022,17 +855,17 @@ void JvmtiDeferredEvent::run_nmethod_entry_barriers() {
 
 
 // Keep the nmethod for compiled_method_load from being unloaded.
-void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
-    cf->do_code_blob(_event_data.compiled_method_load);
+void JvmtiDeferredEvent::oops_do(OopClosure* f, NMethodClosure* cf) {
+  if (cf != nullptr && _type == TYPE_COMPILED_METHOD_LOAD) {
+    cf->do_nmethod(_event_data.compiled_method_load);
   }
 }
 
 // The GC calls this and marks the nmethods here on the stack so that
 // they cannot be unloaded while in the queue.
-void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
-  if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
-    cf->do_code_blob(_event_data.compiled_method_load);
+void JvmtiDeferredEvent::nmethods_do(NMethodClosure* cf) {
+  if (cf != nullptr && _type == TYPE_COMPILED_METHOD_LOAD) {
+    cf->do_nmethod(_event_data.compiled_method_load);
   }
 }
 
@@ -1045,39 +878,39 @@ bool JvmtiDeferredEventQueue::has_events() {
   // The events on the queue should all be posted after the live phase so this is an
   // ok check.  Before the live phase, DynamicCodeGenerated events are posted directly.
   // If we add other types of events to the deferred queue, this could get ugly.
-  return JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE  && _queue_head != NULL;
+  return JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE  && _queue_head != nullptr;
 }
 
 void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
   // Events get added to the end of the queue (and are pulled off the front).
   QueueNode* node = new QueueNode(event);
-  if (_queue_tail == NULL) {
+  if (_queue_tail == nullptr) {
     _queue_tail = _queue_head = node;
   } else {
-    assert(_queue_tail->next() == NULL, "Must be the last element in the list");
+    assert(_queue_tail->next() == nullptr, "Must be the last element in the list");
     _queue_tail->set_next(node);
     _queue_tail = node;
   }
 
-  assert((_queue_head == NULL) == (_queue_tail == NULL),
+  assert((_queue_head == nullptr) == (_queue_tail == nullptr),
          "Inconsistent queue markers");
 }
 
 JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
-  assert(_queue_head != NULL, "Nothing to dequeue");
+  assert(_queue_head != nullptr, "Nothing to dequeue");
 
-  if (_queue_head == NULL) {
+  if (_queue_head == nullptr) {
     // Just in case this happens in product; it shouldn't but let's not crash
     return JvmtiDeferredEvent();
   }
 
   QueueNode* node = _queue_head;
   _queue_head = _queue_head->next();
-  if (_queue_head == NULL) {
-    _queue_tail = NULL;
+  if (_queue_head == nullptr) {
+    _queue_tail = nullptr;
   }
 
-  assert((_queue_head == NULL) == (_queue_tail == NULL),
+  assert((_queue_head == nullptr) == (_queue_tail == nullptr),
          "Inconsistent queue markers");
 
   JvmtiDeferredEvent event = node->event();
@@ -1087,27 +920,27 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
 
 void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
   // Post events while nmethods are still in the queue and can't be unloaded.
-  while (_queue_head != NULL) {
+  while (_queue_head != nullptr) {
     _queue_head->event().post_compiled_method_load_event(env);
     dequeue();
   }
 }
 
 void JvmtiDeferredEventQueue::run_nmethod_entry_barriers() {
-  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+  for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().run_nmethod_entry_barriers();
   }
 }
 
 
-void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+void JvmtiDeferredEventQueue::oops_do(OopClosure* f, NMethodClosure* cf) {
+  for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().oops_do(f, cf);
   }
 }
 
-void JvmtiDeferredEventQueue::nmethods_do(CodeBlobClosure* cf) {
-  for(QueueNode* node = _queue_head; node != NULL; node = node->next()) {
+void JvmtiDeferredEventQueue::nmethods_do(NMethodClosure* cf) {
+  for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().nmethods_do(cf);
   }
 }

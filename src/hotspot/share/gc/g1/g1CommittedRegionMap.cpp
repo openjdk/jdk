@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
@@ -30,7 +29,7 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
-HeapRegionRange::HeapRegionRange(uint start, uint end) :
+G1HeapRegionRange::G1HeapRegionRange(uint start, uint end) :
     _start(start),
     _end(end) {
   assert(start <= end, "Invariant");
@@ -97,50 +96,50 @@ void G1CommittedRegionMap::uncommit(uint start, uint end) {
   inactive_clear_range(start, end);
 }
 
-HeapRegionRange G1CommittedRegionMap::next_active_range(uint offset) const {
+G1HeapRegionRange G1CommittedRegionMap::next_active_range(uint offset) const {
   // Find first active index from offset.
-  uint start = (uint) _active.get_next_one_offset(offset);
+  uint start = (uint) _active.find_first_set_bit(offset);
   if (start == max_length()) {
     // Early out when no active regions are found.
-    return HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_length(), max_length());
   }
 
-  uint end = (uint) _active.get_next_zero_offset(start);
+  uint end = (uint) _active.find_first_clear_bit(start);
   verify_active_range(start, end);
 
-  return HeapRegionRange(start, end);
+  return G1HeapRegionRange(start, end);
 }
 
-HeapRegionRange G1CommittedRegionMap::next_committable_range(uint offset) const {
+G1HeapRegionRange G1CommittedRegionMap::next_committable_range(uint offset) const {
   // We should only call this function when there are no inactive regions.
   verify_no_inactive_regons();
 
   // Find first free region from offset.
-  uint start = (uint) _active.get_next_zero_offset(offset);
+  uint start = (uint) _active.find_first_clear_bit(offset);
   if (start == max_length()) {
     // Early out when no free regions are found.
-    return HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_length(), max_length());
   }
 
-  uint end = (uint) _active.get_next_one_offset(start);
+  uint end = (uint) _active.find_first_set_bit(start);
   verify_free_range(start, end);
 
-  return HeapRegionRange(start, end);
+  return G1HeapRegionRange(start, end);
 }
 
-HeapRegionRange G1CommittedRegionMap::next_inactive_range(uint offset) const {
+G1HeapRegionRange G1CommittedRegionMap::next_inactive_range(uint offset) const {
   // Find first inactive region from offset.
-  uint start = (uint) _inactive.get_next_one_offset(offset);
+  uint start = (uint) _inactive.find_first_set_bit(offset);
 
   if (start == max_length()) {
     // Early when no inactive regions are found.
-    return HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_length(), max_length());
   }
 
-  uint end = (uint) _inactive.get_next_zero_offset(start);
+  uint end = (uint) _inactive.find_first_clear_bit(start);
   verify_inactive_range(start, end);
 
-  return HeapRegionRange(start, end);
+  return G1HeapRegionRange(start, end);
 }
 
 void G1CommittedRegionMap::active_set_range(uint start, uint end) {
@@ -232,8 +231,8 @@ void G1CommittedRegionMap::verify_free_range(uint start, uint end) const {
 }
 
 void G1CommittedRegionMap::verify_no_inactive_regons() const {
-  BitMap::idx_t first_inactive = _inactive.get_next_one_offset(0);
-  assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: " SIZE_FORMAT, first_inactive);
+  BitMap::idx_t first_inactive = _inactive.find_first_set_bit(0);
+  assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: %zu", first_inactive);
 }
 
 void G1CommittedRegionMap::verify_active_count(uint start, uint end, uint expected) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethodType.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"
@@ -39,10 +38,10 @@
 // ------------------------------------------------------------------
 // ciSignature::ciSignature
 ciSignature::ciSignature(ciKlass* accessing_klass, const constantPoolHandle& cpool, ciSymbol* symbol)
-  : _symbol(symbol), _accessing_klass(accessing_klass), _types(CURRENT_ENV->arena(), 8, 0, NULL) {
+  : _symbol(symbol), _accessing_klass(accessing_klass), _types(CURRENT_ENV->arena(), 8, 0, nullptr) {
   ASSERT_IN_VM;
   EXCEPTION_CONTEXT;
-  assert(accessing_klass != NULL, "need origin of access");
+  assert(accessing_klass != nullptr, "need origin of access");
 
   ciEnv* env = CURRENT_ENV;
 
@@ -50,7 +49,7 @@ ciSignature::ciSignature(ciKlass* accessing_klass, const constantPoolHandle& cpo
   ResourceMark rm(THREAD);
   for (SignatureStream ss(symbol->get_symbol()); !ss.is_done(); ss.next()) {
     // Process one element of the signature
-    ciType* type = NULL;
+    ciType* type = nullptr;
     if (ss.is_reference()) {
       ciSymbol* klass_name = env->get_symbol(ss.as_symbol());
       type = env->get_klass_by_name_impl(_accessing_klass, cpool, klass_name, false);

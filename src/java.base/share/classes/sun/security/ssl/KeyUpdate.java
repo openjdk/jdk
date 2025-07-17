@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,9 @@ final class KeyUpdate {
         public byte[] produce(ConnectionContext context) throws IOException {
             PostHandshakeContext hc = (PostHandshakeContext)context;
             return handshakeProducer.produce(context,
-                    new KeyUpdateMessage(hc, KeyUpdateRequest.REQUESTED));
+                    new KeyUpdateMessage(hc, hc.conContext.isInboundClosed() ?
+                            KeyUpdateRequest.NOTREQUESTED :
+                            KeyUpdateRequest.REQUESTED));
         }
     }
 
@@ -212,11 +214,11 @@ final class KeyUpdate {
                         Alert.INTERNAL_ERROR, "no key derivation");
             }
 
-            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1", null);
+            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1");
             SSLKeyDerivation kd = kdg.createKeyDerivation(hc, nplus1);
-            SecretKey key = kd.deriveKey("TlsKey", null);
-            IvParameterSpec ivSpec = new IvParameterSpec(
-                    kd.deriveKey("TlsIv", null).getEncoded());
+            SecretKey key = kd.deriveKey("TlsKey");
+            IvParameterSpec ivSpec =
+                    new IvParameterSpec(kd.deriveData("TlsIv"));
             try {
                 SSLReadCipher rc =
                     hc.negotiatedCipherSuite.bulkCipher.createReadCipher(
@@ -291,11 +293,11 @@ final class KeyUpdate {
                         Alert.INTERNAL_ERROR, "no key derivation");
             }
 
-            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1", null);
+            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1");
             SSLKeyDerivation kd = kdg.createKeyDerivation(hc, nplus1);
-            SecretKey key = kd.deriveKey("TlsKey", null);
-            IvParameterSpec ivSpec = new IvParameterSpec(
-                    kd.deriveKey("TlsIv", null).getEncoded());
+            SecretKey key = kd.deriveKey("TlsKey");
+            IvParameterSpec ivSpec =
+                     new IvParameterSpec(kd.deriveData("TlsIv"));
 
             SSLWriteCipher wc;
             try {

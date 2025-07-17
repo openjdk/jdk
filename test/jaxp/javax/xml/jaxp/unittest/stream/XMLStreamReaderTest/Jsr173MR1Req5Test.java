@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,14 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.Jsr173MR1Req5Test
  * @run testng/othervm stream.XMLStreamReaderTest.Jsr173MR1Req5Test
  * @summary Test XMLStreamReader parses namespace declaration within element when NamespaceAware turns off and on.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Jsr173MR1Req5Test {
 
     private static final String INPUT_FILE1 = "Jsr173MR1Req5.xml";

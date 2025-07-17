@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
 #include "unittest.hpp"
 
 // convenience log. switch on if debugging tests. Don't use tty, plain stdio only.
-#define LOG(...) { printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
-//#define LOG(...)
+//#define LOG(...) { printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#define LOG(...)
 
 static size_t get_total_malloc_invocs() {
   return MallocMemorySummary::as_snapshot()->total_count();
@@ -66,7 +65,7 @@ static totals_t get_totals() {
   EXPECT_LE(t_real.s, t_expected.s + leeway_s);                               \
   EXPECT_GE(t_real.ovrh, t_expected.ovrh - (leeway_n * sizeof(MallocHeader)));   \
   EXPECT_LE(t_real.ovrh, t_expected.ovrh + (leeway_n * sizeof(MallocHeader)));   \
-  LOG("Deviation: n=" SSIZE_FORMAT ", s=" SSIZE_FORMAT ", ovrh=" SSIZE_FORMAT,   \
+  LOG("Deviation: n=%zd, s=%zd, ovrh=%zd",   \
       (ssize_t)t_real.n - (ssize_t)t_expected.n,                                 \
       (ssize_t)t_real.s - (ssize_t)t_expected.s,                                 \
       (ssize_t)t_real.ovrh - (ssize_t)t_expected.ovrh);                          \
@@ -81,7 +80,7 @@ TEST_VM(NMTNumbers, totals) {
 
   const totals_t t1 = get_totals();
 
-  LOG("t1: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t1.n, t1.s, t1.ovrh);
+  LOG("t1: %zu - %zu - %zu", t1.n, t1.s, t1.ovrh);
 
   static const int NUM_ALLOCS = 1024 * 16;
   static const int ALLOC_SIZE = 1024;
@@ -89,19 +88,19 @@ TEST_VM(NMTNumbers, totals) {
   void* p[NUM_ALLOCS];
   for (int i = 0; i < NUM_ALLOCS; i ++) {
     // spread over categories
-    int category = i % (mt_number_of_types - 1);
-    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MEMFLAGS)category);
+    int category = i % (mt_number_of_tags - 1);
+    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemTag)category);
   }
 
   const totals_t t2 = get_totals();
-  LOG("t2: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t2.n, t2.s, t2.ovrh);
+  LOG("t2: %zu - %zu - %zu", t2.n, t2.s, t2.ovrh);
 
   totals_t t2_expected;
   t2_expected.n = t1.n + NUM_ALLOCS;
   t2_expected.s = t1.s + ALLOC_SIZE * NUM_ALLOCS;
   t2_expected.ovrh = (t1.n + NUM_ALLOCS) * sizeof(MallocHeader);
 
-  LOG("t2 expected: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t2_expected.n, t2_expected.s, t2_expected.ovrh);
+  LOG("t2 expected: %zu - %zu - %zu", t2_expected.n, t2_expected.s, t2_expected.ovrh);
 
   compare_totals(t2, t2_expected);
 
@@ -110,7 +109,7 @@ TEST_VM(NMTNumbers, totals) {
   }
 
   const totals_t t3 = get_totals();
-  LOG("t3: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t3.n, t3.s, t3.ovrh);
+  LOG("t3: %zu - %zu - %zu", t3.n, t3.s, t3.ovrh);
 
   compare_totals(t3, t1);
 

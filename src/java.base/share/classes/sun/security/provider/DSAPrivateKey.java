@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,15 +68,11 @@ public final class DSAPrivateKey extends PKCS8Key
         this.x = x;
         algid = new AlgIdDSA(p, q, g);
 
-        try {
-            byte[] xbytes = x.toByteArray();
-            DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
-            key = val.toByteArray();
-            val.clear();
-            Arrays.fill(xbytes, (byte)0);
-        } catch (IOException e) {
-            throw new AssertionError("Should not happen", e);
-        }
+        byte[] xbytes = x.toByteArray();
+        DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
+        privKeyMaterial = val.toByteArray();
+        val.clear();
+        Arrays.fill(xbytes, (byte)0);
     }
 
     /**
@@ -85,7 +81,7 @@ public final class DSAPrivateKey extends PKCS8Key
     public DSAPrivateKey(byte[] encoded) throws InvalidKeyException {
         super(encoded);
         try {
-            DerInputStream in = new DerInputStream(key);
+            DerInputStream in = new DerInputStream(privKeyMaterial);
             x = in.getBigInteger();
         } catch (IOException e) {
             throw new InvalidKeyException(e.getMessage(), e);

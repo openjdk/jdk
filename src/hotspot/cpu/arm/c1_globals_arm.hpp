@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ define_pd_global(size_t, ProfiledCodeHeapSize,       14*M );
 define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M  );
 define_pd_global(bool, ProfileInterpreter,           false);
 define_pd_global(size_t, CodeCacheExpansionSize,     32*K );
-define_pd_global(uintx, CodeCacheMinBlockLength,     1);
+define_pd_global(size_t, CodeCacheMinBlockLength,    1);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t, MaxRAM,                   1ULL*G);
@@ -61,6 +61,5 @@ define_pd_global(bool, UseTypeProfile,               false);
 
 define_pd_global(bool, OptimizeSinglePrecision,      true);
 define_pd_global(bool, CSEArrayLength,               true);
-define_pd_global(bool, TwoOperandLIRForm,            false);
 
 #endif // CPU_ARM_C1_GLOBALS_ARM_HPP

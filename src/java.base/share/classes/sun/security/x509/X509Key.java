@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import sun.security.util.*;
  *
  * @author David Brownell
  */
-public class X509Key implements PublicKey {
+public class X509Key implements PublicKey, DerEncoder {
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
     @java.io.Serial
@@ -63,24 +63,6 @@ public class X509Key implements PublicKey {
 
     /* The algorithm information (name, parameters, etc). */
     protected AlgorithmId algid;
-
-    /**
-     * The key bytes, without the algorithm information.
-     * @deprecated Use the BitArray form which does not require keys to
-     * be byte aligned.
-     * @see sun.security.x509.X509Key#setKey(BitArray)
-     * @see sun.security.x509.X509Key#getKey()
-     */
-    @Deprecated
-    protected byte[] key = null;
-
-    /*
-     * The number of bits unused in the last byte of the key.
-     * Added to keep the byte[] key form consistent with the BitArray
-     * form. Can de deleted when byte[] key is deleted.
-     */
-    @Deprecated
-    private int unusedBits = 0;
 
     /* BitArray form of key */
     private transient BitArray bitStringKey = null;
@@ -100,8 +82,8 @@ public class X509Key implements PublicKey {
      * data is stored and transmitted losslessly, but no knowledge
      * about this particular algorithm is available.
      */
-    private X509Key(AlgorithmId algid, BitArray key)
-    throws InvalidKeyException {
+    @SuppressWarnings("this-escape")
+    public X509Key(AlgorithmId algid, BitArray key) {
         this.algid = algid;
         setKey(key);
         encode();
@@ -112,34 +94,13 @@ public class X509Key implements PublicKey {
      */
     protected void setKey(BitArray key) {
         this.bitStringKey = (BitArray)key.clone();
-
-        /*
-         * Do this to keep the byte array form consistent with
-         * this. Can delete when byte[] key is deleted.
-         */
-        this.key = key.toByteArray();
-        int remaining = key.length() % 8;
-        this.unusedBits =
-            ((remaining == 0) ? 0 : 8 - remaining);
     }
 
     /**
      * Gets the key. The key may or may not be byte aligned.
      * @return a BitArray containing the key.
      */
-    protected BitArray getKey() {
-        /*
-         * Do this for consistency in case a subclass
-         * modifies byte[] key directly. Remove when
-         * byte[] key is deleted.
-         * Note: the consistency checks fail when the subclass
-         * modifies a non byte-aligned key (into a byte-aligned key)
-         * using the deprecated byte[] key field.
-         */
-        this.bitStringKey = new BitArray(
-                          this.key.length * 8 - this.unusedBits,
-                          this.key);
-
+    public BitArray getKey() {
         return (BitArray)bitStringKey.clone();
     }
 
@@ -168,7 +129,7 @@ public class X509Key implements PublicKey {
         algorithm = AlgorithmId.parse(in.data.getDerValue());
         try {
             subjectKey = buildX509Key(algorithm,
-                                      in.data.getUnalignedBitString());
+                in.data.getUnalignedBitString());
 
         } catch (InvalidKeyException e) {
             throw new IOException("subject key, " + e.getMessage(), e);
@@ -190,11 +151,10 @@ public class X509Key implements PublicKey {
      * values using the X509Key member functions, such as <code>parse</code>
      * and <code>decode</code>.
      *
-     * @exception IOException on parsing errors.
      * @exception InvalidKeyException on invalid key encodings.
      */
-    protected void parseKeyBits() throws IOException, InvalidKeyException {
-        encode();
+    protected void parseKeyBits() throws InvalidKeyException {
+        getEncodedInternal();
     }
 
     /*
@@ -283,15 +243,13 @@ public class X509Key implements PublicKey {
     /**
      * Returns the algorithm ID to be used with this key.
      */
-    public AlgorithmId  getAlgorithmId() { return algid; }
+    public AlgorithmId getAlgorithmId() { return algid; }
 
     /**
      * Encode SubjectPublicKeyInfo sequence on the DER output stream.
-     *
-     * @exception IOException on encoding errors.
      */
-    public final void encode(DerOutputStream out) throws IOException
-    {
+    @Override
+    public final void encode(DerOutputStream out) {
         encode(out, this.algid, getKey());
     }
 
@@ -299,26 +257,15 @@ public class X509Key implements PublicKey {
      * Returns the DER-encoded form of the key as a byte array.
      */
     public byte[] getEncoded() {
-        try {
-            return getEncodedInternal().clone();
-        } catch (InvalidKeyException e) {
-            // XXX
-        }
-        return null;
+        return getEncodedInternal().clone();
     }
 
-    public byte[] getEncodedInternal() throws InvalidKeyException {
+    private byte[] getEncodedInternal() {
         byte[] encoded = encodedKey;
         if (encoded == null) {
-            try {
-                DerOutputStream out = new DerOutputStream();
-                encode(out);
-                encoded = out.toByteArray();
-            } catch (IOException e) {
-                throw new InvalidKeyException("IOException : " +
-                                               e.getMessage());
-            }
-            encodedKey = encoded;
+            DerOutputStream out = new DerOutputStream();
+            encode(out);
+            encodedKey = encoded = out.toByteArray();
         }
         return encoded;
     }
@@ -332,10 +279,8 @@ public class X509Key implements PublicKey {
 
     /**
      * Returns the DER-encoded form of the key as a byte array.
-     *
-     * @exception InvalidKeyException on encoding errors.
      */
-    public byte[] encode() throws InvalidKeyException {
+    public byte[] encode() {
         return getEncodedInternal().clone();
     }
 
@@ -347,12 +292,11 @@ public class X509Key implements PublicKey {
         HexDumpEncoder  encoder = new HexDumpEncoder();
 
         return "algorithm = " + algid.toString()
-            + ", unparsed keybits = \n" + encoder.encodeBuffer(key);
+            + ", unparsed keybits = \n" + encoder.encodeBuffer(bitStringKey.toByteArray());
     }
 
     /**
-     * Initialize an X509Key object from an input stream.  The data on that
-     * input stream must be encoded using DER, obeying the X.509
+     * Initialize an X509Key object from a DerValue, obeying the X.509
      * <code>SubjectPublicKeyInfo</code> format.  That is, the data is a
      * sequence consisting of an algorithm ID and a bit string which holds
      * the key.  (That bit string is often used to encapsulate another DER
@@ -367,17 +311,11 @@ public class X509Key implements PublicKey {
      * private keys may override this method, <code>encode</code>, and
      * of course <code>getFormat</code>.
      *
-     * @param in an input stream with a DER-encoded X.509
-     *          SubjectPublicKeyInfo value
+     * @param val a DER-encoded X.509 SubjectPublicKeyInfo value
      * @exception InvalidKeyException on parsing errors.
      */
-    public void decode(InputStream in)
-    throws InvalidKeyException
-    {
-        DerValue        val;
-
+    public void decode(DerValue val) throws InvalidKeyException {
         try {
-            val = new DerValue(in);
             if (val.tag != DerValue.tag_Sequence)
                 throw new InvalidKeyException("invalid key format");
 
@@ -388,13 +326,16 @@ public class X509Key implements PublicKey {
                 throw new InvalidKeyException ("excess key data");
 
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException: " +
-                                          e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         }
     }
 
     public void decode(byte[] encodedKey) throws InvalidKeyException {
-        decode(new ByteArrayInputStream(encodedKey));
+        try {
+            decode(new DerValue(encodedKey));
+        } catch (IOException e) {
+            throw new InvalidKeyException("Unable to decode key", e);
+        }
     }
 
     /**
@@ -413,14 +354,13 @@ public class X509Key implements PublicKey {
     @java.io.Serial
     private void readObject(ObjectInputStream stream) throws IOException {
         try {
-            decode(stream);
+            decode(new DerValue(stream));
         } catch (InvalidKeyException e) {
-            e.printStackTrace();
-            throw new IOException("deserialized key is invalid: " +
-                                  e.getMessage());
+            throw new IOException("deserialized key is invalid", e);
         }
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -428,43 +368,29 @@ public class X509Key implements PublicKey {
         if (!(obj instanceof Key)) {
             return false;
         }
-        try {
-            byte[] thisEncoded = this.getEncodedInternal();
-            byte[] otherEncoded;
-            if (obj instanceof X509Key) {
-                otherEncoded = ((X509Key)obj).getEncodedInternal();
-            } else {
-                otherEncoded = ((Key)obj).getEncoded();
-            }
-            return Arrays.equals(thisEncoded, otherEncoded);
-        } catch (InvalidKeyException e) {
-            return false;
+        byte[] thisEncoded = this.getEncodedInternal();
+        byte[] otherEncoded;
+        if (obj instanceof X509Key) {
+            otherEncoded = ((X509Key) obj).getEncodedInternal();
+        } else {
+            otherEncoded = ((Key) obj).getEncoded();
         }
+        return Arrays.equals(thisEncoded, otherEncoded);
     }
 
     /**
      * Calculates a hash code value for the object. Objects
      * which are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        try {
-            byte[] b1 = getEncodedInternal();
-            int r = b1.length;
-            for (int i = 0; i < b1.length; i++) {
-                r += (b1[i] & 0xff) * 37;
-            }
-            return r;
-        } catch (InvalidKeyException e) {
-            // should not happen
-            return 0;
-        }
+        return Arrays.hashCode(getEncodedInternal());
     }
 
     /*
      * Produce SubjectPublicKey encoding from algorithm id and key material.
      */
-    static void encode(DerOutputStream out, AlgorithmId algid, BitArray key)
-        throws IOException {
+    static void encode(DerOutputStream out, AlgorithmId algid, BitArray key) {
             DerOutputStream tmp = new DerOutputStream();
             algid.encode(tmp);
             tmp.putUnalignedBitString(key);

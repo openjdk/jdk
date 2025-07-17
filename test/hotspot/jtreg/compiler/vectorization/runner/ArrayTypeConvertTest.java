@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +30,54 @@
  * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
+ * @requires vm.compiler2.enabled
+ *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest
+ *                   compiler.vectorization.runner.ArrayTypeConvertTest nCOH_nAV
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.vectorization.runner.ArrayTypeConvertTest nCOH_yAV
+ *
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.vectorization.runner.ArrayTypeConvertTest yCOH_nAV
+ *
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.vectorization.runner.ArrayTypeConvertTest yCOH_yAV
  */
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
+// Explanation about AlignVector: we require 8-byte alignment of all addresses.
+// But the array base offset changes with UseCompactObjectHeaders.
+// This means it affects the alignment constraints.
+
 public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    // We must pass the flags directly to the test-VM, and not the driver vm in the @run above.
+    @Override
+    protected String[] testVMFlags(String[] args) {
+        return switch (args[0]) {
+            case "nCOH_nAV" -> new String[]{"-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "nCOH_yAV" -> new String[]{"-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"};
+            case "yCOH_nAV" -> new String[]{"-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"};
+            case "yCOH_yAV" -> new String[]{"-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"};
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
+    }
+
+    private static final int SIZE = 543;
 
     private   byte[] bytes;
     private  short[] shorts;
@@ -73,6 +108,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Integer Extension ----------------
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public int[] signExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -82,6 +121,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public int[] zeroExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -91,6 +134,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public int[] signExtensionFromByte() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -101,6 +148,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Integer Narrow ----------------
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public short[] narrowToSigned() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -110,6 +161,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public char[] narrowToUnsigned() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -119,6 +174,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public byte[] NarrowToByte() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -129,6 +188,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert I/L to F/D ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_I2F, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0"})
     public float[] convertIntToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -138,6 +199,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0"})
     public double[] convertIntToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -147,6 +210,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx512dq", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_L2F, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0"})
     public float[] convertLongToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -156,6 +221,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_L2D, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0"})
     public double[] convertLongToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -166,15 +233,28 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert Subword-I to F/D ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "rvv", "true"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = {IRNode.VECTOR_CAST_S2F, IRNode.VECTOR_SIZE + "min(max_short, max_float)", ">0"})
     public float[] convertShortToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (float) shorts[i];
+            // AlignVector=true requires that all vector load/store are 8-byte aligned.
+            // F_adr = base + UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 2 = 0
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 2 = 1
+            // S_adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 4 = 0  -> can align both
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 4 = 2  -> cannot align both
         }
         return res;
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true", "rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        counts = {IRNode.VECTOR_CAST_S2D, IRNode.VECTOR_SIZE + "min(max_short, max_double)", ">0"})
     public double[] convertShortToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -184,6 +264,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public float[] convertCharToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -193,6 +277,10 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public double[] convertCharToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -203,6 +291,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to I/L ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_F2I, IRNode.VECTOR_SIZE + "min(max_float, max_int)", ">0"})
     public int[] convertFloatToInt() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -212,6 +302,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_F2L, IRNode.VECTOR_SIZE + "min(max_float, max_long)", ">0"})
     public long[] convertFloatToLong() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -221,6 +313,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_D2I, IRNode.VECTOR_SIZE + "min(max_double, max_int)", ">0"})
     public int[] convertDoubleToInt() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -230,6 +324,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_D2L, IRNode.VECTOR_SIZE + "min(max_double, max_long)", ">0"})
     public long[] convertDoubleToLong() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -240,24 +336,47 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to Subword-I ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "rvv", "true"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_short)", ">0"})
     public short[] convertFloatToShort() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (short) floats[i];
+            // AlignVector=true requires that all vector load/store are 8-byte aligned.
+            // F_adr = base + UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 2 = 0
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 2 = 1
+            // S_adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 4 = 0  -> can align both
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 4 = 2  -> cannot align both
         }
         return res;
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "rvv", "true"},
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = {IRNode.VECTOR_CAST_F2S, IRNode.VECTOR_SIZE + "min(max_float, max_char)", ">0"})
     public char[] convertFloatToChar() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (char) floats[i];
+            // AlignVector=true requires that all vector load/store are 8-byte aligned.
+            // F_adr = base + UNSAFE.ARRAY_FLOAT_BASE_OFFSET + 4*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 2 = 0
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 2 = 1
+            // S_adr = base + UNSAFE.ARRAY_SHORT_BASE_OFFSET + 2*i
+            //                = 16 (UseCompactObjectHeaders=false)    -> i % 4 = 0  -> can align both
+            //                = 12 (UseCompactObjectHeaders=true )    -> i % 4 = 2  -> cannot align both
         }
         return res;
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_short)", ">0"})
     public short[] convertDoubleToShort() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -267,6 +386,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true", "rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        counts = {IRNode.VECTOR_CAST_D2S, IRNode.VECTOR_SIZE + "min(max_double, max_char)", ">0"})
     public char[] convertDoubleToChar() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -277,6 +399,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert Between F & D ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_F2D, IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0"})
     public double[] convertFloatToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -286,6 +410,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"},
+        counts = {IRNode.VECTOR_CAST_D2F, IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0"})
     public float[] convertDoubleToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -294,4 +420,3 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         return res;
     }
 }
-

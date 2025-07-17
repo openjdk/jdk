@@ -25,7 +25,6 @@
 #ifndef SHARE_METAPROGRAMMING_ENABLEIF_HPP
 #define SHARE_METAPROGRAMMING_ENABLEIF_HPP
 
-#include "metaprogramming/logical.hpp"
 #include <type_traits>
 
 // Retained temporarily for backward compatibility.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/sampling/objectSample.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
@@ -35,12 +35,12 @@ void ObjectSample::reset() {
   _virtual_thread = false;
 }
 
-const oop ObjectSample::object() const {
-  return _object.resolve();
+oop ObjectSample::object() const {
+  return is_dead() ? nullptr :_object.resolve();
 }
 
 bool ObjectSample::is_dead() const {
-  return _object.peek() == NULL;
+  return _object.peek() == nullptr;
 }
 
 const oop* ObjectSample::object_addr() const {
@@ -48,6 +48,7 @@ const oop* ObjectSample::object_addr() const {
 }
 
 void ObjectSample::set_object(oop object) {
+  assert(object != nullptr, "invariant");
   assert(_object.is_empty(), "should be empty");
   Handle h(Thread::current(), object);
   _object = WeakHandle(ObjectSampler::oop_storage(), h);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.jfr.internal.EventClassBuilder;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Class for defining an event at runtime.
@@ -91,17 +91,12 @@ public final class EventFactory {
      *         the Java language or an annotation element references a type that
      *         can't be found.
      *
-     * @throws SecurityException if a security manager exists and the caller does
-     *         not have {@code FlightRecorderPermission("registerEvent")}
-     *
      * @see Event#set(int, Object)
      */
     public static EventFactory create(List<AnnotationElement> annotationElements, List<ValueDescriptor> fields) {
         Objects.requireNonNull(annotationElements, "annotationElements");
         Objects.requireNonNull(fields, "fields");
         JVMSupport.ensureWithInternalError();
-
-        Utils.checkRegisterPermission();
 
         List<AnnotationElement> sanitizedAnnotation = Utils.sanitizeNullFreeList(annotationElements, AnnotationElement.class);
         List<ValueDescriptor> sanitizedFields = Utils.sanitizeNullFreeList(fields, ValueDescriptor.class);
@@ -199,8 +194,6 @@ public final class EventFactory {
      * If the event class associated with this event factory is already registered,
      * the call to this method is ignored.
      *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have {@code FlightRecorderPermission("registerEvent")}
      * @see Registered
      * @see FlightRecorder#register(Class)
      */
@@ -218,8 +211,6 @@ public final class EventFactory {
      * If the event class associated with this event factory is not already
      * registered, the call to this method is ignored.
      *
-     * @throws SecurityException if a security manager exists and the caller does
-     *         not have {@code FlightRecorderPermission("registerEvent")}
      * @see Registered
      * @see FlightRecorder#unregister(Class)
      */

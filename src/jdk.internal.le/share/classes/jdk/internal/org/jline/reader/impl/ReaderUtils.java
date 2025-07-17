@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2020, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -13,7 +13,7 @@ import jdk.internal.org.jline.utils.Levenshtein;
 
 public class ReaderUtils {
 
-    private ReaderUtils() { }
+    private ReaderUtils() {}
 
     public static boolean isSet(LineReader reader, LineReader.Option option) {
         return reader != null && reader.isSet(option);
@@ -30,8 +30,7 @@ public class ReaderUtils {
             return (Boolean) v;
         } else if (v != null) {
             String s = v.toString();
-            return s.isEmpty() || s.equalsIgnoreCase("on")
-                    || s.equalsIgnoreCase("1") || s.equalsIgnoreCase("true");
+            return s.isEmpty() || s.equalsIgnoreCase("on") || s.equalsIgnoreCase("1") || s.equalsIgnoreCase("true");
         }
         return def;
     }
@@ -77,5 +76,4 @@ public class ReaderUtils {
             return Levenshtein.distance(word, cand);
         }
     }
-
 }

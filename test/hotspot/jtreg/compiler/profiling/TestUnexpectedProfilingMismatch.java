@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8027631
  * @summary profiling of arguments at calls cannot rely on signature of callee for types
  *
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm -XX:-BackgroundCompilation -XX:TieredStopAtLevel=3 -XX:TypeProfileLevel=111
  *                   -XX:Tier3InvocationThreshold=200 -XX:Tier0InvokeNotifyFreqLog=7
  *                   compiler.profiling.TestUnexpectedProfilingMismatch

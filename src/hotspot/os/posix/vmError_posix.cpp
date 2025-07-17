@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "os_posix.hpp"
 #include "runtime/javaThread.hpp"
@@ -69,7 +69,7 @@ static void crash_handler(int sig, siginfo_t* info, void* context) {
   PosixSignals::unblock_error_signals();
 
   ucontext_t* const uc = (ucontext_t*) context;
-  address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
+  address pc = (uc != nullptr) ? os::Posix::ucontext_get_pc(uc) : nullptr;
 
   // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
   if (sig == SIGILL || sig == SIGFPE) {
@@ -83,14 +83,14 @@ static void crash_handler(int sig, siginfo_t* info, void* context) {
 
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(context, info->si_addr)) {
+  if (VMError::was_assert_poison_crash(info)) {
+    if (handle_assert_poison_fault(context)) {
       return;
     }
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-  VMError::report_and_die(NULL, sig, pc, info, context);
+  VMError::report_and_die(nullptr, sig, pc, info, context);
 }
 
 const void* VMError::crash_handler_address = CAST_FROM_FN_PTR(void *, crash_handler);
@@ -112,11 +112,11 @@ void VMError::install_secondary_signal_handler() {
 // and the offending address points into CDS archive.
 void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 #if INCLUDE_CDS
-  if (siginfo && UseSharedSpaces) {
+  if (siginfo && CDSConfig::is_using_archive()) {
     const siginfo_t* const si = (siginfo_t*)siginfo;
     if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
       const void* const fault_addr = si->si_addr;
-      if (fault_addr != NULL) {
+      if (fault_addr != nullptr) {
         if (MetaspaceShared::is_in_shared_metaspace(fault_addr)) {
           st->print("Error accessing class data sharing archive. "
             "Mapped file inaccessible during execution, possible disk/network problem.");
@@ -125,4 +125,15 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
     }
   }
 #endif
+}
+
+bool VMError::was_assert_poison_crash(const void* siginfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (siginfo == nullptr) {
+    return false;
+  }
+  const siginfo_t* const si = (siginfo_t*)siginfo;
+  return (si->si_signo == SIGSEGV || si->si_signo == SIGBUS) && si->si_addr == g_assert_poison_read_only;
+#endif
+  return false;
 }

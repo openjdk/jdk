@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,17 +23,18 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -45,56 +46,42 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/spinYield.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-// Current thread is maintained as a thread-local variable
-THREAD_LOCAL Thread* Thread::_thr_current = NULL;
-#endif
+THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 
 // ======= Thread ========
-void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
-  return throw_excpt ? AllocateHeap(size, flags, CURRENT_PC)
-                       : AllocateHeap(size, flags, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-}
-
-void Thread::operator delete(void* p) {
-  FreeHeap(p);
-}
-
 // Base class for all threads: VMThread, WatcherThread, ConcurrentMarkSweepThread,
 // JavaThread
 
-DEBUG_ONLY(Thread* Thread::_starting_thread = NULL;)
-
-Thread::Thread() {
+Thread::Thread(MemTag mem_tag) {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
   // stack and get_thread
-  set_stack_base(NULL);
+  set_stack_base(nullptr);
   set_stack_size(0);
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
+  DEBUG_ONLY(clear_indirectly_suspendible_thread();)
+  DEBUG_ONLY(clear_indirectly_safepoint_thread();)
 
   // allocated data structures
-  set_osthread(NULL);
-  set_resource_area(new (mtThread)ResourceArea());
-  DEBUG_ONLY(_current_resource_mark = NULL;)
-  set_handle_area(new (mtThread) HandleArea(NULL));
+  set_osthread(nullptr);
+  set_resource_area(new (mem_tag) ResourceArea(mem_tag));
+  DEBUG_ONLY(_current_resource_mark = nullptr;)
+  set_handle_area(new (mem_tag) HandleArea(mem_tag, nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
-  set_last_handle_mark(NULL);
-  DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
+  set_last_handle_mark(nullptr);
 
   // Initial value of zero ==> never claimed.
   _threads_do_token = 0;
-  _threads_hazard_ptr = NULL;
-  _threads_list_ptr = NULL;
+  _threads_hazard_ptr = nullptr;
+  _threads_list_ptr = nullptr;
   _nested_threads_hazard_ptr_cnt = 0;
   _rcu_counter = 0;
 
@@ -102,14 +89,18 @@ Thread::Thread() {
   new HandleMark(this);
 
   // plain initialization
-  debug_only(_owned_locks = NULL;)
+  DEBUG_ONLY(_owned_locks = nullptr;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _current_pending_raw_monitor = NULL;
+  _current_pending_raw_monitor = nullptr;
+  _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
-  _hashStateX = os::random();
+  // If we are dumping, keep ihashes constant. Note that during dumping we only
+  // ever run one java thread, and no other thread should generate ihashes either,
+  // so using a constant seed should work fine.
+  _hashStateX = CDSConfig::is_dumping_static_archive() ? 0x12345678 : os::random();
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
@@ -134,18 +125,28 @@ Thread::Thread() {
   // BarrierSet::on_thread_create() for this thread is therefore deferred
   // to BarrierSet::set_barrier_set().
   BarrierSet* const barrier_set = BarrierSet::barrier_set();
-  if (barrier_set != NULL) {
+  if (barrier_set != nullptr) {
     barrier_set->on_thread_create(this);
   } else {
     // Only the main thread should be created before the barrier set
     // and that happens just before Thread::current is set. No other thread
     // can attach as the VM is not created yet, so they can't execute this code.
     // If the main thread creates other threads before the barrier set that is an error.
-    assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
+    assert(Thread::current_or_null() == nullptr, "creating thread before barrier set");
   }
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
+
+#ifdef ASSERT
+address Thread::stack_base() const {
+  // Note: can't report Thread::name() here as that can require a ResourceMark which we
+  // can't use because this gets called too early in the thread initialization.
+  assert(_stack_base != nullptr, "Stack base not yet set for thread id:%d (0 if not set)",
+         osthread() != nullptr ? osthread()->thread_id() : 0);
+  return _stack_base;
+}
+#endif
 
 void Thread::initialize_tlab() {
   if (UseTLAB) {
@@ -153,22 +154,37 @@ void Thread::initialize_tlab() {
   }
 }
 
+void Thread::retire_tlab(ThreadLocalAllocStats* stats) {
+  // Sampling and serviceability support
+  if (tlab().end() != nullptr) {
+    incr_allocated_bytes(tlab().used_bytes());
+    heap_sampler().retire_tlab(tlab().top());
+  }
+
+  // Retire the TLAB
+  tlab().retire(stats);
+}
+
+void Thread::fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size) {
+  // Thread allocation sampling support
+  heap_sampler().set_tlab_top_at_sample_start(start);
+
+  // Fill the TLAB
+  tlab().fill(start, start + pre_reserved, new_size);
+}
+
 void Thread::initialize_thread_current() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-  assert(_thr_current == NULL, "Thread::current already initialized");
+  assert(_thr_current == nullptr, "Thread::current already initialized");
   _thr_current = this;
-#endif
-  assert(ThreadLocalStorage::thread() == NULL, "ThreadLocalStorage::thread already initialized");
+  assert(ThreadLocalStorage::thread() == nullptr, "ThreadLocalStorage::thread already initialized");
   ThreadLocalStorage::set_thread(this);
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
 }
 
 void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-  _thr_current = NULL;
-#endif
-  ThreadLocalStorage::set_thread(NULL);
+  _thr_current = nullptr;
+  ThreadLocalStorage::set_thread(nullptr);
 }
 
 void Thread::record_stack_base_and_size() {
@@ -176,8 +192,11 @@ void Thread::record_stack_base_and_size() {
   // any members being initialized. Do not rely on Thread::current() being set.
   // If possible, refrain from doing anything which may crash or assert since
   // quite probably those crash dumps will be useless.
-  set_stack_base(os::current_stack_base());
-  set_stack_size(os::current_stack_size());
+  address base;
+  size_t size;
+  os::current_stack_base_and_size(&base, &size);
+  set_stack_base(base);
+  set_stack_size(size);
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
@@ -199,7 +218,7 @@ void Thread::call_run() {
   // At this point, Thread object should be fully initialized and
   // Thread::current() should be set.
 
-  assert(Thread::current_or_null() != NULL, "current thread is unset");
+  assert(Thread::current_or_null() != nullptr, "current thread is unset");
   assert(Thread::current_or_null() == this, "current thread is wrong");
 
   // Perform common initialization actions
@@ -210,8 +229,8 @@ void Thread::call_run() {
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
-    PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
+  log_debug(os, thread)("Thread %zu stack dimensions: "
+    PTR_FORMAT "-" PTR_FORMAT " (%zuk).",
     os::current_thread_id(), p2i(stack_end()),
     p2i(stack_base()), stack_size()/1024);
 
@@ -226,7 +245,7 @@ void Thread::call_run() {
 
   // Perform common tear-down actions
 
-  assert(Thread::current_or_null() != NULL, "current thread is unset");
+  assert(Thread::current_or_null() != nullptr, "current thread is unset");
   assert(Thread::current_or_null() == this, "current thread is wrong");
 
   // Perform <ChildClass> tear-down actions
@@ -239,7 +258,10 @@ void Thread::call_run() {
   // asynchronously with respect to its termination - that is what _run_state can
   // be used to check.
 
-  assert(Thread::current_or_null() == NULL, "current thread still present");
+  // Logically we should do this->unregister_thread_stack_with_NMT() here, but we
+  // had to move that into post_run() because of the `this` deletion issue.
+
+  assert(Thread::current_or_null() == nullptr, "current thread still present");
 }
 
 Thread::~Thread() {
@@ -254,7 +276,7 @@ Thread::~Thread() {
   // Notify the barrier set that a thread is being destroyed. Note that a barrier
   // set might not be available if we encountered errors during bootstrapping.
   BarrierSet* const barrier_set = BarrierSet::barrier_set();
-  if (barrier_set != NULL) {
+  if (barrier_set != nullptr) {
     barrier_set->on_thread_destroy(this);
   }
 
@@ -262,19 +284,19 @@ Thread::~Thread() {
   delete resource_area();
   // since the handle marks are using the handle area, we have to deallocated the root
   // handle mark before deallocating the thread's handle area,
-  assert(last_handle_mark() != NULL, "check we have an element");
+  assert(last_handle_mark() != nullptr, "check we have an element");
   delete last_handle_mark();
-  assert(last_handle_mark() == NULL, "check we have reached the end");
+  assert(last_handle_mark() == nullptr, "check we have reached the end");
 
   ParkEvent::Release(_ParkEvent);
-  // Set to NULL as a termination indicator for has_terminated().
-  Atomic::store(&_ParkEvent, (ParkEvent*)NULL);
+  // Set to null as a termination indicator for has_terminated().
+  Atomic::store(&_ParkEvent, (ParkEvent*)nullptr);
 
   delete handle_area();
   delete metadata_handles();
 
-  // osthread() can be NULL, if creation of thread failed.
-  if (osthread() != NULL) os::free_thread(osthread());
+  // osthread() can be null, if creation of thread failed.
+  if (osthread() != nullptr) os::free_thread(osthread());
 
   // Clear Thread::current if thread is deleting itself and it has not
   // already been done. This must be done before the memory is deallocated.
@@ -315,7 +337,7 @@ bool Thread::is_JavaThread_protected(const JavaThread* target) {
   // If the target hasn't been started yet then it is trivially
   // "protected". We assume the caller is the thread that will do
   // the starting.
-  if (target->osthread() == NULL || target->osthread()->get_state() <= INITIALIZED) {
+  if (target->osthread() == nullptr || target->osthread()->get_state() <= INITIALIZED) {
     return true;
   }
 
@@ -357,7 +379,7 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
   // Check the ThreadsLists associated with the calling thread (if any)
   // to see if one of them protects the target JavaThread:
   for (SafeThreadsListPtr* stlp = current_thread->_threads_list_ptr;
-       stlp != NULL; stlp = stlp->previous()) {
+       stlp != nullptr; stlp = stlp->previous()) {
     if (stlp->list()->includes(target)) {
       // The target JavaThread is protected by this ThreadsList:
       return true;
@@ -368,16 +390,8 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
   return false;
 }
 
-ThreadPriority Thread::get_priority(const Thread* const thread) {
-  ThreadPriority priority;
-  // Can return an error!
-  (void)os::get_priority(thread, priority);
-  assert(MinPriority <= priority && priority <= MaxPriority, "non-Java priority found");
-  return priority;
-}
-
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {
-  debug_only(check_for_dangling_thread_pointer(thread);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(thread);)
   // Can return an error!
   (void)os::set_priority(thread, priority);
 }
@@ -410,7 +424,7 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
   return false;
 }
 
-void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
@@ -425,22 +439,22 @@ public:
     Thread* self = Thread::current();
     if (self->is_Named_thread()) {
       _cur_thr = (NamedThread *)self;
-      assert(_cur_thr->processed_thread() == NULL, "nesting not supported");
+      assert(_cur_thr->processed_thread() == nullptr, "nesting not supported");
       _cur_thr->set_processed_thread(thread);
     } else {
-      _cur_thr = NULL;
+      _cur_thr = nullptr;
     }
   }
 
   ~RememberProcessedThread() {
     if (_cur_thr) {
-      assert(_cur_thr->processed_thread() != NULL, "nesting not supported");
-      _cur_thr->set_processed_thread(NULL);
+      assert(_cur_thr->processed_thread() != nullptr, "nesting not supported");
+      _cur_thr->set_processed_thread(nullptr);
     }
   }
 };
 
-void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do(OopClosure* f, NMethodClosure* cf) {
   // Record JavaThread to GC thread
   RememberProcessedThread rpt(this);
   oops_do_no_frames(f, cf);
@@ -449,7 +463,7 @@ void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
 
 void Thread::metadata_handles_do(void f(Metadata*)) {
   // Only walk the Handles in Thread.
-  if (metadata_handles() != NULL) {
+  if (metadata_handles() != nullptr) {
     for (int i = 0; i< metadata_handles()->length(); i++) {
       f(metadata_handles()->at(i));
     }
@@ -458,21 +472,21 @@ void Thread::metadata_handles_do(void f(Metadata*)) {
 
 void Thread::print_on(outputStream* st, bool print_extended_info) const {
   // get_priority assumes osthread initialized
-  if (osthread() != NULL) {
+  if (osthread() != nullptr) {
     int os_prio;
     if (os::get_native_priority(this, &os_prio) == OS_OK) {
       st->print("os_prio=%d ", os_prio);
     }
 
     st->print("cpu=%.2fms ",
-              os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
+              (double)os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
               );
     st->print("elapsed=%.2fs ",
-              _statistical_info.getElapsedTime() / 1000.0
+              (double)_statistical_info.getElapsedTime() / 1000.0
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
-      st->print("allocated=" SIZE_FORMAT "%s ",
+      st->print("allocated=%zu%s ",
                 byte_size_in_proper_unit(allocated_bytes),
                 proper_unit_for_byte_size(allocated_bytes)
                 );
@@ -486,7 +500,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
   }
   ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");
-  debug_only(if (WizardMode) print_owned_locks_on(st);)
+  DEBUG_ONLY(if (WizardMode) print_owned_locks_on(st);)
 }
 
 void Thread::print() const { print_on(tty); }
@@ -499,11 +513,14 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   st->print("%s \"%s\"", type_name(), name());
 
   OSThread* os_thr = osthread();
-  if (os_thr != NULL) {
+  if (os_thr != nullptr) {
+    st->fill_to(67);
     if (os_thr->get_state() != ZOMBIE) {
-      st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-                p2i(stack_end()), p2i(stack_base()));
-      st->print(" [id=%d]", osthread()->thread_id());
+      // Use raw field members for stack base/size as this could be
+      // called before a thread has run enough to initialize them.
+      st->print(" [id=%d, stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")]",
+                osthread()->thread_id(), p2i(_stack_base - _stack_size), p2i(_stack_base),
+                PROPERFMTARGS(_stack_size));
     } else {
       st->print(" terminated");
     }
@@ -523,7 +540,7 @@ void Thread::print_value_on(outputStream* st) const {
 #ifdef ASSERT
 void Thread::print_owned_locks_on(outputStream* st) const {
   Mutex* cur = _owned_locks;
-  if (cur == NULL) {
+  if (cur == nullptr) {
     st->print(" (no locks) ");
   } else {
     st->print_cr(" Locks owned:");
@@ -533,41 +550,31 @@ void Thread::print_owned_locks_on(outputStream* st) const {
     }
   }
 }
+
+Thread* Thread::_starting_thread = nullptr;
+
+bool Thread::is_starting_thread(const Thread* t) {
+  assert(_starting_thread != nullptr, "invariant");
+  return t == _starting_thread;
+}
 #endif // ASSERT
 
-// We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
-// However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
-// used for compilation in the future. If that change is made, the need for these methods
-// should be revisited, and they should be removed if possible.
-
-bool Thread::is_lock_owned(address adr) const {
-  return is_in_full_stack(adr);
-}
-
-bool Thread::set_as_starting_thread() {
-  assert(_starting_thread == NULL, "already initialized: "
+bool Thread::set_as_starting_thread(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  assert(_starting_thread == nullptr, "already initialized: "
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
-  // NOTE: this must be called inside the main thread.
-  DEBUG_ONLY(_starting_thread = this;)
-  return os::create_main_thread(JavaThread::cast(this));
+  // NOTE: this must be called from Threads::create_vm().
+  DEBUG_ONLY(_starting_thread = jt;)
+  return os::create_main_thread(jt);
 }
 
-// Ad-hoc mutual exclusion primitives: SpinLock
+// Ad-hoc mutual exclusion primitive: spin lock
 //
-// We employ SpinLocks _only for low-contention, fixed-length
+// We employ a spin lock _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
-//
-// TODO-FIXME: ListLock should be of type SpinLock.
-// We should make this a 1st-class type, integrated into the lock
-// hierarchy as leaf-locks.  Critically, the SpinLock structure
-// should have sufficient padding to avoid false-sharing and excessive
-// cache-coherency traffic.
 
-
-typedef volatile int SpinLockT;
-
-void Thread::SpinAcquire(volatile int * adr, const char * LockName) {
+void Thread::SpinAcquire(volatile int * adr) {
   if (Atomic::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return
   }

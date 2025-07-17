@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,24 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
 #define PASSED  0
 #define STATUS_FAILED  2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static int verbose = 0;
 
 /* the original JNI function table */
-static jniNativeInterface *orig_jni_functions = NULL;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 /* the redirected JNI function table */
-static jniNativeInterface *redir_jni_functions = NULL;
+static jniNativeInterface *redir_jni_functions = nullptr;
 
 /* number of the redirected JNI function calls */
 int call_count = 0;
@@ -115,7 +115,7 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t001_check(JNIEnv *env, jclass cls) {
     jint ver;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("(%s,%d): TEST FAILURE: JVMTI client was not properly loaded\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
@@ -183,14 +183,14 @@ JNIEXPORT jint JNI_OnLoad_ji03t001(JavaVM *jvm, char *options, void *reserved) {
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "-verbose") == 0)
+    if (options != nullptr && strcmp(options, "-verbose") == 0)
         verbose = 1;
 
     if (verbose)
         printf("verbose mode on\n");
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
     }

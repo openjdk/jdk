@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -40,8 +39,20 @@ int AbstractAssembler::code_fill_byte() {
   return 0;
 }
 
-Address::Address(address target, relocInfo::relocType rtype) : _base(noreg), _offset(0), _mode(literal) {
-  _target = target;
+#ifdef ASSERT
+
+void Address::assert_is_literal() const {
+  assert(_mode == literal, "addressing mode is non-literal: %d", _mode);
+}
+
+void Address::assert_is_nonliteral() const {
+  assert(_mode != literal, "unexpected literal addressing mode");
+  assert(_mode != no_mode, "unexpected no_mode addressing mode");
+}
+
+#endif // ASSERT
+
+static RelocationHolder address_relocation(address target, relocInfo::relocType rtype) {
   switch (rtype) {
     case relocInfo::oop_type:
     case relocInfo::metadata_type:
@@ -49,30 +60,29 @@ Address::Address(address target, relocInfo::relocType rtype) : _base(noreg), _of
       // but in cases like icBuffer they are literals in the code stream that
       // we don't have a section for. We use none so that we get a literal address
       // which is always patchable.
-      break;
+      return RelocationHolder::none;
     case relocInfo::external_word_type:
-      _rspec = external_word_Relocation::spec(target);
-      break;
+      return external_word_Relocation::spec(target);
     case relocInfo::internal_word_type:
-      _rspec = internal_word_Relocation::spec(target);
-      break;
+      return internal_word_Relocation::spec(target);
     case relocInfo::opt_virtual_call_type:
-      _rspec = opt_virtual_call_Relocation::spec();
-      break;
+      return opt_virtual_call_Relocation::spec();
     case relocInfo::static_call_type:
-      _rspec = static_call_Relocation::spec();
-      break;
+      return static_call_Relocation::spec();
     case relocInfo::runtime_call_type:
-      _rspec = runtime_call_Relocation::spec();
-      break;
+      return runtime_call_Relocation::spec();
     case relocInfo::poll_type:
     case relocInfo::poll_return_type:
-      _rspec = Relocation::spec_simple(rtype);
-      break;
+      return Relocation::spec_simple(rtype);
     case relocInfo::none:
-      _rspec = RelocationHolder::none;
-      break;
+      return RelocationHolder::none;
     default:
       ShouldNotReachHere();
+      return RelocationHolder::none;
   }
 }
+
+Address::Address(address target, relocInfo::relocType rtype) :
+  _mode(literal),
+  _literal(target, address_relocation(target, rtype))
+{}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.lang.reflect.Constructor;
 import java.util.Map.Entry;
 
 import com.sun.beans.introspect.PropertyInfo;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * A PropertyDescriptor describes one property that a Java Bean
@@ -467,8 +466,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         Object editor = null;
 
         final Class<?> cls = getPropertyEditorClass();
-        if (cls != null && PropertyEditor.class.isAssignableFrom(cls)
-                && ReflectUtil.isPackageAccessible(cls)) {
+        if (cls != null && PropertyEditor.class.isAssignableFrom(cls)) {
             Constructor<?> ctor = null;
             if (bean != null) {
                 try {

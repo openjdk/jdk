@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 class JfrIntrinsicSupport : AllStatic {
  public:
   static void* write_checkpoint(JavaThread* jt);
+  static void* return_lease(JavaThread* jt);
   static void load_barrier(const Klass* klass);
   static address epoch_address();
   static address signal_address();
@@ -46,13 +47,13 @@ class JfrIntrinsicSupport : AllStatic {
 #define JFR_HAVE_INTRINSICS
 
 #define JFR_TEMPLATES(template)                                                                                      \
+  template(jdk_jfr_internal_management_HiddenWait,                    "jdk/jfr/internal/management/HiddenWait")      \
   template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                        \
-  template(jdk_jfr_internal_event_EventWriterFactory,                 "jdk/jfr/internal/event/EventWriterFactory")   \
+  template(jdk_jfr_internal_event_EventWriter,                        "jdk/jfr/internal/event/EventWriter")   \
   template(jdk_jfr_internal_event_EventConfiguration_signature,       "Ljdk/jfr/internal/event/EventConfiguration;") \
   template(getEventWriter_signature,                                  "()Ljdk/jfr/internal/event/EventWriter;")      \
   template(eventConfiguration_name,                                   "eventConfiguration")                          \
   template(commit_name,                                               "commit")                                      \
-  template(jfr_chunk_rotation_monitor,                                "jdk/jfr/internal/JVM$ChunkRotationMonitor")   \
 
 #define JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                      \
   do_intrinsic(_counterTime,        jdk_jfr_internal_JVM, counterTime_name, void_long_signature, F_SN)               \
@@ -61,7 +62,7 @@ class JfrIntrinsicSupport : AllStatic {
     do_name(     getClassId_name,                              "getClassId")                                         \
   do_intrinsic(_getEventWriter,   jdk_jfr_internal_JVM, getEventWriter_name, getEventWriter_signature, F_SN)         \
     do_name(     getEventWriter_name,                          "getEventWriter")                                     \
-
+  do_intrinsic(_jvm_commit,   jdk_jfr_internal_JVM, commit_name, long_long_signature, F_SN)
 #else // !INCLUDE_JFR
 
 #define JFR_TEMPLATES(template)

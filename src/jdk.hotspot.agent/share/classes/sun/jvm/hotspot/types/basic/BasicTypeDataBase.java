@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class BasicTypeDataBase implements TypeDataBase {
   public Type lookupType(String cTypeName, boolean throwException) {
     Type type = nameToTypeMap.get(cTypeName);
     if (type == null && throwException) {
-      throw new RuntimeException("No type named \"" + cTypeName + "\" in database");
+      throw new RuntimeException("No type named \"" + cTypeName + "\" present in type database");
     }
     return type;
   }
@@ -156,9 +156,9 @@ public class BasicTypeDataBase implements TypeDataBase {
     return VM.getVM().getOopSize();
   }
 
-  Map<Type, Address> typeToVtbl = new HashMap<>();
+  private Map<Type, Address> typeToVtbl = new HashMap<>();
 
-  private Address vtblForType(Type type) {
+  public Address vtblForType(Type type) {
     Address vtblAddr = typeToVtbl.get(type);
     if (vtblAddr == null) {
       vtblAddr = vtblAccess.getVtblForType(type);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,6 @@ interface Node<T> {
          * @param action a consumer that is to be invoked with each
          *        element in this {@code Node.OfPrimitive}
          */
-        @SuppressWarnings("overloads")
         void forEach(T_CONS action);
 
         @Override
@@ -314,6 +313,7 @@ interface Node<T> {
     /**
      * Specialized {@code Node} for int elements
      */
+    @SuppressWarnings("overloads")
     interface OfInt extends OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, OfInt> {
 
         /**
@@ -391,6 +391,7 @@ interface Node<T> {
     /**
      * Specialized {@code Node} for long elements
      */
+    @SuppressWarnings("overloads")
     interface OfLong extends OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, OfLong> {
 
         /**
@@ -468,6 +469,7 @@ interface Node<T> {
     /**
      * Specialized {@code Node} for double elements
      */
+    @SuppressWarnings("overloads")
     interface OfDouble extends OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, OfDouble> {
 
         /**

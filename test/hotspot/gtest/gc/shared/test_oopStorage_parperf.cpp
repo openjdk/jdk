@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -74,10 +73,10 @@ public:
   oop* _entries[_storage_entries];
 };
 
-WorkerThreads* OopStorageParIterPerf::_workers = NULL;
+WorkerThreads* OopStorageParIterPerf::_workers = nullptr;
 
 WorkerThreads* OopStorageParIterPerf::workers() const {
-  if (_workers == NULL) {
+  if (_workers == nullptr) {
     WorkerThreads* wg = new WorkerThreads("OopStorageParIterPerf workers", _num_workers);
     wg->initialize_workers();
     wg->set_active_workers(_num_workers);
@@ -126,7 +125,7 @@ class OopStorageParIterPerf::Task : public WorkerTask {
 public:
   Task(OopStorage* storage, OopClosure* closure, uint nthreads) :
     WorkerTask("OopStorageParIterPerf::Task"),
-    _worker_times(NULL),
+    _worker_times(nullptr),
     _state(storage, nthreads),
     _closure(closure)
   {
@@ -152,7 +151,7 @@ public:
 
 class OopStorageParIterPerf::Closure : public OopClosure {
 public:
-  virtual void do_oop(oop* p) { guarantee(*p == NULL, "expected NULL"); }
+  virtual void do_oop(oop* p) { guarantee(*p == nullptr, "expected null"); }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 

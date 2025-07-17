@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
-#include "code/nmethod.hpp"
 #include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -109,7 +108,7 @@ static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
   }
 
   auto barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
-  debug_only(barrier->verify());
+  DEBUG_ONLY(barrier->verify());
   return barrier;
 }
 
@@ -118,29 +117,20 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   // Thus, there's nothing to do here.
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(disarmed_value());
+  barrier->release_set_guard_value(value);
 }
 
-void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+int BarrierSetNMethod::guard_value(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
-    return;
+    return disarmed_guard_value();
   }
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(arm_value);
-}
-
-bool BarrierSetNMethod::is_armed(nmethod* nm) {
-  if (!supports_entry_barrier(nm)) {
-    return false;
-  }
-
-  NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  return barrier->get_guard_value() != disarmed_value();
+  return barrier->get_guard_value();
 }

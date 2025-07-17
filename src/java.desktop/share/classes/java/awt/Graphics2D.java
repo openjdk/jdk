@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,9 +564,9 @@ public abstract class Graphics2D extends Graphics {
      * img1 = op.filter(img, null);
      * drawImage(img1, new AffineTransform(1f,0f,0f,1f,x,y), null);
      * </pre>
-     * @param op the filter to be applied to the image before rendering
      * @param img the specified {@code BufferedImage} to be rendered.
      *            This method does nothing if {@code img} is null.
+     * @param op the filter to be applied to the image before rendering
      * @param x the x coordinate of the location in user space where
      * the upper left corner of the image is rendered
      * @param y the y coordinate of the location in user space where
@@ -836,25 +836,11 @@ public abstract class Graphics2D extends Graphics {
      * and {@code fill}.  It specifies how new pixels are to be combined
      * with the existing pixels on the graphics device during the rendering
      * process.
-     * <p>If this {@code Graphics2D} context is drawing to a
-     * {@code Component} on the display screen and the
-     * {@code Composite} is a custom object rather than an
-     * instance of the {@code AlphaComposite} class, and if
-     * there is a security manager, its {@code checkPermission}
-     * method is called with an {@code AWTPermission("readDisplayPixels")}
-     * permission.
-     * @throws SecurityException
-     *         if a custom {@code Composite} object is being
-     *         used to render to the screen and a security manager
-     *         is set and its {@code checkPermission} method
-     *         does not allow the operation.
      * @param comp the {@code Composite} object to be used for rendering
      * @see java.awt.Graphics#setXORMode
      * @see java.awt.Graphics#setPaintMode
      * @see #getComposite
      * @see AlphaComposite
-     * @see SecurityManager#checkPermission
-     * @see java.awt.AWTPermission
      */
     public abstract void setComposite(Composite comp);
 

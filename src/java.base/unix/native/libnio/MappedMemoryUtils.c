@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#ifdef _AIX
-#include <unistd.h>
-#endif
-
 /* Output type for mincore(2) */
 #ifdef __linux__
 typedef unsigned char mincore_vec_t;
@@ -44,34 +40,14 @@ typedef unsigned char mincore_vec_t;
 typedef char mincore_vec_t;
 #endif
 
-#ifdef _AIX
-static long calculate_number_of_pages_in_range(void* address, size_t len, size_t pagesize) {
-    uintptr_t address_unaligned = (uintptr_t) address;
-    uintptr_t address_aligned = address_unaligned & (~(pagesize - 1));
-    size_t len2 = len + (address_unaligned - address_aligned);
-    long numPages = (len2 + pagesize - 1) / pagesize;
-    return numPages;
-}
-#endif
-
-JNIEXPORT jboolean JNICALL
-Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
-                                         jlong len, jlong numPages)
+jboolean JNICALL MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+                                             jlong len, jlong numPages)
 {
     jboolean loaded = JNI_TRUE;
     int result = 0;
     long i = 0;
     void *a = (void *) jlong_to_ptr(address);
     mincore_vec_t* vec = NULL;
-
-#ifdef _AIX
-    /* See JDK-8186665 */
-    size_t pagesize = (size_t)sysconf(_SC_PAGESIZE);
-    if ((long)pagesize == -1) {
-        return JNI_FALSE;
-    }
-    numPages = (jlong) calculate_number_of_pages_in_range(a, len, pagesize);
-#endif
 
     /* Include space for one sentinel byte at the end of the buffer
      * to catch overflows. */
@@ -103,35 +79,48 @@ Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong addres
 }
 
 
-JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
+void JNICALL MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
                                      jlong len)
 {
     char *a = (char *)jlong_to_ptr(address);
     int result = madvise((caddr_t)a, (size_t)len, MADV_WILLNEED);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
+        JNU_ThrowIOExceptionWithMessageAndLastError(env, "madvise with advise MADV_WILLNEED failed");
     }
 }
 
-JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
-                                     jlong len)
+void JNICALL MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
+                                       jlong len)
 {
     char *a = (char *)jlong_to_ptr(address);
     int result = madvise((caddr_t)a, (size_t)len, MADV_DONTNEED);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
+        JNU_ThrowIOExceptionWithMessageAndLastError(env, "madvise with advise MADV_DONTNEED failed");
     }
 }
 
-JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
+void JNICALL MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
                                       jlong address, jlong len)
 {
     void* a = (void *)jlong_to_ptr(address);
     int result = msync(a, (size_t)len, MS_SYNC);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "msync failed");
+        JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed");
     }
+}
+
+#define FD "Ljava/io/FileDescriptor;"
+
+static JNINativeMethod methods[] = {
+    {"isLoaded0", "(JJJ)Z",             (void *)&MappedMemoryUtils_isLoaded0},
+    {"load0",     "(JJ)V",              (void *)&MappedMemoryUtils_load0},
+    {"unload0",   "(JJ)V",              (void *)&MappedMemoryUtils_unload0},
+    {"force0",    "(" FD "JJ)V",        (void *)&MappedMemoryUtils_force0},
+};
+
+JNIEXPORT void JNICALL
+Java_java_nio_MappedMemoryUtils_registerNatives(JNIEnv *env, jclass cls)
+{
+    (*env)->RegisterNatives(env, cls,
+                            methods, sizeof(methods)/sizeof(methods[0]));
 }

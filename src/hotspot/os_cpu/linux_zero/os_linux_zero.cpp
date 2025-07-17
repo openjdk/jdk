@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,14 +23,12 @@
  *
  */
 
-// no precompiled headers
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_zero.hpp"
 #include "os_linux.hpp"
@@ -60,7 +58,7 @@ address os::current_stack_pointer() {
 
 frame os::get_sender_for_C_frame(frame* fr) {
   ShouldNotCallThis();
-  return frame(NULL, NULL); // silence compile warning.
+  return frame(nullptr, nullptr); // silence compile warning.
 }
 
 frame os::current_frame() {
@@ -71,7 +69,7 @@ frame os::current_frame() {
   //     set the sp to a close approximation of the real value in
   //     order to allow this step to complete.
   //   - Step 120 (printing native stack) tries to walk the stack.
-  //     The frame we create has a NULL pc, which is ignored as an
+  //     The frame we create has a null pc, which is ignored as an
   //     invalid frame.
   frame dummy = frame();
   dummy.set_sp((intptr_t *) current_stack_pointer());
@@ -177,7 +175,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) {
       *ret_sp = (intptr_t*) os::Linux::ucontext_get_sp(uc);
@@ -186,7 +184,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
       *ret_fp = (intptr_t*) os::Linux::ucontext_get_fp(uc);
     }
   } else {
-    epc = NULL;
+    epc = nullptr;
     if (ret_sp) {
       *ret_sp = nullptr;
     }
@@ -202,7 +200,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   // This code is only called from error handler to get PC and SP.
   // We don't have the ready ZeroFrame* at this point, so fake the
   // frame with bare minimum.
-  if (ucVoid != NULL) {
+  if (ucVoid != nullptr) {
     const ucontext_t* uc = (const ucontext_t*)ucVoid;
     frame dummy = frame();
     dummy.set_pc(os::Posix::ucontext_get_pc(uc));
@@ -213,10 +211,15 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   }
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
-  if (info != NULL && thread != NULL) {
+  if (info != nullptr && thread != nullptr) {
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
       address addr = (address) info->si_addr;
@@ -306,89 +309,68 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-static void current_stack_region(address *bottom, size_t *size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
     // may return bogus value.
-    address stack_bottom = os::Linux::initial_thread_stack_bottom();
-    size_t stack_bytes  = os::Linux::initial_thread_stack_size();
+    bottom = os::Linux::initial_thread_stack_bottom();
+    *size = os::Linux::initial_thread_stack_size();
+    *base = bottom + *size;
+  } else {
 
-    assert(os::current_stack_pointer() >= stack_bottom, "should do");
-    assert(os::current_stack_pointer() < stack_bottom + stack_bytes, "should do");
+    pthread_attr_t attr;
 
-    *bottom = stack_bottom;
-    *size = stack_bytes;
-    return;
-  }
+    int rslt = pthread_getattr_np(pthread_self(), &attr);
 
-  pthread_attr_t attr;
-  int res = pthread_getattr_np(pthread_self(), &attr);
-  if (res != 0) {
-    if (res == ENOMEM) {
-      vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
+    // JVM needs to know exact stack location, abort if it fails
+    if (rslt != 0) {
+      if (rslt == ENOMEM) {
+        vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
+      } else {
+        fatal("pthread_getattr_np failed with error = %d", rslt);
+      }
     }
-    else {
-      fatal("pthread_getattr_np failed with error = %d", res);
+
+    if (pthread_attr_getstack(&attr, (void **)&bottom, size) != 0) {
+      fatal("Cannot locate current stack attributes!");
     }
-  }
 
-  address stack_bottom;
-  size_t stack_bytes;
-  res = pthread_attr_getstack(&attr, (void **) &stack_bottom, &stack_bytes);
-  if (res != 0) {
-    fatal("pthread_attr_getstack failed with error = %d", res);
-  }
-  address stack_top = stack_bottom + stack_bytes;
+    *base = bottom + *size;
 
-  // The block of memory returned by pthread_attr_getstack() includes
-  // guard pages where present.  We need to trim these off.
-  size_t page_bytes = os::vm_page_size();
-  assert(((intptr_t) stack_bottom & (page_bytes - 1)) == 0, "unaligned stack");
+    // The block of memory returned by pthread_attr_getstack() includes
+    // guard pages where present.  We need to trim these off.
+    size_t page_bytes = os::vm_page_size();
+    assert(((intptr_t) bottom & (page_bytes - 1)) == 0, "unaligned stack");
 
-  size_t guard_bytes;
-  res = pthread_attr_getguardsize(&attr, &guard_bytes);
-  if (res != 0) {
-    fatal("pthread_attr_getguardsize failed with errno = %d", res);
-  }
-  int guard_pages = align_up(guard_bytes, page_bytes) / page_bytes;
-  assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");
+    size_t guard_bytes;
+    rslt = pthread_attr_getguardsize(&attr, &guard_bytes);
+    if (rslt != 0) {
+      fatal("pthread_attr_getguardsize failed with errno = %d", rslt);
+    }
+    int guard_pages = align_up(guard_bytes, page_bytes) / page_bytes;
+    assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");
 
 #ifdef IA64
-  // IA64 has two stacks sharing the same area of memory, a normal
-  // stack growing downwards and a register stack growing upwards.
-  // Guard pages, if present, are in the centre.  This code splits
-  // the stack in two even without guard pages, though in theory
-  // there's nothing to stop us allocating more to the normal stack
-  // or more to the register stack if one or the other were found
-  // to grow faster.
-  int total_pages = align_down(stack_bytes, page_bytes) / page_bytes;
-  stack_bottom += (total_pages - guard_pages) / 2 * page_bytes;
+    // IA64 has two stacks sharing the same area of memory, a normal
+    // stack growing downwards and a register stack growing upwards.
+    // Guard pages, if present, are in the centre.  This code splits
+    // the stack in two even without guard pages, though in theory
+    // there's nothing to stop us allocating more to the normal stack
+    // or more to the register stack if one or the other were found
+    // to grow faster.
+    int total_pages = align_down(stack_bytes, page_bytes) / page_bytes;
+    bottom += (total_pages - guard_pages) / 2 * page_bytes;
 #endif // IA64
 
-  stack_bottom += guard_bytes;
+    bottom += guard_bytes;
+    *size = *base - bottom;
 
-  pthread_attr_destroy(&attr);
+    pthread_attr_destroy(&attr);
+  }
 
-  assert(os::current_stack_pointer() >= stack_bottom, "should do");
-  assert(os::current_stack_pointer() < stack_top, "should do");
-
-  *bottom = stack_bottom;
-  *size = stack_top - stack_bottom;
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return bottom + size;
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -398,22 +380,7 @@ void os::print_context(outputStream* st, const void* ucVoid) {
   st->print_cr("No context information.");
 }
 
-void os::print_tos_pc(outputStream *st, const void* ucVoid) {
-  const ucontext_t* uc = (const ucontext_t*)ucVoid;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, sizeof(char));
-  st->cr();
-}
-
-void os::print_register_info(outputStream *st, const void* ucVoid) {
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   st->print_cr("No register info.");
 }
 
@@ -491,22 +458,6 @@ extern "C" {
     memmove(to, from, count * 8);
   }
 };
-
-/////////////////////////////////////////////////////////////////////////////
-// Implementations of atomic operations not supported by processors.
-//  -- http://gcc.gnu.org/onlinedocs/gcc-4.2.1/gcc/Atomic-Builtins.html
-
-#ifndef _LP64
-extern "C" {
-  long long unsigned int __sync_val_compare_and_swap_8(
-    volatile void *ptr,
-    long long unsigned int oldval,
-    long long unsigned int newval) {
-    ShouldNotCallThis();
-    return 0; // silence compiler warnings
-  }
-};
-#endif // !_LP64
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {

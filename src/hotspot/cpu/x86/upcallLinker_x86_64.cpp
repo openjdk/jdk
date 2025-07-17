@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "code/codeBlob.hpp"
+#include "classfile/javaClasses.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -40,13 +39,17 @@
 #define __ _masm->
 
 static bool is_valid_XMM(XMMRegister reg) {
-  return reg->is_valid() && (UseAVX >= 3 || (reg->encoding() < 16)); // why is this not covered by is_valid()?
+  return reg->is_valid() && (reg->encoding() < (UseAVX >= 3 ? 32 : 16)); // why is this not covered by is_valid()?
+}
+
+static bool is_valid_gp(Register reg) {
+  return reg->is_valid() && (reg->encoding() < (UseAPX ? 32 : 16));
 }
 
 // for callee saved regs, according to the caller's ABI
 static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   int size = 0;
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       size += 8; // bytes
@@ -73,8 +76,6 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   return size;
 }
 
-constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
-
 static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
   // 1. iterate all registers in the architecture
   //     - check if they are volatile or not for the given abi
@@ -84,7 +85,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   int offset = reg_save_area_offset;
 
   __ block_comment("{ preserve_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(Address(rsp, offset), reg);
@@ -111,12 +112,9 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   {
     const Address mxcsr_save(rsp, offset);
     Label skip_ldmx;
-    __ stmxcsr(mxcsr_save);
-    __ movl(rax, mxcsr_save);
-    __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-    __ cmp32(rax, mxcsr_std, rscratch1);
+    __ cmp32_mxcsr_std(mxcsr_save, rax, rscratch1);
     __ jcc(Assembler::equal, skip_ldmx);
+    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ ldmxcsr(mxcsr_std, rscratch1);
     __ bind(skip_ldmx);
   }
@@ -134,7 +132,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   int offset = reg_save_area_offset;
 
   __ block_comment("{ restore_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(reg, Address(rsp, offset));
@@ -165,31 +163,27 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
-                                       BasicType* in_sig_bt, int total_in_args,
+static const int upcall_stub_code_base_size = 1200;
+static const int upcall_stub_size_per_arg = 16;
+
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
                                        bool needs_return_buffer, int ret_buf_size) {
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
-
-  Register shuffle_reg = rbx;
-  JavaCallingConvention out_conv;
-  NativeCallingConvention in_conv(call_regs._arg_regs);
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
-  int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
-  int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, upcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
+  int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
+  CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
   }
-#endif
+
+  GrowableArray<VMStorage> unfiltered_out_regs;
+  int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
+  int preserved_bytes = SharedRuntime::out_preserve_stack_slots() * VMRegImpl::stack_slot_size;
+  int stack_bytes = preserved_bytes + out_arg_bytes;
+  int out_arg_area = align_up(stack_bytes , StackAlignmentInBytes);
 
   // out_arg_area (for stack arguments) doubles as shadow space for native calls.
   // make sure it is big enough.
@@ -198,21 +192,38 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   }
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
-  RegSpiller arg_spilller(call_regs._arg_regs);
+  RegSpiller arg_spiller(call_regs._arg_regs);
   RegSpiller result_spiller(call_regs._ret_regs);
 
   int shuffle_area_offset    = 0;
   int res_save_area_offset   = shuffle_area_offset    + out_arg_area;
   int arg_save_area_offset   = res_save_area_offset   + result_spiller.spill_size_bytes();
-  int reg_save_area_offset   = arg_save_area_offset   + arg_spilller.spill_size_bytes();
+  int reg_save_area_offset   = arg_save_area_offset   + arg_spiller.spill_size_bytes();
   int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
   int frame_bottom_offset    = frame_data_offset      + sizeof(UpcallStub::FrameData);
 
+  StubLocations locs;
   int ret_buf_offset = -1;
   if (needs_return_buffer) {
     ret_buf_offset = frame_bottom_offset;
     frame_bottom_offset += ret_buf_size;
+    // use a free register for shuffling code to pick up return
+    // buffer address from
+    locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
   }
+
+  VMStorage shuffle_reg = as_VMStorage(rbx);
+  GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
+  GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
+  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, shuffle_reg);
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, upcall) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   int frame_size = frame_bottom_offset;
   frame_size = align_up(frame_size, StackAlignmentInBytes);
@@ -256,7 +267,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   // we have to always spill args since we need to do a call to get the thread
   // (and maybe attach it).
-  arg_spilller.generate_spill(_masm, arg_save_area_offset);
+  arg_spiller.generate_spill(_masm, arg_save_area_offset);
 
   preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
 
@@ -270,30 +281,30 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} on_entry");
 
   __ block_comment("{ argument shuffle");
-  arg_spilller.generate_fill(_masm, arg_save_area_offset);
+  arg_spiller.generate_fill(_masm, arg_save_area_offset);
   if (needs_return_buffer) {
     assert(ret_buf_offset != -1, "no return buffer allocated");
-    __ lea(abi._ret_buf_addr_reg, Address(rsp, ret_buf_offset));
+    __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(rsp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ movptr(rscratch1, (intptr_t)receiver);
-  __ resolve_jobject(rscratch1, r15_thread, rscratch2);
-  __ movptr(j_rarg0, rscratch1);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t)receiver);
+  __ call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // puts target Method* in rbx
+  __ block_comment("} load target ");
 
-  __ mov_metadata(rbx, entry);
-  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
+  __ push_cont_fastpath();
 
   __ call(Address(rbx, Method::from_compiled_offset()));
+
+  __ pop_cont_fastpath();
 
   // return value shuffle
   if (!needs_return_buffer) {
 #ifdef ASSERT
     if (call_regs._ret_regs.length() == 1) { // 0 or 1
-      VMReg j_expected_result_reg;
+      VMStorage j_expected_result_reg;
       switch (ret_type) {
         case T_BOOLEAN:
         case T_BYTE:
@@ -301,19 +312,18 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
         case T_CHAR:
         case T_INT:
         case T_LONG:
-        j_expected_result_reg = rax->as_VMReg();
+        j_expected_result_reg = as_VMStorage(rax);
         break;
         case T_FLOAT:
         case T_DOUBLE:
-          j_expected_result_reg = xmm0->as_VMReg();
+          j_expected_result_reg = as_VMStorage(xmm0);
           break;
         default:
           fatal("unexpected return type: %s", type2name(ret_type));
       }
       // No need to move for now, since CallArranger can pick a return type
       // that goes in the same reg for both CCs. But, at least assert they are the same
-      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
-        "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg, "unexpected result register");
     }
 #endif
   } else {
@@ -321,12 +331,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     __ lea(rscratch1, Address(rsp, ret_buf_offset));
     int offset = 0;
     for (int i = 0; i < call_regs._ret_regs.length(); i++) {
-      VMReg reg = call_regs._ret_regs.at(i);
-      if (reg->is_Register()) {
-        __ movptr(reg->as_Register(), Address(rscratch1, offset));
+      VMStorage reg = call_regs._ret_regs.at(i);
+      if (reg.type() == StorageType::INTEGER) {
+        __ movptr(as_Register(reg), Address(rscratch1, offset));
         offset += 8;
-      } else if (reg->is_XMMRegister()) {
-        __ movdqu(reg->as_XMMRegister(), Address(rscratch1, offset));
+      } else if (reg.type() == StorageType::VECTOR) {
+        __ movdqu(as_XMMRegister(reg), Address(rscratch1, offset));
         offset += 16;
       } else {
         ShouldNotReachHere();
@@ -353,45 +363,33 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ exception handler");
-
-  intptr_t exception_handler_offset = __ pc() - start;
-
-  // TODO: this is always the same, can we bypass and call handle_uncaught_exception directly?
-
-  // native caller has no idea how to handle exceptions
-  // we just crash here. Up to callee to catch exceptions.
-  __ verify_oop(rax);
-  __ vzeroupper();
-  __ mov(c_rarg0, rax);
-  __ andptr(rsp, -StackAlignmentInBytes); // align stack as required by ABI
-  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows (not really needed)
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
-  __ should_not_reach_here();
-
-  __ block_comment("} exception handler");
-
   _masm->flush();
-
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char* name = _masm->code_string(ss.freeze());
 #else // PRODUCT
   const char* name = "upcall_stub";
 #endif // PRODUCT
 
+  buffer.log_section_sizes(name);
+
   UpcallStub* blob
     = UpcallStub::create(name,
                          &buffer,
-                         exception_handler_offset,
                          receiver,
                          in_ByteSize(frame_data_offset));
-
-  if (TraceOptimizedUpcallStubs) {
-    blob->print_on(tty);
+  if (blob == nullptr) {
+    return nullptr;
   }
+
+#ifndef PRODUCT
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    blob->print_on(&ls);
+  }
+#endif
 
   return blob->code_begin();
 }

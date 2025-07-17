@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 
 class fieldDescriptor;
 class klassVtable;
+class ObjArrayKlass;
 
 // ArrayKlass is the abstract baseclass for all array classes
 
@@ -38,31 +39,41 @@ class ArrayKlass: public Klass {
   // If you add a new field that points to any metaspace object, you
   // must add this field to ArrayKlass::metaspace_pointers_do().
   int      _dimension;         // This is n'th-dimensional array.
-  Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
-  Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+  ObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
+  ArrayKlass* volatile    _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
 
  protected:
   // Constructors
   // The constructor with the Symbol argument does the real array
   // initialization, the other is a dummy
   ArrayKlass(Symbol* name, KlassKind kind);
-  ArrayKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  ArrayKlass();
+
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
   // Testing operation
   DEBUG_ONLY(bool is_array_klass_slow() const { return true; })
 
+  // Returns the ObjArrayKlass for n'th dimension.
+  ArrayKlass* array_klass(int n, TRAPS);
+  ArrayKlass* array_klass_or_null(int n);
+
+  // Returns the array class with this class as element type.
+  ArrayKlass* array_klass(TRAPS);
+  ArrayKlass* array_klass_or_null();
+
   // Instance variables
   int dimension() const                 { return _dimension;      }
   void set_dimension(int dimension)     { _dimension = dimension; }
 
-  Klass* higher_dimension() const     { return _higher_dimension; }
-  inline Klass* higher_dimension_acquire() const; // load with acquire semantics
-  void set_higher_dimension(Klass* k) { _higher_dimension = k; }
-  inline void release_set_higher_dimension(Klass* k); // store with release semantics
+  ObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
+  inline ObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
+  void set_higher_dimension(ObjArrayKlass* k) { _higher_dimension = k; }
+  inline void release_set_higher_dimension(ObjArrayKlass* k); // store with release semantics
 
-  Klass* lower_dimension() const      { return _lower_dimension; }
-  void set_lower_dimension(Klass* k)  { _lower_dimension = k; }
+  ArrayKlass* lower_dimension() const      { return _lower_dimension; }
+  void set_lower_dimension(ArrayKlass* k)  { _lower_dimension = k; }
 
   // offset of first element, including any padding for the sake of alignment
   int  array_header_in_bytes() const    { return layout_helper_header_size(layout_helper()); }
@@ -107,10 +118,6 @@ class ArrayKlass: public Klass {
   // Return a handle.
   static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);
 
-
-  // jvm support
-  jint compute_modifier_flags() const;
-
   // JVMTI support
   jint jvmti_class_status() const;
 
@@ -119,8 +126,10 @@ class ArrayKlass: public Klass {
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+  void cds_print_value_on(outputStream* st) const;
 #endif
 
+  void log_array_class_load(Klass* k);
   // Printing
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,18 +109,15 @@ public class MVJarSigningTest {
         signWithJarSignerAPI(JAR_NAME);
         verify(SIGNED_JAR);
 
-        // test Permission granted
+        // test version.Main output
         File keypass = new File("keypass");
         try (FileOutputStream fos = new FileOutputStream(keypass)) {
             fos.write(KEYPASS.getBytes());
         }
         String[] cmd = {
                 "-classpath", SIGNED_JAR,
-                "-Djava.security.manager",
-                "-Djava.security.policy=" +
-                TEST_SRC + File.separator + POLICY_FILE,
                 "version.Main"};
-        ProcessTools.executeTestJvm(cmd)
+        ProcessTools.executeTestJava(cmd)
             .shouldHaveExitValue(0)
             .shouldContain(VERSION_MESSAGE);
     }
@@ -128,15 +125,15 @@ public class MVJarSigningTest {
     private static void compile (String jarContent_path) throws Throwable {
         Path classes = Paths.get(USR_DIR, "classes", "base");
         Path source = Paths.get(TEST_SRC, jarContent_path, "base", "version");
-        CompilerUtils.compile(source, classes);
+        CompilerUtils.compile(source, classes, "--release", "8");
 
         classes = Paths.get(USR_DIR, "classes", "v9");
         source = Paths.get(TEST_SRC, jarContent_path , "v9", "version");
-        CompilerUtils.compile(source, classes);
+        CompilerUtils.compile(source, classes, "--release", "9");
 
         classes = Paths.get(USR_DIR, "classes", "v10");
         source = Paths.get(TEST_SRC, jarContent_path, "v10", "version");
-        CompilerUtils.compile(source, classes);
+        CompilerUtils.compile(source, classes, "--release", "10");
     }
 
     private static OutputAnalyzer jar(String...args) throws Throwable {

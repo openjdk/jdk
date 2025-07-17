@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @bug 8284274
  * @summary Test that reporting doesn't crash because missing ResourceMarks
  * @library /test/lib
+ * @requires vm.flagless
  * @requires vm.debug
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
@@ -47,7 +48,7 @@ public class ResourceMarkTest {
 
 
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",
@@ -63,54 +64,18 @@ public class ResourceMarkTest {
     output_detail.shouldMatch("This is a message with no ResourceMark");
 
     // extract hs-err file
-    String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-    if (hs_err_file == null) {
-      throw new RuntimeException("Did not find hs-err file in output.\n");
-    }
+    File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
 
     // scan hs-err file: File should NOT contain the "[error occurred during error reporting..]"
     // markers which show that the secondary error handling kicked in and handled the
     // error successfully. As an added test, we check that the last line contains "END.",
     // which is an end marker written in the last step and proves that hs-err file was
     // completely written.
-    File f = new File(hs_err_file);
-    if (!f.exists()) {
-      throw new RuntimeException("hs-err file missing at "
-          + f.getAbsolutePath() + ".\n");
-    }
-
-    System.out.println("Found hs_err file. Scanning...");
-
-    FileInputStream fis = new FileInputStream(f);
-    BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-    String line = null;
-
-    Pattern [] pattern = new Pattern[] {
+    Pattern [] negativePattern = new Pattern[] {
         Pattern.compile("\\[error occurred during error reporting \\(test missing ResourceMark does not crash\\), id 0xe0000000, Internal Error \\(.*resourceArea.cpp:.*\\)\\]"),
     };
-    int currentPattern = 0;
 
-    String lastLine = null;
-    while ((line = br.readLine()) != null) {
-      if (currentPattern < pattern.length) {
-        if (pattern[currentPattern].matcher(line).matches()) {
-          System.out.println("Found: " + line + ".");
-          currentPattern ++;
-        }
-      }
-      lastLine = line;
-    }
-    br.close();
-
-    if (currentPattern == pattern.length) {
-      throw new RuntimeException("hs-err file found secondary crash for ResourceMark");
-    }
-
-    if (!lastLine.equals("END.")) {
-      throw new RuntimeException("hs-err file incomplete (missing END marker.)");
-    } else {
-      System.out.println("End marker found.");
-    }
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, null, negativePattern, true /* check end marker */, false /* verbose */);
 
     System.out.println("OK.");
 

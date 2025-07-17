@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.swing.JWindow;
 
 /**
  * A class which tags a window with a particular semantic usage,
- * either tooltip, menu, sub-menu, popup-menu, or comobobox-popup.
+ * either tooltip, menu, sub-menu, popup-menu, or combobox-popup.
  * This is used as a temporary solution for getting native AWT support
  * for transition effects in Windows 98 and Windows 2000.  The native
  * code will interpret the windowType property and automatically
@@ -45,7 +45,7 @@ import javax.swing.JWindow;
  * @author Amy Fowler
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class WindowsPopupWindow extends JWindow {
+final class WindowsPopupWindow extends JWindow {
 
     static final int UNDEFINED_WINDOW_TYPE      = 0;
     static final int TOOLTIP_WINDOW_TYPE        = 1;
@@ -69,10 +69,12 @@ class WindowsPopupWindow extends JWindow {
         return windowType;
     }
 
+    @Override
     public void update(Graphics g) {
         paint(g);
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void hide() {
         super.hide();
@@ -85,6 +87,7 @@ class WindowsPopupWindow extends JWindow {
         removeNotify();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void show() {
         super.show();

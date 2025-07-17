@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.io.*;
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.UnknownFormatConversionException;
 
 public class Basic {
 
@@ -168,6 +169,8 @@ public class Basic {
     }
 
     public static void main(String[] args) {
+        common();
+
         BasicBoolean.test();
         BasicBooleanObject.test();
         BasicByte.test();
@@ -196,5 +199,13 @@ public class Basic {
         } else {
             System.out.printf("All %d tests passed", pass);
         }
+    }
+
+    private static void common() {
+        // non-conversion
+        tryCatch("%12", UnknownFormatConversionException.class);
+        tryCatch("% ", UnknownFormatConversionException.class);
+        tryCatch("%,", UnknownFormatConversionException.class);
+        tryCatch("%03.2", UnknownFormatConversionException.class);
     }
 }

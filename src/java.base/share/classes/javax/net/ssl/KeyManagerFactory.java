@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.net.ssl;
 
-import java.security.Security;
 import java.security.*;
 import java.util.Objects;
 
@@ -62,11 +61,8 @@ public class KeyManagerFactory {
      *          {@code ssl.KeyManagerFactory.algorithm} security property, or an
      *          implementation-specific default if no such property exists.
      */
-    @SuppressWarnings("removal")
-    public static String getDefaultAlgorithm() {
-        String type;
-        type = AccessController.doPrivileged((PrivilegedAction<String>) () ->
-            Security.getProperty("ssl.KeyManagerFactory.algorithm"));
+    public static final String getDefaultAlgorithm() {
+        String type = Security.getProperty("ssl.KeyManagerFactory.algorithm");
         if (type == null) {
             type = "SunX509";
         }
@@ -128,6 +124,7 @@ public class KeyManagerFactory {
      *          Algorithm Names Specification for information about standard
      *          algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -169,6 +166,7 @@ public class KeyManagerFactory {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -214,6 +212,7 @@ public class KeyManagerFactory {
      *
      * @param provider an instance of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws IllegalArgumentException if provider is {@code null}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@ import jdk.test.lib.process.ProcessTools;
 /**
  * Run security tools (including jarsigner and keytool) in a new process.
  * The en_US locale is always used so a test can always match output to
- * English text. {@code /dev/urandom} is used as entropy source so tool will
- * not block because of entropy scarcity. An argument can be a normal string,
+ * English text. An argument can be a normal string,
  * {@code -Jvm-options}, or {@code $sysProp}.
  */
 public class SecurityTools {
@@ -58,9 +57,6 @@ public class SecurityTools {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(tool)
                 .addVMArg("-Duser.language=en")
                 .addVMArg("-Duser.country=US");
-        if (!Platform.isWindows()) {
-            launcher.addVMArg("-Djava.security.egd=file:/dev/./urandom");
-        }
         for (String arg : args) {
             if (arg.startsWith("-J")) {
                 launcher.addVMArg(arg.substring(2));
@@ -240,13 +236,36 @@ public class SecurityTools {
     /**
      * Runs jar.
      *
+     * @param args arguments to jar in the list.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer jar(final List<String> args) throws Exception {
+        return execute(getProcessBuilder("jar", args));
+    }
+
+    /**
+     * Runs jar.
+     *
      * @param args arguments to jar in a single string. The string is
      *             converted to be List with makeList.
      * @return an {@link OutputAnalyzer} object
      * @throws Exception if there is an error
      */
-    public static OutputAnalyzer jar(String args) throws Exception {
-        return execute(getProcessBuilder("jar", makeList(args)));
+    public static OutputAnalyzer jar(final String args) throws Exception {
+        return  jar(makeList(args));
+    }
+
+    /**
+     * Runs jar.
+     *
+     * @param args arguments to jar in multiple strings.
+     *             Converted to be a List with List.of.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer jar(final String... args) throws Exception {
+        return jar(List.of(args));
     }
 
     /**

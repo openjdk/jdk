@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@
  */
 #define SAFE_TO_ALLOC_2(c, sz)                                             \
     (((c) > 0) && ((sz) > 0) &&                                            \
-     ((0x7fffffff / (c)) > (sz)))
+     ((0x7fffffffu / (c)) > (sz)))
 
 #define SAFE_TO_ALLOC_3(w, h, sz)                                          \
     (((w) > 0) && ((h) > 0) && ((sz) > 0) &&                               \
-     (((0x7fffffff / (w)) / (h)) > (sz)))
+     (((0x7fffffffu / (w)) / (h)) > (sz)))
 
 #endif // __SAFE_ALLOC_H__

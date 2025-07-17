@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049237 8242151
+ * @bug 8049237 8242151 8347841
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  *          jdk.crypto.ec
@@ -114,7 +114,7 @@ public class V3Certificate {
 
         // Validity interval
         Date firstDate = new Date();
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("PST"));
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"));
         cal.set(2014, 03, 10, 12, 30, 30);
         Date lastDate = cal.getTime();
         CertificateValidity interval = new CertificateValidity(firstDate,
@@ -155,21 +155,19 @@ public class V3Certificate {
                 new OIDName(ObjectIdentifier.of("1.2.3.4"));
         GeneralName oid = new GeneralName(oidInf);
 
-        SubjectAlternativeNameExtension subjectName
-                = new SubjectAlternativeNameExtension();
-        IssuerAlternativeNameExtension issuerName
-                = new IssuerAlternativeNameExtension();
 
-        GeneralNames subjectNames = subjectName.getNames();
-
-        GeneralNames issuerNames = issuerName.getNames();
-
+        GeneralNames subjectNames = new GeneralNames();
         subjectNames.add(mail);
         subjectNames.add(dns);
         subjectNames.add(uri);
+        SubjectAlternativeNameExtension subjectName
+                = new SubjectAlternativeNameExtension(subjectNames);
 
+        GeneralNames issuerNames = new GeneralNames();
         issuerNames.add(ip);
         issuerNames.add(oid);
+        IssuerAlternativeNameExtension issuerName
+                = new IssuerAlternativeNameExtension(issuerNames);
 
         cal.set(2000, 11, 15, 12, 30, 30);
         lastDate = cal.getTime();
@@ -205,8 +203,7 @@ public class V3Certificate {
         cert.setExtensions(exts);
 
         // Generate and sign X509CertImpl
-        X509CertImpl crt = new X509CertImpl(cert);
-        crt.sign(privateKey, sigAlg);
+        X509CertImpl crt = X509CertImpl.newSigned(cert, privateKey, sigAlg);
         crt.verify(publicKey);
 
         try (FileOutputStream fos = new FileOutputStream(new File(V3_FILE));

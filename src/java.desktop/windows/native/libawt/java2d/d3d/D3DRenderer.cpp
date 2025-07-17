@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,42 +31,42 @@
 #include "D3DRenderer.h"
 #include "D3DRenderQueue.h"
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawLine(D3DContext *d3dc,
                      jint x1, jint y1, jint x2, jint y2)
 {
-    J2dTraceLn4(J2D_TRACE_INFO,
-                "D3DRenderer_doDrawLineD3D x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
-                x1, y1, x2, y2);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DRenderer_doDrawLineD3D x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
+               x1, y1, x2, y2);
     d3dc->BeginScene(STATE_RENDEROP);
     return d3dc->pVCacher->DrawLine(x1, y1, x2, y2);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawRect(D3DContext *d3dc,
                      jint x, jint y, jint w, jint h)
 {
-    J2dTraceLn4(J2D_TRACE_INFO,
-                "D3DRenderer_DrawRect x=%-4d y=%-4d w=%-4d h=%-4d",
-                x, y, w, h);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DRenderer_DrawRect x=%-4d y=%-4d w=%-4d h=%-4d",
+               x, y, w, h);
 
     d3dc->BeginScene(STATE_RENDEROP);
     return d3dc->pVCacher->DrawRect(x, y, x + w, y + h);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillRect(D3DContext *d3dc,
                      jint x, jint y, jint w, jint h)
 {
-    J2dTraceLn4(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                "D3DRenderer_FillRect x=%-4d y=%-4d w=%-4d h=%-4d",
-                x, y, w, h);
+               x, y, w, h);
 
     d3dc->BeginScene(STATE_RENDEROP);
     return d3dc->pVCacher->FillRect(x, y, x + w, y + h);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawPoly(D3DContext *d3dc,
                      jint nPoints, jboolean isClosed,
                      jint transX, jint transY,
@@ -85,7 +85,7 @@ D3DRenderer_DrawPoly(D3DContext *d3dc,
                                     xPoints, yPoints);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawScanlines(D3DContext *d3dc,
                           jint scanlineCount, jint *scanlines)
 {
@@ -102,7 +102,7 @@ D3DRenderer_DrawScanlines(D3DContext *d3dc,
     return d3dc->pVCacher->DrawScanlines(scanlineCount, scanlines);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillSpans(D3DContext *d3dc, jint spanCount, jint *spans)
 {
     J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_FillSpans");
@@ -114,20 +114,20 @@ D3DRenderer_FillSpans(D3DContext *d3dc, jint spanCount, jint *spans)
     return d3dc->pVCacher->FillSpans(spanCount, spans);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillParallelogram(D3DContext *d3dc,
                               jfloat fx11, jfloat fy11,
                               jfloat dx21, jfloat dy21,
                               jfloat dx12, jfloat dy12)
 {
-    J2dTraceLn6(J2D_TRACE_INFO,
-                "D3DRenderer_FillParallelogram "
-                "x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f ",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DRenderer_FillParallelogram "
+               "x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f ",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12);
 
     d3dc->BeginScene(STATE_RENDEROP);
     return d3dc->pVCacher->FillParallelogram(fx11, fy11,
@@ -135,7 +135,7 @@ D3DRenderer_FillParallelogram(D3DContext *d3dc,
                                              dx12, dy12);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawParallelogram(D3DContext *d3dc,
                               jfloat fx11, jfloat fy11,
                               jfloat dx21, jfloat dy21,
@@ -144,14 +144,14 @@ D3DRenderer_DrawParallelogram(D3DContext *d3dc,
 {
     HRESULT res;
 
-    J2dTraceLn8(J2D_TRACE_INFO,
-                "D3DRenderer_DrawParallelogram "
-                "x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f ",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DRenderer_DrawParallelogram "
+               "x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f ",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
     // dx,dy for line width in the "21" and "12" directions.
     jfloat ldx21 = dx21 * lwr21;
@@ -242,7 +242,7 @@ D3DRenderer_DrawParallelogram(D3DContext *d3dc,
     return res;
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillAAParallelogram(D3DContext *d3dc,
                                 jfloat fx11, jfloat fy11,
                                 jfloat dx21, jfloat dy21,
@@ -251,14 +251,14 @@ D3DRenderer_FillAAParallelogram(D3DContext *d3dc,
     IDirect3DDevice9 *pd3dDevice;
     HRESULT res;
 
-    J2dTraceLn6(J2D_TRACE_INFO,
-                "D3DRenderer_FillAAParallelogram "
-                "x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f ",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DRenderer_FillAAParallelogram "
+               "x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f ",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12);
 
     res = d3dc->BeginScene(STATE_AAPGRAMOP);
     RETURN_STATUS_IF_FAILED(res);
@@ -274,7 +274,7 @@ D3DRenderer_FillAAParallelogram(D3DContext *d3dc,
     return res;
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawAAParallelogram(D3DContext *d3dc,
                                 jfloat fx11, jfloat fy11,
                                 jfloat dx21, jfloat dy21,
@@ -290,14 +290,14 @@ D3DRenderer_DrawAAParallelogram(D3DContext *d3dc,
     jfloat ifx11, ify11, idx21, idy21, idx12, idy12;
     HRESULT res;
 
-    J2dTraceLn8(J2D_TRACE_INFO,
-                "D3DRenderer_DrawAAParallelogram "
-                "x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f ",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "D3DRenderer_DrawAAParallelogram "
+               "x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f ",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
     res = d3dc->BeginScene(STATE_AAPGRAMOP);
     RETURN_STATUS_IF_FAILED(res);
@@ -349,8 +349,6 @@ D3DRenderer_DrawAAParallelogram(D3DContext *d3dc,
     return res;
 }
 
-#ifndef D3D_PPL_DLL
-
 extern "C"
 {
 
@@ -388,5 +386,3 @@ Java_sun_java2d_d3d_D3DRenderer_drawPoly
 }
 
 }
-
-#endif // D3D_PPL_DLL

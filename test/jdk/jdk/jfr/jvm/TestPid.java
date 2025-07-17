@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import jdk.jfr.internal.JVM;
 
 /**
  * @test TestPid
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
@@ -39,8 +39,7 @@ public class TestPid {
 
     public static void main(String... args) throws InterruptedException {
 
-        JVM jvm = JVM.getJVM();
-        String pid = jvm.getPid();
+        String pid = JVM.getPid();
 
         try {
             String managementPid = String.valueOf(ProcessHandle.current().pid());

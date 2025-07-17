@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
@@ -39,12 +38,12 @@ KeepStackGCProcessedMark::KeepStackGCProcessedMark(JavaThread* jt) :
     return;
   }
   StackWatermark* our_watermark = StackWatermarkSet::get(JavaThread::current(), StackWatermarkKind::gc);
-  if (our_watermark == NULL) {
+  if (our_watermark == nullptr) {
     _active = false;
     return;
   }
   StackWatermark* their_watermark = StackWatermarkSet::get(jt, StackWatermarkKind::gc);
-  our_watermark->link_watermark(their_watermark);
+  our_watermark->push_linked_watermark(their_watermark);
 }
 
 KeepStackGCProcessedMark::~KeepStackGCProcessedMark() {
@@ -52,25 +51,9 @@ KeepStackGCProcessedMark::~KeepStackGCProcessedMark() {
     return;
   }
   StackWatermark* our_watermark = StackWatermarkSet::get(JavaThread::current(), StackWatermarkKind::gc);
-  our_watermark->link_watermark(NULL);
+  our_watermark->pop_linked_watermark();
 }
 
 void KeepStackGCProcessedMark::finish_processing() {
-  StackWatermarkSet::finish_processing(_jt, NULL /* context */, StackWatermarkKind::gc);
+  StackWatermarkSet::finish_processing(_jt, nullptr /* context */, StackWatermarkKind::gc);
 }
-
-#ifdef ASSERT
-bool KeepStackGCProcessedMark::stack_is_kept_gc_processed(JavaThread* jt) {
-  if (!Thread::current()->is_Java_thread()) {
-    assert(SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread(),
-           "must be either Java thread or VM thread in a safepoint");
-    return true;
-  }
-  StackWatermark* our_watermark = StackWatermarkSet::get(JavaThread::current(), StackWatermarkKind::gc);
-  if (our_watermark == nullptr) {
-    return true;
-  }
-  StackWatermark* their_watermark = StackWatermarkSet::get(jt, StackWatermarkKind::gc);
-  return our_watermark->linked_watermark() == their_watermark;
-}
-#endif // ASSERT

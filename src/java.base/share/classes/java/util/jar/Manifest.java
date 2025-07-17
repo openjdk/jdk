@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,11 @@ import sun.security.util.SecurityProperties;
  * see the
  * <a href="{@docRoot}/../specs/jar/jar.html">
  * Manifest format specification</a>.
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  *
+ * @spec jar/jar.html JAR File Specification
  * @author  David Connelly
  * @see     Attributes
  * @since   1.2
@@ -72,6 +76,7 @@ public class Manifest implements Cloneable {
      * @param is the input stream containing manifest data
      * @throws IOException if an I/O error has occurred
      */
+    @SuppressWarnings("this-escape")
     public Manifest(InputStream is) throws IOException {
         this(null, is, null);
     }
@@ -80,7 +85,8 @@ public class Manifest implements Cloneable {
      * Constructs a new Manifest from the specified input stream.
      *
      * @param is the input stream containing manifest data
-     * @param jarFilename the name of the corresponding jar archive if available
+     * @param jarFilename the name of the corresponding jar archive
+     *                    if available, else null
      * @throws IOException if an I/O error has occurred
      */
     Manifest(InputStream is, String jarFilename) throws IOException {
@@ -91,7 +97,7 @@ public class Manifest implements Cloneable {
      * Constructs a new Manifest from the specified input stream
      * and associates it with a JarVerifier.
      *
-     * @param jv the JarVerifier to use
+     * @param jv the JarVerifier to use if any, else null
      * @param is the input stream containing manifest data
      * @param jarFilename the name of the corresponding jar archive if available
      * @throws IOException if an I/O error has occurred
@@ -113,8 +119,7 @@ public class Manifest implements Cloneable {
     }
 
     /**
-     * Returns the main Attributes for the Manifest.
-     * @return the main Attributes for the Manifest
+     * {@return the main Attributes for the Manifest}
      */
     public Attributes getMainAttributes() {
         return attr;
@@ -211,22 +216,6 @@ public class Manifest implements Cloneable {
             e.getValue().write(dos);
         }
         dos.flush();
-    }
-
-    /**
-     * Adds line breaks to enforce a maximum of 72 bytes per line.
-     *
-     * @deprecation Replaced with {@link #println72}.
-     */
-    @Deprecated(since = "13")
-    static void make72Safe(StringBuffer line) {
-        int length = line.length();
-        int index = 72;
-        while (index < length) {
-            line.insert(index, "\r\n ");
-            index += 74; // + line width + line break ("\r\n")
-            length += 3; // + line break ("\r\n") and space
-        }
     }
 
     /**

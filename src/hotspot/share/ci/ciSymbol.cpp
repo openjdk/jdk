@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -36,7 +35,7 @@
 ciSymbol::ciSymbol(Symbol* s, vmSymbolID sid)
   : _symbol(s), _sid(sid)
 {
-  assert(_symbol != NULL, "adding null symbol");
+  assert(_symbol != nullptr, "adding null symbol");
   _symbol->increment_refcount();  // increment ref count
   assert(sid_ok(), "sid must be consistent with vmSymbols");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,8 +98,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 Boolean.toString(shrinkHeapInSteps)
         );
 
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(0);
     }
 
@@ -123,8 +122,7 @@ public class TestMaxMinHeapFreeRatioFlags {
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-version"
         );
-        ProcessBuilder procBuilder = GCArguments.createJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(1);
         analyzer.shouldContain("Error: Could not create the Java Virtual Machine.");
     }
@@ -140,7 +138,7 @@ public class TestMaxMinHeapFreeRatioFlags {
         // Size of byte array that will be allocated
         public static final int CHUNK_SIZE = 1024;
         // Length of byte array, that will be added to "garbage" list.
-        public static final int ARRAY_LENGTH = CHUNK_SIZE - Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        public static final int ARRAY_LENGTH = CHUNK_SIZE - (int) Unsafe.ARRAY_BYTE_BASE_OFFSET;
         // Amount of tries to force heap shrinking/expansion using GC
         public static final int GC_TRIES = 10;
 

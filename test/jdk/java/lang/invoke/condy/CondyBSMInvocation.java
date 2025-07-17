@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 8186046 8199875
  * @summary Test basic invocation of bootstrap methods
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
  * @run testng CondyBSMInvocation
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMInvocation
  */
@@ -36,6 +36,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
+import java.lang.constant.ConstantDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -55,8 +56,8 @@ public class CondyBSMInvocation {
     public void testNonexistent() throws Throwable {
         MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                 L, "name", Object.class,
-                "bsm", methodType(Object.class),
-                S -> {});
+                "bsm", methodType(Object.class)
+        );
 
         try {
             mh.invoke();
@@ -110,8 +111,7 @@ public class CondyBSMInvocation {
         for (MethodHandle bsm : bsms("shape_bsm")) {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object.class,
-                    "shape_bsm", bsm.type(),
-                    S -> {}
+                    "shape_bsm", bsm.type()
             );
 
             try {
@@ -136,8 +136,7 @@ public class CondyBSMInvocation {
         for (MethodHandle bsm : bsms("sig_bsm")) {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object.class,
-                    "sig_bsm", bsm.type(),
-                    S -> {}
+                    "sig_bsm", bsm.type()
             );
 
             try {
@@ -216,8 +215,8 @@ public class CondyBSMInvocation {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object.class,
                     "bsm", mt,
-                    S -> IntStream.range(0, n).forEach(S::add)
-                    );
+                    IntStream.range(0, n).boxed().toArray(ConstantDesc[]::new)
+            );
 
             Object r = mh.invoke();
             Assert.assertEquals(r, Integer.toString(n));
@@ -228,7 +227,7 @@ public class CondyBSMInvocation {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object.class,
                     "bsm", mt,
-                    S -> IntStream.range(0, 9).forEach(S::add)
+                    IntStream.range(0, 9).boxed().toArray(ConstantDesc[]::new)
             );
 
             Object r = mh.invoke();
@@ -246,7 +245,7 @@ public class CondyBSMInvocation {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object.class,
                     "bsm", mt,
-                    S -> IntStream.range(0, n - 1).forEach(S::add)
+                    IntStream.range(0, n - 1).boxed().toArray(ConstantDesc[]::new)
             );
 
             try {

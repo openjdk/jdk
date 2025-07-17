@@ -120,11 +120,8 @@ public class TreePosRoundsTest extends AbstractProcessor {
 
         try {
             JavaFileObject fo = filer.createSourceFile(name);
-            Writer out = fo.openWriter();
-            try {
+            try (Writer out = fo.openWriter()) {
                 out.write(text.toString());
-            } finally {
-                out.close();
             }
         } catch (IOException e) {
             throw new Error(e);

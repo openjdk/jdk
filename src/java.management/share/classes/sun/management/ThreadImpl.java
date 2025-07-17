@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.stream.Stream;
 import javax.management.ObjectName;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -128,9 +129,8 @@ public class ThreadImpl implements ThreadMXBean {
 
     @Override
     public long[] getAllThreadIds() {
-        Util.checkMonitorAccess();
         Thread[] threads = getThreads();
-        return platformThreadIds(threads);
+        return threadIds(threads);
     }
 
     @Override
@@ -141,12 +141,7 @@ public class ThreadImpl implements ThreadMXBean {
     @Override
     public ThreadInfo getThreadInfo(long id, int maxDepth) {
         long[] ids = new long[] { id };
-        ThreadInfo ti = getThreadInfo(ids, maxDepth)[0];
-        if (ti == null || Util.isVirtual(ti)) {
-            return null;
-        } else {
-            return ti;
-        }
+        return getThreadInfo(ids, maxDepth)[0];
     }
 
     @Override
@@ -182,15 +177,12 @@ public class ThreadImpl implements ThreadMXBean {
         // an empty array of ids should return an empty array of ThreadInfos
         if (ids.length == 0) return new ThreadInfo[0];
 
-        Util.checkMonitorAccess();
-
         ThreadInfo[] infos = new ThreadInfo[ids.length]; // nulls
         if (maxDepth == Integer.MAX_VALUE) {
             getThreadInfo1(ids, -1, infos);
         } else {
             getThreadInfo1(ids, maxDepth, infos);
         }
-        nullVirtualThreads(infos);
         return infos;
     }
 
@@ -200,8 +192,6 @@ public class ThreadImpl implements ThreadMXBean {
             throw new UnsupportedOperationException(
                 "Thread contention monitoring is not supported");
         }
-
-        Util.checkControlAccess();
 
         synchronized (this) {
             if (contentionMonitoringEnabled != enable) {
@@ -220,10 +210,6 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     private boolean verifyCurrentThreadCpuTime() {
-        // check if Thread CPU time measurement is supported.
-        if (Thread.currentThread().isVirtual()) {
-            throw new UnsupportedOperationException("Not supported by virtual threads");
-        }
         if (!isCurrentThreadCpuTimeSupported()) {
             throw new UnsupportedOperationException(
                 "Current thread CPU time measurement is not supported.");
@@ -233,7 +219,7 @@ public class ThreadImpl implements ThreadMXBean {
 
     @Override
     public long getCurrentThreadCpuTime() {
-        if (verifyCurrentThreadCpuTime()) {
+        if (verifyCurrentThreadCpuTime() && !Thread.currentThread().isVirtual()) {
             return getThreadTotalCpuTime0(0);
         }
         return -1;
@@ -276,18 +262,14 @@ public class ThreadImpl implements ThreadMXBean {
 
         int length = ids.length;
         long[] times = new long[length];
-        java.util.Arrays.fill(times, -1);
+        Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
                 long id = ids[0];
                 Thread thread = Thread.currentThread();
                 if (id == thread.threadId()) {
-                    if (thread.isVirtual()) {
-                        times[0] = -1;
-                    } else {
-                        times[0] = getThreadTotalCpuTime0(0);
-                    }
+                    times[0] = thread.isVirtual() ? -1L : getThreadTotalCpuTime0(0);
                 } else {
                     times[0] = getThreadTotalCpuTime0(id);
                 }
@@ -300,7 +282,7 @@ public class ThreadImpl implements ThreadMXBean {
 
     @Override
     public long getCurrentThreadUserTime() {
-        if (verifyCurrentThreadCpuTime()) {
+        if (verifyCurrentThreadCpuTime() && !Thread.currentThread().isVirtual()) {
             return getThreadUserCpuTime0(0);
         }
         return -1;
@@ -319,18 +301,14 @@ public class ThreadImpl implements ThreadMXBean {
 
         int length = ids.length;
         long[] times = new long[length];
-        java.util.Arrays.fill(times, -1);
+        Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
                 long id = ids[0];
                 Thread thread = Thread.currentThread();
                 if (id == thread.threadId()) {
-                    if (thread.isVirtual()) {
-                        times[0] = -1;
-                    } else {
-                        times[0] = getThreadUserCpuTime0(0);
-                    }
+                    times[0] = thread.isVirtual() ? -1L : getThreadTotalCpuTime0(0);
                 } else {
                     times[0] = getThreadUserCpuTime0(id);
                 }
@@ -349,7 +327,6 @@ public class ThreadImpl implements ThreadMXBean {
                 "Thread CPU time measurement is not supported");
         }
 
-        Util.checkControlAccess();
         synchronized (this) {
             if (cpuTimeEnabled != enable) {
                 // notify VM of the state change
@@ -357,6 +334,13 @@ public class ThreadImpl implements ThreadMXBean {
                 cpuTimeEnabled = enable;
             }
         }
+    }
+
+    protected long getTotalThreadAllocatedBytes() {
+        if (isThreadAllocatedMemoryEnabled()) {
+            return getTotalThreadAllocatedMemory();
+        }
+        return -1;
     }
 
     protected long getCurrentThreadAllocatedBytes() {
@@ -376,11 +360,7 @@ public class ThreadImpl implements ThreadMXBean {
         if (verified) {
             Thread thread = Thread.currentThread();
             if (id == thread.threadId()) {
-                if (thread.isVirtual()) {
-                    return -1L;
-                } else {
-                    return getThreadAllocatedMemory0(0);
-                }
+                return thread.isVirtual() ? -1L : getThreadAllocatedMemory0(0);
             } else {
                 return getThreadAllocatedMemory0(id);
             }
@@ -404,7 +384,7 @@ public class ThreadImpl implements ThreadMXBean {
         boolean verified = verifyThreadAllocatedMemory(ids);
 
         long[] sizes = new long[ids.length];
-        java.util.Arrays.fill(sizes, -1);
+        Arrays.fill(sizes, -1);
 
         if (verified) {
             getThreadAllocatedMemory1(ids, sizes);
@@ -415,7 +395,6 @@ public class ThreadImpl implements ThreadMXBean {
     protected void setThreadAllocatedMemoryEnabled(boolean enable) {
         ensureThreadAllocatedMemorySupported();
 
-        Util.checkControlAccess();
         synchronized (this) {
             if (allocatedMemoryEnabled != enable) {
                 // notify VM of the state change
@@ -431,19 +410,15 @@ public class ThreadImpl implements ThreadMXBean {
      * of threads is empty.
      */
     private long[] threadsToIds(Thread[] threads) {
-        if (threads != null) {
-            long[] tids = platformThreadIds(threads);
-            if (tids.length > 0) {
-                return tids;
-            }
+        if (threads != null && threads.length > 0) {
+            return threadIds(threads);
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
     public long[] findMonitorDeadlockedThreads() {
-        Util.checkMonitorAccess();
-
         Thread[] threads = findMonitorDeadlockedThreads0();
         return threadsToIds(threads);
     }
@@ -455,15 +430,12 @@ public class ThreadImpl implements ThreadMXBean {
                 "Monitoring of Synchronizer Usage is not supported.");
         }
 
-        Util.checkMonitorAccess();
-
         Thread[] threads = findDeadlockedThreads0();
         return threadsToIds(threads);
     }
 
     @Override
     public void resetPeakThreadCount() {
-        Util.checkControlAccess();
         resetPeakThreadCount0();
     }
 
@@ -488,20 +460,16 @@ public class ThreadImpl implements ThreadMXBean {
             throw new UnsupportedOperationException(
                 "Monitoring of Synchronizer Usage is not supported.");
         }
-
-        Util.checkMonitorAccess();
     }
 
     @Override
     public ThreadInfo[] getThreadInfo(long[] ids,
                                       boolean lockedMonitors,
                                       boolean lockedSynchronizers) {
-        ThreadInfo[] infos = dumpThreads0(ids, lockedMonitors, lockedSynchronizers,
-                                          Integer.MAX_VALUE);
-        nullVirtualThreads(infos);
-        return infos;
+        return dumpThreads0(ids, lockedMonitors, lockedSynchronizers, Integer.MAX_VALUE);
     }
 
+    @Override
     public ThreadInfo[] getThreadInfo(long[] ids,
                                       boolean lockedMonitors,
                                       boolean lockedSynchronizers,
@@ -516,19 +484,16 @@ public class ThreadImpl implements ThreadMXBean {
         if (ids.length == 0) return new ThreadInfo[0];
 
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
-        ThreadInfo[] infos = dumpThreads0(ids, lockedMonitors, lockedSynchronizers, maxDepth);
-        nullVirtualThreads(infos);
-        return infos;
+        return dumpThreads0(ids, lockedMonitors, lockedSynchronizers, maxDepth);
     }
 
     @Override
     public ThreadInfo[] dumpAllThreads(boolean lockedMonitors,
                                        boolean lockedSynchronizers) {
-        ThreadInfo[] infos = dumpAllThreads(lockedMonitors, lockedSynchronizers,
-                                            Integer.MAX_VALUE);
-        return platformThreads(infos);
+        return dumpAllThreads(lockedMonitors, lockedSynchronizers, Integer.MAX_VALUE);
     }
 
+    @Override
     public ThreadInfo[] dumpAllThreads(boolean lockedMonitors,
                                        boolean lockedSynchronizers,
                                        int maxDepth) {
@@ -538,7 +503,9 @@ public class ThreadImpl implements ThreadMXBean {
         }
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
         ThreadInfo[] infos = dumpThreads0(null, lockedMonitors, lockedSynchronizers, maxDepth);
-        return platformThreads(infos);
+        return Arrays.stream(infos)
+                .filter(ti -> ti != null)
+                .toArray(ThreadInfo[]::new);
     }
 
     // VM support where maxDepth == -1 to request entire stack dump
@@ -552,6 +519,7 @@ public class ThreadImpl implements ThreadMXBean {
     private static native void getThreadUserCpuTime1(long[] ids, long[] result);
     private static native long getThreadAllocatedMemory0(long id);
     private static native void getThreadAllocatedMemory1(long[] ids, long[] result);
+    private static native long getTotalThreadAllocatedMemory();
     private static native void setThreadCpuTimeEnabled0(boolean enable);
     private static native void setThreadAllocatedMemoryEnabled0(boolean enable);
     private static native void setThreadContentionMonitoringEnabled0(boolean enable);
@@ -572,34 +540,11 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     /**
-     * Returns the thread identifiers of the platform threads in the given array.
+     * Returns the thread identifiers of the threads in the given array.
      */
-    private static long[] platformThreadIds(Thread[] threads) {
+    private static long[] threadIds(Thread[] threads) {
         return Stream.of(threads)
-                .filter(t -> !t.isVirtual())
                 .mapToLong(Thread::threadId)
                 .toArray();
-    }
-
-    /**
-     * Returns the ThreadInfo objects from the given array that correspond to platform
-     * threads.
-     */
-    private ThreadInfo[] platformThreads(ThreadInfo[] infos) {
-        return Stream.of(infos)
-                .filter(ti -> !Util.isVirtual(ti))
-                .toArray(ThreadInfo[]::new);
-    }
-
-    /**
-     * Set the elements of the given array to null if they correspond to a virtual thread.
-     */
-    private static void nullVirtualThreads(ThreadInfo[] infos) {
-        for (int i = 0; i < infos.length; i++) {
-            ThreadInfo ti = infos[i];
-            if (ti != null && Util.isVirtual(ti)) {
-                infos[i] = null;
-            }
-        }
     }
 }

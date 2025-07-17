@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,12 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
         return 0;
     }
 
+    HRESULT hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+        DS_unlockCache();
+        return 0;
+    }
+
     if (g_lastCacheRefreshTime == 0
         || (UINT64) timeGetTime() > (UINT64) (g_lastCacheRefreshTime + WAIT_BETWEEN_CACHE_REFRESH_MILLIS)) {
         /* first, initialize any old cache items */
@@ -224,6 +230,11 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
 
         g_lastCacheRefreshTime = (UINT64) timeGetTime();
     }
+
+    if (hr != RPC_E_CHANGED_MODE) {
+        ::CoUninitialize();
+    }
+
     DS_unlockCache();
     /*TRACE1("DirectSound: %d installed devices\n", g_mixerCount);*/
     return g_mixerCount;
@@ -258,6 +269,13 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         DS_unlockCache();
         return FALSE;
     }
+
+    HRESULT hr = ::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+        DS_unlockCache();
+        return 0;
+    }
+
     desc->maxSimulLines = 0;
     if (g_audioDeviceCache[desc->deviceID].isSource) {
         DirectSoundEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
@@ -265,6 +283,10 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
     } else {
         DirectSoundCaptureEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
         strncpy(desc->description, "DirectSound Capture", DAUDIO_STRING_LENGTH);
+    }
+
+    if (hr != RPC_E_CHANGED_MODE) {
+        ::CoUninitialize();
     }
 
     /*desc->vendor;
@@ -447,7 +469,7 @@ protected:
     } static data;
 
     /* StartThread function */
-    static DWORD WINAPI __stdcall ThreadProc(void *param);
+    static DWORD WINAPI ThreadProc(void *param);
 };
 
 /* StartBufferHelper class implementation
@@ -477,7 +499,7 @@ DS_StartBufferHelper::Data::~Data() {
     // - Windows will do during process shutdown
 }
 
-DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
+DWORD WINAPI DS_StartBufferHelper::ThreadProc(void *param)
 {
     ::CoInitialize(NULL);
     while (1) {

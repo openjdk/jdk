@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,13 @@ import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.misc.InnocuousThread;
-import sun.security.action.GetIntegerAction;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
 
@@ -51,7 +47,7 @@ import sun.util.logging.PlatformLogger;
  * @author Dave Brown
  */
 public class KeepAliveCache
-    extends HashMap<KeepAliveKey, ClientVector>
+    extends HashMap<KeepAliveKey, KeepAliveCache.ClientVector>
     implements Runnable {
     @java.io.Serial
     private static final long serialVersionUID = -2937172892064557949L;
@@ -70,10 +66,8 @@ public class KeepAliveCache
 
     static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
 
-    @SuppressWarnings("removal")
     static int getUserKeepAliveSeconds(String type) {
-        int v = AccessController.doPrivileged(
-            new GetIntegerAction(keepAliveProp+type, -1)).intValue();
+        int v = Integer.getInteger(keepAliveProp+type, -1);
         return v < -1 ? -1 : v;
     }
 
@@ -90,12 +84,9 @@ public class KeepAliveCache
      */
     static final int MAX_CONNECTIONS = 5;
     static int result = -1;
-    @SuppressWarnings("removal")
     static int getMaxConnections() {
         if (result == -1) {
-            result = AccessController.doPrivileged(
-                new GetIntegerAction("http.maxConnections", MAX_CONNECTIONS))
-                .intValue();
+            result = Integer.getInteger("http.maxConnections", MAX_CONNECTIONS);
             if (result <= 0) {
                 result = MAX_CONNECTIONS;
             }
@@ -120,7 +111,6 @@ public class KeepAliveCache
      * @param url  The URL contains info about the host and port
      * @param http The HttpClient to be cached
      */
-    @SuppressWarnings("removal")
     public void put(final URL url, Object obj, HttpClient http) {
         // this method may need to close an HttpClient, either because
         // it is not cacheable, or because the cache is at its capacity.
@@ -145,15 +135,10 @@ public class KeepAliveCache
                  * The robustness to get around this is in HttpClient.parseHTTP()
                  */
                 final KeepAliveCache cache = this;
-                AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public Void run() {
-                        keepAliveTimer = InnocuousThread.newSystemThread("Keep-Alive-Timer", cache);
-                        keepAliveTimer.setDaemon(true);
-                        keepAliveTimer.setPriority(Thread.MAX_PRIORITY - 2);
-                        keepAliveTimer.start();
-                        return null;
-                    }
-                });
+                keepAliveTimer = InnocuousThread.newSystemThread("Keep-Alive-Timer", cache);
+                keepAliveTimer.setDaemon(true);
+                keepAliveTimer.setPriority(Thread.MAX_PRIORITY - 2);
+                keepAliveTimer.start();
             }
 
             KeepAliveKey key = new KeepAliveKey(url, obj);
@@ -243,32 +228,32 @@ public class KeepAliveCache
             // Remove all outdated HttpClients.
             cacheLock.lock();
             try {
+                if (isEmpty()) {
+                    // cache not used in the last LIFETIME - exit
+                    keepAliveTimer = null;
+                    break;
+                }
                 long currentTime = System.currentTimeMillis();
                 List<KeepAliveKey> keysToRemove = new ArrayList<>();
 
                 for (KeepAliveKey key : keySet()) {
                     ClientVector v = get(key);
-                    v.lock();
-                    try {
-                        KeepAliveEntry e = v.peekLast();
-                        while (e != null) {
-                            if ((currentTime - e.idleStartTime) > v.nap) {
-                                v.pollLast();
-                                if (closeList == null) {
-                                    closeList = new ArrayList<>();
-                                }
-                                closeList.add(e.hc);
-                            } else {
-                                break;
+                    KeepAliveEntry e = v.peekLast();
+                    while (e != null) {
+                        if ((currentTime - e.idleStartTime) > v.nap) {
+                            v.pollLast();
+                            if (closeList == null) {
+                                closeList = new ArrayList<>();
                             }
-                            e = v.peekLast();
+                            closeList.add(e.hc);
+                        } else {
+                            break;
                         }
+                        e = v.peekLast();
+                    }
 
-                        if (v.isEmpty()) {
-                            keysToRemove.add(key);
-                        }
-                    } finally {
-                        v.unlock();
+                    if (v.isEmpty()) {
+                        keysToRemove.add(key);
                     }
                 }
 
@@ -284,7 +269,7 @@ public class KeepAliveCache
                     }
                 }
             }
-        } while (!isEmpty());
+        } while (keepAliveTimer == Thread.currentThread());
     }
 
     /*
@@ -301,27 +286,24 @@ public class KeepAliveCache
     {
         throw new NotSerializableException();
     }
-}
 
-/* LIFO order for reusing HttpClients. Most recent entries at the front.
- * If > maxConns are in use, discard oldest.
- */
-class ClientVector extends ArrayDeque<KeepAliveEntry> {
-    @java.io.Serial
-    private static final long serialVersionUID = -8680532108106489459L;
-    private final ReentrantLock lock = new ReentrantLock();
+    /* LIFO order for reusing HttpClients. Most recent entries at the front.
+     * If > maxConns are in use, discard oldest.
+     */
+    class ClientVector extends ArrayDeque<KeepAliveEntry> {
+        @java.io.Serial
+        private static final long serialVersionUID = -8680532108106489459L;
 
-    // sleep time in milliseconds, before cache clear
-    int nap;
+        // sleep time in milliseconds, before cache clear
+        int nap;
 
-    ClientVector(int nap) {
-        this.nap = nap;
-    }
+        ClientVector(int nap) {
+            this.nap = nap;
+        }
 
-    /* return a still valid, idle HttpClient */
-    HttpClient get() {
-        lock();
-        try {
+        /* return a still valid, idle HttpClient */
+        HttpClient get() {
+            assert cacheLock.isHeldByCurrentThread();
             // check the most recent connection, use if still valid
             KeepAliveEntry e = peekFirst();
             if (e == null) {
@@ -339,49 +321,34 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
                 }
                 return e.hc;
             }
-        } finally {
-            unlock();
         }
-    }
 
-    HttpClient put(HttpClient h) {
-        HttpClient staleClient = null;
-        lock();
-        try {
+        HttpClient put(HttpClient h) {
+            assert cacheLock.isHeldByCurrentThread();
+            HttpClient staleClient = null;
             assert KeepAliveCache.getMaxConnections() > 0;
             if (size() >= KeepAliveCache.getMaxConnections()) {
                 // remove oldest connection
                 staleClient = removeLast().hc;
             }
             addFirst(new KeepAliveEntry(h, System.currentTimeMillis()));
-        } finally {
-            unlock();
+            // close after releasing the locks
+            return staleClient;
         }
-        // close after releasing the locks
-        return staleClient;
-    }
 
-    final void lock() {
-        lock.lock();
-    }
+        /*
+         * Do not serialize this class!
+         */
+        @java.io.Serial
+        private void writeObject(ObjectOutputStream stream) throws IOException {
+            throw new NotSerializableException();
+        }
 
-    final void unlock() {
-        lock.unlock();
-    }
-
-    /*
-     * Do not serialize this class!
-     */
-    @java.io.Serial
-    private void writeObject(ObjectOutputStream stream) throws IOException {
-        throw new NotSerializableException();
-    }
-
-    @java.io.Serial
-    private void readObject(ObjectInputStream stream)
-        throws IOException, ClassNotFoundException
-    {
-        throw new NotSerializableException();
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            throw new NotSerializableException();
+        }
     }
 }
 
@@ -408,9 +375,9 @@ class KeepAliveKey {
      */
     @Override
     public boolean equals(Object obj) {
-        if ((obj instanceof KeepAliveKey) == false)
+        if (!(obj instanceof KeepAliveKey kae))
             return false;
-        KeepAliveKey kae = (KeepAliveKey)obj;
+
         return host.equals(kae.host)
             && (port == kae.port)
             && protocol.equals(kae.protocol)
@@ -424,7 +391,7 @@ class KeepAliveKey {
     @Override
     public int hashCode() {
         String str = protocol+host+port;
-        return this.obj == null? str.hashCode() :
+        return this.obj == null ? str.hashCode() :
             str.hashCode() + this.obj.hashCode();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@ package jdk.jfr.jvm;
 
 import jdk.jfr.Event;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.JVMSupport;
 
 import java.util.List;
 
 /**
  * @test TestGetAllEventClasses
- * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
@@ -42,38 +42,37 @@ import java.util.List;
 public class TestGetAllEventClasses {
 
     public static void main(String... args) throws ClassNotFoundException {
-        JVM jvm = JVM.getJVM();
         // before creating  native
-        assertEmptyEventList(jvm);
-        jvm.createNativeJFR();
+        assertEmptyEventList();
+        JVMSupport.createJFR();
         // after creating native
-        assertEmptyEventList(jvm);
+        assertEmptyEventList();
 
         // Test event class load is triggered and only once
         Class<? extends Event> clazz = initialize("jdk.jfr.jvm.HelloWorldEvent1");
         // check that the event class is registered
-        assertEventsIncluded(jvm, clazz);
+        assertEventsIncluded(clazz);
         // second active use of the same event class should not add another class
         // to the list - it would already be loaded
         clazz = initialize(clazz);
-        assertEventsIncluded(jvm, clazz);
+        assertEventsIncluded(clazz);
 
         // second event class
         Class<? extends Event> clazz2 = initialize("jdk.jfr.jvm.HelloWorldEvent2");
         // the list of event classes should now have two classes registered
-        assertEventsIncluded(jvm, clazz, clazz2);
+        assertEventsIncluded(clazz, clazz2);
 
         // verify that an abstract event class is not included
         Class<? extends Event> abstractClass = initialize(MyAbstractEvent.class); // to run <clinit>
-        assertEventsExcluded(jvm, abstractClass);
+        assertEventsExcluded(abstractClass);
 
         // verify that a class that is yet to run its <clinit> is not included in the list of event classes
-        assertEventsExcluded(jvm, MyUnInitializedEvent.class);
+        assertEventsExcluded(MyUnInitializedEvent.class);
 
         // ensure old classes are not lost
-        assertEventsIncluded(jvm, clazz, clazz2);
+        assertEventsIncluded(clazz, clazz2);
 
-        jvm.destroyNativeJFR();
+        JVMSupport.destroyJFR();
     }
 
     private static Class<? extends Event> initialize(String name) throws ClassNotFoundException {
@@ -85,26 +84,26 @@ public class TestGetAllEventClasses {
         return initialize(event.getName());
     }
 
-    private static void assertEmptyEventList(JVM jvm) {
-        if (!jvm.getAllEventClasses().isEmpty()) {
+    private static void assertEmptyEventList() {
+        if (!JVM.getAllEventClasses().isEmpty()) {
             throw new AssertionError("should not have any event classes registered!");
         }
     }
 
     @SafeVarargs
-    private static void assertEventsExcluded(JVM jvm, Class<? extends Event>... targetEvents) {
-        assertEvents(jvm, false, targetEvents);
+    private static void assertEventsExcluded(Class<? extends Event>... targetEvents) {
+        assertEvents(false, targetEvents);
     }
 
     @SafeVarargs
-    private static void assertEventsIncluded(JVM jvm, Class<? extends Event>... targetEvents) {
-        assertEvents(jvm, true, targetEvents);
+    private static void assertEventsIncluded(Class<? extends Event>... targetEvents) {
+        assertEvents(true, targetEvents);
     }
 
     @SafeVarargs
     @SuppressWarnings("rawtypes")
-    private static void assertEvents(JVM jvm, boolean inclusion, Class<? extends Event>... targetEvents) {
-        final List list = jvm.getAllEventClasses();
+    private static void assertEvents(boolean inclusion, Class<? extends Event>... targetEvents) {
+        final List list = JVM.getAllEventClasses();
         for (Class<? extends Event> ev : targetEvents) {
            if (list.contains(ev)) {
                if (inclusion) {

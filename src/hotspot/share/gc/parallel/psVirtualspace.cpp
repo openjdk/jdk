@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "runtime/os.hpp"
-
-// PSVirtualSpace
+#include "utilities/align.hpp"
 
 PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
   _alignment(alignment)
 {
-  set_reserved(rs);
-  set_committed(reserved_low_addr(), reserved_low_addr());
-  DEBUG_ONLY(verify());
-}
-
-// Deprecated.
-PSVirtualSpace::PSVirtualSpace():
-  _alignment(os::vm_page_size()),
-  _reserved_low_addr(NULL),
-  _reserved_high_addr(NULL),
-  _committed_low_addr(NULL),
-  _committed_high_addr(NULL),
-  _special(false) {
-}
-
-// Deprecated.
-void PSVirtualSpace::initialize(ReservedSpace rs) {
   set_reserved(rs);
   set_committed(reserved_low_addr(), reserved_low_addr());
   DEBUG_ONLY(verify());
@@ -62,13 +43,13 @@ void PSVirtualSpace::release() {
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
   // This may not release memory it didn't reserve.
   // Use rs.release() to release the underlying memory instead.
-  _reserved_low_addr = _reserved_high_addr = NULL;
-  _committed_low_addr = _committed_high_addr = NULL;
+  _reserved_low_addr = _reserved_high_addr = nullptr;
+  _committed_low_addr = _committed_high_addr = nullptr;
   _special = false;
 }
 
 bool PSVirtualSpace::expand_by(size_t bytes) {
-  assert(is_aligned(bytes), "arg not aligned");
+  assert(is_aligned(bytes, _alignment), "arg not aligned");
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
 
   if (uncommitted_size() < bytes) {
@@ -86,7 +67,7 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
 }
 
 bool PSVirtualSpace::shrink_by(size_t bytes) {
-  assert(is_aligned(bytes), "arg not aligned");
+  assert(is_aligned(bytes, _alignment), "arg not aligned");
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
 
   if (committed_size() < bytes) {
@@ -103,30 +84,16 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
 }
 
 #ifndef PRODUCT
-bool PSVirtualSpace::is_aligned(size_t value, size_t align) {
-  const size_t tmp_value = value + align - 1;
-  const size_t mask = ~(align - 1);
-  return (tmp_value & mask) == value;
-}
-
-bool PSVirtualSpace::is_aligned(size_t value) const {
-  return is_aligned(value, alignment());
-}
-
-bool PSVirtualSpace::is_aligned(char* value) const {
-  return is_aligned((size_t)value);
-}
-
 void PSVirtualSpace::verify() const {
-  assert(is_aligned(alignment(), os::vm_page_size()), "bad alignment");
-  assert(is_aligned(reserved_low_addr()), "bad reserved_low_addr");
-  assert(is_aligned(reserved_high_addr()), "bad reserved_high_addr");
-  assert(is_aligned(committed_low_addr()), "bad committed_low_addr");
-  assert(is_aligned(committed_high_addr()), "bad committed_high_addr");
+  assert(is_aligned(_alignment, os::vm_page_size()), "bad alignment");
+  assert(is_aligned(reserved_low_addr(), _alignment), "bad reserved_low_addr");
+  assert(is_aligned(reserved_high_addr(), _alignment), "bad reserved_high_addr");
+  assert(is_aligned(committed_low_addr(), _alignment), "bad committed_low_addr");
+  assert(is_aligned(committed_high_addr(), _alignment), "bad committed_high_addr");
 
   // Reserved region must be non-empty or both addrs must be 0.
   assert(reserved_low_addr() < reserved_high_addr() ||
-         reserved_low_addr() == NULL && reserved_high_addr() == NULL,
+         (reserved_low_addr() == nullptr && reserved_high_addr() == nullptr),
          "bad reserved addrs");
   assert(committed_low_addr() <= committed_high_addr(), "bad committed addrs");
 
@@ -138,6 +105,6 @@ void PSVirtualSpace::verify() const {
 #endif // #ifndef PRODUCT
 
 void PSVirtualSpace::print_space_boundaries_on(outputStream* st) const {
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+  st->print_cr("[" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                p2i(low_boundary()), p2i(high()), p2i(high_boundary()));
 }

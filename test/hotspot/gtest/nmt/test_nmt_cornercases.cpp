@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,24 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
+#include "sanitizers/address.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
 
 // Check NMT header for integrity, as well as expected type and size.
-static void check_expected_malloc_header(const void* payload, MEMFLAGS type, size_t size) {
-  const MallocHeader* hdr = MallocTracker::malloc_header(payload);
-  hdr->assert_block_integrity();
+static void check_expected_malloc_header(const void* payload, MemTag mem_tag, size_t size) {
+  const MallocHeader* hdr = MallocHeader::resolve_checked(payload);
   EXPECT_EQ(hdr->size(), size);
-  EXPECT_EQ(hdr->flags(), type);
+  EXPECT_EQ(hdr->mem_tag(), mem_tag);
 }
+
+// ASAN complains about allocating very large sizes
+#if !INCLUDE_ASAN
 
 // Check that a malloc with an overflowing size is rejected.
 TEST_VM(NMT, malloc_failure1) {
@@ -70,7 +72,7 @@ static void check_failing_realloc(size_t failing_request_size) {
   EXPECT_NULL(p2);
 
   // original allocation should still be intact
-  GtestUtils::check_range(p, first_size);
+  EXPECT_RANGE_IS_MARKED(p, first_size);
   if (nmt_enabled) {
     check_expected_malloc_header(p, mtTest, first_size);
   }
@@ -86,6 +88,7 @@ TEST_VM(NMT, realloc_failure_overflowing_size) {
 TEST_VM(NMT, realloc_failure_gigantic_size) {
   check_failing_realloc(SIZE_MAX - M);
 }
+#endif // !INCLUDE_ASAN
 
 static void* do_realloc(void* p, size_t old_size, size_t new_size, uint8_t old_content, bool check_nmt_header) {
 
@@ -103,12 +106,14 @@ static void* do_realloc(void* p, size_t old_size, size_t new_size, uint8_t old_c
 
   // Check old content, and possibly zapped area (if block grew)
   if (old_size < new_size) {
-    GtestUtils::check_range((char*)p2, old_size, old_content);
+    EXPECT_RANGE_IS_MARKED_WITH(p2, old_size, old_content);
 #ifdef ASSERT
-    GtestUtils::check_range((char*)p2 + old_size, new_size - old_size, uninitBlockPad);
+    if (MemTracker::enabled()) {
+      EXPECT_RANGE_IS_MARKED_WITH((char*)p2 + old_size, new_size - old_size, uninitBlockPad);
+    }
 #endif
   } else {
-    GtestUtils::check_range((char*)p2, new_size, old_content);
+    EXPECT_RANGE_IS_MARKED_WITH(p2, new_size, old_content);
   }
 
   return p2;
@@ -132,7 +137,7 @@ TEST_VM(NMT, random_reallocs) {
 
   for (int n = 0; n < 100; n ++) {
     size_t new_size = (size_t)(os::random() % 512) + 1;
-    // LOG_HERE("reallocating " SIZE_FORMAT "->" SIZE_FORMAT, size, new_size);
+    // LOG_HERE("reallocating %zu->%zu", size, new_size);
     p = do_realloc(p, size, new_size, content, nmt_enabled);
     size = new_size;
     content = (n % 26) + 'A';
@@ -140,4 +145,17 @@ TEST_VM(NMT, random_reallocs) {
   }
 
   os::free(p);
+}
+
+TEST_VM(NMT, HeaderKeepsIntegrityAfterRevival) {
+  if (!MemTracker::enabled()) {
+    return;
+  }
+  size_t some_size = 16;
+  void* p = os::malloc(some_size, mtTest);
+  ASSERT_NOT_NULL(p) << "Failed to malloc()";
+  MallocHeader* hdr = MallocTracker::malloc_header(p);
+  hdr->mark_block_as_dead();
+  hdr->revive();
+  check_expected_malloc_header(p, mtTest, some_size);
 }

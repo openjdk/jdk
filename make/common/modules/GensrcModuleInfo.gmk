@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # This file makes modifications to module-info.java files based on the build
 # configuration.
@@ -41,13 +43,8 @@
 #
 # The modified module-info.java files are put in the gensrc directory where
 # they will automatically override the static versions in the src tree.
-#
 ################################################################################
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
 include Modules.gmk
 
 ################################################################################
@@ -101,4 +98,4 @@ endif
 
 ################################################################################
 
-all: $(TARGETS)
+include MakeFileEnd.gmk

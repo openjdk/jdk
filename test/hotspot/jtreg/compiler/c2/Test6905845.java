@@ -26,6 +26,7 @@
  * @bug 6905845
  * @summary Server VM improperly optimizing away loop.
  *
+ * @requires vm.opt.TieredStopAtLevel != 3
  * @run main/timeout=480 compiler.c2.Test6905845
  */
 

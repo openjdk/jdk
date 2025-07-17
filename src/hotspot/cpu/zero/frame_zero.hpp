@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,12 +32,17 @@
   enum {
     pc_return_offset = 0,
     metadata_words   = 0,
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom                         = metadata_words,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                            = 0,
     frame_alignment  = 16,
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle     =  1
   };
-
- const ImmutableOopMap* get_oop_map() const;
 
   // Constructor
  public:

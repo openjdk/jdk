@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,7 @@
 #include "jni_util.h"
 #include "awt_Taskbar.h"
 
-
-extern JavaVM *jvm;
+extern JavaVM *jvm_xawt;
 
 #define NO_SYMBOL_EXCEPTION 1
 
@@ -100,7 +99,7 @@ static gboolean unity_load() {
 }
 
 void callback(DbusmenuMenuitem* mi, guint ts, jobject data) {
-    JNIEnv* env = (JNIEnv*) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv* env = (JNIEnv*) JNU_GetEnv(jvm_xawt, JNI_VERSION_1_2);
     (*env)->CallStaticVoidMethod(env, jTaskbarCls, jTaskbarCallback, data);
 }
 
@@ -196,7 +195,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_updateProgress
 }
 
 void deleteGlobalRef(gpointer data) {
-    JNIEnv* env = (JNIEnv*) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv* env = (JNIEnv*) JNU_GetEnv(jvm_xawt, JNI_VERSION_1_2);
     (*env)->DeleteGlobalRef(env, data);
 }
 

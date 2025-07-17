@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.net.www.http;
 
 import java.io.*;
 
-import sun.net.ProgressSource;
 import sun.net.www.MeteredStream;
 import jdk.internal.misc.InnocuousThread;
 
@@ -56,8 +55,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
     /**
      * Constructor
      */
-    public KeepAliveStream(InputStream is, ProgressSource pi, long expected, HttpClient hc)  {
-        super(is, pi, expected);
+    public KeepAliveStream(InputStream is, long expected, HttpClient hc) {
+        super(is, expected);
         this.hc = hc;
     }
 
@@ -101,9 +100,6 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
                     hc.finished();
                 }
             } finally {
-                if (pi != null)
-                    pi.finishTracking();
-
                 if (!queuedForCleanup) {
                     // nulling out the underlying inputstream as well as
                     // httpClient to let gc collect the memories faster
@@ -158,7 +154,6 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         }
     }
 
-    @SuppressWarnings("removal")
     private static void queueForCleanup(KeepAliveCleanerEntry kace) {
         queue.lock();
         try {
@@ -180,16 +175,10 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
             }
 
             if (startCleanupThread) {
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        cleanerThread = InnocuousThread.newSystemThread("Keep-Alive-SocketCleaner", queue);
-                        cleanerThread.setDaemon(true);
-                        cleanerThread.setPriority(Thread.MAX_PRIORITY - 2);
-                        cleanerThread.start();
-                        return null;
-                    }
-                });
+                cleanerThread = InnocuousThread.newSystemThread("Keep-Alive-SocketCleaner", queue);
+                cleanerThread.setDaemon(true);
+                cleanerThread.setPriority(Thread.MAX_PRIORITY - 2);
+                cleanerThread.start();
             }
         } finally {
             queue.unlock();

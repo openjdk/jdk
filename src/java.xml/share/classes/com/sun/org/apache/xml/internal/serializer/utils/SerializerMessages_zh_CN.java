@@ -150,7 +150,7 @@ public class SerializerMessages_zh_CN extends ListResourceBundle {
                 "\u65E0\u6CD5\u4ECE\u7A7A\u5B57\u7B26\u4E32\u8BBE\u7F6E\u65B9\u6848" },
 
             {   MsgKey.ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-                "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u8F6C\u4E49\u5E8F\u5217" },
+                "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u9003\u9038 \u5E8F\u5217" },
 
             {   MsgKey.ER_PATH_INVALID_CHAR,
                 "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u5B57\u7B26: {0}" },

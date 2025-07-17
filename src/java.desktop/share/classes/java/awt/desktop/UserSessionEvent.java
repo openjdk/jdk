@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public final class UserSessionEvent extends AppEvent {
     private static final long serialVersionUID = 6747138462796569055L;
 
     /**
-     * The reason of the user session change.
+     * @serial The reason of the user session change.
      */
     private final Reason reason;
 

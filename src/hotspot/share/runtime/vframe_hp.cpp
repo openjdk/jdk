@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
@@ -45,18 +44,14 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
-#ifdef COMPILER2
-#include "opto/matcher.hpp"
-#endif
-
 
 // ------------- compiledVFrame --------------
 
 StackValueCollection* compiledVFrame::locals() const {
   // Natives has no scope
-  if (scope() == NULL) return new StackValueCollection(0);
+  if (scope() == nullptr) return new StackValueCollection(0);
   GrowableArray<ScopeValue*>*  scv_list = scope()->locals();
-  if (scv_list == NULL) return new StackValueCollection(0);
+  if (scv_list == nullptr) return new StackValueCollection(0);
 
   // scv_list is the list of ScopeValues describing the JVM stack state.
   // There is one scv_list entry for every JVM stack state in use.
@@ -70,7 +65,7 @@ StackValueCollection* compiledVFrame::locals() const {
   // performed through compiledVFrame::update_locals.
   if (!register_map()->in_cont()) { // LOOM TODO
     GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
-    if (list != NULL ) {
+    if (list != nullptr ) {
       // In real life this never happens or is typically a single element search
       for (int i = 0; i < list->length(); i++) {
         if (list->at(i)->matches(this)) {
@@ -111,8 +106,8 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
   assert(fr().is_deoptimized_frame(), "frame must be scheduled for deoptimization");
   assert(!Continuation::is_frame_in_continuation(thread(), fr()), "No support for deferred values in continuations");
   GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = JvmtiDeferredUpdates::deferred_locals(thread());
-  jvmtiDeferredLocalVariableSet* locals = NULL;
-  if (deferred != NULL ) {
+  jvmtiDeferredLocalVariableSet* locals = nullptr;
+  if (deferred != nullptr ) {
     // See if this vframe has already had locals with deferred writes
     for (int f = 0; f < deferred->length(); f++ ) {
       if (deferred->at(f)->matches(this)) {
@@ -127,7 +122,7 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
     JvmtiDeferredUpdates::create_for(thread());
     deferred = JvmtiDeferredUpdates::deferred_locals(thread());
   }
-  if (locals == NULL) {
+  if (locals == nullptr) {
     locals = new jvmtiDeferredLocalVariableSet(method(), bci(), fr().id(), vframe_id());
     deferred->push(locals);
     assert(locals->id() == fr().id(), "Huh? Must match");
@@ -145,12 +140,12 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
 // original update is kept.
 void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
   // locals
-  GrowableArray<ScopeValue*>* extentLocals = scope()->locals();
+  GrowableArray<ScopeValue*>* scopedValues = scope()->locals();
   StackValueCollection* lcls = locals();
-  if (lcls != NULL) {
+  if (lcls != nullptr) {
     for (int i2 = 0; i2 < lcls->size(); i2++) {
       StackValue* var = lcls->at(i2);
-      if (var->type() == T_OBJECT && extentLocals->at(i2)->is_object()) {
+      if (var->type() == T_OBJECT && scopedValues->at(i2)->is_object()) {
         jvalue val;
         val.l = cast_from_oop<jobject>(lcls->at(i2)->get_obj()());
         update_local(T_OBJECT, i2, val);
@@ -161,7 +156,7 @@ void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
   // expressions
   GrowableArray<ScopeValue*>* scopeExpressions = scope()->expressions();
   StackValueCollection* exprs = expressions();
-  if (exprs != NULL) {
+  if (exprs != nullptr) {
     for (int i2 = 0; i2 < exprs->size(); i2++) {
       StackValue* var = exprs->at(i2);
       if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
@@ -174,7 +169,7 @@ void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
 
   // monitors
   GrowableArray<MonitorInfo*>* mtrs = monitors();
-  if (mtrs != NULL) {
+  if (mtrs != nullptr) {
     for (int i2 = 0; i2 < mtrs->length(); i2++) {
       if (mtrs->at(i2)->eliminated()) {
         assert(!mtrs->at(i2)->owner_is_scalar_replaced(),
@@ -187,9 +182,9 @@ void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
 
 StackValueCollection* compiledVFrame::expressions() const {
   // Natives has no scope
-  if (scope() == NULL) return new StackValueCollection(0);
+  if (scope() == nullptr) return new StackValueCollection(0);
   GrowableArray<ScopeValue*>*  scv_list = scope()->expressions();
-  if (scv_list == NULL) return new StackValueCollection(0);
+  if (scv_list == nullptr) return new StackValueCollection(0);
 
   // scv_list is the list of ScopeValues describing the JVM stack state.
   // There is one scv_list entry for every JVM stack state in use.
@@ -203,7 +198,7 @@ StackValueCollection* compiledVFrame::expressions() const {
     // Replace the original values with any stores that have been
     // performed through compiledVFrame::update_stack.
     GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
-    if (list != NULL ) {
+    if (list != nullptr ) {
       // In real life this never happens or is typically a single element search
       for (int i = 0; i < list->length(); i++) {
         if (list->at(i)->matches(this)) {
@@ -235,14 +230,14 @@ StackValue *compiledVFrame::create_stack_value(ScopeValue *sv) const {
 }
 
 BasicLock* compiledVFrame::resolve_monitor_lock(Location location) const {
-  return StackValue::resolve_monitor_lock(&_fr, location);
+  return StackValue::resolve_monitor_lock(stack_chunk() == nullptr ? _fr : stack_chunk()->derelativize(_fr), location);
 }
 
 
 GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   // Natives has no scope
-  if (scope() == NULL) {
-    CompiledMethod* nm = code();
+  if (scope() == nullptr) {
+    nmethod* nm = code();
     Method* method = nm->method();
     assert(method->is_native(), "Expect a native method");
     if (!method->is_synchronized()) {
@@ -259,7 +254,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
     return monitors;
   }
   GrowableArray<MonitorValue*>* monitors = scope()->monitors();
-  if (monitors == NULL) {
+  if (monitors == nullptr) {
     return new GrowableArray<MonitorInfo*>(0);
   }
   GrowableArray<MonitorInfo*>* result = new GrowableArray<MonitorInfo*>(monitors->length());
@@ -284,8 +279,9 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
 
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_monitors.
+  if (thread() == nullptr) return result; // Unmounted continuations have no thread so nothing to do.
   GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
-  if (list != NULL ) {
+  if (list != nullptr ) {
     // In real life this never happens or is typically a single element search
     for (int i = 0; i < list->length(); i++) {
       if (list->at(i)->matches(this)) {
@@ -299,13 +295,13 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
 }
 
 
-compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, CompiledMethod* nm)
+compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, nmethod* nm)
 : javaVFrame(fr, reg_map, thread) {
-  _scope  = NULL;
+  _scope  = nullptr;
   _vframe_id = 0;
   // Compiled method (native stub or Java code)
   // native wrappers have no scope data, it is implied
-  if (!nm->is_compiled() || !nm->as_compiled_method()->is_native_method()) {
+  if (!nm->is_native_method()) {
       _scope  = nm->scope_desc_at(_fr.pc());
   }
 }
@@ -314,7 +310,7 @@ compiledVFrame::compiledVFrame(const frame* fr, const RegisterMap* reg_map, Java
 : javaVFrame(fr, reg_map, thread) {
   _scope  = scope;
   _vframe_id = vframe_id;
-  guarantee(_scope != NULL, "scope must be present");
+  guarantee(_scope != nullptr, "scope must be present");
 }
 
 compiledVFrame* compiledVFrame::at_scope(int decode_offset, int vframe_id) {
@@ -328,20 +324,20 @@ compiledVFrame* compiledVFrame::at_scope(int decode_offset, int vframe_id) {
 
 bool compiledVFrame::is_top() const {
   // FIX IT: Remove this when new native stubs are in place
-  if (scope() == NULL) return true;
+  if (scope() == nullptr) return true;
   return scope()->is_top();
 }
 
 
-CompiledMethod* compiledVFrame::code() const {
-  return CodeCache::find_compiled(_fr.pc());
+nmethod* compiledVFrame::code() const {
+  return CodeCache::find_nmethod(_fr.pc());
 }
 
 
 Method* compiledVFrame::method() const {
-  if (scope() == NULL) {
+  if (scope() == nullptr) {
     // native nmethods have no scope the method is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return nm->method();
   }
@@ -356,9 +352,9 @@ int compiledVFrame::bci() const {
 
 
 int compiledVFrame::raw_bci() const {
-  if (scope() == NULL) {
+  if (scope() == nullptr) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return 0;
   }
@@ -366,9 +362,9 @@ int compiledVFrame::raw_bci() const {
 }
 
 bool compiledVFrame::should_reexecute() const {
-  if (scope() == NULL) {
+  if (scope() == nullptr) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return false;
   }
@@ -376,18 +372,18 @@ bool compiledVFrame::should_reexecute() const {
 }
 
 bool compiledVFrame::has_ea_local_in_scope() const {
-  if (scope() == NULL) {
+  if (scope() == nullptr) {
     // native nmethod, all objs escape
-    assert(code()->as_nmethod()->is_native_method(), "must be native");
+    assert(code()->is_native_method(), "must be native");
     return false;
   }
-  return (scope()->objects() != NULL) || scope()->has_ea_local_in_scope();
+  return (scope()->objects() != nullptr) || scope()->has_ea_local_in_scope();
 }
 
 bool compiledVFrame::arg_escape() const {
-  if (scope() == NULL) {
+  if (scope() == nullptr) {
     // native nmethod, all objs escape
-    assert(code()->as_nmethod()->is_native_method(), "must be native");
+    assert(code()->is_native_method(), "must be native");
     return false;
   }
   return scope()->arg_escape();
@@ -395,9 +391,9 @@ bool compiledVFrame::arg_escape() const {
 
 vframe* compiledVFrame::sender() const {
   const frame f = fr();
-  if (scope() == NULL) {
+  if (scope() == nullptr) {
     // native nmethods have no scope the method/bci is implied
-    nmethod* nm = code()->as_nmethod();
+    nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return vframe::sender();
   } else {
@@ -535,10 +531,3 @@ jvmtiDeferredLocalVariable::jvmtiDeferredLocalVariable(int index, BasicType type
   _type = type;
   _value = value;
 }
-
-
-#ifndef PRODUCT
-void compiledVFrame::verify() const {
-  Unimplemented();
-}
-#endif // PRODUCT

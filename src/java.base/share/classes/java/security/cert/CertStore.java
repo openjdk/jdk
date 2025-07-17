@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package java.security.cert;
 
-import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collection;
@@ -86,6 +84,7 @@ import sun.security.jca.GetInstance.Instance;
  * Multiple threads may concurrently invoke the static methods defined in
  * this class with no ill effects.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since       1.4
  * @author      Sean Mullan, Steve Hanna
  */
@@ -218,6 +217,7 @@ public class CertStore {
      *
      * @param params the initialization parameters (may be {@code null}).
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertStore} object that implements the specified
      *          {@code CertStore} type
      *
@@ -284,6 +284,7 @@ public class CertStore {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertStore} object that implements the
      *          specified type
      *
@@ -345,6 +346,7 @@ public class CertStore {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertStore} object that implements the
      *          specified type
      *
@@ -426,11 +428,8 @@ public class CertStore {
      * {@code certstore.type} security property, or the string
      * {@literal "LDAP"} if no such property exists.
      */
-    @SuppressWarnings("removal")
-    public static String getDefaultType() {
-        String cstype;
-        cstype = AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                Security.getProperty(CERTSTORE_TYPE));
+    public static final String getDefaultType() {
+        String cstype = Security.getProperty(CERTSTORE_TYPE);
         if (cstype == null) {
             cstype = "LDAP";
         }

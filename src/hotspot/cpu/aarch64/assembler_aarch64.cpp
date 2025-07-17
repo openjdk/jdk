@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,13 +22,13 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
 #include "immediate_aarch64.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 
 #ifndef PRODUCT
 const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
@@ -101,7 +101,7 @@ void Assembler::emit_data64(jlong data,
                             RelocationHolder const& rspec,
                             int format) {
 
-  assert(inst_mark() != NULL, "must be inside InstructionMark");
+  assert(inst_mark() != nullptr, "must be inside InstructionMark");
   // Do not use AbstractAssembler::relocate, which is not intended for
   // embedded words.  Instead, relocate to the enclosing instruction.
   code_section()->relocate(inst_mark(), rspec, format);
@@ -117,34 +117,28 @@ extern "C" {
     else
       Disassembler::decode((address)start, (address)start + len);
   }
-
-  JNIEXPORT void das1(uintptr_t insn) {
-    das(insn, 1);
-  }
 }
 
 #define __ as->
 
 void Address::lea(MacroAssembler *as, Register r) const {
-  Relocation* reloc = _rspec.reloc();
-  relocInfo::relocType rtype = (relocInfo::relocType) reloc->type();
-
   switch(_mode) {
   case base_plus_offset: {
-    if (_offset == 0 && _base == r) // it's a nop
+    if (offset() == 0 && base() == r) // it's a nop
       break;
-    if (_offset > 0)
-      __ add(r, _base, _offset);
+    if (offset() > 0)
+      __ add(r, base(), offset());
     else
-      __ sub(r, _base, -_offset);
+      __ sub(r, base(), -offset());
     break;
   }
   case base_plus_offset_reg: {
-    __ add(r, _base, _index, _ext.op(), MAX2(_ext.shift(), 0));
+    __ add(r, base(), index(), ext().op(), MAX2(ext().shift(), 0));
     break;
   }
   case literal: {
-    if (rtype == relocInfo::none)
+    as->code_section()->relocate(as->inst_mark(), rspec());
+    if (rspec().type() == relocInfo::none)
       __ mov(r, target());
     else
       __ movptr(r, (uint64_t)target());
@@ -188,6 +182,26 @@ void Address::lea(MacroAssembler *as, Register r) const {
     zrf(Rd, 0);
   }
 
+// This encoding is similar (but not quite identical) to the encoding used
+// by literal ld/st. see JDK-8324123.
+// PRFM does not support writeback or pre/post index.
+void Assembler::prfm(const Address &adr, prfop pfop) {
+  Address::mode mode = adr.getMode();
+  // PRFM does not support pre/post index
+  guarantee((mode != Address::pre) && (mode != Address::post), "prfm does not support pre/post indexing");
+  if (mode == Address::literal) {
+    starti;
+    f(0b11, 31, 30), f(0b011, 29, 27), f(0b000, 26, 24);
+    f(pfop, 4, 0);
+    int64_t offset = (adr.target() - pc()) >> 2;
+    sf(offset, 23, 5);
+  } else {
+    assert((mode == Address::base_plus_offset)
+            || (mode == Address::base_plus_offset_reg), "must be base_plus_offset/base_plus_offset_reg");
+    ld_st2(as_Register(pfop), adr, 0b11, 0b10);
+  }
+}
+
 // An "all-purpose" add/subtract immediate, per ARM documentation:
 // A "programmer-friendly" assembler may accept a negative immediate
 // between -(2^24 -1) and -1 inclusive, causing it to convert a
@@ -226,6 +240,19 @@ void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
   srf(Rn, 5);
 }
 
+// This method is used to generate Advanced SIMD data processing instructions
+void Assembler::adv_simd_three_same(Instruction_aarch64 &current_insn, FloatRegister Vd,
+                                    SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm,
+                                    int op1, int op2, int op3) {
+  assert(T == T4H || T == T8H || T == T2S || T == T4S || T == T2D, "invalid arrangement");
+  int op22 = (T == T2S || T == T4S) ? 0b0 : 0b1;
+  int op21 = (T == T4H || T == T8H) ? 0b0 : 0b1;
+  int op14 = (T == T4H || T == T8H) ? 0b00 : 0b11;
+  f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);
+  f(op22, 22); f(op21, 21), rf(Vm, 16), f(op14, 15, 14), f(op3, 13, 10),
+  rf(Vn, 5), rf(Vd, 0);
+}
+
 #undef f
 #undef sf
 #undef rf
@@ -237,8 +264,20 @@ void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
 
 #undef starti
 
-Address::Address(address target, relocInfo::relocType rtype) : _mode(literal){
-  _target = target;
+#ifdef ASSERT
+
+void Address::assert_is_literal() const {
+  assert(_mode == literal, "addressing mode is non-literal: %d", _mode);
+}
+
+void Address::assert_is_nonliteral() const {
+  assert(_mode != literal, "unexpected literal addressing mode");
+  assert(_mode != no_mode, "unexpected no_mode addressing mode");
+}
+
+#endif // ASSERT
+
+static RelocationHolder address_relocation(address target, relocInfo::relocType rtype) {
   switch (rtype) {
   case relocInfo::oop_type:
   case relocInfo::metadata_type:
@@ -246,34 +285,32 @@ Address::Address(address target, relocInfo::relocType rtype) : _mode(literal){
     // but in cases like icBuffer they are literals in the code stream that
     // we don't have a section for. We use none so that we get a literal address
     // which is always patchable.
-    break;
+    return RelocationHolder::none;
   case relocInfo::external_word_type:
-    _rspec = external_word_Relocation::spec(target);
-    break;
+    return external_word_Relocation::spec(target);
   case relocInfo::internal_word_type:
-    _rspec = internal_word_Relocation::spec(target);
-    break;
+    return internal_word_Relocation::spec(target);
   case relocInfo::opt_virtual_call_type:
-    _rspec = opt_virtual_call_Relocation::spec();
-    break;
+    return opt_virtual_call_Relocation::spec();
   case relocInfo::static_call_type:
-    _rspec = static_call_Relocation::spec();
-    break;
+    return static_call_Relocation::spec();
   case relocInfo::runtime_call_type:
-    _rspec = runtime_call_Relocation::spec();
-    break;
+    return runtime_call_Relocation::spec();
   case relocInfo::poll_type:
   case relocInfo::poll_return_type:
-    _rspec = Relocation::spec_simple(rtype);
-    break;
+    return Relocation::spec_simple(rtype);
   case relocInfo::none:
-    _rspec = RelocationHolder::none;
-    break;
+    return RelocationHolder::none;
   default:
     ShouldNotReachHere();
-    break;
+    return RelocationHolder::none;
   }
 }
+
+Address::Address(address target, relocInfo::relocType rtype) :
+  _mode(literal),
+  _literal(target, address_relocation(target, rtype))
+{}
 
 void Assembler::b(const Address &dest) {
   code_section()->relocate(pc(), dest.rspec());
@@ -432,7 +469,7 @@ void Assembler::bang_stack_with_offset(int offset) { Unimplemented(); }
 
 bool asm_util::operand_valid_for_immediate_bits(int64_t imm, unsigned nbits) {
   guarantee(nbits == 8 || nbits == 12, "invalid nbits value");
-  uint64_t uimm = (uint64_t)uabs((jlong)imm);
+  uint64_t uimm = (uint64_t)g_uabs((jlong)imm);
   if (uimm < (UCONST64(1) << nbits))
     return true;
   if (uimm < (UCONST64(1) << (2 * nbits))
@@ -491,12 +528,8 @@ unsigned Assembler::pack(double value) {
 // Packed operands for  Floating-point Move (immediate)
 
 static float unpack(unsigned value) {
-  union {
-    unsigned ival;
-    float val;
-  };
-  ival = fp_immediate_for_encoding(value, 0);
-  return val;
+  unsigned ival = fp_immediate_for_encoding(value, 0);
+  return PrimitiveConversions::cast<float>(ival);
 }
 
 address Assembler::locate_next_instruction(address inst) {

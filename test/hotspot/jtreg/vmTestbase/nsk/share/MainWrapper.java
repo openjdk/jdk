@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,8 @@ public final class MainWrapper {
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
 
-        // It is needed to register finalizer thread in default thread group
-        // So FinalizerThread thread can't be in virtual threads group
-        Finalizer finalizer = new Finalizer(new FinalizableObject());
-        finalizer.activate();
-
-
+        // Some tests use this property to understand if virtual threads are used
+        System.setProperty("test.thread.factory", wrapperName);
 
         Runnable task = () -> {
             try {
@@ -78,16 +74,7 @@ public final class MainWrapper {
     }
 
     static Thread unstartedVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) unstarted.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Thread.ofVirtual().unstarted(task);
     }
 
 }

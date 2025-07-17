@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@ package com.apple.laf;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.security.PrivilegedAction;
 
 import javax.swing.*;
 import javax.swing.plaf.*;
 
+import com.apple.eawt.Application;
 import sun.lwawt.macosx.LWCToolkit;
 import apple.laf.JRSUIConstants.AlignmentHorizontal;
 import apple.laf.JRSUIConstants.AlignmentVertical;
@@ -50,7 +50,7 @@ import sun.awt.image.MultiResolutionCachedImage;
 import sun.lwawt.macosx.CImage;
 import sun.swing.ImageIconUIResource;
 
-public class AquaImageFactory {
+public final class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
 
@@ -82,22 +82,12 @@ public class AquaImageFactory {
         return getAppIconCompositedOn(lockIcon);
     }
 
-    @SuppressWarnings("removal")
     static Image getGenericJavaIcon() {
-        return java.security.AccessController.doPrivileged(new PrivilegedAction<Image>() {
-            public Image run() {
-                return com.apple.eawt.Application.getApplication().getDockIconImage();
-            }
-        });
+        return Application.getApplication().getDockIconImage();
     }
 
-    @SuppressWarnings("removal")
     static String getPathToThisApplication() {
-        return java.security.AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                return FileManager.getPathToApplicationBundle();
-            }
-        });
+        return FileManager.getPathToApplicationBundle();
     }
 
     static IconUIResource getAppIconCompositedOn(final SystemIcon systemIcon) {
@@ -203,7 +193,7 @@ public class AquaImageFactory {
         }, 20, 20);
     }
 
-    static class NamedImageSingleton extends RecyclableSingleton<Image> {
+    static final class NamedImageSingleton extends RecyclableSingleton<Image> {
         final String namedImage;
 
         NamedImageSingleton(final String namedImage) {
@@ -216,7 +206,7 @@ public class AquaImageFactory {
         }
     }
 
-    static class IconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
+    static final class IconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
         final NamedImageSingleton holder;
 
         public IconUIResourceSingleton(final NamedImageSingleton holder) {
@@ -230,7 +220,7 @@ public class AquaImageFactory {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
+    static final class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
         Icon invertedImage;
         private Icon disabledIcon;
         public InvertableImageIcon(final Image image) {
@@ -306,7 +296,7 @@ public class AquaImageFactory {
         return icon;
     }
 
-    public static class NineSliceMetrics {
+    public static final class NineSliceMetrics {
         public final int wCut, eCut, nCut, sCut;
         public final int minW, minH;
         public final boolean showMiddle, stretchH, stretchV;
@@ -330,7 +320,7 @@ public class AquaImageFactory {
      * A "paintable" which holds nine images, which represent a sliced up initial
      * image that can be stretched from its middles.
      */
-    public static class SlicedImageControl {
+    public static final class SlicedImageControl {
         final BufferedImage NW, N, NE;
         final BufferedImage W, C, E;
         final BufferedImage SW, S, SE;
@@ -476,6 +466,7 @@ public class AquaImageFactory {
             this.color = color;
         }
 
+        @Override
         public int getRGB() {
             return color.getRGB();
         }

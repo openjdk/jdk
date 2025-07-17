@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8022120
  * @summary check that the init and marshalParams methods throw
  *          NullPointerException when the parent parameter is null
- * @run main/othervm/java.security.policy==test.policy NullParent
  */
 
 import javax.xml.crypto.dsig.CanonicalizationMethod;

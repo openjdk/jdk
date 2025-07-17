@@ -107,6 +107,8 @@ class VM_Version: public Abstract_VM_Version {
   friend class VM_Version_StubGenerator;
 
   static void initialize_cpu_information(void);
+
+  static bool profile_all_receivers_at_type_check() { return false; }
 };
 
 #endif // CPU_ARM_VM_VERSION_ARM_HPP

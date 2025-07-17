@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 7199750 8000997 8062588 8210406
+ * @bug 4052440 7199750 8000997 8062588 8210406 8174269
  * @summary CurrencyNameProvider tests
  * @library providersrc/foobarutils
  *          providersrc/barprovider
@@ -31,7 +31,7 @@
  *          java.base/sun.util.resources
  * @build com.foobar.Utils
  *        com.bar.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI CurrencyNameProviderTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI CurrencyNameProviderTest
  */
 
 import java.text.DecimalFormat;
@@ -73,15 +73,15 @@ public class CurrencyNameProviderTest extends ProviderTest {
         CurrencyNameProviderImpl2 cnp2 = new CurrencyNameProviderImpl2();
         Locale[] availloc = Locale.getAvailableLocales();
         Locale[] testloc = availloc.clone();
-        List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getCurrencyNameProvider().getAvailableLocales());
+        List<Locale> implloc = Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getCurrencyNameProvider().getAvailableLocales());
         List<Locale> providerloc = new ArrayList<Locale>();
         providerloc.addAll(Arrays.asList(cnp.getAvailableLocales()));
         providerloc.addAll(Arrays.asList(cnp2.getAvailableLocales()));
 
         for (Locale target: availloc) {
-            // pure JRE implementation
-            OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getCurrencyNames(target);
-            boolean jreSupportsTarget = jreimplloc.contains(target);
+            // pure CLDR implementation
+            OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)).getLocaleData().getCurrencyNames(target);
+            boolean jreSupportsTarget = implloc.contains(target);
 
             for (Locale test: testloc) {
                 // get a Currency instance

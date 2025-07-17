@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,6 @@ public class StackValueCollection {
   public char      charAt(int slot)      { return (char) get(slot).getInteger(); }
   public short     shortAt(int slot)     { return (short) get(slot).getInteger(); }
   public int       intAt(int slot)       { return (int) get(slot).getInteger(); }
-  public long      longAt(int slot)      { return VM.getVM().buildLongFromIntsPD((int) get(slot).getInteger(),
-                                                                                 (int) get(slot+1).getInteger()); }
 
   public OopHandle oopHandleAt(int slot) {
     StackValue sv = get(slot);
@@ -59,5 +57,4 @@ public class StackValueCollection {
   }
 
   public float     floatAt(int slot)     { return Float.intBitsToFloat(intAt(slot)); }
-  public double    doubleAt(int slot)    { return Double.longBitsToDouble(longAt(slot)); }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,8 @@ class Threadstop001a extends NamedTask {
 
     public static Object lockingObject2 = new Object();
 
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+
     private int i1 = 0, i2 = 10;
 
     public void run() {
@@ -204,11 +206,19 @@ class Threadstop001a extends NamedTask {
                 synchronized (lockingObject) {
                     log("entered into block:  synchronized (lockingObject)");
                 }
-                logerr("ERROR:  normal exit from block:  synchronized (lockingObject)");
-                stop001a.exitCode = stop001a.FAILED;
+                if (!vthreadMode) {
+                    logerr("ERROR:  normal exit from block:  synchronized (lockingObject)");
+                    stop001a.exitCode = stop001a.FAILED;
+                }
             } catch ( Exception e1 ) {
-                log("Exception: " + e1.getMessage());
-                stop001a.tObj = e1;
+                if (vthreadMode) {
+                    logerr("ERROR:  Unexpected exception: " + e1);
+                    stop001a.exitCode = stop001a.FAILED;
+
+                } else {
+                    log("Exception: " + e1.getMessage());
+                    stop001a.tObj = e1;
+                }
             }
         }
 

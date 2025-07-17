@@ -402,7 +402,9 @@ public class URLPermissionTest {
     static Test[] createTests = {
         createtest("http://user@foo.com/a/b/c"),
         createtest("http://user:pass@foo.com/a/b/c"),
-        createtest("http://user:@foo.com/a/b/c")
+        createtest("http://user:@foo.com/a/b/c"),
+        createtest("http://foo_bar"),
+        createtest("http://foo_bar:12345")
     };
 
     static boolean failed = false;

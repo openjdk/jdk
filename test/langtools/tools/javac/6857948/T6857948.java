@@ -12,7 +12,7 @@ class Foo {
 };
 
 class Test {
-   public static void main() {
+   public static void meth() {
       Foo f = new Foo("Hello!",nosuchfunction()) {};
    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,8 +42,9 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * skeleton extension of XMLFilterImpl for now.
  * @author Santiago Pericas-Geertsen
  * @author G. Todd Miller
+ *
+ * @LastModified: Jan 2025
  */
-@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class TrAXFilter extends XMLFilterImpl {
     private Templates              _templates;
     private TransformerImpl        _transformer;
@@ -64,8 +65,11 @@ public class TrAXFilter extends XMLFilterImpl {
     }
 
     private void createParent() throws SAXException {
-        XMLReader parent = JdkXmlUtils.getXMLReader(_overrideDefaultParser,
-                _transformer.isSecureProcessing());
+        XMLReader parent = JdkXmlUtils.getXMLReader(_transformer._securityManager,
+                _overrideDefaultParser,
+                _transformer.isSecureProcessing(),
+                _transformer._useCatalog,
+                _transformer._catalogFeatures);
 
         // make this XMLReader the parent of this filter
         setParent(parent);

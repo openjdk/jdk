@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ template <class E>
 template <typename MATCH_FUNC>
 bool FilterQueue<E>::contains(MATCH_FUNC& match_func) {
   Node* cur = load_first();
-  if (cur == NULL) {
+  if (cur == nullptr) {
     return false;
   }
   do {
@@ -57,7 +57,7 @@ bool FilterQueue<E>::contains(MATCH_FUNC& match_func) {
       return true;
     }
     cur = cur->_next;
-  } while (cur != NULL);
+  } while (cur != nullptr);
   return false;
 }
 
@@ -67,12 +67,12 @@ template <typename MATCH_FUNC>
 E FilterQueue<E>::pop(MATCH_FUNC& match_func) {
   Node*  first       = load_first();
   Node*  cur         = first;
-  Node*  prev        = NULL;
-  Node*  match       = NULL;
-  Node*  match_prev  = NULL;
+  Node*  prev        = nullptr;
+  Node*  match       = nullptr;
+  Node*  match_prev  = nullptr;
 
-  if (cur == NULL) {
-    return (E)NULL;
+  if (cur == nullptr) {
+    return (E)nullptr;
   }
   SpinYield yield(SpinYield::default_spin_limit * 10); // Very unlikely with multiple failed CAS.
   do {
@@ -83,13 +83,13 @@ E FilterQueue<E>::pop(MATCH_FUNC& match_func) {
       }
       prev = cur;
       cur = cur->_next;
-    } while (cur != NULL);
+    } while (cur != nullptr);
 
-    if (match == NULL) {
-      return (E)NULL;
+    if (match == nullptr) {
+      return (E)nullptr;
     }
 
-    if (match_prev == NULL) {
+    if (match_prev == nullptr) {
       // Working on first
       if (Atomic::cmpxchg(&_first, match, match->_next) == match) {
         E ret = match->_data;
@@ -100,9 +100,9 @@ E FilterQueue<E>::pop(MATCH_FUNC& match_func) {
       // Failed, we need to restart to know the Node prior to the match.
       first       = load_first();
       cur         = first;
-      prev        = NULL;
-      match       = NULL;
-      match_prev  = NULL;
+      prev        = nullptr;
+      match       = nullptr;
+      match_prev  = nullptr;
     } else {
       match_prev->_next = match->_next;
       E ret = match->_data;
@@ -118,20 +118,20 @@ template <typename MATCH_FUNC>
 E FilterQueue<E>::peek(MATCH_FUNC& match_func) {
   Node*  first       = load_first();
   Node*  cur         = first;
-  Node*  match       = NULL;
+  Node*  match       = nullptr;
 
-  if (cur == NULL) {
-    return (E)NULL;
+  if (cur == nullptr) {
+    return (E)nullptr;
   }
   do {
     if (match_func(cur->_data)) {
       match = cur;
     }
     cur = cur->_next;
-  } while (cur != NULL);
+  } while (cur != nullptr);
 
-  if (match == NULL) {
-    return (E)NULL;
+  if (match == nullptr) {
+    return (E)nullptr;
   }
 
   return (E)match->_data;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,14 @@ package jdk.jfr.events;
 
 import jdk.jfr.*;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 
 @Category({"Java Development Kit", "Security"})
 @Label("X509 Certificate")
 @Name("jdk.X509Certificate")
 @Description("Details of X.509 Certificate parsed by JDK")
-@MirrorEvent(className = "jdk.internal.event.X509CertificateEvent")
-public final class X509CertificateEvent extends AbstractJDKEvent {
+@RemoveFields("duration")
+public final class X509CertificateEvent extends MirrorEvent {
     @Label("Signature Algorithm")
     public String algorithm;
 

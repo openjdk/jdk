@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,6 @@ import java.util.Set;
  * The {@link #supportedOptions(Class)} method can be called to determine
  * the complete set of options available (per socket type) on the
  * current system.
- * <p>
- * When a security manager is installed, some non-standard socket options
- * may require a security permission before being set or get.
- * The details are specified in {@link ExtendedSocketOptions}. No permission
- * is required for {@link java.net.StandardSocketOptions}.
  *
  * @deprecated
  * Java SE 9 added standard methods to set/get socket options, and retrieve the per-Socket
@@ -62,6 +57,8 @@ import java.util.Set;
  * socket's class for the equivalent method to set/get a socket option or retrieve available socket options.
  *
  * @see java.nio.channels.NetworkChannel
+ *
+ * @since 1.8
  */
 @Deprecated(since = "16")
 public class Sockets {
@@ -88,9 +85,6 @@ public class Sockets {
      *
      * @throws IOException if an I/O error occurs, or socket is closed.
      *
-     * @throws SecurityException if a security manager is set and the
-     *         caller does not have any required permission.
-     *
      * @throws NullPointerException if name is null
      *
      * @deprecated use {@link java.net.Socket#setOption(SocketOption, Object)} instead.
@@ -116,9 +110,6 @@ public class Sockets {
      *         the option.
      *
      * @throws IOException if an I/O error occurs
-     *
-     * @throws SecurityException if a security manager is set and the
-     *         caller does not have any required permission.
      *
      * @throws NullPointerException if name is null
      *
@@ -150,9 +141,6 @@ public class Sockets {
      *
      * @throws NullPointerException if name is null
      *
-     * @throws SecurityException if a security manager is set and the
-     *         caller does not have any required permission.
-     *
      * @deprecated use {@link java.net.ServerSocket#setOption(SocketOption, Object)} instead.
      *
      * @see java.net.StandardSocketOptions
@@ -178,9 +166,6 @@ public class Sockets {
      * @throws IOException if an I/O error occurs
      *
      * @throws NullPointerException if name is null
-     *
-     * @throws SecurityException if a security manager is set and the
-     *         caller does not have any required permission.
      *
      * @deprecated use {@link java.net.ServerSocket#getOption(SocketOption)} instead.
      *
@@ -211,9 +196,6 @@ public class Sockets {
      *
      * @throws NullPointerException if name is null
      *
-     * @throws SecurityException if a security manager is set and the
-     *         caller does not have any required permission.
-     *
      * @deprecated use {@link java.net.DatagramSocket#setOption(SocketOption, Object)} instead.
      *
      * @see java.net.StandardSocketOptions
@@ -240,9 +222,6 @@ public class Sockets {
      * @throws IOException if an I/O error occurs
      *
      * @throws NullPointerException if name is null
-     *
-     * @throws SecurityException if a security manager is set and the
-     *         caller does not have any required permission.
      *
      * @deprecated use {@link java.net.DatagramSocket#getOption(SocketOption)} instead.
      *
@@ -301,7 +280,6 @@ public class Sockets {
         return isReusePortAvailable;
     }
 
-    @SuppressWarnings("removal")
     private static Map<Class<?>,Set<SocketOption<?>>> optionSets() {
         Map<Class<?>,Set<SocketOption<?>>> options = new HashMap<>();
         boolean incomingNapiIdsupported = PlatformSocketOptions.get().incomingNapiIdSupported();

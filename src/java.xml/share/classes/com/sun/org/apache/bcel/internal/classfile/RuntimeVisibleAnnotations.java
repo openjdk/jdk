@@ -28,40 +28,33 @@ import java.io.IOException;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * represents an annotation that is represented in the class file and is
- * provided to the JVM.
+ * represents an annotation that is represented in the class file and is provided to the JVM.
  *
  * @since 6.0
  */
-public class RuntimeVisibleAnnotations extends Annotations
-{
+public class RuntimeVisibleAnnotations extends Annotations {
+
     /**
-     * @param name_index
-     *            Index pointing to the name <em>Code</em>
-     * @param length
-     *            Content length in bytes
-     * @param input
-     *            Input stream
-     * @param constant_pool
-     *            Array of constants
+     * @param nameIndex Index pointing to the name <em>Code</em>
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constantPool Array of constants
+     * @throws IOException Thrown when an I/O exception of some sort has occurred.
      */
-    public RuntimeVisibleAnnotations(final int name_index, final int length, final DataInput input, final ConstantPool constant_pool) throws IOException
-    {
-        super(Const.ATTR_RUNTIME_VISIBLE_ANNOTATIONS, name_index, length, input, constant_pool, true);
+    public RuntimeVisibleAnnotations(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        super(Const.ATTR_RUNTIME_VISIBLE_ANNOTATIONS, nameIndex, length, input, constantPool, true);
     }
 
     /**
      * @return deep copy of this attribute
      */
     @Override
-    public Attribute copy(final ConstantPool constant_pool)
-    {
+    public Attribute copy(final ConstantPool constantPool) {
         return (Attribute) clone();
     }
 
     @Override
-    public final void dump(final DataOutputStream dos) throws IOException
-    {
+    public final void dump(final DataOutputStream dos) throws IOException {
         super.dump(dos);
         writeAnnotations(dos);
     }

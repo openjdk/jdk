@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class SBCS {
     {
         String clzName = cs.clzName;
         String csName  = cs.csName;
-        String hisName = cs.hisName;
+        String histName = cs.histName;
         String pkgName = cs.pkgName;
         boolean isASCII = cs.isASCII;
         boolean isLatin1Decodable = true;
@@ -170,8 +170,8 @@ public class SBCS {
                     line = line.replace("$NAME_ALIASES$",
                                         "ExtendedCharsets.aliasesFor(\"" + csName + "\")");
             }
-            if (line.indexOf("$NAME_HIS$", i) != -1) {
-                line = line.replace("$NAME_HIS$", hisName);
+            if (line.indexOf("$NAME_HIST$", i) != -1) {
+                line = line.replace("$NAME_HIST$", histName);
             }
             if (line.indexOf("$CONTAINS$", i) != -1) {
                 if (isASCII)

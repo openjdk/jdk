@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
 import nsk.share.jdi.JDIThreadFactory;
+import jdk.test.lib.thread.VThreadPinner;
 
 import java.io.*;
 import java.util.*;
@@ -44,10 +45,9 @@ public class kill001a {
     static final int numThreads          = 5;   // number of threads. one lock per thread.
     static Object lock                   = new Object();
     static Object waitnotify             = new Object();
-    public static volatile int notKilled = 0;
+    public static volatile int killed    = 0;
     static final String message          = "kill001a's Exception";
     static int waitTime;
-    static boolean vthreadMode           = "Virtual".equals(System.getProperty("main.wrapper"));
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
@@ -58,11 +58,10 @@ public class kill001a {
                     new SecurityException(message),
                     new com.sun.jdi.IncompatibleThreadStateException(message),
                     new MyException(message)
-                                          };
+    };
 
 
     public int runIt(String args[], PrintStream out) {
-
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
         waitTime = argumentHandler.getWaitTime() * 60 * 1000;
@@ -72,7 +71,7 @@ public class kill001a {
 
         for (i = 0; i < numThreads ; i++) {
             String name = MYTHREAD + "-" + i;
-            holder[i] = JDIThreadFactory.newThread(new MyThread(name), name);
+            holder[i] = JDIThreadFactory.newThread(new MyThread(name, exceptions[i]), name);
         }
 
         // lock monitor to prevent threads from finishing after they started
@@ -88,6 +87,7 @@ public class kill001a {
                     }
                 }
             }
+
             breakHere();  // a break to get thread ids and then to kill MyThreads.
         }
 
@@ -96,33 +96,27 @@ public class kill001a {
         while ((System.currentTimeMillis() - oldTime) <= kill001a.waitTime) {
             boolean waited = false;
             for (i = 0; i < numThreads ; i++) {
-                if (vthreadMode) {
-                    // vthreads will exit on their own without being killed, so just wait for them to exit.
-                    try {
-                        holder[i].join();
-                    } catch (InterruptedException e) {
-                    }
-                } else if (holder[i].isAlive()) {
+                if (holder[i].isAlive()) {
                     waited = true;
                     try {
                         synchronized(waitnotify) {
                             waitnotify.wait(1000);
                         }
                     } catch (InterruptedException e) {
-                        log.display("Main thread was interrupted while waiting for killing of " + MYTHREAD + "-" + i);
+                        log.complain("Main thread was interrupted while waiting for killing of " + MYTHREAD + "-" + i);
                     }
                 }
             }
-            if (!waited || vthreadMode) {
+            if (!waited) {
                 break;
             }
         }
         breakHere(); // a break to check if MyThreads were killed
-        log.display("notKilled == " + notKilled);
+        log.display("killed == " + killed);
 
         for (i = 0; i < numThreads ; i++) {
             if (holder[i].isAlive()) {
-                log.display("Debuggee FAILED - thread " + i + " is alive");
+                log.complain("Debuggee FAILED - thread " + i + " is alive");
                 return kill001.FAILED;
             }
         }
@@ -130,47 +124,75 @@ public class kill001a {
         log.display("Debuggee PASSED");
         return kill001.PASSED;
     }
+}
 
-    static class MyException extends Exception {
-        MyException (String message) {
-            super(message);
-        }
+class MyException extends Exception {
+    MyException (String message) {
+        super(message);
     }
 }
 
-
 class MyThread extends Thread {
     String name;
+    Throwable expectedException;
+    public boolean exceptionThrown = true;
 
-    public MyThread (String n) {
+    public MyThread(String n, Throwable e) {
         name = n;
+        expectedException = e;
+    }
+
+
+    static public int[] trash;
+
+    void methodForException() {
+        trash = new int[10];
+        for (int i = 0; ;i++) {
+            trash[i % trash.length] = i;
+        }
     }
 
     public void run() {
+        boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+        if (vthreadMode) {
+            // JVMTI StopThread is only supported for mounted virtual threads. We need to
+            // pin the virtual threads so they remain mounted.
+            VThreadPinner.runPinned(() -> test());
+        } else {
+            test();
+        }
+    }
+
+    public void test() {
         // Concatenate strings in advance to avoid lambda calculations later
-        String ThreadFinished = "WARNING: Thread finished: " + this.name;
-        String ThreadInterrupted = "WARNING: Thread was interrupted while waiting for killing: " + this.name;
+        String ThreadFinished = "Thread finished: " + this.name;
+        String CaughtExpected = "Thread " + this.name + " caught expected async exception: " + expectedException;
+        String CaughtUnexpected = "WARNING: Thread " + this.name + " caught unexpected exception:";
+
         kill001a.log.display("Thread started: " + this.name);
 
         synchronized (kill001a.waitnotify) {
             kill001a.waitnotify.notify();
         }
-        // prevent thread from early finish
-        synchronized (kill001a.lock) {}
 
-        // Sleep during waitTime to give debugger a chance to kill debugee's thread.
-        // Note vthreads need a short sleep because they will never receive the kill,
-        // and therefore sleep the full time, resulting in a test timeout if too long.
         try {
-            Thread.currentThread().sleep(kill001a.vthreadMode ? 10000 : kill001a.waitTime);
-        } catch (InterruptedException e) {
-            kill001a.log.display(ThreadInterrupted);
-            e.printStackTrace(kill001a.log.getOutStream());
-        }
-
-        // Need to make sure the increment is atomic
-        synchronized (kill001a.lock) {
-            kill001a.notKilled++;
+            synchronized (kill001a.lock) { }
+            // We need some code that does an invoke here to make sure the async exception
+            // gets thrown before we leave the try block.
+            // The methodForException should work until exception is thrown.
+            methodForException();
+        } catch (Throwable t) {
+            if (t == expectedException) {
+                kill001a.log.display(CaughtExpected);
+                // Need to make sure the increment is atomic
+                synchronized (kill001a.lock) {
+                    kill001a.killed++;
+                }
+            } else {
+                kill001a.log.display(CaughtUnexpected);
+                kill001a.log.display(t);
+                t.printStackTrace(kill001a.log.getOutStream());
+            }
         }
         kill001a.log.display(ThreadFinished);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -408,7 +408,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
 
                     baos.write((byte)i); // Quantization table ID
                 }
-            };
+            }
 
 
             // DRI (optional).
@@ -485,7 +485,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
 
                     tables[tmpOffset++] = (byte)i; // Quantization table ID
                 }
-            };
+            }
         }
 
         //
@@ -527,7 +527,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
                     SOSMarker[SOSMarkerIndex++] =
                         (byte)((i << 4) | i); // Huffman table IDs
                 }
-            };
+            }
             SOSMarker[SOSMarkerIndex++] = (byte)0;
             SOSMarker[SOSMarkerIndex++] = (byte)0x3f;
             SOSMarker[SOSMarkerIndex++] = (byte)0;
@@ -610,7 +610,6 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
         JPEGReader.read(0, JPEGParam);
     }
 
-    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         super.finalize();
         JPEGReader.dispose();

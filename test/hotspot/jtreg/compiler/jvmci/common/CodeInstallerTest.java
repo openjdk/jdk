@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package compiler.jvmci.common;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Site;
@@ -113,13 +112,12 @@ public class CodeInstallerTest {
                                     hasUnsafeAccess);
         SpeculationLog log = null;
         InstalledCode installedCode = null;
-        return codeCache.addCode(dummyMethod, code, log, installedCode);
+        return codeCache.addCode(dummyMethod, code, log, installedCode, true);
     }
 
     protected Register getRegister(PlatformKind kind, int index) {
         int idx = index;
-        RegisterArray allRegs = arch.getAvailableValueRegisters();
-        for (Register reg : allRegs) {
+        for (Register reg : arch.getAvailableValueRegisters()) {
             if (arch.canStoreValue(reg.getRegisterCategory(), kind)) {
                 if (idx-- == 0) {
                     return reg;

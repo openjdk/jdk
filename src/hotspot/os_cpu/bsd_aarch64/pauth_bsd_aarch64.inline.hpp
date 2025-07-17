@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ inline address pauth_strip_pointer(address ptr) {
   return ptr;
 }
 
-inline address pauth_sign_return_address(address ret_addr, address sp) {
+inline address pauth_sign_return_address(address ret_addr) {
   // No PAC support in BSD as of yet.
   return ret_addr;
 }
 
-inline address pauth_authenticate_return_address(address ret_addr, address sp) {
+inline address pauth_authenticate_return_address(address ret_addr) {
   // No PAC support in BSD as of yet.
   return ret_addr;
 }

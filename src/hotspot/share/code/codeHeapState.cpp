@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeHeapState.hpp"
 #include "compiler/compileBroker.hpp"
 #include "oops/klass.inline.hpp"
@@ -139,7 +138,7 @@
 // Flush the buffer contents unconditionally.
 // No action if the buffer is empty.
 #define BUFFEREDSTREAM_FLUSH(_termString)                     \
-    if (((_termString) != NULL) && (strlen(_termString) > 0)){\
+    if (((_termString) != nullptr) && (strlen(_termString) > 0)){\
       _sstbuf->print("%s", _termString);                      \
     }                                                         \
     if (_sstbuf != _outbuf) {                                 \
@@ -153,7 +152,7 @@
 // Flush the buffer contents if the remaining capacity is
 // less than the given threshold.
 #define BUFFEREDSTREAM_FLUSH_IF(_termString, _remSize)        \
-    if (((_termString) != NULL) && (strlen(_termString) > 0)){\
+    if (((_termString) != nullptr) && (strlen(_termString) > 0)){\
       _sstbuf->print("%s", _termString);                      \
     }                                                         \
     if (_sstbuf != _outbuf) {                                 \
@@ -193,7 +192,7 @@
     BUFFEREDSTREAM_DECL_SIZE(_anyst, _outst, 4*K)
 
 #define BUFFEREDSTREAM_FLUSH(_termString)                     \
-    if (((_termString) != NULL) && (strlen(_termString) > 0)){\
+    if (((_termString) != nullptr) && (strlen(_termString) > 0)){\
       _outbuf->print("%s", _termString);                      \
     }
 
@@ -237,8 +236,8 @@ const  unsigned int        maxHeaps          = 10;
 static unsigned int        nHeaps            = 0;
 static struct CodeHeapStat CodeHeapStatArray[maxHeaps];
 
-// static struct StatElement *StatArray      = NULL;
-static StatElement* StatArray             = NULL;
+// static struct StatElement *StatArray      = nullptr;
+static StatElement* StatArray             = nullptr;
 static int          log2_seg_size         = 0;
 static size_t       seg_size              = 0;
 static size_t       alloc_granules        = 0;
@@ -249,16 +248,16 @@ static unsigned int nBlocks_t2            = 0;  // counting "in_use" nmethods on
 static unsigned int nBlocks_alive         = 0;  // counting "not_used" and "not_entrant" nmethods only.
 static unsigned int nBlocks_stub          = 0;
 
-static struct FreeBlk*          FreeArray = NULL;
+static struct FreeBlk*          FreeArray = nullptr;
 static unsigned int      alloc_freeBlocks = 0;
 
-static struct TopSizeBlk*    TopSizeArray = NULL;
+static struct TopSizeBlk*    TopSizeArray = nullptr;
 static unsigned int   alloc_topSizeBlocks = 0;
 static unsigned int    used_topSizeBlocks = 0;
 
-static struct SizeDistributionElement*  SizeDistributionArray = NULL;
+static struct SizeDistributionElement*  SizeDistributionArray = nullptr;
 
-static unsigned int  latest_compilation_id   = 0;
+static int           latest_compilation_id   = 0;
 static volatile bool initialization_complete = false;
 
 const char* CodeHeapState::get_heapName(CodeHeap* heap) {
@@ -271,13 +270,13 @@ const char* CodeHeapState::get_heapName(CodeHeap* heap) {
 
 // returns the index for the heap being processed.
 unsigned int CodeHeapState::findHeapIndex(outputStream* out, const char* heapName) {
-  if (heapName == NULL) {
+  if (heapName == nullptr) {
     return maxHeaps;
   }
   if (SegmentedCodeCache) {
     // Search for a pre-existing entry. If found, return that index.
     for (unsigned int i = 0; i < nHeaps; i++) {
-      if (CodeHeapStatArray[i].heapName != NULL && strcmp(heapName, CodeHeapStatArray[i].heapName) == 0) {
+      if (CodeHeapStatArray[i].heapName != nullptr && strcmp(heapName, CodeHeapStatArray[i].heapName) == 0) {
         return i;
       }
     }
@@ -318,7 +317,7 @@ void CodeHeapState::get_HeapStatGlobals(outputStream* out, const char* heapName)
     used_topSizeBlocks    = CodeHeapStatArray[ix].used_topSizeBlocks;
     SizeDistributionArray = CodeHeapStatArray[ix].SizeDistributionArray;
   } else {
-    StatArray             = NULL;
+    StatArray             = nullptr;
     seg_size              = 0;
     log2_seg_size         = 0;
     alloc_granules        = 0;
@@ -328,12 +327,12 @@ void CodeHeapState::get_HeapStatGlobals(outputStream* out, const char* heapName)
     nBlocks_t2            = 0;
     nBlocks_alive         = 0;
     nBlocks_stub          = 0;
-    FreeArray             = NULL;
+    FreeArray             = nullptr;
     alloc_freeBlocks      = 0;
-    TopSizeArray          = NULL;
+    TopSizeArray          = nullptr;
     alloc_topSizeBlocks   = 0;
     used_topSizeBlocks    = 0;
-    SizeDistributionArray = NULL;
+    SizeDistributionArray = nullptr;
   }
 }
 
@@ -360,17 +359,17 @@ void CodeHeapState::set_HeapStatGlobals(outputStream* out, const char* heapName)
 
 //---<  get a new statistics array  >---
 void CodeHeapState::prepare_StatArray(outputStream* out, size_t nElem, size_t granularity, const char* heapName) {
-  if (StatArray == NULL) {
+  if (StatArray == nullptr) {
     StatArray      = new StatElement[nElem];
     //---<  reset some counts  >---
     alloc_granules = nElem;
     granule_size   = granularity;
   }
 
-  if (StatArray == NULL) {
+  if (StatArray == nullptr) {
     //---<  just do nothing if allocation failed  >---
     out->print_cr("Statistics could not be collected for %s, probably out of memory.", heapName);
-    out->print_cr("Current granularity is " SIZE_FORMAT " bytes. Try a coarser granularity.", granularity);
+    out->print_cr("Current granularity is %zu bytes. Try a coarser granularity.", granularity);
     alloc_granules = 0;
     granule_size   = 0;
   } else {
@@ -381,13 +380,13 @@ void CodeHeapState::prepare_StatArray(outputStream* out, size_t nElem, size_t gr
 
 //---<  get a new free block array  >---
 void CodeHeapState::prepare_FreeArray(outputStream* out, unsigned int nElem, const char* heapName) {
-  if (FreeArray == NULL) {
+  if (FreeArray == nullptr) {
     FreeArray      = new FreeBlk[nElem];
     //---<  reset some counts  >---
     alloc_freeBlocks = nElem;
   }
 
-  if (FreeArray == NULL) {
+  if (FreeArray == nullptr) {
     //---<  just do nothing if allocation failed  >---
     out->print_cr("Free space analysis cannot be done for %s, probably out of memory.", heapName);
     alloc_freeBlocks = 0;
@@ -399,14 +398,14 @@ void CodeHeapState::prepare_FreeArray(outputStream* out, unsigned int nElem, con
 
 //---<  get a new TopSizeArray  >---
 void CodeHeapState::prepare_TopSizeArray(outputStream* out, unsigned int nElem, const char* heapName) {
-  if (TopSizeArray == NULL) {
+  if (TopSizeArray == nullptr) {
     TopSizeArray   = new TopSizeBlk[nElem];
     //---<  reset some counts  >---
     alloc_topSizeBlocks = nElem;
     used_topSizeBlocks  = 0;
   }
 
-  if (TopSizeArray == NULL) {
+  if (TopSizeArray == nullptr) {
     //---<  just do nothing if allocation failed  >---
     out->print_cr("Top-%d list of largest CodeHeap blocks can not be collected for %s, probably out of memory.", nElem, heapName);
     alloc_topSizeBlocks = 0;
@@ -419,11 +418,11 @@ void CodeHeapState::prepare_TopSizeArray(outputStream* out, unsigned int nElem, 
 
 //---<  get a new SizeDistributionArray  >---
 void CodeHeapState::prepare_SizeDistArray(outputStream* out, unsigned int nElem, const char* heapName) {
-  if (SizeDistributionArray == NULL) {
+  if (SizeDistributionArray == nullptr) {
     SizeDistributionArray = new SizeDistributionElement[nElem];
   }
 
-  if (SizeDistributionArray == NULL) {
+  if (SizeDistributionArray == nullptr) {
     //---<  just do nothing if allocation failed  >---
     out->print_cr("Size distribution can not be collected for %s, probably out of memory.", heapName);
   } else {
@@ -440,7 +439,7 @@ void CodeHeapState::prepare_SizeDistArray(outputStream* out, unsigned int nElem,
 
 //---<  get a new SizeDistributionArray  >---
 void CodeHeapState::update_SizeDistArray(outputStream* out, unsigned int len) {
-  if (SizeDistributionArray != NULL) {
+  if (SizeDistributionArray != nullptr) {
     for (unsigned int i = log2_seg_size-1; i < nSizeDistElements; i++) {
       if ((SizeDistributionArray[i].rangeStart <= len) && (len < SizeDistributionArray[i].rangeEnd)) {
         SizeDistributionArray[i].lenSum += len;
@@ -452,40 +451,40 @@ void CodeHeapState::update_SizeDistArray(outputStream* out, unsigned int len) {
 }
 
 void CodeHeapState::discard_StatArray(outputStream* out) {
-  if (StatArray != NULL) {
+  if (StatArray != nullptr) {
     delete StatArray;
-    StatArray        = NULL;
+    StatArray        = nullptr;
     alloc_granules   = 0;
     granule_size     = 0;
   }
 }
 
 void CodeHeapState::discard_FreeArray(outputStream* out) {
-  if (FreeArray != NULL) {
+  if (FreeArray != nullptr) {
     delete[] FreeArray;
-    FreeArray        = NULL;
+    FreeArray        = nullptr;
     alloc_freeBlocks = 0;
   }
 }
 
 void CodeHeapState::discard_TopSizeArray(outputStream* out) {
-  if (TopSizeArray != NULL) {
+  if (TopSizeArray != nullptr) {
     for (unsigned int i = 0; i < alloc_topSizeBlocks; i++) {
-      if (TopSizeArray[i].blob_name != NULL) {
+      if (TopSizeArray[i].blob_name != nullptr) {
         os::free((void*)TopSizeArray[i].blob_name);
       }
     }
     delete[] TopSizeArray;
-    TopSizeArray        = NULL;
+    TopSizeArray        = nullptr;
     alloc_topSizeBlocks = 0;
     used_topSizeBlocks  = 0;
   }
 }
 
 void CodeHeapState::discard_SizeDistArray(outputStream* out) {
-  if (SizeDistributionArray != NULL) {
+  if (SizeDistributionArray != nullptr) {
     delete[] SizeDistributionArray;
-    SizeDistributionArray = NULL;
+    SizeDistributionArray = nullptr;
   }
 }
 
@@ -504,7 +503,7 @@ void CodeHeapState::discard(outputStream* out, CodeHeap* heap) {
       discard_TopSizeArray(out);
       discard_SizeDistArray(out);
       set_HeapStatGlobals(out, CodeHeapStatArray[ix].heapName);
-      CodeHeapStatArray[ix].heapName = NULL;
+      CodeHeapStatArray[ix].heapName = nullptr;
     }
     nHeaps = 0;
   }
@@ -538,7 +537,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     memset(CodeHeapStatArray, 0, sizeof(CodeHeapStatArray));
     initialization_complete = true;
 
-    printBox(ast, '=', "C O D E   H E A P   A N A L Y S I S   (general remarks)", NULL);
+    printBox(ast, '=', "C O D E   H E A P   A N A L Y S I S   (general remarks)", nullptr);
     ast->print_cr("   The code heap analysis function provides deep insights into\n"
                   "   the inner workings and the internal state of the Java VM's\n"
                   "   code cache - the place where all the JVM generated machine\n"
@@ -621,11 +620,11 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                 "   collected data to be consistent. Only the method names and signatures\n"
                 "   are retrieved at print time. That may lead to rare cases where the\n"
                 "   name of a method is no longer available, e.g. because it was unloaded.\n");
-  ast->print_cr("   CodeHeap committed size " SIZE_FORMAT "K (" SIZE_FORMAT "M), reserved size " SIZE_FORMAT "K (" SIZE_FORMAT "M), %d%% occupied.",
+  ast->print_cr("   CodeHeap committed size %zuK (%zuM), reserved size %zuK (%zuM), %d%% occupied.",
                 size/(size_t)K, size/(size_t)M, res_size/(size_t)K, res_size/(size_t)M, (unsigned int)(100.0*size/res_size));
-  ast->print_cr("   CodeHeap allocation segment size is " SIZE_FORMAT " bytes. This is the smallest possible granularity.", seg_size);
-  ast->print_cr("   CodeHeap (committed part) is mapped to " SIZE_FORMAT " granules of size " SIZE_FORMAT " bytes.", granules, granularity);
-  ast->print_cr("   Each granule takes " SIZE_FORMAT " bytes of C heap, that is " SIZE_FORMAT "K in total for statistics data.", sizeof(StatElement), (sizeof(StatElement)*granules)/(size_t)K);
+  ast->print_cr("   CodeHeap allocation segment size is %zu bytes. This is the smallest possible granularity.", seg_size);
+  ast->print_cr("   CodeHeap (committed part) is mapped to %zu granules of size %zu bytes.", granules, granularity);
+  ast->print_cr("   Each granule takes %zu bytes of C heap, that is %zuK in total for statistics data.", sizeof(StatElement), (sizeof(StatElement)*granules)/(size_t)K);
   ast->print_cr("   The number of granules is limited to %dk, requiring a granules size of at least %d bytes for a 1GB heap.", (unsigned int)(max_granules/K), (unsigned int)(G/max_granules));
   BUFFEREDSTREAM_FLUSH("\n")
 
@@ -651,7 +650,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
 
     //---<  allocate arrays if they don't yet exist, initialize  >---
     prepare_StatArray(out, granules, granularity, heapName);
-    if (StatArray == NULL) {
+    if (StatArray == nullptr) {
       set_HeapStatGlobals(out, heapName);
       return;
     }
@@ -659,27 +658,27 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     prepare_SizeDistArray(out, nSizeDistElements, heapName);
 
     latest_compilation_id = CompileBroker::get_compilation_id();
-    unsigned int highest_compilation_id = 0;
-    size_t       usedSpace     = 0;
-    size_t       t1Space       = 0;
-    size_t       t2Space       = 0;
-    size_t       aliveSpace    = 0;
-    size_t       disconnSpace  = 0;
-    size_t       notentrSpace  = 0;
-    size_t       stubSpace     = 0;
-    size_t       freeSpace     = 0;
-    size_t       maxFreeSize   = 0;
-    HeapBlock*   maxFreeBlock  = NULL;
-    bool         insane        = false;
+    int          highest_compilation_id = 0;
+    size_t       usedSpace              = 0;
+    size_t       t1Space                = 0;
+    size_t       t2Space                = 0;
+    size_t       aliveSpace             = 0;
+    size_t       disconnSpace           = 0;
+    size_t       notentrSpace           = 0;
+    size_t       stubSpace              = 0;
+    size_t       freeSpace              = 0;
+    size_t       maxFreeSize            = 0;
+    HeapBlock*   maxFreeBlock           = nullptr;
+    bool         insane                 = false;
 
-    unsigned int n_methods     = 0;
+    unsigned int n_methods              = 0;
 
-    for (HeapBlock *h = heap->first_block(); h != NULL && !insane; h = heap->next_block(h)) {
+    for (HeapBlock *h = heap->first_block(); h != nullptr && !insane; h = heap->next_block(h)) {
       unsigned int hb_len     = (unsigned int)h->length();  // despite being size_t, length can never overflow an unsigned int.
       size_t       hb_bytelen = ((size_t)hb_len)<<log2_seg_size;
       unsigned int ix_beg     = (unsigned int)(((char*)h-low_bound)/granule_size);
       unsigned int ix_end     = (unsigned int)(((char*)h-low_bound+(hb_bytelen-1))/granule_size);
-      unsigned int compile_id = 0;
+      int compile_id = 0;
       CompLevel    comp_lvl   = CompLevel_none;
       compType     cType      = noComp;
       blobType     cbType     = noType;
@@ -697,10 +696,10 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         insane = true; ast->print_cr("Sanity check: HeapBlock @%p outside used range (%p)", (char*)h, low_bound + size);
       }
       if (ix_end   >= granules) {
-        insane = true; ast->print_cr("Sanity check: end index (%d) out of bounds (" SIZE_FORMAT ")", ix_end, granules);
+        insane = true; ast->print_cr("Sanity check: end index (%d) out of bounds (%zu)", ix_end, granules);
       }
       if (size     != heap->capacity()) {
-        insane = true; ast->print_cr("Sanity check: code heap capacity has changed (" SIZE_FORMAT "K to " SIZE_FORMAT "K)", size/(size_t)K, heap->capacity()/(size_t)K);
+        insane = true; ast->print_cr("Sanity check: code heap capacity has changed (%zuK to %zuK)", size/(size_t)K, heap->capacity()/(size_t)K);
       }
       if (ix_beg   >  ix_end) {
         insane = true; ast->print_cr("Sanity check: end index (%d) lower than begin index (%d)", ix_end, ix_beg);
@@ -722,12 +721,12 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         nBlocks_used++;
         usedSpace    += hb_bytelen;
         CodeBlob* cb  = (CodeBlob*)heap->find_start(h);
-        cbType = get_cbType(cb);  // Will check for cb == NULL and other safety things.
+        cbType = get_cbType(cb);  // Will check for cb == nullptr and other safety things.
         if (cbType != noType) {
           const char* blob_name  = nullptr;
           unsigned int nm_size   = 0;
           nmethod*  nm = cb->as_nmethod_or_null();
-          if (nm != NULL) { // no is_readable check required, nm = (nmethod*)cb.
+          if (nm != nullptr) { // no is_readable check required, nm = (nmethod*)cb.
             ResourceMark rm;
             Method* method = nm->method();
             if (nm->is_in_use() || nm->is_not_entrant()) {
@@ -735,7 +734,16 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             } else {
               blob_name = os::strdup(cb->name());
             }
-
+#if INCLUDE_JVMCI
+            const char* jvmci_name = nm->jvmci_name();
+            if (jvmci_name != nullptr) {
+              size_t size = ::strlen(blob_name) + ::strlen(" jvmci_name=") + ::strlen(jvmci_name) + 1;
+              char* new_blob_name = (char*)os::malloc(size, mtInternal);
+              os::snprintf(new_blob_name, size, "%s jvmci_name=%s", blob_name, jvmci_name);
+              os::free((void*)blob_name);
+              blob_name = new_blob_name;
+            }
+#endif
             nm_size    = nm->total_size();
             compile_id = nm->compile_id();
             comp_lvl   = (CompLevel)(nm->comp_level());
@@ -790,7 +798,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               currMin    = hb_len;
               currMin_ix = 0;
               used_topSizeBlocks++;
-              blob_name  = NULL; // indicate blob_name was consumed
+              blob_name  = nullptr; // indicate blob_name was consumed
             // This check roughly cuts 5000 iterations (JVM98, mixed, dbg, termination stats):
             } else if ((used_topSizeBlocks < alloc_topSizeBlocks) && (hb_len < currMin)) {
               //---<  all blocks in list are larger, but there is room left in array  >---
@@ -806,7 +814,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               currMin    = hb_len;
               currMin_ix = used_topSizeBlocks;
               used_topSizeBlocks++;
-              blob_name  = NULL; // indicate blob_name was consumed
+              blob_name  = nullptr; // indicate blob_name was consumed
             } else {
               // This check cuts total_iterations by a factor of 6 (JVM98, mixed, dbg, termination stats):
               //   We don't need to search the list if we know beforehand that the current block size is
@@ -846,7 +854,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                       TopSizeArray[i].level       = comp_lvl;
                       TopSizeArray[i].type        = cbType;
                       used_topSizeBlocks++;
-                      blob_name  = NULL; // indicate blob_name was consumed
+                      blob_name  = nullptr; // indicate blob_name was consumed
                     } else { // no room for new entries, current block replaces entry for smallest block
                       //---<  Find last entry (entry for smallest remembered block)  >---
                       // We either want to insert right before the smallest entry, which is when <i>
@@ -870,7 +878,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                         j      = TopSizeArray[j].index;
                       }
                       if (!insane) {
-                        if (TopSizeArray[j].blob_name != NULL) {
+                        if (TopSizeArray[j].blob_name != nullptr) {
                           os::free((void*)TopSizeArray[j].blob_name);
                         }
                         if (prev_j == tsbStopper) {
@@ -902,7 +910,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                           TopSizeArray[i].level       = comp_lvl;
                           TopSizeArray[i].type        = cbType;
                         }
-                        blob_name  = NULL; // indicate blob_name was consumed
+                        blob_name  = nullptr; // indicate blob_name was consumed
                       } // insane
                     }
                     break;
@@ -917,9 +925,9 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               }
             }
           }
-          if (blob_name != NULL) {
+          if (blob_name != nullptr) {
             os::free((void*)blob_name);
-            blob_name = NULL;
+            blob_name = nullptr;
           }
           //----------------------------------------------
           //---<  END register block in TopSizeArray  >---
@@ -1033,19 +1041,19 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
       // interspersed with print data from other threads. We take this risk intentionally.
       // Getting stalled waiting for tty_lock while holding the CodeCache_lock is not desirable.
       printBox(ast, '-', "Global CodeHeap statistics for segment ", heapName);
-      ast->print_cr("freeSpace        = " SIZE_FORMAT_W(8) "k, nBlocks_free     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", freeSpace/(size_t)K,     nBlocks_free,     (100.0*freeSpace)/size,     (100.0*freeSpace)/res_size);
-      ast->print_cr("usedSpace        = " SIZE_FORMAT_W(8) "k, nBlocks_used     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", usedSpace/(size_t)K,     nBlocks_used,     (100.0*usedSpace)/size,     (100.0*usedSpace)/res_size);
-      ast->print_cr("  Tier1 Space    = " SIZE_FORMAT_W(8) "k, nBlocks_t1       = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", t1Space/(size_t)K,       nBlocks_t1,       (100.0*t1Space)/size,       (100.0*t1Space)/res_size);
-      ast->print_cr("  Tier2 Space    = " SIZE_FORMAT_W(8) "k, nBlocks_t2       = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", t2Space/(size_t)K,       nBlocks_t2,       (100.0*t2Space)/size,       (100.0*t2Space)/res_size);
-      ast->print_cr("  Alive Space    = " SIZE_FORMAT_W(8) "k, nBlocks_alive    = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", aliveSpace/(size_t)K,    nBlocks_alive,    (100.0*aliveSpace)/size,    (100.0*aliveSpace)/res_size);
-      ast->print_cr("    disconnected = " SIZE_FORMAT_W(8) "k, nBlocks_disconn  = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", disconnSpace/(size_t)K,  nBlocks_disconn,  (100.0*disconnSpace)/size,  (100.0*disconnSpace)/res_size);
-      ast->print_cr("    not entrant  = " SIZE_FORMAT_W(8) "k, nBlocks_notentr  = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", notentrSpace/(size_t)K,  nBlocks_notentr,  (100.0*notentrSpace)/size,  (100.0*notentrSpace)/res_size);
-      ast->print_cr("  stubSpace      = " SIZE_FORMAT_W(8) "k, nBlocks_stub     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", stubSpace/(size_t)K,     nBlocks_stub,     (100.0*stubSpace)/size,     (100.0*stubSpace)/res_size);
+      ast->print_cr("freeSpace        = %8zuk, nBlocks_free     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", freeSpace/(size_t)K,     nBlocks_free,     (100.0*freeSpace)/size,     (100.0*freeSpace)/res_size);
+      ast->print_cr("usedSpace        = %8zuk, nBlocks_used     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", usedSpace/(size_t)K,     nBlocks_used,     (100.0*usedSpace)/size,     (100.0*usedSpace)/res_size);
+      ast->print_cr("  Tier1 Space    = %8zuk, nBlocks_t1       = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", t1Space/(size_t)K,       nBlocks_t1,       (100.0*t1Space)/size,       (100.0*t1Space)/res_size);
+      ast->print_cr("  Tier2 Space    = %8zuk, nBlocks_t2       = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", t2Space/(size_t)K,       nBlocks_t2,       (100.0*t2Space)/size,       (100.0*t2Space)/res_size);
+      ast->print_cr("  Alive Space    = %8zuk, nBlocks_alive    = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", aliveSpace/(size_t)K,    nBlocks_alive,    (100.0*aliveSpace)/size,    (100.0*aliveSpace)/res_size);
+      ast->print_cr("    disconnected = %8zuk, nBlocks_disconn  = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", disconnSpace/(size_t)K,  nBlocks_disconn,  (100.0*disconnSpace)/size,  (100.0*disconnSpace)/res_size);
+      ast->print_cr("    not entrant  = %8zuk, nBlocks_notentr  = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", notentrSpace/(size_t)K,  nBlocks_notentr,  (100.0*notentrSpace)/size,  (100.0*notentrSpace)/res_size);
+      ast->print_cr("  stubSpace      = %8zuk, nBlocks_stub     = %6d, %10.3f%% of capacity, %10.3f%% of max_capacity", stubSpace/(size_t)K,     nBlocks_stub,     (100.0*stubSpace)/size,     (100.0*stubSpace)/res_size);
       ast->print_cr("ZombieBlocks     = %8d. These are HeapBlocks which could not be identified as CodeBlobs.", nBlocks_zomb);
       ast->cr();
-      ast->print_cr("Segment start          = " INTPTR_FORMAT ", used space      = " SIZE_FORMAT_W(8)"k", p2i(low_bound), size/K);
-      ast->print_cr("Segment end (used)     = " INTPTR_FORMAT ", remaining space = " SIZE_FORMAT_W(8)"k", p2i(low_bound) + size, (res_size - size)/K);
-      ast->print_cr("Segment end (reserved) = " INTPTR_FORMAT ", reserved space  = " SIZE_FORMAT_W(8)"k", p2i(low_bound) + res_size, res_size/K);
+      ast->print_cr("Segment start          = " INTPTR_FORMAT ", used space      = %8zuk", p2i(low_bound), size/K);
+      ast->print_cr("Segment end (used)     = " INTPTR_FORMAT ", remaining space = %8zuk", p2i(low_bound) + size, (res_size - size)/K);
+      ast->print_cr("Segment end (reserved) = " INTPTR_FORMAT ", reserved space  = %8zuk", p2i(low_bound) + res_size, res_size/K);
       ast->cr();
       ast->print_cr("latest allocated compilation id = %d", latest_compilation_id);
       ast->print_cr("highest observed compilation id = %d", highest_compilation_id);
@@ -1125,7 +1133,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     ast->print_cr("   The aggregate step collects information about all free blocks in CodeHeap.\n"
                   "   Subsequent print functions create their output based on this snapshot.\n");
     ast->print_cr("   Free space in %s is distributed over %d free blocks.", heapName, nBlocks_free);
-    ast->print_cr("   Each free block takes " SIZE_FORMAT " bytes of C heap for statistics data, that is " SIZE_FORMAT "K in total.", sizeof(FreeBlk), (sizeof(FreeBlk)*nBlocks_free)/K);
+    ast->print_cr("   Each free block takes %zu bytes of C heap for statistics data, that is %zuK in total.", sizeof(FreeBlk), (sizeof(FreeBlk)*nBlocks_free)/K);
     BUFFEREDSTREAM_FLUSH("\n")
 
     //----------------------------------------
@@ -1138,7 +1146,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     }
 
     prepare_FreeArray(out, nBlocks_free, heapName);
-    if (FreeArray == NULL) {
+    if (FreeArray == nullptr) {
       done = true;
       continue;
     }
@@ -1150,7 +1158,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     unsigned int ix = 0;
     FreeBlock* cur  = heap->freelist();
 
-    while (cur != NULL) {
+    while (cur != nullptr) {
       if (ix < alloc_freeBlocks) { // don't index out of bounds if _freelist has more blocks than anticipated
         FreeArray[ix].start = cur;
         FreeArray[ix].len   = (unsigned int)(cur->length()<<log2_seg_size);
@@ -1185,15 +1193,15 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
   }
 
   //---<  calculate and fill remaining fields  >---
-  if (FreeArray != NULL) {
+  if (FreeArray != nullptr) {
     // This loop is intentionally printing directly to "out".
     // It should not print anything, anyway.
     for (unsigned int ix = 0; ix < alloc_freeBlocks-1; ix++) {
       size_t lenSum = 0;
       FreeArray[ix].gap = (unsigned int)((address)FreeArray[ix+1].start - ((address)FreeArray[ix].start + FreeArray[ix].len));
-      for (HeapBlock *h = heap->next_block(FreeArray[ix].start); (h != NULL) && (h != FreeArray[ix+1].start); h = heap->next_block(h)) {
+      for (HeapBlock *h = heap->next_block(FreeArray[ix].start); (h != nullptr) && (h != FreeArray[ix+1].start); h = heap->next_block(h)) {
         CodeBlob *cb  = (CodeBlob*)(heap->find_start(h));
-        if ((cb != NULL) && !cb->is_nmethod()) { // checks equivalent to those in get_cbType()
+        if ((cb != nullptr) && !cb->is_nmethod()) { // checks equivalent to those in get_cbType()
           FreeArray[ix].stubs_in_gap = true;
         }
         FreeArray[ix].n_gapBlocks++;
@@ -1216,13 +1224,15 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
 
 void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
   const char* heapName   = get_heapName(heap);
   get_HeapStatGlobals(out, heapName);
 
-  if ((StatArray == NULL) || (TopSizeArray == NULL) || (used_topSizeBlocks == 0)) {
+  if ((StatArray == nullptr) || (TopSizeArray == nullptr) || (used_topSizeBlocks == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1263,14 +1273,14 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
       unsigned int printed_topSizeBlocks = 0;
       for (unsigned int i = 0; i != tsbStopper; i = TopSizeArray[i].index) {
         printed_topSizeBlocks++;
-        if (TopSizeArray[i].blob_name == NULL) {
+        if (TopSizeArray[i].blob_name == nullptr) {
           TopSizeArray[i].blob_name = os::strdup("unnamed blob or blob name unavailable");
         }
         // heap->find_start() is safe. Only works on _segmap.
-        // Returns NULL or void*. Returned CodeBlob may be uninitialized.
+        // Returns nullptr or void*. Returned CodeBlob may be uninitialized.
         HeapBlock* heapBlock = TopSizeArray[i].start;
         CodeBlob*  this_blob = (CodeBlob*)(heap->find_start(heapBlock));
-        if (this_blob != NULL) {
+        if (this_blob != nullptr) {
           //---<  access these fields only if we own the CodeCache_lock  >---
           //---<  blob address  >---
           ast->print(INTPTR_FORMAT, p2i(this_blob));
@@ -1292,7 +1302,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
         if (is_nmethod) {
           //---<  nMethod size in hex  >---
           ast->print(UINT32_FORMAT_X_0, TopSizeArray[i].nm_size);
-          ast->print("(" SIZE_FORMAT_W(4) "K)", TopSizeArray[i].nm_size/K);
+          ast->print("(%4zuK)", TopSizeArray[i].nm_size/K);
           ast->fill_to(51);
           ast->print("  %c", blobTypeChar[TopSizeArray[i].type]);
           //---<  compiler information  >---
@@ -1304,7 +1314,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
         } else {
           //---<  block size in hex  >---
           ast->print(UINT32_FORMAT_X_0, (unsigned int)(TopSizeArray[i].len<<log2_seg_size));
-          ast->print("(" SIZE_FORMAT_W(4) "K)", (TopSizeArray[i].len<<log2_seg_size)/K);
+          ast->print("(%4zuK)", (TopSizeArray[i].len<<log2_seg_size)/K);
           //---<  no compiler information  >---
           ast->fill_to(56);
           //---<  name and signature  >---
@@ -1329,7 +1339,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
   //--  Print Usage Histogram  --
   //-----------------------------
 
-  if (SizeDistributionArray != NULL) {
+  if (SizeDistributionArray != nullptr) {
     unsigned long total_count = 0;
     unsigned long total_size  = 0;
     const unsigned long pctFactor = 200;
@@ -1351,17 +1361,17 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
       ast->print_cr("[Size Range)------avg.-size-+----count-+");
       for (unsigned int i = 0; i < nSizeDistElements; i++) {
         if (SizeDistributionArray[i].rangeStart<<log2_seg_size < K) {
-          ast->print("[" SIZE_FORMAT_W(5) " .." SIZE_FORMAT_W(5) " ): "
+          ast->print("[%5zu ..%5zu ): "
                     ,(size_t)(SizeDistributionArray[i].rangeStart<<log2_seg_size)
                     ,(size_t)(SizeDistributionArray[i].rangeEnd<<log2_seg_size)
                     );
         } else if (SizeDistributionArray[i].rangeStart<<log2_seg_size < M) {
-          ast->print("[" SIZE_FORMAT_W(5) "K.." SIZE_FORMAT_W(5) "K): "
+          ast->print("[%5zuK..%5zuK): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/K
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/K
                     );
         } else {
-          ast->print("[" SIZE_FORMAT_W(5) "M.." SIZE_FORMAT_W(5) "M): "
+          ast->print("[%5zuM..%5zuM): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/M
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/M
                     );
@@ -1391,17 +1401,17 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
       ast->print_cr("[Size Range)------avg.-size-+----count-+");
       for (unsigned int i = 0; i < nSizeDistElements; i++) {
         if (SizeDistributionArray[i].rangeStart<<log2_seg_size < K) {
-          ast->print("[" SIZE_FORMAT_W(5) " .." SIZE_FORMAT_W(5) " ): "
+          ast->print("[%5zu ..%5zu ): "
                     ,(size_t)(SizeDistributionArray[i].rangeStart<<log2_seg_size)
                     ,(size_t)(SizeDistributionArray[i].rangeEnd<<log2_seg_size)
                     );
         } else if (SizeDistributionArray[i].rangeStart<<log2_seg_size < M) {
-          ast->print("[" SIZE_FORMAT_W(5) "K.." SIZE_FORMAT_W(5) "K): "
+          ast->print("[%5zuK..%5zuK): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/K
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/K
                     );
         } else {
-          ast->print("[" SIZE_FORMAT_W(5) "M.." SIZE_FORMAT_W(5) "M): "
+          ast->print("[%5zuM..%5zuM): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/M
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/M
                     );
@@ -1426,13 +1436,15 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
   const char* heapName   = get_heapName(heap);
   get_HeapStatGlobals(out, heapName);
 
-  if ((StatArray == NULL) || (FreeArray == NULL) || (alloc_granules == 0)) {
+  if ((StatArray == nullptr) || (FreeArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1483,13 +1495,13 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
       unsigned int currSize = FreeArray[ix].len;
 
       unsigned int iy;
-      for (iy = 0; iy < nTop && FreeTopTen[iy] != NULL; iy++) {
+      for (iy = 0; iy < nTop && FreeTopTen[iy] != nullptr; iy++) {
         if (FreeTopTen[iy]->len < currSize) {
           for (unsigned int iz = nTop-1; iz > iy; iz--) { // make room to insert new free block
             FreeTopTen[iz] = FreeTopTen[iz-1];
           }
           FreeTopTen[iy] = &FreeArray[ix];        // insert new free block
-          if (FreeTopTen[nTop-1] != NULL) {
+          if (FreeTopTen[nTop-1] != nullptr) {
             currMax10 = FreeTopTen[nTop-1]->len;
           }
           break; // done with this, check next free block
@@ -1500,7 +1512,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
                       currSize, currMax10);
         continue;
       }
-      if (FreeTopTen[iy] == NULL) {
+      if (FreeTopTen[iy] == nullptr) {
         FreeTopTen[iy] = &FreeArray[ix];
         if (iy == (nTop-1)) {
           currMax10 = currSize;
@@ -1514,7 +1526,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
     printBox(ast, '-', "Top Ten Free Blocks in ", heapName);
 
     //---<  print Top Ten Free Blocks  >---
-    for (unsigned int iy = 0; (iy < nTop) && (FreeTopTen[iy] != NULL); iy++) {
+    for (unsigned int iy = 0; (iy < nTop) && (FreeTopTen[iy] != nullptr); iy++) {
       ast->print("Pos %3d: Block %4d - size " HEX32_FORMAT ",", iy+1, FreeTopTen[iy]->index, FreeTopTen[iy]->len);
       ast->fill_to(39);
       if (FreeTopTen[iy]->index == (alloc_freeBlocks-1)) {
@@ -1548,13 +1560,13 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
     if (lenTriple > currMax10) {  // larger than the ten largest found so far
 
       unsigned int iy;
-      for (iy = 0; (iy < nTop) && (FreeTopTenTriple[iy] != NULL); iy++) {
+      for (iy = 0; (iy < nTop) && (FreeTopTenTriple[iy] != nullptr); iy++) {
         if (FreeTopTenTriple[iy]->len < lenTriple) {
           for (unsigned int iz = nTop-1; iz > iy; iz--) {
             FreeTopTenTriple[iz] = FreeTopTenTriple[iz-1];
           }
           FreeTopTenTriple[iy] = &FreeArray[ix];
-          if (FreeTopTenTriple[nTop-1] != NULL) {
+          if (FreeTopTenTriple[nTop-1] != nullptr) {
             currMax10 = FreeTopTenTriple[nTop-1]->len;
           }
           break;
@@ -1565,7 +1577,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
                       lenTriple, currMax10);
         continue;
       }
-      if (FreeTopTenTriple[iy] == NULL) {
+      if (FreeTopTenTriple[iy] == nullptr) {
         FreeTopTenTriple[iy] = &FreeArray[ix];
         if (iy == (nTop-1)) {
           currMax10 = lenTriple;
@@ -1584,7 +1596,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
                   "  fragmentation.\n");
 
     //---<  print Top Ten Free-Occupied-Free Triples  >---
-    for (unsigned int iy = 0; (iy < nTop) && (FreeTopTenTriple[iy] != NULL); iy++) {
+    for (unsigned int iy = 0; (iy < nTop) && (FreeTopTenTriple[iy] != nullptr); iy++) {
       ast->print("Pos %3d: Block %4d - size " HEX32_FORMAT ",", iy+1, FreeTopTenTriple[iy]->index, FreeTopTenTriple[iy]->len);
       ast->fill_to(39);
       ast->print("Gap (to next) " HEX32_FORMAT ",", FreeTopTenTriple[iy]->gap);
@@ -1600,13 +1612,15 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
   const char* heapName   = get_heapName(heap);
   get_HeapStatGlobals(out, heapName);
 
-  if ((StatArray == NULL) || (alloc_granules == 0)) {
+  if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1630,7 +1644,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
   {
     if (segment_granules) {
-      printBox(ast, '-', "Total (all types) count for granule size == segment size", NULL);
+      printBox(ast, '-', "Total (all types) count for granule size == segment size", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1638,7 +1652,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
         print_blobType_single(ast, StatArray[ix].type);
       }
     } else {
-      printBox(ast, '-', "Total (all tiers) count, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
+      printBox(ast, '-', "Total (all tiers) count, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1653,7 +1667,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_t1 > 0) {
-      printBox(ast, '-', "Tier1 nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
+      printBox(ast, '-', "Tier1 nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1673,7 +1687,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_t2 > 0) {
-      printBox(ast, '-', "Tier2 nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
+      printBox(ast, '-', "Tier2 nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1693,7 +1707,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_alive > 0) {
-      printBox(ast, '-', "not_used/not_entrant/not_installed nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
+      printBox(ast, '-', "not_used/not_entrant/not_installed nMethod count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1713,7 +1727,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_stub > 0) {
-      printBox(ast, '-', "Stub & Blob count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", NULL);
+      printBox(ast, '-', "Stub & Blob count only, 0x1..0xf. '*' indicates >= 16 blocks, ' ' indicates empty", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1733,7 +1747,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
   {
     if (!segment_granules) { // Prevent totally redundant printouts
-      printBox(ast, '-', "Count by tier (combined): <#t1>:<#t2>:<#s>, 0x0..0xf. '*' indicates >= 16 blocks", NULL);
+      printBox(ast, '-', "Count by tier (combined): <#t1>:<#t2>:<#s>, 0x0..0xf. '*' indicates >= 16 blocks", nullptr);
 
       granules_per_line = 24;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1758,13 +1772,15 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
   const char* heapName   = get_heapName(heap);
   get_HeapStatGlobals(out, heapName);
 
-  if ((StatArray == NULL) || (alloc_granules == 0)) {
+  if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1791,7 +1807,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
   {
     if (segment_granules) {
-      printBox(ast, '-', "Total (all types) space consumption for granule size == segment size", NULL);
+      printBox(ast, '-', "Total (all types) space consumption for granule size == segment size", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1799,7 +1815,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
         print_blobType_single(ast, StatArray[ix].type);
       }
     } else {
-      printBox(ast, '-', "Total (all types) space consumption. ' ' indicates empty, '*' indicates full.", NULL);
+      printBox(ast, '-', "Total (all types) space consumption. ' ' indicates empty, '*' indicates full.", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1814,7 +1830,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_t1 > 0) {
-      printBox(ast, '-', "Tier1 space consumption. ' ' indicates empty, '*' indicates full", NULL);
+      printBox(ast, '-', "Tier1 space consumption. ' ' indicates empty, '*' indicates full", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1834,7 +1850,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_t2 > 0) {
-      printBox(ast, '-', "Tier2 space consumption. ' ' indicates empty, '*' indicates full", NULL);
+      printBox(ast, '-', "Tier2 space consumption. ' ' indicates empty, '*' indicates full", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1854,7 +1870,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_alive > 0) {
-      printBox(ast, '-', "not_used/not_entrant/not_installed space consumption. ' ' indicates empty, '*' indicates full", NULL);
+      printBox(ast, '-', "not_used/not_entrant/not_installed space consumption. ' ' indicates empty, '*' indicates full", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1874,7 +1890,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_stub > 0) {
-      printBox(ast, '-', "Stub and Blob space consumption. ' ' indicates empty, '*' indicates full", NULL);
+      printBox(ast, '-', "Stub and Blob space consumption. ' ' indicates empty, '*' indicates full", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1894,7 +1910,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
   {
     if (!segment_granules) { // Prevent totally redundant printouts
-      printBox(ast, '-', "Space consumption by tier (combined): <t1%>:<t2%>:<s%>. ' ' indicates empty, '*' indicates full", NULL);
+      printBox(ast, '-', "Space consumption by tier (combined): <t1%>:<t2%>:<s%>. ' ' indicates empty, '*' indicates full", nullptr);
 
       granules_per_line = 24;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1927,13 +1943,15 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
   const char* heapName   = get_heapName(heap);
   get_HeapStatGlobals(out, heapName);
 
-  if ((StatArray == NULL) || (alloc_granules == 0)) {
+  if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1954,15 +1972,15 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
   }
 
   {
-    printBox(ast, '-', "Age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
+    printBox(ast, '-', "Age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", nullptr);
 
     granules_per_line = 128;
     for (unsigned int ix = 0; ix < alloc_granules; ix++) {
       print_line_delim(out, ast, low_bound, ix, granules_per_line);
-      unsigned int age1      = StatArray[ix].t1_age;
-      unsigned int age2      = StatArray[ix].t2_age;
-      unsigned int agex      = StatArray[ix].tx_age;
-      unsigned int age       = age1 > age2 ? age1 : age2;
+      int age1      = StatArray[ix].t1_age;
+      int age2      = StatArray[ix].t2_age;
+      int agex      = StatArray[ix].tx_age;
+      int age       = age1 > age2 ? age1 : age2;
       age       = age > agex ? age : agex;
       print_age_single(ast, age);
     }
@@ -1972,7 +1990,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_t1 > 0) {
-      printBox(ast, '-', "Tier1 age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
+      printBox(ast, '-', "Tier1 age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -1988,7 +2006,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_t2 > 0) {
-      printBox(ast, '-', "Tier2 age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
+      printBox(ast, '-', "Tier2 age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -2004,7 +2022,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 
   {
     if (nBlocks_alive > 0) {
-      printBox(ast, '-', "not_used/not_entrant/not_installed age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
+      printBox(ast, '-', "not_used/not_entrant/not_installed age distribution. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", nullptr);
 
       granules_per_line = 128;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -2020,7 +2038,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 
   {
     if (!segment_granules) { // Prevent totally redundant printouts
-      printBox(ast, '-', "age distribution by tier <a1>:<a2>. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", NULL);
+      printBox(ast, '-', "age distribution by tier <a1>:<a2>. '0' indicates youngest 1/256, '8': oldest half, ' ': no age information", nullptr);
 
       granules_per_line = 32;
       for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -2039,20 +2057,22 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
   const char* heapName   = get_heapName(heap);
   get_HeapStatGlobals(out, heapName);
 
-  if ((StatArray == NULL) || (alloc_granules == 0)) {
+  if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
 
   unsigned int granules_per_line   = 128;
   char*        low_bound           = heap->low_boundary();
-  CodeBlob*    last_blob           = NULL;
+  CodeBlob*    last_blob           = nullptr;
   bool         name_in_addr_range  = true;
   bool         have_locks          = holding_required_locks();
 
@@ -2080,7 +2100,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
       size_t end_ix = (ix+granules_per_line <= alloc_granules) ? ix+granules_per_line : alloc_granules;
       ast->cr();
       ast->print_cr("--------------------------------------------------------------------");
-      ast->print_cr("Address range [" INTPTR_FORMAT "," INTPTR_FORMAT "), " SIZE_FORMAT "k", p2i(low_bound+ix*granule_size), p2i(low_bound + end_ix*granule_size), (end_ix - ix)*granule_size/(size_t)K);
+      ast->print_cr("Address range [" INTPTR_FORMAT "," INTPTR_FORMAT "), %zuk", p2i(low_bound+ix*granule_size), p2i(low_bound + end_ix*granule_size), (end_ix - ix)*granule_size/(size_t)K);
       ast->print_cr("--------------------------------------------------------------------");
       BUFFEREDSTREAM_FLUSH_AUTO("")
     }
@@ -2090,7 +2110,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
     if (nBlobs > 0 ) {
     for (unsigned int is = 0; is < granule_size; is+=(unsigned int)seg_size) {
       // heap->find_start() is safe. Only works on _segmap.
-      // Returns NULL or void*. Returned CodeBlob may be uninitialized.
+      // Returns nullptr or void*. Returned CodeBlob may be uninitialized.
       char*     this_seg  = low_bound + ix*granule_size + is;
       CodeBlob* this_blob = (CodeBlob*)(heap->find_start(this_seg));
       bool   blob_is_safe = blob_access_is_safe(this_blob);
@@ -2112,12 +2132,12 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
 
         //---<  access these fields only if we own the CodeCache_lock  >---
         const char* blob_name = "<unavailable>";
-        nmethod*           nm = NULL;
+        nmethod*           nm = nullptr;
         if (have_locks) {
           blob_name = this_blob->name();
           nm        = this_blob->as_nmethod_or_null();
-          // this_blob->name() could return NULL if no name was given to CTOR. Inlined, maybe invisible on stack
-          if (blob_name == NULL) {
+          // this_blob->name() could return nullptr if no name was given to CTOR. Inlined, maybe invisible on stack
+          if (blob_name == nullptr) {
             blob_name = "<unavailable>";
           }
         }
@@ -2140,7 +2160,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         ast->fill_to(33);
 
         // access nmethod and Method fields only if we own the CodeCache_lock.
-        // This fact is implicitly transported via nm != NULL.
+        // This fact is implicitly transported via nm != nullptr.
         if (nmethod_access_is_safe(nm)) {
           Method* method = nm->method();
           ResourceMark rm;
@@ -2149,7 +2169,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           bool         get_name   = (cbType == nMethod_inuse) || (cbType == nMethod_notused);
           //---<  nMethod size in hex  >---
           ast->print(UINT32_FORMAT_X_0, total_size);
-          ast->print("(" SIZE_FORMAT_W(4) "K)", total_size/K);
+          ast->print("(%4zuK)", total_size/K);
           //---<  compiler information  >---
           ast->fill_to(51);
           ast->print("%5s %3d", compTypeName[StatArray[ix].compiler], StatArray[ix].level);
@@ -2160,11 +2180,11 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
 
           if (get_name) {
             Symbol* methName  = method->name();
-            const char*   methNameS = (methName == NULL) ? NULL : methName->as_C_string();
-            methNameS = (methNameS == NULL) ? "<method name unavailable>" : methNameS;
+            const char*   methNameS = (methName == nullptr) ? nullptr : methName->as_C_string();
+            methNameS = (methNameS == nullptr) ? "<method name unavailable>" : methNameS;
             Symbol* methSig   = method->signature();
-            const char*   methSigS  = (methSig  == NULL) ? NULL : methSig->as_C_string();
-            methSigS  = (methSigS  == NULL) ? "<method signature unavailable>" : methSigS;
+            const char*   methSigS  = (methSig  == nullptr) ? nullptr : methSig->as_C_string();
+            methSigS  = (methSigS  == nullptr) ? "<method signature unavailable>" : methSigS;
             Klass* klass = method->method_holder();
             assert(klass != nullptr, "No method holder");
             const char* classNameS = (klass->name() == nullptr) ? "<class name unavailable>" : klass->external_name();
@@ -2172,6 +2192,12 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             ast->print("%s.", classNameS);
             ast->print("%s", methNameS);
             ast->print("%s", methSigS);
+#if INCLUDE_JVMCI
+            const char* jvmci_name = nm->jvmci_name();
+            if (jvmci_name != nullptr) {
+              ast->print(" jvmci_name=%s", jvmci_name);
+            }
+#endif
           } else {
             ast->print("%s", blob_name);
           }
@@ -2186,7 +2212,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         }
         ast->cr();
         BUFFEREDSTREAM_FLUSH_AUTO("")
-      } else if (!blob_is_safe && (this_blob != last_blob) && (this_blob != NULL)) {
+      } else if (!blob_is_safe && (this_blob != last_blob) && (this_blob != nullptr)) {
         last_blob          = this_blob;
       }
     }
@@ -2200,10 +2226,10 @@ void CodeHeapState::printBox(outputStream* ast, const char border, const char* t
   unsigned int lineLen = 1 + 2 + 2 + 1;
   char edge, frame;
 
-  if (text1 != NULL) {
+  if (text1 != nullptr) {
     lineLen += (unsigned int)strlen(text1); // text1 is much shorter than MAX_INT chars.
   }
-  if (text2 != NULL) {
+  if (text2 != nullptr) {
     lineLen += (unsigned int)strlen(text2); // text2 is much shorter than MAX_INT chars.
   }
   if (border == '-') {
@@ -2221,10 +2247,10 @@ void CodeHeapState::printBox(outputStream* ast, const char border, const char* t
   ast->print_cr("%c", edge);
 
   ast->print("%c  ", frame);
-  if (text1 != NULL) {
+  if (text1 != nullptr) {
     ast->print("%s", text1);
   }
-  if (text2 != NULL) {
+  if (text2 != nullptr) {
     ast->print("%s", text2);
   }
   ast->print_cr("  %c", frame);
@@ -2238,7 +2264,7 @@ void CodeHeapState::printBox(outputStream* ast, const char border, const char* t
 
 void CodeHeapState::print_blobType_legend(outputStream* out) {
   out->cr();
-  printBox(out, '-', "Block types used in the following CodeHeap dump", NULL);
+  printBox(out, '-', "Block types used in the following CodeHeap dump", nullptr);
   for (int type = noType; type < lastType; type += 1) {
     out->print_cr("  %c - %s", blobTypeChar[type], blobTypeName[type]);
   }
@@ -2247,11 +2273,9 @@ void CodeHeapState::print_blobType_legend(outputStream* out) {
 }
 
 void CodeHeapState::print_space_legend(outputStream* out) {
-  unsigned int indicator = 0;
-  unsigned int age_range = 256;
-  unsigned int range_beg = latest_compilation_id;
+  int range_beg = latest_compilation_id;
   out->cr();
-  printBox(out, '-', "Space ranges, based on granule occupancy", NULL);
+  printBox(out, '-', "Space ranges, based on granule occupancy", nullptr);
   out->print_cr("    -   0%% == occupancy");
   for (int i=0; i<=9; i++) {
     out->print_cr("  %d - %3d%% < occupancy < %3d%%", i, 10*i, 10*(i+1));
@@ -2263,12 +2287,12 @@ void CodeHeapState::print_space_legend(outputStream* out) {
 
 void CodeHeapState::print_age_legend(outputStream* out) {
   unsigned int indicator = 0;
-  unsigned int age_range = 256;
-  unsigned int range_beg = latest_compilation_id;
+  int age_range = 256;
+  int range_beg = latest_compilation_id;
   out->cr();
-  printBox(out, '-', "Age ranges, based on compilation id", NULL);
+  printBox(out, '-', "Age ranges, based on compilation id", nullptr);
   while (age_range > 0) {
-    out->print_cr("  %d - %6d to %6d", indicator, range_beg, latest_compilation_id - latest_compilation_id/age_range);
+    out->print_cr("  %u - %6d to %6d", indicator, range_beg, latest_compilation_id - latest_compilation_id/age_range);
     range_beg = latest_compilation_id - latest_compilation_id/age_range;
     age_range /= 2;
     indicator += 1;
@@ -2293,9 +2317,9 @@ void CodeHeapState::print_space_single(outputStream* out, unsigned short space) 
   out->print("%c", fraction);
 }
 
-void CodeHeapState::print_age_single(outputStream* out, unsigned int age) {
+void CodeHeapState::print_age_single(outputStream* out, int age) {
   unsigned int indicator = 0;
-  unsigned int age_range = 256;
+  int age_range = 256;
   if (age > 0) {
     while ((age_range > 0) && (latest_compilation_id-age > latest_compilation_id/age_range)) {
       age_range /= 2;
@@ -2345,10 +2369,18 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
   }
 }
 
+void CodeHeapState::print_aggregate_missing(outputStream* out, const char* heapName) {
+  if (heapName == nullptr) {
+    out->print_cr("No aggregated code heap data available. Run function aggregate first.");
+  } else {
+    out->print_cr("No aggregated data available for heap %s. Run function aggregate first.", heapName);
+  }
+}
+
 // Find out which blob type we have at hand.
 // Return "noType" if anything abnormal is detected.
 CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
-  if (cb != NULL) {
+  if (cb != nullptr) {
     if (cb->is_runtime_stub())                return runtimeStub;
     if (cb->is_deoptimization_stub())         return deoptimizationStub;
     if (cb->is_uncommon_trap_stub())          return uncommonTrapStub;
@@ -2362,7 +2394,7 @@ CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
     // Should be ensured by caller. aggregate() and print_names() do that.
     if (holding_required_locks()) {
       nmethod*  nm = cb->as_nmethod_or_null();
-      if (nm != NULL) { // no is_readable check required, nm = (nmethod*)cb.
+      if (nm != nullptr) { // no is_readable check required, nm = (nmethod*)cb.
         if (nm->is_in_use())        return nMethod_inuse;
         if (!nm->is_not_entrant())  return nMethod_notused;
         return nMethod_notentrant;
@@ -2374,7 +2406,7 @@ CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
 
 // make sure the blob at hand is not garbage.
 bool CodeHeapState::blob_access_is_safe(CodeBlob* this_blob) {
-  return (this_blob != NULL) && // a blob must have been found, obviously
+  return (this_blob != nullptr) && // a blob must have been found, obviously
          (this_blob->header_size() >= 0) &&
          (this_blob->relocation_size() >= 0) &&
          ((address)this_blob + this_blob->header_size() == (address)(this_blob->relocation_begin())) &&
@@ -2383,8 +2415,8 @@ bool CodeHeapState::blob_access_is_safe(CodeBlob* this_blob) {
 
 // make sure the nmethod at hand (and the linked method) is not garbage.
 bool CodeHeapState::nmethod_access_is_safe(nmethod* nm) {
-  Method* method = (nm == NULL) ? NULL : nm->method(); // nm->method() was found to be uninitialized, i.e. != NULL, but invalid.
-  return (nm != NULL) && (method != NULL) && (method->signature() != NULL);
+  Method* method = (nm == nullptr) ? nullptr : nm->method(); // nm->method() was found to be uninitialized, i.e. != nullptr, but invalid.
+  return (nm != nullptr) && (method != nullptr) && (method->signature() != nullptr);
 }
 
 bool CodeHeapState::holding_required_locks() {

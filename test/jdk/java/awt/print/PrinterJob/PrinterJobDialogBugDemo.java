@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4775862
+ * @key printer
  * @run main/manual PrinterJobDialogBugDemo
  */
 import java.awt.BorderLayout;

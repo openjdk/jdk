@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ class InterpreterMacroAssembler;
 
 class InterpreterCodelet: public Stub {
   friend class VMStructs;
-  friend class CodeCacheDumper; // possible extension [do not remove]
  private:
   NOT_PRODUCT(AsmRemarks _asm_remarks;)   // Comments for annotating assembler output.
   NOT_PRODUCT(DbgStrings _dbg_strings;)   // Debug strings used in generated code.
@@ -60,9 +59,10 @@ class InterpreterCodelet: public Stub {
   // General info/converters
   int     size() const                           { return _size; }
   static  int alignment()                        { return HeapWordSize; }
+  static  int code_alignment()                   { return CodeEntryAlignment; }
 
   // Code info
-  address code_begin() const                     { return align_up((address)this + sizeof(InterpreterCodelet), CodeEntryAlignment); }
+  address code_begin() const                     { return align_up((address)this + sizeof(InterpreterCodelet), code_alignment()); }
   address code_end() const                       { return (address)this + size(); }
 
   // Debugging
@@ -74,7 +74,7 @@ class InterpreterCodelet: public Stub {
   void    initialize(const char* description, Bytecodes::Code bytecode);
 
   // Interpreter-specific attributes
-  int         code_size() const                  { return code_end() - code_begin(); }
+  int         code_size() const                  { return (int)(code_end() - code_begin()); }
   const char* description() const                { return _description; }
   Bytecodes::Code bytecode() const               { return _bytecode; }
 #ifndef PRODUCT
@@ -85,6 +85,9 @@ class InterpreterCodelet: public Stub {
   }
   void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
   void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
+
+  void clear_remarks() { _asm_remarks.clear(); }
+  void clear_strings() { _dbg_strings.clear(); }
 #endif
 };
 
@@ -106,7 +109,7 @@ class CodeletMark: ResourceMark {
   int codelet_size() {
     // Request the whole code buffer (minus a little for alignment).
     // The commit call below trims it back for each codelet.
-    int codelet_size = AbstractInterpreter::code()->available_space() - 2*K;
+    int codelet_size = AbstractInterpreter::code()->available_space() - (int)(2*K);
 
     // Guarantee there's a little bit of code space left.
     guarantee(codelet_size > 0 && (size_t)codelet_size > 2*K,

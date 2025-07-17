@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class StoreMaskedIOOBEBenchmark {
     @Param({"1024"})
     private int inSize;

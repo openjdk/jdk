@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6383200
+ * @bug 6383200 8288050
  * @summary PBE: need new algorithm support in password based encryption
  */
 import java.security.*;
 import java.util.Arrays;
+import java.util.Locale;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -38,7 +39,16 @@ public class PBES2Test {
         "PBEWithHmacSHA224AndAES_128",
         "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128",
-        "PBEWithHmacSHA512AndAES_128"
+        "PBEWithHmacSHA512AndAES_128",
+        "PBEWithHmacSHA512/224AndAES_128",
+        "PBEWithHmacSHA512/256AndAES_128",
+        "PBEWithHmacSha1AndAES_128/CBC/PKCS5PAdding",
+        "PBEWithHmacSHA224andAES_128/CBC/PkCS5Padding",
+        "PBEWithHmacSHA256AndAes_128/CBC/PKCS5PaddIng",
+        "PBEWithHmacSHa384AndAES_128/CbC/PKCS5Padding",
+        "PBEWithHmacSHA512andAES_128/CBc/PKCS5Padding",
+        "PBEWithHmacSha512/224andAES_128/cBC/PKCS5Padding",
+        "PBEWithHmacShA512/256AndAES_128/CBC/pkCS5Padding",
     };
     private static final byte[] ivBytes = {
         0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,
@@ -64,7 +74,9 @@ public class PBES2Test {
 
         // Create PBE key
         PBEKeySpec pbeKeySpec = new PBEKeySpec("mypassword".toCharArray());
-        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(algo);
+        int modeIdx = algo.toUpperCase(Locale.ENGLISH).indexOf("/CBC");
+        String keyAlgo = (modeIdx == -1 ? algo : algo.substring(0, modeIdx));
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(keyAlgo);
         SecretKey pbeKey = keyFactory.generateSecret(pbeKeySpec);
         byte[] pbeKeyBytes = pbeKey.getEncoded();
         System.out.println("   key[" + pbeKeyBytes.length + "]: " +

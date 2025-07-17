@@ -32,7 +32,7 @@ import sun.lwawt.LWWindowPeer;
 import sun.java2d.SurfaceData;
 import sun.lwawt.macosx.CFLayer;
 
-public class CGLLayer extends CFLayer {
+public final class CGLLayer extends CFLayer {
 
     private native long nativeCreateLayer();
     private static native void nativeSetScale(long layerPtr, double scale);
@@ -48,6 +48,7 @@ public class CGLLayer extends CFLayer {
         this.peer = peer;
     }
 
+    @Override
     public SurfaceData replaceSurfaceData() {
         if (getBounds().isEmpty()) {
             surfaceData = NullSurfaceData.theInstance;
@@ -83,7 +84,7 @@ public class CGLLayer extends CFLayer {
         // break the connection between the layer and the buffer
         validate(null);
         SurfaceData oldData = surfaceData;
-        surfaceData = NullSurfaceData.theInstance;;
+        surfaceData = NullSurfaceData.theInstance;
         if (oldData != null) {
             oldData.flush();
         }

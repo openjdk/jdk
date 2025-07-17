@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2020, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -23,13 +23,18 @@ public interface CompletionMatcher {
      * @param errors number of errors accepted in matching
      * @param originalGroupName value of JLineReader variable original-group-name
      */
-    void compile(Map<LineReader.Option, Boolean> options, boolean prefix, CompletingParsedLine line
-            , boolean caseInsensitive, int errors, String originalGroupName);
+    void compile(
+            Map<LineReader.Option, Boolean> options,
+            boolean prefix,
+            CompletingParsedLine line,
+            boolean caseInsensitive,
+            int errors,
+            String originalGroupName);
 
     /**
      *
      * @param candidates list of candidates
-     * @return a map of candidates that completion matcher matches
+     * @return a list of candidates that completion matcher matches
      */
     List<Candidate> matches(List<Candidate> candidates);
 
@@ -44,5 +49,4 @@ public interface CompletionMatcher {
      * @return a common prefix of matched candidates
      */
     String getCommonPrefix();
-
 }

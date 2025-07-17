@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public class GeneratingCompilingClassLoader extends ClassLoader {
      */
     public Class<?>[] getGeneratedClasses(int sizeFactor, int numClasses) throws IOException {
         GeneratedClass[] gc = getGeneratedClass(sizeFactor, numClasses);
-        Class<?>[] classes = new Class[numClasses];
+        Class<?>[] classes = new Class<?>[numClasses];
         for (int i = 0; i < numClasses; ++i) {
             classes[i] = defineClass(gc[i].name, gc[i].bytes, 0 , gc[i].bytes.length);
         }

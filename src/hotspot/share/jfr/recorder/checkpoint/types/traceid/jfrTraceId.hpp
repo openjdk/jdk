@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jni.h"
 #include "memory/allStatic.hpp"
 
 class ClassLoaderData;
@@ -86,18 +86,24 @@ class JfrTraceId : public AllStatic {
 
   // through load barrier
   static traceid load(const Klass* klass);
+  static traceid load_previous_epoch(const Klass* klass);
   static traceid load(jclass jc, bool raw = false);
   static traceid load(const Method* method);
   static traceid load(const Klass* klass, const Method* method);
   static traceid load(const ModuleEntry* module);
   static traceid load(const PackageEntry* package);
   static traceid load(const ClassLoaderData* cld);
+  static traceid load_leakp(const Klass* klass); // leak profiler
   static traceid load_leakp(const Klass* klass, const Method* method); // leak profiler
+  static traceid load_leakp_previous_epoch(const Klass* klass, const Method* method); // leak profiler
+  static traceid load_no_enqueue(const Method* method);
+  static traceid load_no_enqueue(const Klass* klass, const Method* method);
 
   // load barrier elision
   static traceid load_raw(const Klass* klass);
   static traceid load_raw(jclass jc);
   static traceid load_raw(const Method* method);
+  static traceid load_raw(const Klass* holder, const Method* method);
   static traceid load_raw(const ModuleEntry* module);
   static traceid load_raw(const PackageEntry* package);
   static traceid load_raw(const ClassLoaderData* cld);
@@ -132,6 +138,18 @@ class JfrTraceId : public AllStatic {
   static bool is_event_host(const jclass jc);
   static void tag_as_event_host(const Klass* k);
   static void tag_as_event_host(const jclass jc);
+
+  // Sticky bits and timing bits
+  static bool has_sticky_bit(const Klass* k);
+  static bool has_sticky_bit(const Method* method);
+  static void set_sticky_bit(const Klass* k);
+  static void set_sticky_bit(const Method* method);
+  static void clear_sticky_bit(const Klass* k);
+  static void clear_sticky_bit(const Method* method);
+  static bool has_timing_bit(const Klass* k);
+  static void set_timing_bit(const Klass* k);
+  static void clear_timing_bit(const Klass* k);
+
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP

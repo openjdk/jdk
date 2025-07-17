@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,6 +56,7 @@ class AixFileSystem extends UnixFileSystem {
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<String>();
             result.addAll(UnixFileSystem.standardFileAttributeViews());
+            result.add("user");
             return Collections.unmodifiableSet(result);
         }
     }

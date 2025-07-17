@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 extern "C" {
 
-static jvmtiEnv* jvmti = NULL;
+static jvmtiEnv* jvmti = nullptr;
 static jrawMonitorID monitor;
 
 JNIEXPORT jint JNICALL
@@ -34,7 +34,7 @@ Java_AsyncExceptionOnMonitorEnter_createRawMonitor(JNIEnv *jni, jclass cls) {
   jvmtiError err;
   char name[32];
 
-  sprintf(name, "MyRawMonitor");
+  snprintf(name, sizeof(name), "MyRawMonitor");
   err = jvmti->CreateRawMonitor(name, &monitor);
   if (err != JVMTI_ERROR_NONE) {
     printf("CreateRawMonitor unexpected error: (%d)\n", err);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package jdk.internal.access;
 
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.VM.BufferPool;
 
 import java.lang.foreign.MemorySegment;
-import java.io.FileDescriptor;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
@@ -66,6 +68,11 @@ public interface JavaNioAccess {
     ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegment segment);
 
     /**
+     * Used by {@code sun.nio.ch.Util}.
+     */
+    ByteBuffer newDirectByteBuffer(long addr, int cap);
+
+    /**
      * Used by {@code jdk.internal.foreign.Utils}.
      */
     Object getBufferBase(Buffer bb);
@@ -86,32 +93,31 @@ public interface JavaNioAccess {
     MemorySegment bufferSegment(Buffer buffer);
 
     /**
-     * Used by I/O operations to make a buffer's session non-closeable
-     * (for the duration of the I/O operation) by acquiring the session.
-     * Null is returned if the buffer has no scope, or acquiring is not
-     * required to guarantee safety.
+     * Used by operations to make a buffer's session non-closeable
+     * (for the duration of the operation) by acquiring the session.
+     * {@snippet lang = java:
+     * acquireSession(buffer);
+     * try {
+     *     performOperation(buffer);
+     * } finally {
+     *     releaseSession(buffer);
+     * }
+     *}
+     *
+     * @see #releaseSession(Buffer)
      */
-    Runnable acquireSession(Buffer buffer, boolean async);
+    void acquireSession(Buffer buffer);
 
-    /**
-     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
-     */
-    void force(FileDescriptor fd, long address, boolean isSync, long offset, long size);
+    void releaseSession(Buffer buffer);
 
-    /**
-     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
-     */
-    void load(long address, boolean isSync, long size);
+    boolean isThreadConfined(Buffer buffer);
+
+    boolean hasSession(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl}.
      */
-    void unload(long address, boolean isSync, long size);
-
-    /**
-     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
-     */
-    boolean isLoaded(long address, boolean isSync, long size);
+    MappedMemoryUtilsProxy mappedMemoryUtils();
 
     /**
      * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
@@ -127,4 +133,14 @@ public interface JavaNioAccess {
      * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
      */
     int pageSize();
+
+    int scaleShifts(Buffer buffer);
+
+    AbstractMemorySegmentImpl heapSegment(Buffer buffer,
+                                          Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope);
+
 }

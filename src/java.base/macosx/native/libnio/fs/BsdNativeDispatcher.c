@@ -39,6 +39,7 @@
 #define ISREADONLY MNT_RDONLY
 #endif
 #include <sys/attr.h>
+#include <unistd.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -243,17 +244,11 @@ Java_sun_nio_fs_BsdNativeDispatcher_clonefile0(JNIEnv* env, jclass this,
     return 0;
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
-    jlong pathAddress, int commonattr, jlong modTime, jlong accTime,
-    jlong createTime, jlong options)
+size_t initattrlist(jint commonattr, jlong modTime, jlong accTime,
+    jlong createTime, const int attrsize, char* buf, struct attrlist *attrList)
 {
-    const char* path = (const char*)jlong_to_ptr(pathAddress);
-    // attributes must align on 4-byte boundaries per the getattrlist(2) spec
-    const int attrsize = ((sizeof(struct timespec) + 3)/4)*4;
-    char buf[3*attrsize];
-
     int count = 0;
+
     // attributes are ordered per the getattrlist(2) spec
     if ((commonattr & ATTR_CMN_CRTIME) != 0) {
         struct timespec* t = (struct timespec*)buf;
@@ -274,12 +269,46 @@ Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
         count++;
     }
 
-    struct attrlist attrList;
-    memset(&attrList, 0, sizeof(struct attrlist));
-    attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
-    attrList.commonattr = commonattr;
+    memset(attrList, 0, sizeof(struct attrlist));
+    attrList->bitmapcount = ATTR_BIT_MAP_COUNT;
+    attrList->commonattr = commonattr;
 
-    if (setattrlist(path, &attrList, (void*)buf, count*attrsize, options) != 0) {
+    return count*attrsize;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
+    jlong pathAddress, int commonattr, jlong modTime, jlong accTime,
+    jlong createTime, jlong options)
+{
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+    // attributes must align on 4-byte boundaries per the getattrlist(2) spec
+    const int attrsize = ((sizeof(struct timespec) + 3)/4)*4;
+    char buf[3*attrsize];
+
+    struct attrlist attrList;
+    size_t attrBufSize = initattrlist(commonattr, modTime, accTime, createTime,
+                                      attrsize, buf, &attrList);
+
+    if (setattrlist(path, &attrList, (void*)buf, attrBufSize, options) != 0) {
+        throwUnixException(env, errno);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_BsdNativeDispatcher_fsetattrlist0(JNIEnv* env, jclass this,
+    jint fd, int commonattr, jlong modTime, jlong accTime,
+    jlong createTime, jlong options)
+{
+    // attributes must align on 4-byte boundaries per the getattrlist(2) spec
+    const int attrsize = ((sizeof(struct timespec) + 3)/4)*4;
+    char buf[3*attrsize];
+
+    struct attrlist attrList;
+    size_t attrBufSize = initattrlist(commonattr, modTime, accTime, createTime,
+                                      attrsize, buf, &attrList);
+
+    if (fsetattrlist(fd, &attrList, (void*)buf, attrBufSize, options) != 0) {
         throwUnixException(env, errno);
     }
 }

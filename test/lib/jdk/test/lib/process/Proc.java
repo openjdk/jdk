@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package jdk.test.lib.process;
 
+import jdk.test.lib.compiler.CompilerUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -32,9 +34,6 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.Permission;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -55,11 +54,9 @@ import java.util.stream.Collectors;
  *        .args("x")            // with args
  *        .env("env", "value")  // and an environment variable
  *        .prop("key","value")  // and a system property
- *        .grant(file)          // grant codes in this codebase
- *        .perm(perm)           // with the permission
  *        .start();             // and start
  *
- * create/start must be called, args/env/prop/perm can be called zero or
+ * create/start must be called, args/env/prop can be called zero or
  * multiple times between create and start.
  *
  * The controller can call inheritIO to share its I/O to the process.
@@ -118,7 +115,11 @@ public class Proc {
     private boolean inheritIO = false;
     private boolean noDump = false;
 
-    private List<String> cp;        // user-provided classpath
+    private boolean addcp;          // user-provided classpath is appended
+    private List<String> cp;        // user-provided classpaths
+
+    private boolean compile;        // compile the program as well
+
     private String clazz;           // Class to launch
     private String debug;           // debug flag, controller will show data
                                     // transfer between procs. If debug is set,
@@ -126,11 +127,6 @@ public class Proc {
     private final StringBuilder stdout = new StringBuilder();
 
     final private static String PREFIX = "PROCISFUN:";
-
-    // policy file
-    final private StringBuilder perms = new StringBuilder();
-    // temporary saving the grant line in a policy file
-    final private StringBuilder grant = new StringBuilder();
 
     // The following methods are called by controllers
 
@@ -195,8 +191,7 @@ public class Proc {
         }
         return this;
     }
-    // Sets classpath. If not called, Proc will choose a classpath. If called
-    // with no arg, no classpath will be used. Can be called multiple times.
+    // Sets classpath. Can be called multiple times.
     public Proc cp(String... s) {
         if (cp == null) {
             cp = new ArrayList<>();
@@ -204,61 +199,41 @@ public class Proc {
         cp.addAll(Arrays.asList(s));
         return this;
     }
-    // Adds a permission to policy. Can be called multiple times.
-    // All perm() calls after a series of grant() calls are grouped into
-    // a single grant block. perm() calls before any grant() call are grouped
-    // into a grant block with no restriction.
-    // Please note that in order to make permissions effective, also call
-    // prop("java.security.manager", "").
-    public Proc perm(Permission p) {
-        if (grant.length() != 0) {      // Right after grant(s)
-            if (perms.length() != 0) {  // Not first block
-                perms.append("};\n");
-            }
-            perms.append("grant ").append(grant).append(" {\n");
-            grant.setLength(0);
-        } else {
-            if (perms.length() == 0) {  // First block w/o restriction
-                perms.append("grant {\n");
-            }
-        }
-        if (p.getActions().isEmpty()) {
-            String s = String.format("%s \"%s\"",
-                    p.getClass().getCanonicalName(),
-                    p.getName()
-                            .replace("\\", "\\\\").replace("\"", "\\\""));
-            perms.append("    permission ").append(s).append(";\n");
-        } else {
-            String s = String.format("%s \"%s\", \"%s\"",
-                    p.getClass().getCanonicalName(),
-                    p.getName()
-                            .replace("\\", "\\\\").replace("\"", "\\\""),
-                    p.getActions());
-            perms.append("    permission ").append(s).append(";\n");
-        }
+    // Adds classpath to defaults. Can be called multiple times.
+    // Once called, addcp is always true.
+    public Proc addcp(String... s) {
+        addcp = true;
+        return cp(s);
+    }
+
+    // Compile as well
+    public Proc compile() {
+        compile = true;
         return this;
     }
 
-    // Adds a grant option to policy. If called in a row, a single grant block
-    // with all options will be created. If there are perm() call(s) between
-    // grant() calls, they belong to different grant blocks
+    // get full classpath.
+    // 1. Default classpath used if neither cp() or addcp() is called
+    // 2. User provided classpath (can be empty) used if only cp() is called
+    // 3. User provided classpath + default classpath used, otherwise
+    String fullcp() {
+        if (cp == null) {
+            return System.getProperty("test.class.path") + File.pathSeparator +
+                    System.getProperty("test.src.path");
+        } else {
+            var newcp = new ArrayList<>(cp);
+            if (addcp) {
+                newcp.add(System.getProperty("test.class.path"));
+                newcp.add(System.getProperty("test.src.path"));
+            }
+            if (!newcp.isEmpty()) {
+                return newcp.stream().collect(Collectors.joining(File.pathSeparator));
+            } else {
+                return null;
+            }
+        }
+    }
 
-    // grant on a principal
-    public Proc grant(Principal p) {
-        grant.append("principal ").append(p.getClass().getName())
-                .append(" \"").append(p.getName()).append("\", ");
-        return this;
-    }
-    // grant on a codebase
-    public Proc grant(File f) {
-        grant.append("codebase \"").append(f.toURI()).append("\", ");
-        return this;
-    }
-    // arbitrary grant
-    public Proc grant(String v) {
-        grant.append(v).append(", ");
-        return this;
-    }
     // Starts the proc
     public Proc start() throws IOException {
         List<String> cmd = new ArrayList<>();
@@ -282,17 +257,25 @@ public class Proc {
             }
         }
 
+        var lcp = fullcp();
+        if (lcp != null) {
+            cmd.add("-cp");
+            cmd.add(lcp);
+        }
+
+        if (compile) {
+            boolean comp = CompilerUtils.compile(
+                    Path.of(System.getProperty("test.src"), clazz + ".java"),
+                    Path.of(System.getProperty("test.classes")),
+                    cmd.subList(1, cmd.size()).toArray(new String[0]));
+                        // subList(1): all options added without launcher name
+            if (!comp) {
+                throw new RuntimeException("Compilation error");
+            }
+        }
+
         Collections.addAll(cmd, splitProperty("test.vm.opts"));
         Collections.addAll(cmd, splitProperty("test.java.opts"));
-
-        if (cp == null) {
-            cmd.add("-cp");
-            cmd.add(System.getProperty("test.class.path") + File.pathSeparator +
-                    System.getProperty("test.src.path"));
-        } else if (!cp.isEmpty()) {
-            cmd.add("-cp");
-            cmd.add(cp.stream().collect(Collectors.joining(File.pathSeparator)));
-        }
 
         if (!secprop.isEmpty()) {
             Path p = Path.of(getId("security"));
@@ -307,12 +290,6 @@ public class Proc {
 
         for (Entry<String,String> e: prop.entrySet()) {
             cmd.add("-D" + e.getKey() + "=" + e.getValue());
-        }
-        if (perms.length() > 0) {
-            Path p = Paths.get(getId("policy")).toAbsolutePath();
-            perms.append("};\n");
-            Files.write(p, perms.toString().getBytes());
-            cmd.add("-Djava.security.policy=" + p.toString());
         }
         cmd.add(clazz);
         for (String s: args) {

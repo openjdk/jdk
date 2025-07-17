@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public interface ObjectStreamConstants {
     static final int baseWireHandle = 0x7e0000;
 
 
-    /******************************************************/
+    /* ****************************************************/
     /* Bit masks for ObjectStreamClass flag.*/
 
     /**
@@ -186,6 +186,7 @@ public interface ObjectStreamConstants {
      * @see java.io.ObjectInputStream#enableResolveObject(boolean)
      * @since 1.2
      */
+    @SuppressWarnings("removal")
     static final SerializablePermission SUBSTITUTION_PERMISSION =
                            new SerializablePermission("enableSubstitution");
 
@@ -196,6 +197,7 @@ public interface ObjectStreamConstants {
      * @see java.io.ObjectInputStream#readObjectOverride()
      * @since 1.2
      */
+    @SuppressWarnings("removal")
     static final SerializablePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
                     new SerializablePermission("enableSubclassImplementation");
 
@@ -205,6 +207,7 @@ public interface ObjectStreamConstants {
      * @see java.io.ObjectInputFilter.Config#setSerialFilter(ObjectInputFilter)
      * @since 9
      */
+    @SuppressWarnings("removal")
     static final SerializablePermission SERIAL_FILTER_PERMISSION =
             new SerializablePermission("serialFilter");
 
@@ -226,12 +229,12 @@ public interface ObjectStreamConstants {
     * A Stream Protocol Version. <p>
     *
     * This protocol is written by JVM 1.2.
-    *
+    * <p>
     * Externalizable data is written in block data mode and is
     * terminated with TC_ENDBLOCKDATA. Externalizable class descriptor
     * flags has SC_BLOCK_DATA enabled. JVM 1.1.6 and greater can
     * read this format change.
-    *
+    * <p>
     * Enables writing a nonSerializable class descriptor into the
     * stream. The serialVersionUID of a nonSerializable class is
     * set to 0L.

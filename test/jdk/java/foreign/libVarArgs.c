@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 
 #include "shared.h"
 
+struct S_FFFF { float p0; float p1; float p2; float p3; };
+
 typedef void (*writeback_t)(int,void*);
 
 typedef struct {
@@ -41,7 +43,6 @@ typedef struct {
 
 enum NativeType {
     T_INT,
-    T_FLOAT,
     T_DOUBLE,
     T_POINTER,
     T_S_I,
@@ -128,6 +129,7 @@ enum NativeType {
     T_S_PPF,
     T_S_PPD,
     T_S_PPP,
+    T_S_FFFF,
 };
 
 // need to pass `num` separately as last argument preceding varargs according to spec (and for MSVC)
@@ -140,7 +142,6 @@ EXPORT void varargs(call_info* info, int num, ...) {
         int id = info->argids[i];
         switch (id) {
             CASE(T_INT, int)
-            CASE(T_FLOAT, double) // vararg float is promoted to double per C spec
             CASE(T_DOUBLE, double)
             CASE(T_POINTER, void*)
             CASE(T_S_I,   struct S_I)
@@ -227,6 +228,7 @@ EXPORT void varargs(call_info* info, int num, ...) {
             CASE(T_S_PPF, struct S_PPF)
             CASE(T_S_PPD, struct S_PPD)
             CASE(T_S_PPP, struct S_PPP)
+            CASE(T_S_FFFF, struct S_FFFF)
             default: exit(-1); // invalid id
         }
     }

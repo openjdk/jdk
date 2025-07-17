@@ -147,7 +147,7 @@ public class TreeEndPosTest {
 
     static void testFinalVariableWithConstructor() throws IOException {
         compile(JavaSource.createJavaSource("public Bug (){} private static final String Foo; public void bar() { }",
-                "{}"));
+                "private static final String Foo;"));
     }
 
     static void testWholeTextSpan() throws IOException {
@@ -174,7 +174,9 @@ public class TreeEndPosTest {
                     compiler.getTask(writer, javaFileManager,
                     dc, options, null,
                     sources);
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
             for (Diagnostic diagnostic : (List<Diagnostic>) dc.getDiagnostics()) {
                 long actualStart = diagnostic.getStartPosition();
                 long actualEnd = diagnostic.getEndPosition();

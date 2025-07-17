@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ inline Position<AP>::Position(const u1* start_pos, size_t size) :
 }
 
 template <typename AP>
-inline Position<AP>::Position() : _start_pos(NULL), _current_pos(NULL), _end_pos(NULL) {
+inline Position<AP>::Position() : _start_pos(nullptr), _current_pos(nullptr), _end_pos(nullptr) {
 }
 
 template <typename AP>

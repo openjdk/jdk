@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.net.httpserver;
 
 import java.io.*;
-import java.net.*;
-import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
+import java.util.Objects;
 
 /**
  * a class which allows the caller to write up to a defined
@@ -41,7 +39,6 @@ import com.sun.net.httpserver.spi.*;
 class FixedLengthOutputStream extends FilterOutputStream
 {
     private long remaining;
-    private boolean eof = false;
     private boolean closed = false;
     ExchangeImpl t;
 
@@ -58,8 +55,7 @@ class FixedLengthOutputStream extends FilterOutputStream
         if (closed) {
             throw new IOException ("stream closed");
         }
-        eof = (remaining == 0);
-        if (eof) {
+        if (remaining == 0) {
             throw new StreamClosedException();
         }
         out.write(b);
@@ -67,12 +63,12 @@ class FixedLengthOutputStream extends FilterOutputStream
     }
 
     public void write (byte[]b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
+            return;
+        }
         if (closed) {
             throw new IOException ("stream closed");
-        }
-        eof = (remaining == 0);
-        if (eof) {
-            throw new StreamClosedException();
         }
         if (len > remaining) {
             // stream is still open, caller can retry
@@ -92,14 +88,13 @@ class FixedLengthOutputStream extends FilterOutputStream
             throw new IOException ("insufficient bytes written to stream");
         }
         flush();
-        eof = true;
         LeftOverInputStream is = t.getOriginalInputStream();
         if (!is.isClosed()) {
             try {
                 is.close();
             } catch (IOException e) {}
         }
-        WriteFinishedEvent e = new WriteFinishedEvent (t);
+        Event e = new Event.WriteFinished(t);
         t.getHttpContext().getServerImpl().addEvent (e);
     }
 

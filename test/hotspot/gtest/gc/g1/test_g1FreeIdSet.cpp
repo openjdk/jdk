@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -113,7 +112,7 @@ public:
       ++_allocations;
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }
-    tty->print_cr("%u allocations: " SIZE_FORMAT, _thread_number, _allocations);
+    tty->print_cr("%u allocations: %zu", _thread_number, _allocations);
     Atomic::add(_total_allocations, _allocations);
   }
 };
@@ -151,7 +150,7 @@ TEST_VM(G1FreeIdSetTest, stress) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
-  tty->print_cr("total allocations: " SIZE_FORMAT, total_allocations);
+  tty->print_cr("total allocations: %zu", total_allocations);
   tty->print_cr("final free list: ");
   uint ids[size] = {};
   for (uint i = 0; i < size; ++i) {

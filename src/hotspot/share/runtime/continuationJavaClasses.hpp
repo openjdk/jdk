@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@ class jdk_internal_vm_ContinuationScope: AllStatic {
   static void compute_offsets();
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  static inline oop name(oop ref);
 };
 
 // Interface to jdk.internal.vm.Continuation objects
@@ -63,13 +61,9 @@ class jdk_internal_vm_Continuation: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
   // Accessors
   static inline oop scope(oop continuation);
-  static inline oop target(oop continuation);
   static inline oop parent(oop continuation);
-  static inline oop yieldInfo(oop continuation);
-  static inline void set_yieldInfo(oop continuation, oop value);
   static inline stackChunkOop tail(oop continuation);
   static inline void set_tail(oop continuation, stackChunkOop value);
-  static inline bool on_local_stack(oop continuation, address adr);
   static inline bool done(oop continuation);
   static inline bool is_preempted(oop continuation);
   static inline void set_preempted(oop continuation, bool value);
@@ -77,10 +71,11 @@ class jdk_internal_vm_Continuation: AllStatic {
 
 // Interface to jdk.internal.vm.StackChunk objects
 #define STACKCHUNK_INJECTED_FIELDS(macro)                                          \
-  macro(jdk_internal_vm_StackChunk, cont,           continuation_signature, false) \
-  macro(jdk_internal_vm_StackChunk, flags,          byte_signature,         false) \
-  macro(jdk_internal_vm_StackChunk, pc,             intptr_signature,       false) \
-  macro(jdk_internal_vm_StackChunk, maxThawingSize, int_signature,          false) \
+  macro(jdk_internal_vm_StackChunk, cont,            continuation_signature, false) \
+  macro(jdk_internal_vm_StackChunk, flags,           byte_signature,         false) \
+  macro(jdk_internal_vm_StackChunk, pc,              intptr_signature,       false) \
+  macro(jdk_internal_vm_StackChunk, maxThawingSize,  int_signature,          false) \
+  macro(jdk_internal_vm_StackChunk, lockStackSize,   byte_signature,         false) \
 
 class jdk_internal_vm_StackChunk: AllStatic {
   friend class JavaClasses;
@@ -89,9 +84,10 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static int _size_offset;
   static int _sp_offset;
   static int _pc_offset;
-  static int _argsize_offset;
+  static int _bottom_offset;
   static int _flags_offset;
   static int _maxThawingSize_offset;
+  static int _lockStackSize_offset;
   static int _cont_offset;
 
 
@@ -106,8 +102,6 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline oop parent(oop chunk);
   static inline void set_parent(oop chunk, oop value);
   template<typename P>
-  static inline bool is_parent_null(oop chunk); // bypasses barriers for a faster test
-  template<typename P>
   static inline void set_parent_raw(oop chunk, oop value);
   template<DecoratorSet decorators>
   static inline void set_parent_access(oop chunk, oop value);
@@ -120,8 +114,9 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_sp(HeapWord* chunk, int value); // used while allocating
   static inline address pc(oop chunk);
   static inline void set_pc(oop chunk, address value);
-  static inline int argsize(oop chunk);
-  static inline void set_argsize(oop chunk, int value);
+  static inline int bottom(oop chunk);
+  static inline void set_bottom(oop chunk, int value);
+  static inline void set_bottom(HeapWord* chunk, int value);
   static inline uint8_t flags(oop chunk);
   static inline void set_flags(oop chunk, uint8_t value);
   static inline uint8_t flags_acquire(oop chunk);
@@ -131,11 +126,14 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline int maxThawingSize(oop chunk);
   static inline void set_maxThawingSize(oop chunk, int value);
 
- // cont oop's processing is essential for the chunk's GC protocol
+  static inline uint8_t lockStackSize(oop chunk);
+  static inline void set_lockStackSize(oop chunk, uint8_t value);
+
+  // cont oop's processing is essential for the chunk's GC protocol
   static inline oop cont(oop chunk);
-  static inline void set_cont(oop chunk, oop value);
   template<typename P>
   static inline oop cont_raw(oop chunk);
+  static inline void set_cont(oop chunk, oop value);
   template<typename P>
   static inline void set_cont_raw(oop chunk, oop value);
   template<DecoratorSet decorators>

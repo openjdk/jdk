@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @compile --enable-preview -source ${jdk.version} DisambiguatePatterns.java
- * @run main/othervm --enable-preview DisambiguatePatterns
  */
 
 import com.sun.source.tree.CaseLabelTree;
@@ -55,11 +53,11 @@ public class DisambiguatePatterns {
                                  ExpressionType.PATTERN);
         test.disambiguationTest("String s when s.isEmpty()",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("(String s)",
+        test.disambiguationTest("String s",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("(@Ann String s)",
+        test.disambiguationTest("@Ann String s",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("((String s))",
+        test.disambiguationTest("String s",
                                  ExpressionType.PATTERN);
         test.disambiguationTest("(String) s",
                                  ExpressionType.EXPRESSION);
@@ -79,7 +77,7 @@ public class DisambiguatePatterns {
                                  ExpressionType.EXPRESSION);
         test.disambiguationTest("(a << b || a < b | a >>> b)",
                                  ExpressionType.EXPRESSION);
-        test.disambiguationTest("(a < c.d > b)",
+        test.disambiguationTest("a < c.d > b",
                                  ExpressionType.PATTERN);
         test.disambiguationTest("a<? extends c.d> b",
                                  ExpressionType.PATTERN);
@@ -111,6 +109,10 @@ public class DisambiguatePatterns {
                                  ExpressionType.EXPRESSION);
         test.disambiguationTest("a & b",
                                  ExpressionType.EXPRESSION);
+        test.disambiguationTest("R r when (x > 0)",
+                                 ExpressionType.PATTERN);
+        test.disambiguationTest("R(int x) when (x > 0)",
+                                 ExpressionType.PATTERN);
     }
 
     private final ParserFactory factory;

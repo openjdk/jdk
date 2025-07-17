@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.jpackage.internal;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.util.ResourceBundle;
 import java.io.File;
 import java.text.MessageFormat;
@@ -46,8 +48,7 @@ public class CLIHelp {
         if (noArgs) {
             Log.info(I18N.getString("MSG_Help_no_args"));
         } else {
-            Platform platform = (Log.isVerbose()) ?
-                    Platform.UNKNOWN : Platform.getPlatform();
+            OperatingSystem platform = OperatingSystem.current();
             String types;
             String pLaunchOptions;
             String pInstallOptions;
@@ -55,7 +56,7 @@ public class CLIHelp {
             String pAppImageDescription;
             String pSignSampleUsage;
             switch (platform) {
-                case MAC:
+                case MACOS:
                     types = "{\"app-image\", \"dmg\", \"pkg\"}";
                     pLaunchOptions = I18N.getString("MSG_Help_mac_launcher");
                     pInstallOptions = I18N.getString("MSG_Help_mac_install");

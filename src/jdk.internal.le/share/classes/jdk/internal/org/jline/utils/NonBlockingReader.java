@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -23,8 +23,7 @@ public abstract class NonBlockingReader extends Reader {
      * thread is currently blocked waiting for I/O it will not actually
      * shut down until the I/O is received.
      */
-    public void shutdown() {
-    }
+    public void shutdown() {}
 
     @Override
     public int read() throws IOException {
@@ -85,7 +84,15 @@ public abstract class NonBlockingReader extends Reader {
         return 1;
     }
 
-    public abstract int readBuffered(char[] b) throws IOException;
+    public int readBuffered(char[] b) throws IOException {
+        return readBuffered(b, 0L);
+    }
+
+    public int readBuffered(char[] b, long timeout) throws IOException {
+        return readBuffered(b, 0, b.length, timeout);
+    }
+
+    public abstract int readBuffered(char[] b, int off, int len, long timeout) throws IOException;
 
     public int available() {
         return 0;
@@ -101,5 +108,4 @@ public abstract class NonBlockingReader extends Reader {
      * @throws IOException if anything wrong happens
      */
     protected abstract int read(long timeout, boolean isPeek) throws IOException;
-
 }

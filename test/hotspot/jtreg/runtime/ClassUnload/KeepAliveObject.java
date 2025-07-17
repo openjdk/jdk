@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,21 +35,22 @@
 
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import java.util.List;
+import java.util.Set;
 
+import java.lang.ref.Reference;
 /**
  * Test that verifies that classes are not unloaded when specific types of references are kept to them.
  */
 public class KeepAliveObject {
   private static final String className = "test.Empty";
   private static final WhiteBox wb = WhiteBox.getWhiteBox();
-  public static Object escape = null;
 
   public static void main(String... args) throws Exception {
     ClassLoader cl = ClassUnloadCommon.newClassLoader();
     Class<?> c = cl.loadClass(className);
     Object o = c.newInstance();
     cl = null; c = null;
-    escape = o;
 
     {
         boolean isAlive = wb.isClassAlive(className);
@@ -66,15 +67,11 @@ public class KeepAliveObject {
 
         ClassUnloadCommon.failIf(!isAlive, "should be alive");
     }
+    // Don't let `o` get prematurely reclaimed by the GC.
+    Reference.reachabilityFence(o);
     o = null;
-    escape = null;
-    ClassUnloadCommon.triggerUnloading();
 
-    {
-        boolean isAlive = wb.isClassAlive(className);
-        System.out.println("testObject (3) alive: " + isAlive);
-        ClassUnloadCommon.failIf(isAlive, "should be unloaded");
-    }
-
+    Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
+    ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "testObject (3) should be unloaded: " + aliveClasses);
   }
 }

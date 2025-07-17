@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,3 @@
  */
 
 #include <stddef.h>
-#ifndef _WIN64
-typedef int intptr_t;
-typedef unsigned int uintptr_t;
-typedef unsigned long DWORD_PTR, *PDWORD_PTR;
-#endif

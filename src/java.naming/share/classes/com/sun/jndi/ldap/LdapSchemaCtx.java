@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.jndi.ldap;
 import javax.naming.*;
 import javax.naming.directory.*;
 import java.util.Hashtable;
+import java.util.concurrent.locks.ReentrantLock;
+
 import com.sun.jndi.toolkit.dir.HierMemDirCtx;
 
 /**
@@ -394,6 +396,9 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         private int port;
         private boolean hasLdapsScheme;
 
+        // SchemaInfo instance lock
+        private final ReentrantLock lock = new ReentrantLock();
+
         SchemaInfo(String schemaEntryName, LdapCtx schemaEntry,
             LdapSchemaParser parser) {
             this.schemaEntryName = schemaEntryName;
@@ -404,10 +409,15 @@ final class LdapSchemaCtx extends HierMemDirCtx {
             this.hasLdapsScheme = schemaEntry.hasLdapsScheme;
         }
 
-        synchronized void close() throws NamingException {
-            if (schemaEntry != null) {
-                schemaEntry.close();
-                schemaEntry = null;
+        void close() throws NamingException {
+            lock.lock();
+            try {
+                if (schemaEntry != null) {
+                    schemaEntry.close();
+                    schemaEntry = null;
+                }
+            } finally {
+                lock.unlock();
             }
         }
 
@@ -417,21 +427,31 @@ final class LdapSchemaCtx extends HierMemDirCtx {
                                 env, hasLdapsScheme);
         }
 
-        synchronized void modifyAttributes(Hashtable<?,?> env,
+        void modifyAttributes(Hashtable<?,?> env,
                                            ModificationItem[] mods)
             throws NamingException {
-            if (schemaEntry == null) {
-                schemaEntry = reopenEntry(env);
+            lock.lock();
+            try {
+                if (schemaEntry == null) {
+                    schemaEntry = reopenEntry(env);
+                }
+                schemaEntry.modifyAttributes("", mods);
+            } finally {
+                lock.unlock();
             }
-            schemaEntry.modifyAttributes("", mods);
         }
 
-        synchronized void modifyAttributes(Hashtable<?,?> env, int mod,
+        void modifyAttributes(Hashtable<?,?> env, int mod,
             Attributes attrs) throws NamingException {
-            if (schemaEntry == null) {
-                schemaEntry = reopenEntry(env);
+            lock.lock();
+            try {
+                if (schemaEntry == null) {
+                    schemaEntry = reopenEntry(env);
+                }
+                schemaEntry.modifyAttributes("", mod, attrs);
+            } finally {
+                lock.unlock();
             }
-            schemaEntry.modifyAttributes("", mod, attrs);
         }
     }
 }

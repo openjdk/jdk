@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ class ObjectSampleMarker : public StackObj {
                          const markWord mark_word) : _obj(obj),
                                                      _mark_word(mark_word) {}
    public:
-    ObjectSampleMarkWord() : _obj(NULL), _mark_word(markWord::zero()) {}
+    ObjectSampleMarkWord() : _obj(nullptr), _mark_word(markWord::zero()) {}
   };
 
   GrowableArray<ObjectSampleMarkWord>* _store;
@@ -54,7 +54,7 @@ class ObjectSampleMarker : public StackObj {
   ObjectSampleMarker() :
        _store(new GrowableArray<ObjectSampleMarkWord>(16)) {}
   ~ObjectSampleMarker() {
-    assert(_store != NULL, "invariant");
+    assert(_store != nullptr, "invariant");
     // restore the saved, original, markWord for sample objects
     while (_store->is_nonempty()) {
       ObjectSampleMarkWord sample_oop = _store->pop();
@@ -64,13 +64,13 @@ class ObjectSampleMarker : public StackObj {
   }
 
   void mark(oop obj) {
-    assert(obj != NULL, "invariant");
+    assert(obj != nullptr, "invariant");
     // save the original markWord
     _store->push(ObjectSampleMarkWord(obj, obj->mark()));
     // now we will set the mark word to "marked" in order to quickly
     // identify sample objects during the reachability search from gc roots.
     assert(!obj->mark().is_marked(), "should only mark an object once");
-    obj->set_mark(markWord::prototype().set_marked());
+    obj->set_mark(obj->prototype_mark().set_marked());
     assert(obj->mark().is_marked(), "invariant");
   }
 };

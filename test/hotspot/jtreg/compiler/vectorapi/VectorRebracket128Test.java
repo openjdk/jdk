@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,8 @@ import jdk.incubator.vector.*;
 import jdk.internal.vm.annotation.ForceInline;
 
 /*
- * @test id=Z
+ * @test
  * @bug 8260473
- * @enablePreview
  * @requires vm.gc.Z
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation

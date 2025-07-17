@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,23 @@ AC_DEFUN([FLAGS_SETUP_ARFLAGS],
   # FIXME: figure out if we should select AR flags depending on OS or toolchain.
   if test "x$OPENJDK_TARGET_OS" = xaix; then
     ARFLAGS="-X64"
-  elif test "x$OPENJDK_TARGET_OS" = xwindows; then
-    # lib.exe is used as AR to create static libraries.
-    ARFLAGS="-nologo -NODEFAULTLIB:MSVCRT"
   else
     ARFLAGS=""
   fi
 
   AC_SUBST(ARFLAGS)
+])
+
+AC_DEFUN([FLAGS_SETUP_LIBFLAGS],
+[
+  # LIB is used to create static libraries on Windows
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+    LIBFLAGS="-nodefaultlib:msvcrt"
+  else
+    LIBFLAGS=""
+  fi
+
+  AC_SUBST(LIBFLAGS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],
@@ -88,6 +97,16 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
   AC_SUBST(RCFLAGS)
 ])
 
+AC_DEFUN([FLAGS_SETUP_NMFLAGS],
+[
+  # On AIX, we need to set NM flag -X64 for processing 64bit object files
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    NMFLAGS="-X64"
+  fi
+
+  AC_SUBST(NMFLAGS)
+])
+
 ################################################################################
 # platform independent
 AC_DEFUN([FLAGS_SETUP_ASFLAGS],
@@ -129,6 +148,10 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
       test "x$TOOLCHAIN_TYPE" = xgcc && \
       test "x$OPENJDK_TARGET_CPU" = xarm; then
     $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $ARM_ARCH_TYPE_ASFLAGS $ARM_FLOAT_TYPE_ASFLAGS"
+  fi
+
+  if test "x$BRANCH_PROTECTION_ENABLED" = "xtrue"; then
+    $2JVM_ASFLAGS="${$2JVM_ASFLAGS} $BRANCH_PROTECTION_FLAG"
   fi
 
   AC_SUBST($2JVM_ASFLAGS)

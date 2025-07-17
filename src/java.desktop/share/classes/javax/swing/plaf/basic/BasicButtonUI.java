@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.swing.plaf.basic;
 
-import sun.awt.AppContext;
-import sun.swing.SwingUtilities2;
 import java.awt.AWTKeyStroke;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -60,6 +58,9 @@ import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
+
+import sun.awt.AppContext;
+import sun.swing.SwingUtilities2;
 
 /**
  * BasicButton implementation
@@ -598,15 +599,7 @@ public class BasicButtonUI extends ButtonUI{
 
     private String layout(AbstractButton b, FontMetrics fm,
                           int width, int height) {
-        Insets i;
-
-        final View v = (View)b.getClientProperty(BasicHTML.propertyKey);
-        if (v != null) {
-            i = new Insets(0, 0, 0, 0);
-        } else {
-            i = b.getInsets();
-        }
-
+        Insets i = b.getInsets();
         viewRect.x = i.left;
         viewRect.y = i.top;
         viewRect.width = width - (i.right + viewRect.x);

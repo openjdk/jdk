@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 
@@ -1572,7 +1573,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
     /**
      * Returns <code>isEditable</code>. This is invoked from the UI before
-     * editing begins to insure that the given path can be edited. This
+     * editing begins to ensure that the given path can be edited. This
      * is provided as an entry point for subclassers to add filtered
      * editing without having to resort to creating a new editor.
      *
@@ -3103,7 +3104,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
         prefix = prefix.toUpperCase();
 
-        // start search from the next/previous element froom the
+        // start search from the next/previous element of the
         // selected element
         int increment = (bias == Position.Bias.Forward) ? 1 : -1;
         int row = startingRow;
@@ -4739,6 +4740,26 @@ public class JTree extends JComponent implements Scrollable, Accessible
         protected class AccessibleJTreeNode extends AccessibleContext
             implements Accessible, AccessibleComponent, AccessibleSelection,
             AccessibleAction {
+
+            static {
+                SwingAccessor.setAccessibleComponentAccessor(new AccessibleJTreeNodeAccessor());
+            }
+
+            private static class AccessibleJTreeNodeAccessor implements SwingAccessor.AccessibleComponentAccessor {
+
+                private AccessibleJTreeNodeAccessor() {}
+
+                @Override
+                public Accessible getCurrentAccessible(AccessibleContext ac) {
+                    if (ac instanceof AccessibleJTreeNode) {
+                        Component c = ((AccessibleJTreeNode) ac).getCurrentComponent();
+                        if (c instanceof Accessible) {
+                            return (Accessible)c;
+                        }
+                    }
+                    return null;
+                }
+            }
 
             private JTree tree = null;
             private TreeModel treeModel = null;

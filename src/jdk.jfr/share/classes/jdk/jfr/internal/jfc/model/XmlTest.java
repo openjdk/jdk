@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ final class XmlTest extends XmlExpression {
         Result ret = Result.NULL;
         List<XmlElement> producers = getProducers();
         if (!producers.isEmpty()) {
-            XmlElement producer = producers.get(0);
+            XmlElement producer = producers.getFirst();
             Result r = producer.evaluate();
             if (!r.isNull()) {
                 ret = getValue().equals(r.value()) ? Result.TRUE : Result.FALSE;

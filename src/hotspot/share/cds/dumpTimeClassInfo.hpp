@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  *
  */
 
-#ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
-#define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
+#ifndef SHARE_CDS_DUMPTIMECLASSINFO_HPP
+#define SHARE_CDS_DUMPTIMECLASSINFO_HPP
+
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -37,16 +39,17 @@ class Method;
 class Symbol;
 
 class DumpTimeClassInfo: public CHeapObj<mtClass> {
-  bool                         _excluded;
-  bool                         _is_early_klass;
-  bool                         _has_checked_exclusion;
+  bool _excluded;
+  bool _is_aot_tooling_class;
+  bool _is_early_klass;
+  bool _has_checked_exclusion;
 
   class DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
     char _loader_type2;
   public:
-    DTLoaderConstraint() : _name(NULL), _loader_type1('0'), _loader_type2('0') {}
+    DTLoaderConstraint() : _name(nullptr), _loader_type1('0'), _loader_type2('0') {}
     DTLoaderConstraint(Symbol* name, char l1, char l2) : _name(name), _loader_type1(l1), _loader_type2(l2) {
       Symbol::maybe_increment_refcount(_name);
     }
@@ -84,7 +87,7 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
     Symbol* _name;
     Symbol* _from_name;
   public:
-    DTVerifierConstraint() : _name(NULL), _from_name(NULL) {}
+    DTVerifierConstraint() : _name(nullptr), _from_name(nullptr) {}
     DTVerifierConstraint(Symbol* n, Symbol* fn) : _name(n), _from_name(fn) {
       Symbol::maybe_increment_refcount(_name);
       Symbol::maybe_increment_refcount(_from_name);
@@ -120,7 +123,7 @@ public:
   InstanceKlass*               _klass;
   InstanceKlass*               _nest_host;
   bool                         _failed_verification;
-  bool                         _is_archived_lambda_proxy;
+  bool                         _is_registered_lambda_proxy;
   int                          _id;
   int                          _clsfile_size;
   int                          _clsfile_crc32;
@@ -130,22 +133,22 @@ public:
   GrowableArray<int>*                  _enum_klass_static_fields;
 
   DumpTimeClassInfo() {
-    _klass = NULL;
-    _nest_host = NULL;
+    _klass = nullptr;
+    _nest_host = nullptr;
     _failed_verification = false;
-    _is_archived_lambda_proxy = false;
+    _is_registered_lambda_proxy = false;
     _has_checked_exclusion = false;
     _id = -1;
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
     _excluded = false;
+    _is_aot_tooling_class = false;
     _is_early_klass = JvmtiExport::is_early_phase();
-    _verifier_constraints = NULL;
-    _verifier_constraint_flags = NULL;
-    _loader_constraints = NULL;
-    _enum_klass_static_fields = NULL;
+    _verifier_constraints = nullptr;
+    _verifier_constraint_flags = nullptr;
+    _loader_constraints = nullptr;
+    _enum_klass_static_fields = nullptr;
   }
-  DumpTimeClassInfo(const DumpTimeClassInfo& src);
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
@@ -159,7 +162,7 @@ public:
 private:
   template <typename T>
   static int array_length_or_zero(GrowableArray<T>* array) {
-    if (array == NULL) {
+    if (array == nullptr) {
       return 0;
     } else {
       return array->length();
@@ -183,12 +186,12 @@ public:
   void metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_klass);
     it->push(&_nest_host);
-    if (_verifier_constraints != NULL) {
+    if (_verifier_constraints != nullptr) {
       for (int i = 0; i < _verifier_constraints->length(); i++) {
         _verifier_constraints->adr_at(i)->metaspace_pointers_do(it);
       }
     }
-    if (_loader_constraints != NULL) {
+    if (_loader_constraints != nullptr) {
       for (int i = 0; i < _loader_constraints->length(); i++) {
         _loader_constraints->adr_at(i)->metaspace_pointers_do(it);
       }
@@ -197,6 +200,14 @@ public:
 
   bool is_excluded() {
     return _excluded || _failed_verification;
+  }
+
+  bool is_aot_tooling_class() {
+    return _is_aot_tooling_class;
+  }
+
+  void set_is_aot_tooling_class() {
+    _is_aot_tooling_class = true;
   }
 
   // Was this class loaded while JvmtiExport::is_early_phase()==true
@@ -218,7 +229,7 @@ public:
 
 template <typename T>
 inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Deterministic archive contents
     uintx delta = k->name() - MetaspaceShared::symbol_rs_base();
     return primitive_hash<uintx>(delta);
@@ -272,4 +283,4 @@ private:
   template<typename Function> void iterate_all(Function function) const;
 };
 
-#endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
+#endif // SHARE_CDS_DUMPTIMECLASSINFO_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ class outputStream;
 
 namespace metaspace {
   struct ClmsStats;
+  class ClmsTester;
   class MetaspaceArena;
+  class MetaspaceContext;
 }
 
 // A ClassLoaderMetaspace manages MetaspaceArena(s) for a CLD.
@@ -57,6 +59,7 @@ namespace metaspace {
 //                                                               alloc top
 //
 class ClassLoaderMetaspace : public CHeapObj<mtClass> {
+  friend class metaspace::ClmsTester; // for gtests
 
   // A reference to an outside lock, held by the CLD.
   Mutex* const _lock;
@@ -68,15 +71,21 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   metaspace::MetaspaceArena* _non_class_space_arena;
 
   // Arena for allocations from class space
-  //  (NULL if -XX:-UseCompressedClassPointers).
+  //  (null if -XX:-UseCompressedClassPointers).
   metaspace::MetaspaceArena* _class_space_arena;
 
   Mutex* lock() const                             { return _lock; }
   metaspace::MetaspaceArena* non_class_space_arena() const   { return _non_class_space_arena; }
   metaspace::MetaspaceArena* class_space_arena() const       { return _class_space_arena; }
 
-public:
+  bool have_class_space_arena() const { return _class_space_arena != nullptr; }
 
+  ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type,
+                       metaspace::MetaspaceContext* non_class_context,
+                       metaspace::MetaspaceContext* class_context,
+                       size_t klass_alignment_words);
+
+public:
   ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type);
 
   ~ClassLoaderMetaspace();
@@ -87,23 +96,27 @@ public:
   MetaWord* allocate(size_t word_size, Metaspace::MetadataType mdType);
 
   // Attempt to expand the GC threshold to be good for at least another word_size words
-  // and allocate. Returns NULL if failure. Used during Metaspace GC.
+  // and allocate. Returns null if failure. Used during Metaspace GC.
   MetaWord* expand_and_allocate(size_t word_size, Metaspace::MetadataType mdType);
 
   // Prematurely returns a metaspace allocation to the _block_freelists
   // because it is not needed anymore.
-  void deallocate(MetaWord* ptr, size_t word_size, bool is_class);
+  void deallocate(MetaWord* ptr, size_t word_size);
 
   // Update statistics. This walks all in-use chunks.
   void add_to_statistics(metaspace::ClmsStats* out) const;
 
   DEBUG_ONLY(void verify() const;)
 
-  // This only exists for JFR and jcmd VM.classloader_stats. We may want to
-  //  change this. Capacity as a stat is of questionable use since it may
-  //  contain committed and uncommitted areas. For now we do this to maintain
-  //  backward compatibility with JFR.
-  void calculate_jfr_stats(size_t* p_used_bytes, size_t* p_capacity_bytes) const;
+  // Convenience method to get the most important usage statistics for either class
+  // or non-class space. For more detailed statistics, use add_to_statistics().
+  void usage_numbers(Metaspace::MetadataType mdType, size_t* p_used_words,
+                     size_t* p_committed_words, size_t* p_capacity_words) const;
+
+  // Convenience method to get the most important usage statistics (totals; both class- and non-class spaces)
+  // For more detailed statistics, use add_to_statistics().
+  void usage_numbers(size_t* p_used_words, size_t* p_committed_words,
+                     size_t* p_capacity_words) const;
 
 }; // end: ClassLoaderMetaspace
 

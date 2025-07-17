@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,18 +34,11 @@
 #include <limits.h>
 
 #include "childproc.h"
+#include "jni_util.h"
 
 const char * const *parentPathv;
 
-ssize_t
-restartableWrite(int fd, const void *buf, size_t count)
-{
-    ssize_t result;
-    RESTARTABLE(write(fd, buf, count), result);
-    return result;
-}
-
-int
+static int
 restartableDup2(int fd_from, int fd_to)
 {
     int err;
@@ -59,6 +53,21 @@ closeSafely(int fd)
 }
 
 int
+markCloseOnExec(int fd)
+{
+    const int flags = fcntl(fd, F_GETFD);
+    if (flags < 0) {
+        return -1;
+    }
+    if ((flags & FD_CLOEXEC) == 0) {
+        if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int
 isAsciiDigit(char c)
 {
   return c >= '0' && c <= '9';
@@ -67,33 +76,22 @@ isAsciiDigit(char c)
 #if defined(_AIX)
   /* AIX does not understand '/proc/self' - it requires the real process ID */
   #define FD_DIR aix_fd_dir
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
 #elif defined(_ALLBSD_SOURCE)
   #define FD_DIR "/dev/fd"
 #else
   #define FD_DIR "/proc/self/fd"
 #endif
 
-int
-closeDescriptors(void)
+static int
+markDescriptorsCloseOnExec(void)
 {
     DIR *dp;
     struct dirent *dirp;
-    int from_fd = FAIL_FILENO + 1;
-
-    /* We're trying to close all file descriptors, but opendir() might
-     * itself be implemented using a file descriptor, and we certainly
-     * don't want to close that while it's in use.  We assume that if
-     * opendir() is implemented using a file descriptor, then it uses
-     * the lowest numbered file descriptor, just like open().  So we
-     * close a couple explicitly.  */
-
-    close(from_fd);          /* for possible use by opendir() */
-    close(from_fd + 1);      /* another one for good luck */
+    /* This function marks all file descriptors beyond stderr as CLOEXEC.
+     * That includes the file descriptor used for the fail pipe: we want that
+     * one to stay open up until the execve, but it should be closed with the
+     * execve. */
+    const int fd_from = STDERR_FILENO + 1;
 
 #if defined(_AIX)
     /* AIX does not understand '/proc/self' - it requires the real process ID */
@@ -102,21 +100,25 @@ closeDescriptors(void)
 #endif
 
     if ((dp = opendir(FD_DIR)) == NULL)
-        return 0;
+        return -1;
 
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
         if (isAsciiDigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd + 2)
-            close(fd);
+            (fd = strtol(dirp->d_name, NULL, 10)) >= fd_from) {
+            if (markCloseOnExec(fd) == -1) {
+                closedir(dp);
+                return -1;
+            }
+        }
     }
 
     closedir(dp);
 
-    return 1;
+    return 0;
 }
 
-int
+static int
 moveDescriptor(int fd_from, int fd_to)
 {
     if (fd_from != fd_to) {
@@ -156,7 +158,47 @@ readFully(int fd, void *buf, size_t nbyte)
             buf = (void *) (((char *)buf) + n);
         } else if (errno == EINTR) {
             /* Strange signals like SIGJVM1 are possible at any time.
-             * See http://www.dreamsongs.com/WorseIsBetter.html */
+             * See https://dreamsongs.com/WorseIsBetter.html */
+        } else {
+            return -1;
+        }
+    }
+}
+
+/*
+ * Writes nbyte bytes from buf into file descriptor fd,
+ * The write operation is retried in case of EINTR or partial writes.
+ *
+ * Returns number of bytes written (normally nbyte).
+ * In case of write errors, returns -1 and sets errno.
+ */
+ssize_t
+writeFully(int fd, const void *buf, size_t nbyte)
+{
+#ifdef DEBUG
+/* This code is only used in debug builds for testing truncated writes
+ * during the handshake with the spawn helper for MODE_POSIX_SPAWN.
+ * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
+ */
+    const char* env = getenv("JTREG_JSPAWNHELPER_PROTOCOL_TEST");
+    if (env != NULL && atoi(env) == 99 && nbyte == sizeof(ChildStuff)) {
+        printf("posix_spawn: truncating write of ChildStuff struct\n");
+        fflush(stdout);
+        nbyte = nbyte / 2;
+    }
+#endif
+    ssize_t remaining = nbyte;
+    for (;;) {
+        ssize_t n = write(fd, buf, remaining);
+        if (n > 0) {
+            remaining -= n;
+            if (remaining <= 0)
+                return nbyte;
+            /* We were interrupted in the middle of writing the bytes.
+             * Unlikely, but possible. */
+            buf = (void *) (((char *)buf) + n);
+        } else if (n == -1 && errno == EINTR) {
+            /* Retry */
         } else {
             return -1;
         }
@@ -182,7 +224,7 @@ initVectorFromBlock(const char**vector, const char* block, int count)
  * misfeature, but compatibility wins over sanity.  The original support for
  * this was imported accidentally from execvp().
  */
-void
+static void
 execve_as_traditional_shell_script(const char *file,
                                    const char *argv[],
                                    const char *const envp[])
@@ -205,12 +247,12 @@ execve_as_traditional_shell_script(const char *file,
  * Like execve(2), except that in case of ENOEXEC, FILE is assumed to
  * be a shell script and the system default shell is invoked to run it.
  */
-void
+static void
 execve_with_shell_fallback(int mode, const char *file,
                            const char *argv[],
                            const char *const envp[])
 {
-    if (mode == MODE_CLONE || mode == MODE_VFORK) {
+    if (mode == MODE_VFORK) {
         /* shared address space; be very careful. */
         execve(file, (char **) argv, (char **) envp);
         if (errno == ENOEXEC)
@@ -229,7 +271,7 @@ execve_with_shell_fallback(int mode, const char *file,
  * JDK_execvpe is identical to execvp, except that the child environment is
  * specified via the 3rd argument instead of being inherited from environ.
  */
-void
+static void
 JDK_execvpe(int mode, const char *file,
             const char *argv[],
             const char *const envp[])
@@ -321,9 +363,14 @@ childProcess(void *arg)
         /* Child shall signal aliveness to parent at the very first
          * moment. */
         int code = CHILD_IS_ALIVE;
-        restartableWrite(fail_pipe_fd, &code, sizeof(code));
+        if (writeFully(fail_pipe_fd, &code, sizeof(code)) != sizeof(code)) {
+            goto WhyCantJohnnyExec;
+        }
     }
 
+#ifdef DEBUG
+    jtregSimulateCrash(0, 6);
+#endif
     /* Close the parent sides of the pipes.
        Closing pipe fds here is redundant, since closeDescriptors()
        would do it anyways, but a little paranoia is a good thing. */
@@ -360,11 +407,11 @@ childProcess(void *arg)
     fail_pipe_fd = FAIL_FILENO;
 
     /* close everything */
-    if (closeDescriptors() == 0) { /* failed,  close the old way */
+    if (markDescriptorsCloseOnExec() == -1) { /* failed,  close the old way */
         int max_fd = (int)sysconf(_SC_OPEN_MAX);
         int fd;
-        for (fd = FAIL_FILENO + 1; fd < max_fd; fd++)
-            if (close(fd) == -1 && errno != EBADF)
+        for (fd = STDERR_FILENO + 1; fd < max_fd; fd++)
+            if (markCloseOnExec(fd) == -1 && errno != EBADF)
                 goto WhyCantJohnnyExec;
     }
 
@@ -372,8 +419,12 @@ childProcess(void *arg)
     if (p->pdir != NULL && chdir(p->pdir) < 0)
         goto WhyCantJohnnyExec;
 
-    if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
-        goto WhyCantJohnnyExec;
+    // Reset any mask signals from parent, but not in VFORK mode
+    if (p->mode != MODE_VFORK) {
+        sigset_t unblock_signals;
+        sigemptyset(&unblock_signals);
+        sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+    }
 
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
 
@@ -390,9 +441,26 @@ childProcess(void *arg)
      */
     {
         int errnum = errno;
-        restartableWrite(fail_pipe_fd, &errnum, sizeof(errnum));
+        writeFully(fail_pipe_fd, &errnum, sizeof(errnum));
     }
     close(fail_pipe_fd);
     _exit(-1);
     return 0;  /* Suppress warning "no return value from function" */
 }
+
+#ifdef DEBUG
+/* This method is only used in debug builds for testing MODE_POSIX_SPAWN
+ * in the light of abnormal program termination of either the parent JVM
+ * or the newly created jspawnhelper child process during the execution of
+ * Java_java_lang_ProcessImpl_forkAndExec().
+ * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
+ */
+void jtregSimulateCrash(pid_t child, int stage) {
+    const char* env = getenv("JTREG_JSPAWNHELPER_PROTOCOL_TEST");
+    if (env != NULL && atoi(env) == stage) {
+        printf("posix_spawn:%d\n", child);
+        fflush(stdout);
+        _exit(stage);
+    }
+}
+#endif

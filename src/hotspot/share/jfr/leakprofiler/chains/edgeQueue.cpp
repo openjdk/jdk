@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/recorder/storage/jfrVirtualMemory.hpp"
 
 EdgeQueue::EdgeQueue(size_t reservation_size_bytes, size_t commit_block_size_bytes) :
-  _vmm(NULL),
+  _vmm(nullptr),
   _reservation_size_bytes(reservation_size_bytes),
   _commit_block_size_bytes(commit_block_size_bytes),
   _top_index(0),
@@ -37,9 +36,9 @@ EdgeQueue::EdgeQueue(size_t reservation_size_bytes, size_t commit_block_size_byt
 
 bool EdgeQueue::initialize() {
   assert(_reservation_size_bytes >= _commit_block_size_bytes, "invariant");
-  assert(_vmm == NULL, "invariant");
+  assert(_vmm == nullptr, "invariant");
   _vmm = new JfrVirtualMemory();
-  return _vmm != NULL && _vmm->initialize(_reservation_size_bytes, _commit_block_size_bytes, sizeof(Edge));
+  return _vmm != nullptr && _vmm->initialize(_reservation_size_bytes, _commit_block_size_bytes, sizeof(Edge));
 }
 
 EdgeQueue::~EdgeQueue() {
@@ -51,7 +50,7 @@ void EdgeQueue::add(const Edge* parent, UnifiedOopRef ref) {
   assert(!is_full(), "EdgeQueue is full. Check is_full before adding another Edge");
   assert(!_vmm->is_full(), "invariant");
   void* const allocation = _vmm->new_datum();
-  assert(allocation != NULL, "invariant");
+  assert(allocation != nullptr, "invariant");
   new (allocation)Edge(parent, ref);
   _top_index++;
   assert(_vmm->count() == _top_index, "invariant");
@@ -86,16 +85,16 @@ const Edge* EdgeQueue::element_at(size_t index) const {
 }
 
 size_t EdgeQueue::reserved_size() const {
-  assert(_vmm != NULL, "invariant");
+  assert(_vmm != nullptr, "invariant");
   return _vmm->reserved_size();
 }
 
 size_t EdgeQueue::live_set() const {
-  assert(_vmm != NULL, "invariant");
+  assert(_vmm != nullptr, "invariant");
   return _vmm->live_set();
 }
 
 size_t EdgeQueue::sizeof_edge() const {
-  assert(_vmm != NULL, "invariant");
+  assert(_vmm != nullptr, "invariant");
   return _vmm->aligned_datum_size_bytes();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,11 +30,6 @@
 enum {
   pd_lo_word_offset_in_bytes = 0,
   pd_hi_word_offset_in_bytes = BytesPerWord
-};
-
-// explicit rounding operations are required to implement the strictFP mode
-enum {
-  pd_strict_fp_requires_explicit_rounding = false
 };
 
 // registers
@@ -79,6 +74,15 @@ enum {
 // RISCV where floats and doubles are stored in their native form.
 enum {
   pd_float_saved_as_double = false
+};
+
+enum {
+  pd_two_operand_lir_form = false
+};
+
+// the number of stack required by ArrayCopyStub
+enum {
+  pd_arraycopystub_reserved_argument_area_size = 2
 };
 
 #endif // CPU_RISCV_C1_DEFS_RISCV_HPP

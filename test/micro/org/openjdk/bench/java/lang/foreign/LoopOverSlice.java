@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -48,7 +49,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-preview", "--enable-native-access=ALL-UNNAMED" })
+@Fork(3)
 
 public class LoopOverSlice {
 
@@ -56,19 +57,22 @@ public class LoopOverSlice {
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
+    Arena arena;
     MemorySegment nativeSegment, heapSegment;
     IntBuffer nativeBuffer, heapBuffer;
 
     @Setup
     public void setup() {
-        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, MemorySession.openConfined());
+        arena = Arena.ofConfined();
+        nativeSegment = arena.allocate(ALLOC_SIZE, 1);
         heapSegment = MemorySegment.ofArray(new int[ELEM_SIZE]);
         nativeBuffer = ByteBuffer.allocateDirect(ALLOC_SIZE).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
         heapBuffer = IntBuffer.wrap(new int[ELEM_SIZE]);
     }
 
     @TearDown
-    public void tearDown() { nativeSegment.session().close();
+    public void tearDown() {
+        arena.close();
     }
 
     @Benchmark

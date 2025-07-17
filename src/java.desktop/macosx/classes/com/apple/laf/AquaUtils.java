@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.awt.*;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.swing.*;
@@ -40,8 +38,6 @@ import javax.swing.plaf.UIResource;
 import sun.awt.AppContext;
 
 import sun.lwawt.macosx.CPlatformWindow;
-import sun.reflect.misc.ReflectUtil;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaImageFactory.SlicedImageControl;
@@ -166,7 +162,7 @@ final class AquaUtils {
         abstract T getInstance();
     }
 
-    static class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
+    static final class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
         private final Class<T> clazz;
 
         RecyclableSingletonFromDefaultConstructor(final Class<T> clazz) {
@@ -177,7 +173,6 @@ final class AquaUtils {
         @SuppressWarnings("deprecation")
         T getInstance() {
             try {
-                ReflectUtil.checkPackageAccess(clazz);
                 return clazz.newInstance();
             } catch (ReflectiveOperationException ignored) {
             }
@@ -205,9 +200,7 @@ final class AquaUtils {
     private static final RecyclableSingleton<Boolean> enableAnimations = new RecyclableSingleton<Boolean>() {
         @Override
         protected Boolean getInstance() {
-            @SuppressWarnings("removal")
-            final String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<?>)new GetPropertyAction(
-                    ANIMATIONS_PROPERTY));
+            final String sizeProperty = System.getProperty(ANIMATIONS_PROPERTY);
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -315,7 +308,7 @@ final class AquaUtils {
         }
     }
 
-    static class SlicedShadowBorder extends ShadowBorder {
+    static final class SlicedShadowBorder extends ShadowBorder {
         private final SlicedImageControl slices;
 
         SlicedShadowBorder(final Painter prePainter, final Painter postPainter, final int offsetX, final int offsetY, final float distance, final float intensity, final int blur, final int templateWidth, final int templateHeight, final int leftCut, final int topCut, final int rightCut, final int bottomCut) {
@@ -332,25 +325,17 @@ final class AquaUtils {
         }
     }
 
-    @SuppressWarnings("removal")
     private static final RecyclableSingleton<Method> getJComponentGetFlagMethod = new RecyclableSingleton<Method>() {
         @Override
         protected Method getInstance() {
-            return AccessController.doPrivileged(
-                new PrivilegedAction<Method>() {
-                    @Override
-                    public Method run() {
-                        try {
-                            final Method method = JComponent.class.getDeclaredMethod(
-                                    "getFlag", new Class<?>[] { int.class });
-                            method.setAccessible(true);
-                            return method;
-                        } catch (final Throwable ignored) {
-                            return null;
-                        }
-                    }
-                }
-            );
+            try {
+                final Method method = JComponent.class.getDeclaredMethod(
+                        "getFlag", new Class<?>[]{int.class});
+                method.setAccessible(true);
+                return method;
+            } catch (final Throwable ignored) {
+                return null;
+            }
         }
     };
 

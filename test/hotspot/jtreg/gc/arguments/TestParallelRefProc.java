@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,7 @@ public class TestParallelRefProc {
         result.addAll(Arrays.asList(args));
         result.add("-XX:+PrintFlagsFinal");
         result.add("-version");
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(result);
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = GCArguments.executeLimitedTestJava(result);
 
         output.shouldHaveExitValue(0);
 

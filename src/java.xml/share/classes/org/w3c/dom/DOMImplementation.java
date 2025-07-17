@@ -46,6 +46,8 @@ package org.w3c.dom;
  * for performing operations that are independent of any particular instance
  * of the document object model.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ *
+ * @since 1.4, DOM Level 2
  */
 public interface DOMImplementation {
     /**

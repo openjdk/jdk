@@ -168,6 +168,7 @@ import javax.annotation.processing.Processor;
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager stdFileManager = compiler.getStandardFileManager(null, null, null);
  *       JavaFileManager fileManager = new ForwardingJavaFileManager(stdFileManager) {
+ *           @Override
  *           public void flush() throws IOException {
  *               logger.entering(StandardJavaFileManager.class.getName(), "flush");
  *               super.flush();

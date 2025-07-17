@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,24 @@
 
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
-import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
@@ -54,19 +52,14 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.AppImageFile.LauncherInfo;
-
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
-import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
-import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import jdk.jpackage.internal.PackagingPipeline.PackageBuildEnv;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.model.WinMsiPackage;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -134,100 +127,11 @@ import org.xml.sax.SAXException;
  */
 public class WinMsiBundler  extends AbstractBundler {
 
-    public static final BundlerParamInfo<Path> MSI_IMAGE_DIR =
-            new StandardBundlerParam<>(
-            "win.msi.imageDir",
-            Path.class,
-            params -> {
-                Path imagesRoot = IMAGES_ROOT.fetchFrom(params);
-                if (!Files.exists(imagesRoot)) {
-                    try {
-                        Files.createDirectories(imagesRoot);
-                    } catch (IOException ioe) {
-                        return null;
-                    }
-                }
-                return imagesRoot.resolve("win-msi.image");
-            },
-            (s, p) -> null);
-
-    public static final BundlerParamInfo<Path> WIN_APP_IMAGE =
-            new StandardBundlerParam<>(
-            "win.app.image",
-            Path.class,
-            null,
-            (s, p) -> null);
-
-    static final StandardBundlerParam<InstallableFile> SERVICE_INSTALLER
-            = new StandardBundlerParam<>(
-                    "win.msi.serviceInstaller",
-                    InstallableFile.class,
-                    null,
-                    null
-            );
-
-    public static final StandardBundlerParam<Boolean> MSI_SYSTEM_WIDE  =
-            new StandardBundlerParam<>(
-                    Arguments.CLIOptions.WIN_PER_USER_INSTALLATION.getId(),
-                    Boolean.class,
-                    params -> true, // MSIs default to system wide
-                    // valueOf(null) is false,
-                    // and we actually do want null
-                    (s, p) -> (s == null || "null".equalsIgnoreCase(s))? null
-                            : Boolean.valueOf(s)
-            );
-
-    public static final StandardBundlerParam<String> PRODUCT_VERSION =
-            new StandardBundlerParam<>(
-                    "win.msi.productVersion",
-                    String.class,
-                    VERSION::fetchFrom,
-                    (s, p) -> s
-            );
-
-    private static final BundlerParamInfo<String> HELP_URL =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.WIN_HELP_URL.getId(),
-            String.class,
-            null,
-            (s, p) -> s);
-
-    private static final BundlerParamInfo<String> UPDATE_URL =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.WIN_UPDATE_URL.getId(),
-            String.class,
-            null,
-            (s, p) -> s);
-
-    private static final BundlerParamInfo<String> UPGRADE_UUID =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.WIN_UPGRADE_UUID.getId(),
-            String.class,
-            null,
-            (s, p) -> s);
-
-    private static final BundlerParamInfo<String> INSTALLER_FILE_NAME =
-            new StandardBundlerParam<> (
-            "win.installerName",
-            String.class,
-            params -> {
-                String nm = INSTALLER_NAME.fetchFrom(params);
-                if (nm == null) return null;
-
-                String version = VERSION.fetchFrom(params);
-                if (version == null) {
-                    return nm;
-                } else {
-                    return nm + "-" + version;
-                }
-            },
-            (s, p) -> s);
-
     public WinMsiBundler() {
-        appImageBundler = new WinAppBundler().setDependentTask(true);
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
-                Map.entry("ui.wxf", new WixUiFragmentBuilder())
+                Map.entry("ui.wxf", new WixUiFragmentBuilder()),
+                Map.entry("os-condition.wxf", OSVersionCondition.createWixFragmentBuilder())
         ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
             return e.getValue();
@@ -253,7 +157,7 @@ public class WinMsiBundler  extends AbstractBundler {
     public boolean supported(boolean platformInstaller) {
         try {
             if (wixToolset == null) {
-                wixToolset = WixTool.toolset();
+                wixToolset = WixTool.createToolset();
             }
             return true;
         } catch (ConfigException ce) {
@@ -272,146 +176,65 @@ public class WinMsiBundler  extends AbstractBundler {
         return false;
     }
 
-    private static UUID getUpgradeCode(Map<String, ? super Object> params) {
-        String upgradeCode = UPGRADE_UUID.fetchFrom(params);
-        if (upgradeCode != null) {
-            return UUID.fromString(upgradeCode);
-        }
-        return createNameUUID("UpgradeCode", params, List.of(VENDOR, APP_NAME));
-    }
-
-    private static UUID getProductCode(Map<String, ? super Object> params) {
-        return createNameUUID("ProductCode", params, List.of(VENDOR, APP_NAME,
-                VERSION));
-    }
-
-    private static UUID createNameUUID(String prefix,
-            Map<String, ? super Object> params,
-            List<StandardBundlerParam<String>> components) {
-        String key = Stream.concat(Stream.of(prefix), components.stream().map(
-                c -> c.fetchFrom(params))).collect(Collectors.joining("/"));
-        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
-    }
-
     @Override
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
         try {
-            appImageBundler.validate(params);
+            // Order is important!
+            WinFromParams.APPLICATION.fetchFrom(params);
+            BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
             if (wixToolset == null) {
-                wixToolset = WixTool.toolset();
+                wixToolset = WixTool.createToolset();
             }
 
-            try {
-                getUpgradeCode(params);
-            } catch (IllegalArgumentException ex) {
-                throw new ConfigException(ex);
+            for (var tool : wixToolset.getType().getTools()) {
+                Log.verbose(I18N.format("message.tool-version",
+                        wixToolset.getToolPath(tool).getFileName(),
+                        wixToolset.getVersion()));
             }
 
-            for (var toolInfo: wixToolset.values()) {
-                Log.verbose(MessageFormat.format(I18N.getString(
-                        "message.tool-version"), toolInfo.path.getFileName(),
-                        toolInfo.version));
-            }
+            wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(wixToolset.getVersion(),
+                    wixToolset.getType()));
 
-            wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(
-                    wixToolset.get(WixTool.Light).version));
-
-            wixFragments.get(0).logWixFeatures();
-
-            /********* validate bundle parameters *************/
-
-            try {
-                String version = PRODUCT_VERSION.fetchFrom(params);
-                MsiVersion.of(version);
-            } catch (IllegalArgumentException ex) {
-                throw new ConfigException(ex.getMessage(), I18N.getString(
-                        "error.version-string-wrong-format.advice"), ex);
-            }
-
-            FileAssociation.verify(FileAssociation.fetchFrom(params));
-
-            var serviceInstallerResource = initServiceInstallerResource(params);
-            if (serviceInstallerResource != null) {
-                if (!Files.exists(serviceInstallerResource.getExternalPath())) {
-                    throw new ConfigException(I18N.getString(
-                            "error.missing-service-installer"), I18N.getString(
-                                    "error.missing-service-installer.advice"));
-                }
-            }
+            wixFragments.stream().map(WixFragmentBuilder::getLoggableWixFeatures).flatMap(
+                    List::stream).distinct().toList().forEach(Log::verbose);
 
             return true;
         } catch (RuntimeException re) {
-            if (re.getCause() instanceof ConfigException) {
-                throw (ConfigException) re.getCause();
-            } else {
-                throw new ConfigException(re);
-            }
+            throw rethrowConfigException(re);
         }
     }
 
-    private void prepareProto(Map<String, ? super Object> params)
-                throws PackagerException, IOException {
-        Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
-        String appName = APP_NAME.fetchFrom(params);
-        Path appDir;
-        if (appName == null) {
-            // Can happen when no name is given, and using a foreign app-image
-            throw new PackagerException("error.no.name");
-        }
-
-        // we either have an application image or need to build one
-        if (appImage != null) {
-            appDir = MSI_IMAGE_DIR.fetchFrom(params).resolve(appName);
-            // copy everything from appImage dir into appDir/name
-            IOUtils.copyRecursive(appImage, appDir);
-        } else {
-            appDir = appImageBundler.execute(params, MSI_IMAGE_DIR.fetchFrom(
-                    params));
-        }
+    private void prepareProto(Package pkg, BuildEnv env, AppImageLayout appImageLayout) throws
+            PackagerException, IOException {
 
         // Configure installer icon
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+        if (appImageLayout instanceof RuntimeLayout runtimeLayout) {
             // Use icon from java launcher.
             // Assume java.exe exists in Java Runtime being packed.
             // Ignore custom icon if any as we don't want to copy anything in
             // Java Runtime image.
-            installerIcon = ApplicationLayout.javaRuntime()
-                    .resolveAt(appDir)
-                    .runtimeDirectory()
-                    .resolve(Path.of("bin", "java.exe"));
-        } else {
-            var appLayout = ApplicationLayout.windowsAppImage().resolveAt(appDir);
-
-            installerIcon = appLayout.launchersDirectory()
-                    .resolve(appName + ".exe");
-
-            new PackageFile(appName).save(appLayout);
+            installerIcon = runtimeLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
+        } else if (appImageLayout instanceof ApplicationLayout appLayout) {
+            installerIcon = appLayout.launchersDirectory().resolve(
+                    pkg.app().mainLauncher().orElseThrow().executableNameWithSuffix());
         }
         installerIcon = installerIcon.toAbsolutePath();
 
-        params.put(WIN_APP_IMAGE.getID(), appDir);
-
-        String licenseFile = LICENSE_FILE.fetchFrom(params);
-        if (licenseFile != null) {
+        pkg.licenseFile().ifPresent(licenseFile -> {
             // need to copy license file to the working directory
             // and convert to rtf if needed
-            Path lfile = Path.of(licenseFile);
-            Path destFile = CONFIG_ROOT.fetchFrom(params)
-                    .resolve(lfile.getFileName());
+            Path destFile = env.configDir().resolve(licenseFile.getFileName());
 
-            IOUtils.copyFile(lfile, destFile);
+            try {
+                IOUtils.copyFile(licenseFile, destFile);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
             destFile.toFile().setWritable(true);
             ensureByMutationFileIsRTF(destFile);
-        }
-
-        var serviceInstallerResource = initServiceInstallerResource(params);
-        if (serviceInstallerResource != null) {
-            var serviceInstallerPath = serviceInstallerResource.getExternalPath();
-            params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
-                    serviceInstallerPath, serviceInstallerPath.getFileName()));
-        }
+        });
     }
 
     @Override
@@ -420,199 +243,206 @@ public class WinMsiBundler  extends AbstractBundler {
 
         IOUtils.writableOutputDir(outputParentDir);
 
-        Path imageDir = MSI_IMAGE_DIR.fetchFrom(params);
-        try {
-            Files.createDirectories(imageDir);
+        // Order is important!
+        var pkg = WinFromParams.MSI_PACKAGE.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-            prepareProto(params);
+        WinPackagingPipeline.build()
+                .excludeDirFromCopying(outputParentDir)
+                .task(PackagingPipeline.PackageTaskID.CREATE_CONFIG_FILES)
+                        .packageAction(this::prepareConfigFiles)
+                        .add()
+                .task(PackagingPipeline.PackageTaskID.CREATE_PACKAGE_FILE)
+                        .packageAction(this::buildPackage)
+                        .add()
+                .create().execute(env, pkg, outputParentDir);
 
-            for (var wixFragment : wixFragments) {
-                wixFragment.initFromParams(params);
-                wixFragment.addFilesToConfigRoot();
-            }
-
-            Map<String, String> wixVars = prepareMainProjectFile(params);
-
-            new ScriptRunner()
-            .setDirectory(imageDir)
-            .setResourceCategoryId("resource.post-app-image-script")
-            .setScriptNameSuffix("post-image")
-            .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
-            .run(params);
-
-            return buildMSI(params, wixVars, outputParentDir);
-        } catch (IOException ex) {
-            Log.verbose(ex);
-            throw new PackagerException(ex);
-        }
+        return outputParentDir.resolve(pkg.packageFileNameWithSuffix()).toAbsolutePath();
     }
 
-    private long getAppImageSizeKb(Map<String, ? super Object> params) throws
-            IOException {
-        ApplicationLayout appLayout;
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            appLayout = ApplicationLayout.javaRuntime();
-        } else {
-            appLayout = ApplicationLayout.windowsAppImage();
-        }
-        appLayout = appLayout.resolveAt(WIN_APP_IMAGE.fetchFrom(params));
-
-        long size = appLayout.sizeInBytes() >> 10;
-
-        return size;
-    }
-
-    private Map<String, String> prepareMainProjectFile(
-            Map<String, ? super Object> params) throws IOException {
-        Map<String, String> data = new HashMap<>();
-
-        final UUID productCode = getProductCode(params);
-        final UUID upgradeCode = getUpgradeCode(params);
-
-        data.put("JpProductCode", productCode.toString());
-        data.put("JpProductUpgradeCode", upgradeCode.toString());
-
-        Log.verbose(MessageFormat.format(I18N.getString("message.product-code"),
-                productCode));
-        Log.verbose(MessageFormat.format(I18N.getString("message.upgrade-code"),
-                upgradeCode));
-
-        data.put("JpAllowUpgrades", "yes");
-        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
-            data.put("JpAllowDowngrades", "yes");
+    private void prepareConfigFiles(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws PackagerException, IOException {
+        prepareProto(env.pkg(), env.env(), env.resolvedLayout());
+        for (var wixFragment : wixFragments) {
+            wixFragment.initFromParams(env.env(), env.pkg());
+            wixFragment.addFilesToConfigRoot();
         }
 
-        data.put("JpAppName", APP_NAME.fetchFrom(params));
-        data.put("JpAppDescription", DESCRIPTION.fetchFrom(params));
-        data.put("JpAppVendor", VENDOR.fetchFrom(params));
-        data.put("JpAppVersion", PRODUCT_VERSION.fetchFrom(params));
-        if (Files.exists(installerIcon)) {
-            data.put("JpIcon", installerIcon.toString());
-        }
+        final var msiOut = env.outputDir().resolve(env.pkg().packageFileNameWithSuffix());
 
-        Optional.ofNullable(HELP_URL.fetchFrom(params)).ifPresent(value -> {
-            data.put("JpHelpURL", value);
-        });
+        Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
 
-        Optional.ofNullable(UPDATE_URL.fetchFrom(params)).ifPresent(value -> {
-            data.put("JpUpdateURL", value);
-        });
+        final var wixVars = createWixVars(env);
 
-        Optional.ofNullable(ABOUT_URL.fetchFrom(params)).ifPresent(value -> {
-            data.put("JpAboutURL", value);
-        });
+        final var wixObjDir = env.env().buildRoot().resolve("wixobj");
 
-        data.put("JpAppSizeKb", Long.toString(getAppImageSizeKb(params)));
+        final var configDir = env.env().configDir();
 
-        final Path configDir = CONFIG_ROOT.fetchFrom(params);
-
-        data.put("JpConfigDir", configDir.toAbsolutePath().toString());
-
-        if (MSI_SYSTEM_WIDE.fetchFrom(params)) {
-            data.put("JpIsSystemWide", "yes");
-        }
-
-        // Copy standard l10n files.
-        for (String loc : Arrays.asList("de", "en", "ja", "zh_CN")) {
-            String fname = "MsiInstallerStrings_" + loc + ".wxl";
-            createResource(fname, params)
-                    .setCategory(I18N.getString("resource.wxl-file"))
-                    .saveToFile(configDir.resolve(fname));
-        }
-
-        createResource("main.wxs", params)
-                .setCategory(I18N.getString("resource.main-wix-file"))
-                .saveToFile(configDir.resolve("main.wxs"));
-
-        createResource("overrides.wxi", params)
-                .setCategory(I18N.getString("resource.overrides-wix-file"))
-                .saveToFile(configDir.resolve("overrides.wxi"));
-
-        return data;
-    }
-
-    private Path buildMSI(Map<String, ? super Object> params,
-            Map<String, String> wixVars, Path outdir)
-            throws IOException {
-
-        Path msiOut = outdir.resolve(INSTALLER_FILE_NAME.fetchFrom(params) + ".msi");
-
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-msi-config"), msiOut.toAbsolutePath()
-                        .toString()));
-
-        WixPipeline wixPipeline = new WixPipeline()
-        .setToolset(wixToolset.entrySet().stream().collect(
-                Collectors.toMap(
-                        entry -> entry.getKey(),
-                        entry -> entry.getValue().path)))
-        .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
-        .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
-        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"), wixVars);
+        final var wixPipelineBuilder = WixPipeline.build()
+                .setWixObjDir(wixObjDir)
+                .setWorkDir(env.env().appImageDir())
+                .addSource(configDir.resolve("main.wxs"), wixVars);
 
         for (var wixFragment : wixFragments) {
-            wixFragment.configureWixPipeline(wixPipeline);
+            wixFragment.configureWixPipeline(wixPipelineBuilder);
         }
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.generating-msi"), msiOut.toAbsolutePath().toString()));
+        switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipelineBuilder.addLightOptions("-sice:ICE27");
 
-        wixPipeline.addLightOptions("-sice:ICE27");
-
-        if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
-            wixPipeline.addLightOptions("-sice:ICE91");
+                if (!env.pkg().isSystemWideInstall()) {
+                    wixPipelineBuilder.addLightOptions("-sice:ICE91");
+                }
+            }
+            case Wix4 -> {
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
         }
+
+        var primaryWxlFiles = Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
+            return configDir.resolve("MsiInstallerStrings_" + loc + ".wxl");
+        }).toList();
+
+        var wixResources = new WixSourceConverter.ResourceGroup(wixToolset.getType());
+
+        // Copy standard l10n files.
+        for (var path : primaryWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(env.env().createResource(name).setPublicName(name).setCategory(
+                    I18N.getString("resource.wxl-file")), path);
+        }
+
+        wixResources.addResource(env.env().createResource("main.wxs").setPublicName("main.wxs").
+                setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
+
+        wixResources.addResource(env.env().createResource("overrides.wxi").setPublicName(
+                "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
+                configDir.resolve("overrides.wxi"));
 
         // Filter out custom l10n files that were already used to
         // override primary l10n files. Ignore case filename comparison,
         // both lists are expected to be short.
-        List<Path> primaryWxlFiles = getWxlFilesFromDir(params, CONFIG_ROOT);
-        List<Path> customWxlFiles = getWxlFilesFromDir(params, RESOURCE_DIR).stream()
+        List<Path> customWxlFiles = env.env().resourceDir()
+                .map(WinMsiBundler::getWxlFilesFromDir)
+                .orElseGet(Collections::emptyList)
+                .stream()
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
                                 custom.getFileName().toString())))
-                .peek(custom -> Log.verbose(MessageFormat.format(
-                        I18N.getString("message.using-custom-resource"),
-                                String.format("[%s]", I18N.getString("resource.wxl-file")),
-                                custom.getFileName().toString())))
-                .toList();
+                .peek(custom -> Log.verbose(I18N.format(
+                        "message.using-custom-resource", String.format("[%s]",
+                                I18N.getString("resource.wxl-file")),
+                        custom.getFileName()))).toList();
+
+        // Copy custom l10n files.
+        for (var path : customWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(env.env().createResource(name).setPublicName(name).
+                    setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
+                    getString("resource.wxl-file")), configDir.resolve(name));
+        }
+
+        // Save all WiX resources into config dir.
+        wixResources.saveResources();
 
         // All l10n files are supplied to WiX with "-loc", but only
         // Cultures from custom files and a single primary Culture are
         // included into "-cultures" list
         for (var wxl : primaryWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipelineBuilder.addLightOptions("-loc", wxl.toString());
         }
 
         List<String> cultures = new ArrayList<>();
         for (var wxl : customWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wxl = configDir.resolve(wxl.getFileName());
+            wixPipelineBuilder.addLightOptions("-loc", wxl.toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }
 
         // Append a primary culture bases on runtime locale.
-        final Path primaryWxlFile = CONFIG_ROOT.fetchFrom(params).resolve(
+        final Path primaryWxlFile = configDir.resolve(
                 I18N.getString("resource.wxl-file-name"));
         cultures.add(getCultureFromWxlFile(primaryWxlFile));
 
         // Build ordered list of unique cultures.
         Set<String> uniqueCultures = new LinkedHashSet<>();
         uniqueCultures.addAll(cultures);
-        wixPipeline.addLightOptions(uniqueCultures.stream().collect(
-                Collectors.joining(";", "-cultures:", "")));
-
-        wixPipeline.buildMsi(msiOut.toAbsolutePath());
-
-        return msiOut;
-    }
-
-    private static List<Path> getWxlFilesFromDir(Map<String, ? super Object> params,
-            StandardBundlerParam<Path> pathParam) throws IOException {
-        Path dir = pathParam.fetchFrom(params);
-        if (dir == null) {
-            return Collections.emptyList();
+        switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipelineBuilder.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
+                        "-cultures:", "")));
+            }
+            case Wix4 -> {
+                uniqueCultures.forEach(culture -> {
+                    wixPipelineBuilder.addLightOptions("-culture", culture);
+                });
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
         }
 
+        Files.createDirectories(wixObjDir);
+        wixPipeline = wixPipelineBuilder.create(wixToolset);
+    }
+
+    private void buildPackage(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws PackagerException, IOException {
+        final var msiOut = env.outputDir().resolve(env.pkg().packageFileNameWithSuffix());
+        Log.verbose(I18N.format("message.generating-msi", msiOut.toAbsolutePath()));
+        wixPipeline.buildMsi(msiOut.toAbsolutePath());
+    }
+
+    private Map<String, String> createWixVars(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws IOException {
+        Map<String, String> data = new HashMap<>();
+
+        final var pkg = env.pkg();
+
+        data.put("JpProductCode", pkg.productCode().toString());
+        data.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
+
+        Log.verbose(I18N.format("message.product-code", pkg.productCode()));
+        Log.verbose(I18N.format("message.upgrade-code", pkg.upgradeCode()));
+
+        data.put("JpAllowUpgrades", "yes");
+        if (!pkg.isRuntimeInstaller()) {
+            data.put("JpAllowDowngrades", "yes");
+        }
+
+        data.put("JpAppName", pkg.packageName());
+        data.put("JpAppDescription", pkg.description());
+        data.put("JpAppVendor", pkg.app().vendor());
+        data.put("JpAppVersion", pkg.version());
+        if (Files.exists(installerIcon)) {
+            data.put("JpIcon", installerIcon.toString());
+        }
+
+        pkg.helpURL().ifPresent(value -> {
+            data.put("JpHelpURL", value);
+        });
+
+        pkg.updateURL().ifPresent(value -> {
+            data.put("JpUpdateURL", value);
+        });
+
+        pkg.aboutURL().ifPresent(value -> {
+            data.put("JpAboutURL", value);
+        });
+
+        data.put("JpAppSizeKb", Long.toString(AppImageLayout.toPathGroup(
+                env.resolvedLayout()).sizeInBytes() >> 10));
+
+        data.put("JpConfigDir", env.env().configDir().toAbsolutePath().toString());
+
+        if (pkg.isSystemWideInstall()) {
+            data.put("JpIsSystemWide", "yes");
+        }
+
+        return data;
+    }
+
+    private static List<Path> getWxlFilesFromDir(Path dir) {
         final String glob = "glob:**/*.wxl";
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(
                 glob);
@@ -623,10 +453,12 @@ public class WinMsiBundler  extends AbstractBundler {
                     .filter(pathMatcher::matches)
                     .sorted((a, b) -> a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString()))
                     .toList();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
-    private static String getCultureFromWxlFile(Path wxlPath) throws IOException {
+    private static String getCultureFromWxlFile(Path wxlPath) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(false);
@@ -636,25 +468,24 @@ public class WinMsiBundler  extends AbstractBundler {
 
             XPath xPath = XPathFactory.newInstance().newXPath();
             NodeList nodes = (NodeList) xPath.evaluate(
-                    "//WixLocalization/@Culture", doc,
-                    XPathConstants.NODESET);
+                    "//WixLocalization/@Culture", doc, XPathConstants.NODESET);
             if (nodes.getLength() != 1) {
-                throw new IOException(MessageFormat.format(I18N.getString(
-                        "error.extract-culture-from-wix-l10n-file"),
-                        wxlPath.toAbsolutePath()));
+                throw new IOException(I18N.format(
+                        "error.extract-culture-from-wix-l10n-file",
+                        wxlPath.toAbsolutePath().normalize()));
             }
 
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
-            throw new IOException(MessageFormat.format(I18N.getString(
-                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath()), ex);
+            throw new UncheckedIOException(new IOException(
+                    I18N.format("error.read-wix-l10n-file", wxlPath.toAbsolutePath().normalize()), ex));
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
     private static void ensureByMutationFileIsRTF(Path f) {
-        if (f == null || !Files.isRegularFile(f)) return;
-
         try {
             boolean existingLicenseIsRTF = false;
 
@@ -720,38 +551,10 @@ public class WinMsiBundler  extends AbstractBundler {
         } catch (IOException e) {
             Log.verbose(e);
         }
-
-    }
-
-    private static OverridableResource initServiceInstallerResource(
-            Map<String, ? super Object> params) {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            // Runtime installer doesn't install launchers,
-            // service installer not needed
-            return null;
-        }
-
-        if (!AppImageFile.getLaunchers(
-                StandardBundlerParam.getPredefinedAppImage(params), params).stream().anyMatch(
-                LauncherInfo::isService)) {
-            // Not a single launcher is requested to be installed as a service,
-            // service installer not needed
-            return null;
-        }
-
-        var result = createResource(null, params)
-                .setPublicName("service-installer.exe")
-                .setSourceOrder(OverridableResource.Source.External);
-        if (result.getResourceDir() == null) {
-            return null;
-        }
-
-        return result.setExternal(result.getResourceDir().resolve(
-                result.getPublicName()));
     }
 
     private Path installerIcon;
-    private Map<WixTool, WixTool.ToolInfo> wixToolset;
-    private AppImageBundler appImageBundler;
+    private WixToolset wixToolset;
+    private WixPipeline wixPipeline;
     private final List<WixFragmentBuilder> wixFragments;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 import com.sun.jdi.connect.*;
 
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.*;
@@ -796,8 +797,8 @@ public class TTY implements EventNotifier {
             this.handler = new EventHandler(this, true, trackVthreads);
         }
         try {
-            BufferedReader in =
-                    new BufferedReader(new InputStreamReader(System.in));
+            Charset charset = Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset());
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
 
             Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
 
@@ -980,7 +981,6 @@ public class TTY implements EventNotifier {
                 return;
             } else if (
                    // Standard VM options passed on
-                   token.equals("-v") || token.startsWith("-v:") ||  // -v[:...]
                    token.startsWith("-verbose") ||                  // -verbose[:...]
                    token.startsWith("-D") ||
                    // -classpath handled below
@@ -988,12 +988,9 @@ public class TTY implements EventNotifier {
                    token.startsWith("-X") ||
                    // Old-style options (These should remain in place as long as
                    //  the standard VM accepts them)
-                   token.equals("-noasyncgc") || token.equals("-prof") ||
                    token.equals("-verify") ||
                    token.equals("-verifyremote") ||
-                   token.equals("-verbosegc") ||
-                   token.startsWith("-ms") || token.startsWith("-mx") ||
-                   token.startsWith("-ss") || token.startsWith("-oss") ) {
+                   token.equals("-verbosegc")) {
 
                 javaArgs = addArgument(javaArgs, token);
             } else if (token.startsWith("-R")) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,12 @@
  * @summary Test vectorization of Streams$RangeIntSpliterator::forEachRemaining
  * @requires vm.compiler2.enabled & vm.compMode != "Xint"
  *
- * @run main compiler.vectorization.TestForEachRem test1
- * @run main compiler.vectorization.TestForEachRem test2
- * @run main compiler.vectorization.TestForEachRem test3
- * @run main compiler.vectorization.TestForEachRem test4
+ * @run main/othervm -Xbatch compiler.vectorization.TestForEachRem test1
+ * @run main/othervm -Xbatch compiler.vectorization.TestForEachRem test2
+ * @run main/othervm -Xbatch compiler.vectorization.TestForEachRem test3
+ * @run main/othervm -Xbatch compiler.vectorization.TestForEachRem test4
+ * @run main/othervm -Xbatch compiler.vectorization.TestForEachRem test5
+ * @run main/othervm -Xbatch compiler.vectorization.TestForEachRem test6
  */
 
 package compiler.vectorization;
@@ -65,7 +67,34 @@ public class TestForEachRem {
        });
     }
 
+    static void test5(int[] data) {
+       IntStream.range(0, RANGE - 2).forEach(j -> {
+           data[j + 2] = data[j];
+       });
+    }
+
+    static void initByte(byte[] data) {
+       IntStream.range(0, RANGE).parallel().forEach(j -> {
+           data[j] = (byte)j;
+       });
+    }
+
+    static void test6(byte[] data) {
+       // 2-byte offset -> can only vectorize if alignment not required by hardware
+       IntStream.range(0, RANGE - 2).forEach(j -> {
+           data[j] = data[j + 2];
+       });
+    }
+
     static void verify(String name, int[] data, int[] gold) {
+        for (int i = 0; i < RANGE; i++) {
+            if (data[i] != gold[i]) {
+                throw new RuntimeException(" Invalid " + name + " result: data[" + i + "]: " + data[i] + " != " + gold[i]);
+            }
+        }
+    }
+
+    static void verify(String name, byte[] data, byte[] gold) {
         for (int i = 0; i < RANGE; i++) {
             if (data[i] != gold[i]) {
                 throw new RuntimeException(" Invalid " + name + " result: data[" + i + "]: " + data[i] + " != " + gold[i]);
@@ -76,9 +105,11 @@ public class TestForEachRem {
     public static void main(String[] args) {
         int[] data = new int[RANGE];
         int[] gold = new int[RANGE];
+        byte[] dataB = new byte[RANGE];
+        byte[] goldB = new byte[RANGE];
 
         if (args.length == 0) {
-            throw new RuntimeException(" Missing test name: test1, test2, test3, test4");
+            throw new RuntimeException(" Missing test name: test1, test2, test3, test4, test5");
         }
 
         if (args[0].equals("test1")) {
@@ -126,5 +157,30 @@ public class TestForEachRem {
             verify("test4", data, gold);
             System.out.println(" Finished test4.");
         }
+
+        if (args[0].equals("test5")) {
+            System.out.println(" Run test5 ...");
+            test1(gold); // reset
+            test5(gold);
+            for (int i = 0; i < ITER; i++) {
+                test1(data); // reset
+                test5(data);
+            }
+            verify("test5", data, gold);
+            System.out.println(" Finished test5.");
+        }
+
+        if (args[0].equals("test6")) {
+            System.out.println(" Run test6 ...");
+            initByte(goldB); // reset
+            test6(goldB);
+            for (int i = 0; i < ITER; i++) {
+                initByte(dataB); // reset
+                test6(dataB);
+            }
+            verify("test6", dataB, goldB);
+            System.out.println(" Finished test6.");
+        }
+
     }
 }

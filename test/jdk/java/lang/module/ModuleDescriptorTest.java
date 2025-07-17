@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /**
  * @test
+ * @bug 8142968 8158456 8298875
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.module
+ * @library /test/lib
+ * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleDescriptorTest
  * @summary Basic test for java.lang.module.ModuleDescriptor and its builder
  */
@@ -56,13 +59,20 @@ import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.module.ModuleInfoWriter;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import jdk.test.lib.util.ModuleInfoWriter;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 @Test
 public class ModuleDescriptorTest {
+    private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
 
     @DataProvider(name = "invalidNames")
     public Object[][] invalidNames() {
@@ -1084,7 +1094,6 @@ public class ModuleDescriptorTest {
     }
 
     private ModuleDescriptor newModule(String name, String vs) {
-        JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
         Builder builder = JLMA.newModuleBuilder(name, false, Set.of());
         if (vs != null)
             builder.version(vs);
@@ -1094,7 +1103,6 @@ public class ModuleDescriptorTest {
     }
 
     private Requires newRequires(String name, String vs) {
-        JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
         Builder builder = JLMA.newModuleBuilder("foo", false, Set.of());
         if (vs == null) {
             builder.requires(name);
@@ -1361,19 +1369,16 @@ public class ModuleDescriptorTest {
      * Test ModuleDescriptor with a packager finder that doesn't return the
      * complete set of packages.
      */
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
     public void testReadsWithBadPackageFinder() throws Exception {
-        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
-                .requires("java.base")
-                .exports("p")
-                .build();
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ModuleInfoWriter.write(descriptor, baos);
-        ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
+        ByteBuffer bb = ByteBuffer.wrap(ClassFile.of().buildModule(
+                ModuleAttribute.of(
+                        ModuleDesc.of("foo"),
+                        mb -> mb.requires(ModuleDesc.of("java.base"), 0, null)
+                                .exports(PackageDesc.of("p"), 0))));
 
         // package finder returns a set that doesn't include p
-        ModuleDescriptor.read(bb, () -> Set.of("q"));
+        assertThrows(InvalidModuleDescriptorException.class,
+                     () -> ModuleDescriptor.read(bb, () -> Set.of("q")));
     }
 
     @Test(expectedExceptions = InvalidModuleDescriptorException.class)
@@ -1392,63 +1397,76 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.read(bb);
     }
 
-    // The requires table for java.base must be 0 length
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    /**
+     * Test ModuleDescriptor.read reading a module-info for java.base that has a non-0
+     * length requires table.
+     */
     public void testReadOfJavaBaseWithRequires() {
-        ModuleDescriptor descriptor
-            = ModuleDescriptor.newModule("java.base")
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("java.base")
                 .requires("other")
                 .build();
         ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
-        ModuleDescriptor.read(bb);
+        assertThrows(InvalidModuleDescriptorException.class,
+                     () -> ModuleDescriptor.read(bb));
     }
 
-    // The requires table must have an entry for java.base
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    /**
+     * Test ModuleDescriptor.read reading a module-info with a zero length requires table
+     * (no entry for java.base).
+     */
     public void testReadWithEmptyRequires() {
-        ModuleDescriptor descriptor = SharedSecrets.getJavaLangModuleAccess()
-                .newModuleBuilder("m1", false, Set.of()).build();
+        // use non-strict builder to create module that does not require java.base
+        ModuleDescriptor descriptor = JLMA.newModuleBuilder("m", false, Set.of()).build();
         ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
-        ModuleDescriptor.read(bb);
+        assertThrows(InvalidModuleDescriptorException.class,
+                     () -> ModuleDescriptor.read(bb));
     }
 
-    // The requires table must have an entry for java.base
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    /**
+     * Test ModuleDescriptor.read reading a module-info with a non-zero length requires
+     * table that does not have entry for java.base.
+     */
     public void testReadWithNoRequiresBase() {
-        ModuleDescriptor descriptor = SharedSecrets.getJavaLangModuleAccess()
-                .newModuleBuilder("m1", false, Set.of()).requires("m2").build();
+        // use non-strict builder to create module that does not require java.base
+        ModuleDescriptor descriptor = JLMA.newModuleBuilder("m1", false, Set.of())
+                .requires("m2")
+                .build();
         ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
-        ModuleDescriptor.read(bb);
+        assertThrows(InvalidModuleDescriptorException.class,
+                     () -> ModuleDescriptor.read(bb));
     }
 
+    /**
+     * Test ModuleDescriptor.read reading a module-info with a requires entry for
+     * java.base with the ACC_SYNTHETIC flag set.
+     */
+    public void testReadWithSynethticRequiresBase() {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("m")
+                .requires(Set.of(SYNTHETIC), "java.base")
+                .build();
+        ByteBuffer bb = ModuleInfoWriter.toByteBuffer(descriptor);
+        assertThrows(InvalidModuleDescriptorException.class,
+                     () -> ModuleDescriptor.read(bb));
+    }
+
+    /**
+     * Test ModuleDescriptor.read with a null parameter.
+     */
     public void testReadWithNull() throws Exception {
         Module base = Object.class.getModule();
 
-        try {
-            ModuleDescriptor.read((InputStream)null);
-            assertTrue(false);
-        } catch (NullPointerException expected) { }
-
-
-        try (InputStream in = base.getResourceAsStream("module-info.class")) {
-            try {
-                ModuleDescriptor.read(in, null);
-                assertTrue(false);
-            } catch (NullPointerException expected) { }
-        }
-
-        try {
-            ModuleDescriptor.read((ByteBuffer)null);
-            assertTrue(false);
-        } catch (NullPointerException expected) { }
-
+        assertThrows(NullPointerException.class,
+                     () -> ModuleDescriptor.read((InputStream) null));
+        assertThrows(NullPointerException.class,
+                     () -> ModuleDescriptor.read((ByteBuffer) null));
 
         try (InputStream in = base.getResourceAsStream("module-info.class")) {
+            assertThrows(NullPointerException.class,
+                        () -> ModuleDescriptor.read(in, null));
+
             ByteBuffer bb = ByteBuffer.wrap(in.readAllBytes());
-            try {
-                ModuleDescriptor.read(bb, null);
-                assertTrue(false);
-            } catch (NullPointerException expected) { }
+            assertThrows(NullPointerException.class,
+                         () -> ModuleDescriptor.read(bb, null));
         }
     }
 
@@ -1505,4 +1523,66 @@ public class ModuleDescriptorTest {
         assertTrue(s.contains("p1"));
     }
 
+    public void testRequiresTransitiveJavaBaseNotPermitted1() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
+
+        ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+    }
+
+    public void testRequiresTransitiveJavaBaseNotPermitted2() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        byte[] bytecode = baos.toByteArray();
+        ByteBuffer bb = ByteBuffer.wrap(bytecode);
+        setClassFileVersion(bb, ClassFile.JAVA_21_VERSION, -1);
+
+        ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+    }
+
+    public void testRequiresTransitiveJavaBasePermitted() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        byte[] bytecode = baos.toByteArray();
+        ByteBuffer bb = ByteBuffer.wrap(bytecode);
+        setClassFileVersion(bb, -1, ClassFile.PREVIEW_MINOR_VERSION);
+
+        descriptor = ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+
+        assertEquals(descriptor.requires().size(), 1);
+        Requires javaBase = descriptor.requires().iterator().next();
+        assertEquals(javaBase.name(), "java.base");
+        assertEquals(javaBase.modifiers(), Set.of(Modifier.TRANSITIVE));
+    }
+
+    /**Change the classfile versions of the provided classfile to the provided
+     * values.
+     *
+     * @param bytecode the classfile content to modify
+     * @param major the major classfile version to set,
+     *              -1 if the existing version should be kept
+     * @param minor the minor classfile version to set,
+     *              -1 if the existing version should be kept
+     */
+    private void setClassFileVersion(ByteBuffer bb, int major, int minor) {
+        if (minor != (-1)) {
+            bb.putShort(4, (short) minor);
+        }
+        if (major != (-1)) {
+            bb.putShort(6, (short) major);
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -87,13 +87,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignInit
 
     rv = (*ckpFunctions->C_SignInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_SignInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_SignInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif
@@ -147,7 +143,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Sign
     if (rv == CKR_BUFFER_TOO_SMALL) {
         bufP = (CK_BYTE_PTR) malloc(ckSignatureLength);
         if (bufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         rv = (*ckpFunctions->C_Sign)(ckSessionHandle, ckpData, ckDataLength,
@@ -205,7 +201,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignUpdate
         bufLen = min(MAX_HEAP_BUFFER_LEN, jInLen);
         bufP = (CK_BYTE_PTR) malloc((size_t)bufLen);
         if (bufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return;
         }
     }
@@ -264,7 +260,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignFina
     if (rv == CKR_BUFFER_TOO_SMALL) {
         bufP = (CK_BYTE_PTR) malloc(ckSignatureLength);
         if (bufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return NULL;
         }
         rv = (*ckpFunctions->C_SignFinal)(ckSessionHandle, bufP, &ckSignatureLength);
@@ -310,13 +306,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignRecoverIni
 
     rv = (*ckpFunctions->C_SignRecoverInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_SignRecoverInit, stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_SignRecoverInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif
@@ -355,7 +347,7 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignRecover
     } else {
         inBufP = (CK_BYTE_PTR) malloc((size_t)jInLen);
         if (inBufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return 0;
         }
         ckSignatureLength = jInLen;
@@ -371,7 +363,7 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignRecover
     if ((rv == CKR_BUFFER_TOO_SMALL) && (ckSignatureLength <= jIntToCKULong(jOutLen))) {
         outBufP = (CK_BYTE_PTR) malloc(ckSignatureLength);
         if (outBufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         rv = (*ckpFunctions->C_SignRecover)(ckSessionHandle, inBufP, jInLen, outBufP, &ckSignatureLength);
@@ -420,13 +412,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyInit
 
     rv = (*ckpFunctions->C_VerifyInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_VerifyInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_VerifyInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif
@@ -516,7 +504,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyUpdate
         bufLen = min(MAX_HEAP_BUFFER_LEN, jInLen);
         bufP = (CK_BYTE_PTR) malloc((size_t)bufLen);
         if (bufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
     }
@@ -608,13 +596,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyRecoverI
 
     rv = (*ckpFunctions->C_VerifyRecoverInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_VerifyRecoverInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_VerifyRecoverInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif
@@ -653,7 +637,7 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyRecover
     } else {
         inBufP = (CK_BYTE_PTR) malloc((size_t)jInLen);
         if (inBufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return 0;
         }
         ckDataLength = jInLen;
@@ -670,7 +654,7 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyRecover
     if ((rv == CKR_BUFFER_TOO_SMALL) && (ckDataLength <= jIntToCKULong(jOutLen))) {
         outBufP = (CK_BYTE_PTR) malloc(ckDataLength);
         if (outBufP == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         rv = (*ckpFunctions->C_VerifyRecover)(ckSessionHandle, inBufP, jInLen, outBufP, &ckDataLength);

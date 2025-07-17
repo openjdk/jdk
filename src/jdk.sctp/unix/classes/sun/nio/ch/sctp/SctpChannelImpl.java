@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.nio.ch.sctp;
 
 import java.net.InetAddress;
@@ -53,6 +54,8 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.NotificationHandler;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.net.util.IPAddressUtil;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
@@ -74,13 +77,16 @@ import static sun.nio.ch.sctp.ResultContainer.SHUTDOWN;
 public class SctpChannelImpl extends SctpChannel
     implements SelChImpl
 {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
     private final FileDescriptor fd;
 
     private final int fdVal;
 
-    /* IDs of native threads doing send and receivess, for signalling */
-    private volatile long receiverThread = 0;
-    private volatile long senderThread = 0;
+    /* IDs of native threads doing send and receive, for signalling */
+    private volatile long receiverThread;
+    private volatile long senderThread;
 
     /* Lock held by current receiving or connecting thread */
     private final Object receiveLock = new Object();
@@ -89,7 +95,7 @@ public class SctpChannelImpl extends SctpChannel
     private final Object sendLock = new Object();
 
     private final ThreadLocal<Boolean> receiveInvoked =
-        new ThreadLocal<Boolean>() {
+        new ThreadLocal<>() {
              @Override protected Boolean initialValue() {
                  return Boolean.FALSE;
             }
@@ -108,11 +114,11 @@ public class SctpChannelImpl extends SctpChannel
         KILLED,
     }
     /* -- The following fields are protected by stateLock -- */
-    private ChannelState state = ChannelState.UNINITIALIZED;
+    private ChannelState state;
 
     /* Binding; Once bound the port will remain constant. */
     int port = -1;
-    private HashSet<InetSocketAddress> localAddresses = new HashSet<InetSocketAddress>();
+    private final Set<InetSocketAddress> localAddresses = new HashSet<>();
     /* Has the channel been bound to the wildcard address */
     private boolean wildcard; /* false */
     //private InetSocketAddress remoteAddress = null;
@@ -187,11 +193,6 @@ public class SctpChannelImpl extends SctpChannel
                         SctpNet.throwAlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
-                    @SuppressWarnings("removal")
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null) {
-                        sm.checkListen(isa.getPort());
-                    }
                     Net.bind(fd, isa.getAddress(), isa.getPort());
                     InetSocketAddress boundIsa = Net.localAddress(fd);
                     port = boundIsa.getPort();
@@ -220,7 +221,7 @@ public class SctpChannelImpl extends SctpChannel
         return this;
     }
 
-    private SctpChannel bindUnbindAddress(InetAddress address, boolean add)
+    private void bindUnbindAddress(InetAddress address, boolean add)
             throws IOException {
         if (address == null)
             throw new IllegalArgumentException();
@@ -276,12 +277,11 @@ public class SctpChannelImpl extends SctpChannel
                 }
             }
         }
-        return this;
     }
 
     private boolean isBound() {
         synchronized (stateLock) {
-            return port == -1 ? false : true;
+            return port != -1;
         }
     }
 
@@ -358,11 +358,6 @@ public class SctpChannelImpl extends SctpChannel
             synchronized (sendLock) {
                 ensureOpenAndUnconnected();
                 InetSocketAddress isa = Net.checkAddress(endpoint);
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null)
-                    sm.checkConnect(isa.getAddress().getHostAddress(),
-                                    isa.getPort());
                 synchronized (blockingLock()) {
                     int n = 0;
                     try {
@@ -691,28 +686,22 @@ public class SctpChannelImpl extends SctpChannel
         }
     }
 
-    private static class DefaultOptionsHolder {
-        static final Set<SctpSocketOption<?>> defaultOptions = defaultOptions();
-
-        private static Set<SctpSocketOption<?>> defaultOptions() {
-            HashSet<SctpSocketOption<?>> set = new HashSet<SctpSocketOption<?>>(10);
-            set.add(SCTP_DISABLE_FRAGMENTS);
-            set.add(SCTP_EXPLICIT_COMPLETE);
-            set.add(SCTP_FRAGMENT_INTERLEAVE);
-            set.add(SCTP_INIT_MAXSTREAMS);
-            set.add(SCTP_NODELAY);
-            set.add(SCTP_PRIMARY_ADDR);
-            set.add(SCTP_SET_PEER_PRIMARY_ADDR);
-            set.add(SO_SNDBUF);
-            set.add(SO_RCVBUF);
-            set.add(SO_LINGER);
-            return Collections.unmodifiableSet(set);
-        }
-    }
-
     @Override
     public final Set<SctpSocketOption<?>> supportedOptions() {
-        return DefaultOptionsHolder.defaultOptions;
+        final class Holder {
+            static final Set<SctpSocketOption<?>> DEFAULT_OPTIONS = Set.of(
+                    SCTP_DISABLE_FRAGMENTS,
+                    SCTP_EXPLICIT_COMPLETE,
+                    SCTP_FRAGMENT_INTERLEAVE,
+                    SCTP_INIT_MAXSTREAMS,
+                    SCTP_NODELAY,
+                    SCTP_PRIMARY_ADDR,
+                    SCTP_SET_PEER_PRIMARY_ADDR,
+                    SO_SNDBUF,
+                    SO_RCVBUF,
+                    SO_LINGER);
+        }
+        return Holder.DEFAULT_OPTIONS;
     }
 
     @Override
@@ -839,30 +828,32 @@ public class SctpChannelImpl extends SctpChannel
                                         boolean peek)
         throws IOException
     {
-        int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
+        NIO_ACCESS.acquireSession(bb);
+        try {
+            int n = receive0(fd, resultContainer, NIO_ACCESS.getBufferAddress(bb) + pos, rem, peek);
 
-        if (n > 0)
-            bb.position(pos + n);
-        return n;
+            if (n > 0)
+                bb.position(pos + n);
+            return n;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
+        }
     }
 
-    private InternalNotificationHandler internalNotificationHandler =
+    private final InternalNotificationHandler internalNotificationHandler =
             new InternalNotificationHandler();
 
-    private void handleNotificationInternal(ResultContainer resultContainer)
-    {
+    private void handleNotificationInternal(ResultContainer resultContainer) {
         invokeNotificationHandler(resultContainer,
                 internalNotificationHandler, null);
     }
 
-    private class InternalNotificationHandler
-            extends AbstractNotificationHandler<Object>
-    {
+    private final class InternalNotificationHandler
+            extends AbstractNotificationHandler<Object> {
         @Override
-        public HandlerResult handleNotification(
-                AssociationChangeNotification not, Object unused) {
-            if (not.event().equals(
-                    AssociationChangeNotification.AssocChangeEvent.COMM_UP) &&
+        public HandlerResult handleNotification(AssociationChangeNotification not,
+                                                Object unused) {
+            if (not.event().equals(AssociationChangeNotification.AssocChangeEvent.COMM_UP) &&
                     association == null) {
                 AssociationChange sac = (AssociationChange) not;
                 association = new AssociationImpl
@@ -872,40 +863,32 @@ public class SctpChannelImpl extends SctpChannel
         }
     }
 
-    private <T> HandlerResult invokeNotificationHandler
-                                 (ResultContainer resultContainer,
-                                  NotificationHandler<T> handler,
-                                  T attachment) {
+    private <T> HandlerResult invokeNotificationHandler(ResultContainer resultContainer,
+                                                        NotificationHandler<T> handler,
+                                                        T attachment) {
         SctpNotification notification = resultContainer.notification();
         synchronized (stateLock) {
             notification.setAssociation(association);
         }
 
-        if (!(handler instanceof AbstractNotificationHandler)) {
+        if (!(handler instanceof AbstractNotificationHandler<T> absHandler)) {
             return handler.handleNotification(notification, attachment);
         }
 
         /* AbstractNotificationHandler */
-        AbstractNotificationHandler<T> absHandler =
-                (AbstractNotificationHandler<T>)handler;
-        switch(resultContainer.type()) {
-            case ASSOCIATION_CHANGED :
-                return absHandler.handleNotification(
-                        resultContainer.getAssociationChanged(), attachment);
-            case PEER_ADDRESS_CHANGED :
-                return absHandler.handleNotification(
-                        resultContainer.getPeerAddressChanged(), attachment);
-            case SEND_FAILED :
-                return absHandler.handleNotification(
-                        resultContainer.getSendFailed(), attachment);
-            case SHUTDOWN :
-                return absHandler.handleNotification(
-                        resultContainer.getShutdown(), attachment);
-            default :
-                /* implementation specific handlers */
-                return absHandler.handleNotification(
-                        resultContainer.notification(), attachment);
-        }
+        return switch (resultContainer.type()) {
+            case ASSOCIATION_CHANGED  -> absHandler.handleNotification(
+                    resultContainer.getAssociationChanged(), attachment);
+            case PEER_ADDRESS_CHANGED -> absHandler.handleNotification(
+                    resultContainer.getPeerAddressChanged(), attachment);
+            case SEND_FAILED          -> absHandler.handleNotification(
+                    resultContainer.getSendFailed(), attachment);
+            case SHUTDOWN             -> absHandler.handleNotification(
+                    resultContainer.getShutdown(), attachment);
+            /* implementation specific handlers */
+            default                   -> absHandler.handleNotification(
+                    resultContainer.notification(), attachment);
+        };
     }
 
     private void checkAssociation(Association sendAssociation) {
@@ -1028,11 +1011,16 @@ public class SctpChannelImpl extends SctpChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
-                            port, -1 /*121*/, streamNumber, unordered, ppid);
-        if (written > 0)
-            bb.position(pos + written);
-        return written;
+        NIO_ACCESS.acquireSession(bb);
+        try {
+            int written = send0(fd, NIO_ACCESS.getBufferAddress(bb) + pos, rem, addr,
+                    port, -1 /*121*/, streamNumber, unordered, ppid);
+            if (written > 0)
+                bb.position(pos + written);
+            return written;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
+        }
     }
 
     @Override
@@ -1095,16 +1083,10 @@ public class SctpChannelImpl extends SctpChannel
         loadSctpLibrary();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     private static void loadSctpLibrary() {
         IOUtil.load();   /* loads nio & net native libraries */
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("sctp");
-                    return null;
-                }
-            });
+        System.loadLibrary("sctp");
         initIDs();
     }
 }

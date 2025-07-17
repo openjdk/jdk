@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ class Encode;
 class Attribute;
 class Effect;
 class ExpandRule;
+class Flag;
 class RewriteRule;
 class Constraint;
 class ConstructRule;
@@ -172,11 +173,12 @@ protected:
   Interface     *interface_parse();      // Parse operand interface rule
   Interface     *mem_interface_parse();  // Parse memory interface rule
   Interface     *cond_interface_parse(); // Parse conditional interface rule
-  char          *interface_field_parse(const char** format = NULL);// Parse field contents
+  char          *interface_field_parse(const char** format = nullptr);// Parse field contents
 
   FormatRule    *format_parse(void);     // Parse format rule
   FormatRule    *template_parse(void);     // Parse format rule
   void           effect_parse(InstructForm *instr); // Parse effect rule
+  Flag          *flag_parse(InstructForm *instr); // Parse flag rule
   ExpandRule    *expand_parse(InstructForm *instr); // Parse expand rule
   RewriteRule   *rewrite_parse(void);    // Parse rewrite rule
   Constraint    *constraint_parse(void); // Parse constraint rule

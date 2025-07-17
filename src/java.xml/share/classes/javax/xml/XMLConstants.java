@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,55 @@
 package javax.xml;
 
 /**
- * <p>Utility class to contain basic XML values as constants.
+ * Defines constants for XML Processing APIs.
+ *
+ * <h2 id="EAP">External Access Properties</h2>
+ * The value of the external access properties, including {@link #ACCESS_EXTERNAL_DTD},
+ * {@link #ACCESS_EXTERNAL_SCHEMA}, and {@link #ACCESS_EXTERNAL_STYLESHEET},
+ * is defined as follows.
+ *
+ * <h3 id="EAPValue">Value:</h3>
+ * A list of protocols separated by comma. A protocol is the scheme portion of a
+ * {@link java.net.URI}, or in the case of the JAR protocol, "jar" plus the scheme
+ * portion separated by colon. A scheme is defined as:
+ *
+ * <blockquote>
+ * scheme = alpha *( alpha | digit | "+" | "-" | "." )<br>
+ * where alpha = a-z and A-Z.<br><br>
+ *
+ * And the JAR protocol:<br>
+ *
+ * jar[:scheme]<br><br>
+ *
+ * Protocols including the keyword "jar" are case-insensitive. Any whitespaces as defined by
+ * {@link java.lang.Character#isSpaceChar } in the value will be ignored.
+ * Examples of protocols are file, http, jar:file.
+ *
+ * </blockquote>
+ *
+ * <h3>Default value:</h3>
+ * The default value is implementation specific and therefore not specified.
+ * The following options are provided for consideration:
+ * <blockquote>
+ * <UL>
+ *     <LI>an empty string to deny all access to external references;</LI>
+ *     <LI>a specific protocol, such as file, to give permission to only the protocol;</LI>
+ *     <LI>the keyword "all" to grant  permission to all protocols.</LI>
+ * </UL><br>
+ *      When FEATURE_SECURE_PROCESSING is enabled,  it is recommended that implementations
+ *      restrict external connections by default, though this may cause problems for applications
+ *      that process XML/XSD/XSL with external references.
+ * </blockquote>
+ *
+ * <h3>Granting all access:</h3>
+ * The keyword "all" grants permission to all protocols.
+ *
+ * <h2 id="PropPrec">Property Precedence</h2>
+ * Properties, including the <a href="#EAP">External Access Properties</a> and
+ * {@link #USE_CATALOG}, can be specified through multiple configuration sources.
+ * They follow the configuration process as defined in the
+ * <a href="{@docRoot}/java.xml/module-summary.html#Conf">Configuration</a> section
+ * of the module summary.
  *
  * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xml11/">Extensible Markup Language (XML) 1.1</a>
@@ -198,54 +246,15 @@ public final class XMLConstants {
          * for example, {@link org.xml.sax.SAXException} is thrown.
          *
          * <p>
-         * <b>Value: </b> a list of protocols separated by comma. A protocol is the scheme portion of a
-         * {@link java.net.URI}, or in the case of the JAR protocol, "jar" plus the scheme portion
-         * separated by colon.
-         * A scheme is defined as:
-         *
-         * <blockquote>
-         * scheme = alpha *( alpha | digit | "+" | "-" | "." )<br>
-         * where alpha = a-z and A-Z.<br><br>
-         *
-         * And the JAR protocol:<br>
-         *
-         * jar[:scheme]<br><br>
-         *
-         * Protocols including the keyword "jar" are case-insensitive. Any whitespaces as defined by
-         * {@link java.lang.Character#isSpaceChar } in the value will be ignored.
-         * Examples of protocols are file, http, jar:file.
-         *
-         * </blockquote>
-         *
-         *<p>
-         * <b>Default value:</b> The default value is implementation specific and therefore not specified.
-         * The following options are provided for consideration:
-         * <blockquote>
-         * <UL>
-         *     <LI>an empty string to deny all access to external references;</LI>
-         *     <LI>a specific protocol, such as file, to give permission to only the protocol;</LI>
-         *     <LI>the keyword "all" to grant  permission to all protocols.</LI>
-         * </UL><br>
-         *      When FEATURE_SECURE_PROCESSING is enabled,  it is recommended that implementations
-         *      restrict external connections by default, though this may cause problems for applications
-         *      that process XML/XSD/XSL with external references.
-         * </blockquote>
+         * <b>Value: </b> as defined in <a href="#EAP">the class description</a>.
          *
          * <p>
-         * <b>Granting all access:</b>  the keyword "all" grants permission to all protocols.
+         * <b>System Property:</b> {@code javax.xml.accessExternalDTD}.
          *
          * <p>
-         * <b>System Property:</b> The value of this property can be set or overridden by
-         * system property {@code javax.xml.accessExternalDTD}.
-         *
-         *
-         * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * of the property.
-         *
+         * <b>Configuration File:</b>
+         * Yes. The property can be set in the
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
          *
          * @since 1.7
          */
@@ -262,53 +271,16 @@ public final class XMLConstants {
          * for example, org.xml.sax.SAXException is thrown.
          *
          * <p>
-         * <b>Value:</b> a list of protocols separated by comma. A protocol is the scheme portion of a
-         * {@link java.net.URI}, or in the case of the JAR protocol, "jar" plus the scheme portion
-         * separated by colon.
-         * A scheme is defined as:
-         *
-         * <blockquote>
-         * scheme = alpha *( alpha | digit | "+" | "-" | "." )<br>
-         * where alpha = a-z and A-Z.<br><br>
-         *
-         * And the JAR protocol:<br>
-         *
-         * jar[:scheme]<br><br>
-         *
-         * Protocols including the keyword "jar" are case-insensitive. Any whitespaces as defined by
-         * {@link java.lang.Character#isSpaceChar } in the value will be ignored.
-         * Examples of protocols are file, http, jar:file.
-         *
-         * </blockquote>
+         * <b>Value: </b> as defined in <a href="#EAP">the class description</a>.
          *
          * <p>
-         * <b>Default value:</b> The default value is implementation specific and therefore not specified.
-         * The following options are provided for consideration:
-         * <blockquote>
-         * <UL>
-         *     <LI>an empty string to deny all access to external references;</LI>
-         *     <LI>a specific protocol, such as file, to give permission to only the protocol;</LI>
-         *     <LI>the keyword "all" to grant  permission to all protocols.</LI>
-         * </UL><br>
-         *      When FEATURE_SECURE_PROCESSING is enabled,  it is recommended that implementations
-         *      restrict external connections by default, though this may cause problems for applications
-         *      that process XML/XSD/XSL with external references.
-         * </blockquote>
+         * <b>System Property:</b> {@code javax.xml.accessExternalSchema}
          *
          * <p>
-         * <b>Granting all access:</b>  the keyword "all" grants permission to all protocols.
-         *
-         * <p>
-         * <b>System Property:</b> The value of this property can be set or overridden by
-         * system property {@code javax.xml.accessExternalSchema}
-         *
-         * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * of the property.
-         *
+         * <b>Configuration File:</b>
+         * Yes. The property can be set in the
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
+        *
          * @since 1.7
          */
         public static final String ACCESS_EXTERNAL_SCHEMA = "http://javax.xml.XMLConstants/property/accessExternalSchema";
@@ -326,52 +298,15 @@ public final class XMLConstants {
          * will be thrown by the {@link javax.xml.transform.TransformerFactory}.
          *
          * <p>
-         * <b>Value:</b> a list of protocols separated by comma. A protocol is the scheme portion of a
-         * {@link java.net.URI}, or in the case of the JAR protocol, "jar" plus the scheme portion
-         * separated by colon.
-         * A scheme is defined as:
-         *
-         * <blockquote>
-         * scheme = alpha *( alpha | digit | "+" | "-" | "." )<br>
-         * where alpha = a-z and A-Z.<br><br>
-         *
-         * And the JAR protocol:<br>
-         *
-         * jar[:scheme]<br><br>
-         *
-         * Protocols including the keyword "jar" are case-insensitive. Any whitespaces as defined by
-         * {@link java.lang.Character#isSpaceChar } in the value will be ignored.
-         * Examples of protocols are file, http, jar:file.
-         *
-         * </blockquote>
+         * <b>Value: </b> as defined in <a href="#EAP">the class description</a>.
          *
          * <p>
-         * <b>Default value:</b> The default value is implementation specific and therefore not specified.
-         * The following options are provided for consideration:
-         * <blockquote>
-         * <UL>
-         *     <LI>an empty string to deny all access to external references;</LI>
-         *     <LI>a specific protocol, such as file, to give permission to only the protocol;</LI>
-         *     <LI>the keyword "all" to grant  permission to all protocols.</LI>
-         * </UL><br>
-         *      When FEATURE_SECURE_PROCESSING is enabled,  it is recommended that implementations
-         *      restrict external connections by default, though this may cause problems for applications
-         *      that process XML/XSD/XSL with external references.
-         * </blockquote>
+         * <b>System Property:</b> {@code javax.xml.accessExternalStylesheet}
          *
          * <p>
-         * <b>Granting all access:</b>  the keyword "all" grants permission to all protocols.
-         *
-         * <p>
-         * <b>System Property:</b> The value of this property can be set or overridden by
-         * system property {@code javax.xml.accessExternalStylesheet}
-         *
-         * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * of the property.
+         * <b>Configuration File:</b>
+         * Yes. The property can be set in the
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
          *
          * @since 1.7
          */
@@ -384,15 +319,15 @@ public final class XMLConstants {
          * <p>
          * Instructs XML processors to use XML Catalogs to resolve entity references.
          * Catalogs may be set through JAXP factories, system properties, or
-         * jaxp.properties by using the {@code javax.xml.catalog.files} property
+         * configuration file by using the {@code javax.xml.catalog.files} property
          * defined in {@link javax.xml.catalog.CatalogFeatures}.
          * The following code enables Catalog on SAX parser:
-         * <pre>{@code
+         * {@snippet :
          *      SAXParserFactory spf = SAXParserFactory.newInstance();
          *      spf.setFeature(XMLConstants.USE_CATALOG, true);
          *      SAXParser parser = spf.newSAXParser();
          *      parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), "catalog.xml");
-         * }</pre>
+         * }
          *
          * <p>
          * <b>Value:</b> a boolean. If the value is true, and a catalog is set,
@@ -401,15 +336,12 @@ public final class XMLConstants {
          * XML Catalog is ignored even if one is set. The default value is true.
          *
          * <p>
-         * <b>System Property:</b> The value of this property can be set or overridden by
-         * system property {@code javax.xml.useCatalog}
+         * <b>System Property:</b> {@code javax.xml.useCatalog}
          *
          * <p>
-         * <b>jaxp.properties:</b> This configuration file is in standard
-         * {@link java.util.Properties} format and typically located in the {@code conf}
-         * directory of the Java installation. If the file exists and the system
-         * property is specified, its value will be used to override the default
-         * value of the property.
+         * <b>Configuration File:</b>
+         * Yes. The property can be set in the
+         * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>.
          *
          * @since 9
          */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class DigestKAT {
 
     static void runTests(Test[] tests) throws Exception {
         long start = System.currentTimeMillis();
-        Provider p = Security.getProvider("SUN");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name","SUN"));
         System.out.println("Testing provider " + p.getName() + "...");
         for (int i = 0; i < tests.length; i++) {
             Test test = tests[i];

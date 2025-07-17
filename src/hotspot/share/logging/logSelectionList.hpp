@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class LogTagSet;
 // Consists of ordered LogSelections, i.e. "tag1+tag2=level1,tag3*=level2".
 class LogSelectionList : public StackObj {
  public:
-  static const size_t MaxSelections = 256;
+  static const size_t MaxSelections = 320;
 
  private:
   friend void LogConfiguration::configure_stdout(LogLevelType, int, ...);
@@ -53,13 +53,15 @@ class LogSelectionList : public StackObj {
     _selections[0] = selection;
   }
 
-  bool parse(const char* str, outputStream* errstream = NULL);
+  bool parse(const char* str, outputStream* errstream = nullptr);
   LogLevelType level_for(const LogTagSet& ts) const;
 
   // Verify that each selection actually selects something.
   // Returns false if some invalid selection was found. If given an outputstream,
   // this function will list all the invalid selections on the stream.
-  bool verify_selections(outputStream* out = NULL) const;
+  bool verify_selections(outputStream* out = nullptr) const;
+
+  LogDecorators get_default_decorators() const;
 };
 
 #endif // SHARE_LOGGING_LOGSELECTIONLIST_HPP

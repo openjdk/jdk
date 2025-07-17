@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,14 @@
 
 /*
  * @test id=platform
+ * @bug 8284161 8347039
  * @summary Basic tests for new thread-per-task executors
- * @enablePreview
- * @run testng/othervm -DthreadFactory=platform ThreadPerTaskExecutorTest
+ * @run junit/othervm -DthreadFactory=platform ThreadPerTaskExecutorTest
  */
 
 /*
  * @test id=virtual
- * @enablePreview
- * @run testng/othervm -DthreadFactory=virtual ThreadPerTaskExecutorTest
+ * @run junit/othervm -DthreadFactory=virtual ThreadPerTaskExecutorTest
  */
 
 import java.time.Duration;
@@ -45,32 +44,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import static java.lang.Thread.State.*;
 import static java.util.concurrent.Future.State.*;
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ThreadPerTaskExecutorTest {
-    // long running interruptible task
-    private static final Callable<Void> SLEEP_FOR_A_DAY = () -> {
-        Thread.sleep(Duration.ofDays(1));
-        return null;
-    };
+class ThreadPerTaskExecutorTest {
+    private static ScheduledExecutorService scheduler;
+    private static List<ThreadFactory> threadFactories;
 
-    private ScheduledExecutorService scheduler;
-    private Object[][] threadFactories;
-
-    @BeforeClass
-    public void setUp() throws Exception {
-        ThreadFactory factory = (task) -> {
-            Thread thread = new Thread(task);
-            thread.setDaemon(true);
-            return thread;
-        };
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+    @BeforeAll
+    static void setup() throws Exception {
+        scheduler = Executors.newSingleThreadScheduledExecutor();
 
         // thread factories
         String value = System.getProperty("threadFactory");
@@ -80,42 +71,29 @@ public class ThreadPerTaskExecutorTest {
         if (value == null || value.equals("virtual"))
             list.add(Thread.ofVirtual().factory());
         assertTrue(list.size() > 0, "No thread factories for tests");
-        this.threadFactories = list.stream()
-                .map(f -> new Object[] { f })
-                .toArray(Object[][]::new);
+        threadFactories = list;
     }
 
-    @AfterClass
-    public void tearDown() {
+    @AfterAll
+    static void shutdown() {
         scheduler.shutdown();
     }
 
-    @DataProvider(name = "factories")
-    public Object[][] factories() {
-        return threadFactories;
+    private static Stream<ThreadFactory> factories() {
+        return threadFactories.stream();
     }
 
-    @DataProvider(name = "executors")
-    public Object[][] executors() {
-        return Arrays.stream(threadFactories)
-                .map(f -> Executors.newThreadPerTaskExecutor((ThreadFactory) f[0]))
-                .map(e -> new Object[] { e })
-                .toArray(Object[][]::new);
-    }
-
-    /**
-     * Schedules a thread to be interrupted after the given delay.
-     */
-    private void scheduleInterrupt(Thread thread, Duration delay) {
-        long millis = delay.toMillis();
-        scheduler.schedule(thread::interrupt, millis, TimeUnit.MILLISECONDS);
+    private static Stream<ExecutorService> executors() {
+        return threadFactories.stream()
+                .map(f -> Executors.newThreadPerTaskExecutor(f));
     }
 
     /**
      * Test that a thread is created for each task.
      */
-    @Test(dataProvider = "factories")
-    public void testThreadPerTask(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testThreadPerTask(ThreadFactory factory) throws Exception {
         final int NUM_TASKS = 100;
         AtomicInteger threadCount = new AtomicInteger();
 
@@ -135,7 +113,7 @@ public class ThreadPerTaskExecutorTest {
         }
 
         assertTrue(executor.isTerminated());
-        assertEquals(threadCount.get(), NUM_TASKS);
+        assertEquals(NUM_TASKS, threadCount.get());
         for (int i=0; i<NUM_TASKS; i++) {
             Future<Integer> future = futures.get(i);
             assertEquals((int) future.get(), i);
@@ -146,7 +124,7 @@ public class ThreadPerTaskExecutorTest {
      * Test that newThreadPerTaskExecutor uses the specified thread factory.
      */
     @Test
-    public void testThreadFactory() throws Exception {
+    void testThreadFactory() throws Exception {
         var ref1 = new AtomicReference<Thread>();
         var ref2 = new AtomicReference<Thread>();
         ThreadFactory factory = task -> {
@@ -166,21 +144,23 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test shutdown.
      */
-    @Test(dataProvider = "executors")
-    public void testShutdown(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testShutdown(ExecutorService executor) throws Exception {
         try (executor) {
             assertFalse(executor.isShutdown());
             assertFalse(executor.isTerminated());
             assertFalse(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
 
-            Future<?> result = executor.submit(SLEEP_FOR_A_DAY);
+            Future<Void> future = executor.submit(new LongRunningTask<Void>());
             try {
                 executor.shutdown();
                 assertTrue(executor.isShutdown());
                 assertFalse(executor.isTerminated());
                 assertFalse(executor.awaitTermination(500, TimeUnit.MILLISECONDS));
+                assertFalse(future.isDone());
             } finally {
-                result.cancel(true);
+                future.cancel(true);  // interrupt task
             }
         }
     }
@@ -188,26 +168,30 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test shutdownNow.
      */
-    @Test(dataProvider = "executors")
-    public void testShutdownNow(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testShutdownNow(ExecutorService executor) throws Exception {
         try (executor) {
             assertFalse(executor.isShutdown());
             assertFalse(executor.isTerminated());
             assertFalse(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
 
-            Future<?> result = executor.submit(SLEEP_FOR_A_DAY);
+            var task = new LongRunningTask<Void>();
+            Future<Void> future = executor.submit(task);
             try {
+                task.awaitStarted();
+
                 List<Runnable> tasks = executor.shutdownNow();
                 assertTrue(executor.isShutdown());
                 assertTrue(tasks.isEmpty());
 
-                Throwable e = expectThrows(ExecutionException.class, result::get);
+                Throwable e = assertThrows(ExecutionException.class, future::get);
                 assertTrue(e.getCause() instanceof InterruptedException);
 
                 assertTrue(executor.awaitTermination(3, TimeUnit.SECONDS));
                 assertTrue(executor.isTerminated());
             } finally {
-                result.cancel(true);
+                future.cancel(true);
             }
         }
     }
@@ -215,8 +199,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test close with no threads running.
      */
-    @Test(dataProvider = "executors")
-    public void testClose1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testClose1(ExecutorService executor) throws Exception {
         executor.close();
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
@@ -226,8 +211,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test close with threads running.
      */
-    @Test(dataProvider = "executors")
-    public void testClose2(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testClose2(ExecutorService executor) throws Exception {
         Future<String> future;
         try (executor) {
             future = executor.submit(() -> {
@@ -242,83 +228,140 @@ public class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Invoke close with interrupt status set, should cancel task.
+     * Invoke close with interrupt status set.
      */
-    @Test(dataProvider = "executors")
-    public void testClose3(ExecutorService executor) throws Exception {
-        Future<?> future;
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testClose3(ExecutorService executor) throws Exception {
+        Future<Void> future;
         try (executor) {
-            future = executor.submit(SLEEP_FOR_A_DAY);
+            var task = new LongRunningTask<Void>();
+            future = executor.submit(task);
+            task.awaitStarted();
             Thread.currentThread().interrupt();
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
-
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-        expectThrows(ExecutionException.class, future::get);
+        assertTrue(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
+        Throwable e = assertThrows(ExecutionException.class, future::get);
+        assertTrue(e.getCause() instanceof InterruptedException);
     }
 
     /**
      * Interrupt thread blocked in close.
      */
-    @Test(dataProvider = "executors")
-    public void testClose4(ExecutorService executor) throws Exception {
-        Future<?> future;
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testClose4(ExecutorService executor) throws Exception {
+        Future<Void> future;
         try (executor) {
-            future = executor.submit(SLEEP_FOR_A_DAY);
-            scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
+            var task = new LongRunningTask<Void>();
+            future = executor.submit(task);
+            task.awaitStarted();
+            scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.close");
         } finally {
             assertTrue(Thread.interrupted());
         }
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-        expectThrows(ExecutionException.class, future::get);
+        assertTrue(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
+        Throwable e = assertThrows(ExecutionException.class, future::get);
+        assertTrue(e.getCause() instanceof InterruptedException);
     }
 
     /**
      * Close executor that is already closed.
      */
-    @Test(dataProvider = "executors")
-    public void testClose5(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testClose5(ExecutorService executor) throws Exception {
         executor.close();
         executor.close(); // already closed
     }
 
     /**
-     * Test awaitTermination when not shutdown.
+     * Test awaitTermination with no tasks running.
      */
-    @Test(dataProvider = "executors")
-    public void testAwaitTermination1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testAwaitTermination1(ExecutorService executor) throws Exception {
         assertFalse(executor.awaitTermination(100, TimeUnit.MILLISECONDS));
-        executor.close();
+        executor.shutdown();
         assertTrue(executor.awaitTermination(100, TimeUnit.MILLISECONDS));
     }
 
     /**
      * Test awaitTermination with task running.
      */
-    @Test(dataProvider = "executors")
-    public void testAwaitTermination2(ExecutorService executor) throws Exception {
-        Phaser barrier = new Phaser(2);
-        Future<?> result = executor.submit(barrier::arriveAndAwaitAdvance);
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testAwaitTermination2(ExecutorService executor) throws Exception {
+        var started = new CountDownLatch(1);
+        var stop = new CountDownLatch(1);
+        Future<?> future = executor.submit(() -> {
+            started.countDown();
+            stop.await();
+            return null;
+        });
+        started.await();
         try {
             executor.shutdown();
-            assertFalse(executor.awaitTermination(100, TimeUnit.MILLISECONDS));
-            barrier.arriveAndAwaitAdvance();
-            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+            assertFalse(executor.awaitTermination(1, TimeUnit.SECONDS));
+            assertFalse(future.isDone());
         } finally {
-            result.cancel(true);
+            stop.countDown();
         }
+        assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
+        assertTrue(future.isDone());
+    }
+
+    /**
+     * Test awaitTermination with cancelled task still running.
+     */
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testAwaitTermination3(ExecutorService executor) throws Exception {
+        var started = new CountDownLatch(1);
+        var stop = new CountDownLatch(1);
+        Future<?> future = executor.submit(() -> {
+            started.countDown();
+            stop.await();
+            return null;
+        });
+        started.await();
+        try {
+            future.cancel(false);
+            executor.shutdown();
+            assertFalse(executor.awaitTermination(1, TimeUnit.SECONDS));
+        } finally {
+            stop.countDown();
+        }
+        assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
+    }
+
+    /**
+     * Test awaitTermination with cancelled task that may not have started execution.
+     */
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testAwaitTermination4(ExecutorService executor) throws Exception {
+        Future<?> future = executor.submit(() -> {
+            Thread.sleep(Duration.ofMillis(50));
+            return null;
+        });
+        future.cancel(false);
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
     }
 
     /**
      * Test submit when the Executor is shutdown but not terminated.
      */
-    @Test(dataProvider = "executors")
-    public void testSubmitAfterShutdown(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testSubmitAfterShutdown(ExecutorService executor) throws Exception {
         Phaser barrier = new Phaser(2);
         try (executor) {
             // submit task to prevent executor from terminating
@@ -326,7 +369,7 @@ public class ThreadPerTaskExecutorTest {
             try {
                 executor.shutdown();
                 assertTrue(executor.isShutdown() && !executor.isTerminated());
-                expectThrows(RejectedExecutionException.class,
+                assertThrows(RejectedExecutionException.class,
                              () -> executor.submit(() -> {  }));
             } finally {
                 barrier.arriveAndAwaitAdvance();
@@ -337,24 +380,27 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test submit when the Executor is terminated.
      */
-    @Test(dataProvider = "executors")
-    public void testSubmitAfterTermination(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testSubmitAfterTermination(ExecutorService executor) throws Exception {
         executor.shutdown();
         assertTrue(executor.isShutdown() && executor.isTerminated());
-        expectThrows(RejectedExecutionException.class, () -> executor.submit(() -> {}));
+        assertThrows(RejectedExecutionException.class, () -> executor.submit(() -> {}));
     }
 
     /**
      * Test submit with null.
      */
-    @Test(dataProvider = "factories")
-    public void testSubmitNulls1(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testSubmitNulls1(ThreadFactory factory) {
         var executor = Executors.newThreadPerTaskExecutor(factory);
         assertThrows(NullPointerException.class, () -> executor.submit((Runnable) null));
     }
 
-    @Test(dataProvider = "factories")
-    public void testSubmitNulls2(ThreadFactory factory) {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testSubmitNulls2(ThreadFactory factory) {
         var executor = Executors.newThreadPerTaskExecutor(factory);
         assertThrows(NullPointerException.class, () -> executor.submit((Callable<String>) null));
     }
@@ -362,8 +408,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny where all tasks complete normally.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAny1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAny1(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> "bar";
@@ -376,31 +423,19 @@ public class ThreadPerTaskExecutorTest {
      * Test invokeAny where all tasks complete normally. The completion of the
      * first task should cancel remaining tasks.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAny2(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAny2(ExecutorService executor) throws Exception {
         try (executor) {
-            AtomicBoolean task2Started = new AtomicBoolean();
-            AtomicReference<Throwable> task2Exception = new AtomicReference<>();
             Callable<String> task1 = () -> "foo";
-            Callable<String> task2 = () -> {
-                task2Started.set(true);
-                try {
-                    Thread.sleep(Duration.ofDays(1));
-                } catch (Exception e) {
-                    task2Exception.set(e);
-                }
-                return "bar";
-            };
+            var task2 = new LongRunningTask<String>();
             String result = executor.invokeAny(Set.of(task1, task2));
             assertTrue("foo".equals(result));
 
-            // if task2 started then the sleep should have been interrupted
-            if (task2Started.get()) {
-                Throwable exc;
-                while ((exc = task2Exception.get()) == null) {
-                    Thread.sleep(20);
-                }
-                assertTrue(exc instanceof InterruptedException);
+            // if task2 started then it should be interrupted
+            if (task2.isStarted()) {
+                task2.awaitDone();
+                assertTrue(task2.isInterrupted());
             }
         }
     }
@@ -408,8 +443,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny where all tasks complete with exception.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAny3(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAny3(ExecutorService executor) throws Exception {
         try (executor) {
             class FooException extends Exception { }
             Callable<String> task1 = () -> { throw new FooException(); };
@@ -428,8 +464,9 @@ public class ThreadPerTaskExecutorTest {
      * Test invokeAny where all tasks complete with exception. The completion
      * of the last task is delayed.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAny4(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAny4(ExecutorService executor) throws Exception {
         try (executor) {
             class FooException extends Exception { }
             Callable<String> task1 = () -> { throw new FooException(); };
@@ -450,8 +487,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny where some, not all, tasks complete normally.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAny5(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAny5(ExecutorService executor) throws Exception {
         try (executor) {
             class FooException extends Exception { }
             Callable<String> task1 = () -> "foo";
@@ -465,8 +503,9 @@ public class ThreadPerTaskExecutorTest {
      * Test invokeAny where some, not all, tasks complete normally. The
      * completion of the first task to complete normally is delayed.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAny6(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAny6(ExecutorService executor) throws Exception {
         try (executor) {
             class FooException extends Exception { }
             Callable<String> task1 = () -> {
@@ -482,8 +521,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test timed-invokeAny where all tasks complete normally before the timeout.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAnyWithTimeout1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAnyWithTimeout1(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> "bar";
@@ -496,31 +536,19 @@ public class ThreadPerTaskExecutorTest {
      * Test timed-invokeAny where one task completes normally before the timeout.
      * The remaining tests should be cancelled.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAnyWithTimeout2(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAnyWithTimeout2(ExecutorService executor) throws Exception {
         try (executor) {
-            AtomicBoolean task2Started = new AtomicBoolean();
-            AtomicReference<Throwable> task2Exception = new AtomicReference<>();
             Callable<String> task1 = () -> "foo";
-            Callable<String> task2 = () -> {
-                task2Started.set(true);
-                try {
-                    Thread.sleep(Duration.ofDays(1));
-                } catch (Exception e) {
-                    task2Exception.set(e);
-                }
-                return "bar";
-            };
+            var task2 = new LongRunningTask<String>();
             String result = executor.invokeAny(Set.of(task1, task2), 1, TimeUnit.MINUTES);
             assertTrue("foo".equals(result));
 
-            // if task2 started then the sleep should have been interrupted
-            if (task2Started.get()) {
-                Throwable exc;
-                while ((exc = task2Exception.get()) == null) {
-                    Thread.sleep(20);
-                }
-                assertTrue(exc instanceof InterruptedException);
+            // if task2 started then it should be interrupted
+            if (task2.isStarted()) {
+                task2.awaitDone();
+                assertTrue(task2.isInterrupted());
             }
         }
     }
@@ -528,8 +556,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test timed-invokeAny where timeout expires before any task completes.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAnyWithTimeout3(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAnyWithTimeout3(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> {
                 Thread.sleep(Duration.ofMinutes(1));
@@ -548,8 +577,9 @@ public class ThreadPerTaskExecutorTest {
      * Test invokeAny where timeout expires after some tasks have completed
      * with exception.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAnyWithTimeout4(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAnyWithTimeout4(ExecutorService executor) throws Exception {
         try (executor) {
             class FooException extends Exception { }
             Callable<String> task1 = () -> { throw new FooException(); };
@@ -565,8 +595,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny with interrupt status set.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAnyWithInterruptSet(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAnyWithInterruptSet(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> "bar";
@@ -585,23 +616,23 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test interrupting a thread blocked in invokeAny.
      */
-    @Test(dataProvider = "executors")
-    public void testInterruptInvokeAny(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInterruptInvokeAny(ExecutorService executor) throws Exception {
         try (executor) {
-            Callable<String> task1 = () -> {
-                Thread.sleep(Duration.ofMinutes(1));
-                return "foo";
-            };
-            Callable<String> task2 = () -> {
-                Thread.sleep(Duration.ofMinutes(2));
-                return "bar";
-            };
-            scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
+            var task = new LongRunningTask<Void>();
             try {
-                executor.invokeAny(Set.of(task1, task2));
+                scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.invokeAny");
+                executor.invokeAny(Set.of(task));
                 fail("invokeAny did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
+
+                // if task started then it should be interrupted
+                if (task.isStarted()) {
+                    task.awaitDone();
+                    assertTrue(task.isInterrupted());
+                }
             } finally {
                 Thread.interrupted(); // clear interrupt
             }
@@ -611,8 +642,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny after ExecutorService has been shutdown.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAnyAfterShutdown(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAnyAfterShutdown(ExecutorService executor) throws Exception {
         executor.shutdown();
         Callable<String> task1 = () -> "foo";
         Callable<String> task2 = () -> "bar";
@@ -623,8 +655,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny with empty collection.
      */
-    @Test(dataProvider = "factories")
-    public void testInvokeAnyEmpty1(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAnyEmpty1(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             assertThrows(IllegalArgumentException.class, () -> executor.invokeAny(Set.of()));
         }
@@ -633,8 +666,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test timed-invokeAny with empty collection.
      */
-    @Test(dataProvider = "factories")
-    public void testInvokeAnyEmpty2(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAnyEmpty2(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             assertThrows(IllegalArgumentException.class,
                          () -> executor.invokeAny(Set.of(), 1, TimeUnit.MINUTES));
@@ -644,8 +678,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny with null.
      */
-    @Test(dataProvider = "factories")
-    public void testInvokeAnyNull1(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAnyNull1(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             assertThrows(NullPointerException.class, () -> executor.invokeAny(null));
         }
@@ -654,8 +689,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny with null element
      */
-    @Test(dataProvider = "factories")
-    public void testInvokeAnyNull2(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAnyNull2(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             List<Callable<String>> list = new ArrayList<>();
             list.add(() -> "foo");
@@ -667,8 +703,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAll where all tasks complete normally.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAll1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAll1(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> {
@@ -692,8 +729,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAll where all tasks complete with exception.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAll2(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAll2(ExecutorService executor) throws Exception {
         try (executor) {
             class FooException extends Exception { }
             class BarException extends Exception { }
@@ -711,9 +749,9 @@ public class ThreadPerTaskExecutorTest {
             assertFalse(notDone);
 
             // check results
-            Throwable e1 = expectThrows(ExecutionException.class, () -> list.get(0).get());
+            Throwable e1 = assertThrows(ExecutionException.class, () -> list.get(0).get());
             assertTrue(e1.getCause() instanceof FooException);
-            Throwable e2 = expectThrows(ExecutionException.class, () -> list.get(1).get());
+            Throwable e2 = assertThrows(ExecutionException.class, () -> list.get(1).get());
             assertTrue(e2.getCause() instanceof BarException);
         }
     }
@@ -721,8 +759,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAll where all tasks complete normally before the timeout expires.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAll3(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAll3(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> {
@@ -746,8 +785,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAll where some tasks do not complete before the timeout expires.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAll4(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAll4(ExecutorService executor) throws Exception {
         try (executor) {
             AtomicReference<Exception> exc = new AtomicReference<>();
             Callable<String> task1 = () -> "foo";
@@ -782,17 +822,17 @@ public class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test invokeAll with interrupt status set.
+     * Test untimed-invokeAll with interrupt status set.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAllInterrupt1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllInterrupt1(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> {
                 Thread.sleep(Duration.ofMinutes(1));
                 return "bar";
             };
-
             Thread.currentThread().interrupt();
             try {
                 executor.invokeAll(List.of(task1, task2));
@@ -808,8 +848,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test timed-invokeAll with interrupt status set.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAllInterrupt3(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllInterrupt3(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> "foo";
             Callable<String> task2 = () -> {
@@ -830,25 +871,25 @@ public class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test interrupt with thread blocked in invokeAll.
+     * Test interrupt of thread blocked in untimed-invokeAll.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAllInterrupt4(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllInterrupt4(ExecutorService executor) throws Exception {
         try (executor) {
-            Callable<String> task1 = () -> "foo";
-            DelayedResult<String> task2 = new DelayedResult("bar", Duration.ofMinutes(1));
-            scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
+            var task = new LongRunningTask<Void>();
             try {
-                executor.invokeAll(Set.of(task1, task2));
+                scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.invokeAll");
+                executor.invokeAll(Set.of(task));
                 fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
 
-                // task2 should have been interrupted
-                while (!task2.isDone()) {
-                    Thread.sleep(Duration.ofMillis(100));
+                // if task started then it should be interrupted
+                if (task.isStarted()) {
+                    task.awaitDone();
+                    assertTrue(task.isInterrupted());
                 }
-                assertTrue(task2.exception() instanceof InterruptedException);
             } finally {
                 Thread.interrupted(); // clear interrupt
             }
@@ -856,25 +897,25 @@ public class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test interrupt with thread blocked in timed-invokeAll.
+     * Test interrupt of thread blocked in timed-invokeAll.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAllInterrupt6(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllInterrupt5(ExecutorService executor) throws Exception {
         try (executor) {
-            Callable<String> task1 = () -> "foo";
-            DelayedResult<String> task2 = new DelayedResult("bar", Duration.ofMinutes(1));
-            scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
+            var task = new LongRunningTask<Void>();
             try {
-                executor.invokeAll(Set.of(task1, task2), 1, TimeUnit.DAYS);
+                scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.invokeAll");
+                executor.invokeAll(Set.of(task), 1, TimeUnit.DAYS);
                 fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
 
-                // task2 should have been interrupted
-                while (!task2.isDone()) {
-                    Thread.sleep(Duration.ofMillis(100));
+                // if task started then it should be interrupted
+                if (task.isStarted()) {
+                    task.awaitDone();
+                    assertTrue(task.isInterrupted());
                 }
-                assertTrue(task2.exception() instanceof InterruptedException);
             } finally {
                 Thread.interrupted(); // clear interrupt
             }
@@ -884,8 +925,9 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAll after ExecutorService has been shutdown.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAllAfterShutdown1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllAfterShutdown1(ExecutorService executor) throws Exception {
         executor.shutdown();
 
         Callable<String> task1 = () -> "foo";
@@ -894,8 +936,9 @@ public class ThreadPerTaskExecutorTest {
                      () -> executor.invokeAll(Set.of(task1, task2)));
     }
 
-    @Test(dataProvider = "executors")
-    public void testInvokeAllAfterShutdown2(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllAfterShutdown2(ExecutorService executor) throws Exception {
         executor.shutdown();
 
         Callable<String> task1 = () -> "foo";
@@ -907,31 +950,35 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAll with empty collection.
      */
-    @Test(dataProvider = "executors")
-    public void testInvokeAllEmpty1(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllEmpty1(ExecutorService executor) throws Exception {
         try (executor) {
             List<Future<Object>> list = executor.invokeAll(Set.of());
             assertTrue(list.size() == 0);
         }
     }
 
-    @Test(dataProvider = "executors")
-    public void testInvokeAllEmpty2(ExecutorService executor) throws Exception {
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testInvokeAllEmpty2(ExecutorService executor) throws Exception {
         try (executor) {
             List<Future<Object>> list = executor.invokeAll(Set.of(), 1, TimeUnit.SECONDS);
             assertTrue(list.size() == 0);
         }
     }
 
-    @Test(dataProvider = "factories")
-    public void testInvokeAllNull1(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAllNull1(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             assertThrows(NullPointerException.class, () -> executor.invokeAll(null));
         }
     }
 
-    @Test(dataProvider = "factories")
-    public void testInvokeAllNull2(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAllNull2(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             List<Callable<String>> tasks = new ArrayList<>();
             tasks.add(() -> "foo");
@@ -940,16 +987,18 @@ public class ThreadPerTaskExecutorTest {
         }
     }
 
-    @Test(dataProvider = "factories")
-    public void testInvokeAllNull3(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAllNull3(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             assertThrows(NullPointerException.class,
                          () -> executor.invokeAll(null, 1, TimeUnit.SECONDS));
         }
     }
 
-    @Test(dataProvider = "factories")
-    public void testInvokeAllNull4(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAllNull4(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             Callable<String> task = () -> "foo";
             assertThrows(NullPointerException.class,
@@ -957,8 +1006,9 @@ public class ThreadPerTaskExecutorTest {
         }
     }
 
-    @Test(dataProvider = "factories")
-    public void testInvokeAllNull5(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInvokeAllNull5(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             List<Callable<String>> tasks = new ArrayList<>();
             tasks.add(() -> "foo");
@@ -972,64 +1022,129 @@ public class ThreadPerTaskExecutorTest {
      * Test ThreadFactory that does not produce any threads
      */
     @Test
-    public void testNoThreads1() throws Exception {
+    void testNoThreads1() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
         assertThrows(RejectedExecutionException.class, () -> executor.execute(() -> { }));
     }
 
     @Test
-    public void testNoThreads2() throws Exception {
+    void testNoThreads2() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
         assertThrows(RejectedExecutionException.class, () -> executor.submit(() -> "foo"));
     }
 
     @Test
-    public void testNoThreads3() throws Exception {
+    void testNoThreads3() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
         assertThrows(RejectedExecutionException.class,
                      () -> executor.invokeAll(List.of(() -> "foo")));
     }
 
     @Test
-    public void testNoThreads4() throws Exception {
+    void testNoThreads4() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
         assertThrows(RejectedExecutionException.class,
                      () -> executor.invokeAny(List.of(() -> "foo")));
     }
 
     @Test
-    public void testNull() {
+    void testNull() {
         assertThrows(NullPointerException.class,
                      () -> Executors.newThreadPerTaskExecutor(null));
     }
 
-    // -- supporting classes --
-
-    static class DelayedResult<T> implements Callable<T> {
-        final T result;
-        final Duration delay;
-        volatile boolean done;
-        volatile Exception exception;
-        DelayedResult(T result, Duration delay) {
-            this.result = result;
-            this.delay = delay;
-        }
-        public T call() throws Exception {
+    /**
+     * Schedules the current thread to be interrupted when it waits (timed or untimed)
+     * at the given location "{@code c.m}" where {@code c} is the fully qualified class
+     * name and {@code m} is the method name.
+     */
+    private void scheduleInterruptAt(String location) {
+        int index = location.lastIndexOf('.');
+        String className = location.substring(0, index);
+        String methodName = location.substring(index + 1);
+        Thread target = Thread.currentThread();
+        scheduler.submit(() -> {
             try {
-                Thread.sleep(delay);
-                return result;
+                boolean found = false;
+                while (!found) {
+                    Thread.State state = target.getState();
+                    assertTrue(state != TERMINATED);
+                    if ((state == WAITING || state == TIMED_WAITING)
+                            && contains(target.getStackTrace(), className, methodName)) {
+                        found = true;
+                    } else {
+                        Thread.sleep(20);
+                    }
+                }
+                target.interrupt();
             } catch (Exception e) {
-                this.exception = e;
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Returns true if the given stack trace contains an element for the given class
+     * and method name.
+     */
+    private boolean contains(StackTraceElement[] stack, String className, String methodName) {
+        return Arrays.stream(stack)
+                .anyMatch(e -> className.equals(e.getClassName())
+                        && methodName.equals(e.getMethodName()));
+    }
+
+    /**
+     * Long running task with methods to test if the task has started, finished,
+     * and interrupted.
+     */
+    private static class LongRunningTask<T> implements Callable<T> {
+        final CountDownLatch started = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(1);
+        volatile boolean interrupted;
+
+        @Override
+        public T call() throws InterruptedException {
+            started.countDown();
+            try {
+                Thread.sleep(Duration.ofDays(1));
+            } catch (InterruptedException e) {
+                interrupted = true;
                 throw e;
             } finally {
-                done = true;
+                done.countDown();
             }
+            return null;
         }
-        boolean isDone() {
-            return done;
+
+        /**
+         * Wait for the task to start execution.
+         */
+        LongRunningTask<T> awaitStarted() throws InterruptedException {
+            started.await();
+            return this;
         }
-        Exception exception() {
-            return exception;
+
+        /**
+         * Wait for the task to finish execution.
+         */
+        LongRunningTask<T> awaitDone() throws InterruptedException {
+            done.await();
+            return this;
+        }
+
+        /**
+         * Returns true if the task started execution.
+         */
+        boolean isStarted() {
+            return started.getCount() == 0;
+        }
+
+        /**
+         * Returns true if the task was interrupted.
+         */
+        boolean isInterrupted() {
+            assertTrue(done.getCount() == 0);  // shouldn't call before finished
+            return interrupted;
         }
     }
 }

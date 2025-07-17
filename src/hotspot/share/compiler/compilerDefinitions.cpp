@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "include/jvm_io.h"
+#include "interpreter/invocationCounter.hpp"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -53,7 +53,7 @@ bool CompilationModeFlag::initialize() {
   _mode = Mode::NORMAL;
   // During parsing we want to be very careful not to use any methods of CompilerConfig that depend on
   // CompilationModeFlag.
-  if (CompilationMode != NULL) {
+  if (CompilationMode != nullptr) {
     if (strcmp(CompilationMode, "default") == 0 || strcmp(CompilationMode, "normal") == 0) {
       assert(_mode == Mode::NORMAL, "Precondition");
     } else if (strcmp(CompilationMode, "quick-only") == 0) {
@@ -121,6 +121,16 @@ intx CompilerConfig::scaled_compile_threshold(intx threshold) {
 // Returns freq_log scaled with CompileThresholdScaling
 intx CompilerConfig::scaled_freq_log(intx freq_log) {
   return scaled_freq_log(freq_log, CompileThresholdScaling);
+}
+
+// For XXXThreshold flags, which all have a valid range of [0 .. max_jint]
+intx CompilerConfig::jvmflag_scaled_compile_threshold(intx threshold) {
+  return MAX2((intx)0, MIN2(scaled_compile_threshold(threshold), (intx)max_jint));
+}
+
+// For XXXNotifyFreqLog flags, which all have a valid range of [0 .. 30]
+intx CompilerConfig::jvmflag_scaled_freq_log(intx freq_log) {
+  return MAX2((intx)0, MIN2(scaled_freq_log(freq_log), (intx)30));
 }
 
 // Returns threshold scaled with the value of scale.
@@ -303,7 +313,7 @@ void CompilerConfig::set_compilation_policy_flags() {
     // Increase the code cache size - tiered compiles a lot more.
     if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
-                    MIN2(CODE_CACHE_DEFAULT_LIMIT, (size_t)ReservedCodeCacheSize * 5));
+                    MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
     // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
     // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
@@ -325,7 +335,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
   }
 
   if (CompilationModeFlag::disable_intermediate()) {
@@ -364,29 +374,29 @@ void CompilerConfig::set_compilation_policy_flags() {
   // Scale tiered compilation thresholds.
   // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves compilation thresholds unchanged.
   if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0) {
-    FLAG_SET_ERGO(Tier0InvokeNotifyFreqLog, scaled_freq_log(Tier0InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, scaled_freq_log(Tier0BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier0InvokeNotifyFreqLog, jvmflag_scaled_freq_log(Tier0InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, jvmflag_scaled_freq_log(Tier0BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier3InvocationThreshold, scaled_compile_threshold(Tier3InvocationThreshold));
-    FLAG_SET_ERGO(Tier3MinInvocationThreshold, scaled_compile_threshold(Tier3MinInvocationThreshold));
-    FLAG_SET_ERGO(Tier3CompileThreshold, scaled_compile_threshold(Tier3CompileThreshold));
-    FLAG_SET_ERGO(Tier3BackEdgeThreshold, scaled_compile_threshold(Tier3BackEdgeThreshold));
+    FLAG_SET_ERGO(Tier3InvocationThreshold, jvmflag_scaled_compile_threshold(Tier3InvocationThreshold));
+    FLAG_SET_ERGO(Tier3MinInvocationThreshold, jvmflag_scaled_compile_threshold(Tier3MinInvocationThreshold));
+    FLAG_SET_ERGO(Tier3CompileThreshold, jvmflag_scaled_compile_threshold(Tier3CompileThreshold));
+    FLAG_SET_ERGO(Tier3BackEdgeThreshold, jvmflag_scaled_compile_threshold(Tier3BackEdgeThreshold));
 
     // Tier2{Invocation,MinInvocation,Compile,Backedge}Threshold should be scaled here
     // once these thresholds become supported.
 
-    FLAG_SET_ERGO(Tier2InvokeNotifyFreqLog, scaled_freq_log(Tier2InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(Tier2BackedgeNotifyFreqLog, scaled_freq_log(Tier2BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier2InvokeNotifyFreqLog, jvmflag_scaled_freq_log(Tier2InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier2BackedgeNotifyFreqLog, jvmflag_scaled_freq_log(Tier2BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier3InvokeNotifyFreqLog, scaled_freq_log(Tier3InvokeNotifyFreqLog));
-    FLAG_SET_ERGO(Tier3BackedgeNotifyFreqLog, scaled_freq_log(Tier3BackedgeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier3InvokeNotifyFreqLog, jvmflag_scaled_freq_log(Tier3InvokeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier3BackedgeNotifyFreqLog, jvmflag_scaled_freq_log(Tier3BackedgeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier23InlineeNotifyFreqLog, scaled_freq_log(Tier23InlineeNotifyFreqLog));
+    FLAG_SET_ERGO(Tier23InlineeNotifyFreqLog, jvmflag_scaled_freq_log(Tier23InlineeNotifyFreqLog));
 
-    FLAG_SET_ERGO(Tier4InvocationThreshold, scaled_compile_threshold(Tier4InvocationThreshold));
-    FLAG_SET_ERGO(Tier4MinInvocationThreshold, scaled_compile_threshold(Tier4MinInvocationThreshold));
-    FLAG_SET_ERGO(Tier4CompileThreshold, scaled_compile_threshold(Tier4CompileThreshold));
-    FLAG_SET_ERGO(Tier4BackEdgeThreshold, scaled_compile_threshold(Tier4BackEdgeThreshold));
+    FLAG_SET_ERGO(Tier4InvocationThreshold, jvmflag_scaled_compile_threshold(Tier4InvocationThreshold));
+    FLAG_SET_ERGO(Tier4MinInvocationThreshold, jvmflag_scaled_compile_threshold(Tier4MinInvocationThreshold));
+    FLAG_SET_ERGO(Tier4CompileThreshold, jvmflag_scaled_compile_threshold(Tier4CompileThreshold));
+    FLAG_SET_ERGO(Tier4BackEdgeThreshold, jvmflag_scaled_compile_threshold(Tier4BackEdgeThreshold));
   }
 
 #ifdef COMPILER1
@@ -401,13 +411,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
 #ifdef COMPILER2
     // Some inlining tuning
-#ifdef X86
-    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-      FLAG_SET_DEFAULT(InlineSmallCode, 2500);
-    }
-#endif
-
-#if defined AARCH64
+#if defined(X86) || defined(AARCH64) || defined(RISCV64)
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
@@ -471,26 +475,26 @@ void CompilerConfig::set_jvmci_specific_flags() {
 bool CompilerConfig::check_args_consistency(bool status) {
   // Check lower bounds of the code cache
   // Template Interpreter code is approximately 3X larger in debug builds.
-  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
+  size_t min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (ReservedCodeCacheSize < InitialCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",
+                "Invalid ReservedCodeCacheSize: %zuK. Must be at least InitialCodeCacheSize=%zuK.\n",
                 ReservedCodeCacheSize/K, InitialCodeCacheSize/K);
     status = false;
   } else if (ReservedCodeCacheSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
+                "Invalid ReservedCodeCacheSize=%zuK. Must be at least %zuK.\n", ReservedCodeCacheSize/K,
                 min_code_cache_size/K);
     status = false;
   } else if (ReservedCodeCacheSize > CODE_CACHE_SIZE_LIMIT) {
     // Code cache size larger than CODE_CACHE_SIZE_LIMIT is not supported.
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
+                "Invalid ReservedCodeCacheSize=%zuM. Must be at most %zuM.\n", ReservedCodeCacheSize/M,
                 CODE_CACHE_SIZE_LIMIT/M);
     status = false;
   } else if (NonNMethodCodeHeapSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
+                "Invalid NonNMethodCodeHeapSize=%zuK. Must be at least %zuK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
   }
@@ -507,15 +511,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
     }
     FLAG_SET_CMDLINE(BackgroundCompilation, false);
   }
-
-#ifdef COMPILER2
-  if (PostLoopMultiversioning && !RangeCheckElimination) {
-    if (!FLAG_IS_DEFAULT(PostLoopMultiversioning)) {
-      warning("PostLoopMultiversioning disabled because RangeCheckElimination is disabled.");
-    }
-    FLAG_SET_CMDLINE(PostLoopMultiversioning, false);
-  }
-#endif // COMPILER2
 
   if (CompilerConfig::is_interpreter_only()) {
     if (UseCompiler) {
@@ -541,7 +536,7 @@ bool CompilerConfig::check_args_consistency(bool status) {
       FLAG_SET_DEFAULT(SegmentedCodeCache, false);
     }
 #if INCLUDE_JVMCI
-    if (EnableJVMCI) {
+    if (EnableJVMCI || UseJVMCICompiler) {
       if (!FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler)) {
         warning("JVMCI Compiler disabled due to -Xint.");
       }
@@ -565,11 +560,6 @@ void CompilerConfig::ergo_initialize() {
 
   if (has_c1()) {
     if (!is_compilation_mode_selected()) {
-#if defined(_WINDOWS) && !defined(_LP64)
-      if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-        FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-      }
-#endif
       if (NeverActAsServerClassMachine) {
         set_client_emulation_mode_flags();
       }
@@ -610,6 +600,7 @@ void CompilerConfig::ergo_initialize() {
     IncrementalInline = false;
     IncrementalInlineMH = false;
     IncrementalInlineVirtual = false;
+    StressIncrementalInlining = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {
@@ -632,4 +623,3 @@ void CompilerConfig::ergo_initialize() {
   }
 #endif // COMPILER2
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitCase(CaseTree node, P p) {
         JCCase t = (JCCase) node;
         List<JCCaseLabel> labels = copy(t.labels, p);
+        JCExpression guard = copy(t.guard, p);
         List<JCStatement> stats = copy(t.stats, p);
         JCTree body;
         if (node.getCaseKind() == CaseTree.CaseKind.RULE) {
@@ -161,7 +162,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         } else {
             body = null;
         }
-        return M.at(t.pos).Case(t.caseKind, labels, stats, body);
+        return M.at(t.pos).Case(t.caseKind, labels, guard, stats, body);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -256,9 +257,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitImport(ImportTree node, P p) {
-        JCImport t = (JCImport) node;
-        JCTree qualid = copy(t.qualid, p);
-        return M.at(t.pos).Import(qualid, t.staticImport);
+        if (node instanceof JCModuleImport mimp) {
+            JCExpression module = copy(mimp.module, p);
+            return M.at(mimp.pos).ModuleImport(module);
+        } else {
+            JCImport t = (JCImport) node;
+            JCFieldAccess qualid = copy(t.qualid, p);
+            return M.at(t.pos).Import(qualid, t.staticImport);
+        }
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -491,17 +497,16 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitAnyPattern(AnyPatternTree node, P p) {
+        JCAnyPattern t = (JCAnyPattern) node;
+        return M.at(t.pos).AnyPattern();
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitBindingPattern(BindingPatternTree node, P p) {
         JCBindingPattern t = (JCBindingPattern) node;
         JCVariableDecl var = copy(t.var, p);
         return M.at(t.pos).BindingPattern(var);
-    }
-
-    @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        JCParenthesizedPattern t = (JCParenthesizedPattern) node;
-        JCPattern pattern = copy(t.pattern, p);
-        return M.at(t.pos).ParenthesizedPattern(pattern);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -521,8 +526,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
         JCPatternCaseLabel t = (JCPatternCaseLabel) node;
         JCPattern pat = copy(t.pat, p);
-        JCExpression guard = copy(t.guard, p);
-        return M.at(t.pos).PatternCaseLabel(pat, guard);
+        return M.at(t.pos).PatternCaseLabel(pat);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -530,8 +534,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCRecordPattern t = (JCRecordPattern) node;
         JCExpression deconstructor = copy(t.deconstructor, p);
         List<JCPattern> nested = copy(t.nested, p);
-        JCVariableDecl var = copy(t.var, p);
-        return M.at(t.pos).RecordPattern(deconstructor, nested, var);
+        return M.at(t.pos).RecordPattern(deconstructor, nested);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

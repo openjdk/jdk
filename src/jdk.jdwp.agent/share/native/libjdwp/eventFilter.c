@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1387,9 +1387,7 @@ eventFilterRestricted_deinstall(HandlerNode *node)
     return error1 != JVMTI_ERROR_NONE? error1 : error2;
 }
 
-/***** debugging *****/
-
-#ifdef DEBUG
+/***** APIs for debugging the debug agent *****/
 
 void
 eventFilter_dumpHandlerFilters(HandlerNode *node)
@@ -1476,5 +1474,3 @@ eventFilter_dumpHandlerFilters(HandlerNode *node)
         }
     }
 }
-
-#endif /* DEBUG */

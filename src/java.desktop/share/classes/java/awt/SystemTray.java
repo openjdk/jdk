@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.beans.PropertyChangeSupport;
 import java.util.Vector;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.SunToolkit;
@@ -149,27 +148,17 @@ public class SystemTray {
      * supported.  You may use the {@link #isSupported} method to
      * check if the system tray is supported.
      *
-     * <p>If a SecurityManager is installed, the AWTPermission
-     * {@code accessSystemTray} must be granted in order to get the
-     * {@code SystemTray} instance. Otherwise this method will throw a
-     * SecurityException.
-     *
      * @return the {@code SystemTray} instance that represents
      * the desktop's tray area
      * @throws UnsupportedOperationException if the system tray isn't
      * supported by the current platform
      * @throws HeadlessException if
      * {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if {@code accessSystemTray} permission
-     * is not granted
      * @see #add(TrayIcon)
      * @see TrayIcon
      * @see #isSupported
-     * @see SecurityManager#checkPermission
-     * @see AWTPermission
      */
     public static SystemTray getSystemTray() {
-        checkSystemTrayAllowed();
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
@@ -317,10 +306,7 @@ public class SystemTray {
     /**
      * Returns an array of all icons added to the tray by this
      * application.  You can't access the icons added by another
-     * application.  Some browsers partition applets in different
-     * code bases into separate contexts, and establish walls between
-     * these contexts.  In such a scenario, only the tray icons added
-     * from this context will be returned.
+     * application.
      *
      * <p> The returned array is a copy of the actual array and may be
      * modified in any way without affecting the system tray.  To
@@ -344,10 +330,10 @@ public class SystemTray {
 
     /**
      * Returns the size, in pixels, of the space that a tray icon will
-     * occupy in the system tray.  Developers may use this methods to
-     * acquire the preferred size for the image property of a tray icon
-     * before it is created.  For convenience, there is a similar
-     * method {@link TrayIcon#getSize} in the {@code TrayIcon} class.
+     * occupy in the system tray. Developers may use this method to
+     * acquire the preferred size for the tray icon before it is created.
+     * For convenience, there is a similar method {@link TrayIcon#getSize}
+     * in the {@code TrayIcon} class.
      *
      * @return the default size of a tray icon, in pixels
      * @see TrayIcon#setImageAutoSize(boolean)
@@ -500,14 +486,6 @@ public class SystemTray {
             } else if (toolkit instanceof HeadlessToolkit) {
                 peer = ((HeadlessToolkit)Toolkit.getDefaultToolkit()).createSystemTray(this);
             }
-        }
-    }
-
-    static void checkSystemTrayAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ACCESS_SYSTEM_TRAY_PERMISSION);
         }
     }
 

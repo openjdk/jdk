@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,23 +36,20 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(value = 3, jvmArgs = { "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class LoopOverNonConstantHeap extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -59,8 +57,8 @@ public class LoopOverNonConstantHeap extends JavaLayouts {
     static final int ELEM_SIZE = 1_000_000;
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
-    static final int UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
-    static final int UNSAFE_INT_BASE = unsafe.arrayBaseOffset(int[].class);
+    static final long UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
+    static final long UNSAFE_INT_BASE = unsafe.arrayBaseOffset(int[].class);
 
     MemorySegment segment, alignedSegment;
     byte[] base;
@@ -78,7 +76,8 @@ public class LoopOverNonConstantHeap extends JavaLayouts {
             MemorySegment intI = MemorySegment.ofArray(new int[ALLOC_SIZE]);
             MemorySegment intD = MemorySegment.ofArray(new double[ALLOC_SIZE]);
             MemorySegment intF = MemorySegment.ofArray(new float[ALLOC_SIZE]);
-            MemorySegment s = MemorySegment.allocateNative(ALLOC_SIZE, 1, MemorySession.openConfined());
+            Arena scope = Arena.ofAuto();
+            MemorySegment s = scope.allocate(ALLOC_SIZE, 1);
             for (int i = 0; i < ALLOC_SIZE; i++) {
                 intB.set(JAVA_BYTE, i, (byte)i);
                 intI.setAtIndex(JAVA_INT, i, i);

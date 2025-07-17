@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,34 +37,52 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.EXECUTABLE_MEMBER_PARAM;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.MEMBER;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.MEMBER_TYPE_PARAMS;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.RECEIVER_TYPE;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.THROWS_TYPE;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.PLAIN;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_PREVIEW;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS;
 
 /**
- * Print method and constructor info.
+ * Abstract "member writer" for executable elements.
  */
 public abstract class AbstractExecutableMemberWriter extends AbstractMemberWriter {
 
-    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    /**
+     * Creates a writer for executable members, for a given enclosing writer, type element, and kind of member.
+     *
+     * @param writer the enclosing "page" writer, with an associated type element
+     * @param typeElement the type element
+     * @param kind the kind of member: one of {@link VisibleMemberTable.Kind#CONSTRUCTORS} or {@link VisibleMemberTable.Kind#METHODS}
+     */
+    protected AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement,
+                                          VisibleMemberTable.Kind kind) {
+        super(writer, typeElement, kind);
+
+        // The following would be better before the preceding call to super; see JDK-8300786
+        switch (kind) {
+            case CONSTRUCTORS, METHODS -> { }
+            default -> throw new IllegalArgumentException(kind.toString());
+        }
     }
 
-    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer) {
+    /**
+     * Creates a writer for executable members, for a given enclosing writer.
+     * No type element or kind is provided, limiting the set of methods that can be used.
+     *
+     * @param writer the enclosing "page" writer.
+     */
+    protected AbstractExecutableMemberWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
-
 
     /**
      * Get the type parameters for the executable member.
@@ -73,7 +91,8 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @return the type parameters.
      */
     protected Content getTypeParameters(ExecutableElement member) {
-        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, MEMBER_TYPE_PARAMS, member);
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS_AND_BOUNDS, member)
+                .showTypeParameterAnnotations(true);
         return writer.getTypeParameterLinks(linkInfo);
     }
 
@@ -87,11 +106,11 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            content.add(new HtmlTree(TagName.WBR));
+            content.add(HtmlTree.WBR());
         }
         content.add(signature);
 
-        return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member),
+        return writer.getDocLink(SHOW_PREVIEW, utils.getEnclosingTypeElement(member),
                 member, content, null, false);
     }
 
@@ -99,7 +118,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement te, Element member,
                                   Content target) {
         ExecutableElement ee = (ExecutableElement)member;
-        Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyle.memberNameLink);
+        Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyles.memberNameLink);
         var code = HtmlTree.CODE(memberLink);
         addParameters(ee, code);
         target.add(code);
@@ -107,7 +126,33 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
     @Override
     protected void addInheritedSummaryLink(TypeElement te, Element member, Content target) {
-        target.add(writer.getDocLink(MEMBER, te, member, name(member)));
+        // Use method name as link label, but add signature as title attribute
+        String name = name(member);
+        ExecutableElement ee = (ExecutableElement) member;
+        String title = name + utils.makeSignature(ee, typeElement, false, true);
+        target.add(writer.getLink(new HtmlLinkInfo(configuration, PLAIN, te)
+                .label(name)
+                .fragment(htmlIds.forMember(ee).getFirst().name())
+                .targetMember(member)
+                .title(title)));
+    }
+
+    /**
+     * Adds the generic type parameters.
+     *
+     * @param member the member to add the generic type parameters for
+     * @param target the content to which the generic type parameters will be added
+     */
+    protected void addTypeParameters(ExecutableElement member, Content target) {
+        Content typeParameters = getTypeParameters(member);
+        target.add(typeParameters);
+        // Add explicit line break between method type parameters and
+        // return type in member summary table to avoid random wrapping.
+        if (typeParameters.charCount() > 10) {
+            target.add(HtmlTree.BR());
+        } else {
+            target.add(Entity.NO_BREAK_SPACE);
+        }
     }
 
     /**
@@ -120,8 +165,10 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected void addParam(VariableElement param, TypeMirror paramType, boolean isVarArg,
                             Content target) {
-        Content link = writer.getLink(new HtmlLinkInfo(configuration, EXECUTABLE_MEMBER_PARAM,
-                paramType).varargs(isVarArg));
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS, paramType)
+                .varargs(isVarArg)
+                .showTypeParameterAnnotations(true);
+        Content link = writer.getLink(linkInfo);
         target.add(link);
         if(name(param).length() > 0) {
             target.add(Entity.NO_BREAK_SPACE);
@@ -139,8 +186,8 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @param target the content to which the information will be added.
      */
     protected void addReceiver(ExecutableElement member, TypeMirror rcvrType, Content target) {
-        var info = new HtmlLinkInfo(configuration, RECEIVER_TYPE, rcvrType);
-        info.linkToSelf = false;
+        var info = new HtmlLinkInfo(configuration, SHOW_TYPE_PARAMS_AND_BOUNDS, rcvrType)
+                .linkToSelf(false);
         target.add(writer.getLink(info));
         target.add(Entity.NO_BREAK_SPACE);
         if (member.getKind() == ElementKind.CONSTRUCTOR) {
@@ -191,7 +238,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         Content params = getParameters(member, false);
         if (params.charCount() > 2) {
             // only add <wbr> for non-empty parameters
-            target.add(new HtmlTree(TagName.WBR));
+            target.add(HtmlTree.WBR());
         }
         target.add(params);
     }
@@ -270,7 +317,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                 result.add(",");
                 result.add(Text.NL);
             }
-            Content link = writer.getLink(new HtmlLinkInfo(configuration, THROWS_TYPE, t));
+            Content link = writer.getLink(new HtmlLinkInfo(configuration, PLAIN, t));
             result.add(link);
         }
         return result;

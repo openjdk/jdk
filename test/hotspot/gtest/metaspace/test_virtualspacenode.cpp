@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
@@ -33,6 +32,8 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "sanitizers/address.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/debug.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -90,7 +91,7 @@ class VirtualSpaceNodeTest {
     verify();
 
     const bool node_is_full = _node->used_words() == _node->word_size();
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     {
       MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       c = _node->allocate_root_chunk();
@@ -154,6 +155,11 @@ class VirtualSpaceNodeTest {
 
       // The chunk should be as far committed as was requested
       EXPECT_GE(c->committed_words(), request_commit_words);
+
+      // At the VirtualSpaceNode level, all memory is still poisoned.
+      // Since we bypass the normal way of allocating chunks (ChunkManager::get_chunk), we
+      // need to unpoison this chunk.
+      ASAN_UNPOISON_MEMORY_REGION(c->base(), c->committed_words() * BytesPerWord);
 
       // Zap committed portion.
       DEBUG_ONLY(zap_range(c->base(), c->committed_words());)
@@ -257,7 +263,7 @@ class VirtualSpaceNodeTest {
 
     //freelist->print_on(tty);
 
-    Metachunk* result = NULL;
+    Metachunk* result = nullptr;
     {
       MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       result = _node->merge(c, freelist);
@@ -292,7 +298,7 @@ public:
     _counter_reserved_words(),
     _counter_committed_words(),
     _commit_limiter(commit_limit),
-    _node(NULL),
+    _node(nullptr),
     _vs_word_size(vs_word_size),
     _commit_limit(commit_limit)
   {
@@ -326,14 +332,14 @@ public:
   }
 
   void test_exhaust_node() {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     bool rc = true;
     do {
       c = alloc_root_chunk();
-      if (c != NULL) {
+      if (c != nullptr) {
         rc = commit_root_chunk(c, c->word_size());
       }
-    } while (c != NULL && rc);
+    } while (c != nullptr && rc);
   }
 
   void test_arbitrary_commits() {
@@ -354,7 +360,7 @@ public:
     TestMap testmap(c->word_size());
     assert(testmap.get_num_set() == 0, "Sanity");
 
-    for (int run = 0; run < 1000; run++) {
+    for (int run = 0; run < 750; run++) {
 
       const size_t committed_words_before = testmap.get_num_set();
       ASSERT_EQ(_commit_limiter.committed_words(), committed_words_before);
@@ -369,7 +375,7 @@ public:
       const bool do_commit = IntRange(100).random_value() >= 50;
       if (do_commit) {
 
-        //LOG("c " SIZE_FORMAT "," SIZE_FORMAT, r.start(), r.end());
+        //LOG("c %zu,%zu", r.start(), r.end());
 
         bool rc = false;
         {
@@ -378,7 +384,9 @@ public:
         }
 
         // Test-zap
+        ASAN_UNPOISON_MEMORY_REGION(c->base() + r.start(), r.size() * BytesPerWord);
         zap_range(c->base() + r.start(), r.size());
+        ASAN_POISON_MEMORY_REGION(c->base() + r.start(), r.size() * BytesPerWord);
 
         // We should never reach commit limit since it is as large as the whole area.
         ASSERT_TRUE(rc);
@@ -387,7 +395,7 @@ public:
 
       } else {
 
-        //LOG("u " SIZE_FORMAT "," SIZE_FORMAT, r.start(), r.end());
+        //LOG("u %zu,%zu", r.start(), r.end());
 
         {
           MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
@@ -422,7 +430,7 @@ public:
 
     assert(_commit_limit >= _vs_word_size, "No commit limit here pls");
 
-    // Allocate a root chunk and commit a random part of it. Then repeatedly split
+    // Allocate a root chunk and commit a part of it. Then repeatedly split
     // it and merge it back together; observe the committed regions of the split chunks.
 
     Metachunk* c = alloc_root_chunk();
@@ -493,7 +501,7 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
 
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
 
-  const size_t word_size = metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 10;
+  const size_t word_size = metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 3;
 
   SizeCounter scomm;
   SizeCounter sres;
@@ -510,7 +518,9 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   ASSERT_EQ(node->committed_words(), word_size);
   ASSERT_EQ(node->committed_words(), scomm.get());
   DEBUG_ONLY(node->verify_locked();)
+  ASAN_UNPOISON_MEMORY_REGION(node->base(), node->word_size() * BytesPerWord);
   zap_range(node->base(), node->word_size());
+  ASAN_POISON_MEMORY_REGION(node->base(), node->word_size() * BytesPerWord);
 
   node->uncommit_range(node->base(), node->word_size());
   ASSERT_EQ(node->committed_words(), (size_t)0);
@@ -524,7 +534,9 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
     ASSERT_EQ(node->committed_words(), i * Settings::commit_granule_words());
     ASSERT_EQ(node->committed_words(), scomm.get());
     DEBUG_ONLY(node->verify_locked();)
+    ASAN_UNPOISON_MEMORY_REGION(node->base(), i * Settings::commit_granule_words() * BytesPerWord);
     zap_range(node->base(), i * Settings::commit_granule_words());
+    ASAN_POISON_MEMORY_REGION(node->base(), i * Settings::commit_granule_words() * BytesPerWord);
   }
 
   node->uncommit_range(node->base(), node->word_size());
@@ -532,6 +544,9 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   ASSERT_EQ(node->committed_words(), scomm.get());
   DEBUG_ONLY(node->verify_locked();)
 
+  delete node;
+  ASSERT_EQ(scomm.get(), (size_t)0);
+  ASSERT_EQ(sres.get(), (size_t)0);
 }
 
 // Note: we unfortunately need TEST_VM even though the system tested
@@ -552,15 +567,10 @@ TEST_VM(metaspace, virtual_space_node_test_2) {
 }
 
 TEST_VM(metaspace, virtual_space_node_test_3) {
-  double d = os::elapsedTime();
   // Test committing uncommitting arbitrary ranges
-  for (int run = 0; run < 100; run++) {
-    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE,
-        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE);
-    test.test_split_and_merge_chunks();
-  }
-  double d2 = os::elapsedTime();
-  LOG("%f", (d2-d));
+  VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE,
+      metaspace::chunklevel::MAX_CHUNK_WORD_SIZE);
+  test.test_split_and_merge_chunks();
 }
 
 TEST_VM(metaspace, virtual_space_node_test_4) {
@@ -580,13 +590,13 @@ TEST_VM(metaspace, virtual_space_node_test_5) {
 TEST_VM(metaspace, virtual_space_node_test_7) {
   // Test large allocation and freeing.
   {
-    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100,
-        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100);
+    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25,
+        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25);
     test.test_exhaust_node();
   }
   {
-    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100,
-        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100);
+    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25,
+        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25);
     test.test_exhaust_node();
   }
 

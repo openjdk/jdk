@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,42 +26,48 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.nio.ByteBuffer;
-import java.util.Objects;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteBuffer;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Implementation for heap memory segments. A heap memory segment is composed by an offset and
  * a base object (typically an array). To enhance performances, the access to the base object needs to feature
  * sharp type information, as well as sharp null-check information. For this reason, many concrete subclasses
- * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}, so that each subclass can override the
+ * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}), so that each subclass can override the
  * {@link HeapMemorySegmentImpl#unsafeGetBase()} method so that it returns an array of the correct (sharp) type. Note that
  * the field type storing the 'base' coordinate is just Object; similarly, all the constructor in the subclasses
  * accept an Object 'base' parameter instead of a sharper type (e.g. {@code byte[]}). This is deliberate, as
  * using sharper types would require use of type-conversions, which in turn would inhibit some C2 optimizations,
- * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, int, MemorySession)}.
+ * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, boolean, MemorySessionImpl)}.
  */
-public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
+abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
+    // Constants defining the maximum alignment supported by various kinds of heap arrays.
 
-    private static final long MAX_ALIGN_1 = 1;
-    private static final long MAX_ALIGN_2 = 2;
-    private static final long MAX_ALIGN_4 = 4;
-    private static final long MAX_ALIGN_8 = 8;
+    private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
+    private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
+    private static final long MAX_ALIGN_INT_ARRAY = ValueLayout.JAVA_INT.byteAlignment();
+    private static final long MAX_ALIGN_LONG_ARRAY = ValueLayout.JAVA_LONG.byteAlignment();
 
     final long offset;
     final Object base;
 
+    @Override
+    public Optional<Object> heapBase() {
+        return readOnly ?
+                Optional.empty() :
+                Optional.of(base);
+    }
+
     @ForceInline
-    HeapMemorySegmentImpl(long offset, Object base, long length, boolean readOnly) {
-        super(length, readOnly, MemorySessionImpl.GLOBAL);
+    HeapMemorySegmentImpl(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+        super(length, readOnly, session);
         this.offset = offset;
         this.base = base;
     }
@@ -72,28 +78,35 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    abstract HeapMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session);
+    public final long maxByteAlignment() {
+        return address() == 0
+            ? maxAlignMask()
+            : Math.min(maxAlignMask(), Long.lowestOneBit(address()));
+    }
+
+    @Override
+    abstract HeapMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope);
 
     @Override
     ByteBuffer makeByteBuffer() {
-        if (!(base instanceof byte[])) {
+        if (!(base instanceof byte[] baseByte)) {
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }
         JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-        return nioAccess.newHeapByteBuffer((byte[])base, (int)offset - BYTE_ARR_BASE, (int) byteSize(), null);
+        return nioAccess.newHeapByteBuffer(baseByte, (int)(offset - Utils.BaseAndScale.BYTE.base()), (int) byteSize(), null);
     }
 
     // factories
 
-    public static class OfByte extends HeapMemorySegmentImpl {
+    public static final class OfByte extends HeapMemorySegmentImpl {
 
-        OfByte(long offset, Object base, long length, boolean readOnly) {
-            super(offset, base, length, readOnly);
+        OfByte(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
         }
 
         @Override
-        OfByte dup(long offset, long size, boolean readOnly, MemorySession session) {
-            return new OfByte(this.offset + offset, base, size, readOnly);
+        OfByte dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+            return new OfByte(this.offset + offset, base, size, readOnly, scope);
         }
 
         @Override
@@ -101,27 +114,26 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             return (byte[])Objects.requireNonNull(base);
         }
 
-        public static MemorySegment fromArray(byte[] arr) {
-            Objects.requireNonNull(arr);
-            long byteSize = (long)arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
-            return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, false);
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_BYTE_ARRAY;
         }
 
         @Override
-        public long maxAlignMask() {
-            return MAX_ALIGN_1;
+        public long address() {
+            return offset - Utils.BaseAndScale.BYTE.base();
         }
     }
 
-    public static class OfChar extends HeapMemorySegmentImpl {
+    public static final class OfChar extends HeapMemorySegmentImpl {
 
-        OfChar(long offset, Object base, long length, boolean readOnly) {
-            super(offset, base, length, readOnly);
+        OfChar(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
         }
 
         @Override
-        OfChar dup(long offset, long size, boolean readOnly, MemorySession session) {
-            return new OfChar(this.offset + offset, base, size, readOnly);
+        OfChar dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+            return new OfChar(this.offset + offset, base, size, readOnly, scope);
         }
 
         @Override
@@ -129,27 +141,26 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             return (char[])Objects.requireNonNull(base);
         }
 
-        public static MemorySegment fromArray(char[] arr) {
-            Objects.requireNonNull(arr);
-            long byteSize = (long)arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
-            return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, false);
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_SHORT_ARRAY;
         }
 
         @Override
-        public long maxAlignMask() {
-            return MAX_ALIGN_2;
+        public long address() {
+            return offset - Utils.BaseAndScale.CHAR.base();
         }
     }
 
-    public static class OfShort extends HeapMemorySegmentImpl {
+    public static final class OfShort extends HeapMemorySegmentImpl {
 
-        OfShort(long offset, Object base, long length, boolean readOnly) {
-            super(offset, base, length, readOnly);
+        OfShort(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
         }
 
         @Override
-        OfShort dup(long offset, long size, boolean readOnly, MemorySession session) {
-            return new OfShort(this.offset + offset, base, size, readOnly);
+        OfShort dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+            return new OfShort(this.offset + offset, base, size, readOnly, scope);
         }
 
         @Override
@@ -157,27 +168,26 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             return (short[])Objects.requireNonNull(base);
         }
 
-        public static MemorySegment fromArray(short[] arr) {
-            Objects.requireNonNull(arr);
-            long byteSize = (long)arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
-            return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, false);
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_SHORT_ARRAY;
         }
 
         @Override
-        public long maxAlignMask() {
-            return MAX_ALIGN_2;
+        public long address() {
+            return offset - Utils.BaseAndScale.SHORT.base();
         }
     }
 
-    public static class OfInt extends HeapMemorySegmentImpl {
+    public static final class OfInt extends HeapMemorySegmentImpl {
 
-        OfInt(long offset, Object base, long length, boolean readOnly) {
-            super(offset, base, length, readOnly);
+        OfInt(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
         }
 
         @Override
-        OfInt dup(long offset, long size, boolean readOnly, MemorySession session) {
-            return new OfInt(this.offset + offset, base, size, readOnly);
+        OfInt dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+            return new OfInt(this.offset + offset, base, size, readOnly, scope);
         }
 
         @Override
@@ -185,27 +195,26 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             return (int[])Objects.requireNonNull(base);
         }
 
-        public static MemorySegment fromArray(int[] arr) {
-            Objects.requireNonNull(arr);
-            long byteSize = (long)arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
-            return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, false);
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_INT_ARRAY;
         }
 
         @Override
-        public long maxAlignMask() {
-            return MAX_ALIGN_4;
+        public long address() {
+            return offset - Utils.BaseAndScale.INT.base();
         }
     }
 
-    public static class OfLong extends HeapMemorySegmentImpl {
+    public static final class OfLong extends HeapMemorySegmentImpl {
 
-        OfLong(long offset, Object base, long length, boolean readOnly) {
-            super(offset, base, length, readOnly);
+        OfLong(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
         }
 
         @Override
-        OfLong dup(long offset, long size, boolean readOnly, MemorySession session) {
-            return new OfLong(this.offset + offset, base, size, readOnly);
+        OfLong dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+            return new OfLong(this.offset + offset, base, size, readOnly, scope);
         }
 
         @Override
@@ -213,27 +222,26 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             return (long[])Objects.requireNonNull(base);
         }
 
-        public static MemorySegment fromArray(long[] arr) {
-            Objects.requireNonNull(arr);
-            long byteSize = (long)arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
-            return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, false);
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_LONG_ARRAY;
         }
 
         @Override
-        public long maxAlignMask() {
-            return MAX_ALIGN_8;
+        public long address() {
+            return offset - Utils.BaseAndScale.LONG.base();
         }
     }
 
-    public static class OfFloat extends HeapMemorySegmentImpl {
+    public static final class OfFloat extends HeapMemorySegmentImpl {
 
-        OfFloat(long offset, Object base, long length, boolean readOnly) {
-            super(offset, base, length, readOnly);
+        OfFloat(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
         }
 
         @Override
-        OfFloat dup(long offset, long size, boolean readOnly, MemorySession session) {
-            return new OfFloat(this.offset + offset, base, size, readOnly);
+        OfFloat dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+            return new OfFloat(this.offset + offset, base, size, readOnly, scope);
         }
 
         @Override
@@ -241,27 +249,26 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             return (float[])Objects.requireNonNull(base);
         }
 
-        public static MemorySegment fromArray(float[] arr) {
-            Objects.requireNonNull(arr);
-            long byteSize = (long)arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
-            return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, false);
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_INT_ARRAY;
         }
 
         @Override
-        public long maxAlignMask() {
-            return MAX_ALIGN_4;
+        public long address() {
+            return offset - Utils.BaseAndScale.FLOAT.base();
         }
     }
 
-    public static class OfDouble extends HeapMemorySegmentImpl {
+    public static final class OfDouble extends HeapMemorySegmentImpl {
 
-        OfDouble(long offset, Object base, long length, boolean readOnly) {
-            super(offset, base, length, readOnly);
+        OfDouble(long offset, Object base, long length, boolean readOnly, MemorySessionImpl session) {
+            super(offset, base, length, readOnly, session);
         }
 
         @Override
-        OfDouble dup(long offset, long size, boolean readOnly, MemorySession session) {
-            return new OfDouble(this.offset + offset, base, size, readOnly);
+        OfDouble dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+            return new OfDouble(this.offset + offset, base, size, readOnly, scope);
         }
 
         @Override
@@ -269,15 +276,14 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
             return (double[])Objects.requireNonNull(base);
         }
 
-        public static MemorySegment fromArray(double[] arr) {
-            Objects.requireNonNull(arr);
-            long byteSize = (long)arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
-            return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, false);
+        @Override
+        public long maxAlignMask() {
+            return MAX_ALIGN_LONG_ARRAY;
         }
 
         @Override
-        public long maxAlignMask() {
-            return MAX_ALIGN_8;
+        public long address() {
+            return offset - Utils.BaseAndScale.DOUBLE.base();
         }
     }
 

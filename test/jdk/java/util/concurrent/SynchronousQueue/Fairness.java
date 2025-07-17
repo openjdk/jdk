@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,45 @@
 
 /*
  * @test
+ * @modules java.base/java.util.concurrent:open
  * @bug 4992438 6633113
  * @summary Checks that fairness setting is respected.
  */
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Fairness {
-    private static void testFairness(boolean fair,
-                                     final BlockingQueue<Integer> q)
+    private final static VarHandle underlyingTransferQueueAccess;
+
+    static {
+        try {
+            underlyingTransferQueueAccess =
+                MethodHandles.privateLookupIn(
+                    SynchronousQueue.class,
+                    MethodHandles.lookup()
+                ).findVarHandle(
+                    SynchronousQueue.class,
+                    "transferer",
+                    Class.forName(SynchronousQueue.class.getName() + "$Transferer")
+            );
+        } catch (Exception ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
+
+    private static void testFairness(boolean fair, final SynchronousQueue<Integer> q)
         throws Throwable
     {
+        final LinkedTransferQueue<Integer> underlying =
+            (LinkedTransferQueue<Integer>)underlyingTransferQueueAccess.get(q);
+
         final ReentrantLock lock = new ReentrantLock();
         final Condition ready = lock.newCondition();
         final int threadCount = 10;
@@ -53,9 +78,12 @@ public class Fairness {
                 } catch (Throwable t) { badness[0] = t; }}};
             t.start();
             ready.await();
-            // Probably unnecessary, but should be bullet-proof
-            while (t.getState() == Thread.State.RUNNABLE)
+            // Wait until previous put:ing thread is provably parked
+            while (underlying.size() < (i + 1))
                 Thread.yield();
+
+            if (underlying.size() > (i + 1))
+                throw new Error("Unexpected number of waiting producers: " + i);
         }
         for (int i = 0; i < threadCount; i++) {
             int j = q.take();
@@ -68,8 +96,8 @@ public class Fairness {
     }
 
     public static void main(String[] args) throws Throwable {
-        testFairness(false, new SynchronousQueue<Integer>());
-        testFairness(false, new SynchronousQueue<Integer>(false));
-        testFairness(true,  new SynchronousQueue<Integer>(true));
+        testFairness(false, new SynchronousQueue<>());
+        testFairness(false, new SynchronousQueue<>(false));
+        testFairness(true,  new SynchronousQueue<>(true));
     }
 }

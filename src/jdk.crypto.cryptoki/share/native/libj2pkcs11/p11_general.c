@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -68,40 +68,22 @@ jobject ckMechanismInfoPtrToJMechanismInfo(JNIEnv *env, const CK_MECHANISM_INFO_
 jfieldID pNativeDataID;
 jfieldID mech_mechanismID;
 jfieldID mech_pParameterID;
-jfieldID mech_pHandleID;
 
 jclass jByteArrayClass;
 jclass jLongClass;
 
-JavaVM* jvm = NULL;
+JavaVM* jvm_j2pkcs11 = NULL;
 
-jboolean debug = 0;
+jboolean debug_j2pkcs11 = 0;
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
-    jvm = vm;
+    jvm_j2pkcs11 = vm;
     return JNI_VERSION_1_4;
 }
 
 /* ************************************************************************** */
 /* The native implementation of the methods of the PKCS11Implementation class */
 /* ************************************************************************** */
-
-/*
- * This method is used to do free the memory allocated for CK_MECHANISM structure.
- *
- * Class:     sun_security_pkcs11_wrapper_PKCS11
- * Method:    freeMechanism
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_sun_security_pkcs11_wrapper_PKCS11_freeMechanism
-(JNIEnv *env, jclass thisClass, jlong ckpMechanism) {
-    if (ckpMechanism != 0L) {
-        freeCKMechanismPtr(jlong_to_ptr(ckpMechanism));
-        TRACE1("DEBUG PKCS11_freeMechanism: free pMech = %lld\n", (long long int) ckpMechanism);
-    }
-    return 0L;
-}
 
 /*
  * This method is used to do static initialization. This method is static and
@@ -122,7 +104,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_initializeLibrary
 #endif
 
     prefetchFields(env, thisClass);
-    debug = enableDebug;
+    debug_j2pkcs11 = enableDebug;
 }
 
 jclass fetchClass(JNIEnv *env, const char *name) {
@@ -146,8 +128,6 @@ void prefetchFields(JNIEnv *env, jclass thisClass) {
     mech_pParameterID = (*env)->GetFieldID(env, tmpClass, "pParameter",
                                            "Ljava/lang/Object;");
     if (mech_pParameterID == NULL) { return; }
-    mech_pHandleID = (*env)->GetFieldID(env, tmpClass, "pHandle", "J");
-    if (mech_pHandleID == NULL) { return; }
 
     /* java classes for primitive types - byte[], long */
     jByteArrayClass = fetchClass(env, "[B");
@@ -385,7 +365,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotList
 
     ckpSlotList = (CK_SLOT_ID_PTR) malloc(ckTokenNumber * sizeof(CK_SLOT_ID));
     if (ckpSlotList == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -686,7 +666,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismList
     ckpMechanismList = (CK_MECHANISM_TYPE_PTR)
       malloc(ckMechanismNumber * sizeof(CK_MECHANISM_TYPE));
     if (ckpMechanismList == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 

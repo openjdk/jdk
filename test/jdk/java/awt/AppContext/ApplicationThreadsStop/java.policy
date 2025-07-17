@@ -1,5 +1,0 @@
-grant {
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.awt";
-    permission java.awt.AWTPermission "createRobot";
-    permission java.util.PropertyPermission "AWT.EventQueueClass", "read";
-};

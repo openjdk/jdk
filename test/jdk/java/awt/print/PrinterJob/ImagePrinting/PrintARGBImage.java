@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 /*
  * @test
  * @bug 6581756
+ * @key printer
  * @library ../../../regtesthelpers
  * @build PassFailJFrame
  * @summary Test printing of images which need to have src area clipped
@@ -54,6 +55,7 @@ public class PrintARGBImage implements Printable {
                     """;
 
             PassFailJFrame passFailJFrame = new PassFailJFrame(instruction, 10);
+            PassFailJFrame.positionTestWindow(null, PassFailJFrame.Position.HORIZONTAL);
             try {
                 PrinterJob pj = PrinterJob.getPrinterJob();
                 pj.setPrintable(new PrintARGBImage());

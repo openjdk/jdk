@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,10 +258,10 @@ class UNSIGNED5 : AllStatic {
   //  MyReader r(array); while (r.has_next())  print(r.next_uint());
   template<typename ARR, typename OFF, typename GET = ArrayGetSet<ARR,OFF>>
   class Reader {
-    const ARR _array;
-    const OFF _limit;
+    ARR _array;
+    OFF _limit;
     OFF _position;
-    int next_length() {
+    int next_length() const {
       return UNSIGNED5::check_length(_array, _position, _limit, GET());
     }
   public:
@@ -270,7 +270,7 @@ class UNSIGNED5 : AllStatic {
     uint32_t next_uint() {
       return UNSIGNED5::read_uint(_array, _position, _limit, GET());
     }
-    bool has_next() {
+    bool has_next() const {
       return next_length() != 0;
     }
     // tries to skip count logical entries; returns actual number skipped
@@ -284,8 +284,9 @@ class UNSIGNED5 : AllStatic {
       return actual;
     }
     ARR array() { return _array; }
-    OFF limit() { return _limit; }
-    OFF position() { return _position; }
+    OFF limit() const { return _limit; }
+    OFF position() const { return _position; }
+    void set_limit(OFF limit) { _limit = limit; }
     void set_position(OFF position) { _position = position; }
 
     // For debugging, even in product builds (see debug.cpp).
@@ -306,7 +307,7 @@ class UNSIGNED5 : AllStatic {
     // The %d formats are for the number of printed items and
     // their length in bytes, if you want to see that also.
     void print_on(outputStream* st, int count = -1,
-                  const char* left = NULL, const char* right = NULL);
+                  const char* left = nullptr, const char* right = nullptr);
   };
 
   // Writer example use
@@ -323,8 +324,8 @@ class UNSIGNED5 : AllStatic {
     OFF _position;
   public:
     Writer(const ARR& array)
-      : _array(const_cast<ARR&>(array)), _limit_ptr(NULL), _position(0) {
-      // Note: if _limit_ptr is NULL, the ARR& is never reassigned,
+      : _array(const_cast<ARR&>(array)), _limit_ptr(nullptr), _position(0) {
+      // Note: if _limit_ptr is null, the ARR& is never reassigned,
       // because has_limit is false.  So the const_cast here is safe.
       assert(!has_limit(), "this writer cannot be growable");
     }
@@ -363,7 +364,7 @@ class UNSIGNED5 : AllStatic {
     ARR array() { return _array; }
     OFF position() { return _position; }
     void set_position(OFF position) { _position = position; }
-    bool has_limit() { return _limit_ptr != NULL; }
+    bool has_limit() { return _limit_ptr != nullptr; }
     OFF limit() { assert(has_limit(), "needs limit"); return *_limit_ptr; }
     OFF remaining() { return limit() - position(); }
   };

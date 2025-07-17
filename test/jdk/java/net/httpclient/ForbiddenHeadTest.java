@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,9 @@
  * @test
  * @summary checks that receiving 403 for a HEAD request after
  *          401/407 doesn't cause any unexpected behavior.
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
- * @library /test/lib http2/server
- * @build HttpServerAdapters DigestEchoServer Http2TestServer ForbiddenHeadTest
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build DigestEchoServer ForbiddenHeadTest jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
  *       -Djdk.http.auth.tunneling.disabledSchemes
  *       -Djdk.httpclient.HttpClient.log=headers,requests
@@ -84,9 +75,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -210,18 +205,18 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     @DataProvider(name = "all")
     public Object[][] allcases() {
         List<Object[]> result = new ArrayList<>();
-        for (var client : List.of(authClient, noAuthClient)) {
+        for (boolean useAuth : List.of(true, false)) {
             for (boolean async : List.of(true, false)) {
                 for (int code : List.of(UNAUTHORIZED, PROXY_UNAUTHORIZED)) {
                     var srv = code == PROXY_UNAUTHORIZED ? "/proxy" : "/server";
                     for (var auth : List.of("/auth", "/noauth")) {
                         var pcode = code;
                         if (auth.equals("/noauth")) {
-                            if (client == authClient) continue;
+                            if (useAuth) continue;
                             pcode = FORBIDDEN;
                         }
                         for (var uri : List.of(httpURI, httpsURI, http2URI, https2URI)) {
-                            result.add(new Object[]{uri + srv + auth, pcode, async, client});
+                            result.add(new Object[]{uri + srv + auth, pcode, async, useAuth});
                         }
                     }
                 }
@@ -242,12 +237,13 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     static final AtomicLong sleepCount = new AtomicLong();
 
     @Test(dataProvider = "all")
-    void test(String uriString, int code, boolean async, HttpClient client) throws Throwable {
+    void test(String uriString, int code, boolean async, boolean useAuth) throws Throwable {
         checkSkip();
+        HttpClient client = useAuth ? authClient : noAuthClient;
         var name = String.format("test(%s, %d, %s, %s)", uriString, code, async ? "async" : "sync",
                 client.authenticator().isPresent() ? "authClient" : "noAuthClient");
         out.printf("%n---- starting %s ----%n", name);
-        assert client.authenticator().isPresent() ? client == authClient : client == noAuthClient;
+        assert client.authenticator().isPresent() == useAuth;
         uriString = uriString + "/ForbiddenTest";
         for (int i=0; i<ITERATIONS; i++) {
             if (ITERATIONS > 1) out.printf("---- ITERATION %d%n",i);
@@ -338,22 +334,18 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new UnauthorizedHandler(), "/http1/");
         httpTestServer.addHandler(new UnauthorizedHandler(), "/http2/proxy/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1";
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(new UnauthorizedHandler(),"/https1/");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1";
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(new UnauthorizedHandler(), "/http2/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2";
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new UnauthorizedHandler(), "/https2/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 
@@ -389,14 +381,17 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     public void teardown() throws Exception {
         authClient = noAuthClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
-
-        proxy.stop();
-        authproxy.stop();
-        httpTestServer.stop();
-        httpsTestServer.stop();
-        http2TestServer.stop();
-        https2TestServer.stop();
+        AssertionError fail = TRACKER.check(1500);
+        try {
+            proxy.stop();
+            authproxy.stop();
+            httpTestServer.stop();
+            httpsTestServer.stop();
+            http2TestServer.stop();
+            https2TestServer.stop();
+        } finally {
+            if (fail != null) throw fail;
+        }
     }
 
     static class TestProxySelector extends ProxySelector {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ public:
 
   static inline void push_pd(const frame& f);
 
+  static inline address return_address_at(intptr_t* sp);
+  static inline void patch_return_address_at(intptr_t* sp, address pc);
+
   static inline int frame_align_words(int size);
   static inline intptr_t* frame_align_pointer(intptr_t* sp);
 
@@ -55,6 +58,7 @@ public:
   class InterpretedFrame;
   class NonInterpretedUnknownFrame;
   class CompiledFrame;
+  class NativeFrame;
   class StubFrame;
 };
 
@@ -62,23 +66,20 @@ class ContinuationHelper::Frame : public AllStatic {
 public:
   static const bool interpreted = false;
   static const bool stub = false;
+  static const bool native = false;
 
   static inline intptr_t** callee_link_address(const frame& f);
   static Method* frame_method(const frame& f);
   static inline address real_pc(const frame& f);
   static inline void patch_pc(const frame& f, address pc);
   static address* return_pc_address(const frame& f);
-  static address return_pc(const frame& f) { return *return_pc_address(f); }
+  static address return_pc(const frame& f);
   static bool is_stub(CodeBlob* cb);
 
 #ifdef ASSERT
   static inline intptr_t* frame_top(const frame &f);
   static inline bool is_deopt_return(address pc, const frame& sender);
   static bool assert_frame_laid_out(frame f);
-
-  static char* method_name(Method* m) { return m != nullptr ? m->name_and_sig_as_C_string() : nullptr; }
-  static Method* top_java_frame_method(const frame& f);
-  static Method* bottom_java_frame_method(const frame& f)  { return frame_method(f); }
 #endif
 };
 
@@ -90,14 +91,13 @@ public:
   static inline intptr_t* frame_top(const frame& f);
   static inline intptr_t* frame_top(const frame& f, int callee_argsize, bool callee_interpreted);
   static inline intptr_t* frame_bottom(const frame& f);
-  static inline intptr_t* sender_unextended_sp(const frame& f);
+  static inline intptr_t* callers_sp(const frame& f);
   static inline int stack_argsize(const frame& f);
 
   static inline address* return_pc_address(const frame& f);
   static address return_pc(const frame& f);
-  static void patch_sender_sp(frame& f, intptr_t* sp);
+  static void patch_sender_sp(frame& f, const frame& caller);
 
-  static int size(const frame& f, InterpreterOopMap* mask);
   static int size(const frame& f);
   static inline int expression_stack_size(const frame &f, InterpreterOopMap* mask);
 
@@ -118,7 +118,6 @@ public:
 
   static inline int size(const frame& f);
   static inline int stack_argsize(const frame& f);
-  static inline int num_oops(const frame& f);
 };
 
 class ContinuationHelper::NonInterpretedUnknownFrame : public ContinuationHelper::NonInterpretedFrame  {
@@ -128,8 +127,6 @@ public:
 
 class ContinuationHelper::CompiledFrame : public ContinuationHelper::NonInterpretedFrame {
 public:
-  static inline int num_oops(const frame& f);
-
   static bool is_instance(const frame& f);
 
 #ifdef ASSERT
@@ -138,11 +135,25 @@ public:
 #endif
 };
 
+class ContinuationHelper::NativeFrame : public ContinuationHelper::NonInterpretedFrame {
+public:
+  static const bool native = true;
+
+  static bool is_instance(const frame& f);
+
+#ifdef ASSERT
+  static bool is_owning_locks(JavaThread* current, const frame& f);
+#endif
+
+  static int stack_argsize(const frame& f) { return 0; }
+};
+
 class ContinuationHelper::StubFrame : public ContinuationHelper::NonInterpretedFrame {
 public:
   static const bool stub = true;
 
   static bool is_instance(const frame& f);
+  static int stack_argsize(const frame& f) { return 0; }
 };
 
 #endif // SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP

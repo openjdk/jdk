@@ -297,6 +297,24 @@
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
     }
 
+    @Test(dataProvider = "$type$SelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVector$vectorteststype$(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb, IntFunction<$type$[]> fc) {
+        $type$[] a = fa.apply(SPECIES.length());
+        $type$[] b = fb.apply(SPECIES.length());
+        $type$[] idx = fc.apply(SPECIES.length());
+        $type$[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
+                $abstractvectortype$ bv = $abstractvectortype$.fromArray(SPECIES, b, i);
+                $abstractvectortype$ idxv = $abstractvectortype$.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
+    }
+
 #if[Int]
     @Test(dataProvider = "$type$UnaryOpShuffleMaskProvider")
 #else[Int]
@@ -376,6 +394,82 @@
             int to = i + SPECIES.length();
             Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
         }
+    }
+
+    static boolean band(boolean a, boolean b) {
+        return a & b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAnd$vectorteststype$SmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.and(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, $vectorteststype$::band);
+    }
+
+    static boolean bor(boolean a, boolean b) {
+        return a | b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskOr$vectorteststype$SmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.or(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, $vectorteststype$::bor);
+    }
+
+    static boolean bxor(boolean a, boolean b) {
+        return a != b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskXor$vectorteststype$SmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.xor(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, $vectorteststype$::bxor);
+    }
+
+    static boolean bandNot(boolean a, boolean b) {
+        return a & !b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndNot$vectorteststype$SmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.andNot(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, $vectorteststype$::bandNot);
     }
 
     static boolean beq(boolean a, boolean b) {

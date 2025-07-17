@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,55 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
+################################################################################
 # This makefile creates an image of the optional static versions of certain JDK
 # libraries.
+################################################################################
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
+include CopyFiles.gmk
 include Modules.gmk
 
 ALL_MODULES = $(call FindAllModules)
 
 ################################################################################
 
-TARGETS :=
+ifneq ($(filter static-libs-image, $(MAKECMDGOALS)), )
+  IMAGE_DEST_DIR = $(STATIC_LIBS_IMAGE_DIR)/lib
+else ifneq ($(filter static-libs-graal-image, $(MAKECMDGOALS)), )
+  IMAGE_DEST_DIR = $(STATIC_LIBS_GRAAL_IMAGE_DIR)/lib
+endif
 
+# Copy JDK static libs to the image.
 $(foreach m, $(ALL_MODULES), \
   $(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_$m, \
       FLATTEN := true, \
       SRC := $(SUPPORT_OUTPUTDIR)/native/$m, \
-      DEST := $(STATIC_LIBS_IMAGE_DIR)/lib, \
+      DEST := $(IMAGE_DEST_DIR), \
       FILES := $(filter %$(STATIC_LIBRARY_SUFFIX), \
           $(call FindFiles, $(SUPPORT_OUTPUTDIR)/native/$m/*/static)), \
   )) \
   $(eval TARGETS += $$(COPY_STATIC_LIBS_$m)) \
+  $(eval STATIC_LIBS_TARGETS += $$(COPY_STATIC_LIBS_$m)) \
 )
+
+ifneq ($(filter static-libs-image, $(MAKECMDGOALS)), )
+  # Copy libjvm static library to the image.
+  $(foreach v, $(JVM_VARIANTS), \
+    $(eval $(call SetupCopyFiles, COPY_STATIC_LIBS_$v, \
+        SRC := $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/objs/static, \
+        DEST := $(IMAGE_DEST_DIR)/$v, \
+        FILES := $(wildcard $(HOTSPOT_OUTPUTDIR)/variant-$v/libjvm/objs/static/*$(STATIC_LIBRARY_SUFFIX)), \
+    )) \
+    $(eval TARGETS += $$(COPY_STATIC_LIBS_$v)) \
+    $(eval HOTSPOT_VARIANT_STATIC_LIBS_TARGETS += $$(COPY_STATIC_LIBS_$v)) \
+  )
+endif
+
+static-libs-image: $(HOTSPOT_VARIANT_STATIC_LIBS_TARGETS) $(STATIC_LIBS_TARGETS)
+static-libs-graal-image: $(STATIC_LIBS_TARGETS)
 
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all
+include MakeFileEnd.gmk

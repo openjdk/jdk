@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -62,6 +62,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>arab</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
 		<symbols numberSystem="latn">
 			<percentSign>٪</percentSign>
 		</symbols>
@@ -76,14 +77,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" draft="contributed">{0} مترًا في الثانية المربعة</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} متر في الثانية المربعة</unitPattern>
 			</unit>
-			<unit type="angle-arc-minute">
-				<unitPattern count="zero">{0} دقيقة قوسية</unitPattern>
-				<unitPattern count="one">دقيقة قوسية</unitPattern>
-				<unitPattern count="two">دقيقتان قوسيتان</unitPattern>
-				<unitPattern count="few">{0} دقائق قوسية</unitPattern>
-				<unitPattern count="many">{0} دقيقة قوسية</unitPattern>
-				<unitPattern count="other">{0} دقيقة قوسية</unitPattern>
-			</unit>
 			<unit type="area-square-kilometer">
 				<unitPattern count="zero">{0} كيلومتر مربع</unitPattern>
 				<unitPattern count="one">{0} كيلومتر مربع</unitPattern>
@@ -91,14 +84,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} كيلومترات مربعة</unitPattern>
 				<unitPattern count="many">{0} كيلومترًا مربعًا</unitPattern>
 				<unitPattern count="other">{0} كيلومتر مربع</unitPattern>
-			</unit>
-			<unit type="area-hectare">
-				<unitPattern count="zero">{0} هكتار</unitPattern>
-				<unitPattern count="one">{0} هكتار</unitPattern>
-				<unitPattern count="two">هكتاران</unitPattern>
-				<unitPattern count="few">{0} هكتارات</unitPattern>
-				<unitPattern count="many">{0} هكتارًا</unitPattern>
-				<unitPattern count="other">{0} هكتار</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<unitPattern count="zero">{0} متر مربع</unitPattern>
@@ -123,14 +108,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} أميال مربعة</unitPattern>
 				<unitPattern count="many">{0} ميلًا مربعًا</unitPattern>
 				<unitPattern count="other">{0} ميل مربع</unitPattern>
-			</unit>
-			<unit type="area-acre">
-				<unitPattern count="zero">{0} فدان</unitPattern>
-				<unitPattern count="one">فدان</unitPattern>
-				<unitPattern count="two">{0} فدان</unitPattern>
-				<unitPattern count="few">{0} أفدنة</unitPattern>
-				<unitPattern count="many">{0} فدانًا</unitPattern>
-				<unitPattern count="other">{0} فدان</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<unitPattern count="zero">{0} ياردة مربعة</unitPattern>
@@ -188,6 +165,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} كيلومترًا</unitPattern>
 				<unitPattern count="other">{0} كيلومتر</unitPattern>
 			</unit>
+			<unit type="length-meter">
+				<unitPattern count="zero">{0} متر</unitPattern>
+				<unitPattern count="one">متر</unitPattern>
+				<unitPattern count="two">متران</unitPattern>
+				<unitPattern count="few">{0} أمتار</unitPattern>
+				<unitPattern count="many">{0} مترًا</unitPattern>
+				<unitPattern count="other">{0} متر</unitPattern>
+			</unit>
 			<unit type="length-centimeter">
 				<unitPattern count="zero">{0} سنتيمتر</unitPattern>
 				<unitPattern count="one">{0} سنتيمتر</unitPattern>
@@ -204,38 +189,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} مليمترًا</unitPattern>
 				<unitPattern count="other">{0} مليمتر</unitPattern>
 			</unit>
-			<unit type="length-yard">
-				<unitPattern count="zero">{0} ياردة</unitPattern>
-				<unitPattern count="one">ياردة</unitPattern>
-				<unitPattern count="two">ياردتان</unitPattern>
-				<unitPattern count="few">{0} ياردات</unitPattern>
-				<unitPattern count="many">{0} ياردة</unitPattern>
-				<unitPattern count="other">{0} ياردة</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="zero">{0} قدم</unitPattern>
-				<unitPattern count="one">قدم</unitPattern>
-				<unitPattern count="two">قدمان</unitPattern>
-				<unitPattern count="few">{0} أقدام</unitPattern>
-				<unitPattern count="many">{0} قدمًا</unitPattern>
-				<unitPattern count="other">{0} قدم</unitPattern>
-			</unit>
-			<unit type="length-inch">
-				<unitPattern count="zero">{0} بوصة</unitPattern>
-				<unitPattern count="one">{0} بوصة</unitPattern>
-				<unitPattern count="two">بوصتان</unitPattern>
-				<unitPattern count="few">{0} بوصات</unitPattern>
-				<unitPattern count="many">{0} بوصة</unitPattern>
-				<unitPattern count="other">{0} بوصة</unitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<unitPattern count="zero">{0} فرسخ فلكي</unitPattern>
-				<unitPattern count="one">فرسخ فلكي</unitPattern>
-				<unitPattern count="two">فرسخان فلكيان</unitPattern>
-				<unitPattern count="few">{0} فراسخ فلكية</unitPattern>
-				<unitPattern count="many">{0} فرسخًا فلكيًا</unitPattern>
-				<unitPattern count="other">{0} فرسخ فلكي</unitPattern>
-			</unit>
 			<unit type="length-astronomical-unit">
 				<unitPattern count="zero">{0} وحدة فلكية</unitPattern>
 				<unitPattern count="one">وحدة فلكية</unitPattern>
@@ -243,30 +196,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} وحدات فلكية</unitPattern>
 				<unitPattern count="many">{0} وحدة فلكية</unitPattern>
 				<unitPattern count="other">{0} وحدة فلكية</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<unitPattern count="zero">{0} ميل بحري</unitPattern>
-				<unitPattern count="one">ميل بحري</unitPattern>
-				<unitPattern count="two">ميلان بحريان</unitPattern>
-				<unitPattern count="few">{0} أميال بحرية</unitPattern>
-				<unitPattern count="many">{0} ميلًا بحريًا</unitPattern>
-				<unitPattern count="other">{0} ميل بحري</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<unitPattern count="zero">{0} ميل اسكندنافي</unitPattern>
-				<unitPattern count="one">{0} ميل اسكندنافي</unitPattern>
-				<unitPattern count="two">ميلان اسكندنافيان</unitPattern>
-				<unitPattern count="few">{0} أميال اسكندنافية</unitPattern>
-				<unitPattern count="many">{0} ميلًا اسكندنافيًا</unitPattern>
-				<unitPattern count="other">{0} ميل اسكندنافي</unitPattern>
-			</unit>
-			<unit type="light-solar-luminosity">
-				<unitPattern count="zero">{0} ضياء شمسي</unitPattern>
-				<unitPattern count="one">{0} ضياء شمسي</unitPattern>
-				<unitPattern count="two">ضياءان شمسيان</unitPattern>
-				<unitPattern count="few">{0} ضياءات شمسية</unitPattern>
-				<unitPattern count="many">{0} ضياءً شمسيًا</unitPattern>
-				<unitPattern count="other">{0} ضياء شمسي</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<unitPattern count="zero">{0} طن متري</unitPattern>
@@ -300,30 +229,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} ميكروغرامًا</unitPattern>
 				<unitPattern count="other">{0} ميكروغرام</unitPattern>
 			</unit>
-			<unit type="mass-pound">
-				<unitPattern count="zero">{0} رطل</unitPattern>
-				<unitPattern count="one">{0} رطل</unitPattern>
-				<unitPattern count="two">رطلان</unitPattern>
-				<unitPattern count="few">{0} أرطال</unitPattern>
-				<unitPattern count="many">{0} رطلًا</unitPattern>
-				<unitPattern count="other">{0} رطل</unitPattern>
-			</unit>
-			<unit type="mass-earth-mass">
-				<unitPattern count="zero">{0} كتلة أرضية</unitPattern>
-				<unitPattern count="one">{0} كتلة أرضية</unitPattern>
-				<unitPattern count="two">كتلتان أرضيتان</unitPattern>
-				<unitPattern count="few">{0} كتل أرضية</unitPattern>
-				<unitPattern count="many">{0} كتلة أرضية</unitPattern>
-				<unitPattern count="other">{0} كتلة أرضية</unitPattern>
-			</unit>
-			<unit type="mass-solar-mass">
-				<unitPattern count="zero">{0} كتلة شمسية</unitPattern>
-				<unitPattern count="one">{0} كتلة شمسية</unitPattern>
-				<unitPattern count="two">كتلتان شمسيتان</unitPattern>
-				<unitPattern count="few">{0} كتل شمسية</unitPattern>
-				<unitPattern count="many">{0} كتلة شمسية</unitPattern>
-				<unitPattern count="other">{0} كتلة شمسية</unitPattern>
-			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<unitPattern count="zero" draft="contributed">{0} رطل لكل بوصة مربعة</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} رطل لكل بوصة مربعة</unitPattern>
@@ -355,14 +260,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} أميال في الساعة</unitPattern>
 				<unitPattern count="many">{0} ميلًا في الساعة</unitPattern>
 				<unitPattern count="other">{0} ميل في الساعة</unitPattern>
-			</unit>
-			<unit type="speed-knot">
-				<unitPattern count="zero">{0} عقدة</unitPattern>
-				<unitPattern count="one">{0} عقدة</unitPattern>
-				<unitPattern count="two">عقدتان</unitPattern>
-				<unitPattern count="few">{0} عقد</unitPattern>
-				<unitPattern count="many">{0} عقدة</unitPattern>
-				<unitPattern count="other">{0} عقدة</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="zero">{0} كيلومتر مكعب</unitPattern>
@@ -413,36 +310,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} قدم مكعبة</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
-				<unitPattern count="zero">{0} بوصة مكعبة</unitPattern>
-				<unitPattern count="one">{0} بوصة مكعبة</unitPattern>
+				<unitPattern count="zero">{0} بوصة³</unitPattern>
+				<unitPattern count="one">{0} بوصة³</unitPattern>
 				<unitPattern count="two">بوصتان مكعبات</unitPattern>
 				<unitPattern count="few">{0} بوصات مكعبة</unitPattern>
-				<unitPattern count="many">{0} بوصة مكعبة</unitPattern>
-				<unitPattern count="other">{0} بوصة مكعبة</unitPattern>
-			</unit>
-			<unit type="volume-liter">
-				<unitPattern count="zero">{0} لتر</unitPattern>
-				<unitPattern count="one">لتر</unitPattern>
-				<unitPattern count="two">لتران</unitPattern>
-				<unitPattern count="few">{0} لترات</unitPattern>
-				<unitPattern count="many">{0} لترًا</unitPattern>
-				<unitPattern count="other">{0} لتر</unitPattern>
-			</unit>
-			<unit type="volume-pint-metric">
-				<unitPattern count="zero">{0} مكيال متري</unitPattern>
-				<unitPattern count="one">{0} مكيال متري</unitPattern>
-				<unitPattern count="two">مكيالان متريان</unitPattern>
-				<unitPattern count="few">{0} مكاييل مترية</unitPattern>
-				<unitPattern count="many">{0} مكيالًا متريًا</unitPattern>
-				<unitPattern count="other">{0} مكيال متري</unitPattern>
-			</unit>
-			<unit type="volume-cup-metric">
-				<unitPattern count="zero">{0} كوب متري</unitPattern>
-				<unitPattern count="one">{0} كوب متري</unitPattern>
-				<unitPattern count="two">كوبان متريان</unitPattern>
-				<unitPattern count="few">{0} أكواب مترية</unitPattern>
-				<unitPattern count="many">{0} كوبًا متريًا</unitPattern>
-				<unitPattern count="other">{0} كوب متري</unitPattern>
+				<unitPattern count="many">{0} بوصة³</unitPattern>
+				<unitPattern count="other">{0} بوصة³</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<unitPattern count="zero">{0} ملعقة كبيرة</unitPattern>
@@ -542,14 +415,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} سنوات</unitPattern>
 				<unitPattern count="many">{0} سنة</unitPattern>
 				<unitPattern count="other">{0} سنة</unitPattern>
-			</unit>
-			<unit type="energy-british-thermal-unit">
-				<unitPattern count="zero">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="one">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="two">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="few">{0} وحدات حرارية بريطانية</unitPattern>
-				<unitPattern count="many">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="other">{0} وحدة حرارية بريطانية</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<unitPattern count="zero">{0} ميل</unitPattern>
@@ -716,7 +581,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-cubic-inch">
 				<unitPattern count="zero">{0} بوصة³</unitPattern>
-				<unitPattern count="one">{0} بوصة مكعبة</unitPattern>
+				<unitPattern count="one">{0} بوصة³</unitPattern>
 				<unitPattern count="two">{0} بوصة³</unitPattern>
 				<unitPattern count="few">{0} بوصة³</unitPattern>
 				<unitPattern count="many">{0} بوصة³</unitPattern>
@@ -792,13 +657,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} سنة</unitPattern>
 				<unitPattern count="other">{0} سنة</unitPattern>
 			</unit>
-			<unit type="duration-month">
-				<unitPattern count="zero">{0} شهر</unitPattern>
-				<unitPattern count="one">شهر</unitPattern>
-				<unitPattern count="two">شهران</unitPattern>
-				<unitPattern count="few">{0} أشهر</unitPattern>
-				<unitPattern count="many">{0} شهرًا</unitPattern>
-				<unitPattern count="other">{0} شهر</unitPattern>
+			<unit type="length-meter">
+				<displayName>متر</displayName>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>كغم</displayName>
@@ -818,10 +678,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} غم</unitPattern>
 				<unitPattern count="other">{0} غم</unitPattern>
 			</unit>
-			<coordinateUnit>
-				<coordinateUnitPattern type="south">{0} جنوب</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} غرب</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
 	</units>
 </ldml>

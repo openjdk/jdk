@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,13 @@
 /*
  * @test
  * @bug 4851638 4900189 4939441
+ * @build Tests
+ * @build Expm1Tests
+ * @run main Expm1Tests
  * @summary Tests for {Math, StrictMath}.expm1
  */
+
+import static java.lang.Double.longBitsToDouble;
 
 /*
  * The Taylor expansion of expxm1(x) = exp(x) -1 is
@@ -48,21 +53,14 @@ public class Expm1Tests {
     static final double infinityD = Double.POSITIVE_INFINITY;
     static final double NaNd = Double.NaN;
 
-    static int testExpm1() {
+    private static int testExpm1() {
         int failures = 0;
 
+        for(double nan : Tests.NaNs) {
+            failures += testExpm1Case(nan, NaNd);
+        }
+
         double [][] testCases = {
-            {Double.NaN,                NaNd},
-            {Double.longBitsToDouble(0x7FF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0xFFF0000000000001L),      NaNd},
-            {Double.longBitsToDouble(0x7FF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0xFFF8555555555555L),      NaNd},
-            {Double.longBitsToDouble(0x7FFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0xFFFFFFFFFFFFFFFFL),      NaNd},
-            {Double.longBitsToDouble(0x7FFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFDeadBeef00000L),      NaNd},
-            {Double.longBitsToDouble(0x7FFCafeBabe00000L),      NaNd},
-            {Double.longBitsToDouble(0xFFFCafeBabe00000L),      NaNd},
             {infinityD,                 infinityD},
             {-infinityD,                -1.0},
             {-0.0,                      -0.0},

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8186801 8186751
+ * @bug 8186801 8186751 8310631
  * @summary Test the charset mappings
  * @modules jdk.charsets
  */
@@ -451,7 +451,7 @@ public class TestCharsetMapping {
         String   pkgName;
         String   clzName;
         String   csName;
-        String   hisName;
+        String   histName;
         String   type;
         boolean  isInternal;
         Set<String> aliases = new HashSet<>();
@@ -552,7 +552,7 @@ public class TestCharsetMapping {
                         cs.type = tokens[2];
                         break;
                     case "hisname":
-                        cs.hisName = tokens[2];
+                        cs.histName = tokens[2];
                         break;
                     case "internal":
                         cs.isInternal = Boolean.parseBoolean(tokens[2]);
@@ -569,11 +569,9 @@ public class TestCharsetMapping {
 
     public static void main(String args[]) throws Exception {
         Path dir = Paths.get(System.getProperty("test.src", ".") +
-                             "/../../../../src/java.base/share/data/charsetmapping");
+            "/../../../../../make/data/charsetmapping").normalize();
         if (!Files.exists(dir)) {
-            // not inside jdk repo, no mappings, exit silently
-            log.println("Nothing done, not in a jdk repo: ");
-            return;
+            throw new Exception("charsetmapping files cannot be located in " + dir);
         }
         if (args.length > 0 && "-v".equals(args[0])) {
             // For debugging: java CoderTest [-v]
@@ -608,7 +606,8 @@ public class TestCharsetMapping {
                            + " vs " + cs.name() + "]");
             }
             // test aliases()
-            if (!cs.aliases().equals(csinfo.aliases)) {
+            if (!cs.aliases().equals(csinfo.aliases)
+                && !csname.equals("GB18030")) {  // no alias in "charsets" file
                 errors++;
                 log.printf("    [error wrong aliases]");
                 if (verbose) {
@@ -625,6 +624,19 @@ public class TestCharsetMapping {
             }
 
             if (!csinfo.loadMappings(dir)) {
+                // Ignore these cs, as mapping files are not provided
+                if (csinfo.csName.equals("x-IBM942C") ||
+                        csinfo.csName.equals("x-IBM943C") ||
+                        csinfo.csName.equals("x-IBM834") ||
+                        csinfo.csName.equals("x-IBM949C") ||
+                        csinfo.csName.equals("x-IBM964") ||
+                        csinfo.csName.equals("x-IBM29626C"))
+                {
+                    log.println("    [**** skipped, mapping file is not provided]");
+                    known++;
+                    continue;
+                }
+
                 log.println("    [error loading mappings failed]");
                 errors++;
                 continue;

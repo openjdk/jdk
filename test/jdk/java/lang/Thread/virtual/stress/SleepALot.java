@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,12 @@
  * @test
  * @summary Stress test Thread.sleep
  * @requires vm.debug != true & vm.continuations
- * @enablePreview
- * @run main/othervm SleepALot 500000
+ * @run main SleepALot 500000
  */
 
 /*
  * @test
  * @requires vm.debug == true & vm.continuations
- * @enablePreview
  * @run main/othervm/timeout=300 SleepALot 200000
  */
 
@@ -43,16 +41,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SleepALot {
 
     public static void main(String[] args) throws Exception {
-        int iterations = 1_000_000;
+        int iterations;
         if (args.length > 0) {
             iterations = Integer.parseInt(args[0]);
+        } else {
+            iterations = 1_000_000;
         }
-        final int ITERATIONS = iterations;
 
         AtomicInteger count = new AtomicInteger();
-
         Thread thread = Thread.ofVirtual().start(() -> {
-            while (count.incrementAndGet() < ITERATIONS) {
+            while (count.incrementAndGet() < iterations) {
                 try {
                     Thread.sleep(Duration.ofNanos(100));
                 } catch (InterruptedException ignore) { }
@@ -62,12 +60,12 @@ public class SleepALot {
         boolean terminated;
         do {
             terminated = thread.join(Duration.ofSeconds(1));
-            System.out.println(Instant.now() + " => " + count.get());
+            System.out.println(Instant.now() + " => " + count.get() + " of " + iterations);
         } while (!terminated);
 
         int countValue = count.get();
-        if (countValue != ITERATIONS) {
-            throw new RuntimeException("count = " + countValue);
+        if (countValue != iterations) {
+            throw new RuntimeException("Thread terminated, count=" + countValue);
         }
     }
 }

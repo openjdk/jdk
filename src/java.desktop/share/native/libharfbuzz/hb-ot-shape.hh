@@ -51,7 +51,8 @@ struct hb_ot_shape_plan_key_t
 
   bool equal (const hb_ot_shape_plan_key_t *other)
   {
-    return 0 == memcmp (this, other, sizeof (*this));
+    return variations_index[0] == other->variations_index[0] &&
+           variations_index[1] == other->variations_index[1];
   }
 };
 
@@ -60,6 +61,8 @@ struct hb_shape_plan_key_t;
 
 struct hb_ot_shape_plan_t
 {
+  ~hb_ot_shape_plan_t () { fini (); }
+
   hb_segment_properties_t props;
   const struct hb_ot_shaper_t *shaper;
   hb_ot_map_t map;
@@ -78,21 +81,11 @@ struct hb_ot_shape_plan_t
 #else
   static constexpr hb_mask_t kern_mask = 0;
 #endif
-#ifndef HB_NO_AAT_SHAPE
-  hb_mask_t trak_mask;
-#else
-  static constexpr hb_mask_t trak_mask = 0;
-#endif
 
 #ifndef HB_NO_OT_KERN
   bool requested_kerning : 1;
 #else
   static constexpr bool requested_kerning = false;
-#endif
-#ifndef HB_NO_AAT_SHAPE
-  bool requested_tracking : 1;
-#else
-  static constexpr bool requested_tracking = false;
 #endif
 #ifndef HB_NO_OT_SHAPE_FRACTIONS
   bool has_frac : 1;
@@ -150,8 +143,8 @@ struct hb_ot_shape_planner_t
   hb_face_t *face;
   hb_segment_properties_t props;
   hb_ot_map_builder_t map;
-  hb_aat_map_builder_t aat_map;
 #ifndef HB_NO_AAT_SHAPE
+  hb_aat_map_builder_t aat_map;
   bool apply_morx : 1;
 #else
   static constexpr bool apply_morx = false;
@@ -161,7 +154,7 @@ struct hb_ot_shape_planner_t
   const struct hb_ot_shaper_t *shaper;
 
   HB_INTERNAL hb_ot_shape_planner_t (hb_face_t                     *face,
-                                     const hb_segment_properties_t *props);
+                                     const hb_segment_properties_t &props);
 
   HB_INTERNAL void compile (hb_ot_shape_plan_t           &plan,
                             const hb_ot_shape_plan_key_t &key);

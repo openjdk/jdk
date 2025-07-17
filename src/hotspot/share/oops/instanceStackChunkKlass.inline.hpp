@@ -1,4 +1,4 @@
-/* Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 #include "utilities/macros.hpp"
 
 inline size_t InstanceStackChunkKlass::instance_size(size_t stack_size_in_words) const {
-  return align_object_size(size_helper() + stack_size_in_words + bitmap_size(stack_size_in_words));
+  return align_object_size(size_helper() + stack_size_in_words + gc_data_size(stack_size_in_words));
 }
 
 inline size_t InstanceStackChunkKlass::bitmap_size_in_bits(size_t stack_size_in_words) {
@@ -46,6 +46,11 @@ inline size_t InstanceStackChunkKlass::bitmap_size_in_bits(size_t stack_size_in_
   size_t size_in_bits = stack_size_in_words << (LogBitsPerWord - LogBitsPerHeapOop);
 
   return align_up(size_in_bits, BitsPerWord);
+}
+
+inline size_t InstanceStackChunkKlass::gc_data_size(size_t stack_size_in_words) {
+  // At the moment all GCs are okay with GC data big enough to fit a bit map
+  return bitmap_size(stack_size_in_words);
 }
 
 inline size_t InstanceStackChunkKlass::bitmap_size(size_t stack_size_in_words) {
@@ -60,6 +65,7 @@ void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure) 
   }
   oop_oop_iterate_stack<T>(chunk, closure);
   oop_oop_iterate_header<T>(chunk, closure);
+  oop_oop_iterate_lockstack<T>(chunk, closure, chunk->range());
 }
 
 template <typename T, class OopClosureType>
@@ -68,6 +74,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* c
   stackChunkOop chunk = stackChunkOopDesc::cast(obj);
   oop_oop_iterate_stack<T>(chunk, closure);
   oop_oop_iterate_header<T>(chunk, closure);
+  oop_oop_iterate_lockstack<T>(chunk, closure, chunk->range());
 }
 
 template <typename T, class OopClosureType>
@@ -80,6 +87,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
   }
   oop_oop_iterate_stack_bounded<T>(chunk, closure, mr);
   oop_oop_iterate_header_bounded<T>(chunk, closure, mr);
+  oop_oop_iterate_lockstack<T>(chunk, closure, mr);
 }
 
 template <typename T, class OopClosureType>
@@ -105,7 +113,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_header_bounded(stackChunkOop chunk
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_stack_bounded(stackChunkOop chunk, OopClosureType* closure, MemRegion mr) {
   if (chunk->has_bitmap()) {
-    intptr_t* start = chunk->sp_address() - frame::metadata_words;
+    intptr_t* start = chunk->sp_address() - frame::metadata_words_at_bottom;
     intptr_t* end = chunk->end_address();
     // mr.end() can actually be less than start. In that case, we only walk the metadata
     if ((intptr_t*)mr.start() > start) {
@@ -123,7 +131,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_bounded(stackChunkOop chunk,
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_stack(stackChunkOop chunk, OopClosureType* closure) {
   if (chunk->has_bitmap()) {
-    oop_oop_iterate_stack_with_bitmap<T>(chunk, closure, chunk->sp_address() - frame::metadata_words, chunk->end_address());
+    oop_oop_iterate_stack_with_bitmap<T>(chunk, closure, chunk->sp_address() - frame::metadata_words_at_bottom, chunk->end_address());
   } else {
     oop_oop_iterate_stack_slow(chunk, closure, chunk->range());
   }

@@ -35,7 +35,6 @@
 #include <netdb.h>
 
 // Aix does not have NUMA support but need these for compilation.
-inline bool os::numa_has_static_binding()   { AIX_ONLY(ShouldNotReachHere();) return true; }
 inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) return false;  }
 
 // Platform Mutex/Monitor implementation

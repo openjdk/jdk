@@ -63,7 +63,10 @@ public class OnScreenRenderingResizeTest {
     private static Frame frame;
 
     private static void createAndShowGUI() {
-        frame = new Frame();
+        frame = new Frame() {
+            public void paint(Graphics g) {}
+            public void update(Graphics g) {}
+        };
         frame.setBackground(bgColor);
         frame.setUndecorated(true);
         frame.setAlwaysOnTop(true);
@@ -148,6 +151,9 @@ public class OnScreenRenderingResizeTest {
                         incH = -incH;
                     }
                     frame.setSize(w, h);
+                    if (robot != null) {
+                        robot.waitForIdle();
+                    }
                     cnt = 0;
                 }
                 // try to put the device into non-default state, for example,

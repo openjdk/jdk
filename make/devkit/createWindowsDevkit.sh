@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,12 @@
 
 # This script copies parts of a Visual Studio installation into a devkit
 # suitable for building OpenJDK and OracleJDK. Needs to run in Cygwin or WSL.
+#
+# To include the debugger tools for the jtreg failure_handler, those need to
+# be explicitly added to the Windows SDK installation first. That is done
+# through Windows Settings - Apps, find the Windows Software Development Kit
+# installation, click modify, and add the debugger tools.
+#
 # erik.joelsson@oracle.com
 
 usage_and_exit() {
@@ -50,16 +56,46 @@ BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
 
 UNAME_SYSTEM=`uname -s`
 UNAME_RELEASE=`uname -r`
+UNAME_OS=`uname -o`
 
 # Detect cygwin or WSL
 IS_CYGWIN=`echo $UNAME_SYSTEM | grep -i CYGWIN`
 IS_WSL=`echo $UNAME_RELEASE | grep Microsoft`
+IS_MSYS=`echo $UNAME_OS | grep -i Msys`
+MSYS2_ARG_CONV_EXCL="*"          # make "cmd.exe /c" work for msys2
+CMD_EXE="cmd.exe /c"
+
+# Detect host architecture to determine devkit platform support
+# Note: The devkit always includes x86, x64, and aarch64 libraries and tools
+# The difference is in toolchain capabilities:
+# - On x64|AMD64 hosts: aarch64 tools are cross-compilation tools (Hostx64/arm64)
+# - On aarch64|ARMv8 hosts: aarch64 tools are native tools (Hostarm64/arm64)
+HOST_ARCH=`echo $PROCESSOR_IDENTIFIER`
+case $HOST_ARCH in
+    AMD64)
+        echo "Running on x64 host - generating devkit with native x86/x64 tools and cross-compiled aarch64 tools."
+        echo "For native aarch64 compilation tools, run this script on a Windows/aarch64 machine."
+        SUPPORTED_PLATFORMS="x86, x64 (native) and aarch64 (cross-compiled)"
+        ;;
+    ARMv8)
+        echo "Running on aarch64 host - generating devkit with native tools for all platforms (x86, x64, aarch64)."
+        SUPPORTED_PLATFORMS="x86, x64, and aarch64 (all native)"
+        ;;
+    *)
+        echo "Unknown host architecture: $HOST_ARCH"
+        echo "Proceeding with devkit generation - toolchain capabilities may vary."
+        SUPPORTED_PLATFORMS="x86, x64, and aarch64"
+        ;;
+esac
+
 if test "x$IS_CYGWIN" != "x"; then
+    BUILD_ENV="cygwin"
+elif test "x$IS_MSYS" != "x"; then
     BUILD_ENV="cygwin"
 elif test "x$IS_WSL" != "x"; then
     BUILD_ENV="wsl"
 else
-    echo "Unknown environment; only Cygwin and WSL are supported."
+    echo "Unknown environment; only Cygwin/MSYS2/WSL are supported."
     exit 1
 fi
 
@@ -70,7 +106,7 @@ elif test "x$BUILD_ENV" = "xwsl"; then
 fi
 
 # Work around the insanely named ProgramFiles(x86) env variable
-PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(cmd.exe /c set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
+PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(${CMD_EXE} set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
 PROGRAMFILES="$($WINDOWS_PATH_TO_UNIX_PATH "$PROGRAMFILES")"
 
 case $VS_VERSION in
@@ -93,13 +129,15 @@ esac
 
 
 # Find Visual Studio installation dir
-VSNNNCOMNTOOLS=`cmd.exe /c echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
+VSNNNCOMNTOOLS=`${CMD_EXE} echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
+VSNNNCOMNTOOLS="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS")"
 if [ -d "$VSNNNCOMNTOOLS" ]; then
-    VS_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS/../..")"
+    VS_INSTALL_DIR="$VSNNNCOMNTOOLS/../.."
 else
     VS_INSTALL_DIR="${MSVC_PROGRAMFILES_DIR}/Microsoft Visual Studio/$VS_VERSION"
     VS_INSTALL_DIR="$(ls -d "${VS_INSTALL_DIR}/"{Community,Professional,Enterprise} 2>/dev/null | head -n1)"
 fi
+echo "VSNNNCOMNTOOLS: $VSNNNCOMNTOOLS"
 echo "VS_INSTALL_DIR: $VS_INSTALL_DIR"
 
 # Extract semantic version
@@ -125,6 +163,7 @@ DEVKIT_ROOT="${BUILD_DIR}/VS${VS_VERSION}-${VS_VERSION_SP}-devkit"
 DEVKIT_BUNDLE="${DEVKIT_ROOT}.tar.gz"
 
 echo "Creating devkit in $DEVKIT_ROOT"
+echo "Platform support: $SUPPORTED_PLATFORMS"
 
 MSVCR_DLL=${MSVC_CRT_DIR}/vcruntime${VS_DLL_VERSION}.dll
 VCRUNTIME_1_DLL=${MSVC_CRT_DIR}/vcruntime${VS_DLL_VERSION}_1.dll
@@ -142,7 +181,11 @@ REDIST_SUBDIR="VC/Redist/MSVC/$REDIST_VERSION"
 echo "Copying VC..."
 rm -rf $DEVKIT_ROOT/VC
 mkdir -p $DEVKIT_ROOT/VC/bin
-cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/arm64" $DEVKIT_ROOT/VC/bin/
+if [ -d "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostarm64/arm64" ]; then
+    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostarm64/arm64" $DEVKIT_ROOT/VC/bin/
+else
+    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/arm64" $DEVKIT_ROOT/VC/bin/
+fi
 cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/x64" $DEVKIT_ROOT/VC/bin/
 cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx86/x86" $DEVKIT_ROOT/VC/bin/
 mkdir -p $DEVKIT_ROOT/VC/lib
@@ -174,7 +217,11 @@ cp $DEVKIT_ROOT/VC/redist/arm64/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/arm64
 ################################################################################
 # Copy SDK files
 
-SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+SDK_INSTALL_DIR=`${CMD_EXE} echo %WindowsSdkDir% | tr -d '\r'`
+SDK_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$SDK_INSTALL_DIR")"
+if [ ! -d "$SDK_INSTALL_DIR" ]; then
+    SDK_INSTALL_DIR="$PROGRAMFILES_X86/Windows Kits/$SDK_VERSION"
+fi
 echo "SDK_INSTALL_DIR: $SDK_INSTALL_DIR"
 
 SDK_FULL_VERSION="$(ls "$SDK_INSTALL_DIR/bin" | sort -r -n | head -n1)"
@@ -197,6 +244,17 @@ mkdir -p $DEVKIT_ROOT/$SDK_VERSION/Redist
 cp -r "$SDK_INSTALL_DIR/Redist/$UCRT_VERSION/ucrt" $DEVKIT_ROOT/$SDK_VERSION/Redist/
 mkdir -p $DEVKIT_ROOT/$SDK_VERSION/include
 cp -r "$SDK_INSTALL_DIR/include/$SDK_FULL_VERSION/"* $DEVKIT_ROOT/$SDK_VERSION/include/
+if [ -d "$SDK_INSTALL_DIR/Debuggers" ]; then
+    mkdir -p $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib
+    cp -r "$SDK_INSTALL_DIR/Debuggers/arm64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/x64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/x86" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/lib/arm64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/lib/x64" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib/
+    cp -r "$SDK_INSTALL_DIR/Debuggers/lib/x86" $DEVKIT_ROOT/$SDK_VERSION/Debuggers/lib/
+else
+    echo "No SDK debuggers found, skipping"
+fi
 
 ################################################################################
 # Generate devkit.info
@@ -211,14 +269,14 @@ echo-info "# This file describes to configure how to interpret the contents of t
 echo-info "DEVKIT_NAME=\"Microsoft Visual Studio $VS_VERSION $VS_VERSION_SP (devkit)\""
 echo-info "DEVKIT_VS_VERSION=\"$VS_VERSION\""
 echo-info ""
-echo-info "DEVKIT_TOOLCHAIN_PATH_x86=\"\$DEVKIT_ROOT/VC/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86\""
+echo-info "DEVKIT_TOOLCHAIN_PATH_x86=\"\$DEVKIT_ROOT/VC/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/Debuggers/x86\""
 echo-info "DEVKIT_VS_INCLUDE_x86=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_x86=\"\$DEVKIT_ROOT/VC/lib/x86;\$DEVKIT_ROOT/VC/atlmfc/lib/x86;\$DEVKIT_ROOT/$SDK_VERSION/lib/x86\""
 echo-info "DEVKIT_MSVCR_DLL_x86=\"\$DEVKIT_ROOT/VC/redist/x86/$MSVCR_DLL\""
 echo-info "DEVKIT_MSVCP_DLL_x86=\"\$DEVKIT_ROOT/VC/redist/x86/$MSVCP_DLL\""
 echo-info "DEVKIT_UCRT_DLL_DIR_x86=\"\$DEVKIT_ROOT/10/Redist/ucrt/DLLs/x86\""
 echo-info ""
-echo-info "DEVKIT_TOOLCHAIN_PATH_x86_64=\"\$DEVKIT_ROOT/VC/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86\""
+echo-info "DEVKIT_TOOLCHAIN_PATH_x86_64=\"\$DEVKIT_ROOT/VC/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/Debuggers/x64\""
 echo-info "DEVKIT_VS_INCLUDE_x86_64=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_x86_64=\"\$DEVKIT_ROOT/VC/lib/x64;\$DEVKIT_ROOT/VC/atlmfc/lib/x64;\$DEVKIT_ROOT/$SDK_VERSION/lib/x64\""
 echo-info "DEVKIT_MSVCR_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCR_DLL\""
@@ -226,7 +284,7 @@ echo-info "DEVKIT_VCRUNTIME_1_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$VCRUNTIM
 echo-info "DEVKIT_MSVCP_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCP_DLL\""
 echo-info "DEVKIT_UCRT_DLL_DIR_x86_64=\"\$DEVKIT_ROOT/10/Redist/ucrt/DLLs/x64\""
 echo-info ""
-echo-info "DEVKIT_TOOLCHAIN_PATH_aarch64=\"\$DEVKIT_ROOT/VC/bin/arm64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86\""
+echo-info "DEVKIT_TOOLCHAIN_PATH_aarch64=\"\$DEVKIT_ROOT/VC/bin/arm64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x64:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86:\$DEVKIT_ROOT/$SDK_VERSION/Debuggers/arm64\""
 echo-info "DEVKIT_VS_INCLUDE_aarch64=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_aarch64=\"\$DEVKIT_ROOT/VC/lib/arm64;\$DEVKIT_ROOT/VC/atlmfc/lib/arm64;\$DEVKIT_ROOT/$SDK_VERSION/lib/arm64\""
 echo-info "DEVKIT_MSVCR_DLL_aarch64=\"\$DEVKIT_ROOT/VC/redist/arm64/$MSVCR_DLL\""

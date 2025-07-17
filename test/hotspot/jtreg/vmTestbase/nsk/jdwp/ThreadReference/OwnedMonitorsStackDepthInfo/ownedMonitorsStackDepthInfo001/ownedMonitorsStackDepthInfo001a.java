@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,13 +104,13 @@ public class ownedMonitorsStackDepthInfo001a extends AbstractJDWPDebuggee {
     }
 
     static int adjustStackDepth(int depth) {
-        // The stack depth does not take into account the extra frame below Thread.sleep() (sleep0),
+        // The stack depth does not take into account the extra frames below Thread.sleep()
         // so we need to add it to the stack depth. See LockingThread.expectedDepth(), which is where the
         // depth is calculated.
         if (depth == -1) {
             return -1;
         } else {
-            return depth + 1;
+            return depth + 2;
         }
     }
 

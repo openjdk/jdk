@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,7 +73,8 @@
     sender_sp_offset                                 =  2,
 
     // Interpreter frames
-    interpreter_frame_oop_temp_offset                =  3, // for native calls only
+    interpreter_frame_result_handler_offset          =  3, // for native calls only
+    interpreter_frame_oop_temp_offset                =  2, // for native calls only
 
     interpreter_frame_sender_sp_offset               = -1,
     // outgoing sp before a call to an invoked method
@@ -93,7 +94,7 @@
     // Entry frames
     // n.b. these values are determined by the layout defined in
     // stubGenerator for the Java call stub
-    entry_frame_after_call_words                     = 27,
+    entry_frame_after_call_words                     = 29,
     entry_frame_call_wrapper_offset                  = -8,
 
     // we don't need a save area
@@ -101,6 +102,13 @@
 
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                                   = sender_sp_offset,
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom                         = metadata_words,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                            = 0,
     // in bytes
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
@@ -146,10 +154,8 @@
 
 #ifdef ASSERT
   // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(   CompiledMethod* nm, intptr_t* unextended_sp);
+  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp);
 #endif
-
-  const ImmutableOopMap* get_oop_map() const;
 
  public:
   // Constructors
@@ -158,7 +164,7 @@
 
   frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
-  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb);
+  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, bool allow_cb_null = false);
   // used for fast frame construction by continuations
   frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 

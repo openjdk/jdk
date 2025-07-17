@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,10 @@
 
 import com.sun.net.httpserver.*;
 
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.*;
 import java.io.*;
 import java.net.*;
-import java.security.*;
-import javax.net.ssl.*;
 
 /**
  * Test pipe-lining (no block)
@@ -63,9 +60,8 @@ public class Test5 extends Test {
             doClient(port);
             System.out.println ("OK");
         } finally {
-            delay ();
             if (server != null)
-                server.stop(2);
+                server.stop(0);
             if (exec != null)
                 exec.shutdown();
         }

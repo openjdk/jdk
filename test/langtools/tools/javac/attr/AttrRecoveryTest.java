@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8273039
+ * @bug 8273039 8344706
  * @summary Verify error recovery in Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -36,6 +36,7 @@
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ErroneousTree;
+import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePath;
@@ -45,7 +46,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.lang.model.element.Element;
+import javax.lang.model.type.TypeMirror;
 
 import toolbox.TestRunner;
 import toolbox.JavacTask;
@@ -81,7 +84,7 @@ public class AttrRecoveryTest extends TestRunner {
                          """,
                          "java.lang.Deprecated",
                          "Test.java:2:30: compiler.err.dot.class.expected",
-                         "Test.java:2:51: compiler.err.expected4: class, interface, enum, record",
+                         "Test.java:2:51: compiler.err.class.method.or.field.expected",
                          "Test.java:2:26: compiler.err.unexpected.type: kindname.value, kindname.class",
                          "3 errors"),
             new TestCase("b",
@@ -92,7 +95,7 @@ public class AttrRecoveryTest extends TestRunner {
                          """,
                          null,
                          "Test.java:2:30: compiler.err.dot.class.expected",
-                         "Test.java:2:39: compiler.err.expected4: class, interface, enum, record",
+                         "Test.java:2:39: compiler.err.class.method.or.field.expected",
                          "Test.java:2:26: compiler.err.unexpected.type: kindname.value, kindname.class",
                          "3 errors")
         };
@@ -160,6 +163,63 @@ public class AttrRecoveryTest extends TestRunner {
         }.scan(cut, null);
         if (foundAnnotation[0] ^ (expected != null)) {
             throw new AssertionError();
+        }
+    }
+
+    @Test
+    public void testVarAssignment2Self(Path base) throws Exception {
+        Path current = base;
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          public class Test {
+                              void t() {
+                                  var v = v;
+                              }
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        AtomicInteger seenVariables = new AtomicInteger();
+        TreePathScanner<Void, Trees> checkTypes = new TreePathScanner<>() {
+            @Override
+            public Void visitVariable(VariableTree node, Trees trees) {
+                if (node.getName().contentEquals("v")) {
+                    TypeMirror type = trees.getTypeMirror(getCurrentPath());
+                    if (type == null) {
+                        throw new AssertionError("Unexpected null type!");
+                    }
+                    seenVariables.incrementAndGet();
+                }
+                return super.visitVariable(node, trees);
+            }
+        };
+
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics")
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .callback(t -> {
+                t.addTaskListener(new TaskListener() {
+                    CompilationUnitTree parsed;
+                    @Override
+                    public void finished(TaskEvent e) {
+                        switch (e.getKind()) {
+                            case PARSE -> parsed = e.getCompilationUnit();
+                            case COMPILATION ->
+                                checkTypes.scan(parsed, Trees.instance(t));
+                        }
+                    }
+                });
+            })
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (seenVariables.get() != 1) {
+            throw new AssertionError("Didn't see enough variables: " + seenVariables);
         }
     }
 }

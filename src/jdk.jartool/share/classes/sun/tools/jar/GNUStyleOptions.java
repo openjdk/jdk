@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.PrintWriter;
 import java.lang.module.ModuleDescriptor.Version;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import jdk.internal.module.ModulePath;
@@ -212,6 +214,13 @@ class GNUStyleOptions {
                 }
             },
 
+            // Extract options
+            new Option(false, OptionType.EXTRACT, "--keep-old-files", "-k") {
+                void process(Main jartool, String opt, String arg) {
+                    jartool.kflag = true;
+                }
+            },
+
             // Hidden options
             new Option(false, OptionType.OTHER, "-P") {
                 void process(Main jartool, String opt, String arg) {
@@ -245,6 +254,14 @@ class GNUStyleOptions {
                     if (jartool.info == null)
                         jartool.info = GNUStyleOptions::printVersion;
                 }
+            },
+            new Option(true, true, OptionType.EXTRACT, "--dir") {
+                void process(Main jartool, String opt, String arg) throws BadArgs {
+                    if (jartool.xdestDir != null) {
+                        throw new BadArgs("error.extract.multiple.dest.dir").showUsage(true);
+                    }
+                    jartool.xdestDir = arg;
+                }
             }
     };
 
@@ -254,6 +271,7 @@ class GNUStyleOptions {
         CREATE("create"),
         CREATE_UPDATE("create.update"),
         CREATE_UPDATE_INDEX("create.update.index"),
+        EXTRACT("extract"),
         OTHER("other");
 
         /** Resource lookup section prefix. */

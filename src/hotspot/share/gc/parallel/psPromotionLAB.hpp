@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,9 @@ class PSPromotionLAB : public CHeapObj<mtGC> {
   void set_end(HeapWord* value)    { _end = value; }
 
   // The shared initialize code invokes this.
-  debug_only(virtual bool lab_is_valid(MemRegion lab) { return false; });
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab) { return false; });
 
-  PSPromotionLAB() : _top(NULL), _bottom(NULL), _end(NULL), _state(zero_size) { }
+  PSPromotionLAB() : _top(nullptr), _bottom(nullptr), _end(nullptr), _state(zero_size) { }
 
  public:
   // Filling and flushing.
@@ -95,7 +95,7 @@ class PSYoungPromotionLAB : public PSPromotionLAB {
   // Not MT safe
   inline HeapWord* allocate(size_t size);
 
-  debug_only(virtual bool lab_is_valid(MemRegion lab);)
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab);)
 };
 
 class PSOldPromotionLAB : public PSPromotionLAB {
@@ -103,7 +103,7 @@ class PSOldPromotionLAB : public PSPromotionLAB {
   ObjectStartArray* _start_array;
 
  public:
-  PSOldPromotionLAB() : _start_array(NULL) { }
+  PSOldPromotionLAB() : _start_array(nullptr) { }
 
   void set_start_array(ObjectStartArray* start_array) { _start_array = start_array; }
 
@@ -113,21 +113,21 @@ class PSOldPromotionLAB : public PSPromotionLAB {
   HeapWord* allocate(size_t size) {
     // Cannot test for this now that we're doing promotion failures
     // assert(_state != flushed, "Sanity");
-    assert(_start_array != NULL, "Sanity");
+    assert(_start_array != nullptr, "Sanity");
     HeapWord* obj = top();
     if (size <= pointer_delta(end(), obj)) {
       HeapWord* new_top = obj + size;
       set_top(new_top);
       assert(is_object_aligned(obj) && is_object_aligned(new_top),
              "checking alignment");
-      _start_array->allocate_block(obj);
+      _start_array->update_for_block(obj, obj + size);
       return obj;
     }
 
-    return NULL;
+    return nullptr;
   }
 
-  debug_only(virtual bool lab_is_valid(MemRegion lab));
+  DEBUG_ONLY(virtual bool lab_is_valid(MemRegion lab));
 };
 
 #endif // SHARE_GC_PARALLEL_PSPROMOTIONLAB_HPP

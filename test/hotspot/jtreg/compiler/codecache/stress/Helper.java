@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,26 +65,7 @@ public final class Helper {
     }
 
     public static ThreadFactory threadFactory(boolean virtual) {
-        // After virtual thread Preview:
-        // return (virtual ? Thread.ofVirtual() : Thread.ofPlatform().daemon()).factory();
-        if (virtual) {
-            return virtualThreadFactory();
-        } else {
-            return runnable -> {
-                Thread t = new Thread(runnable);
-                t.setDaemon(true);
-                return t;
-            };
-        }
-    }
-
-    private static ThreadFactory virtualThreadFactory() {
-        try {
-            return (ThreadFactory)Class.forName("java.lang.Thread$Builder").getMethod("factory")
-                .invoke(Thread.class.getMethod("ofVirtual").invoke(null));
-        } catch (ReflectiveOperationException ex) {
-            throw new AssertionError(ex);
-        }
+        return (virtual ? Thread.ofVirtual() : Thread.ofPlatform().daemon()).factory();
     }
 
     public static int callMethod(Callable<Integer> callable, int expected) {

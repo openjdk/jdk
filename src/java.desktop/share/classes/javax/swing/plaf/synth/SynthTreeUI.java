@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,9 @@ public class SynthTreeUI extends BasicTreeUI
 
     private boolean useTreeColors;
 
-    private Icon expandedIconWrapper = new ExpandedIconWrapper();
+    private Icon expandedIconWrapper;
+
+    private Icon collapsedIconWrapper;
 
     /**
      *
@@ -99,12 +101,19 @@ public class SynthTreeUI extends BasicTreeUI
         return expandedIconWrapper;
     }
 
+    @Override
+    public Icon getCollapsedIcon() {
+        return collapsedIconWrapper;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
         updateStyle(tree);
+        expandedIconWrapper = new IconWrapper(expandedIcon);
+        collapsedIconWrapper = new IconWrapper(collapsedIcon);
     }
 
     private void updateStyle(JTree tree) {
@@ -762,7 +771,6 @@ public class SynthTreeUI extends BasicTreeUI
 
         @Override
         protected TreeCellEditor createTreeCellEditor() {
-            @SuppressWarnings("serial") // anonymous class
             JTextField tf = new JTextField() {
                 @Override
                 public String getName() {
@@ -778,44 +786,40 @@ public class SynthTreeUI extends BasicTreeUI
     }
 
     //
-    // BasicTreeUI directly uses expandIcon outside of the Synth methods.
+    // BasicTreeUI directly uses expandIcon and collapsedIcon outside of the
+    // Synth methods.
     // To get the correct context we return an instance of this that fetches
     // the SynthContext as needed.
     //
-    private class ExpandedIconWrapper implements SynthIcon {
+
+    private class IconWrapper implements SynthIcon {
+        Icon iconType;
+
+        public IconWrapper(Icon type) {
+            super();
+            iconType = type;
+        }
+
         public void paintIcon(SynthContext context, Graphics g, int x,
                               int y, int w, int h) {
             if (context == null) {
                 context = getContext(tree);
-                SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
             }
-            else {
-                SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
-            }
+            SynthGraphicsUtils.paintIcon(iconType, context, g, x, y, w, h);
         }
 
         public int getIconWidth(SynthContext context) {
-            int width;
             if (context == null) {
                 context = getContext(tree);
-                width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
             }
-            else {
-                width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
-            }
-            return width;
+            return SynthGraphicsUtils.getIconWidth(iconType, context);
         }
 
         public int getIconHeight(SynthContext context) {
-            int height;
             if (context == null) {
                 context = getContext(tree);
-                height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
             }
-            else {
-                height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
-            }
-            return height;
+            return SynthGraphicsUtils.getIconHeight(iconType, context);
         }
     }
 }

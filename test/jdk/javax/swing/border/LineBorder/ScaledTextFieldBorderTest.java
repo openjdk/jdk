@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -45,12 +44,15 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
+import static sun.java2d.pipe.Region.clipRound;
+
 /*
  * @test
- * @bug 8282958
+ * @bug 8282958 8349188
  * @summary Verify all the borders are rendered consistently for a JTextField
  *          in Windows LaF which uses LineBorder
  * @requires (os.family == "windows")
+ * @modules java.desktop/sun.java2d.pipe
  * @run main ScaledTextFieldBorderTest
  */
 public class ScaledTextFieldBorderTest {
@@ -93,7 +95,7 @@ public class ScaledTextFieldBorderTest {
             BufferedImage img = images.get(i);
             double scaling = scales[i];
             try {
-                int thickness = (int) Math.floor(scaling);
+                int thickness = clipRound(scaling);
 
                 checkVerticalBorders(textFieldSize.width / 2, thickness, img);
 
@@ -246,6 +248,8 @@ public class ScaledTextFieldBorderTest {
             childPanel.add(Box.createHorizontalStrut(4));
 
             contentPanel.add(childPanel);
+            contentPanel.add(Box.createVerticalStrut(4));
+
             if (textFieldSize == null) {
                 textFieldSize = textField.getPreferredSize();
                 borderColor = tfBorder.getLineColor().getRGB();
@@ -254,17 +258,13 @@ public class ScaledTextFieldBorderTest {
             textField.setBounds(i, 0, textFieldSize.width, textFieldSize.height);
             childPanel.setBounds(0, (textFieldSize.height + 4) * i,
                     textFieldSize.width + i + 4, textFieldSize.height);
+            panelLocations.add(childPanel.getLocation());
         }
 
         contentPanel.setSize(textFieldSize.width + 4,
                 (textFieldSize.height + 4) * 4);
 
         panelColor = contentPanel.getBackground().getRGB();
-
-        // Save coordinates of the panels
-        for (Component comp : contentPanel.getComponents()) {
-            panelLocations.add(comp.getLocation());
-        }
 
         return contentPanel;
     }

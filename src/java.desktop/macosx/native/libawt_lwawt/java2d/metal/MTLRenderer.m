@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,95 +36,6 @@
 #import "MTLLayer.h"
 
 /**
- * The max size of the vertex batch.
- *
- * Note:
- * This is the max number of vertices (of struct Vertex - 8 bytes)
- * that can be accommodated in 4KB.
- *
- * [MTLRenderCommandEncoder setVertexBytes] expects the data size
- * to be less than or equal to 4KB.
- */
-static const int VERTEX_BATCH_SIZE = 510;
-
-static const int MAX_NO_OF_BATCHES = 20;
-
-struct primDetail {
-    MTLPrimitiveType type;
-    int vertexStart;
-    int vertexEnd;
-};
-
-static struct Vertex vertexBatch[VERTEX_BATCH_SIZE];
-static struct primDetail PrimitivesBatch[MAX_NO_OF_BATCHES];
-static int currentIndexInBatch = 0;
-static MTLPrimitiveType currentMTLPrimitiveType = MTLPrimitiveTypeTriangleStrip; // invalid type that we do not use in this renderer
-static int currentBatchNo = -1;
-
-
-void MTLRenderer_SetPrimitiveType(MTLPrimitiveType type) {
-    if (type != currentMTLPrimitiveType) {
-
-        if (currentBatchNo != -1) {
-            // close the current batch
-            PrimitivesBatch[currentBatchNo].vertexEnd = currentIndexInBatch - 1;
-        }
-
-        // Start a new batch
-        currentBatchNo++;
-        PrimitivesBatch[currentBatchNo].type = type;
-        PrimitivesBatch[currentBatchNo].vertexStart = currentIndexInBatch;
-        PrimitivesBatch[currentBatchNo].vertexEnd = currentIndexInBatch;
-        J2dRlsTraceLn1(J2D_TRACE_ERROR, "MTLRenderer_SetPrimitiveType: starting a new batch : batch %d", currentBatchNo);
-
-        currentMTLPrimitiveType = type;
-    }
-}
-
-inline void MTLRenderer_AddVertexToBatch(float x, float y)
-{
-   vertexBatch[currentIndexInBatch].position[0] = x;
-   vertexBatch[currentIndexInBatch].position[1] = y;
-
-   currentIndexInBatch++;
-}
-
-void MTLRenderer_SubmitVertexBatch(MTLContext *mtlc, BMTLSDOps * dstOps)
-{
-    if (currentIndexInBatch == 0) return;
-    if (currentBatchNo == -1) return;
-
-    // close the current batch
-    PrimitivesBatch[currentBatchNo].vertexEnd = currentIndexInBatch - 1;
-
-    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
-
-    if (mtlEncoder == nil) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLRenderer_SubmitVertexBatch: error creating MTLRenderCommandEncoder.");
-        return;
-    }
-
-    [mtlEncoder setVertexBytes:vertexBatch length:currentIndexInBatch * sizeof(struct Vertex) atIndex:MeshVertexBuffer];
-
-    // Iterate through PrimitivesBatch array
-    for (int i = 0; i <= currentBatchNo; i++) {
-        int numVertices = PrimitivesBatch[i].vertexEnd - PrimitivesBatch[i].vertexStart + 1;
-        J2dRlsTraceLn2(J2D_TRACE_ERROR, "MTLRenderer_SubmitVertexBatch: total vertices in batch %d = %d", i, numVertices);
-        [mtlEncoder drawPrimitives: PrimitivesBatch[i].type
-                       vertexStart: PrimitivesBatch[i].vertexStart
-                       vertexCount: numVertices];
-    }
-
-    // Reset the index
-    currentIndexInBatch = 0;
-
-    // Reset the batches
-    currentBatchNo = -1;
-
-     // Reset to type that we do not use in this renderer
-    currentMTLPrimitiveType = MTLPrimitiveTypeTriangleStrip;
-}
-/**
  * Note: Some of the methods in this file apply a "magic number"
  * translation to line segments. It is same as what we have in
  * OGLrenderer.
@@ -152,18 +63,16 @@ void MTLRenderer_DrawLine(MTLContext *mtlc, BMTLSDOps * dstOps, jint x1, jint y1
         return;
     }
 
-    J2dTraceLn5(J2D_TRACE_INFO, "MTLRenderer_DrawLine (x1=%d y1=%d x2=%d y2=%d), dst tex=%p", x1, y1, x2, y2, dstOps->pTexture);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawLine (x1=%d y1=%d x2=%d y2=%d), dst tex=%p",
+               x1, y1, x2, y2, dstOps->pTexture);
 
-    // Make sure we have space for 2 more vertices in the batch
-    if (((currentIndexInBatch + 2) > VERTEX_BATCH_SIZE) ||
-         (currentBatchNo == (MAX_NO_OF_BATCHES - 1))) {
-        // encode the vertex batch
-        MTLRenderer_SubmitVertexBatch(mtlc, dstOps);
-    }
-
-    MTLRenderer_SetPrimitiveType(MTLPrimitiveTypeLine);
+    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
+    if (mtlEncoder == nil)
+        return;
 
     // DrawLine implementation same as in OGLRenderer.c
+    struct Vertex verts[2];
     if (y1 == y2) {
         // horizontal
         float fx1 = (float)x1;
@@ -173,8 +82,11 @@ void MTLRenderer_DrawLine(MTLContext *mtlc, BMTLSDOps * dstOps, jint x1, jint y1
         if (x1 > x2) {
             float t = fx1; fx1 = fx2; fx2 = t;
         }
-        MTLRenderer_AddVertexToBatch(fx1 + 0.2f, fy);
-        MTLRenderer_AddVertexToBatch(fx2 + 1.2f, fy);
+
+        verts[0].position[0] = fx1 + 0.2f;
+        verts[0].position[1] = fy;
+        verts[1].position[0] = fx2 + 1.2f;
+        verts[1].position[1] = fy;
     } else if (x1 == x2) {
         // vertical
         float fx  = ((float)x1) + 0.2f;
@@ -184,8 +96,11 @@ void MTLRenderer_DrawLine(MTLContext *mtlc, BMTLSDOps * dstOps, jint x1, jint y1
         if (y1 > y2) {
             float t = fy1; fy1 = fy2; fy2 = t;
         }
-        MTLRenderer_AddVertexToBatch(fx, fy1 + 0.2f);
-        MTLRenderer_AddVertexToBatch(fx, fy2 + 1.2f);
+
+        verts[0].position[0] = fx;
+        verts[0].position[1] = fy1 + 0.2f;
+        verts[1].position[0] = fx;
+        verts[1].position[1] = fy2 + 1.2f;
     } else {
         // diagonal
         float fx1 = (float)x1;
@@ -208,10 +123,14 @@ void MTLRenderer_DrawLine(MTLContext *mtlc, BMTLSDOps * dstOps, jint x1, jint y1
             fy1 += 0.8f;
             fy2 -= 0.2f;
         }
-
-        MTLRenderer_AddVertexToBatch(fx1, fy1);
-        MTLRenderer_AddVertexToBatch(fx2, fy2);
+        verts[0].position[0] = fx1;
+        verts[0].position[1] = fy1;
+        verts[1].position[0] = fx2;
+        verts[1].position[1] = fy2;
     }
+
+    [mtlEncoder setVertexBytes:verts length:sizeof(verts) atIndex:MeshVertexBuffer];
+    [mtlEncoder drawPrimitives:MTLPrimitiveTypeLine vertexStart:0 vertexCount:2];
 }
 
 void MTLRenderer_DrawPixel(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y) {
@@ -221,7 +140,7 @@ void MTLRenderer_DrawPixel(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y)
     }
 
     id<MTLTexture> dest = dstOps->pTexture;
-    J2dTraceLn3(J2D_TRACE_INFO, "MTLRenderer_DrawPixel (x=%d y=%d), dst tex=%p", x, y, dest);
+    J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPixel (x=%d y=%d), dst tex=%p", x, y, dest);
 
     id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
     if (mtlEncoder == nil)
@@ -243,37 +162,31 @@ void MTLRenderer_DrawRect(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y, 
     }
 
     id<MTLTexture> dest = dstOps->pTexture;
-    J2dTraceLn5(J2D_TRACE_INFO, "MTLRenderer_DrawRect (x=%d y=%d w=%d h=%d), dst tex=%p", x, y, w, h, dest);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawRect (x=%d y=%d w=%d h=%d), dst tex=%p",
+               x, y, w, h, dest);
 
-    // Make sure we have space for 8 more vertices in the batch
-    if ( ((currentIndexInBatch + 8) > VERTEX_BATCH_SIZE) ||
-         (currentBatchNo == (MAX_NO_OF_BATCHES - 1))) {
-
-        // encode the vertex batch
-        MTLRenderer_SubmitVertexBatch(mtlc, dstOps);
-    }
-
-    MTLRenderer_SetPrimitiveType(MTLPrimitiveTypeLine);
-
+    // TODO: use DrawParallelogram(x, y, w, h, lw=1, lh=1)
+    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
+    if (mtlEncoder == nil)
+        return;
 
     // Translate each vertex by a fraction so
     // that we hit pixel centers.
+    const int verticesCount = 5;
     float fx = (float)x + 0.2f;
     float fy = (float)y + 0.5f;
     float fw = (float)w;
     float fh = (float)h;
-
-    MTLRenderer_AddVertexToBatch(fx, fy);
-    MTLRenderer_AddVertexToBatch(fx+fw, fy);
-
-    MTLRenderer_AddVertexToBatch(fx+fw, fy);
-    MTLRenderer_AddVertexToBatch(fx+fw, fy+fh);
-
-    MTLRenderer_AddVertexToBatch(fx+fw, fy+fh);
-    MTLRenderer_AddVertexToBatch(fx, fy+fh);
-
-    MTLRenderer_AddVertexToBatch(fx, fy+fh);
-    MTLRenderer_AddVertexToBatch(fx, fy);
+    struct Vertex vertices[5] = {
+            {{fx, fy}},
+            {{fx + fw, fy}},
+            {{fx + fw, fy + fh}},
+            {{fx, fy + fh}},
+            {{fx, fy}},
+    };
+    [mtlEncoder setVertexBytes:vertices length:sizeof(vertices) atIndex:MeshVertexBuffer];
+    [mtlEncoder drawPrimitives:MTLPrimitiveTypeLineStrip vertexStart:0 vertexCount:verticesCount];
 }
 
 const int POLYLINE_BUF_SIZE = 64;
@@ -300,7 +213,9 @@ void MTLRenderer_DrawPoly(MTLContext *mtlc, BMTLSDOps * dstOps,
         return;
     }
 
-    J2dTraceLn4(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: %d points, transX=%d, transY=%d, dst tex=%p", nPoints, transX, transY, dstOps->pTexture);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawPoly: %d points, transX=%d, transY=%d, dst tex=%p",
+               nPoints, transX, transY, dstOps->pTexture);
 
     __block struct {
         struct Vertex verts[POLYLINE_BUF_SIZE];
@@ -320,20 +235,23 @@ void MTLRenderer_DrawPoly(MTLContext *mtlc, BMTLSDOps * dstOps,
         __block int chunkSize = isLastChunk ? nPoints : POLYLINE_BUF_SIZE;
 
         fillVertex(pointsChunk.verts, prevX + transX + 0.5f, prevY + transY + 0.5f);
-        J2dTraceLn2(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)", prevX + transX + 0.5f, prevY + transY + 0.5f);
+        J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",
+                   prevX + transX + 0.5f, prevY + transY + 0.5f);
 
         for (int i = 1; i < chunkSize; i++) {
             prevX = *(xPoints++);
             prevY = *(yPoints++);
             fillVertex(pointsChunk.verts + i, prevX + transX + 0.5f, prevY + transY + 0.5f);
-            J2dTraceLn2(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)", prevX + transX + 0.5f,prevY + transY + 0.5f);
+            J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",
+                       prevX + transX + 0.5f,prevY + transY + 0.5f);
         }
 
         bool drawCloseSegment = false;
         if (isClosed && isLastChunk) {
             if (chunkSize + 2 <= POLYLINE_BUF_SIZE) {
                 fillVertex(pointsChunk.verts + chunkSize, firstX + transX + 0.5f, firstY + transY + 0.5f);
-                J2dTraceLn2(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",firstX + transX + 0.5f, firstY + transY + 0.5f);
+                J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",
+                           firstX + transX + 0.5f, firstY + transY + 0.5f);
 
                 ++chunkSize;
             } else
@@ -354,8 +272,12 @@ void MTLRenderer_DrawPoly(MTLContext *mtlc, BMTLSDOps * dstOps,
                     {{firstX + transX + 0.5f, firstY + transY + 0.5f}}
             };
 
-            J2dTraceLn2(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: last segment Point1 - (%1.2f, %1.2f)",prevX + transX + 0.5f, prevY + transY + 0.5f);
-            J2dTraceLn2(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: last segment Point2 - (%1.2f, %1.2f)",firstX + transX + 0.5f, firstY + transY + 0.5f);
+            J2dTraceLn(J2D_TRACE_INFO,
+                       "MTLRenderer_DrawPoly: last segment Point1 - (%1.2f, %1.2f)",
+                       prevX + transX + 0.5f, prevY + transY + 0.5f);
+            J2dTraceLn(J2D_TRACE_INFO,
+                       "MTLRenderer_DrawPoly: last segment Point2 - (%1.2f, %1.2f)",
+                       firstX + transX + 0.5f, firstY + transY + 0.5f);
 
             [mtlEncoder setVertexBytes:vertices length:sizeof(vertices) atIndex:MeshVertexBuffer];
             [mtlEncoder drawPrimitives:MTLPrimitiveTypeLine vertexStart:0 vertexCount:2];
@@ -415,7 +337,9 @@ MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
                           jint scanlineCount, jint *scanlines)
 {
 
-    J2dTraceLn2(J2D_TRACE_INFO, "MTLRenderer_DrawScanlines (scanlineCount=%d), dst tex=%p", scanlineCount, dstOps->pTexture);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawScanlines (scanlineCount=%d), dst tex=%p",
+               scanlineCount, dstOps->pTexture);
     if (mtlc == NULL || dstOps == NULL || dstOps->pTexture == NULL) {
             J2dTraceLn(J2D_TRACE_ERROR, "MTLRenderer_DrawScanlines: dest is null");
             return;
@@ -423,7 +347,7 @@ MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
     RETURN_IF_NULL(scanlines);
     int vertexSize = NUM_OF_VERTICES_PER_SCANLINE
         * scanlineCount * VERTEX_STRUCT_SIZE;
-    J2dTraceLn1(J2D_TRACE_INFO, "MTLRenderer_DrawScanlines: Total vertex size : %d", vertexSize);
+    J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawScanlines: Total vertex size : %d", vertexSize);
     if (vertexSize == 0) return;
 
     id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
@@ -490,8 +414,9 @@ MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
                     vertexCount:(remainingScanlineCount / VERTEX_STRUCT_SIZE)];
                 remainingScanlineCount -= remainingScanlineCount;
             }
-            J2dTraceLn1(J2D_TRACE_INFO,
-                "MTLRenderer_DrawScanlines: Remaining vertex size %d", remainingScanlineCount);
+            J2dTraceLn(J2D_TRACE_INFO,
+                       "MTLRenderer_DrawScanlines: Remaining vertex size %d",
+                       remainingScanlineCount);
         } while (remainingScanlineCount != 0);
     }
 }
@@ -506,23 +431,25 @@ MTLRenderer_FillRect(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y, jint 
         return;
     }
 
-    // Make sure we have space for 6 more vertices in the batch
-    if ( ((currentIndexInBatch + 6) > VERTEX_BATCH_SIZE) ||
-         (currentBatchNo == (MAX_NO_OF_BATCHES - 1))) {
-        // encode the vertex batch
-        MTLRenderer_SubmitVertexBatch(mtlc, dstOps);
-    }
-
-    MTLRenderer_SetPrimitiveType(MTLPrimitiveTypeTriangle);
+    struct Vertex verts[QUAD_VERTEX_COUNT] = {
+        { {x, y}},
+        { {x, y+h}},
+        { {x+w, y}},
+        { {x+w, y+h}
+    }};
 
 
-    MTLRenderer_AddVertexToBatch(x, y);
-    MTLRenderer_AddVertexToBatch(x, y+h);
-    MTLRenderer_AddVertexToBatch(x+w, y);
+    id<MTLTexture> dest = dstOps->pTexture;
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_FillRect (x=%d y=%d w=%d h=%d), dst tex=%p", x, y, w, h, dest);
 
-    MTLRenderer_AddVertexToBatch(x, y+h);
-    MTLRenderer_AddVertexToBatch(x+w, y);
-    MTLRenderer_AddVertexToBatch(x+w, y+h);
+    // Encode render command.
+    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
+    if (mtlEncoder == nil)
+        return;
+
+    [mtlEncoder setVertexBytes:verts length:sizeof(verts) atIndex:MeshVertexBuffer];
+    [mtlEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart:0 vertexCount: QUAD_VERTEX_COUNT];
 }
 
 void MTLRenderer_FillSpans(MTLContext *mtlc, BMTLSDOps * dstOps, jint spanCount, jint *spans)
@@ -634,31 +561,32 @@ MTLRenderer_FillParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
     }
 
     id<MTLTexture> dest = dstOps->pTexture;
-    J2dTraceLn7(J2D_TRACE_INFO,
-                "MTLRenderer_FillParallelogram"
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f dst tex=%p)",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12, dest);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_FillParallelogram"
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f dst tex=%p)",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12, dest);
 
-    // Make sure we have space for 6 more vertices in the batch
-    if ( ((currentIndexInBatch + 6) > VERTEX_BATCH_SIZE) ||
-         (currentBatchNo == (MAX_NO_OF_BATCHES - 1))) {
-        // encode the vertex batch
-        MTLRenderer_SubmitVertexBatch(mtlc, dstOps);
+    struct Vertex verts[QUAD_VERTEX_COUNT] = {
+            { {fx11, fy11}},
+            { {fx11+dx21, fy11+dy21}},
+            { {fx11+dx12, fy11+dy12}},
+            { {fx11 + dx21 + dx12, fy11+ dy21 + dy12}
+        }};
+
+    // Encode render command.
+    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
+
+    if (mtlEncoder == nil) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLRenderer_FillParallelogram: error creating MTLRenderCommandEncoder.");
+        return;
     }
 
-    MTLRenderer_SetPrimitiveType(MTLPrimitiveTypeTriangle);
-
-    MTLRenderer_AddVertexToBatch(fx11, fy11);
-    MTLRenderer_AddVertexToBatch(fx11+dx21, fy11+dy21);
-    MTLRenderer_AddVertexToBatch(fx11 + dx21 + dx12, fy11+ dy21 + dy12);
-
-    MTLRenderer_AddVertexToBatch(fx11 + dx21 + dx12, fy11+ dy21 + dy12);
-    MTLRenderer_AddVertexToBatch(fx11 + dx12, fy11+dy12);
-    MTLRenderer_AddVertexToBatch(fx11, fy11);
+    [mtlEncoder setVertexBytes:verts length:sizeof(verts) atIndex:MeshVertexBuffer];
+    [mtlEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart:0 vertexCount: QUAD_VERTEX_COUNT];
 }
 
 void
@@ -678,14 +606,14 @@ MTLRenderer_DrawParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
     jfloat ox11 = fx11 - (ldx21 + ldx12) / 2.0f;
     jfloat oy11 = fy11 - (ldy21 + ldy12) / 2.0f;
 
-    J2dTraceLn8(J2D_TRACE_INFO,
-                "MTLRenderer_DrawParallelogram"
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawParallelogram"
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
 
     // Only need to generate 4 quads if the interior still
@@ -720,66 +648,69 @@ MTLRenderer_DrawParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
         // Each quad is encoded using two triangles
         // For 4 segments - there are 8 triangles in total
         // Each triangle has 3 vertices
-
         const int TOTAL_VERTICES = 8 * 3;
-        // Make sure we have space for 24 more vertices in the batch
-        if ( ((currentIndexInBatch + TOTAL_VERTICES) > VERTEX_BATCH_SIZE) ||
-             (currentBatchNo == (MAX_NO_OF_BATCHES - 1))) {
-            // encode the vertex batch
-            MTLRenderer_SubmitVertexBatch(mtlc, dstOps);
-        }
-        MTLRenderer_SetPrimitiveType(MTLPrimitiveTypeTriangle);
-
+        struct Vertex vertexList[TOTAL_VERTICES];
+        int i = 0;
 
         // TOP segment, to left side of RIGHT edge
         // "width" of original pgram, "height" of hor. line size
         fx11 = ox11;
         fy11 = oy11;
 
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
-        MTLRenderer_AddVertexToBatch(fx11 + dx21, fy11 + dy21);
-        MTLRenderer_AddVertexToBatch(fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + dx21, fy11 + dy21);
+        fillVertex(vertexList + (i++), fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
 
-        MTLRenderer_AddVertexToBatch(fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
-        MTLRenderer_AddVertexToBatch(fx11 + ldx12, fy11 + ldy12);
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
+        fillVertex(vertexList + (i++), fx11 + ldx12, fy11 + ldy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
 
         // RIGHT segment, to top of BOTTOM edge
         // "width" of vert. line size , "height" of original pgram
         fx11 = ox11 + dx21;
         fy11 = oy11 + dy21;
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
-        MTLRenderer_AddVertexToBatch(fx11 + ldx21, fy11 + ldy21);
-        MTLRenderer_AddVertexToBatch(fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + ldx21, fy11 + ldy21);
+        fillVertex(vertexList + (i++), fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
 
-        MTLRenderer_AddVertexToBatch(fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
-        MTLRenderer_AddVertexToBatch(fx11 + dx12, fy11 + dy12);
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
+        fillVertex(vertexList + (i++), fx11 + dx12, fy11 + dy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
 
         // BOTTOM segment, from right side of LEFT edge
         // "width" of original pgram, "height" of hor. line size
         fx11 = ox11 + dx12 + ldx21;
         fy11 = oy11 + dy12 + ldy21;
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
-        MTLRenderer_AddVertexToBatch(fx11 + dx21, fy11 + dy21);
-        MTLRenderer_AddVertexToBatch(fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + dx21, fy11 + dy21);
+        fillVertex(vertexList + (i++), fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
 
-        MTLRenderer_AddVertexToBatch(fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
-        MTLRenderer_AddVertexToBatch(fx11 + ldx12, fy11 + ldy12);
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + dx21 + ldx12, fy11 + dy21 + ldy12);
+        fillVertex(vertexList + (i++), fx11 + ldx12, fy11 + ldy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
 
         // LEFT segment, from bottom of TOP edge
         // "width" of vert. line size , "height" of inner pgram
         fx11 = ox11 + ldx12;
         fy11 = oy11 + ldy12;
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
-        MTLRenderer_AddVertexToBatch(fx11 + ldx21, fy11 + ldy21);
-        MTLRenderer_AddVertexToBatch(fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + ldx21, fy11 + ldy21);
+        fillVertex(vertexList + (i++), fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
 
-        MTLRenderer_AddVertexToBatch(fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
-        MTLRenderer_AddVertexToBatch(fx11 + dx12, fy11 + dy12);
-        MTLRenderer_AddVertexToBatch(fx11, fy11);
+        fillVertex(vertexList + (i++), fx11 + ldx21 + dx12, fy11 + ldy21 + dy12);
+        fillVertex(vertexList + (i++), fx11 + dx12, fy11 + dy12);
+        fillVertex(vertexList + (i++), fx11, fy11);
 
+        // Encode render command.
+        id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
+
+        if (mtlEncoder == nil) {
+            J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLRenderer_DrawParallelogram: error creating MTLRenderCommandEncoder.");
+            return;
+        }
+
+        [mtlEncoder setVertexBytes:vertexList length:sizeof(vertexList) atIndex:MeshVertexBuffer];
+        [mtlEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:TOTAL_VERTICES];
     } else {
         // The line width ratios were large enough to consume
         // the entire hole in the middle of the parallelogram
@@ -876,14 +807,14 @@ MTLRenderer_FillAAParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
     // parameters for uv texture coordinates of parallelogram corners
     jfloat ou11, ov11, ou12, ov12, ou21, ov21, ou22, ov22;
 
-    J2dTraceLn6(J2D_TRACE_INFO,
-                "MTLRenderer_FillAAParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_FillAAParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12);
 
     RETURN_IF_NULL(mtlc);
     RETURN_IF_NULL(dstOps);
@@ -993,14 +924,14 @@ MTLRenderer_DrawAAParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
     // parameters for "inner" parallelogram
     jfloat ifx11, ify11, idx21, idy21, idx12, idy12;
 
-    J2dTraceLn8(J2D_TRACE_INFO,
-                "MTLRenderer_DrawAAParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawAAParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
     RETURN_IF_NULL(mtlc);
     RETURN_IF_NULL(dstOps);

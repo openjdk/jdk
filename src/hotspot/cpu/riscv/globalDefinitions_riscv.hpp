@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,6 +28,7 @@
 #define CPU_RISCV_GLOBALDEFINITIONS_RISCV_HPP
 
 const int StackAlignmentInBytes = 16;
+const size_t pd_segfault_address = 1024;
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
@@ -47,10 +48,15 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
-
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
+// auipc useable for all cc -> cc calls and jumps
+#define CODE_CACHE_SIZE_LIMIT ((2*G)-(2*K))
+
+// The expected size in bytes of a cache line.
 #define DEFAULT_CACHE_LINE_SIZE 64
+
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
 #endif // CPU_RISCV_GLOBALDEFINITIONS_RISCV_HPP

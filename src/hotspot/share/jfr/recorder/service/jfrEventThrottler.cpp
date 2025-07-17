@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "logging/log.hpp"
@@ -35,7 +34,9 @@ constexpr static const JfrSamplerParams _disabled_params = {
                                                              false // reconfigure
                                                            };
 
-static JfrEventThrottler* _throttler = NULL;
+static JfrEventThrottler* _disabled_cpu_time_sample_throttler = nullptr;
+static JfrEventThrottler* _object_allocation_throttler = nullptr;
+static JfrEventThrottler* _safepoint_latency_throttler = nullptr;
 
 JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   JfrAdaptiveSampler(),
@@ -48,30 +49,58 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   _update(false) {}
 
 bool JfrEventThrottler::create() {
-  assert(_throttler == NULL, "invariant");
-  _throttler = new JfrEventThrottler(JfrObjectAllocationSampleEvent);
-  return _throttler != NULL && _throttler->initialize();
+  assert(_disabled_cpu_time_sample_throttler == nullptr, "invariant");
+  _disabled_cpu_time_sample_throttler = new JfrEventThrottler(JfrCPUTimeSampleEvent);
+  _disabled_cpu_time_sample_throttler->_disabled = true;
+  assert(_object_allocation_throttler == nullptr, "invariant");
+  _object_allocation_throttler = new JfrEventThrottler(JfrObjectAllocationSampleEvent);
+  if (_object_allocation_throttler == nullptr || !_object_allocation_throttler->initialize()) {
+    return false;
+  }
+  assert(_safepoint_latency_throttler == nullptr, "invariant");
+  _safepoint_latency_throttler = new JfrEventThrottler(JfrSafepointLatencyEvent);
+  return _safepoint_latency_throttler != nullptr && _safepoint_latency_throttler->initialize();
 }
 
 void JfrEventThrottler::destroy() {
-  delete _throttler;
-  _throttler = NULL;
+  delete _disabled_cpu_time_sample_throttler;
+  _disabled_cpu_time_sample_throttler = nullptr;
+  delete _object_allocation_throttler;
+  _object_allocation_throttler = nullptr;
+  delete _safepoint_latency_throttler;
+  _safepoint_latency_throttler = nullptr;
 }
 
-// There is currently only one throttler instance, for the jdk.ObjectAllocationSample event.
-// When introducing additional throttlers, also add a lookup map keyed by event id.
+// There is currently only two throttler instances, one for the jdk.ObjectAllocationSample event
+// and another for the SamplingLatency event.
+// When introducing many more throttlers, consider adding a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
-  assert(_throttler != NULL, "JfrEventThrottler has not been properly initialized");
-  assert(event_id == JfrObjectAllocationSampleEvent, "Event type has an unconfigured throttler");
-  return event_id == JfrObjectAllocationSampleEvent ? _throttler : NULL;
+  assert(_disabled_cpu_time_sample_throttler != nullptr, "Disabled CPU time throttler has not been properly initialized");
+  assert(_object_allocation_throttler != nullptr, "ObjectAllocation throttler has not been properly initialized");
+  assert(_safepoint_latency_throttler != nullptr, "SafepointLatency throttler has not been properly initialized");
+  assert(event_id == JfrObjectAllocationSampleEvent || event_id == JfrSafepointLatencyEvent || event_id == JfrCPUTimeSampleEvent, "Event type has an unconfigured throttler");
+  if (event_id == JfrObjectAllocationSampleEvent) {
+    return _object_allocation_throttler;
+  }
+  if (event_id == JfrSafepointLatencyEvent) {
+    return _safepoint_latency_throttler;
+  }
+  if (event_id == JfrCPUTimeSampleEvent) {
+    return _disabled_cpu_time_sample_throttler;
+  }
+  return nullptr;
 }
 
 void JfrEventThrottler::configure(JfrEventId event_id, int64_t sample_size, int64_t period_ms) {
-  if (event_id != JfrObjectAllocationSampleEvent) {
+  if (event_id == JfrObjectAllocationSampleEvent) {
+    assert(_object_allocation_throttler != nullptr, "ObjectAllocation throttler has not been properly initialized");
+    _object_allocation_throttler->configure(sample_size, period_ms);
     return;
   }
-  assert(_throttler != NULL, "JfrEventThrottler has not been properly initialized");
-  _throttler->configure(sample_size, period_ms);
+  if (event_id == JfrSafepointLatencyEvent) {
+    assert(_safepoint_latency_throttler != nullptr, "SafepointLatency throttler has not been properly initialized");
+    _safepoint_latency_throttler->configure(sample_size, period_ms);
+  }
 }
 
 /*
@@ -93,8 +122,8 @@ void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
 // Predicate for event selection.
 bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp /* 0 */) {
   JfrEventThrottler* const throttler = for_event(event_id);
-  if (throttler == NULL) return true;
-  return _throttler->_disabled ? true : _throttler->sample(timestamp);
+  assert(throttler != nullptr, "invariant");
+  return throttler->_disabled ? true : throttler->sample(timestamp);
 }
 
 /*
@@ -168,8 +197,8 @@ inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int6
  * If the input event sample size is large enough, normalize to per 1000 ms
  */
 inline void normalize(int64_t* sample_size, int64_t* period_ms) {
-  assert(sample_size != NULL, "invariant");
-  assert(period_ms != NULL, "invariant");
+  assert(sample_size != nullptr, "invariant");
+  assert(period_ms != nullptr, "invariant");
   if (*period_ms == MILLIUNITS) {
     return;
   }
@@ -245,12 +274,12 @@ inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
  * When introducing additional throttlers, also provide a map from the event id to the event name.
  */
 static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
-  assert(sample_size_ewma != NULL, "invariant");
+  assert(sample_size_ewma != nullptr, "invariant");
   if (log_is_enabled(Debug, jfr, system, throttle)) {
-    *sample_size_ewma = exponentially_weighted_moving_average(expired->sample_size(), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
+    *sample_size_ewma = exponentially_weighted_moving_average(static_cast<double>(expired->sample_size()), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
     log_debug(jfr, system, throttle)("jdk.ObjectAllocationSample: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
       *sample_size_ewma, expired->params().sample_points_per_window, expired->sample_size(), expired->population_size(),
-      expired->population_size() == 0 ? 0 : (double)expired->sample_size() / (double)expired->population_size(),
+      expired->population_size() == 0 ? 0 : static_cast<double>(expired->sample_size()) / static_cast<double>(expired->population_size()),
       expired->params().window_duration_ms);
   }
 }
@@ -266,7 +295,7 @@ static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
  * in the process of rotating windows.
  */
 const JfrSamplerParams& JfrEventThrottler::next_window_params(const JfrSamplerWindow* expired) {
-  assert(expired != NULL, "invariant");
+  assert(expired != nullptr, "invariant");
   assert(_lock, "invariant");
   log(expired, &_sample_size_ewma);
   if (_update) {

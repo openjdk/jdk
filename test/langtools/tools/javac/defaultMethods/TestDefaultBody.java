@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,12 @@
  * @test
  * @bug 7192246
  * @summary  check that code attributed for default methods is correctly generated
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool.*;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Method;
-
-import com.sun.tools.classfile.Opcode;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.io.*;
 
 public class TestDefaultBody {
@@ -67,12 +61,12 @@ public class TestDefaultBody {
     void verifyDefaultBody(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassFile cf = ClassFile.read(f);
-            Method testMethod = null;
-            Code_attribute codeAttr = null;
-            for (Method m : cf.methods) {
-                codeAttr = (Code_attribute)m.attributes.get(Attribute.Code);
-                String mname = m.getName(cf.constant_pool);
+            ClassModel cf = ClassFile.of().parse(f.toPath());
+            MethodModel testMethod = null;
+            CodeAttribute codeAttr = null;
+            for (MethodModel m : cf.methods()) {
+                codeAttr = m.findAttribute(Attributes.code()).orElse(null);
+                String mname = m.methodName().stringValue();
                 if (mname.equals(TEST_METHOD_NAME)) {
                     testMethod = m;
                     break;
@@ -83,7 +77,7 @@ public class TestDefaultBody {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            if (testMethod.access_flags.is(AccessFlags.ACC_ABSTRACT)) {
+            if ((testMethod.flags().flagsMask() & ClassFile.ACC_ABSTRACT) != 0) {
                 throw new Error("Test method is abstract");
             }
             if (codeAttr == null) {
@@ -91,14 +85,13 @@ public class TestDefaultBody {
             }
 
             boolean found = false;
-            for (Instruction instr : codeAttr.getInstructions()) {
-                if (instr.getOpcode() == Opcode.INVOKESTATIC) {
+            for (CodeElement instr : codeAttr.elementList()) {
+                if (instr instanceof InvokeInstruction ins && ins.opcode() == Opcode.INVOKESTATIC) {
                     found = true;
-                    int pc_index = instr.getShort(1);
-                    CONSTANT_Methodref_info mref = (CONSTANT_Methodref_info)cf.constant_pool.get(pc_index);
-                    String className = mref.getClassName();
-                    String targetName = mref.getNameAndTypeInfo().getName();
-                    String targetType = mref.getNameAndTypeInfo().getType();
+                    MemberRefEntry mref = ins.method();
+                    String className = mref.owner().asInternalName();
+                    String targetName = mref.name().stringValue();
+                    String targetType = mref.type().stringValue();
 
                     if (!className.equals(TARGET_CLASS_NAME)) {
                         throw new Error("unexpected class in default method body " + className);

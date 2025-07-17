@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.peer.RobotPeer;
 
-import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 import sun.awt.image.SunWritableRaster;
@@ -58,6 +57,15 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * events are generated in the platform's native input
  * queue. For example, {@code Robot.mouseMove} will actually move
  * the mouse cursor instead of just generating mouse move events.
+ *
+ * @apiNote When {@code autoWaitForIdle()} is enabled, mouse and key related methods
+ * cannot be called on the AWT EDT. This is because when {@code autoWaitForIdle()}
+ * is enabled, the mouse and key methods implicitly call {@code waitForIdle()}
+ * which will throw {@code IllegalThreadStateException} when called on the AWT EDT.
+ * In addition, screen capture operations can be lengthy
+ * and {@code delay(long ms)} clearly inserts a delay, so these also
+ * should not be called on the EDT. Taken together, this means that as much as possible,
+ * methods on this class should not be called on the EDT.
  * <p>
  * Note that some platforms require special privileges or extensions
  * to access low-level input control. If the current platform configuration
@@ -68,6 +76,43 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * <p>
  * Applications that use Robot for purposes other than self-testing should
  * handle these error conditions gracefully.
+ * <p>
+ * Platforms and desktop environments may impose restrictions or limitations
+ * on the access required to implement all functionality in the Robot class.
+ * For example:
+ * <ul>
+ * <li> preventing access to the contents of any part of a desktop
+ * or Window on the desktop that is not owned by the running application.</li>
+ * <li> treating window decorations as non-owned content.</li>
+ * <li> ignoring or limiting specific requests to manipulate windows.</li>
+ * <li> ignoring or limiting specific requests for Robot generated (synthesized)
+ * events related to keyboard and mouse etc.</li>
+ * <li> requiring specific or global permissions to any access to window
+ * contents, even application owned content,or to perform even limited
+ * synthesizing of events.</li>
+ * </ul>
+ *
+ * The Robot API specification requires that approvals for these be granted
+ * for full operation.
+ * If they are not granted, the API will be degraded as discussed here.
+ * Relevant specific API methods may document more specific limitations
+ * and requirements.
+ * Depending on the policies of the desktop environment,
+ * the approvals mentioned above may:
+ * <ul>
+ * <li>be required every time</li>
+ * <li>or persistent for the lifetime of an application,</li>
+ * <li>or persistent across multiple user desktop sessions</li>
+ * <li>be fine-grained permissions</li>
+ * <li>be associated with a specific binary application,
+ * or a class of binary applications.</li>
+ * </ul>
+ *
+ * When such approvals need to given interactively, it may impede the normal
+ * operation of the application until approved, and if approval is denied
+ * or not possible, or cannot be made persistent then it will degrade
+ * the functionality of this class and in turn any part of the operation
+ * of the application which is dependent on it.
  *
  * @author      Robi Khan
  * @since       1.3
@@ -87,10 +132,7 @@ public class Robot {
      * @throws  AWTException if the platform configuration does not allow
      * low-level input control.  This exception is always thrown when
      * GraphicsEnvironment.isHeadless() returns true
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      * @see     java.awt.GraphicsEnvironment#isHeadless
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
      */
     public Robot() throws AWTException {
         checkHeadless();
@@ -119,11 +161,8 @@ public class Robot {
      * GraphicsEnvironment.isHeadless() returns true.
      * @throws  IllegalArgumentException if {@code screen} is not a screen
      *          GraphicsDevice.
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      * @see     java.awt.GraphicsEnvironment#isHeadless
      * @see     GraphicsDevice
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
      */
     public Robot(GraphicsDevice screen) throws AWTException {
         checkHeadless();
@@ -132,7 +171,6 @@ public class Robot {
     }
 
     private void init(GraphicsDevice screen) throws AWTException {
-        checkRobotAllowed();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof ComponentFactory) {
             peer = ((ComponentFactory)toolkit).createRobot(screen);
@@ -162,15 +200,6 @@ public class Robot {
         LEGAL_BUTTON_MASK = tmpMask;
     }
 
-    /* determine if the security policy allows Robot's to be created */
-    private static void checkRobotAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.CREATE_ROBOT_PERMISSION);
-        }
-    }
-
     /**
      * Check for headless state and throw {@code AWTException} if headless.
      */
@@ -189,8 +218,15 @@ public class Robot {
 
     /**
      * Moves mouse pointer to given screen coordinates.
+     * <p>
+     * The mouse pointer may not visually move on some platforms,
+     * while the subsequent mousePress and mouseRelease can be
+     * delivered to the correct location
+     *
      * @param x         X position
      * @param y         Y position
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      */
     public synchronized void mouseMove(int x, int y) {
         peer.mouseMove(x, y);
@@ -243,6 +279,7 @@ public class Robot {
      *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
      *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see #mouseRelease(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -300,6 +337,7 @@ public class Robot {
      *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
      *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see #mousePress(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -324,6 +362,8 @@ public class Robot {
      * @param wheelAmt  number of "notches" to move the mouse wheel
      *                  Negative values indicate movement up/away from the user,
      *                  positive values indicate movement down/towards the user.
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      *
      * @since 1.4
      */
@@ -343,6 +383,8 @@ public class Robot {
      * @param   keycode Key to press (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see     #keyRelease(int)
      * @see     java.awt.event.KeyEvent
      */
@@ -362,7 +404,9 @@ public class Robot {
      * @param   keycode Key to release (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not a
      *          valid key
-     * @see  #keyPress(int)
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread and {@code isAutoWaitForIdle} would return true
+     * @see     #keyPress(int)
      * @see     java.awt.event.KeyEvent
      */
     public synchronized void keyRelease(int keycode) {
@@ -383,26 +427,48 @@ public class Robot {
 
     /**
      * Returns the color of a pixel at the given screen coordinates.
+     * <p>
+     * If the desktop environment requires that permissions be granted
+     * to capture screen content, and the required permissions are not granted,
+     * then a {@code SecurityException} may be thrown,
+     * or the content of the returned {@code Color} is undefined.
+     * </p>
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since screen capture may be a lengthy
+     * operation, particularly if acquiring permissions is needed and involves
+     * user interaction.
+     *
      * @param   x       X position of pixel
      * @param   y       Y position of pixel
+     * @throws  SecurityException if access to the screen is denied
+     *          by the desktop environment
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
-        checkScreenCaptureAllowed();
         Point point = peer.useAbsoluteCoordinates() ? toDeviceSpaceAbs(x, y)
                                                     : toDeviceSpace(x, y);
         return new Color(peer.getRGBPixel(point.x, point.y));
     }
 
     /**
-     * Creates an image containing pixels read from the screen.  This image does
-     * not include the mouse cursor.
+     * Creates an image containing pixels read from the screen.
+     * <p>
+     * If the desktop environment requires that permissions be granted
+     * to capture screen content, and the required permissions are not granted,
+     * then a {@code SecurityException} may be thrown,
+     * or the contents of the returned {@code BufferedImage} are undefined.
+     * </p>
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since screen capture may be a lengthy
+     * operation, particularly if acquiring permissions is needed and involves
+     * user interaction.
+     *
      * @param   screenRect      Rect to capture in screen coordinates
      * @return  The captured image
-     * @throws  IllegalArgumentException if {@code screenRect} width and height are not greater than zero
-     * @throws  SecurityException if {@code readDisplayPixels} permission is not granted
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
+     * @throws  IllegalArgumentException if {@code screenRect} width and height
+     *          are not greater than zero
+     * @throws  SecurityException if access to the screen is denied
+     *          by the desktop environment
      */
     public synchronized BufferedImage createScreenCapture(Rectangle screenRect) {
         return createCompatibleImage(screenRect, false)[0];
@@ -410,7 +476,6 @@ public class Robot {
 
     /**
      * Creates an image containing pixels read from the screen.
-     * This image does not include the mouse cursor.
      * This method can be used in case there is a scaling transform
      * from user space to screen (device) space.
      * Typically this means that the display is a high resolution screen,
@@ -441,12 +506,18 @@ public class Robot {
      *          nativeResImage = resolutionVariants.get(0);
      *      }
      * }</pre>
+     *
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since screen capture may be a lengthy
+     * operation, particularly if acquiring permissions is needed and involves
+     * user interaction.
+     *
      * @param   screenRect     Rect to capture in screen coordinates
      * @return  The captured image
-     * @throws  IllegalArgumentException if {@code screenRect} width and height are not greater than zero
-     * @throws  SecurityException if {@code readDisplayPixels} permission is not granted
-     * @see     SecurityManager#checkPermission
-     * @see     AWTPermission
+     * @throws  IllegalArgumentException if {@code screenRect} width and height
+     *          are not greater than zero
+     * @throws  SecurityException if access to the screen is denied
+     *          by the desktop environment
      *
      * @since 9
      */
@@ -459,8 +530,6 @@ public class Robot {
 
     private synchronized BufferedImage[]
             createCompatibleImage(Rectangle screenRect, boolean isHiDPI) {
-
-        checkScreenCaptureAllowed();
 
         checkValidRect(screenRect);
 
@@ -577,14 +646,6 @@ public class Robot {
         }
     }
 
-    private static void checkScreenCaptureAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.READ_DISPLAY_PIXELS_PERMISSION);
-        }
-    }
-
     /*
      * Called after an event is generated
      */
@@ -605,6 +666,10 @@ public class Robot {
     /**
      * Sets whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
+     *
+     * @apiNote Setting this to true means you cannot call mouse and key-controlling events
+     * on the AWT Event Dispatching Thread
+     *
      * @param   isOn    Whether {@code waitForIdle} is automatically invoked
      */
     public synchronized void setAutoWaitForIdle(boolean isOn) {
@@ -655,6 +720,10 @@ public class Robot {
      * immediately with the interrupt status set. If the interrupted status is
      * already set, this method returns immediately with the interrupt status
      * set.
+     *
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since delay may be a lengthy
+     * operation.
      *
      * @param  ms time to sleep in milliseconds
      * @throws IllegalArgumentException if {@code ms} is not between {@code 0}

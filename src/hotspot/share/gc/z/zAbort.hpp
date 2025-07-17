@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,5 +34,13 @@ public:
   static bool should_abort();
   static void abort();
 };
+
+// Macro to execute a abortion check
+#define abortpoint()               \
+  do {                             \
+    if (ZAbort::should_abort()) {  \
+      return;                      \
+    }                              \
+  } while (false)
 
 #endif // SHARE_GC_Z_ZABORT_HPP

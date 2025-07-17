@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.x509;
 import java.io.IOException;
 import java.util.Objects;
 
+import sun.security.util.DerEncoder;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 
@@ -78,7 +79,7 @@ import sun.security.util.DerValue;
  * @see IssuingDistributionPointExtension
  * @since 1.6
  */
-public class DistributionPointName {
+public class DistributionPointName implements DerEncoder {
 
     // ASN.1 context specific tag values
     private static final byte TAG_FULL_NAME = 0;
@@ -164,9 +165,9 @@ public class DistributionPointName {
      * Encodes the distribution point name and writes it to the DerOutputStream.
      *
      * @param out the output stream.
-     * @exception IOException on encoding error.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
 
         DerOutputStream theChoice = new DerOutputStream();
 
@@ -191,6 +192,7 @@ public class DistributionPointName {
      * @param obj Object to be compared to this
      * @return true if objects match; false otherwise
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -204,17 +206,15 @@ public class DistributionPointName {
     }
 
     /**
-     * Returns the hash code for this distribution point name.
-     *
-     * @return the hash code.
+     * {@return the hash code for this distribution point name}
      */
+    @Override
     public int hashCode() {
         int hash = hashCode;
         if (hash == 0) {
             hash = 1;
             if (fullName != null) {
                 hash += fullName.hashCode();
-
             } else {
                 hash += relativeName.hashCode();
             }

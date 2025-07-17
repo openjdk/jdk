@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SymLinkTest
  */
@@ -40,9 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.SourceFile_attribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import toolbox.JavacTask;
 import toolbox.TestRunner;
 import toolbox.TestRunner.Test;
@@ -94,9 +92,9 @@ public class SymLinkTest extends TestRunner {
             .run()
             .writeAll();
 
-        ClassFile cf = ClassFile.read(classes.resolve("HelloWorld.class"));
-        SourceFile_attribute sf = (SourceFile_attribute) cf.attributes.get(Attribute.SourceFile);
-        String sourceFile = sf.getSourceFile(cf.constant_pool);
+        ClassModel cf = ClassFile.of().parse(classes.resolve("HelloWorld.class"));
+        SourceFileAttribute sf = cf.findAttribute(Attributes.sourceFile()).orElseThrow();
+        String sourceFile = sf.sourceFile().stringValue();
 
         if (!"HelloWorld.java".equals(sourceFile)) {
             throw new AssertionError("Unexpected SourceFile attribute value: " + sourceFile);

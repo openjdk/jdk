@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,14 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcOverheadChecker.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "logging/log.hpp"
 
 GCOverheadChecker::GCOverheadChecker() :
   _gc_overhead_limit_exceeded(false),
-  _print_gc_overhead_limit_would_be_exceeded(false),
   _gc_overhead_limit_count(0) {
   assert(GCOverheadLimitThreshold > 0,
     "No opportunity to clear SoftReferences before GC overhead limit");
@@ -41,7 +39,11 @@ void GCOverheadChecker::check_gc_overhead_limit(GCOverheadTester* time_overhead,
                                                 bool is_full_gc,
                                                 GCCause::Cause gc_cause,
                                                 SoftRefPolicy* soft_ref_policy) {
-
+  if (is_full_gc) {
+    // Explicit Full GC would do the clearing of soft-refs as well
+    // So reset in the beginning
+    soft_ref_policy->set_should_clear_all_soft_refs(false);
+  }
   // Ignore explicit GC's.  Exiting here does not set the flag and
   // does not reset the count.
   if (GCCause::is_user_requested_gc(gc_cause) ||
@@ -91,11 +93,11 @@ void GCOverheadChecker::check_gc_overhead_limit(GCOverheadTester* time_overhead,
 
   if (UseGCOverheadLimit) {
     if (gc_overhead_limit_exceeded()) {
-      log_trace(gc, ergo)("GC is exceeding overhead limit of " UINTX_FORMAT "%%", GCTimeLimit);
+      log_trace(gc, ergo)("GC is exceeding overhead limit of %u%%", GCTimeLimit);
       reset_gc_overhead_limit_count();
     } else if (print_gc_overhead_limit_would_be_exceeded) {
       assert(_gc_overhead_limit_count > 0, "Should not be printing");
-      log_trace(gc, ergo)("GC would exceed overhead limit of " UINTX_FORMAT "%% %d consecutive time(s)",
+      log_trace(gc, ergo)("GC would exceed overhead limit of %u%% %d consecutive time(s)",
                           GCTimeLimit, _gc_overhead_limit_count);
     }
   }

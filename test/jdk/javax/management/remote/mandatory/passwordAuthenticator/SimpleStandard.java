@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@
  *      - the "getNbResets()" method.
  */
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.Principal;
 import java.util.Set;
 import javax.management.AttributeChangeNotification;
@@ -152,8 +150,7 @@ public class SimpleStandard
      * type JMXPrincipal and refers to the "monitorRole" identity.
      */
     private void checkSubject() {
-        AccessControlContext acc = AccessController.getContext();
-        Subject subject = Subject.getSubject(acc);
+        Subject subject = Subject.current();
         Set principals = subject.getPrincipals();
         Principal principal = (Principal) principals.iterator().next();
         if (!(principal instanceof JMXPrincipal))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,8 +22,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/upcallLinker.hpp"
@@ -114,8 +114,10 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
-                                       BasicType* in_sig_bt, int total_in_args,
+static const int upcall_stub_code_base_size = 1024;
+static const int upcall_stub_size_per_arg = 16;
+
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -123,23 +125,17 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
-
-  Register shuffle_reg = r19;
-  JavaCallingConvention out_conv;
-  NativeCallingConvention in_conv(call_regs._arg_regs);
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
-  int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
-  int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, upcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
+  int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
+  CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
   }
-#endif
+
+  GrowableArray<VMStorage> unfiltered_out_regs;
+  int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
+  int preserved_bytes = SharedRuntime::out_preserve_stack_slots() * VMRegImpl::stack_slot_size;
+  int stack_bytes = preserved_bytes + out_arg_bytes;
+  int out_arg_area = align_up(stack_bytes , StackAlignmentInBytes);
 
   // out_arg_area (for stack arguments) doubles as shadow space for native calls.
   // make sure it is big enough.
@@ -148,21 +144,38 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   }
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
-  RegSpiller arg_spilller(call_regs._arg_regs);
+  RegSpiller arg_spiller(call_regs._arg_regs);
   RegSpiller result_spiller(call_regs._ret_regs);
 
   int shuffle_area_offset    = 0;
   int res_save_area_offset   = shuffle_area_offset    + out_arg_area;
   int arg_save_area_offset   = res_save_area_offset   + result_spiller.spill_size_bytes();
-  int reg_save_area_offset   = arg_save_area_offset   + arg_spilller.spill_size_bytes();
+  int reg_save_area_offset   = arg_save_area_offset   + arg_spiller.spill_size_bytes();
   int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
   int frame_bottom_offset    = frame_data_offset      + sizeof(UpcallStub::FrameData);
 
+  StubLocations locs;
   int ret_buf_offset = -1;
   if (needs_return_buffer) {
     ret_buf_offset = frame_bottom_offset;
     frame_bottom_offset += ret_buf_size;
+    // use a free register for shuffling code to pick up return
+    // buffer address from
+    locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
   }
+
+  Register shuffle_reg = r19;
+  GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
+  GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
+  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, as_VMStorage(shuffle_reg));
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, upcall) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   int frame_size = frame_bottom_offset;
   frame_size = align_up(frame_size, StackAlignmentInBytes);
@@ -203,7 +216,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   // we have to always spill args since we need to do a call to get the thread
   // (and maybe attach it).
-  arg_spilller.generate_spill(_masm, arg_save_area_offset);
+  arg_spiller.generate_spill(_masm, arg_save_area_offset);
   preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
 
   __ block_comment("{ on_entry");
@@ -215,31 +228,31 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} on_entry");
 
   __ block_comment("{ argument shuffle");
-  arg_spilller.generate_fill(_masm, arg_save_area_offset);
+  arg_spiller.generate_fill(_masm, arg_save_area_offset);
   if (needs_return_buffer) {
     assert(ret_buf_offset != -1, "no return buffer allocated");
-    __ lea(abi._ret_buf_addr_reg, Address(sp, ret_buf_offset));
+    __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(sp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ movptr(shuffle_reg, (intptr_t)receiver);
-  __ resolve_jobject(shuffle_reg, rscratch1, rscratch2);
-  __ mov(j_rarg0, shuffle_reg);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t)receiver);
+  __ far_call(RuntimeAddress(StubRoutines::upcall_stub_load_target()), rscratch1); // puts target Method* in rmethod
+  __ block_comment("} load target ");
 
-  __ mov_metadata(rmethod, entry);
-  __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+  __ push_cont_fastpath(rthread);
 
   __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
   __ blr(rscratch1);
+
+  __ pop_cont_fastpath(rthread);
 
     // return value shuffle
   if (!needs_return_buffer) {
 #ifdef ASSERT
     if (call_regs._ret_regs.length() == 1) { // 0 or 1
-      VMReg j_expected_result_reg;
+      VMStorage j_expected_result_reg;
       switch (ret_type) {
         case T_BOOLEAN:
         case T_BYTE:
@@ -247,19 +260,18 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
         case T_CHAR:
         case T_INT:
         case T_LONG:
-        j_expected_result_reg = r0->as_VMReg();
+        j_expected_result_reg = as_VMStorage(r0);
         break;
         case T_FLOAT:
         case T_DOUBLE:
-          j_expected_result_reg = v0->as_VMReg();
+          j_expected_result_reg = as_VMStorage(v0);
           break;
         default:
           fatal("unexpected return type: %s", type2name(ret_type));
       }
       // No need to move for now, since CallArranger can pick a return type
       // that goes in the same reg for both CCs. But, at least assert they are the same
-      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
-      "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg, "unexpected result register");
     }
 #endif
   } else {
@@ -267,12 +279,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     __ lea(rscratch1, Address(sp, ret_buf_offset));
     int offset = 0;
     for (int i = 0; i < call_regs._ret_regs.length(); i++) {
-      VMReg reg = call_regs._ret_regs.at(i);
-      if (reg->is_Register()) {
-        __ ldr(reg->as_Register(), Address(rscratch1, offset));
+      VMStorage reg = call_regs._ret_regs.at(i);
+      if (reg.type() == StorageType::INTEGER) {
+        __ ldr(as_Register(reg), Address(rscratch1, offset));
         offset += 8;
-      } else if (reg->is_FloatRegister()) {
-        __ ldrd(reg->as_FloatRegister(), Address(rscratch1, offset));
+      } else if (reg.type() == StorageType::VECTOR) {
+        __ ldrd(as_FloatRegister(reg), Address(rscratch1, offset));
         offset += 16; // needs to match VECTOR_REG_SIZE in AArch64Architecture (Java)
       } else {
         ShouldNotReachHere();
@@ -298,39 +310,33 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ exception handler");
-
-  intptr_t exception_handler_offset = __ pc() - start;
-
-  // Native caller has no idea how to handle exceptions,
-  // so we just crash here. Up to callee to catch exceptions.
-  __ verify_oop(r0);
-  __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
-  __ blr(rscratch1);
-  __ should_not_reach_here();
-
-  __ block_comment("} exception handler");
-
   _masm->flush();
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char* name = _masm->code_string(ss.as_string());
 #else // PRODUCT
   const char* name = "upcall_stub";
 #endif // PRODUCT
 
+  buffer.log_section_sizes(name);
+
   UpcallStub* blob
     = UpcallStub::create(name,
                          &buffer,
-                         exception_handler_offset,
                          receiver,
                          in_ByteSize(frame_data_offset));
-
-  if (TraceOptimizedUpcallStubs) {
-    blob->print_on(tty);
+  if (blob == nullptr) {
+    return nullptr;
   }
+
+#ifndef PRODUCT
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    blob->print_on(&ls);
+  }
+#endif
 
   return blob->code_begin();
 }

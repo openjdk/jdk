@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,11 +91,8 @@ abstract class AbstractTest<T> implements ExceptionListener {
 
     /**
      * This is entry point to start testing.
-     *
-     * @param security  use {@code true} to start
-     *                  second pass in secure context
      */
-    final void test(boolean security) {
+    final void test() {
         Bean.DEFAULT = null;
         T object = getObject();
 
@@ -113,10 +110,6 @@ abstract class AbstractTest<T> implements ExceptionListener {
 
             System.out.println("Test object updating");
             validate(object, testBean(object));
-        }
-        if (security) {
-            System.setSecurityManager(new SecurityManager());
-            test(false);
         }
     }
 

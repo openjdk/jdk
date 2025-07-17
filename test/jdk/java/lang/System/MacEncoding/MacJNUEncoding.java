@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class MacJNUEncoding {
         var cmds = (args.length == 4)
                 ? List.of("-Dfile.encoding=" + args[3], ExpectedEncoding.class.getName(), args[0], args[1])
                 : List.of(ExpectedEncoding.class.getName(), args[0], args[1]);
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmds);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmds);
         Map<String, String> env = pb.environment();
         env.put("LANG", locale);
         env.put("LC_ALL", locale);

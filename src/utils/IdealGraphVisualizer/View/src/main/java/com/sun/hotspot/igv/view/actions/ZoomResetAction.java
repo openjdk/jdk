@@ -41,8 +41,8 @@ import org.openide.util.actions.CallableSystemAction;
         @ActionReference(path = "Shortcuts", name = "D-0")
 })
 @NbBundle.Messages({
-        "CTL_ZoomResetAction=Reset zoom (100%",
-        "HINT_ZoomResetAction=Rest the zoom level to 100%"
+        "CTL_ZoomResetAction=Reset zoom (100%)",
+        "HINT_ZoomResetAction=Reset the zoom level to 100%"
 })
 public final class ZoomResetAction extends CallableSystemAction {
 
@@ -61,11 +61,11 @@ public final class ZoomResetAction extends CallableSystemAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_ZoomResetAction");
+        return NbBundle.getMessage(ZoomResetAction.class, "CTL_ZoomResetAction");
     }
 
     private String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_ZoomResetAction");
+        return NbBundle.getMessage(ZoomResetAction.class, "HINT_ZoomResetAction");
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  * @author Andreas Sterbenz
  */
-public class GeneralSubtrees implements Cloneable {
+public class GeneralSubtrees implements Cloneable, DerEncoder {
 
     private final List<GeneralSubtree> trees;
 
@@ -70,6 +70,7 @@ public class GeneralSubtrees implements Cloneable {
      *
      * @param val the DER encoded form of the same.
      */
+    @SuppressWarnings("this-escape")
     public GeneralSubtrees(DerValue val) throws IOException {
         this();
         if (val.tag != DerValue.tag_Sequence) {
@@ -132,7 +133,8 @@ public class GeneralSubtrees implements Cloneable {
      *
      * @param out the DerOutputStream to encode this object to.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream seq = new DerOutputStream();
 
         for (int i = 0, n = size(); i < n; i++) {

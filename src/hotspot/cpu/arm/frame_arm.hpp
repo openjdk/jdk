@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,13 @@
     // Entry frames
     entry_frame_call_wrapper_offset                  =  0,
     metadata_words                                   = sender_sp_offset,
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom                         = metadata_words,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                            = 0,
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle                                     =  1
@@ -86,13 +93,11 @@
 
 #ifdef ASSERT
   // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(   CompiledMethod* nm, intptr_t* unextended_sp, bool is_method_handle_return = false);
-  static void verify_deopt_mh_original_pc(CompiledMethod* nm, intptr_t* unextended_sp) {
+  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return = false);
+  static void verify_deopt_mh_original_pc(nmethod* nm, intptr_t* unextended_sp) {
     verify_deopt_original_pc(nm, unextended_sp, true);
   }
 #endif
-
-  const ImmutableOopMap* get_oop_map() const;
 
  public:
   // Constructors
@@ -103,6 +108,9 @@
 
   frame(intptr_t* sp, intptr_t* fp);
 
+  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, bool allow_cb_null = false);
+
+  void setup(address pc);
   void init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
   // accessors for the instance variables

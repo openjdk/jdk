@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Jan 2022
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages extends ListResourceBundle {
 
@@ -553,6 +553,15 @@ public class ErrorMessages extends ListResourceBundle {
         "Cannot convert data-type ''{0}'' to ''{1}''."},
 
         /*
+         * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
+         * and value "true" should not be translated.
+         */
+        {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
+        "Use of the extension function ''{0}'' is not allowed when extension "
+              + "functions are disabled by the secure processing feature or "
+              + "the property ''jdk.xml.enableExtensionFunctions''. "
+              + "To enable extension functions, set ''jdk.xml.enableExtensionFunctions'' to ''true''."},
+        /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
@@ -1027,11 +1036,6 @@ public class ErrorMessages extends ListResourceBundle {
          "that are very large.  Try restructuring your stylesheet to use " +
          "smaller templates."
         },
-
-        {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "When Java security is enabled, "
-              + "support for deserializing TemplatesImpl is disabled. This can be "
-              + "overridden by setting the jdk.xml.enableTemplatesImplDeserialization"
-              + " system property to true."},
 
         {ErrorMsg.XPATH_GROUP_LIMIT,
             "JAXP0801001: the compiler encountered an XPath expression containing "

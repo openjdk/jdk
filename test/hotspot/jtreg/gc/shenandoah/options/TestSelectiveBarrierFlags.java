@@ -35,9 +35,8 @@
  * @summary Test selective barrier enabling works, by aggressively compiling HelloWorld with combinations
  *          of barrier flags
  * @requires vm.gc.Shenandoah
- * @requires vm.debug
  * @library /test/lib
- * @run driver TestSelectiveBarrierFlags -Xbatch -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:+ShenandoahVerifyOptoBarriers
+ * @run driver TestSelectiveBarrierFlags -Xbatch -XX:CompileThreshold=100 -XX:-TieredCompilation
  */
 
 import java.util.*;
@@ -51,10 +50,9 @@ public class TestSelectiveBarrierFlags {
     public static void main(String[] args) throws Exception {
         String[][] opts = {
                 new String[] { "ShenandoahLoadRefBarrier" },
-                new String[] { "ShenandoahSATBBarrier", "ShenandoahIUBarrier" },
+                new String[] { "ShenandoahSATBBarrier" },
                 new String[] { "ShenandoahCASBarrier" },
                 new String[] { "ShenandoahCloneBarrier" },
-                new String[] { "ShenandoahNMethodBarrier" },
                 new String[] { "ShenandoahStackWatermarkBarrier" }
         };
 
@@ -91,8 +89,7 @@ public class TestSelectiveBarrierFlags {
 
             pool.submit(() -> {
                 try {
-                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(conf.toArray(new String[0]));
-                    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+                    OutputAnalyzer output = ProcessTools.executeLimitedTestJava(conf.toArray(new String[0]));
                     output.shouldHaveExitValue(0);
                 } catch (Exception e) {
                     e.printStackTrace();

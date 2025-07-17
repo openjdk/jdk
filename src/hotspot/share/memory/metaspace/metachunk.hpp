@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -167,7 +167,7 @@ class VirtualSpaceNode;
 
 class Metachunk {
 
-  // start of chunk memory; NULL if dead.
+  // start of chunk memory; null if dead.
   MetaWord* _base;
 
   // Used words.
@@ -224,25 +224,25 @@ class Metachunk {
 public:
 
   Metachunk() :
-    _base(NULL),
+    _base(nullptr),
     _used_words(0),
     _committed_words(0),
     _level(chunklevel::ROOT_CHUNK_LEVEL),
     _state(State::Free),
-    _vsnode(NULL),
-    _prev(NULL), _next(NULL),
-    _prev_in_vs(NULL),
-    _next_in_vs(NULL)
+    _vsnode(nullptr),
+    _prev(nullptr), _next(nullptr),
+    _prev_in_vs(nullptr),
+    _next_in_vs(nullptr)
   {}
 
   void clear() {
-    _base = NULL;
+    _base = nullptr;
     _used_words = 0; _committed_words = 0;
     _level = chunklevel::ROOT_CHUNK_LEVEL;
     _state = State::Free;
-    _vsnode = NULL;
-    _prev = NULL; _next = NULL;
-    _prev_in_vs = NULL; _next_in_vs = NULL;
+    _vsnode = nullptr;
+    _prev = nullptr; _next = nullptr;
+    _prev_in_vs = nullptr; _next_in_vs = nullptr;
   }
 
   size_t word_size() const        { return chunklevel::word_size_for_level(_level); }
@@ -258,7 +258,7 @@ public:
   void set_next(Metachunk* c)     { _next = c; }
   Metachunk* next() const         { return _next; }
 
-  DEBUG_ONLY(bool in_list() const { return _prev != NULL || _next != NULL; })
+  DEBUG_ONLY(bool in_list() const { return _prev != nullptr || _next != nullptr; })
 
   // Physical neighbors wiring
   void set_prev_in_vs(Metachunk* c) { DEBUG_ONLY(assert_have_expand_lock()); _prev_in_vs = c; }
@@ -362,7 +362,7 @@ public:
 #define METACHUNK_FORMAT                "@" PTR_FORMAT ", %c, base " PTR_FORMAT ", level " CHKLVL_FORMAT
 #define METACHUNK_FORMAT_ARGS(chunk)    p2i(chunk), chunk->get_state_char(), p2i(chunk->base()), chunk->level()
 
-#define METACHUNK_FULL_FORMAT                "@" PTR_FORMAT ", %c, base " PTR_FORMAT ", level " CHKLVL_FORMAT " (" SIZE_FORMAT "), used: " SIZE_FORMAT ", committed: " SIZE_FORMAT ", committed-free: " SIZE_FORMAT
+#define METACHUNK_FULL_FORMAT                "@" PTR_FORMAT ", %c, base " PTR_FORMAT ", level " CHKLVL_FORMAT " (%zu), used: %zu, committed: %zu, committed-free: %zu"
 #define METACHUNK_FULL_FORMAT_ARGS(chunk)    p2i(chunk), chunk->get_state_char(), p2i(chunk->base()), chunk->level(), chunk->word_size(), chunk->used_words(), chunk->committed_words(), chunk->free_below_committed_words()
 
 } // namespace metaspace

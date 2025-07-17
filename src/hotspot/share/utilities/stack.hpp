@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,11 @@
 // implementation in class Stack assumes that alloc() will terminate the process
 // if the allocation fails.
 
-template <class E, MEMFLAGS F> class StackIterator;
+template <class E, MemTag MT> class StackIterator;
 
 // StackBase holds common data/methods that don't depend on the element type,
 // factored out to reduce template code duplication.
-template <MEMFLAGS F> class StackBase
+template <MemTag MT> class StackBase
 {
 public:
   size_t segment_size()   const { return _seg_size; } // Elements per segment.
@@ -85,11 +85,11 @@ protected:
   size_t       _cache_size;     // Number of segments in the cache.
 };
 
-template <class E, MEMFLAGS F>
-class Stack:  public StackBase<F>
+template <class E, MemTag MT>
+class Stack:  public StackBase<MT>
 {
 public:
-  friend class StackIterator<E, F>;
+  friend class StackIterator<E, MT>;
 
   // Number of elements that fit in 4K bytes minus the size of two pointers
   // (link field and malloc header).
@@ -104,7 +104,7 @@ public:
                size_t max_cache_size = 4, size_t max_size = 0);
   inline ~Stack() { clear(true); }
 
-  inline bool is_empty() const { return this->_cur_seg == NULL; }
+  inline bool is_empty() const { return this->_cur_seg == nullptr; }
   inline bool is_full()  const { return this->_full_seg_size >= this->max_size(); }
 
   // Performance sensitive code should use is_empty() instead of size() == 0 and
@@ -160,36 +160,15 @@ private:
   E* _cache;      // Segment cache to avoid ping-ponging.
 };
 
-template <class E, MEMFLAGS F> class ResourceStack:  public Stack<E, F>, public ResourceObj
-{
-public:
-  // If this class becomes widely used, it may make sense to save the Thread
-  // and use it when allocating segments.
-//  ResourceStack(size_t segment_size = Stack<E, F>::default_segment_size()):
-  ResourceStack(size_t segment_size): Stack<E, F>(segment_size, max_uintx)
-    { }
-
-  // Set the segment pointers to NULL so the parent dtor does not free them;
-  // that must be done by the ResourceMark code.
-  ~ResourceStack() { Stack<E, F>::reset(true); }
-
-protected:
-  virtual E*   alloc(size_t bytes);
-  virtual void free(E* addr, size_t bytes);
-
-private:
-  void clear(bool clear_cache = false);
-};
-
-template <class E, MEMFLAGS F>
+template <class E, MemTag MT>
 class StackIterator: public StackObj
 {
 public:
-  StackIterator(Stack<E, F>& stack): _stack(stack) { sync(); }
+  StackIterator(Stack<E, MT>& stack): _stack(stack) { sync(); }
 
-  Stack<E, F>& stack() const { return _stack; }
+  Stack<E, MT>& stack() const { return _stack; }
 
-  bool is_empty() const { return _cur_seg == NULL; }
+  bool is_empty() const { return _cur_seg == nullptr; }
 
   E  next() { return *next_addr(); }
   E* next_addr();
@@ -197,7 +176,7 @@ public:
   void sync(); // Sync the iterator's state to the stack's current state.
 
 private:
-  Stack<E, F>& _stack;
+  Stack<E, MT>& _stack;
   size_t    _cur_seg_size;
   E*        _cur_seg;
   size_t    _full_seg_size;

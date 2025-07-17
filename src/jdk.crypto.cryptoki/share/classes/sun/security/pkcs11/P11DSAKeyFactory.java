@@ -49,8 +49,7 @@ final class P11DSAKeyFactory extends P11KeyFactory {
 
     PublicKey implTranslatePublicKey(PublicKey key) throws InvalidKeyException {
         try {
-            if (key instanceof DSAPublicKey) {
-                DSAPublicKey dsaKey = (DSAPublicKey)key;
+            if (key instanceof DSAPublicKey dsaKey) {
                 DSAParams params = dsaKey.getParams();
                 return generatePublic(
                     dsaKey.getY(),
@@ -75,8 +74,7 @@ final class P11DSAKeyFactory extends P11KeyFactory {
     PrivateKey implTranslatePrivateKey(PrivateKey key)
             throws InvalidKeyException {
         try {
-            if (key instanceof DSAPrivateKey) {
-                DSAPrivateKey dsaKey = (DSAPrivateKey)key;
+            if (key instanceof DSAPrivateKey dsaKey) {
                 DSAParams params = dsaKey.getParams();
                 return generatePrivate(
                     dsaKey.getX(),
@@ -112,7 +110,7 @@ final class P11DSAKeyFactory extends P11KeyFactory {
                         ("Could not create DSA public key", e);
             }
         }
-        if (keySpec instanceof DSAPublicKeySpec == false) {
+        if (!(keySpec instanceof DSAPublicKeySpec)) {
             throw new InvalidKeySpecException("Only DSAPublicKeySpec and "
                 + "X509EncodedKeySpec supported for DSA public keys");
         }
@@ -144,7 +142,7 @@ final class P11DSAKeyFactory extends P11KeyFactory {
                         ("Could not create DSA private key", e);
             }
         }
-        if (keySpec instanceof DSAPrivateKeySpec == false) {
+        if (!(keySpec instanceof DSAPrivateKeySpec)) {
             throw new InvalidKeySpecException("Only DSAPrivateKeySpec and "
                 + "PKCS8EncodedKeySpec supported for DSA private keys");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,18 +64,27 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        @JEP(number=427, title="Pattern Matching for switch", status="Third Preview")
-        SWITCH_PATTERN_MATCHING(),
-        @JEP(number=405, title="Record Patterns")
-        RECORD_PATTERNS,
-        @JEP(number=425, title="Virtual Threads")
-        VIRTUAL_THREADS,
-        @JEP(number=424, title="Foreign Function & Memory API")
-        FOREIGN,
+        // while building the interim javac, the ClassReader will produce a warning when loading a class
+        // keeping the constant of a feature that has been integrated or dropped, serves the purpose of muting such warnings.
+
+        //---
+        IMPLICIT_CLASSES, //to be removed when boot JDK is 25
+        SCOPED_VALUES,
+        @JEP(number=505, title="Structured Concurrency", status="Fifth Preview")
+        STRUCTURED_CONCURRENCY,
+        CLASSFILE_API,
+        STREAM_GATHERERS,
+        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
+        KEY_DERIVATION, //remove when the boot JDK is JDK 25
+        @JEP(number = 502, title = "Stable Values", status = "Preview")
+        STABLE_VALUES,
+        @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
+        PEM_API,
+        LANGUAGE_MODEL,
         /**
          * A key for testing.
          */
-        @JEP(number=0, title="Test Feature")
+        @JEP(number=2_147_483_647, title="Test Feature")
         TEST,
         ;
     }

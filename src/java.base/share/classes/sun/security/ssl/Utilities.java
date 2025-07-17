@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import javax.net.ssl.*;
 import sun.net.util.IPAddressUtil;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A utility class to share the static methods.
@@ -128,12 +127,10 @@ final class Utilities {
 
     /**
      * Return the value of the boolean System property propName.
-     *
-     * Note use of privileged action. Do NOT make accessible to applications.
      */
     static boolean getBooleanProperty(String propName, boolean defaultValue) {
         // if set, require value of either true or false
-        String b = GetPropertyAction.privilegedGetProperty(propName);
+        String b = System.getProperty(propName);
         if (b == null) {
             return defaultValue;
         } else if (b.equalsIgnoreCase("false")) {

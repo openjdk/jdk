@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @summary Test virtual threads using a custom scheduler
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} CustomScheduler.java
- * @run testng/othervm --enable-preview CustomScheduler
+ * @library /test/lib
+ * @run junit CustomScheduler
  */
 
 import java.lang.reflect.Field;
@@ -36,60 +36,55 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
-import org.testng.SkipException;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import jdk.test.lib.thread.VThreadScheduler;
+import jdk.test.lib.thread.VThreadRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
-public class CustomScheduler {
-    private static final Executor DEFAULT_SCHEDULER = defaultScheduler();
-    private static ExecutorService SCHEDULER_1;
-    private static ExecutorService SCHEDULER_2;
+class CustomScheduler {
+    private static ExecutorService scheduler1;
+    private static ExecutorService scheduler2;
 
-    @BeforeClass
-    public void setup() {
-        SCHEDULER_1 = Executors.newFixedThreadPool(1);
-        SCHEDULER_2 = Executors.newFixedThreadPool(1);
+    @BeforeAll
+    static void setup() {
+        scheduler1 = Executors.newFixedThreadPool(1);
+        scheduler2 = Executors.newFixedThreadPool(1);
     }
 
-    @AfterClass
-    public void shutdown() {
-        SCHEDULER_1.shutdown();
-        SCHEDULER_2.shutdown();
+    @AfterAll
+    static void shutdown() {
+        scheduler1.shutdown();
+        scheduler2.shutdown();
     }
 
     /**
      * Test platform thread creating a virtual thread that uses a custom scheduler.
      */
     @Test
-    public void testCustomScheduler1() throws Exception {
-        AtomicReference<Executor> ref = new AtomicReference<>();
-        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
-            ref.set(scheduler(Thread.currentThread()));
-        }).join();
-        assertTrue(ref.get() == SCHEDULER_1);
+    void testCustomScheduler1() throws Exception {
+        var ref = new AtomicReference<Executor>();
+        ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler1);
+        Thread thread = factory.newThread(() -> {
+            ref.set(VThreadScheduler.scheduler(Thread.currentThread()));
+        });
+        thread.start();
+        thread.join();
+        assertTrue(ref.get() == scheduler1);
     }
 
     /**
      * Test virtual thread creating a virtual thread that uses a custom scheduler.
      */
     @Test
-    public void testCustomScheduler2() throws Exception {
-        AtomicReference<Executor> ref = new AtomicReference<>();
-        Thread.ofVirtual().start(() -> {
-            try {
-                ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
-                    ref.set(scheduler(Thread.currentThread()));
-                }).join();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).join();
-        assertTrue(ref.get() == SCHEDULER_1);
+    void testCustomScheduler2() throws Exception {
+        VThreadRunner.run(this::testCustomScheduler1);
     }
 
     /**
@@ -97,18 +92,21 @@ public class CustomScheduler {
      * The scheduler should be inherited.
      */
     @Test
-    public void testCustomScheduler3() throws Exception {
-        AtomicReference<Executor> ref = new AtomicReference<>();
-        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+    void testCustomScheduler3() throws Exception {
+        var ref = new AtomicReference<Executor>();
+        ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler1);
+        Thread thread = factory.newThread(() -> {
             try {
                 Thread.ofVirtual().start(() -> {
-                    ref.set(scheduler(Thread.currentThread()));
+                    ref.set(VThreadScheduler.scheduler(Thread.currentThread()));
                 }).join();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }).join();
-        assertTrue(ref.get() == SCHEDULER_1);
+        });
+        thread.start();
+        thread.join();
+        assertTrue(ref.get() == scheduler1);
     }
 
     /**
@@ -116,25 +114,31 @@ public class CustomScheduler {
      * that uses a different custom scheduler.
      */
     @Test
-    public void testCustomScheduler4() throws Exception {
-        AtomicReference<Executor> ref = new AtomicReference<>();
-        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+    void testCustomScheduler4() throws Exception {
+        var ref = new AtomicReference<Executor>();
+        ThreadFactory factory1 = VThreadScheduler.virtualThreadFactory(scheduler1);
+        ThreadFactory factory2 = VThreadScheduler.virtualThreadFactory(scheduler2);
+        Thread thread1 = factory1.newThread(() -> {
             try {
-                ThreadBuilders.virtualThreadBuilder(SCHEDULER_2).start(() -> {
-                    ref.set(scheduler(Thread.currentThread()));
-                }).join();
+                Thread thread2 = factory2.newThread(() -> {
+                    ref.set(VThreadScheduler.scheduler(Thread.currentThread()));
+                });
+                thread2.start();
+                thread2.join();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }).join();
-        assertTrue(ref.get() == SCHEDULER_2);
+        });
+        thread1.start();
+        thread1.join();
+        assertTrue(ref.get() == scheduler2);
     }
 
     /**
      * Test running task on a virtual thread, should thrown WrongThreadException.
      */
     @Test
-    public void testBadCarrier() {
+    void testBadCarrier() {
         Executor scheduler = (task) -> {
             var exc = new AtomicReference<Throwable>();
             try {
@@ -151,8 +155,9 @@ public class CustomScheduler {
             }
             assertTrue(exc.get() instanceof WrongThreadException);
         };
-
-        ThreadBuilders.virtualThreadBuilder(scheduler).start(LockSupport::park);
+        ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+        Thread thread = factory.newThread(LockSupport::park);
+        thread.start();
     }
 
     /**
@@ -160,16 +165,16 @@ public class CustomScheduler {
      * carrier thread when the task completes.
      */
     @Test
-    public void testParkWithInterruptSet() {
+    void testParkWithInterruptSet() {
         Thread carrier = Thread.currentThread();
-        if (carrier.isVirtual())
-            throw new SkipException("Main test is a virtual thread");
+        assumeFalse(carrier.isVirtual(), "Main thread is a virtual thread");
         try {
-            var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
-            Thread vthread = builder.start(() -> {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(Runnable::run);
+            Thread vthread = factory.newThread(() -> {
                 Thread.currentThread().interrupt();
                 Thread.yield();
             });
+            vthread.start();
             assertTrue(vthread.isInterrupted());
             assertFalse(carrier.isInterrupted());
         } finally {
@@ -182,15 +187,15 @@ public class CustomScheduler {
      * the carrier thread when the task completes.
      */
     @Test
-    public void testTerminateWithInterruptSet() {
+    void testTerminateWithInterruptSet() {
         Thread carrier = Thread.currentThread();
-        if (carrier.isVirtual())
-            throw new SkipException("Main test is a virtual thread");
+        assumeFalse(carrier.isVirtual(), "Main thread is a virtual thread");
         try {
-            var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
-            Thread vthread = builder.start(() -> {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(Runnable::run);
+            Thread vthread = factory.newThread(() -> {
                 Thread.currentThread().interrupt();
             });
+            vthread.start();
             assertTrue(vthread.isInterrupted());
             assertFalse(carrier.isInterrupted());
         } finally {
@@ -202,18 +207,19 @@ public class CustomScheduler {
      * Test running task with the carrier interrupt status set.
      */
     @Test
-    public void testRunWithInterruptSet() throws Exception {
-        if (Thread.currentThread().isVirtual())
-            throw new SkipException("Main test is a virtual thread");
+    void testRunWithInterruptSet() throws Exception {
+        assumeFalse(Thread.currentThread().isVirtual(), "Main thread is a virtual thread");
         Executor scheduler = (task) -> {
             Thread.currentThread().interrupt();
             task.run();
         };
+        ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
         try {
             AtomicBoolean interrupted = new AtomicBoolean();
-            Thread vthread = ThreadBuilders.virtualThreadBuilder(scheduler).start(() -> {
+            Thread vthread = factory.newThread(() -> {
                 interrupted.set(Thread.currentThread().isInterrupted());
             });
+            vthread.start();
             assertFalse(vthread.isInterrupted());
         } finally {
             Thread.interrupted();
@@ -221,32 +227,60 @@ public class CustomScheduler {
     }
 
     /**
-     * Returns the default scheduler.
+     * Test custom scheduler throwing OOME when starting a thread.
      */
-    private static Executor defaultScheduler() {
-        try {
-            Field defaultScheduler = Class.forName("java.lang.VirtualThread")
-                    .getDeclaredField("DEFAULT_SCHEDULER");
-            defaultScheduler.setAccessible(true);
-            return (Executor) defaultScheduler.get(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @Test
+    void testThreadStartOOME() throws Exception {
+        Executor scheduler = task -> {
+            System.err.println("OutOfMemoryError");
+            throw new OutOfMemoryError();
+        };
+        ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+        Thread thread = factory.newThread(() -> { });
+        assertThrows(OutOfMemoryError.class, thread::start);
     }
 
     /**
-     * Returns the scheduler for the given virtual thread.
+     * Test custom scheduler throwing OOME when unparking a thread.
      */
-    private static Executor scheduler(Thread thread) {
-        if (!thread.isVirtual())
-            throw new IllegalArgumentException("Not a virtual thread");
-        try {
-            Field scheduler = Class.forName("java.lang.VirtualThread")
-                    .getDeclaredField("scheduler");
-            scheduler.setAccessible(true);
-            return (Executor) scheduler.get(thread);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    @Test
+    void testThreadUnparkOOME() throws Exception {
+        try (ExecutorService executor = Executors.newFixedThreadPool(1)) {
+            AtomicInteger counter = new AtomicInteger();
+            Executor scheduler = task -> {
+                switch (counter.getAndIncrement()) {
+                    case 0 -> executor.execute(task);             // Thread.start
+                    case 1, 2 -> {                                // unpark attempt 1+2
+                        System.err.println("OutOfMemoryError");
+                        throw new OutOfMemoryError();
+                    }
+                    default -> executor.execute(task);
+                }
+                executor.execute(task);
+            };
+
+            // start thread and wait for it to park
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+            var thread = factory.newThread(LockSupport::park);
+            thread.start();
+            await(thread, Thread.State.WAITING);
+
+            // unpark thread, this should retry until OOME is not thrown
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+
+    }
+
+    /**
+     * Waits for the given thread to reach a given state.
+     */
+    private void await(Thread thread, Thread.State expectedState) throws InterruptedException {
+        Thread.State state = thread.getState();
+        while (state != expectedState) {
+            assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
+            Thread.sleep(10);
+            state = thread.getState();
         }
     }
 }

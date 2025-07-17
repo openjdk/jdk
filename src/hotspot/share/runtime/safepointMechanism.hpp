@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ class SafepointMechanism : public AllStatic {
 
   static inline bool global_poll();
 
+  static inline bool has_pending_safepoint(JavaThread* thread);
+
   static void process(JavaThread *thread, bool allow_suspend, bool check_async_exception);
 
   static void default_initialize();
@@ -73,7 +75,6 @@ class SafepointMechanism : public AllStatic {
     inline uintptr_t get_polling_word();
 
     inline void set_polling_page(uintptr_t poll_value);
-    inline uintptr_t get_polling_page();
   };
 
   // Call this method to see if this thread should block for a safepoint or process handshake.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,8 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
   static void doTest(boolean errorInDump) throws Exception  {
         for (int i = 1; i <= 3; i++) {
             System.out.println("========================================");
-            System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader + ", useZGC: " + useZGC + ", case: " + i);
+            System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader +
+                               ", useZGC: " + useZGC + ", case: " + i);
             System.out.println("========================================");
             String topArchiveName = getNewArchiveName();
             String testCase = Integer.toString(i);

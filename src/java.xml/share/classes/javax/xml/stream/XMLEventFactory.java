@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public abstract class XMLEventFactory {
 
   /**
    * Creates a new instance of the factory. This method uses the
-   * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
+   * <a href="{@docRoot}/java.xml/module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
    * to determine the {@code XMLEventFactory} implementation class to load.
    * <p>
    * Once an application has obtained a reference to a {@code XMLEventFactory}, it
@@ -134,23 +134,10 @@ public abstract class XMLEventFactory {
    * </li>
    * <li>
    *   <p>
-   *   Use the configuration file "stax.properties". The file is in standard
-   *   {@link java.util.Properties} format and typically located in the
-   *   conf directory of the Java installation. It contains the fully qualified
-   *   name of the implementation class with the key being the system property
-   *   defined above.
-   *
-   *   <p>
-   *   The stax.properties file is read only once by the implementation
-   *   and its values are then cached for future use.  If the file does not exist
-   *   when the first attempt is made to read from it, no further attempts are
-   *   made to check for its existence.  It is not possible to change the value
-   *   of any property in stax.properties after it has been read for the first time.
-   *
-   *   <p>
-   *   Use the jaxp configuration file "jaxp.properties". The file is in the same
-   *   format as stax.properties and will only be read if stax.properties does
-   *   not exist.
+   *   Use the value of the property {@code factoryId} set in the
+   * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>,
+   * jaxp.properties by default. If the file exists and the property {@code factoryId}
+   * is specified in the file, its value will be used as the implementation class.
    * </li>
    * <li>
    *   <p>
@@ -271,9 +258,9 @@ public abstract class XMLEventFactory {
    * an empty NamespaceContext.  Querying this event for its namespaces or
    * attributes will result in an empty iterator being returned.
    *
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @return an instance of the requested StartElement
    */
   public abstract StartElement createStartElement(String prefix,
@@ -285,9 +272,9 @@ public abstract class XMLEventFactory {
    * Attributes can be added to this StartElement by passing an iterator
    * that walks over a set of Attribute interfaces.
    *
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @param attributes an unordered set of objects that implement
    * Attribute to add to the new StartElement
    * @param namespaces an unordered set of objects that implement
@@ -306,9 +293,9 @@ public abstract class XMLEventFactory {
    * Attributes can be added to this StartElement by passing an iterator
    * that walks over a set of Attribute interfaces.
    *
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @param attributes an unordered set of objects that implement
    * Attribute to add to the new StartElement, may be null
    * @param namespaces an unordered set of objects that implement
@@ -336,9 +323,9 @@ public abstract class XMLEventFactory {
 
   /**
    * Create a new EndElement
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @return an instance of the requested EndElement
    */
   public abstract EndElement createEndElement(String prefix,
@@ -346,9 +333,9 @@ public abstract class XMLEventFactory {
                                               String localName);
   /**
    * Create a new EndElement
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaces an unordered set of objects that implement
    * Namespace that have gone out of scope, may be null
    * @return an instance of the requested EndElement

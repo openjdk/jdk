@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,11 @@ private:
   size_t    _word_size;
 
 public:
-  MemRegion() : _start(NULL), _word_size(0) {};
+  MemRegion() : _start(nullptr), _word_size(0) {};
   MemRegion(HeapWord* start, size_t word_size) :
     _start(start), _word_size(word_size) {};
   MemRegion(HeapWord* start, HeapWord* end) :
     _start(start), _word_size(pointer_delta(end, start)) {
-    assert(end >= start, "incorrect constructor arguments");
-  }
-  MemRegion(MetaWord* start, MetaWord* end) :
-    _start((HeapWord*)start), _word_size(pointer_delta(end, start)) {
     assert(end >= start, "incorrect constructor arguments");
   }
 
@@ -94,7 +90,7 @@ public:
   bool is_empty() const { return word_size() == 0; }
 
   // Creates and initializes an array of MemRegions of the given length.
-  static MemRegion* create_array(size_t length, MEMFLAGS flags);
+  static MemRegion* create_array(size_t length, MemTag mem_tag);
   static void destroy_array(MemRegion* array, size_t length);
 };
 
@@ -103,17 +99,6 @@ public:
 class MemRegionClosure : public StackObj {
 public:
   virtual void do_MemRegion(MemRegion mr) = 0;
-};
-
-// A ResourceObj version of MemRegionClosure
-
-class MemRegionClosureRO: public MemRegionClosure {
-public:
-  void* operator new(size_t size) throw() {
-    return resource_allocate_bytes(size);
-  }
-
-  void  operator delete(void* p) {} // nothing to do
 };
 
 #endif // SHARE_MEMORY_MEMREGION_HPP

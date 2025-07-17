@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,10 +32,16 @@
 
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
 enum platform_dependent_constants {
-  code_size1 = 20000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 24000           // simply increase if too small (assembler will crash if too small)
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
 
 // CRC32 Intrinsics.
 #define CRC32_TABLE_SIZE (4 * 256)
@@ -50,11 +56,7 @@ class ppc {
   friend class StubGenerator;
 
  private:
-  static address _nmethod_entry_barrier;
-
  public:
-  static address nmethod_entry_barrier();
-
   static address generate_crc_constants(juint reverse_poly);
 };
 

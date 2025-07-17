@@ -44,7 +44,7 @@ import sun.lwawt.*;
 
 import static sun.awt.AWTAccessor.ComponentAccessor;
 
-public class CInputMethod extends InputMethodAdapter {
+public final class CInputMethod extends InputMethodAdapter {
     private InputMethodContext fIMContext;
     private Component fAwtFocussedComponent;
     private LWComponentPeer<?, ?> fAwtFocussedComponentPeer;
@@ -101,8 +101,9 @@ public class CInputMethod extends InputMethodAdapter {
      * method.
      *
      * @param context the input method context for this input method
-     * @exception NullPointerException if {@code context} is null
+     * @throws NullPointerException if {@code context} is null
      */
+    @Override
     public void setInputMethodContext(InputMethodContext context) {
         fIMContext = context;
     }
@@ -124,8 +125,9 @@ public class CInputMethod extends InputMethodAdapter {
      *
      * @param lang locale to input
      * @return whether the specified locale is supported
-     * @exception NullPointerException if {@code locale} is null
+     * @throws NullPointerException if {@code locale} is null
      */
+    @Override
     public boolean setLocale(Locale lang) {
         return setLocale(lang, false);
     }
@@ -159,6 +161,7 @@ public class CInputMethod extends InputMethodAdapter {
      *
      * @return the current input locale, or null
      */
+    @Override
     public Locale getLocale() {
         // On Mac OS X we'll ask the currently active input method what its locale is.
         Locale returnValue = getNativeLocale();
@@ -184,6 +187,7 @@ public class CInputMethod extends InputMethodAdapter {
      * @param subsets the subsets of the Unicode character set from which
      * characters may be input
      */
+    @Override
     public void setCharacterSubsets(Subset[] subsets) {
         // -- SAK: Does mac OS X support this?
     }
@@ -191,10 +195,12 @@ public class CInputMethod extends InputMethodAdapter {
     /**
         * Composition cannot be set on Mac OS X -- the input method remembers this
      */
+    @Override
     public void setCompositionEnabled(boolean enable) {
         throw new UnsupportedOperationException("Can't adjust composition mode on Mac OS X.");
     }
 
+    @Override
     public boolean isCompositionEnabled() {
         throw new UnsupportedOperationException("Can't adjust composition mode on Mac OS X.");
     }
@@ -216,8 +222,9 @@ public class CInputMethod extends InputMethodAdapter {
      * This method is called by {@link java.awt.im.InputContext#dispatchEvent InputContext.dispatchEvent}.
      *
      * @param event the event being dispatched to the input method
-     * @exception NullPointerException if {@code event} is null
+     * @throws NullPointerException if {@code event} is null
      */
+    @Override
     public void dispatchEvent(final AWTEvent event) {
         // No-op for Mac OS X.
     }
@@ -231,10 +238,12 @@ public class CInputMethod extends InputMethodAdapter {
      *
      *
      */
+    @Override
     public void activate() {
         isActive = true;
     }
 
+    @Override
     public void deactivate(boolean isTemporary) {
         isActive = false;
     }
@@ -243,6 +252,7 @@ public class CInputMethod extends InputMethodAdapter {
      * Closes or hides all windows opened by this input method instance or
      * its class.  Deactivate hides windows for us on Mac OS X.
      */
+    @Override
     public void hideWindows() {
     }
 
@@ -261,6 +271,7 @@ public class CInputMethod extends InputMethodAdapter {
      * removed from its containment hierarchy, or that input method
      * support has been disabled for the component.
      */
+    @Override
     public void removeNotify() {
         if (fAwtFocussedComponentPeer != null) {
             nativeEndComposition(getNativeViewPtr(fAwtFocussedComponentPeer));
@@ -275,6 +286,7 @@ public class CInputMethod extends InputMethodAdapter {
      * We also take the opportunity to tell the native side that we are the input method
      * to talk to when responding to key events.
      */
+    @Override
     protected void setAWTFocussedComponent(Component component) {
         LWComponentPeer<?, ?> peer = null;
         long modelPtr = 0;
@@ -347,6 +359,7 @@ public class CInputMethod extends InputMethodAdapter {
      *     {@link java.awt.im.InputContext#selectInputMethod InputContext.selectInputMethod}.
      * </ul>
      */
+    @Override
     public void endComposition() {
         if (fAwtFocussedComponentPeer != null)
             nativeEndComposition(getNativeViewPtr(fAwtFocussedComponentPeer));
@@ -362,6 +375,7 @@ public class CInputMethod extends InputMethodAdapter {
      * The method is only called when the input method is inactive.
      * No method of this interface is called on this instance after dispose.
      */
+    @Override
     public void dispose() {
         fIMContext = null;
         fAwtFocussedComponent = null;
@@ -382,6 +396,7 @@ public class CInputMethod extends InputMethodAdapter {
      *
      * @return a control object from this input method, or null
      */
+    @Override
     public Object getControlObject() {
         return null;
     }
@@ -784,11 +799,13 @@ public class CInputMethod extends InputMethodAdapter {
 
     // On Mac OS X we effectively disabled the input method when focus was lost, so
     // this call can be ignored.
+    @Override
     public void disableInputMethod()
     {
         // Deliberately ignored. See setAWTFocussedComponent above.
     }
 
+    @Override
     public String getNativeInputMethodInfo()
     {
         return nativeGetCurrentInputMethodInfo();

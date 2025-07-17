@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
@@ -31,7 +30,7 @@
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
-uintptr_t** G1FromCardCache::_cache = NULL;
+uintptr_t** G1FromCardCache::_cache = nullptr;
 uint        G1FromCardCache::_max_reserved_regions = 0;
 size_t      G1FromCardCache::_static_mem_size = 0;
 #ifdef ASSERT
@@ -40,7 +39,7 @@ uint   G1FromCardCache::_max_workers = 0;
 
 void G1FromCardCache::initialize(uint max_reserved_regions) {
   guarantee(max_reserved_regions > 0, "Heap size must be valid");
-  guarantee(_cache == NULL, "Should not call this multiple times");
+  guarantee(_cache == nullptr, "Should not call this multiple times");
 
   _max_reserved_regions = max_reserved_regions;
 #ifdef ASSERT
@@ -57,7 +56,7 @@ void G1FromCardCache::initialize(uint max_reserved_regions) {
 
 void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
   guarantee((size_t)start_idx + new_num_regions <= max_uintx,
-            "Trying to invalidate beyond maximum region, from %u size " SIZE_FORMAT,
+            "Trying to invalidate beyond maximum region, from %u size %zu",
             start_idx, new_num_regions);
   uint end_idx = (start_idx + (uint)new_num_regions);
   assert(end_idx <= _max_reserved_regions, "Must be within max.");
@@ -73,7 +72,7 @@ void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
 void G1FromCardCache::print(outputStream* out) {
   for (uint i = 0; i < num_par_rem_sets(); i++) {
     for (uint j = 0; j < _max_reserved_regions; j++) {
-      out->print_cr("_from_card_cache[%u][%u] = " SIZE_FORMAT ".",
+      out->print_cr("_from_card_cache[%u][%u] = %zu.",
                     i, j, at(i, j));
     }
   }
@@ -81,7 +80,7 @@ void G1FromCardCache::print(outputStream* out) {
 #endif
 
 uint G1FromCardCache::num_par_rem_sets() {
-  return G1DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::max_num_threads() + MAX2(ConcGCThreads, ParallelGCThreads);
+  return G1DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads + MAX2(ConcGCThreads, ParallelGCThreads);
 }
 
 void G1FromCardCache::clear(uint region_idx) {

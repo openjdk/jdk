@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
@@ -127,7 +126,7 @@ Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
   }
 
   default:
-    fatal("unhandled bytecode");
+    fatal("unhandled bytecode : Current Method = %s, BCI = %d, OPCODE = %s (0x%X)", _method->name()->as_utf8(), cur_bci(), Bytecodes::name(bc), bc);
   }
   return bc;
 }
@@ -135,7 +134,7 @@ Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
 // ------------------------------------------------------------------
 // ciBytecodeStream::reset_to_bci
 void ciBytecodeStream::reset_to_bci( int bci ) {
-  _bc_start=_was_wide=0;
+  _bc_start = _was_wide = nullptr;
   _pc = _start+bci;
 }
 
@@ -267,9 +266,9 @@ ciConstant ciBytecodeStream::get_constant() {
 //
 // If this bytecode is one of the ldc variants, get the referenced
 // constant.
-constantTag ciBytecodeStream::get_constant_pool_tag(int index) const {
+constantTag ciBytecodeStream::get_constant_pool_tag(int cp_index) const {
   VM_ENTRY_MARK;
-  return _method->get_Method()->constants()->constant_tag_at(index);
+  return _method->get_Method()->constants()->constant_tag_at(cp_index);
 }
 
 // ------------------------------------------------------------------
@@ -283,9 +282,9 @@ constantTag ciBytecodeStream::get_raw_pool_tag_at(int index) const {
 // ------------------------------------------------------------------
 // ciBytecodeStream::get_basic_type_for_constant_at
 //
-BasicType ciBytecodeStream::get_basic_type_for_constant_at(int index) const {
+BasicType ciBytecodeStream::get_basic_type_for_constant_at(int cp_index) const {
   VM_ENTRY_MARK;
-  return _method->get_Method()->constants()->basic_type_for_constant_at(index);
+  return _method->get_Method()->constants()->basic_type_for_constant_at(cp_index);
 }
 
 // ------------------------------------------------------------------
@@ -298,7 +297,7 @@ int ciBytecodeStream::get_field_index() {
          cur_bc() == Bytecodes::_putfield ||
          cur_bc() == Bytecodes::_getstatic ||
          cur_bc() == Bytecodes::_putstatic, "wrong bc");
-  return get_index_u2_cpcache();
+  return get_index_u2();
 }
 
 
@@ -308,7 +307,7 @@ int ciBytecodeStream::get_field_index() {
 // If this bytecode is one of get_field, get_static, put_field,
 // or put_static, get the referenced field.
 ciField* ciBytecodeStream::get_field(bool& will_link) {
-  ciField* f = CURRENT_ENV->get_field_by_index(_holder, get_field_index());
+  ciField* f = CURRENT_ENV->get_field_by_index(_holder, get_field_index(), _bc);
   will_link = f->will_link(_method, _bc);
   return f;
 }
@@ -343,7 +342,7 @@ ciInstanceKlass* ciBytecodeStream::get_declared_field_holder() {
 int ciBytecodeStream::get_field_holder_index() {
   GUARDED_VM_ENTRY(
     ConstantPool* cpool = _holder->get_instanceKlass()->constants();
-    return cpool->klass_ref_index_at(get_field_index());
+    return cpool->klass_ref_index_at(get_field_index(), _bc);
   )
 }
 
@@ -356,7 +355,7 @@ int ciBytecodeStream::get_method_index() {
   assert(Bytecodes::is_invoke(cur_bc()), "invalid bytecode: %s", Bytecodes::name(cur_bc()));
   if (has_index_u4())
     return get_index_u4();  // invokedynamic
-  return get_index_u2_cpcache();
+  return get_index_u2();
 }
 
 // ------------------------------------------------------------------
@@ -470,7 +469,7 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_s
 bool ciBytecodeStream::has_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index());
+  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index(), cur_bc());
 }
 
 // ------------------------------------------------------------------
@@ -481,7 +480,7 @@ bool ciBytecodeStream::has_appendix() {
 ciObject* ciBytecodeStream::get_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index());
+  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index(), cur_bc());
   return CURRENT_ENV->get_object(appendix_oop);
 }
 
@@ -493,7 +492,7 @@ ciObject* ciBytecodeStream::get_appendix() {
 bool ciBytecodeStream::has_local_signature() {
   GUARDED_VM_ENTRY(
     constantPoolHandle cpool(Thread::current(), _method->get_Method()->constants());
-    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index());
+    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index(), cur_bc());
   )
 }
 
@@ -527,7 +526,7 @@ ciKlass* ciBytecodeStream::get_declared_method_holder() {
 // deoptimization information.
 int ciBytecodeStream::get_method_holder_index() {
   ConstantPool* cpool = _method->get_Method()->constants();
-  return cpool->klass_ref_index_at(get_method_index());
+  return cpool->klass_ref_index_at(get_method_index(), _bc);
 }
 
 // ------------------------------------------------------------------
@@ -539,8 +538,7 @@ int ciBytecodeStream::get_method_holder_index() {
 int ciBytecodeStream::get_method_signature_index(const constantPoolHandle& cpool) {
   GUARDED_VM_ENTRY(
     const int method_index = get_method_index();
-    const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
+    const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index, _bc);
     return cpool->signature_ref_index_at(name_and_type_index);
   )
 }
-

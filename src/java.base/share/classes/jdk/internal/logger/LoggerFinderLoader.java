@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,15 @@
  */
 package jdk.internal.logger;
 
-import java.io.FilePermission;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
+import java.lang.System.Logger;
+import java.lang.System.LoggerFinder;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import sun.security.util.SecurityConstants;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
+import java.util.function.BooleanSupplier;
+
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Helper class used to load the {@link java.lang.System.LoggerFinder}.
@@ -42,13 +40,6 @@ import sun.security.action.GetPropertyAction;
 public final class LoggerFinderLoader {
     private static volatile System.LoggerFinder service;
     private static final Object lock = new int[0];
-    static final Permission CLASSLOADER_PERMISSION =
-            SecurityConstants.GET_CLASSLOADER_PERMISSION;
-    static final Permission READ_PERMISSION =
-            new FilePermission("<<ALL FILES>>",
-                    SecurityConstants.FILE_READ_ACTION);
-    public static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
 
     // This is used to control how the LoggerFinderLoader handles
     // errors when instantiating the LoggerFinder provider.
@@ -58,20 +49,35 @@ public final class LoggerFinderLoader {
     // DEBUG => Do not fail, use plain default (simple logger) implementation,
     //          prints warning and exception stack trace on console.
     // QUIET => Do not fail and stay silent.
-    private static enum ErrorPolicy { ERROR, WARNING, DEBUG, QUIET };
+    private static enum ErrorPolicy { ERROR, WARNING, DEBUG, QUIET }
 
     // This class is static and cannot be instantiated.
     private LoggerFinderLoader() {
         throw new InternalError("LoggerFinderLoader cannot be instantiated");
     }
 
-
+    // record the loadingThread while loading the backend
+    static volatile Thread loadingThread;
     // Return the loaded LoggerFinder, or load it if not already loaded.
     private static System.LoggerFinder service() {
         if (service != null) return service;
+        // ensure backend is detected before attempting to load the finder
+        BootstrapLogger.ensureBackendDetected();
         synchronized(lock) {
             if (service != null) return service;
-            service = loadLoggerFinder();
+            Thread currentThread = Thread.currentThread();
+            if (loadingThread == currentThread) {
+                // recursive attempt to load the backend while loading the backend
+                // use a temporary logger finder that returns special BootstrapLogger
+                // which will wait until loading is finished
+                return TemporaryLoggerFinder.INSTANCE;
+            }
+            loadingThread = currentThread;
+            try {
+                service = loadLoggerFinder();
+            } finally {
+                loadingThread = null;
+            }
         }
         // Since the LoggerFinder is already loaded - we can stop using
         // temporary loggers.
@@ -79,10 +85,15 @@ public final class LoggerFinderLoader {
         return service;
     }
 
+    // returns true if called by the thread that loads the LoggerFinder, while
+    // loading the LoggerFinder.
+    static boolean isLoadingThread() {
+        return loadingThread != null && loadingThread == Thread.currentThread();
+    }
+
     // Get configuration error policy
     private static ErrorPolicy configurationErrorPolicy() {
-        String errorPolicy =
-                GetPropertyAction.privilegedGetProperty("jdk.logger.finder.error");
+        String errorPolicy = System.getProperty("jdk.logger.finder.error");
         if (errorPolicy == null || errorPolicy.isEmpty()) {
             return ErrorPolicy.WARNING;
         }
@@ -96,25 +107,40 @@ public final class LoggerFinderLoader {
     // Whether multiple provider should be considered as an error.
     // This is further submitted to the configuration error policy.
     private static boolean ensureSingletonProvider() {
-        return GetBooleanAction.privilegedGetProperty
-            ("jdk.logger.finder.singleton");
+        return Boolean.getBoolean("jdk.logger.finder.singleton");
     }
 
-    @SuppressWarnings("removal")
     private static Iterator<System.LoggerFinder> findLoggerFinderProviders() {
-        final Iterator<System.LoggerFinder> iterator;
-        if (System.getSecurityManager() == null) {
-            iterator = ServiceLoader.load(System.LoggerFinder.class,
+        return ServiceLoader.load(System.LoggerFinder.class,
                         ClassLoader.getSystemClassLoader()).iterator();
-        } else {
-            final PrivilegedAction<Iterator<System.LoggerFinder>> pa =
-                    () -> ServiceLoader.load(System.LoggerFinder.class,
-                        ClassLoader.getSystemClassLoader()).iterator();
-            iterator = AccessController.doPrivileged(pa, null,
-                        LOGGERFINDER_PERMISSION, CLASSLOADER_PERMISSION,
-                        READ_PERMISSION);
+    }
+
+    public static final class TemporaryLoggerFinder extends LoggerFinder {
+        private TemporaryLoggerFinder() {}
+        @Stable
+        private LoggerFinder loadedService;
+
+        private static final BooleanSupplier isLoadingThread = new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return LoggerFinderLoader.isLoadingThread();
+            }
+        };
+        private static final TemporaryLoggerFinder INSTANCE = new TemporaryLoggerFinder();
+
+        @Override
+        public Logger getLogger(String name, Module module) {
+            if (loadedService == null) {
+                loadedService = service;
+                if (loadedService == null) {
+                    return LazyLoggers.makeLazyLogger(name, module, isLoadingThread);
+                }
+            }
+            assert loadedService != null;
+            assert !LoggerFinderLoader.isLoadingThread();
+            assert loadedService != this;
+            return LazyLoggers.getLogger(name, module);
         }
-        return iterator;
     }
 
     // Loads the LoggerFinder using ServiceLoader. If no LoggerFinder
@@ -122,8 +148,6 @@ public final class LoggerFinderLoader {
     private static System.LoggerFinder loadLoggerFinder() {
         System.LoggerFinder result;
         try {
-            // Iterator iterates with the access control context stored
-            // at ServiceLoader creation time.
             final Iterator<System.LoggerFinder> iterator =
                     findLoggerFinderProviders();
             if (iterator.hasNext()) {
@@ -165,29 +189,12 @@ public final class LoggerFinderLoader {
         return result;
     }
 
-    @SuppressWarnings("removal")
     private static System.LoggerFinder loadDefaultImplementation() {
-        final SecurityManager sm = System.getSecurityManager();
-        final Iterator<DefaultLoggerFinder> iterator;
-        if (sm == null) {
-            iterator = ServiceLoader.loadInstalled(DefaultLoggerFinder.class).iterator();
-        } else {
-            // We use limited do privileged here - the minimum set of
-            // permissions required to 'see' the META-INF/services resources
-            // seems to be CLASSLOADER_PERMISSION and READ_PERMISSION.
-            // Note that do privileged is required because
-            // otherwise the SecurityManager will prevent the ServiceLoader
-            // from seeing the installed provider.
-            PrivilegedAction<Iterator<DefaultLoggerFinder>> pa = () ->
-                    ServiceLoader.loadInstalled(DefaultLoggerFinder.class).iterator();
-            iterator = AccessController.doPrivileged(pa, null,
-                    LOGGERFINDER_PERMISSION, CLASSLOADER_PERMISSION,
-                    READ_PERMISSION);
-        }
+        final Iterator<DefaultLoggerFinder> iterator =
+                ServiceLoader.loadInstalled(DefaultLoggerFinder.class).iterator();
+
         DefaultLoggerFinder result = null;
         try {
-            // Iterator iterates with the access control context stored
-            // at ServiceLoader creation time.
             if (iterator.hasNext()) {
                 result = iterator.next();
             }
@@ -202,11 +209,6 @@ public final class LoggerFinderLoader {
     }
 
     public static System.LoggerFinder getLoggerFinder() {
-        @SuppressWarnings("removal")
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(LOGGERFINDER_PERMISSION);
-        }
         return service();
     }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,17 +85,13 @@
  */
 
 /*
- * @test id=iu
+ * @test id=generational
  * @summary Check that MX notifications are reported for all cycles
  * @library /test/lib /
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestPauseNotifications
- *
- * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      TestPauseNotifications
  */
 
@@ -115,8 +112,14 @@ public class TestPauseNotifications {
 
     static volatile Object sink;
 
+    private static boolean isExpectedPauseAction(String action) {
+        return "Init Mark".equals(action) || "Final Mark".equals(action) || "Full GC".equals(action)
+            || "Degenerated GC".equals(action) || "Init Update Refs".equals(action)
+            || "Final Update Refs".equals(action) || "Final Roots".equals(action);
+    }
+
     public static void main(String[] args) throws Exception {
-        final long startTime = System.currentTimeMillis();
+        final long startTimeNanos = System.nanoTime();
 
         final AtomicLong pausesDuration = new AtomicLong();
         final AtomicLong cyclesDuration = new AtomicLong();
@@ -129,7 +132,8 @@ public class TestPauseNotifications {
                 if (n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
                     GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
 
-                    System.out.println("Received: " + info.getGcName());
+                    System.out.println("Received: " + info.getGcName() + "/" + info.getGcAction());
+
 
                     long d = info.getGcInfo().getDuration();
 
@@ -138,6 +142,9 @@ public class TestPauseNotifications {
                         if (name.equals("Shenandoah Pauses")) {
                             pausesCount.incrementAndGet();
                             pausesDuration.addAndGet(d);
+                            if (!isExpectedPauseAction(info.getGcAction())) {
+                                throw new IllegalStateException("Unknown action: " + info.getGcAction());
+                            }
                         } else if (name.equals("Shenandoah Cycles")) {
                             cyclesCount.incrementAndGet();
                             cyclesDuration.addAndGet(d);
@@ -163,8 +170,8 @@ public class TestPauseNotifications {
         // Look at test timeout to figure out how long we can wait without breaking into timeout.
         // Default to 1/4 of the remaining time in 1s steps.
         final long STEP_MS = 1000;
-        long spentTime = System.currentTimeMillis() - startTime;
-        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - spentTime) / STEP_MS / 4;
+        long spentTimeNanos = System.nanoTime() - startTimeNanos;
+        long maxTries = (Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) - (spentTimeNanos / 1_000_000L)) / STEP_MS / 4;
 
         long actualPauses = 0;
         long actualCycles = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,23 +133,6 @@ public class Klass extends Metadata implements ClassConstants {
     return traceIDField.getJLong(addr);
   }
 
-  // computed access flags - takes care of inner classes etc.
-  // This is closer to actual source level than getAccessFlags() etc.
-  public long computeModifierFlags() {
-    return 0L; // Unless overridden, modifier_flags is 0.
-  }
-
-  // same as JVM_GetClassModifiers
-  public final long getClassModifiers() {
-    // unlike the VM counterpart we never have to deal with primitive type,
-    // because we operator on Klass and not an instance of java.lang.Class.
-    long flags = computeModifierFlags();
-    if (isSuper()) {
-       flags |= JVM_ACC_SUPER;
-    }
-    return flags;
-  }
-
   // subclass check
   public boolean isSubclassOf(Klass k) {
     if (k != null) {
@@ -230,8 +213,4 @@ public class Klass extends Metadata implements ClassConstants {
   public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
   public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
   public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
-  public boolean hasFinalizer()             { return getAccessFlagsObj().hasFinalizer(); }
-  public boolean isCloneable()              { return getAccessFlagsObj().isCloneable(); }
-  public boolean hasVanillaConstructor()    { return getAccessFlagsObj().hasVanillaConstructor(); }
-  public boolean hasMirandaMethods ()       { return getAccessFlagsObj().hasMirandaMethods(); }
 }

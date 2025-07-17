@@ -41,7 +41,7 @@ import sun.swing.SwingUtilities2;
 import apple.laf.JRSUIUtils;
 import apple.laf.JRSUIConstants.*;
 
-public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
+public final class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
     private static boolean isFrameActive = false;
 
     public static ComponentUI createUI(final JComponent c) {
@@ -50,6 +50,7 @@ public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
 
     public AquaTabbedPaneContrastUI() { }
 
+    @Override
     protected void paintTitle(final Graphics2D g2d, final Font font, final FontMetrics metrics, final Rectangle textRect, final int tabIndex, final String title) {
         final View v = getTextViewForTab(tabIndex);
         if (v != null) {
@@ -101,23 +102,27 @@ public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
         return ((MouseHandler)mouseListener).trackingTab == index;
     }
 
+    @Override
     protected boolean shouldRepaintSelectedTabOnMouseDown() {
         return true;
     }
 
+    @Override
     protected State getState(final int index, final boolean frameActive, final boolean isSelected) {
-        isFrameActive = frameActive;;
+        isFrameActive = frameActive;
         if (!frameActive) return State.INACTIVE;
         if (!tabPane.isEnabled()) return State.DISABLED;
         if (pressedTab == index) return State.PRESSED;
         return State.ACTIVE;
     }
 
+    @Override
     protected SegmentTrailingSeparator getSegmentTrailingSeparator(final int index, final int selectedIndex, final boolean isLeftToRight) {
         if (isTabBeforeSelectedTab(index, selectedIndex, isLeftToRight)) return SegmentTrailingSeparator.NO;
         return SegmentTrailingSeparator.YES;
     }
 
+    @Override
     protected SegmentLeadingSeparator getSegmentLeadingSeparator(final int index, final int selectedIndex, final boolean isLeftToRight) {
         if (index == selectedIndex) return SegmentLeadingSeparator.YES;
         return SegmentLeadingSeparator.NO;

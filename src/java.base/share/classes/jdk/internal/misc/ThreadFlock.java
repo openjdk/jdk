@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.vm.ExtentLocalContainer;
+import jdk.internal.invoke.MhUtil;
+import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -83,14 +85,9 @@ public class ThreadFlock implements AutoCloseable {
     private static final VarHandle THREAD_COUNT;
     private static final VarHandle PERMIT;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            THREAD_COUNT = l.findVarHandle(ThreadFlock.class, "threadCount", int.class);
-            PERMIT = l.findVarHandle(ThreadFlock.class, "permit", boolean.class);
-            Unsafe.getUnsafe().ensureClassInitialized(StructureViolationExceptions.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        THREAD_COUNT = MhUtil.findVarHandle(l, "threadCount", int.class);
+        PERMIT = MhUtil.findVarHandle(l, "permit", boolean.class);
     }
 
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();
@@ -99,7 +96,7 @@ public class ThreadFlock implements AutoCloseable {
     private volatile int threadCount;
 
     private final String name;
-    private final ExtentLocalContainer.BindingsSnapshot extentLocalBindings;
+    private final ScopedValueContainer.BindingsSnapshot scopedValueBindings;
     private final ThreadContainerImpl container; // encapsulate for now
 
     // state
@@ -111,7 +108,7 @@ public class ThreadFlock implements AutoCloseable {
 
     ThreadFlock(String name) {
         this.name = name;
-        this.extentLocalBindings = ExtentLocalContainer.captureBindings();
+        this.scopedValueBindings = ScopedValueContainer.captureBindings();
         this.container = new ThreadContainerImpl(this);
     }
 
@@ -119,8 +116,8 @@ public class ThreadFlock implements AutoCloseable {
         return threadCount;
     }
 
-    private ExtentLocalContainer.BindingsSnapshot extentLocalBindings() {
-        return extentLocalBindings;
+    private ScopedValueContainer.BindingsSnapshot scopedValueBindings() {
+        return scopedValueBindings;
     }
 
     private void incrementThreadCount() {
@@ -210,7 +207,7 @@ public class ThreadFlock implements AutoCloseable {
      * Opens a new thread flock. The flock is owned by the current thread. It can be
      * named to aid debugging.
      *
-     * <p> This method captures the current thread's {@linkplain ExtentLocal extent-local}
+     * <p> This method captures the current thread's {@linkplain ScopedValue scoped value}
      * bindings for inheritance by threads created in the flock.
      *
      * <p> For the purposes of containment, monitoring, and debugging, the parent
@@ -250,7 +247,7 @@ public class ThreadFlock implements AutoCloseable {
     /**
      * Starts the given unstarted thread in this flock.
      *
-     * <p> The thread is started with the extent-local bindings that were captured
+     * <p> The thread is started with the scoped value bindings that were captured
      * when opening the flock. The bindings must match the current thread's bindings.
      *
      * <p> This method may only be invoked by the flock owner or threads {@linkplain
@@ -262,8 +259,8 @@ public class ThreadFlock implements AutoCloseable {
      * @throws IllegalThreadStateException if the given thread was already started
      * @throws WrongThreadException if the current thread is not the owner or a thread
      * contained in the flock
-     * @throws jdk.incubator.concurrent.StructureViolationException if the current
-     * extent-local bindings are not the same as when the flock was created
+     * @throws StructureViolationException if the current scoped value bindings are
+     * not the same as when the flock was created
      */
     public Thread start(Thread thread) {
         ensureOwnerOrContainsThread();
@@ -275,15 +272,8 @@ public class ThreadFlock implements AutoCloseable {
      * Shutdown this flock so that no new threads can be started, existing threads
      * in the flock will continue to run. This method is a no-op if the flock is
      * already shutdown or closed.
-     *
-     * <p> This method may only be invoked by the flock owner or threads {@linkplain
-     * #containsThread(Thread) contained} in the flock.
-     *
-     * @throws WrongThreadException if the current thread is not the owner or a thread
-     * contained in the flock
      */
     public void shutdown() {
-        ensureOwnerOrContainsThread();
         if (!shutdown) {
             shutdown = true;
         }
@@ -373,12 +363,8 @@ public class ThreadFlock implements AutoCloseable {
      * <p> If the owner is blocked in {@code awaitAll} then it will return immediately.
      * If the owner is not blocked in {@code awaitAll} then its next call to wait
      * will return immediately. The method does nothing when the flock is closed.
-     *
-     * @throws WrongThreadException if the current thread is not the owner or a thread
-     * contained in the flock
      */
     public void wakeup() {
-        ensureOwnerOrContainsThread();
         if (!getAndSetPermit(true) && Thread.currentThread() != owner()) {
             LockSupport.unpark(owner());
         }
@@ -398,16 +384,14 @@ public class ThreadFlock implements AutoCloseable {
      * <p> A ThreadFlock is intended to be used in a <em>structured manner</em>. If
      * this method is called to close a flock before nested flocks are closed then it
      * closes the nested flocks (in the reverse order that they were created in),
-     * closes this flock, and then throws {@link
-     * jdk.incubator.concurrent.StructureViolationException}.
-     * Similarly, if called to close a flock that <em>encloses</em> {@linkplain
-     * jdk.incubator.concurrent.ExtentLocal.Carrier#run(Runnable) operations} with
-     * extent-local bindings then it also throws {@code StructureViolationException}
-     * after closing the flock.
+     * closes this flock, and then throws {@code StructureViolationException}.
+     * Similarly, if this method is called to close a thread flock while executing with
+     * scoped value bindings, and the thread flock was created before the scoped values
+     * were bound, then {@code StructureViolationException} is thrown after closing the
+     * thread flock.
      *
      * @throws WrongThreadException if invoked by a thread that is not the owner
-     * @throws jdk.incubator.concurrent.StructureViolationException if a structure
-     * violation was detected
+     * @throws StructureViolationException if a structure violation was detected
      */
     public void close() {
         ensureOwner();
@@ -453,7 +437,7 @@ public class ThreadFlock implements AutoCloseable {
     }
 
     /**
-     * {@return a stream of the live threads in this flock}
+     * {@return a stream of the threads in this flock}
      * The elements of the stream are threads that were started in this flock
      * but have not terminated. The stream will reflect the set of threads in the
      * flock at some point at or since the creation of the stream. It may or may
@@ -461,7 +445,7 @@ public class ThreadFlock implements AutoCloseable {
      * stream.
      */
     public Stream<Thread> threads() {
-        return threads.stream().filter(Thread::isAlive);
+        return threads.stream();
     }
 
     /**
@@ -514,14 +498,15 @@ public class ThreadFlock implements AutoCloseable {
 
         @Override
         public ThreadContainerImpl push() {
-            // Virtual threads in the root containers are not tracked so need
+            // Virtual threads in the root containers may not be tracked so need
             // to register container to ensure that it is found
-            Thread thread = Thread.currentThread();
-            if (thread.isVirtual()
-                    && JLA.threadContainer(thread) == ThreadContainers.root()) {
-                this.key = ThreadContainers.registerContainer(this);
+            if (!ThreadContainers.trackAllThreads()) {
+                Thread thread = Thread.currentThread();
+                if (thread.isVirtual()
+                        && JLA.threadContainer(thread) == ThreadContainers.root()) {
+                    this.key = ThreadContainers.registerContainer(this);
+                }
             }
-
             super.push();
             return this;
         }
@@ -539,7 +524,7 @@ public class ThreadFlock implements AutoCloseable {
                 if (key != null)
                     ThreadContainers.deregisterContainer(key);
                 if (!atTop)
-                    StructureViolationExceptions.throwException();
+                    throw new StructureViolationException();
             }
         }
 
@@ -565,6 +550,10 @@ public class ThreadFlock implements AutoCloseable {
         }
 
         @Override
+        public String name() {
+            return flock.name();
+        }
+        @Override
         public long threadCount() {
             return flock.threadCount();
         }
@@ -581,12 +570,8 @@ public class ThreadFlock implements AutoCloseable {
             flock.onExit(thread);
         }
         @Override
-        public String toString() {
-            return flock.toString();
-        }
-        @Override
-        public ExtentLocalContainer.BindingsSnapshot extentLocalBindings() {
-            return flock.extentLocalBindings();
+        public ScopedValueContainer.BindingsSnapshot scopedValueBindings() {
+            return flock.scopedValueBindings();
         }
     }
 }

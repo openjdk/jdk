@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
  * @test
  * @bug 7186925
  * @summary JavapTask passes null to java.io.Writer
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
+ * @modules jdk.jdeps/com.sun.tools.javap
  */
 
-import java.io.*;
-import java.util.*;
 import javax.tools.*;
 import com.sun.tools.javap.*;
 
@@ -56,7 +53,9 @@ public class T7186925
                 JavapTask t = new JavapTask(null, fileManager, null);
                 t.handleOptions(new String[] { "-sysinfo", className });
                 JavapTask.ClassFileInfo cfInfo = t.read(fo);
-                expectEqual(cfInfo.cf.byteLength(), cfInfo.size);
+                try (var in = fo.openInputStream()) {
+                    expectEqual(in.readAllBytes().length, cfInfo.size);
+                }
             }
         } catch (NullPointerException ee) {
             ee.printStackTrace();

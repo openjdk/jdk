@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ inline void ZLock::unlock() {
   _lock.unlock();
 }
 
-inline ZReentrantLock::ZReentrantLock() :
-    _lock(),
-    _owner(NULL),
+inline ZReentrantLock::ZReentrantLock()
+  : _lock(),
+    _owner(nullptr),
     _count(0) {}
 
 inline void ZReentrantLock::lock() {
@@ -67,7 +67,7 @@ inline void ZReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store(&_owner, (Thread*)NULL);
+    Atomic::store(&_owner, (Thread*)nullptr);
     _lock.unlock();
   }
 }
@@ -103,16 +103,16 @@ inline void ZConditionLock::notify_all() {
 }
 
 template <typename T>
-inline ZLocker<T>::ZLocker(T* lock) :
-    _lock(lock) {
-  if (_lock != NULL) {
+inline ZLocker<T>::ZLocker(T* lock)
+  : _lock(lock) {
+  if (_lock != nullptr) {
     _lock->lock();
   }
 }
 
 template <typename T>
 inline ZLocker<T>::~ZLocker() {
-  if (_lock != NULL) {
+  if (_lock != nullptr) {
     _lock->unlock();
   }
 }

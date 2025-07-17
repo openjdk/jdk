@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.Util.PREFIX_PATTERN;
 import static jdk.jshell.Util.expunge;
+import static jdk.jshell.Snippet.SubKind.MODULE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_TYPE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_STATIC_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
@@ -96,7 +97,7 @@ import static jdk.jshell.Snippet.SubKind.STATIC_IMPORT_ON_DEMAND_SUBKIND;
  */
 class Eval {
 
-    private static final Pattern IMPORT_PATTERN = Pattern.compile("import\\p{javaWhitespace}+(?<static>static\\p{javaWhitespace}+)?(?<fullname>[\\p{L}\\p{N}_\\$\\.]+\\.(?<name>[\\p{L}\\p{N}_\\$]+|\\*))");
+    private static final Pattern IMPORT_PATTERN = Pattern.compile("import\\p{javaWhitespace}+(?<module>module\\p{javaWhitespace}+)?(?<static>static\\p{javaWhitespace}+)?(?<fullname>[\\p{L}\\p{N}_\\$\\.]+\\.(?<name>[\\p{L}\\p{N}_\\$]+|\\*))");
     private static final Pattern DEFAULT_PREFIX = Pattern.compile("\\p{javaWhitespace}*(default)\\p{javaWhitespace}+");
 
     // for uses that should not change state -- non-evaluations
@@ -175,7 +176,16 @@ class Eval {
     List<Snippet> toScratchSnippets(String userSource) {
         try {
             preserveState = true;
-            return sourceToSnippets(userSource);
+            List<Snippet> result = sourceToSnippetsWithWrappers(userSource);
+            result.forEach(snippet -> {
+                if (snippet.diagnostics() == null || snippet.diagnostics().isEmpty()) {
+                    //if no better diagnostics set yet, do trial compilation, and
+                    //set diagnostic found:
+                    DiagList fullDiagnostics = state.taskFactory.analyze(snippet.outerWrap(), AnalyzeTask::getDiagnostics);
+                    snippet.setDiagnostics(fullDiagnostics);
+                }
+            });
+            return result;
         } finally {
             preserveState = false;
         }
@@ -244,13 +254,20 @@ class Eval {
         Matcher mat = IMPORT_PATTERN.matcher(compileSource);
         String fullname;
         String name;
+        boolean isModule;
         boolean isStatic;
         if (mat.find()) {
+            isModule = mat.group("module") != null;
             isStatic = mat.group("static") != null;
-            name = mat.group("name");
             fullname = mat.group("fullname");
+            if (isModule) {
+                name = fullname;
+            } else {
+                name = mat.group("name");
+            }
         } else {
             // bad import -- fake it
+            isModule = compileSource.contains(" module ");
             isStatic = compileSource.contains("static");
             name = fullname = compileSource;
         }
@@ -259,9 +276,14 @@ class Eval {
         String keyName = isStar
                 ? fullname
                 : name;
-        SubKind snippetKind = isStar
-                ? (isStatic ? STATIC_IMPORT_ON_DEMAND_SUBKIND : TYPE_IMPORT_ON_DEMAND_SUBKIND)
-                : (isStatic ? SINGLE_STATIC_IMPORT_SUBKIND : SINGLE_TYPE_IMPORT_SUBKIND);
+        SubKind snippetKind;
+        if (isModule) {
+            snippetKind = MODULE_IMPORT_SUBKIND;
+        } else if (isStar) {
+            snippetKind = isStatic ? STATIC_IMPORT_ON_DEMAND_SUBKIND : TYPE_IMPORT_ON_DEMAND_SUBKIND;
+        } else {
+            snippetKind = isStatic ? SINGLE_STATIC_IMPORT_SUBKIND : SINGLE_TYPE_IMPORT_SUBKIND;
+        }
         Snippet snip = new ImportSnippet(state.keyMap.keyForImport(keyName, snippetKind),
                 userSource, guts, fullname, name, snippetKind, fullkey, isStatic, isStar);
         return singletonList(snip);
@@ -385,21 +407,28 @@ class Eval {
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
             Wrap wname;
-            int nameStart = compileSource.lastIndexOf(name, nameMax);
-            if (nameStart < 0) {
-                // the name has been transformed (e.g. unicode).
-                // Use it directly
-                wname = Wrap.identityWrap(name);
+            String fieldName;
+            if (name.isEmpty()) {
+                fieldName = "$UNNAMED";
+                wname = Wrap.simpleWrap(fieldName);
             } else {
-                int nameEnd = nameStart + name.length();
-                Range rname = new Range(nameStart, nameEnd);
-                wname = new Wrap.RangeWrap(compileSource, rname);
+                fieldName = name;
+                int nameStart = compileSource.lastIndexOf(name, nameMax);
+                if (nameStart < 0) {
+                    // the name has been transformed (e.g. unicode).
+                    // Use it directly
+                    wname = Wrap.identityWrap(name);
+                } else {
+                    int nameEnd = nameStart + name.length();
+                    Range rname = new Range(nameStart, nameEnd);
+                    wname = new Wrap.RangeWrap(compileSource, rname);
+                }
             }
             Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), wname,
                                      winit, enhancedDesugaring, anonDeclareWrap);
             DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                    name, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
+                    name, fieldName, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
                     tds.declareReferences(), modDiag);
             snippets.add(snip);
         }
@@ -659,7 +688,7 @@ class Eval {
                 }
                 Collection<String> declareReferences = null; //TODO
                 snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                        name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
+                        name, name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
             } else {
                 guts = Wrap.methodReturnWrap(compileSource);
                 snip = new ExpressionSnippet(state.keyMap.keyForExpression(name, typeName), userSource, guts,

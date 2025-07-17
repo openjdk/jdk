@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ public class PipedInputStream extends InputStream {
      * @throws     IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
      */
+    @SuppressWarnings("this-escape")
     public PipedInputStream(PipedOutputStream src, int pipeSize)
             throws IOException {
          initPipe(pipeSize);
@@ -175,11 +176,15 @@ public class PipedInputStream extends InputStream {
      * is an unconnected piped input stream, they
      * may be connected by either the call:
      *
-     * <pre>{@code snk.connect(src)} </pre>
+     * {@snippet lang=java :
+     *     snk.connect(src)
+     * }
      * <p>
      * or the call:
      *
-     * <pre>{@code src.connect(snk)} </pre>
+     * {@snippet lang=java :
+     *     src.connect(snk)
+     * }
      * <p>
      * The two calls have the same effect.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class GSSCredentialImpl implements GSSCredential {
             } catch (GSSException e) {
                 if (defaultList) {
                     // Try the next mechanism
-                    if (GSSUtil.DEBUG) {
+                    if (GSSUtil.DEBUG != null) {
                         GSSUtil.debug("Ignore " + e + " while acquiring cred for "
                                 + mechs[i]);
                         // e.printStackTrace();
@@ -134,10 +134,7 @@ public class GSSCredentialImpl implements GSSCredential {
 
     public void dispose() throws GSSException {
         if (!destroyed) {
-            GSSCredentialSpi element;
-            Enumeration<GSSCredentialSpi> values = hashtable.elements();
-            while (values.hasMoreElements()) {
-                element = values.nextElement();
+            for (GSSCredentialSpi element : hashtable.values()) {
                 element.dispose();
             }
             destroyed = true;
@@ -211,14 +208,11 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        SearchKey tempKey;
         GSSCredentialSpi tempCred;
         int tempLife, tempInitLife, tempAcceptLife;
         int min = INDEFINITE_LIFETIME;
 
-        for (Enumeration<SearchKey> e = hashtable.keys();
-                                        e.hasMoreElements(); ) {
-            tempKey = e.nextElement();
+        for (SearchKey tempKey : hashtable.keySet()) {
             tempCred = hashtable.get(tempKey);
             if (tempKey.getUsage() == INITIATE_ONLY)
                 tempLife = tempCred.getInitLifetime();
@@ -329,13 +323,10 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        SearchKey tempKey;
         boolean initiate = false;
         boolean accept = false;
 
-        for (Enumeration<SearchKey> e = hashtable.keys();
-                                        e.hasMoreElements(); ) {
-            tempKey = e.nextElement();
+        for (SearchKey tempKey : hashtable.keySet()) {
             if (tempKey.getUsage() == INITIATE_ONLY)
                 initiate = true;
             else if (tempKey.getUsage() == ACCEPT_ONLY)
@@ -406,10 +397,7 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
         ArrayList<Oid> result = new ArrayList<Oid>(hashtable.size());
-
-        for (Enumeration<SearchKey> e = hashtable.keys();
-                                                e.hasMoreElements(); ) {
-            SearchKey tempKey = e.nextElement();
+        for (SearchKey tempKey : hashtable.keySet()) {
             result.add(tempKey.getMech());
         }
         return result.toArray(new Oid[0]);
@@ -488,6 +476,7 @@ public class GSSCredentialImpl implements GSSCredential {
         }
     }
 
+    @Override
     public boolean equals(Object another) {
 
         if (destroyed) {
@@ -524,10 +513,9 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     /**
-     * Returns a hashcode value for this GSSCredential.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this GSSCredential}
      */
+    @Override
     public int hashCode() {
 
         if (destroyed) {
@@ -615,14 +603,7 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     Set<GSSCredentialSpi> getElements() {
-        HashSet<GSSCredentialSpi> retVal =
-                new HashSet<>(hashtable.size());
-        Enumeration<GSSCredentialSpi> values = hashtable.elements();
-        while (values.hasMoreElements()) {
-            GSSCredentialSpi o = values.nextElement();
-            retVal.add(o);
-        }
-        return retVal;
+        return new HashSet<>(hashtable.values());
     }
 
     private static String getElementStr(Oid mechOid, int usage) {

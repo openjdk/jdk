@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package jdk.internal.loader;
 
+import java.io.IOException;
 import java.net.URL;
 import java.io.File;
+
 import sun.net.www.ParseUtil;
 
 /**
@@ -36,12 +38,12 @@ import sun.net.www.ParseUtil;
  * @author      Michael McMahon
  */
 
-public class FileURLMapper {
+final class FileURLMapper {
 
-    URL url;
-    String file;
+    private final URL url;
+    private String file;
 
-    public FileURLMapper (URL url) {
+    FileURLMapper (URL url) {
         this.url = url;
     }
 
@@ -49,8 +51,7 @@ public class FileURLMapper {
      * @return the platform specific path corresponding to the URL, and in particular
      *  returns a UNC when the authority contains a hostname
      */
-
-    public String getPath () {
+    String getPath() throws IOException {
         if (file != null) {
             return file;
         }
@@ -63,13 +64,17 @@ public class FileURLMapper {
             return file;
         }
         String path = url.getFile().replace('/', '\\');
-        file = ParseUtil.decode(path);
+        try {
+            file = ParseUtil.decode(path);
+        } catch (IllegalArgumentException iae) {
+            throw new IOException(iae);
+        }
         return file;
     }
 
-    public boolean exists() {
+    boolean exists() throws IOException {
         String path = getPath();
-        File f = new File (path);
+        File f = new File(path);
         return f.exists();
     }
 }

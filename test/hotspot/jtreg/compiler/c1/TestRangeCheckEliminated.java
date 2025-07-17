@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class TestRangeCheckEliminated {
             test_constant_array.class.getName()
          };
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         String output = new OutputAnalyzer(pb.start()).getOutput();
         // should have 2 "can be fully eliminated"
         System.out.println(output);
@@ -74,7 +74,7 @@ public class TestRangeCheckEliminated {
             test_multi_constant_array.class.getName()
         };
 
-        pb = ProcessTools.createJavaProcessBuilder(procArgs);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         output = new OutputAnalyzer(pb.start()).getOutput();
         // should have 1 "can be fully eliminated"
         System.out.println(output);
@@ -94,7 +94,7 @@ public class TestRangeCheckEliminated {
             test_multi_new_array.class.getName()
          };
 
-        pb = ProcessTools.createJavaProcessBuilder(procArgs);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         output = new OutputAnalyzer(pb.start()).getOutput();
         // should have 2 "can be fully eliminated"
         System.out.println(output);

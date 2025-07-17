@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class AdaptiveWeightedAverage : public CHeapObj<mtGC> {
   static inline float exp_avg(float avg, float sample,
                                unsigned int weight) {
     assert(weight <= 100, "weight must be a percent");
-    return (100.0F - weight) * avg / 100.0F + weight * sample / 100.0F;
+    return (100.0F - (float)weight) * avg / 100.0F + (float)weight * sample / 100.0F;
   }
   static inline size_t exp_avg(size_t avg, size_t sample,
                                unsigned int weight) {
@@ -142,11 +142,6 @@ class AdaptivePaddedAverage : public AdaptiveWeightedAverage {
   AdaptivePaddedAverage(unsigned weight, unsigned padding) :
     AdaptiveWeightedAverage(weight),
     _padded_avg(0.0), _deviation(0.0), _padding(padding) {}
-
-  // Placement support
-  void* operator new(size_t ignored, void* p) throw() { return p; }
-  // Allocator
-  void* operator new(size_t size) throw();
 
   // Accessor
   float padded_average() const         { return _padded_avg; }

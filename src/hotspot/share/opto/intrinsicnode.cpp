@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "opto/intrinsicnode.hpp"
 #include "opto/addnode.hpp"
-#include "opto/mulnode.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
-#include "utilities/population_count.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/population_count.hpp"
 
 //=============================================================================
 // Do not match memory edge.
@@ -44,7 +43,7 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
 Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
   // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
+  if (in(0) && in(0)->is_top())  return nullptr;
 
   if (can_reshape) {
     Node* mem = phase->transform(in(MemNode::Memory));
@@ -56,7 +55,7 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return this;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -72,7 +71,7 @@ uint StrIntrinsicNode::size_of() const { return sizeof(*this); }
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //=============================================================================
@@ -80,8 +79,23 @@ Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
+
+uint VectorizedHashCodeNode::match_edge(uint idx) const {
+  // Do not match memory edge.
+  return idx >= 2 && idx <=  5; // VectorizedHashCodeNode (Binary ary1 cnt1) (Binary result bt)
+}
+
+Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
+}
+
+const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
+  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
+  return bottom_type();
+}
+
 
 //=============================================================================
 //------------------------------match_edge-------------------------------------
@@ -94,7 +108,7 @@ uint EncodeISOArrayNode::match_edge(uint idx) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -121,7 +135,7 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* src = in(1);
   Node* mask = in(2);
   if (bottom_type()->isa_int()) {
-    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->isa_int() && phase->type(mask->in(1))->is_int()->is_con()) {
       // compress(x, 1 << n) == (x >> n & 1)
       if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
         Node* rshift = phase->transform(new RShiftINode(in(1), mask->in(2)));
@@ -139,7 +153,7 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   } else {
     assert(bottom_type()->isa_long(), "");
-    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->isa_long() && phase->type(mask->in(1))->is_long()->is_con()) {
       // compress(x, 1 << n) == (x >> n & 1)
       if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
         Node* rshift = phase->transform(new RShiftLNode(in(1), mask->in(2)));
@@ -156,10 +170,10 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndLNode(compr, src->in(1));
     }
   }
-  return NULL;
+  return nullptr;
 }
 
-Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
+static Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
   BasicType bt = n->bottom_type()->basic_type();
   // compress(x, 0) == 0, expand(x, 0) == 0
   if(phase->type(n->in(2))->higher_equal(TypeInteger::zero(bt))) return n->in(2);
@@ -179,7 +193,7 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* src = in(1);
   Node* mask = in(2);
   if (bottom_type()->isa_int()) {
-    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->isa_int() && phase->type(mask->in(1))->is_int()->is_con()) {
       // expand(x, 1 << n) == (x & 1) << n
       if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
         Node* andnode = phase->transform(new AndINode(in(1), phase->makecon(TypeInt::ONE)));
@@ -196,7 +210,7 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   } else {
     assert(bottom_type()->isa_long(), "");
-    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->isa_long() && phase->type(mask->in(1))->is_long()->is_con()) {
       // expand(x, 1 << n) == (x & 1) << n
       if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
         Node* andnode = phase->transform(new AndLNode(in(1), phase->makecon(TypeLong::ONE)));
@@ -212,7 +226,7 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndLNode(src->in(1), mask);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
@@ -229,12 +243,12 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
     int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
     if (opc == Op_CompressBits) {
       // Bit compression selects the source bits corresponding to true mask bits
-      // and lays them out contiguously at desitination bit poistions starting from
+      // and lays them out contiguously at destination bit positions starting from
       // LSB, remaining higher order bits are set to zero.
-      // Thus, it will always generates a +ve value i.e. sign bit set to 0 if
+      // Thus, it will always generate a +ve value i.e. sign bit set to 0 if
       // any bit of constant mask value is zero.
       lo = 0L;
-      hi = (1L << bitcount) - 1;
+      hi = (1UL << bitcount) - 1;
     } else {
       assert(opc == Op_ExpandBits, "");
       // Expansion sequentially reads source bits starting from LSB

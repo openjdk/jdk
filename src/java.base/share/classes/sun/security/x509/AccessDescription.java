@@ -72,7 +72,7 @@ public final class AccessDescription {
         return accessLocation;
     }
 
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
         tmp.putOID(accessMethod);
         accessLocation.encode(tmp);

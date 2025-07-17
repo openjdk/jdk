@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Checks that the jshdb debugd utility successfully starts
  *          and tries to attach to a running process
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -101,12 +102,18 @@ public class SADebugDTest {
                 int registryPort = REGISTRY_DEFAULT_PORT;
                 if (useRegistryPort) {
                     registryPort = Utils.findUnreservedFreePort(REGISTRY_DEFAULT_PORT);
+                    if (registryPort == -1) {
+                        throw new RuntimeException("Cannot find a registryPort, findUnreservedFreePort returns -1");
+                    }
                     jhsdbLauncher.addToolArg("--registryport");
                     jhsdbLauncher.addToolArg(Integer.toString(registryPort));
                 }
 
                 final int rmiPort = useRmiPort ? Utils.findUnreservedFreePort(REGISTRY_DEFAULT_PORT, registryPort) : -1;
                 if (useRmiPort) {
+                    if (rmiPort == -1) {
+                        throw new RuntimeException("Cannot find an rmiPort, findUnreservedFreePort returns -1");
+                    }
                     jhsdbLauncher.addToolArg("--rmiport");
                     jhsdbLauncher.addToolArg(Integer.toString(rmiPort));
                 }

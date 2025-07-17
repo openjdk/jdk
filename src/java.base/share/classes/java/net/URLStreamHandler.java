@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,12 @@
 package java.net;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
 import sun.net.util.IPAddressUtil;
+
+import static jdk.internal.util.Exceptions.formatMsg;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 /**
  * The abstract class {@code URLStreamHandler} is the common
@@ -205,7 +209,7 @@ public abstract class URLStreamHandler {
                         if (!IPAddressUtil.
                             isIPv6LiteralAddress(host.substring(1, ind))) {
                             throw new IllegalArgumentException(
-                                "Invalid host: "+ host);
+                                formatMsg("Invalid host%s", filterNonSocketInfo(host).prefixWith(": ")));
                         }
 
                         port = -1 ;
@@ -219,12 +223,14 @@ public abstract class URLStreamHandler {
                                 }
                             } else {
                                 throw new IllegalArgumentException(
-                                    "Invalid authority field: " + authority);
+                                    formatMsg("Invalid authority field%s",
+                                               filterNonSocketInfo(authority).prefixWith(": ")));
                             }
                         }
                     } else {
                         throw new IllegalArgumentException(
-                            "Invalid authority field: " + authority);
+                            formatMsg("Invalid authority field%s",
+                                       filterNonSocketInfo(authority).prefixWith(": ")));
                     }
                 } else {
                     ind = host.indexOf(':');
@@ -374,7 +380,7 @@ public abstract class URLStreamHandler {
         } else {
             String host = u.getHost();
             if (host != null)
-                h += host.toLowerCase().hashCode();
+                h += host.toLowerCase(Locale.ROOT).hashCode();
         }
 
         // Generate the file part.

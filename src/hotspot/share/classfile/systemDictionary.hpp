@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@
 // The dictionary in each ClassLoaderData stores all loaded classes, either
 // initiatied by its class loader or defined by its class loader:
 //
-//   class loader -> ClassLoaderData -> [class, protection domain set]
+//   class loader -> ClassLoaderData -> Loaded and initiated loaded classes
 //
 // Classes are loaded lazily. The default VM class loader is
-// represented as NULL.
+// represented as null.
 
-// The underlying data structure is an open hash table (Dictionary) per
+// The underlying data structure is a concurrent hash table (Dictionary) per
 // ClassLoaderData with a fixed number of buckets. During loading the
 // class loader object is locked, (for the VM loader a private lock object is used).
 // The global SystemDictionary_lock is held for all additions into the ClassLoaderData
@@ -49,9 +49,7 @@
 // a side data structure, and is used to detect ClassCircularityErrors.
 //
 // When class loading is finished, a new entry is added to the dictionary
-// of the class loader and the placeholder is removed. Note that the protection
-// domain field of the dictionary entry has not yet been filled in when
-// the "real" dictionary entry is created.
+// of the class loader and the placeholder is removed.
 //
 // Clients of this class who are interested in finding if a class has
 // been completely loaded -- not classes in the process of being loaded --
@@ -75,10 +73,13 @@ class GCTimer;
 class EventClassLoad;
 class Symbol;
 
+template <class E> class GrowableArray;
+
 class SystemDictionary : AllStatic {
+  friend class AOTLinkedClassBulkLoader;
   friend class BootstrapInfo;
+  friend class LambdaProxyClassDictionary;
   friend class vmClasses;
-  friend class VMStructs;
 
  public:
 
@@ -88,29 +89,35 @@ class SystemDictionary : AllStatic {
   // throw_error flag.  For most uses the throw_error argument should be set
   // to true.
 
-  static Klass* resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
+  static Klass* resolve_or_fail(Symbol* class_name, Handle class_loader, bool throw_error, TRAPS);
   // Convenient call for null loader and protection domain.
   static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS) {
-    return resolve_or_fail(class_name, Handle(), Handle(), throw_error, THREAD);
+    return resolve_or_fail(class_name, Handle(), throw_error, THREAD);
   }
 
   // Returns a class with a given class name and class loader.
-  // Loads the class if needed. If not found NULL is returned.
-  static Klass* resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  // Loads the class if needed. If not found null is returned.
+  static Klass* resolve_or_null(Symbol* class_name, Handle class_loader, TRAPS);
   // Version with null loader and protection domain
   static Klass* resolve_or_null(Symbol* class_name, TRAPS) {
-    return resolve_or_null(class_name, Handle(), Handle(), THREAD);
+    return resolve_or_null(class_name, Handle(), THREAD);
   }
+
+  static InstanceKlass* resolve_with_circularity_detection(Symbol* class_name,
+                                                           Symbol* next_name,
+                                                           Handle class_loader,
+                                                           bool is_superclass,
+                                                           TRAPS);
 
   // Resolve a superclass or superinterface. Called from ClassFileParser,
   // parse_interfaces, resolve_instance_class_or_null, load_shared_class
   // "class_name" is the class whose super class or interface is being resolved.
-  static InstanceKlass* resolve_super_or_fail(Symbol* class_name,
-                                              Symbol* super_name,
+  static InstanceKlass* resolve_super_or_fail(Symbol* class_name, Symbol* super_name,
                                               Handle class_loader,
-                                              Handle protection_domain,
-                                              bool is_superclass,
-                                              TRAPS);
+                                              bool is_superclass, TRAPS) {
+    return resolve_with_circularity_detection(class_name, super_name, class_loader, is_superclass, THREAD);
+  }
+
  private:
   // Parse the stream to create a hidden class.
   // Used by jvm_lookup_define_class.
@@ -139,23 +146,22 @@ class SystemDictionary : AllStatic {
                                             const ClassLoadInfo& cl_info,
                                             TRAPS);
 
-  // Lookup an already loaded class. If not found NULL is returned.
+  // Lookup an already loaded class. If not found null is returned.
   static InstanceKlass* find_instance_klass(Thread* current, Symbol* class_name,
-                                            Handle class_loader, Handle protection_domain);
+                                            Handle class_loader);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
-  // If not found NULL is returned.
+  // If not found null is returned.
   static Klass* find_instance_or_array_klass(Thread* current, Symbol* class_name,
-                                             Handle class_loader,
-                                             Handle protection_domain);
+                                             Handle class_loader);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
   // loader that is constrained (via loader constraints) to produce
   // a consistent class.  Do not take protection domains into account.
   // Do not make any queries to class loaders; consult only the cache.
-  // Return NULL if the class is not found.
+  // Return null if the class is not found.
   //
   // This function is a strict superset of find_instance_or_array_klass.
   // This function (the unchecked version) makes a conservative prediction
@@ -177,7 +183,7 @@ class SystemDictionary : AllStatic {
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
-
+  // Will not keep metadata alive. See ClassLoaderDataGraph::methods_do.
   static void methods_do(void f(Method*));
 
   // Garbage collection support
@@ -200,10 +206,6 @@ class SystemDictionary : AllStatic {
 public:
   // Returns java system loader
   static oop java_system_loader();
-
-  // Returns the class loader data to be used when looking up/updating the
-  // system dictionary.
-  static ClassLoaderData *class_loader_data(Handle class_loader);
 
   // Returns java platform loader
   static oop java_platform_loader();
@@ -235,22 +237,14 @@ public:
                                               Symbol* signature,
                                               TRAPS);
 
+  static void get_all_method_handle_intrinsics(GrowableArray<Method*>* methods) NOT_CDS_RETURN;
+  static void restore_archived_method_handle_intrinsics() NOT_CDS_RETURN;
+
   // compute java_mirror (java.lang.Class instance) for a type ("I", "[[B", "LFoo;", etc.)
-  // Either the accessing_klass or the CL/PD can be non-null, but not both.
   static Handle    find_java_mirror_for_type(Symbol* signature,
                                              Klass* accessing_klass,
-                                             Handle class_loader,
-                                             Handle protection_domain,
                                              SignatureStream::FailureMode failure_mode,
                                              TRAPS);
-  static Handle    find_java_mirror_for_type(Symbol* signature,
-                                             Klass* accessing_klass,
-                                             SignatureStream::FailureMode failure_mode,
-                                             TRAPS) {
-    // callee will fill in CL/PD from AK, if they are needed
-    return find_java_mirror_for_type(signature, accessing_klass, Handle(), Handle(),
-                                     failure_mode, THREAD);
-  }
 
   // find a java.lang.invoke.MethodType object for a given signature
   // (asks Java to compute it if necessary, except in a compiler thread)
@@ -276,24 +270,21 @@ public:
 
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
-  static void add_resolution_error(const constantPoolHandle& pool, int which, Symbol* error,
-                                   Symbol* message, Symbol* cause = NULL, Symbol* cause_msg = NULL);
+  static void add_resolution_error(const constantPoolHandle& pool, int which,
+                                   Symbol* error, const char* message,
+                                   Symbol* cause = nullptr, const char* cause_msg = nullptr);
   static void delete_resolution_error(ConstantPool* pool);
   static Symbol* find_resolution_error(const constantPoolHandle& pool, int which,
-                                       Symbol** message, Symbol** cause, Symbol** cause_msg);
-
+                                       const char** message,
+                                       Symbol** cause, const char** cause_msg);
 
   // Record a nest host resolution/validation error
   static void add_nest_host_error(const constantPoolHandle& pool, int which,
                                   const char* message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
-protected:
-  static InstanceKlass* _well_known_klasses[];
-
-private:
-  // table of box klasses (int_klass, etc.)
-  static InstanceKlass* _box_klasses[T_VOID+1];
+  static void add_to_initiating_loader(JavaThread* current, InstanceKlass* k,
+                                       ClassLoaderData* loader_data) NOT_CDS_RETURN;
 
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
@@ -302,16 +293,10 @@ private:
   // Basic loading operations
   static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
                                                        Handle class_loader,
-                                                       Handle protection_domain, TRAPS);
+                                                       TRAPS);
   static Klass* resolve_array_class_or_null(Symbol* class_name,
                                             Handle class_loader,
-                                            Handle protection_domain, TRAPS);
-  static InstanceKlass* handle_parallel_loading(JavaThread* current,
-                                                Symbol* name,
-                                                ClassLoaderData* loader_data,
-                                                Handle lockObject,
-                                                bool* throw_circularity_error);
-
+                                            TRAPS);
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);
   static InstanceKlass* find_or_define_helper(Symbol* class_name,
                                               Handle class_loader,
@@ -319,6 +304,11 @@ private:
   static InstanceKlass* load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS);
   static InstanceKlass* load_instance_class(Symbol* class_name,
                                             Handle class_loader, TRAPS);
+
+  // Class loader constraints
+  static void check_constraints(InstanceKlass* k, ClassLoaderData* loader,
+                                bool defining, TRAPS);
+  static void update_dictionary(JavaThread* current, InstanceKlass* k, ClassLoaderData* loader_data);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
                                       PackageEntry* pkg_entry,
@@ -328,23 +318,19 @@ private:
                                            PackageEntry* pkg_entry,
                                            Handle class_loader);
   static bool check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super,
-                                            Handle class_loader,  Handle protection_domain,
+                                            Handle class_loader,
                                             bool is_superclass, TRAPS);
-  static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader,
-                                               Handle protection_domain, TRAPS);
+  static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader, TRAPS);
   // Second part of load_shared_class
   static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
+  static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
+
 protected:
-  // Used by SystemDictionaryShared
+  // Used by SystemDictionaryShared and LambdaProxyClassDictionary
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
   static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
-  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
-                                                       Handle class_loader,
-                                                       Handle protection_domain,
-                                                       PackageEntry* pkg_entry,
-                                                       TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
@@ -355,10 +341,11 @@ protected:
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
+
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
-  static bool is_boot_class_loader(oop class_loader) { return class_loader == NULL; }
+  static bool is_boot_class_loader(oop class_loader) { return class_loader == nullptr; }
   static bool is_builtin_class_loader(oop class_loader) {
     return is_boot_class_loader(class_loader)      ||
            is_platform_class_loader(class_loader)  ||
@@ -369,21 +356,6 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
-
-  // Setup link to hierarchy
-  static void add_to_hierarchy(InstanceKlass* k);
-protected:
-
-  // Basic find on loaded classes
-  static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
-
-  // Basic find on classes in the midst of being loaded
-  static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
-
-  // Class loader constraints
-  static void check_constraints(InstanceKlass* k, Handle loader,
-                                bool defining, TRAPS);
-  static void update_dictionary(JavaThread* current, InstanceKlass* k, Handle loader);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

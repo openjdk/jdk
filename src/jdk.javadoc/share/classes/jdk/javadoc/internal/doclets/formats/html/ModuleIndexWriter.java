@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,11 @@ import java.util.SortedSet;
 
 import javax.lang.model.element.ModuleElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate the module index page "index.html".
@@ -53,23 +51,20 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
      * Construct the ModuleIndexWriter.
      *
      * @param configuration the configuration object
-     * @param filename the name of the generated file
      */
-    public ModuleIndexWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
+    public ModuleIndexWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.INDEX);
         modules = configuration.modules;
     }
 
-    /**
-     * Generate the module index page.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem generating the module index page
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.INDEX;
-        ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
-        mdlgen.buildOverviewIndexFile("doclet.Window_Overview_Summary", "module index");
+    @Override
+    public String getDescription() {
+        return "module index";
+    }
+
+    @Override
+    public String getTitleKey() {
+        return "doclet.Window_Overview_Summary";
     }
 
     /**
@@ -84,9 +79,9 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
         if (!groupModuleMap.keySet().isEmpty()) {
             TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            var table = new Table<ModuleElement>(HtmlStyle.summaryTable)
+            var table = new Table<ModuleElement>(HtmlStyles.summaryTable)
                     .setHeader(tableHeader)
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                    .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                     .setId(HtmlIds.ALL_MODULES_TABLE)
                     .setDefaultTab(contents.getContent("doclet.All_Modules"));
 

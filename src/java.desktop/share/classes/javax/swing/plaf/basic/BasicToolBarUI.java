@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,13 +554,11 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     @Deprecated(since = "17", forRemoval = true)
     protected JFrame createFloatingFrame(JToolBar toolbar) {
         Window window = SwingUtilities.getWindowAncestor(toolbar);
-        @SuppressWarnings("serial") // anonymous class
         JFrame frame = new JFrame(toolbar.getName(),
                                   (window != null) ? window.getGraphicsConfiguration() : null) {
             // Override createRootPane() to automatically resize
             // the frame when contents change
             protected JRootPane createRootPane() {
-                @SuppressWarnings("serial") // anonymous class
                 JRootPane rootPane = new JRootPane() {
                     private boolean packing = false;
 
@@ -606,7 +604,6 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
             // Override createRootPane() to automatically resize
             // the frame when contents change
             protected JRootPane createRootPane() {
-                @SuppressWarnings("serial") // anonymous class
                 JRootPane rootPane = new JRootPane() {
                     private boolean packing = false;
 
@@ -1431,15 +1428,6 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
                 if (floatingToolBar instanceof Window) ((Window)floatingToolBar).setVisible(false);
                 floatingToolBar.getContentPane().remove(toolBar);
                 String constraint = constraintBeforeFloating;
-                if (toolBar.getOrientation() == JToolBar.HORIZONTAL) {
-                    if (constraint == "West" || constraint == "East") {
-                        constraint = "North";
-                    }
-                } else {
-                    if (constraint == "North" || constraint == "South") {
-                        constraint = "West";
-                    }
-                }
                 if (dockingSource == null)
                     dockingSource = toolBar.getParent();
                 if (propertyListener != null)

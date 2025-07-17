@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
  * Note that this shader source code includes some "holes" marked by "%s".
  * This allows us to build different shader programs (e.g. one for
  * 3x3, one for 5x5, and so on) simply by filling in these "holes" with
- * a call to sprintf().  See the OGLBufImgOps_CreateConvolveProgram() method
+ * a call to snprintf().  See the OGLBufImgOps_CreateConvolveProgram() method
  * for more details.
  *
  * REMIND: Currently this shader (and the supporting code in the
@@ -135,22 +135,22 @@ OGLBufImgOps_CreateConvolveProgram(jint flags)
     char edge[100];
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "OGLBufImgOps_CreateConvolveProgram: flags=%d",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLBufImgOps_CreateConvolveProgram: flags=%d",
+               flags);
 
     if (IS_SET(CONVOLVE_EDGE_ZERO_FILL)) {
         // EDGE_ZERO_FILL: fill in zero at the edges
-        sprintf(edge, "sum = vec4(0.0);");
+        snprintf(edge, sizeof(edge), "sum = vec4(0.0);");
     } else {
         // EDGE_NO_OP: use the source pixel color at the edges
-        sprintf(edge,
+        snprintf(edge, sizeof(edge),
                 "sum = texture%s(baseImage, gl_TexCoord[0].st);",
                 target);
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, convolveShaderSource,
+    snprintf(finalSource, sizeof(finalSource), convolveShaderSource,
             kernelMax, target, edge, target);
 
     convolveProgram = OGLContext_CreateFragmentProgram(finalSource);
@@ -189,9 +189,9 @@ OGLBufImgOps_EnableConvolveOp(OGLContext *oglc, jlong pSrcOps,
     GLint loc;
     jint flags = 0;
 
-    J2dTraceLn2(J2D_TRACE_INFO,
-                "OGLBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
-                kernelWidth, kernelHeight);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
+               kernelWidth, kernelHeight);
 
     RETURN_IF_NULL(oglc);
     RETURN_IF_NULL(srcOps);
@@ -296,7 +296,7 @@ OGLBufImgOps_DisableConvolveOp(OGLContext *oglc)
  * Note that this shader source code includes some "holes" marked by "%s".
  * This allows us to build different shader programs (e.g. one for
  * GL_TEXTURE_2D targets, one for GL_TEXTURE_RECTANGLE_ARB targets, and so on)
- * simply by filling in these "holes" with a call to sprintf().  See the
+ * simply by filling in these "holes" with a call to snprintf().  See the
  * OGLBufImgOps_CreateRescaleProgram() method for more details.
  */
 static const char *rescaleShaderSource =
@@ -350,9 +350,9 @@ OGLBufImgOps_CreateRescaleProgram(jint flags)
     char *postRescale = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "OGLBufImgOps_CreateRescaleProgram: flags=%d",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLBufImgOps_CreateRescaleProgram: flags=%d",
+               flags);
 
     if (IS_SET(RESCALE_NON_PREMULT)) {
         preRescale  = "srcColor.rgb /= srcColor.a;";
@@ -360,7 +360,7 @@ OGLBufImgOps_CreateRescaleProgram(jint flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, rescaleShaderSource,
+    snprintf(finalSource, sizeof(finalSource), rescaleShaderSource,
             target, target, preRescale, postRescale);
 
     rescaleProgram = OGLContext_CreateFragmentProgram(finalSource);
@@ -502,7 +502,7 @@ OGLBufImgOps_DisableRescaleOp(OGLContext *oglc)
  * Note that this shader source code includes some "holes" marked by "%s".
  * This allows us to build different shader programs (e.g. one for
  * GL_TEXTURE_2D targets, one for GL_TEXTURE_RECTANGLE_ARB targets, and so on)
- * simply by filling in these "holes" with a call to sprintf().  See the
+ * simply by filling in these "holes" with a call to snprintf().  See the
  * OGLBufImgOps_CreateLookupProgram() method for more details.
  */
 static const char *lookupShaderSource =
@@ -572,9 +572,9 @@ OGLBufImgOps_CreateLookupProgram(jint flags)
     char *postLookup = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
-                "OGLBufImgOps_CreateLookupProgram: flags=%d",
-                flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLBufImgOps_CreateLookupProgram: flags=%d",
+               flags);
 
     if (IS_SET(LOOKUP_USE_SRC_ALPHA)) {
         // when numComps is 1 or 3, the alpha is not looked up in the table;
@@ -592,7 +592,7 @@ OGLBufImgOps_CreateLookupProgram(jint flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, lookupShaderSource,
+    snprintf(finalSource, sizeof(finalSource), lookupShaderSource,
             target, target, preLookup, alpha, postLookup);
 
     lookupProgram = OGLContext_CreateFragmentProgram(finalSource);
@@ -632,9 +632,9 @@ OGLBufImgOps_EnableLookupOp(OGLContext *oglc, jlong pSrcOps,
     int i;
     jint flags = 0;
 
-    J2dTraceLn4(J2D_TRACE_INFO,
-                "OGLBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
-                shortData, numBands, bandLength, offset);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
+               shortData, numBands, bandLength, offset);
 
     for (i = 0; i < 4; i++) {
         bands[i] = NULL;

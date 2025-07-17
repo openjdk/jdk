@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 
 package sun.nio.fs;
 
+import java.io.IOException;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.nio.channels.SeekableByteChannel;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.io.IOException;
 
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
@@ -93,13 +93,6 @@ class UnixSecureDirectoryStream
         UnixPath child = ds.directory().resolve(file);
         boolean followLinks = Util.followLinks(options);
 
-        // permission check using name resolved against original path of directory
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            child.checkRead();
-        }
-
         ds.readLock().lock();
         try {
             if (!ds.isOpen())
@@ -146,15 +139,12 @@ class UnixSecureDirectoryStream
         int mode = UnixFileModeAttribute
             .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
 
-        // path for permission check
-        String pathToCheck = ds.directory().resolve(file).getPathForPermissionCheck();
-
         ds.readLock().lock();
         try {
             if (!ds.isOpen())
                 throw new ClosedDirectoryStreamException();
             try {
-                return UnixChannelFactory.newFileChannel(dfd, file, pathToCheck, options, mode);
+                return UnixChannelFactory.newFileChannel(dfd, file, options, mode);
             } catch (UnixException x) {
                 x.rethrowAsIOException(file);
                 return null; // keep compiler happy
@@ -168,36 +158,15 @@ class UnixSecureDirectoryStream
      * Deletes file/directory in this directory. Works in a race-free manner
      * when invoked with flags.
      */
-    private void implDelete(Path obj, boolean haveFlags, int flags)
+    private void implDelete(Path obj, int flags)
         throws IOException
     {
         UnixPath file = getName(obj);
-
-        // permission check using name resolved against original path of directory
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            ds.directory().resolve(file).checkDelete();
-        }
 
         ds.readLock().lock();
         try {
             if (!ds.isOpen())
                 throw new ClosedDirectoryStreamException();
-
-            if (!haveFlags) {
-                // need file attribute to know if file is directory. This creates
-                // a race in that the file may be replaced by a directory or a
-                // directory replaced by a file between the time we query the
-                // file type and unlink it.
-                UnixFileAttributes attrs = null;
-                try {
-                    attrs = UnixFileAttributes.get(dfd, file, false);
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
-                }
-                flags = (attrs.isDirectory()) ? AT_REMOVEDIR : 0;
-            }
 
             try {
                 unlinkat(dfd, file.asByteArray(), flags);
@@ -216,12 +185,12 @@ class UnixSecureDirectoryStream
 
     @Override
     public void deleteFile(Path file) throws IOException {
-        implDelete(file, true, 0);
+        implDelete(file, 0);
     }
 
     @Override
     public void deleteDirectory(Path dir) throws IOException {
-        implDelete(dir, true, AT_REMOVEDIR);
+        implDelete(dir, AT_REMOVEDIR);
     }
 
     /**
@@ -238,14 +207,6 @@ class UnixSecureDirectoryStream
         if (!(dir instanceof UnixSecureDirectoryStream))
             throw new ProviderMismatchException();
         UnixSecureDirectoryStream that = (UnixSecureDirectoryStream)dir;
-
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            this.ds.directory().resolve(from).checkWrite();
-            that.ds.directory().resolve(to).checkWrite();
-        }
 
         // lock ordering doesn't matter
         this.ds.readLock().lock();
@@ -337,18 +298,6 @@ class UnixSecureDirectoryStream
             }
         }
 
-        private void checkWriteAccess() {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                if (file == null) {
-                    ds.directory().checkWrite();
-                } else {
-                    ds.directory().resolve(file).checkWrite();
-                }
-            }
-        }
-
         @Override
         public String name() {
             return "basic";
@@ -361,15 +310,6 @@ class UnixSecureDirectoryStream
                 if (!ds.isOpen())
                     throw new ClosedDirectoryStreamException();
 
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    if (file == null) {
-                        ds.directory().checkRead();
-                    } else {
-                        ds.directory().resolve(file).checkRead();
-                    }
-                }
                 try {
                      UnixFileAttributes attrs = (file == null) ?
                          UnixFileAttributes.get(dfd) :
@@ -392,8 +332,6 @@ class UnixSecureDirectoryStream
                              FileTime createTime) // ignore
             throws IOException
         {
-            checkWriteAccess();
-
             ds.readLock().lock();
             try {
                 if (!ds.isOpen())
@@ -415,9 +353,9 @@ class UnixSecureDirectoryStream
                     }
                     // update times
                     try {
-                        futimes(fd,
-                                lastAccessTime.to(TimeUnit.MICROSECONDS),
-                                lastModifiedTime.to(TimeUnit.MICROSECONDS));
+                        futimens(fd,
+                                 lastAccessTime.to(TimeUnit.NANOSECONDS),
+                                 lastModifiedTime.to(TimeUnit.NANOSECONDS));
                     } catch (UnixException x) {
                         x.rethrowAsIOException(file);
                     }
@@ -441,15 +379,6 @@ class UnixSecureDirectoryStream
             super(file, followLinks);
         }
 
-        private void checkWriteAndUserAccess() {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                super.checkWriteAccess();
-                sm.checkPermission(new RuntimePermission("accessUserInformation"));
-            }
-        }
-
         @Override
         public String name() {
             return "posix";
@@ -457,16 +386,6 @@ class UnixSecureDirectoryStream
 
         @Override
         public PosixFileAttributes readAttributes() throws IOException {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                if (file == null)
-                    ds.directory().checkRead();
-                else
-                    ds.directory().resolve(file).checkRead();
-                sm.checkPermission(new RuntimePermission("accessUserInformation"));
-            }
-
             ds.readLock().lock();
             try {
                 if (!ds.isOpen())
@@ -490,32 +409,35 @@ class UnixSecureDirectoryStream
         public void setPermissions(Set<PosixFilePermission> perms)
             throws IOException
         {
-            // permission check
-            checkWriteAndUserAccess();
-
             ds.readLock().lock();
             try {
                 if (!ds.isOpen())
                     throw new ClosedDirectoryStreamException();
 
-                int fd = (file == null) ? dfd : open();
-                try {
-                    fchmod(fd, UnixFileModeAttribute.toUnixMode(perms));
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
-                } finally {
-                    if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd, e-> null);
+                int mode = UnixFileModeAttribute.toUnixMode(perms);
+                if (file == null)
+                    fchmod(dfd, mode);
+                else if (followLinks)
+                    fchmodat(dfd, file, mode, 0);
+                else if (fchmodatNoFollowSupported())
+                    fchmodat(dfd, file, mode, AT_SYMLINK_NOFOLLOW);
+                else {
+                    int fd = open();
+                    try {
+                        fchmod(fd, mode);
+                    } finally {
+                        if (fd >= 0)
+                            UnixNativeDispatcher.close(fd, e-> null);
+                    }
                 }
+            } catch (UnixException x) {
+                x.rethrowAsIOException(file);
             } finally {
                 ds.readLock().unlock();
             }
         }
 
         private void setOwners(int uid, int gid) throws IOException {
-            // permission check
-            checkWriteAndUserAccess();
-
             ds.readLock().lock();
             try {
                 if (!ds.isOpen())

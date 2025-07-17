@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,9 @@ public interface ExecutionControl extends AutoCloseable {
     public static final class ClassBytecodes implements Serializable {
 
         private static final long serialVersionUID = 0xC1A55B47EC0DE5L;
+        /** @serial */
         private final String name;
+        /** @serial */
         private final byte[] bytecodes;
 
         /**
@@ -389,6 +391,7 @@ public interface ExecutionControl extends AutoCloseable {
 
         private static final long serialVersionUID = 1L;
 
+        /** @serial */
         private final boolean[] installed;
 
         public ClassInstallException(String message, boolean[] installed) {
@@ -426,8 +429,10 @@ public interface ExecutionControl extends AutoCloseable {
 
         private static final long serialVersionUID = 1L;
 
+        /** @serial */
         private final String causeExceptionClass;
 
+        @SuppressWarnings("this-escape")
         public UserException(String message, String causeExceptionClass, StackTraceElement[] stackElements) {
             super(message);
             this.causeExceptionClass = causeExceptionClass;
@@ -458,6 +463,7 @@ public interface ExecutionControl extends AutoCloseable {
 
         private static final long serialVersionUID = 1L;
 
+        /** @serial */
         private final int id;
 
         /**
@@ -467,6 +473,7 @@ public interface ExecutionControl extends AutoCloseable {
          * @param id An internal identifier of the specific method
          * @param stackElements the stack trace
          */
+        @SuppressWarnings("this-escape")
         public ResolutionException(int id, StackTraceElement[] stackElements) {
             super("resolution exception: " + id);
             this.id = id;

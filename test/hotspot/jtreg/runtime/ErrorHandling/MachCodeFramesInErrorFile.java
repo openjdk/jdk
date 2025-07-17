@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8272586
+ * @requires vm.flagless
  * @requires vm.compiler2.enabled
  * @summary Test that abstract machine code is dumped for the top frames in a hs-err log
  * @library /test/lib
@@ -34,6 +35,7 @@
  * @run driver MachCodeFramesInErrorFile
  */
 
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -113,7 +115,7 @@ public class MachCodeFramesInErrorFile {
      * expected to have a min number of MachCode sections.
      */
     private static void run(boolean crashInJava) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Xmx64m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
             "-XX:-CreateCoredumpOnCrash",
             "-Xcomp",
@@ -126,12 +128,8 @@ public class MachCodeFramesInErrorFile {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         // Extract hs_err_pid file.
-        String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-        if (hs_err_file == null) {
-            output.reportDiagnosticSummary();
-            throw new RuntimeException("Did not find hs_err_pid file in output");
-        }
-        Path hsErrPath = Paths.get(hs_err_file);
+        File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output);
+        Path hsErrPath = hs_err_file.toPath();
         if (!Files.exists(hsErrPath)) {
             throw new RuntimeException("hs_err_pid file missing at " + hsErrPath + ".\n");
         }

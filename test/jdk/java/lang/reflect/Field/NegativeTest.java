@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 8277451
- * @run testng/othervm -Djdk.reflect.useDirectMethodHandle=true NegativeTest
- * @run testng/othervm -Djdk.reflect.useDirectMethodHandle=false NegativeTest
+ * @run testng NegativeTest
  * @summary Test exception thrown due to bad receiver and bad value on
  *          Field with and without setAccessible(true)
  */

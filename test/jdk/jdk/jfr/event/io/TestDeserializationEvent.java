@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8261160
  * @summary Add a deserialization JFR event
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run testng/othervm jdk.jfr.event.io.TestDeserializationEvent
@@ -175,9 +175,9 @@ public class TestDeserializationEvent {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
-            assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
-            assertFilterConfigured(true).accept(events.get(0));
-            assertFilterStatus(expectedValue).accept(events.get(0));
+            assertEquals(events.getFirst().getEventType().getName(), "jdk.Deserialization");
+            assertFilterConfigured(true).accept(events.getFirst());
+            assertFilterStatus(expectedValue).accept(events.getFirst());
         }
     }
 
@@ -202,9 +202,9 @@ public class TestDeserializationEvent {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
-            assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
-            assertFilterConfigured(true).accept(events.get(0));
-            assertFilterStatus(expectedValue).accept(events.get(0));
+            assertEquals(events.getFirst().getEventType().getName(), "jdk.Deserialization");
+            assertFilterConfigured(true).accept(events.getFirst());
+            assertFilterStatus(expectedValue).accept(events.getFirst());
         }
     }
 
@@ -224,10 +224,10 @@ public class TestDeserializationEvent {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
-            assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
-            assertFilterConfigured(true).accept(events.get(0));
-            assertExceptionType(XYZException.class).accept(events.get(0));
-            assertExceptionMessage("I am a bad filter!!!").accept(events.get(0));
+            assertEquals(events.getFirst().getEventType().getName(), "jdk.Deserialization");
+            assertFilterConfigured(true).accept(events.getFirst());
+            assertExceptionType(XYZException.class).accept(events.getFirst());
+            assertExceptionMessage("I am a bad filter!!!").accept(events.getFirst());
         }
     }
 
@@ -428,8 +428,8 @@ public class TestDeserializationEvent {
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(events.size(), 1);
             assertEquals(events.get(0).getEventType().getName(), "jdk.Deserialization");
-            assertFilterConfigured(true).accept(events.get(0));
-            assertFilterStatus("REJECTED").accept(events.get(0));
+            assertFilterConfigured(true).accept(events.getFirst());
+            assertFilterStatus("REJECTED").accept(events.getFirst());
             assertFalse(initializedFoo);
             assertType(Foo.class);
         }

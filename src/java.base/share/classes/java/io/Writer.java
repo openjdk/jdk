@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.io;
 
 import java.util.Objects;
-import jdk.internal.misc.InternalLock;
 
 /**
  * Abstract class for writing to character streams.  The only methods that a
@@ -163,21 +162,6 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     }
 
     /**
-     * For use by BufferedWriter to create a character-stream writer that uses an
-     * internal lock when BufferedWriter is not extended and the given writer is
-     * trusted, otherwise critical sections will synchronize on the given writer.
-     */
-    Writer(Writer writer) {
-        Class<?> clazz = writer.getClass();
-        if (getClass() == BufferedWriter.class &&
-                (clazz == OutputStreamWriter.class || clazz == FileWriter.class)) {
-            this.lock = InternalLock.newLockOr(writer);
-        } else {
-            this.lock = writer;
-        }
-    }
-
-    /**
      * Creates a new character-stream writer whose critical sections will
      * synchronize on the given object.
      *
@@ -206,27 +190,13 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      */
     public void write(int c) throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implWrite(c);
-            } finally {
-                locker.unlock();
+        synchronized (lock) {
+            if (writeBuffer == null){
+                writeBuffer = new char[WRITE_BUFFER_SIZE];
             }
-        } else {
-            synchronized (lock) {
-                implWrite(c);
-            }
+            writeBuffer[0] = (char) c;
+            write(writeBuffer, 0, 1);
         }
-    }
-
-    private void implWrite(int c) throws IOException {
-        if (writeBuffer == null){
-            writeBuffer = new char[WRITE_BUFFER_SIZE];
-        }
-        writeBuffer[0] = (char) c;
-        write(writeBuffer, 0, 1);
     }
 
     /**
@@ -305,43 +275,31 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      */
     public void write(String str, int off, int len) throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implWrite(str, off, len);
-            } finally {
-                locker.unlock();
+        synchronized (lock) {
+            char cbuf[];
+            if (len <= WRITE_BUFFER_SIZE) {
+                if (writeBuffer == null) {
+                    writeBuffer = new char[WRITE_BUFFER_SIZE];
+                }
+                cbuf = writeBuffer;
+            } else {    // Don't permanently allocate very large buffers.
+                cbuf = new char[len];
             }
-        } else {
-            synchronized (lock) {
-                implWrite(str, off, len);
-            }
+            str.getChars(off, (off + len), cbuf, 0);
+            write(cbuf, 0, len);
         }
-    }
-
-    private void implWrite(String str, int off, int len) throws IOException {
-        char cbuf[];
-        if (len <= WRITE_BUFFER_SIZE) {
-            if (writeBuffer == null) {
-                writeBuffer = new char[WRITE_BUFFER_SIZE];
-            }
-            cbuf = writeBuffer;
-        } else {    // Don't permanently allocate very large buffers.
-            cbuf = new char[len];
-        }
-        str.getChars(off, (off + len), cbuf, 0);
-        write(cbuf, 0, len);
     }
 
     /**
      * Appends the specified character sequence to this writer.
      *
      * <p> An invocation of this method of the form {@code out.append(csq)}
-     * behaves in exactly the same way as the invocation
+     * when {@code csq} is not {@code null}, behaves in exactly the same way
+     * as the invocation
      *
-     * <pre>
-     *     out.write(csq.toString()) </pre>
+     * {@snippet lang=java :
+     *     out.write(csq.toString())
+     * }
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
@@ -368,16 +326,15 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
 
     /**
      * Appends a subsequence of the specified character sequence to this writer.
-     * {@code Appendable}.
      *
      * <p> An invocation of this method of the form
      * {@code out.append(csq, start, end)} when {@code csq}
      * is not {@code null} behaves in exactly the
      * same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(csq.subSequence(start, end).toString())
-     * }</pre>
+     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -415,8 +372,9 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * <p> An invocation of this method of the form {@code out.append(c)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     out.write(c) </pre>
+     * {@snippet lang=java :
+     *     out.write(c)
+     * }
      *
      * @param  c
      *         The 16-bit character to append

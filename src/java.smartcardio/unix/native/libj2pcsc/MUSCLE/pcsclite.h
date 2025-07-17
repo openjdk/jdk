@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999-2004
  *  David Corcoran <corcoran@musclecard.com>
- * Copyright (C) 2002-2011
+ * Copyright (C) 2002-2024
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
  * Copyright (C) 2005
  *  Martin Paljak <martin@paljak.pri.ee>
@@ -58,7 +58,7 @@ typedef SCARDHANDLE *LPSCARDHANDLE;
 
 #define MAX_ATR_SIZE            33    /**< Maximum ATR size */
 
-/* Set structure elements aligment on bytes
+/* Set structure elements alignment on bytes
  * http://gcc.gnu.org/onlinedocs/gcc/Structure_002dPacking-Pragmas.html */
 #ifdef __APPLE__
 #pragma pack(1)
@@ -192,7 +192,8 @@ extern const SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci, g_rgSCardRawPci;
 /** @ingroup ErrorCodes */
 #define SCARD_E_INVALID_CHV        ((LONG)0x8010002A) /**< The supplied PIN is incorrect. */
 /** @ingroup ErrorCodes */
-#define SCARD_E_UNKNOWN_RES_MNG        ((LONG)0x8010002B) /**< An unrecognized error code was returned from a layered component. */
+#define SCARD_E_UNKNOWN_RES_MSG        ((LONG)0x8010002B) /**< An unrecognized error code was returned from a layered component. */
+#define SCARD_E_UNKNOWN_RES_MNG        SCARD_E_UNKNOWN_RES_MSG
 /** @ingroup ErrorCodes */
 #define SCARD_E_NO_SUCH_CERTIFICATE    ((LONG)0x8010002C) /**< The requested certificate does not exist. */
 /** @ingroup ErrorCodes */
@@ -279,7 +280,7 @@ extern const SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci, g_rgSCardRawPci;
 #define INFINITE            0xFFFFFFFF    /**< Infinite timeout */
 #endif
 
-#define PCSCLITE_VERSION_NUMBER        "1.9.5"    /**< Current version */
+#define PCSCLITE_VERSION_NUMBER        "2.3.0"    /**< Current version */
 /** Maximum readers context (a slot is count as a reader) */
 #define PCSCLITE_MAX_READERS_CONTEXTS            16
 
@@ -292,7 +293,7 @@ extern const SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci, g_rgSCardRawPci;
 /*
  * The message and buffer sizes must be multiples of 16.
  * The max message size must be at least large enough
- * to accomodate the transmit_struct
+ * to accommodate the transmit_struct
  */
 #define MAX_BUFFER_SIZE            264    /**< Maximum Tx/Rx Buffer for short APDU */
 #define MAX_BUFFER_SIZE_EXTENDED    (4 + 3 + (1<<16) + 3 + 2)    /**< enhanced (64K + APDU + Lc + Le + SW) Tx/Rx Buffer */

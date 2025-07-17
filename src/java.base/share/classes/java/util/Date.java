@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,6 +260,8 @@ public class Date
      * {@link Date#parse} method.
      *
      * @param   s   a string representation of the date.
+     * @throws IllegalArgumentException if {@code s} cannot be interpreted as a
+     * representation of a date and time.
      * @see     java.text.DateFormat
      * @see     java.util.Date#parse(java.lang.String)
      * @deprecated As of JDK version 1.1,
@@ -441,6 +443,8 @@ public class Date
      * @param   s   a string to be parsed as a date.
      * @return  the number of milliseconds since January 1, 1970, 00:00:00 GMT
      *          represented by the string argument.
+     * @throws IllegalArgumentException if {@code s} cannot be interpreted as a
+     * representation of a date and time.
      * @see     java.text.DateFormat
      * @deprecated As of JDK version 1.1,
      * replaced by {@code DateFormat.parse(String s)}.
@@ -1008,7 +1012,7 @@ public class Date
      * <li>{@code mm} is the minute within the hour ({@code 00} through
      *     {@code 59}), as two decimal digits.
      * <li>{@code ss} is the second within the minute ({@code 00} through
-     *     {@code 61}, as two decimal digits.
+     *     {@code 61}), as two decimal digits.
      * <li>{@code zzz} is the time zone (and may reflect daylight saving
      *     time). Standard time zone abbreviations include those
      *     recognized by the method {@code parse}. If time zone

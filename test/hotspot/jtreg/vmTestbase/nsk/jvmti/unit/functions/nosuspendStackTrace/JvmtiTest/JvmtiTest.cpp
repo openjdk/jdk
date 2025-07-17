@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 extern "C" {
 
@@ -133,10 +133,10 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for vm death event returned error", res);
 
     return JNI_OK;
@@ -154,7 +154,7 @@ Java_nsk_jvmti_unit_functions_nosuspendStackTrace_JvmtiTest_CreateRawMonitor(JNI
     jvmtiError ret;
     char sz[128];
 
-    sprintf(sz, "Rawmonitor-%d",i);
+    snprintf(sz, sizeof(sz), "Rawmonitor-%d",i);
     debug_printf("jvmti create raw monitor \n");
     ret = jvmti->CreateRawMonitor(sz, &jraw_monitor[i]);
 
@@ -233,7 +233,7 @@ Java_nsk_jvmti_unit_functions_nosuspendStackTrace_JvmtiTest_GetFrameCount(JNIEnv
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_unit_functions_nosuspendStackTrace_JvmtiTest_GetStackTrace(JNIEnv * env, jclass cls, jobject thr) {
     jvmtiError ret;
-    jvmtiFrameInfo *stack_buffer = NULL;
+    jvmtiFrameInfo *stack_buffer = nullptr;
     jint count = 20;
     jclass klass;
     char *mname;

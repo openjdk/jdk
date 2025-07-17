@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,45 +50,51 @@ class MemRegion;
 
 Chunk layout:
 
-                   +-------------------+
-                   |                   |
-                   |  oop bitmap       |
-                   |                   |
-                   | ----------------- |
-                   |                   |
-                   |  [empty]          |
-                   |                   |
-                  -|===================|
-                /  |                   |
-               |   | caller stack args |  argsize
-               |   |                   |  words
-               |   | ----------------- |
-               |   |                   |
-         ^     |   | frame             |
-         |     |   |                   |
-         |   size  | ----------------- |
-         |   words |                   |
-         |     |   | frame             |
-         |     |   |                   |
- Address |     |   | ----------------- |
-         |     |   |                   |
-         |     |   | frame             |
-         |     |   |                   |
-         |     |   | callee stack args |
-         |     |   | ----------------- |<--\
-         |     |   | pc                |   |
-         |     |   | rbp               |   |
-         |     |   |                   |   |
-         |     |   | [empty]           |   |
-         |     \   |                   |   |
-                 - |===================|   |
-                   | int maxSize       |   |
-                   | long pc           |   |
-            header | byte flags        |   |
-                   | int argsize       |   |
-                   | int sp            +---/
-                   | int size          |
-                   +-------------------+
+                   +--------------------------------+
+                   |                                |
+                   |  oop bitmap                    |
+                   |                                |
+                   | ------------------------------ |
+                   |                                |
+                   |  [empty]                       |
+                   |                                |
+                  -|================================|
+                /  |                                |
+               |   | caller stack args              |   argsize
+               |   | [metadata at frame top (1)]    | + frame::metadata_words_at_top
+               |   | ------------------------------ |   words
+               |   | [metadata at frame bottom (2)] |
+         ^     |   | frame                          |
+         |     |   |                                |
+         |   size  | ------------------------------ |
+         |   words |                                |
+         |     |   | frame                          |
+         |     |   |                                |
+ Address |     |   | ------------------------------ |
+         |     |   |                                |
+         |     |   | frame                          |
+         |     |   |                                |
+         |     |   | callee stack args              |
+         |     |   | [metadata at frame top (1)]    |<--\
+         |     |   | ------------------------------ |   |
+         |     |   | [metadata at frame bottom (2)  |   |
+         |     |   |  i.e. rbp, pc]                 |   |
+         |     |   |                                |   |
+         |     |   | [empty]                        |   |
+         |     \   |                                |   |
+                 - |================================|   |
+                   | int maxSize                    |   |
+                   | long pc                        |   |
+            header | byte flags                     |   |
+                   | int argsize                    |   |
+                   | int sp                         +---/
+                   | int size                       |
+                   +--------------------------------+
+
+ (1) Metadata at frame top (see frame::metadata_words_at_top)
+     Used on ppc64, empty on x86_64, aarch64
+ (2) Metadata at the frame bottom (see frame::metadata_words_at_bottom)
+     Used on x86_64 (saved rbp, ret.addr.), aarch64, empty on ppc64
 
 ************************************************/
 
@@ -107,7 +113,7 @@ private:
   InstanceStackChunkKlass(const ClassFileParser& parser);
 
 public:
-  InstanceStackChunkKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceStackChunkKlass();
 
   // Casting from Klass*
   static InstanceStackChunkKlass* cast(Klass* k) {
@@ -119,6 +125,7 @@ public:
 
   static inline size_t bitmap_size_in_bits(size_t stack_size_in_words); // In bits
   static inline size_t bitmap_size(size_t stack_size_in_words); // In words
+  static inline size_t gc_data_size(size_t stack_size_in_words); // In words
 
   // Returns the size of the instance including the stack data.
   virtual size_t oop_size(oop obj) const override;
@@ -169,6 +176,9 @@ private:
 
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_stack_with_bitmap(stackChunkOop chunk, OopClosureType* closure, intptr_t* start, intptr_t* end);
+
+  template <typename OopT>
+  void oop_oop_iterate_lockstack(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
 
   void do_methods(stackChunkOop chunk, OopIterateClosure* cl);
 

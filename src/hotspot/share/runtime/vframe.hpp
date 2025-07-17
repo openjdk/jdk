@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,20 +63,14 @@ class vframe: public ResourceObj {
   stackChunkHandle _chunk;
 
   vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread);
-  vframe(const frame* fr, JavaThread* thread);
 
  public:
   // Factory methods for creating vframes
   static vframe* new_vframe(const frame* f, const RegisterMap *reg_map, JavaThread* thread);
-  static vframe* new_vframe(StackFrameStream& fst, JavaThread* thread);
 
   // Accessors
   frame             fr() const { return _fr;       }
   CodeBlob*         cb() const { return _fr.cb();  }
-  CompiledMethod*   nm() const {
-      assert( cb() != NULL && cb()->is_compiled(), "usage");
-      return (CompiledMethod*) cb();
-  }
 
 // ???? Does this need to be a copy?
   frame*             frame_pointer() { return &_fr;       }
@@ -97,9 +91,6 @@ class vframe: public ResourceObj {
   // is in the caller frame
   virtual bool is_top() const { return true; }
 
-  // Returns top vframe within same frame (see is_top())
-  virtual vframe* top() const;
-
   // Type testing operations
   virtual bool is_entry_frame()       const { return false; }
   virtual bool is_java_frame()        const { return false; }
@@ -108,8 +99,8 @@ class vframe: public ResourceObj {
 
 #ifndef PRODUCT
   // printing operations
-  virtual void print_value() const;
-  virtual void print();
+  virtual void print_value(outputStream* output = tty) const;
+  virtual void print(outputStream* output = tty);
 #endif
 };
 
@@ -135,12 +126,11 @@ class javaVFrame: public vframe {
 
  protected:
   javaVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread) : vframe(fr, reg_map, thread) {}
-  javaVFrame(const frame* fr, JavaThread* thread) : vframe(fr, thread) {}
 
  public:
   // casting
   static javaVFrame* cast(vframe* vf) {
-    assert(vf == NULL || vf->is_java_frame(), "must be java frame");
+    assert(vf == nullptr || vf->is_java_frame(), "must be java frame");
     return (javaVFrame*) vf;
   }
 
@@ -149,21 +139,15 @@ class javaVFrame: public vframe {
 
   // printing used during stack dumps and diagnostics
   static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state);
-  void print_lock_info_on(outputStream* st, int frame_count);
-  void print_lock_info(int frame_count) { print_lock_info_on(tty, frame_count); }
+  void print_lock_info_on(outputStream* st, bool is_virtual, int frame_count);
+  void print_lock_info(bool is_virtual, int frame_count) { print_lock_info_on(tty, is_virtual, frame_count); }
 
 #ifndef PRODUCT
  public:
   // printing operations
-  void print();
-  void print_value() const;
-  void print_activation(int index) const;
-
-  // verify operations
-  virtual void verify() const;
-
-  // Structural compare
-  bool structural_compare(javaVFrame* other);
+  void print(outputStream* output = tty);
+  void print_value(outputStream* output = tty) const;
+  void print_activation(int index, outputStream* output = tty) const;
 #endif
   friend class vframe;
 };
@@ -188,11 +172,10 @@ class interpretedVFrame: public javaVFrame {
  public:
   // Accessors for Byte Code Pointer
   u_char* bcp() const;
-  void set_bcp(u_char* bcp);
 
   // casting
   static interpretedVFrame* cast(vframe* vf) {
-    assert(vf == NULL || vf->is_interpreted_frame(), "must be interpreted frame");
+    assert(vf == nullptr || vf->is_interpreted_frame(), "must be interpreted frame");
     return (interpretedVFrame*) vf;
   }
 
@@ -200,14 +183,7 @@ class interpretedVFrame: public javaVFrame {
   static const int bcp_offset;
   intptr_t* locals_addr_at(int offset) const;
   StackValueCollection* stack_data(bool expressions) const;
-  // returns where the parameters starts relative to the frame pointer
-  int start_of_parameters() const;
 
-#ifndef PRODUCT
- public:
-  // verify operations
-  void verify() const;
-#endif
   friend class vframe;
 };
 
@@ -219,8 +195,8 @@ class externalVFrame: public vframe {
 #ifndef PRODUCT
  public:
   // printing operations
-  void print_value() const;
-  void print();
+  void print_value(outputStream* output = tty) const;
+  void print(outputStream* output = tty);
 #endif
   friend class vframe;
 };
@@ -232,18 +208,11 @@ class entryVFrame: public externalVFrame {
  protected:
   entryVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread);
 
- public:
-  // casting
-  static entryVFrame* cast(vframe* vf) {
-    assert(vf == NULL || vf->is_entry_frame(), "must be entry frame");
-    return (entryVFrame*) vf;
-  }
-
 #ifndef PRODUCT
  public:
   // printing
-  void print_value() const;
-  void print();
+  void print_value(outputStream* output = tty) const;
+  void print(outputStream* output = tty);
 #endif
   friend class vframe;
 };
@@ -312,7 +281,8 @@ class vframeStreamCommon : StackObj {
 
  public:
   // Constructor
-  inline vframeStreamCommon(RegisterMap reg_map);
+  inline vframeStreamCommon(JavaThread* thread, RegisterMap::UpdateMap update_map, RegisterMap::ProcessFrames process_frames, RegisterMap::WalkContinuation walk_cont);
+  vframeStreamCommon(oop continuation);
 
   // Accessors
   Method* method() const { return _method; }
@@ -323,20 +293,18 @@ class vframeStreamCommon : StackObj {
   inline int decode_offset() const;
   inline oop continuation() const;
 
-  CodeBlob*         cb()         const { return _frame.cb();  }
-  CompiledMethod*   nm()         const {
-      assert( cb() != NULL && cb()->is_compiled(), "usage");
-      return (CompiledMethod*) cb();
+  CodeBlob* cb() const { return _frame.cb();  }
+  nmethod*  nm() const {
+    assert(cb() != nullptr, "usage");
+    return cb()->as_nmethod();
   }
 
   const RegisterMap* reg_map() { return &_reg_map; }
-  void dont_walk_cont() { _reg_map.set_walk_cont(false); }
 
   javaVFrame* asJavaVFrame();
 
   // Frame type
   inline bool is_interpreted_frame() const;
-  inline bool is_entry_frame() const;
 
   // Iteration
   inline void next();
@@ -355,9 +323,6 @@ class vframeStream : public vframeStreamCommon {
   vframeStream(JavaThread* thread, bool stop_at_java_call_stub = false, bool process_frames = true, bool vthread_carrier = false);
 
   vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub = false);
-
-  // top_frame may not be at safepoint, start with sender
-  vframeStream(JavaThread* thread, frame top_frame, bool stop_at_java_call_stub = false);
 
   vframeStream(oop continuation, Handle continuation_scope = Handle());
 };

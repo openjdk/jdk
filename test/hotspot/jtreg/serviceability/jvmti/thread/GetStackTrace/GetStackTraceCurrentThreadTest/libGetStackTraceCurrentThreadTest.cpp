@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,20 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
-#include "../get_stack_trace.h"
+#include "jvmti_common.hpp"
+#include "../get_stack_trace.hpp"
 
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static frame_info expected_virtual_frames[] = {
     {"LGetStackTraceCurrentThreadTest;", "check", "(Ljava/lang/Thread;)V"},
     {"LGetStackTraceCurrentThreadTest;", "dummy", "()V"},
     {"LGetStackTraceCurrentThreadTest;", "chain", "()V"},
     {"LTask;", "run", "()V"},
-    {"Ljava/lang/VirtualThread;", "run", "(Ljava/lang/Runnable;)V"}
+    {"Ljava/lang/VirtualThread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
+    {"Ljava/lang/VirtualThread;", "run", "(Ljava/lang/Runnable;)V"},
 };
 
 static frame_info expected_platform_frames[] = {
@@ -44,13 +45,14 @@ static frame_info expected_platform_frames[] = {
     {"LGetStackTraceCurrentThreadTest;", "dummy", "()V"},
     {"LGetStackTraceCurrentThreadTest;", "chain", "()V"},
     {"LTask;", "run", "()V"},
-    {"Ljava/lang/Thread;", "run", "()V"}
+    {"Ljava/lang/Thread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
+    {"Ljava/lang/Thread;", "run", "()V"},
 };
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     printf("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }

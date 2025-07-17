@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,11 @@ JavaVM* _jvm;
 
 static jmp_buf  context;
 
-static int _last_si_code = -1;
-static int _failures = 0;
-static int _rec_count = 0;
-static int _kp_rec_count = 0;
+static volatile int _last_si_code = -1;
+static volatile int _failures = 0;
+static volatile int _rec_count = 0; // Number of allocations to hit stack guard page
+static volatile int _kp_rec_count = 0; // Kept record of rec_count, for retrying
+static int _peek_value = 0; // Used for accessing memory to cause SIGSEGV
 
 pid_t gettid() {
   return (pid_t) syscall(SYS_gettid);
@@ -73,7 +74,7 @@ static char* altstack = NULL;
 void set_signal_handler() {
   if (altstack == NULL) {
     // Dynamically allocated in case SIGSTKSZ is not constant
-    altstack = malloc(SIGSTKSZ);
+    altstack = (char*)malloc(SIGSTKSZ);
     if (altstack == NULL) {
       fprintf(stderr, "Test ERROR. Unable to malloc altstack space\n");
       exit(7);
@@ -116,31 +117,37 @@ size_t get_java_stacksize () {
   return jdk_args.javaStackSize;
 }
 
-void *run_java_overflow (void *p) {
+// Call DoOverflow::`method` on JVM
+void call_method_on_jvm(const char* method) {
   JNIEnv *env;
   jclass class_id;
   jmethodID method_id;
   int res;
 
-  res = (*_jvm)->AttachCurrentThread(_jvm, (void**)&env, NULL);
+  res = (*_jvm)->AttachCurrentThread(_jvm, (void **)&env, NULL);
   if (res != JNI_OK) {
     fprintf(stderr, "Test ERROR. Can't attach to current thread\n");
     exit(7);
   }
 
-  class_id = (*env)->FindClass (env, "DoOverflow");
+  class_id = (*env)->FindClass(env, "DoOverflow");
   if (class_id == NULL) {
     fprintf(stderr, "Test ERROR. Can't load class DoOverflow\n");
     exit(7);
   }
 
-  method_id = (*env)->GetStaticMethodID(env, class_id, "printIt", "()V");
+  method_id = (*env)->GetStaticMethodID(env, class_id, method, "()V");
   if (method_id == NULL) {
-    fprintf(stderr, "Test ERROR. Can't find method DoOverflow.printIt\n");
+    fprintf(stderr, "Test ERROR. Can't find method DoOverflow.%s\n", method);
     exit(7);
   }
 
   (*env)->CallStaticVoidMethod(env, class_id, method_id, NULL);
+}
+
+void *run_java_overflow (void *p) {
+  volatile int res;
+  call_method_on_jvm("printIt");
 
   res = (*_jvm)->DetachCurrentThread(_jvm);
   if (res != JNI_OK) {
@@ -151,42 +158,22 @@ void *run_java_overflow (void *p) {
 }
 
 void do_overflow(){
-  int *p = alloca(sizeof(int));
+  volatile int *p = NULL;
   if (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
-      _rec_count ++;
-      do_overflow();
+    for(;;) {
+      _rec_count++;
+      p = (int*)alloca(128);
+      _peek_value = p[0]; // Peek
+    }
   }
 }
 
 void *run_native_overflow(void *p) {
   // Test that stack guard page is correctly set for initial and non initial thread
   // and correctly removed for the initial thread
-  JNIEnv *env;
-  jclass class_id;
-  jmethodID method_id;
-  int res;
-
+  volatile int res;
   printf("run_native_overflow %ld\n", (long) gettid());
-
-  res = (*_jvm)->AttachCurrentThread(_jvm, (void **)&env, NULL);
-  if (res != JNI_OK) {
-    fprintf(stderr, "Test ERROR. Can't attach to current thread\n");
-    exit(7);
-  }
-
-  class_id = (*env)->FindClass (env, "DoOverflow");
-  if (class_id == NULL) {
-    fprintf(stderr, "Test ERROR. Can't load class DoOverflow\n");
-    exit(7);
-  }
-
-  method_id = (*env)->GetStaticMethodID (env, class_id, "printAlive", "()V");
-  if (method_id == NULL) {
-    fprintf(stderr, "Test ERROR. Can't find method DoOverflow.printAlive\n");
-    exit(7);
-  }
-
-  (*env)->CallStaticVoidMethod (env, class_id, method_id, NULL);
+  call_method_on_jvm("printAlive");
 
   // Initialize statics used in do_overflow
   _kp_rec_count = 0;
@@ -240,7 +227,18 @@ void *run_native_overflow(void *p) {
 
 void usage() {
   fprintf(stderr, "Usage: invoke test_java_overflow\n");
+  fprintf(stderr, "       invoke test_java_overflow_initial\n");
   fprintf(stderr, "       invoke test_native_overflow\n");
+  fprintf(stderr, "       invoke test_native_overflow_initial\n");
+}
+
+void init_thread_or_die(pthread_t *thr, pthread_attr_t *thread_attr) {
+  size_t stack_size = get_java_stacksize();
+  if (pthread_attr_init(thread_attr) != 0 ||
+      pthread_attr_setstacksize(thread_attr, stack_size) != 0) {
+    printf("Failed to set stacksize. Exiting test.\n");
+    exit(0);
+  }
 }
 
 
@@ -283,36 +281,52 @@ int main (int argc, const char** argv) {
     exit(7);
   }
 
-  size_t stack_size = get_java_stacksize();
   pthread_t thr;
   pthread_attr_t thread_attr;
 
-  pthread_attr_init(&thread_attr);
-  pthread_attr_setstacksize(&thread_attr, stack_size);
+  if (argc < 2) {
+    fprintf(stderr, "No test selected");
+    usage();
+    exit(7);
+  }
 
-  if (argc > 1 && strcmp(argv[1], "test_java_overflow") == 0) {
+  if (strcmp(argv[1], "test_java_overflow_initial") == 0) {
     printf("\nTesting JAVA_OVERFLOW\n");
-
-    printf("Testing stack guard page behaviour for other thread\n");
-
-    pthread_create(&thr, &thread_attr, run_java_overflow, NULL);
-    pthread_join(thr, NULL);
-
     printf("Testing stack guard page behaviour for initial thread\n");
+
     run_java_overflow(NULL);
     // This test crash on error
     exit(0);
   }
 
-  if (argc > 1 && strcmp(argv[1], "test_native_overflow") == 0) {
-    printf("\nTesting NATIVE_OVERFLOW\n");
-
+  if (strcmp(argv[1], "test_java_overflow") == 0) {
+    init_thread_or_die(&thr, &thread_attr);
+    printf("\nTesting JAVA_OVERFLOW\n");
     printf("Testing stack guard page behaviour for other thread\n");
-    pthread_create(&thr, &thread_attr, run_native_overflow, NULL);
+
+    pthread_create(&thr, &thread_attr, run_java_overflow, NULL);
     pthread_join(thr, NULL);
 
+    // This test crash on error
+    exit(0);
+  }
+
+  if (strcmp(argv[1], "test_native_overflow_initial") == 0) {
+    printf("\nTesting NATIVE_OVERFLOW\n");
     printf("Testing stack guard page behaviour for initial thread\n");
+
     run_native_overflow(NULL);
+
+    exit((_failures > 0) ? 1 : 0);
+  }
+
+  if (strcmp(argv[1], "test_native_overflow") == 0) {
+    init_thread_or_die(&thr, &thread_attr);
+    printf("\nTesting NATIVE_OVERFLOW\n");
+    printf("Testing stack guard page behaviour for other thread\n");
+
+    pthread_create(&thr, &thread_attr, run_native_overflow, NULL);
+    pthread_join(thr, NULL);
 
     exit((_failures > 0) ? 1 : 0);
   }

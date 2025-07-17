@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import org.openide.util.ImageUtilities;
 public class PredSuccAction extends AbstractAction {
 
 
-    public PredSuccAction() {
-        putValue(Action.SELECTED_KEY, true);
+    public PredSuccAction(boolean selected) {
+        putValue(Action.SELECTED_KEY, selected);
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(Action.SHORT_DESCRIPTION, "Show neighboring nodes of fully visible nodes semi-transparent");
     }

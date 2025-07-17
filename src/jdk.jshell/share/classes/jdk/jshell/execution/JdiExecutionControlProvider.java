@@ -26,9 +26,11 @@
 package jdk.jshell.execution;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControlProvider;
 import jdk.jshell.spi.ExecutionEnv;
@@ -66,6 +68,8 @@ public class JdiExecutionControlProvider implements ExecutionControlProvider {
      */
     private static final int DEFAULT_TIMEOUT = 5000;
 
+    private final JdiStarter starter;
+
     /**
      * Create an instance.  An instance can be used to
      * {@linkplain  #generate generate} an {@link ExecutionControl} instance
@@ -73,6 +77,37 @@ public class JdiExecutionControlProvider implements ExecutionControlProvider {
      * process.
      */
     public JdiExecutionControlProvider() {
+        this(new JdiStarter() {
+            @Override
+            public TargetDescription start(ExecutionEnv env, Map<String, String> parameters, int port) {
+                String remoteAgent = parameters.get(PARAM_REMOTE_AGENT);
+                int timeout = Integer.parseUnsignedInt(
+                    parameters.get(PARAM_TIMEOUT));
+                String host = parameters.get(PARAM_HOST_NAME);
+                String sIsLaunch = parameters.get(PARAM_LAUNCH)
+                                             .toLowerCase(Locale.ROOT);
+                boolean isLaunch = sIsLaunch.length() > 0
+                    && ("true".startsWith(sIsLaunch) || "yes".startsWith(sIsLaunch));
+
+                JdiInitiator jdii = new JdiInitiator(port,
+                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host,
+                    timeout, Collections.emptyMap());
+                return new TargetDescription(jdii.vm(), jdii.process());
+            }
+        });
+    }
+
+    /**
+     * Create an instance.  An instance can be used to
+     * {@linkplain  #generate generate} an {@link ExecutionControl} instance
+     * that uses the Java Debug Interface as part of the control of a remote
+     * process. The provided {@code start} will be used to start the remote process.
+     *
+     * @param starter starter that will create the remote process
+     * @since 22
+     */
+    public JdiExecutionControlProvider(JdiStarter starter) {
+        this.starter = starter;
     }
 
     /**
@@ -142,14 +177,14 @@ public class JdiExecutionControlProvider implements ExecutionControlProvider {
         if (parameters == null) {
             parameters = dp;
         }
-        String remoteAgent = parameters.getOrDefault(PARAM_REMOTE_AGENT, dp.get(PARAM_REMOTE_AGENT));
+        parameters = new HashMap<>(parameters);
+        String remoteAgent = parameters.computeIfAbsent(PARAM_REMOTE_AGENT, x -> dp.get(PARAM_REMOTE_AGENT));
         int timeout = Integer.parseUnsignedInt(
-                parameters.getOrDefault(PARAM_TIMEOUT, dp.get(PARAM_TIMEOUT)));
-        String host = parameters.getOrDefault(PARAM_HOST_NAME, dp.get(PARAM_HOST_NAME));
-        String sIsLaunch = parameters.getOrDefault(PARAM_LAUNCH, dp.get(PARAM_LAUNCH)).toLowerCase(Locale.ROOT);
-        boolean isLaunch = sIsLaunch.length() > 0
-                && ("true".startsWith(sIsLaunch) || "yes".startsWith(sIsLaunch));
-        return JdiDefaultExecutionControl.create(env, remoteAgent, isLaunch, host, timeout);
+                parameters.computeIfAbsent(PARAM_TIMEOUT, x -> dp.get(PARAM_TIMEOUT)));
+        parameters.putIfAbsent(PARAM_HOST_NAME, dp.get(PARAM_HOST_NAME));
+        parameters.putIfAbsent(PARAM_LAUNCH, dp.get(PARAM_LAUNCH));
+
+        return JdiDefaultExecutionControl.create(env, parameters, remoteAgent, timeout, starter);
     }
 
 }

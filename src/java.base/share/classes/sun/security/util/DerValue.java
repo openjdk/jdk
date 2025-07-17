@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_32BE;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;
@@ -66,6 +67,7 @@ public class DerValue {
 
     /** The tag class types */
     public static final byte TAG_UNIVERSAL = (byte)0x000;
+    public static final byte TAG_CONSTRUCT = (byte)0x020;
     public static final byte TAG_APPLICATION = (byte)0x040;
     public static final byte TAG_CONTEXT = (byte)0x080;
     public static final byte TAG_PRIVATE = (byte)0x0c0;
@@ -339,6 +341,7 @@ public class DerValue {
      *
      * This is a public constructor.
      */
+    @SuppressWarnings("this-escape")
     public DerValue(byte[] encoding) throws IOException {
         this(encoding.clone(), 0, encoding.length, true, false);
     }
@@ -486,6 +489,7 @@ public class DerValue {
      * @param in the input stream holding a single DER datum,
      *  which may be followed by additional data
      */
+    @SuppressWarnings("this-escape")
     public DerValue(InputStream in) throws IOException {
         this(in, true);
     }
@@ -493,7 +497,7 @@ public class DerValue {
     /**
      * Encode an ASN1/DER encoded datum onto a DER output stream.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         out.write(tag);
         out.putLength(end - start);
         out.write(buffer, start, end - start);
@@ -774,7 +778,7 @@ public class DerValue {
      * Helper routine to return all the bytes contained in the
      * DerInputStream associated with this object.
      */
-    public byte[] getDataBytes() throws IOException {
+    public byte[] getDataBytes() {
         data.pos = data.end; // Compatibility. Reach end.
         return Arrays.copyOfRange(buffer, start, end);
     }
@@ -1060,6 +1064,14 @@ public class DerValue {
     }
 
     /**
+     * Determines whether Date was encoded as UTC or Generalized time and
+     * calls getUTCTime or getGeneralizedTime accordingly
+     */
+    public Date getTime() throws IOException {
+        return (tag == tag_UtcTime) ? getUTCTime() : getGeneralizedTime();
+    }
+
+    /**
      * Returns a Date if the DerValue is UtcTime.
      *
      * @return the Date held in this DER value
@@ -1124,7 +1136,8 @@ public class DerValue {
     @Override
     public String toString() {
         return String.format("DerValue(%02x, %s, %d, %d)",
-                0xff & tag, buffer, start, end);
+                0xff & tag, HexFormat.of().withUpperCase().formatHex(buffer),
+                start, end);
     }
 
     /**
@@ -1133,7 +1146,7 @@ public class DerValue {
      *
      * @return DER-encoded value, including tag and length.
      */
-    public byte[] toByteArray() throws IOException {
+    public byte[] toByteArray() {
         data.pos = data.start; // Compatibility. At head.
         // Minimize content duplication by writing out tag and length only
         DerOutputStream out = new DerOutputStream();
@@ -1251,17 +1264,11 @@ public class DerValue {
     }
 
     /**
-     * Returns a hashcode for this DerValue.
-     *
-     * @return a hashcode for this DerValue.
+     * {@return a hashcode for this DerValue}
      */
     @Override
     public int hashCode() {
-        int result = tag;
-        for (int i = start; i < end; i++) {
-            result = 31 * result + buffer[i];
-        }
-        return result;
+        return ArraysSupport.hashCode(buffer, start, end - start, tag);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define SHARE_GC_G1_G1MONOTONICARENA_INLINE_HPP
 
 #include "gc/g1/g1MonotonicArena.hpp"
+
 #include "runtime/atomic.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
@@ -34,7 +35,7 @@ inline void* G1MonotonicArena::Segment::allocate_slot() {
   if (_next_allocate >= _num_slots) {
     return nullptr;
   }
-  uint result = Atomic::fetch_and_add(&_next_allocate, 1u, memory_order_relaxed);
+  uint result = Atomic::fetch_then_add(&_next_allocate, 1u, memory_order_relaxed);
   if (result >= _num_slots) {
     return nullptr;
   }

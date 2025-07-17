@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  * simple_copyLoop is surprisingly 5x slower.  The array copying intrinsics
  * are very effective and a naive loop does not get optimized the same way.
  * OTOH there is no intrinsic for Arrays.fill but the naive array zeroing loop
- * *does* get optimized to something a little faster than than arraycopy.
+ * *does* get optimized to something a little faster than arraycopy.
  *
  * System.arraycopy and Arrays.fill have such outstanding performance that
  * one should use them to replace handwritten loops whenever possible.
@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 2)
 @Fork(3)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class ArrayFiddle {
     @Param("999")
     public int size;

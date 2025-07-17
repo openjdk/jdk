@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,11 @@ class MatchRule;
 class Attribute;
 class Effect;
 class ExpandRule;
+class Flag;
 class RewriteRule;
 class ConstructRule;
 class FormatRule;
+class FormClosure;
 class Peephole;
 class EncClass;
 class Interface;
@@ -84,7 +86,7 @@ class ArchDesc;
 // Dictionary containing Forms, and objects derived from forms
 class FormDict {
 private:
-  Dict         _form;              // map names, char*, to their Form* or NULL
+  Dict         _form;              // map names, char*, to their Form* or null
 
   // Disable public use of constructor, copy-ctor, operator =, operator ==
   FormDict( );
@@ -105,14 +107,16 @@ public:
   int Size(void) const;
 
   // Insert inserts the given key-value pair into the dictionary.  The prior
-  // value of the key is returned; NULL if the key was not previously defined.
+  // value of the key is returned; null if the key was not previously defined.
   const Form  *Insert(const char *name, Form *form); // A new key-value
 
-  // Find finds the value of a given key; or NULL if not found.
+  // Find finds the value of a given key; or null if not found.
   // The dictionary is NOT changed.
   const Form  *operator [](const char *name) const;  // Do a lookup
 
   void dump();
+  // iterate child forms recursively
+  void forms_do(FormClosure *f);
 };
 
 // ***** Master Class for ADL Parser Forms *****
@@ -147,7 +151,7 @@ public:
 
   // Public Methods
   Form(int formType=0, int line=0)
-    : _next(NULL), _linenum(line), _ftype(formType) { };
+    : _next(nullptr), _linenum(line), _ftype(formType) { };
   virtual ~Form() {};
 
   virtual bool ideal_only() const {
@@ -161,6 +165,9 @@ public:
   virtual void dump()      { output(stderr); }    // Debug printer
   // Write info to output files
   virtual void output(FILE *fp)    { fprintf(fp,"Form Output"); }
+
+  // iterate child forms recursively
+  virtual void forms_do (FormClosure* f) { return; }
 
 public:
   // ADLC types, match the last character on ideal operands and instructions
@@ -176,7 +183,8 @@ public:
     idealS      =  8,  // String  type
     idealN      =  9,  // Narrow oop types
     idealNKlass = 10,  // Narrow klass types
-    idealV      = 11   // Vector  type
+    idealV      = 11,  // Vector  type
+    idealH      = 12   // HalfFloat  type
   };
   // Convert ideal name to a DataType, return DataType::none if not a 'ConX'
   Form::DataType  ideal_to_const_type(const char *ideal_type_name) const;
@@ -237,6 +245,7 @@ public:
     EXP,
     REW,
     EFF,
+    FLG,
     RDEF,
     RCL,
     ACL,
@@ -253,6 +262,16 @@ public:
 
 };
 
+class FormClosure {
+public:
+    FormClosure() = default;
+    virtual ~FormClosure() = default;
+
+    virtual void do_form(Form* form);
+    virtual void do_form_by_name(const char* name);
+};
+
+
 //------------------------------FormList---------------------------------------
 class FormList {
 private:
@@ -265,7 +284,7 @@ private:
 
 public:
   void addForm(Form * entry) {
-    if (_tail==NULL) { _root = _tail = _cur = entry;}
+    if (_tail==nullptr) { _root = _tail = _cur = entry;}
     else { _tail->_next = entry; _tail = entry;}
   };
   Form * current() { return _cur; };
@@ -283,14 +302,14 @@ public:
 
   int  count() {
     int  count = 0; reset();
-    for( Form *cur; (cur =  iter()) != NULL; ) { ++count; };
+    for( Form *cur; (cur =  iter()) != nullptr; ) { ++count; };
     return count;
   }
 
   void dump() {
     reset();
     Form *cur;
-    for(; (cur =  iter()) != NULL; ) {
+    for(; (cur =  iter()) != nullptr; ) {
       cur->dump();
     };
   }
@@ -300,7 +319,7 @@ public:
 
     reset();
     Form *cur;
-    for(; (cur =  iter()) != NULL; ) {
+    for(; (cur =  iter()) != nullptr; ) {
       if ( ! cur->verify() ) verified = false;
     };
 
@@ -310,12 +329,12 @@ public:
   void output(FILE* fp) {
     reset();
     Form *cur;
-    for( ; (cur =  iter()) != NULL; ) {
+    for( ; (cur =  iter()) != nullptr; ) {
       cur->output(fp);
     };
   }
 
-  FormList() { _justReset = 1; _justReset2 = 1; _root = NULL; _tail = NULL; _cur = NULL; _cur2 = NULL;};
+  FormList() { _justReset = 1; _justReset2 = 1; _root = nullptr; _tail = nullptr; _cur = nullptr; _cur2 = nullptr;};
   ~FormList();
 };
 
@@ -441,7 +460,7 @@ public:
   void       reset();              // Reset iteration
   Component *current();            // return current element in iteration.
 
-  // Return element at "position", else NULL
+  // Return element at "position", else null
   Component *operator[](int position);
   Component *at(int position) { return (*this)[position]; }
 
@@ -514,7 +533,7 @@ public:
     Zero     = 0,
     Max      = 0x7fffffff
   };
-  const char *_external_name;  // if !NULL, then print this instead of _expr
+  const char *_external_name;  // if not null, then print this instead of _expr
   const char *_expr;
   int         _min_value;
   int         _max_value;
@@ -533,7 +552,7 @@ public:
   void  add(const char *c, ArchDesc &AD);   // check if 'c' is defined in <arch>.ad
   void  set_external_name(const char *name) { _external_name = name; }
 
-  const char *as_string()  const { return (_external_name != NULL ? _external_name : _expr); }
+  const char *as_string()  const { return (_external_name != nullptr ? _external_name : _expr); }
   void  print()            const;
   void  print_define(FILE *fp) const;
   void  print_assert(FILE *fp) const;
@@ -559,7 +578,7 @@ private:
 // Dictionary containing Exprs
 class ExprDict {
 private:
-  Dict         _expr;              // map names, char*, to their Expr* or NULL
+  Dict         _expr;              // map names, char*, to their Expr* or null
   NameList     _defines;           // record the order of definitions entered with define call
 
   // Disable public use of constructor, copy-ctor, operator =, operator ==
@@ -584,10 +603,10 @@ public:
   const Expr  *define(const char *name, Expr *expr);
 
   // Insert inserts the given key-value pair into the dictionary.  The prior
-  // value of the key is returned; NULL if the key was not previously defined.
+  // value of the key is returned; null if the key was not previously defined.
   const Expr  *Insert(const char *name, Expr *expr); // A new key-value
 
-  // Find finds the value of a given key; or NULL if not found.
+  // Find finds the value of a given key; or null if not found.
   // The dictionary is NOT changed.
   const Expr  *operator [](const char *name) const;  // Do a lookup
 

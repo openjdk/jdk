@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph;
 import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
+import com.sun.tools.javac.util.CompilerInternalException;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -57,8 +58,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -69,6 +69,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static com.sun.tools.javac.code.TypeTag.*;
+import static com.sun.tools.javac.main.Option.DOE;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
@@ -97,6 +98,10 @@ public class Infer {
      */
     private List<String> pendingGraphs;
 
+    private final boolean dumpStacktraceOnError;
+
+    private final boolean erasePolySigReturnType;
+
     public static Infer instance(Context context) {
         Infer instance = context.get(inferKey);
         if (instance == null)
@@ -104,6 +109,7 @@ public class Infer {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Infer(Context context) {
         context.put(inferKey, this);
 
@@ -118,6 +124,9 @@ public class Infer {
         pendingGraphs = List.nil();
 
         emptyContext = new InferenceContext(this, List.nil());
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
+        Source source = Source.instance(context);
+        erasePolySigReturnType = Source.Feature.ERASE_POLY_SIG_RETURN_TYPE.allowedInSource(source);
     }
 
     /** A value for prototypes that admit any type, including polymorphic ones. */
@@ -132,8 +141,8 @@ public class Infer {
 
         transient List<JCDiagnostic> messages = List.nil();
 
-        InferenceException() {
-            super(null);
+        InferenceException(boolean dumpStacktrace) {
+            super(null, dumpStacktrace);
         }
 
         @Override
@@ -143,7 +152,7 @@ public class Infer {
     }
 
     InferenceException error(JCDiagnostic diag) {
-        InferenceException result = new InferenceException();
+        InferenceException result = new InferenceException(dumpStacktraceOnError);
         if (diag != null) {
             result.messages = result.messages.append(diag);
         }
@@ -197,7 +206,11 @@ public class Infer {
                     //propagate outwards if needed
                     if (shouldPropagate) {
                         //propagate inference context outwards and exit
-                        minContext.dupTo(resultInfo.checkContext.inferenceContext());
+                        InferenceContext duppedTo = resultInfo.checkContext.inferenceContext();
+                        minContext.dupTo(duppedTo);
+                        if (minContext != inferenceContext) {
+                            duppedTo.parentIC = inferenceContext;
+                        }
                         deferredAttrContext.complete();
                         return mt;
                     }
@@ -507,8 +520,11 @@ public class Infer {
             }
         }
         //step 2 - replace fresh tvars in their bounds
-        List<Type> formals = vars;
-        for (Type t : todo) {
+        replaceTypeVarsInBounds(todo.toList(), inferenceContext);
+    }
+
+    private void replaceTypeVarsInBounds(List<Type> vars, InferenceContext inferenceContext) {
+        for (Type t : vars) {
             UndetVar uv = (UndetVar)t;
             TypeVar ct = (TypeVar)uv.getInst();
             ct.setUpperBound( types.glb(inferenceContext.asInstTypes(types.getBounds(ct))) );
@@ -516,7 +532,6 @@ public class Infer {
                 //report inference error if glb fails
                 reportBoundError(uv, InferenceBound.UPPER);
             }
-            formals = formals.tail;
         }
     }
 
@@ -537,8 +552,8 @@ public class Infer {
             case TYPECAST:
                 JCTypeCast castTree = (JCTypeCast)env.next.tree;
                 restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
-                          castTree.clazz.type :
-                          spType;
+                              (erasePolySigReturnType ? types.erasure(castTree.clazz.type) : castTree.clazz.type) :
+                              spType;
                 break;
             case EXEC:
                 JCTree.JCExpressionStatement execTree =
@@ -651,6 +666,122 @@ public class Infer {
             return owntype;
         }
     }
+
+    /**
+     * Infer record type for pattern matching. Given an expression type
+     * ({@code expressionType}), and a given record ({@code patternTypeSymbol}),
+     * a parameterized type of {@code patternTypeSymbol} is inferred
+     * according to JLS 18.5.5.
+     *
+     * @param expressionType
+     * @param patternTypeSymbol
+     * @return
+     */
+    public Type instantiatePatternType(Type expressionType, TypeSymbol patternTypeSymbol) {
+        if (expressionType.tsym == patternTypeSymbol)
+            return expressionType;
+
+        //step 1:
+        List<Type> expressionTypes = List.nil();
+        List<Type> params = patternTypeSymbol.type.allparams();
+        List<Type> capturedWildcards = List.nil();
+        List<Type> todo = List.of(expressionType);
+        while (todo.nonEmpty()) {
+            Type current = todo.head;
+            todo = todo.tail;
+            switch (current.getTag()) {
+                case CLASS -> {
+                    if (current.isCompound()) {
+                        todo = todo.prependList(types.directSupertypes(current));
+                    } else {
+                        Type captured = types.capture(current);
+
+                        for (Type ta : captured.getTypeArguments()) {
+                            if (ta.hasTag(TYPEVAR) && ((TypeVar) ta).isCaptured()) {
+                                params = params.prepend((TypeVar) ta);
+                                capturedWildcards = capturedWildcards.prepend(ta);
+                            }
+                        }
+                        expressionTypes = expressionTypes.prepend(captured);
+                    }
+                }
+                case TYPEVAR -> {
+                    todo = todo.prepend(types.skipTypeVars(current, false));
+                }
+                default -> expressionTypes = expressionTypes.prepend(current);
+            }
+        }
+        //add synthetic captured ivars
+        InferenceContext c = new InferenceContext(this, params);
+        Type patternType = c.asUndetVar(patternTypeSymbol.type);
+        List<Type> exprTypes = expressionTypes.map(t -> c.asUndetVar(t));
+
+        capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
+
+        try {
+            //step 2:
+            for (Type exprType : exprTypes) {
+                if (exprType.isParameterized()) {
+                    Type patternAsExpression =
+                            types.asSuper(patternType, exprType.tsym);
+                    if (patternAsExpression == null ||
+                        !types.isSameType(patternAsExpression, exprType)) {
+                        return null;
+                    }
+                }
+            }
+
+            doIncorporation(c, types.noWarnings);
+
+            //step 3:
+            List<Type> freshVars = instantiatePatternVars(params, c);
+
+            Type substituted = c.asInstType(patternTypeSymbol.type);
+
+            //step 4:
+            return types.upward(substituted, freshVars);
+        } catch (Infer.InferenceException ex) {
+            return null;
+        }
+    }
+
+    private List<Type> instantiatePatternVars(List<Type> vars, InferenceContext c) {
+        ListBuffer<Type> freshVars = new ListBuffer<>();
+        ListBuffer<Type> todo = new ListBuffer<>();
+
+        //step 1 - create fresh tvars
+        for (Type t : vars) {
+            UndetVar undet = (UndetVar) c.asUndetVar(t);
+            List<Type> bounds = InferenceStep.EQ.filterBounds(undet, c);
+            if (bounds.nonEmpty()) {
+                undet.setInst(bounds.head);
+            } else {
+                List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
+                Type upper;
+                boolean recursive = Type.containsAny(upperBounds, vars);
+                if (recursive) {
+                    upper = types.makeIntersectionType(upperBounds);
+                    todo.append(undet);
+                } else if (upperBounds.nonEmpty()) {
+                    upper = types.glb(upperBounds);
+                } else {
+                    upper = syms.objectType;
+                }
+                List<Type> lowerBounds = undet.getBounds(InferenceBound.LOWER);
+                Type lower = lowerBounds.isEmpty() ? syms.botType
+                                                   : lowerBounds.tail.isEmpty() ? lowerBounds.head
+                                                                                : types.lub(lowerBounds);
+                TypeVar vt = new TypeVar(syms.noSymbol, upper, lower);
+                freshVars.add(vt);
+                undet.setInst(vt);
+            }
+        }
+
+        //step 2 - replace fresh tvars in their bounds
+        replaceTypeVarsInBounds(todo.toList(), c);
+
+        return freshVars.toList();
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Incorporation">
@@ -678,15 +809,15 @@ public class Infer {
         /**
          * Helper function: perform subtyping through incorporation cache.
          */
-        boolean isSubtype(Type s, Type t, Warner warn) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn);
+        boolean isSubtype(Type s, Type t, Warner warn, InferenceContext ic) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn, ic);
         }
 
         /**
          * Helper function: perform type-equivalence through incorporation cache.
          */
-        boolean isSameType(Type s, Type t) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null);
+        boolean isSameType(Type s, Type t, InferenceContext ic) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null, ic);
         }
 
         @Override
@@ -730,7 +861,7 @@ public class Infer {
                 for (Type b : uv.getBounds(to)) {
                     b = typeFunc.apply(inferenceContext, b);
                     if (optFilter != null && optFilter.test(inferenceContext, b)) continue;
-                    boolean success = checkBound(t, b, from, to, warn);
+                    boolean success = checkBound(t, b, from, to, warn, inferenceContext);
                     if (!success) {
                         report(from, to);
                     }
@@ -750,13 +881,13 @@ public class Infer {
         /**
          * Is source type 's' compatible with target type 't' given source and target bound kinds?
          */
-        boolean checkBound(Type s, Type t, InferenceBound ib_s, InferenceBound ib_t, Warner warn) {
+        boolean checkBound(Type s, Type t, InferenceBound ib_s, InferenceBound ib_t, Warner warn, InferenceContext ic) {
             if (ib_s.lessThan(ib_t)) {
-                return isSubtype(s, t, warn);
+                return isSubtype(s, t, warn, ic);
             } else if (ib_t.lessThan(ib_s)) {
-                return isSubtype(t, s, warn);
+                return isSubtype(t, s, warn, ic);
             } else {
-                return isSameType(s, t);
+                return isSameType(s, t, ic);
             }
         }
 
@@ -887,7 +1018,7 @@ public class Infer {
                             if (!allParamsSuperBound1.head.hasTag(WILDCARD) &&
                                     !allParamsSuperBound2.head.hasTag(WILDCARD)) {
                                 if (!isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
-                                        inferenceContext.asUndetVar(allParamsSuperBound2.head))) {
+                                        inferenceContext.asUndetVar(allParamsSuperBound2.head), inferenceContext)) {
                                     reportBoundError(uv, InferenceBound.UPPER);
                                 }
                             }
@@ -1071,11 +1202,11 @@ public class Infer {
                     types.asSuper(t, sup.tsym);
         }
 
-    boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn) {
-            IncorporationBinaryOp newOp = new IncorporationBinaryOp(opKind, op1, op2);
+    boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, InferenceContext ic) {
+            IncorporationBinaryOpKey newOp = new IncorporationBinaryOpKey(opKind, ic.asTypeVar(op1), ic.asTypeVar(op2), types);
             Boolean res = incorporationCache.get(newOp);
             if (res == null) {
-                incorporationCache.put(newOp, res = newOp.apply(warn));
+                incorporationCache.put(newOp, res = opKind.apply(op1, op2, warn, types));
             }
             return res;
         }
@@ -1109,26 +1240,14 @@ public class Infer {
      * are not executed unnecessarily (which would potentially lead to adding
      * same bounds over and over).
      */
-    class IncorporationBinaryOp {
-
-        IncorporationBinaryOpKind opKind;
-        Type op1;
-        Type op2;
-
-        IncorporationBinaryOp(IncorporationBinaryOpKind opKind, Type op1, Type op2) {
-            this.opKind = opKind;
-            this.op1 = op1;
-            this.op2 = op2;
-        }
-
+    record IncorporationBinaryOpKey(IncorporationBinaryOpKind opKind, Type op1, Type op2, Types types) {
         @Override
         public boolean equals(Object o) {
-            return (o instanceof IncorporationBinaryOp incorporationBinaryOp)
-                    && opKind == incorporationBinaryOp.opKind
-                    && types.isSameType(op1, incorporationBinaryOp.op1)
-                    && types.isSameType(op2, incorporationBinaryOp.op2);
+            return (o instanceof IncorporationBinaryOpKey anotherKey)
+                    && opKind == anotherKey.opKind
+                    && types.isSameType(op1, anotherKey.op1)
+                    && types.isSameType(op2, anotherKey.op2);
         }
-
         @Override
         public int hashCode() {
             int result = opKind.hashCode();
@@ -1138,14 +1257,10 @@ public class Infer {
             result += types.hashCode(op2);
             return result;
         }
-
-        boolean apply(Warner warn) {
-            return opKind.apply(op1, op2, warn, types);
-        }
     }
 
     /** an incorporation cache keeps track of all executed incorporation-related operations */
-    Map<IncorporationBinaryOp, Boolean> incorporationCache = new HashMap<>();
+    Map<IncorporationBinaryOpKey, Boolean> incorporationCache = new LinkedHashMap<>();
 
     protected static class BoundFilter implements Predicate<Type> {
 
@@ -1223,19 +1338,14 @@ public class Infer {
          * A NodeNotFoundException is thrown whenever an inference strategy fails
          * to pick the next node to solve in the inference graph.
          */
-        public static class NodeNotFoundException extends RuntimeException {
+        class NodeNotFoundException extends CompilerInternalException {
             private static final long serialVersionUID = 0;
 
             transient InferenceGraph graph;
 
-            public NodeNotFoundException(InferenceGraph graph) {
+            public NodeNotFoundException(InferenceGraph graph, boolean dumpStacktraceOnError) {
+                super(dumpStacktraceOnError);
                 this.graph = graph;
-            }
-
-            @Override
-            public Throwable fillInStackTrace() {
-                // This is an internal exception; the stack trace is irrelevant.
-                return this;
             }
         }
         /**
@@ -1256,7 +1366,7 @@ public class Infer {
         public Node pickNode(InferenceGraph g) {
             if (g.nodes.isEmpty()) {
                 //should not happen
-                throw new NodeNotFoundException(g);
+                throw new NodeNotFoundException(g, Infer.this.dumpStacktraceOnError);
             }
             return g.nodes.get(0);
         }
@@ -1307,7 +1417,7 @@ public class Infer {
         }
 
         /** cache used to avoid redundant computation of tree costs */
-        final Map<Node, Pair<List<Node>, Integer>> treeCache = new HashMap<>();
+        final Map<Node, Pair<List<Node>, Integer>> treeCache = new LinkedHashMap<>();
 
         /** constant value used to mark non-existent paths */
         final Pair<List<Node>, Integer> noPath = new Pair<>(null, Integer.MAX_VALUE);
@@ -1331,7 +1441,7 @@ public class Infer {
             }
             if (bestPath == noPath) {
                 //no path leads there
-                throw new NodeNotFoundException(g);
+                throw new NodeNotFoundException(g, Infer.this.dumpStacktraceOnError);
             }
             return bestPath.fst.head;
         }
@@ -1635,7 +1745,7 @@ public class Infer {
                  * through all its dependencies.
                  */
                 protected Set<Node> closure() {
-                    Set<Node> closure = new HashSet<>();
+                    Set<Node> closure = new LinkedHashSet<>();
                     closureInternal(closure);
                     return closure;
                 }

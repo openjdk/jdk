@@ -25,7 +25,7 @@
  * @test
  * @bug     6413690 6380018
  * @summary JavacProcessingEnvironment does not enter trees from preceding rounds
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler
@@ -53,11 +53,11 @@ public class T6413690 extends JavacTestingAbstractProcessor {
         Set<? extends Element> supers = roundEnvironment.getElementsAnnotatedWith(testMe);
         try {
             for (Element sup : supers) {
-                Writer sub = filer.createSourceFile(sup.getSimpleName() + "_GENERATED").openWriter();
-                sub.write(String.format("class %s_GENERATED extends %s {}",
-                                        sup.getSimpleName(),
-                                        ((TypeElement)sup).getQualifiedName()));
-                sub.close();
+                try (Writer sub = filer.createSourceFile(sup.getSimpleName() + "_GENERATED").openWriter()) {
+                    sub.write(String.format("class %s_GENERATED extends %s {}",
+                                            sup.getSimpleName(),
+                                            ((TypeElement)sup).getQualifiedName()));
+                }
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);

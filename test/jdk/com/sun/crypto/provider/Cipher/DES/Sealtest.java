@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,23 @@
 /*
  * @test
  * @bug 0000000 7055362
+ * @library /test/lib
  * @summary Sealtest
  * @author Jan Luehe
  */
 import java.io.*;
 import java.security.*;
 import javax.crypto.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class Sealtest {
 
     public static void main(String[] args) throws Exception {
 
         // create DSA keypair
-        KeyPairGenerator kpgen = KeyPairGenerator.getInstance("DSA");
-        kpgen.initialize(512);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator kpgen = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpgen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpgen.generateKeyPair();
 
         // create DES key

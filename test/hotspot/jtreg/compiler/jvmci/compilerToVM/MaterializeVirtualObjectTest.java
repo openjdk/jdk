@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,16 @@
  *
  * @requires vm.jvmci & vm.compMode == "Xmixed"
  * @requires vm.opt.final.EliminateAllocations == true
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  *
  * @comment no "-Xcomp -XX:-TieredCompilation" combination allowed until JDK-8140018 is resolved
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
  *
  * @library / /test/lib
  * @library ../common/patches
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.code.stack
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
@@ -51,7 +51,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=true
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -63,7 +63,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=false
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -75,7 +75,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=true
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -87,7 +87,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=false
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -157,7 +157,11 @@ public class MaterializeVirtualObjectTest {
             throw new SkippedException("Test needs compilation level 4");
         }
 
-        new MaterializeVirtualObjectTest().test();
+        try {
+            new MaterializeVirtualObjectTest().test();
+        } catch (MaterializationNotSupported e) {
+            Asserts.assertTrue(Thread.currentThread().isVirtual());
+        }
     }
 
     private static String getName() {
@@ -168,7 +172,6 @@ public class MaterializeVirtualObjectTest {
     }
 
     private void test() {
-        System.out.println(getName());
         Asserts.assertFalse(WB.isMethodCompiled(MATERIALIZED_METHOD),
                 getName() + " : materialized method is compiled");
         Asserts.assertFalse(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD),
@@ -230,6 +233,14 @@ public class MaterializeVirtualObjectTest {
         }
     }
 
+    private static void materializeVirtualObjects(InspectedFrame f, boolean invalidateCode) {
+        try {
+            f.materializeVirtualObjects(invalidateCode);
+        } catch (IllegalArgumentException e) {
+            throw new MaterializationNotSupported(e);
+        }
+    }
+
     private void checkStructure(boolean materialize) {
         boolean[] framesSeen = new boolean[2];
         Object[] helpers = new Object[1];
@@ -248,7 +259,7 @@ public class MaterializeVirtualObjectTest {
                     Asserts.assertEQ(((Helper) f.getLocal(3)).string, "foo", "innerHelper.string should be foo");
                     helpers[0] = f.getLocal(1);
                     if (materialize) {
-                        f.materializeVirtualObjects(false);
+                        materializeVirtualObjects(f, false);
                     }
                     return null; //continue
                 } else {
@@ -306,7 +317,7 @@ public class MaterializeVirtualObjectTest {
             Asserts.assertTrue(notMaterialized.hasVirtualObjects(), getName()
                     + ": notMaterialized frame has no virtual object before materialization");
             // materialize
-            CompilerToVMHelper.materializeVirtualObjects(materialized, INVALIDATE);
+            materializeVirtualObjects(materialized, INVALIDATE);
             // check that only not materialized frame has virtual objects
             Asserts.assertFalse(materialized.hasVirtualObjects(), getName()
                     + " : materialized has virtual object after materialization");
@@ -329,6 +340,12 @@ public class MaterializeVirtualObjectTest {
 
         public Helper(String s) {
             this.string = s;
+        }
+    }
+
+    static class MaterializationNotSupported extends RuntimeException {
+        public MaterializationNotSupported(Throwable cause) {
+            super(cause);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ using namespace std;
 #ifdef _WIN64
 typedef __int64 intptr_t;
 #else
-typedef int intptr_t;
+#error "Unsupported platform"
 #endif
 #define _INTPTR_T_DEFINED
 #endif
@@ -59,7 +59,7 @@ typedef int intptr_t;
 #ifdef _WIN64
 typedef unsigned __int64 uintptr_t;
 #else
-typedef unsigned int uintptr_t;
+#error "Unsupported platform"
 #endif
 #define _UINTPTR_T_DEFINED
 #endif
@@ -99,5 +99,9 @@ typedef unsigned int uintptr_t;
 // could have a backpointer to the AD but it's too complicated to pass
 // it everywhere it needs to be available.
 extern ArchDesc* globalAD;
+
+// Performs snprintf and asserts the result is non-negative (so there was not
+// an encoding error) and that the output was not truncated.
+extern int snprintf_checked(char* buf, size_t len, const char* fmt, ...);
 
 #endif // SHARE_ADLC_ADLC_HPP

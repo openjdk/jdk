@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,12 @@ class SerializeClosure;
 
 class ClassLoaderDataShared : AllStatic {
   static bool _full_module_graph_loaded;
+  static void ensure_module_entry_table_exists(oop class_loader);
 public:
+  static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();
   static void iterate_symbols(MetaspaceClosure* closure);
   static void init_archived_tables();
-  static void init_archived_oops();
   static void serialize(SerializeClosure* f);
   static void clear_archived_oops();
   static oop  restore_archived_oops_for_null_class_loader_data();

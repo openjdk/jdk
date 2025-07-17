@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/startOperation.hpp"
 #include "jfr/leakprofiler/stopOperation.hpp"
@@ -33,6 +32,15 @@
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/vmThread.hpp"
+
+bool LeakProfiler::is_supported() {
+  if (UseShenandoahGC) {
+    // Leak Profiler uses mark words in the ways that might interfere
+    // with concurrent GC uses of them. This affects Shenandoah.
+    return false;
+  }
+  return true;
+}
 
 bool LeakProfiler::is_running() {
   return ObjectSampler::is_created();
@@ -45,6 +53,12 @@ bool LeakProfiler::start(int sample_count) {
 
   // Allows user to disable leak profiler on command line by setting queue size to zero.
   if (sample_count == 0) {
+    return false;
+  }
+
+  // Exit cleanly if not supported
+  if (!is_supported()) {
+    log_trace(jfr, system)("Object sampling is not supported");
     return false;
   }
 
@@ -84,14 +98,14 @@ void LeakProfiler::emit_events(int64_t cutoff_ticks, bool emit_all, bool skip_bf
   }
   // exclusive access to object sampler instance
   ObjectSampler* const sampler = ObjectSampler::acquire();
-  assert(sampler != NULL, "invariant");
+  assert(sampler != nullptr, "invariant");
   EventEmitter::emit(sampler, cutoff_ticks, emit_all, skip_bfs);
   ObjectSampler::release();
 }
 
 void LeakProfiler::sample(HeapWord* object, size_t size, JavaThread* thread) {
   assert(is_running(), "invariant");
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   assert(thread->thread_state() == _thread_in_vm, "invariant");
 
   // exclude compiler threads

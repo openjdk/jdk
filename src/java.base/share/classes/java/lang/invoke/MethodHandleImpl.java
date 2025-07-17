@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,22 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.foreign.abi.NativeEntryPoint;
-import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.foreign.MemoryLayout;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -51,16 +55,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.MN_CALLER_SENSITIVE;
+import static java.lang.invoke.MethodHandleNatives.Constants.MN_HIDDEN_MEMBER;
+import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * Trusted implementation code for MethodHandle.
@@ -576,8 +582,8 @@ abstract class MethodHandleImpl {
             return;
         } else if (av == null) {
             throw new NullPointerException("null array reference");
-        } else if (av instanceof Object[]) {
-            int len = ((Object[])av).length;
+        } else if (av instanceof Object[] array) {
+            int len = array.length;
             if (len == n)  return;
         } else {
             int len = java.lang.reflect.Array.getLength(av);
@@ -803,8 +809,7 @@ abstract class MethodHandleImpl {
         final int CALL_TARGET  = nameCursor++;
         assert(CALL_TARGET == SELECT_ALT+1);  // must be true to trigger IBG.emitSelectAlternative
 
-        MethodType lambdaType = basicType.invokerType();
-        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
 
         BoundMethodHandle.SpeciesData data =
                 (GET_COUNTERS != -1) ? BoundMethodHandle.speciesData_LLLL()
@@ -836,7 +841,7 @@ abstract class MethodHandleImpl {
         invokeArgs[0] = names[SELECT_ALT];
         names[CALL_TARGET] = new Name(basicType, invokeArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, /*forceInline=*/true, Kind.GUARD);
+        lform = LambdaForm.create(basicType.parameterCount() + 1, names, /*forceInline=*/true, Kind.GUARD);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWT, lform);
     }
@@ -863,8 +868,6 @@ abstract class MethodHandleImpl {
      * among catchException combinators with the same basic type.
      */
     private static LambdaForm makeGuardWithCatchForm(MethodType basicType) {
-        MethodType lambdaType = basicType.invokerType();
-
         LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_GWC);
         if (lform != null) {
             return lform;
@@ -883,7 +886,7 @@ abstract class MethodHandleImpl {
         final int TRY_CATCH        = nameCursor++;
         final int UNBOX_RESULT     = nameCursor++;
 
-        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLLL();
         names[THIS_MH]          = names[THIS_MH].withConstraint(data);
@@ -912,7 +915,7 @@ abstract class MethodHandleImpl {
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_CATCH]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.GUARD_WITH_CATCH);
+        lform = LambdaForm.create(basicType.parameterCount() + 1, names, Kind.GUARD_WITH_CATCH);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWC, lform);
     }
@@ -979,7 +982,7 @@ abstract class MethodHandleImpl {
         return makePairwiseConvert(getFunction(NF_throwException).resolvedHandle(), type, false, true);
     }
 
-    static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
+    static <T extends Throwable> Void throwException(T t) throws T { throw t; }
 
     static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
     static MethodHandle fakeMethodHandleInvoke(MemberName method) {
@@ -1005,7 +1008,8 @@ abstract class MethodHandleImpl {
     }
     static MethodHandle fakeVarHandleInvoke(MemberName method) {
         // TODO caching, is it necessary?
-        MethodType type = MethodType.methodType(method.getReturnType(), UnsupportedOperationException.class,
+        MethodType type = MethodType.methodType(method.getMethodType().returnType(),
+                                                UnsupportedOperationException.class,
                                                 VarHandle.class, Object[].class);
         MethodHandle mh = throwException(type);
         mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke VarHandle"));
@@ -1032,8 +1036,10 @@ abstract class MethodHandleImpl {
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
-        private static MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
-        private static MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
+
+        private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
+        private static final MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
+        private static final MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
 
         static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Code in the boot layer should now be careful while creating method handles or
@@ -1100,8 +1106,9 @@ abstract class MethodHandleImpl {
                     // use the original class name
                     name = name.replace('/', '_');
                 }
+                name = name.replace('.', '/');
                 Class<?> invokerClass = new Lookup(targetClass)
-                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, Set.of(NESTMATE))
+                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, dumper(), NESTMATE_CLASS)
                         .defineClass(true, targetClass);
                 assert checkInjectedInvoker(targetClass, invokerClass);
                 return invokerClass;
@@ -1122,7 +1129,7 @@ abstract class MethodHandleImpl {
          * Method::invoke on a caller-sensitive method will call
          * MethodAccessorImpl::invoke(Object, Object[]) through reflect_invoke_V
          *     target.csm(args)
-         *     NativeMethodAccesssorImpl::invoke(target, args)
+         *     NativeMethodAccessorImpl::invoke(target, args)
          *     MethodAccessImpl::invoke(target, args)
          *     InjectedInvoker::reflect_invoke_V(vamh, target, args);
          *     method::invoke(target, args)
@@ -1201,11 +1208,7 @@ abstract class MethodHandleImpl {
 
         private static boolean checkInjectedInvoker(Class<?> hostClass, Class<?> invokerClass) {
             assert (hostClass.getClassLoader() == invokerClass.getClassLoader()) : hostClass.getName()+" (CL)";
-            try {
-                assert (hostClass.getProtectionDomain() == invokerClass.getProtectionDomain()) : hostClass.getName()+" (PD)";
-            } catch (SecurityException ex) {
-                // Self-check was blocked by security manager. This is OK.
-            }
+            assert (hostClass.getProtectionDomain() == invokerClass.getProtectionDomain()) : hostClass.getName()+" (PD)";
             try {
                 // Test the invoker to ensure that it really injects into the right place.
                 MethodHandle invoker = IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
@@ -1246,8 +1249,6 @@ abstract class MethodHandleImpl {
 
         /** Produces byte code for a class that is used as an injected invoker. */
         private static byte[] generateInvokerTemplate() {
-            ClassWriter cw = new ClassWriter(0);
-
             // private static class InjectedInvoker {
             //     /* this is used to wrap DMH(s) of caller-sensitive methods */
             //     @Hidden
@@ -1261,39 +1262,25 @@ abstract class MethodHandleImpl {
             //     }
             // }
             // }
-            cw.visit(CLASSFILE_VERSION, ACC_PRIVATE | ACC_SUPER, "InjectedInvoker", null, "java/lang/Object", null);
-            {
-                var mv = cw.visitMethod(ACC_STATIC, "invoke_V",
-                        "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;",
-                        null, null);
-
-                mv.visitCode();
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                        "([Ljava/lang/Object;)Ljava/lang/Object;", false);
-                mv.visitInsn(ARETURN);
-                mv.visitMaxs(2, 2);
-                mv.visitEnd();
-
-                cw.visitEnd();
-            }
-
-            {
-                var mv = cw.visitMethod(ACC_STATIC, "reflect_invoke_V",
-                        "(Ljava/lang/invoke/MethodHandle;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
-                        null, null);
-                mv.visitCode();
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                        "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", false);
-                mv.visitInsn(ARETURN);
-                mv.visitMaxs(3, 3);
-                mv.visitEnd();
-            }
-            return cw.toByteArray();
+            return ClassFile.of().build(ClassOrInterfaceDescImpl.ofValidated("LInjectedInvoker;"), clb -> clb
+                    .withFlags(ACC_PRIVATE | ACC_SUPER)
+                    .withMethodBody(
+                        "invoke_V",
+                        MethodTypeDescImpl.ofValidated(CD_Object, CD_MethodHandle, CD_Object_array),
+                        ACC_STATIC,
+                        cob -> cob.aload(0)
+                                  .aload(1)
+                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object_array))
+                                  .areturn())
+                    .withMethodBody(
+                        "reflect_invoke_V",
+                        MethodTypeDescImpl.ofValidated(CD_Object, CD_MethodHandle, CD_Object, CD_Object_array),
+                        ACC_STATIC,
+                        cob -> cob.aload(0)
+                                  .aload(1)
+                                  .aload(2)
+                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Object_array))
+                                  .areturn()));
         }
     }
 
@@ -1356,7 +1343,6 @@ abstract class MethodHandleImpl {
         ARRAY_STORE,
         ARRAY_LENGTH,
         IDENTITY,
-        ZERO,
         NONE // no intrinsic associated
     }
 
@@ -1539,39 +1525,29 @@ abstract class MethodHandleImpl {
     }
 
     static {
+        runtimeSetup();
+    }
+
+    // Also called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
-            public Object newMemberName() {
-                return new MemberName();
+            public Class<?> getDeclaringClass(Object rmname) {
+                ResolvedMethodName method = (ResolvedMethodName)rmname;
+                return method.declaringClass();
             }
 
             @Override
-            public String getName(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getName();
-            }
-            @Override
-            public Class<?> getDeclaringClass(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getDeclaringClass();
+            public MethodType getMethodType(String descriptor, ClassLoader loader) {
+                return MethodType.fromDescriptor(descriptor, loader);
             }
 
-            @Override
-            public MethodType getMethodType(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getMethodType();
+            public boolean isCallerSensitive(int flags) {
+                return (flags & MN_CALLER_SENSITIVE) == MN_CALLER_SENSITIVE;
             }
 
-            @Override
-            public String getMethodDescriptor(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getMethodDescriptor();
-            }
-
-            @Override
-            public boolean isNative(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.isNative();
+            public boolean isHiddenMember(int flags) {
+                return (flags & MN_HIDDEN_MEMBER) == MN_HIDDEN_MEMBER;
             }
 
             @Override
@@ -1580,8 +1556,8 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
-                return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
+            public VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask, ByteOrder order, boolean constantOffset, long offset) {
+                return VarHandles.memorySegmentViewHandle(carrier, enclosing, alignmentMask, constantOffset, offset, order);
             }
 
             @Override
@@ -1655,15 +1631,15 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public Lookup defineHiddenClassWithClassData(Lookup caller, String name, byte[] bytes, Object classData, boolean initialize) {
-                // skip name and access flags validation
-                return caller.makeHiddenClassDefiner(name, bytes, Set.of()).defineClassAsLookup(initialize, classData);
-            }
-
-            @Override
             public Class<?>[] exceptionTypes(MethodHandle handle) {
                 return VarHandles.exceptionTypes(handle);
             }
+
+            @Override
+            public MethodHandle serializableConstructor(Class<?> decl, Constructor<?> ctorToCall) throws IllegalAccessException {
+                return IMPL_LOOKUP.serializableConstructor(decl, ctorToCall);
+            }
+
         });
     }
 
@@ -1687,7 +1663,7 @@ abstract class MethodHandleImpl {
      * @param tloop the return type of the loop.
      * @param targs types of the arguments to be passed to the loop.
      * @param init sanitized array of initializers for loop-local variables.
-     * @param step sanitited array of loop bodies.
+     * @param step sanitized array of loop bodies.
      * @param pred sanitized array of predicates.
      * @param fini sanitized array of loop finalizers.
      *
@@ -1753,8 +1729,6 @@ abstract class MethodHandleImpl {
      * bytecode generation}.
      */
     private static LambdaForm makeLoopForm(MethodType basicType, BasicType[] localVarTypes) {
-        MethodType lambdaType = basicType.invokerType();
-
         final int THIS_MH = 0;  // the BMH_LLL
         final int ARG_BASE = 1; // start of incoming arguments
         final int ARG_LIMIT = ARG_BASE + basicType.parameterCount();
@@ -1769,7 +1743,7 @@ abstract class MethodHandleImpl {
 
         LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_LOOP);
         if (lform == null) {
-            Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+            Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
 
             BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
             names[THIS_MH] = names[THIS_MH].withConstraint(data);
@@ -1797,7 +1771,7 @@ abstract class MethodHandleImpl {
             names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
             lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_LOOP,
-                    new LambdaForm(lambdaType.parameterCount(), names, Kind.LOOP));
+                    LambdaForm.create(basicType.parameterCount() + 1, names, Kind.LOOP));
         }
 
         // BOXED_ARGS is the index into the names array where the loop idiom starts
@@ -1986,8 +1960,6 @@ abstract class MethodHandleImpl {
      * forms among tryFinally combinators with the same basic type.
      */
     private static LambdaForm makeTryFinallyForm(MethodType basicType) {
-        MethodType lambdaType = basicType.invokerType();
-
         LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_TF);
         if (lform != null) {
             return lform;
@@ -2005,7 +1977,7 @@ abstract class MethodHandleImpl {
         final int TRY_FINALLY      = nameCursor++;
         final int UNBOX_RESULT     = nameCursor++;
 
-        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLL();
         names[THIS_MH]          = names[THIS_MH].withConstraint(data);
@@ -2031,7 +2003,7 @@ abstract class MethodHandleImpl {
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_FINALLY]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TRY_FINALLY);
+        lform = LambdaForm.create(basicType.parameterCount() + 1, names, Kind.TRY_FINALLY);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_TF, lform);
     }
@@ -2075,7 +2047,6 @@ abstract class MethodHandleImpl {
     }
 
     private static LambdaForm makeCollectorForm(MethodType basicType, Class<?> arrayType) {
-        MethodType lambdaType = basicType.invokerType();
         int parameterCount = basicType.parameterCount();
 
         // Only share the lambda form for empty arrays and reference types.
@@ -2108,7 +2079,7 @@ abstract class MethodHandleImpl {
         final int STORE_ELEMENT_LIMIT = STORE_ELEMENT_BASE + parameterCount;
         nameCursor = STORE_ELEMENT_LIMIT;
 
-        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_L();
         names[THIS_MH]          = names[THIS_MH].withConstraint(data);
@@ -2126,7 +2097,7 @@ abstract class MethodHandleImpl {
                     names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
         }
 
-        LambdaForm lform = new LambdaForm(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
+        LambdaForm lform = LambdaForm.create(basicType.parameterCount() + 1, names, CALL_NEW_ARRAY, Kind.COLLECTOR);
         if (isSharedLambdaForm) {
             lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_COLLECTOR, lform);
         }
@@ -2189,8 +2160,6 @@ abstract class MethodHandleImpl {
 
     private static LambdaForm makeTableSwitchForm(MethodType basicType, BoundMethodHandle.SpeciesData data,
                                                   int numCases) {
-        MethodType lambdaType = basicType.invokerType();
-
         // We need to cache based on the basic type X number of cases,
         // since the number of cases is used when generating bytecode.
         // This also means that we can't use the cache in MethodTypeForm,
@@ -2222,7 +2191,7 @@ abstract class MethodHandleImpl {
         final int FIELD_UNBOX_RESULT  = fieldCursor++;
         final int FIELD_CASES         = fieldCursor++;
 
-        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
 
         names[THIS_MH] = names[THIS_MH].withConstraint(data);
         names[GET_DEFAULT_CASE] = new Name(data.getterFunction(FIELD_DEFAULT_CASE), names[THIS_MH]);
@@ -2251,7 +2220,7 @@ abstract class MethodHandleImpl {
             names[UNBOXED_RESULT] = new Name(invokeBasic, unboxArgs);
         }
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TABLE_SWITCH);
+        lform = LambdaForm.create(basicType.parameterCount() + 1, names, Kind.TABLE_SWITCH);
         LambdaForm prev = TableSwitchCacheKey.CACHE.putIfAbsent(key, lform);
         return prev != null ? prev : lform;
     }
@@ -2266,6 +2235,29 @@ abstract class MethodHandleImpl {
             selectedCase = caseActions[input];
         }
         return selectedCase.invokeWithArguments(args);
+    }
+
+    // type is validated, value is not
+    static MethodHandle makeConstantReturning(Class<?> type, Object value) {
+        var callType = MethodType.methodType(type);
+        var basicType = BasicType.basicType(type);
+        var form = constantForm(basicType);
+
+        if (type.isPrimitive()) {
+            assert type != void.class;
+            var wrapper = Wrapper.forPrimitiveType(type);
+            var v = wrapper.convert(value, type); // throws CCE
+            return switch (wrapper) {
+                case INT    -> BoundMethodHandle.bindSingleI(callType, form, (int) v);
+                case LONG   -> BoundMethodHandle.bindSingleJ(callType, form, (long) v);
+                case FLOAT  -> BoundMethodHandle.bindSingleF(callType, form, (float) v);
+                case DOUBLE -> BoundMethodHandle.bindSingleD(callType, form, (double) v);
+                default -> BoundMethodHandle.bindSingleI(callType, form, ValueConversions.widenSubword(v));
+            };
+        }
+
+        var v = type.cast(value); // throws CCE
+        return BoundMethodHandle.bindSingleL(callType, form, v);
     }
 
     // Indexes into constant method handles:

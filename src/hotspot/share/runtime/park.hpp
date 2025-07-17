@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,6 @@ class ParkEvent : public PlatformEvent {
     // Current association
     Thread * AssociatedWith ;
 
-  public:
-    // MCS-CLH list linkage and Native Mutex/Monitor
-    ParkEvent * volatile ListNext ;
-    volatile int TState ;
-    volatile int Notified ;             // for native monitor construct
-
   private:
     static ParkEvent * volatile FreeList ;
     static volatile int ListLock ;
@@ -137,11 +131,8 @@ class ParkEvent : public PlatformEvent {
     ~ParkEvent() { guarantee (0, "invariant") ; }
 
     ParkEvent() : PlatformEvent() {
-       AssociatedWith = NULL ;
-       FreeNext       = NULL ;
-       ListNext       = NULL ;
-       TState         = 0 ;
-       Notified       = 0 ;
+       AssociatedWith = nullptr ;
+       FreeNext       = nullptr ;
     }
 
     // We use placement-new to force ParkEvent instances to be

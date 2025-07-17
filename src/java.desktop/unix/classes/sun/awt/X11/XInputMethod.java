@@ -42,17 +42,19 @@ import sun.util.logging.PlatformLogger;
  *
  * @author JavaSoft International
  */
-public class XInputMethod extends X11InputMethod {
+public final class XInputMethod extends X11InputMethod {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XInputMethod");
 
     public XInputMethod() throws AWTException {
         super();
     }
 
+    @Override
     public void setInputMethodContext(InputMethodContext context) {
         context.enableClientWindowNotification(this, true);
     }
 
+    @Override
     public void notifyClientWindowChange(Rectangle location) {
         XComponentPeer peer = (XComponentPeer)getPeer(clientComponentWindow);
         if (peer != null) {
@@ -60,10 +62,12 @@ public class XInputMethod extends X11InputMethod {
         }
     }
 
+    @Override
     protected boolean openXIM() {
         return openXIMNative(XToolkit.getDisplay());
     }
 
+    @Override
     protected boolean createXIC() {
         XComponentPeer peer = (XComponentPeer)getPeer(clientComponentWindow);
         if (peer == null) {
@@ -75,6 +79,7 @@ public class XInputMethod extends X11InputMethod {
 
     private static volatile long xicFocus;
 
+    @Override
     protected void setXICFocus(ComponentPeer peer,
                                     boolean value, boolean active) {
         if (peer == null) {
@@ -93,6 +98,7 @@ public class XInputMethod extends X11InputMethod {
 /* XAWT_HACK  FIX ME!
    do NOT call client code!
 */
+    @Override
     protected Container getParent(Component client) {
         return client.getParent();
     }
@@ -101,6 +107,7 @@ public class XInputMethod extends X11InputMethod {
      * Returns peer of the given client component. If the given client component
      * doesn't have peer, peer of the native container of the client is returned.
      */
+    @Override
     protected ComponentPeer getPeer(Component client) {
         XComponentPeer peer;
 
@@ -126,15 +133,18 @@ public class XInputMethod extends X11InputMethod {
      * Subclasses should override disposeImpl() instead of dispose(). Client
      * code should always invoke dispose(), never disposeImpl().
      */
+    @Override
     protected synchronized void disposeImpl() {
         super.disposeImpl();
         clientComponentWindow = null;
     }
 
+    @Override
     protected void awtLock() {
         XToolkit.awtLock();
     }
 
+    @Override
     protected void awtUnlock() {
         XToolkit.awtUnlock();
     }

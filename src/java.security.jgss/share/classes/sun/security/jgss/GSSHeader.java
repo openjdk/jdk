@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,12 +155,9 @@ public class GSSHeader {
                                           int maxTotalSize) {
 
         int mechOidBytesSize = 0;
-        try {
-            DerOutputStream temp = new DerOutputStream();
-            temp.putOID(mechOid);
-            mechOidBytesSize = temp.toByteArray().length;
-        } catch (IOException ignored) {
-        }
+        DerOutputStream temp = new DerOutputStream();
+        temp.putOID(mechOid);
+        mechOidBytesSize = temp.toByteArray().length;
 
         // Subtract bytes needed for 0x60 tag and mechOidBytes
         maxTotalSize -= (1 + mechOidBytesSize);
@@ -319,26 +316,5 @@ public class GSSHeader {
         }
 
         return retVal;
-    }
-
-    // XXX Call these two in some central class
-    private void debug(String str) {
-        System.err.print(str);
-    }
-
-    private  String getHexBytes(byte[] bytes, int len)
-        throws IOException {
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < len; i++) {
-
-            int b1 = (bytes[i] >> 4) & 0x0f;
-            int b2 = bytes[i] & 0x0f;
-
-            sb.append(Integer.toHexString(b1));
-            sb.append(Integer.toHexString(b2));
-            sb.append(' ');
-        }
-        return sb.toString();
     }
 }

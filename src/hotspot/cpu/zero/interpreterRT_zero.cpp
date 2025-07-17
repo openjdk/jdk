@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -62,7 +61,7 @@ void InterpreterRuntime::SignatureHandlerGeneratorBase::pass_object() {
 }
 
 void InterpreterRuntime::SignatureHandlerGeneratorBase::push(BasicType type) {
-  ffi_type *ftype = NULL;
+  ffi_type *ftype = nullptr;
   switch (type) {
   case T_VOID:
     ftype = &ffi_type_void;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,28 +84,28 @@ final class ProcessHandleImpl implements ProcessHandle {
     /**
      * The thread pool of "process reaper" daemon threads.
      */
-    @SuppressWarnings("removal")
-    private static final Executor processReaperExecutor =
-            AccessController.doPrivileged((PrivilegedAction<Executor>) () -> {
-                // Initialize ThreadLocalRandom now to avoid using the smaller stack
-                // of the processReaper threads.
-                ThreadLocalRandom.current();
+    private static final Executor processReaperExecutor = initReaper();
 
-                // For a debug build, the stack shadow zone is larger;
-                // Increase the total stack size to avoid potential stack overflow.
-                int debugDelta = "release".equals(System.getProperty("jdk.debug")) ? 0 : (4*4096);
-                final long stackSize = Boolean.getBoolean("jdk.lang.processReaperUseDefaultStackSize")
-                        ? 0 : REAPER_DEFAULT_STACKSIZE + debugDelta;
+    private static Executor initReaper() {
+        // Initialize ThreadLocalRandom now to avoid using the smaller stack
+        // of the processReaper threads.
+        ThreadLocalRandom.current();
 
-                ThreadFactory threadFactory = grimReaper -> {
-                    Thread t = InnocuousThread.newSystemThread("process reaper", grimReaper,
-                            stackSize, Thread.MAX_PRIORITY);
-                    t.setDaemon(true);
-                    return t;
-                };
+        // For a debug build, the stack shadow zone is larger;
+        // Increase the total stack size to avoid potential stack overflow.
+        int debugDelta = "release".equals(System.getProperty("jdk.debug")) ? 0 : (4 * 4096);
+        final long stackSize = Boolean.getBoolean("jdk.lang.processReaperUseDefaultStackSize")
+                ? 0 : REAPER_DEFAULT_STACKSIZE + debugDelta;
 
-                return Executors.newCachedThreadPool(threadFactory);
-            });
+        ThreadFactory threadFactory = grimReaper -> {
+            Thread t = InnocuousThread.newSystemThread("process reaper", grimReaper,
+                    stackSize, Thread.MAX_PRIORITY);
+            t.setDaemon(true);
+            return t;
+        };
+
+        return Executors.newCachedThreadPool(threadFactory);
+    }
 
     private static class ExitCompletion extends CompletableFuture<Integer> {
         final boolean isReaping;
@@ -140,8 +140,9 @@ final class ProcessHandleImpl implements ProcessHandle {
                 processReaperExecutor.execute(new Runnable() {
                     // Use inner class to avoid lambda stack overhead
                     public void run() {
-                        String threadName = Thread.currentThread().getName();
-                        Thread.currentThread().setName("process reaper (pid " + pid + ")");
+                        Thread t = Thread.currentThread();
+                        String threadName = t.getName();
+                        t.setName("process reaper (pid " + pid + ")");
                         try {
                             int exitValue = waitForProcessExit0(pid, shouldReap);
                             if (exitValue == NOT_A_CHILD) {
@@ -172,7 +173,7 @@ final class ProcessHandleImpl implements ProcessHandle {
                             completions.remove(pid, newCompletion);
                         } finally {
                             // Restore thread name
-                            Thread.currentThread().setName(threadName);
+                            t.setName(threadName);
                         }
                     }
                 });
@@ -238,14 +239,8 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @param  pid the native process identifier
      * @return The ProcessHandle for the pid if the process is alive;
      *         or {@code null} if the process ID does not exist in the native system.
-     * @throws SecurityException if RuntimePermission("manageProcess") is not granted
      */
     static Optional<ProcessHandle> get(long pid) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         long start = isAlive0(pid);
         return (start >= 0)
                 ? Optional.of(new ProcessHandleImpl(pid, start))
@@ -279,14 +274,8 @@ final class ProcessHandleImpl implements ProcessHandle {
      * Returns the ProcessHandle for the current native process.
      *
      * @return The ProcessHandle for the OS process.
-     * @throws SecurityException if RuntimePermission("manageProcess") is not granted
      */
     public static ProcessHandleImpl current() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         return current;
     }
 
@@ -302,15 +291,8 @@ final class ProcessHandleImpl implements ProcessHandle {
      *
      * @return a ProcessHandle of the parent process; {@code null} is returned
      *         if the child process does not have a parent
-     * @throws SecurityException           if permission is not granted by the
-     *                                     security policy
      */
     public Optional<ProcessHandle> parent() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         long ppid = parent0(pid, startTime);
         if (ppid <= 0) {
             return Optional.empty();
@@ -425,11 +407,6 @@ final class ProcessHandleImpl implements ProcessHandle {
      * @return a stream of ProcessHandles
      */
     static Stream<ProcessHandle> children(long pid) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         int size = 100;
         long[] childpids = null;
         long[] starttimes = null;
@@ -446,11 +423,6 @@ final class ProcessHandleImpl implements ProcessHandle {
 
     @Override
     public Stream<ProcessHandle> descendants() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("manageProcess"));
-        }
         int size = 100;
         long[] pids = null;
         long[] ppids = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ extern "C" {
 JNIEXPORT void JNICALL
 Java_gc_gctests_nativeGC05_nativeGC05_kickOffRefillers
 (JNIEnv *env, jobject obj, jobject matrix, jobject stack) {
-        jclass matrixClass, stackClass, pairClass = 0;
-        jmethodID stack_pop_mid, stack_empty_mid, matrix_repopulate_mid, pair_geti_mid = 0, pair_getj_mid = 0;
+        jclass matrixClass, stackClass, pairClass = nullptr;
+        jmethodID stack_pop_mid, stack_empty_mid, matrix_repopulate_mid, pair_geti_mid = nullptr, pair_getj_mid = nullptr;
         jobject pair;
         jint i, j;
         jboolean b;
@@ -40,18 +40,18 @@ Java_gc_gctests_nativeGC05_nativeGC05_kickOffRefillers
 
         /* GetMethodID's for the pop() and Repopulate() methods */
         stack_pop_mid  = env->GetMethodID(stackClass, "pop", "()Ljava/lang/Object;");
-        if (stack_pop_mid == 0) {
+        if (stack_pop_mid == nullptr) {
                 printf("could not get a methodID for Stack::pop()\n");
                 return;
         }
         stack_empty_mid = env->GetMethodID(stackClass, "empty", "()Z");
-        if (stack_empty_mid == 0) {
+        if (stack_empty_mid == nullptr) {
                 printf("could not get a methodID for Stack::empty()\n");
                 return;
         }
 
         matrix_repopulate_mid = env->GetMethodID(matrixClass, "repopulate", "(II)V");
-        if (matrix_repopulate_mid == 0) {
+        if (matrix_repopulate_mid == nullptr) {
                 printf("could not get a methodID for Matrix::repopulate(int, int)\n");
                 return;
         }
@@ -62,15 +62,15 @@ Java_gc_gctests_nativeGC05_nativeGC05_kickOffRefillers
                 /** pair = stack.pop() */
                 pair = env->CallObjectMethod(stack, stack_pop_mid);
 
-                if (pairClass == 0) {
+                if (pairClass == nullptr) {
                         pairClass = env->GetObjectClass(pair);
                         pair_geti_mid = env->GetMethodID(pairClass, "getI", "()I");
-                        if (pair_geti_mid == 0) {
+                        if (pair_geti_mid == nullptr) {
                                 printf("could not get a methodID for IndexPair::getI()\n");
                                 return;
                         }
                         pair_getj_mid = env->GetMethodID(pairClass, "getJ", "()I");
-                        if (pair_getj_mid == 0) {
+                        if (pair_getj_mid == nullptr) {
                                 printf("could not get a methodID for IndexPair::getJ()\n");
                                 return;
                         }

@@ -90,6 +90,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param params
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineSetParameter(AlgorithmParameterSpec params) throws XMLSignatureException {
         throw new XMLSignatureException("empty", new Object[]{"Incorrect method call"});
     }
@@ -102,6 +103,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @return true if the signature is correct
      * @throws XMLSignatureException
      */
+    @Override
     protected boolean engineVerify(byte[] signature) throws XMLSignatureException {
         try {
             if (hmacOutputLength != null && hmacOutputLength.length < getDigestLength()) {
@@ -124,6 +126,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param secretKey
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineInitVerify(Key secretKey) throws XMLSignatureException {
         if (!(secretKey instanceof SecretKey)) {
             String supplied = null;
@@ -150,6 +153,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @return the result of the {@link java.security.Signature#sign()} method
      * @throws XMLSignatureException
      */
+    @Override
     protected byte[] engineSign() throws XMLSignatureException {
         try {
             if (hmacOutputLength != null && hmacOutputLength.length < getDigestLength()) {
@@ -170,6 +174,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param secretKey
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineInitSign(Key secretKey) throws XMLSignatureException {
         engineInitSign(secretKey, (AlgorithmParameterSpec)null);
     }
@@ -181,6 +186,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param algorithmParameterSpec
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineInitSign(
         Key secretKey, AlgorithmParameterSpec algorithmParameterSpec
     ) throws XMLSignatureException {
@@ -213,6 +219,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param secureRandom
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineInitSign(Key secretKey, SecureRandom secureRandom)
         throws XMLSignatureException {
         throw new XMLSignatureException("algorithms.CannotUseSecureRandomOnMAC");
@@ -225,6 +232,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param input
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineUpdate(byte[] input) throws XMLSignatureException {
         try {
             this.macAlgorithm.update(input);
@@ -240,6 +248,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param input
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineUpdate(byte input) throws XMLSignatureException {
         try {
             this.macAlgorithm.update(input);
@@ -257,6 +266,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * @param len
      * @throws XMLSignatureException
      */
+    @Override
     protected void engineUpdate(byte[] buf, int offset, int len) throws XMLSignatureException {
         try {
             this.macAlgorithm.update(buf, offset, len);
@@ -270,6 +280,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      * {@inheritDoc}
      *
      */
+    @Override
     protected String engineGetJCEAlgorithmString() {
         return this.macAlgorithm.getAlgorithm();
     }
@@ -279,6 +290,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
      *
      * {@inheritDoc}
      */
+    @Override
     protected String engineGetJCEProviderName() {
         return this.macAlgorithm.getProvider().getName();
     }

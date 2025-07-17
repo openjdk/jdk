@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/ostream.hpp"
 
@@ -31,10 +30,10 @@ TraceTime::TraceTime(const char* title,
   _active   = doit;
   _verbose  = true;
   _title    = title;
-  _print    = NULL;
+  _print    = nullptr;
 
   if (_active) {
-    _accum = NULL;
+    _accum = nullptr;
     _t.start();
   }
 }
@@ -46,7 +45,7 @@ TraceTime::TraceTime(const char* title,
   _active   = doit;
   _verbose  = verbose;
   _title    = title;
-  _print    = NULL;
+  _print    = nullptr;
 
   if (_active) {
     _accum = accumulator;
@@ -56,13 +55,13 @@ TraceTime::TraceTime(const char* title,
 
 TraceTime::TraceTime(const char* title,
                      TraceTimerLogPrintFunc ttlpf) {
-  _active   = ttlpf!= NULL;
+  _active   = ttlpf!= nullptr;
   _verbose  = true;
   _title    = title;
   _print    = ttlpf;
 
   if (_active) {
-    _accum = NULL;
+    _accum = nullptr;
     _t.start();
   }
 }
@@ -72,7 +71,7 @@ TraceTime::~TraceTime() {
     return;
   }
   _t.stop();
-  if (_accum != NULL) {
+  if (_accum != nullptr) {
     _accum->add(_t);
   }
   if (!_verbose) {

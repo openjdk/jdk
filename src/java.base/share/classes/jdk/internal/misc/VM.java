@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
+import java.io.PrintStream;
+import java.lang.classfile.ClassFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -148,24 +150,13 @@ public class VM {
     // User-controllable flag that determines if direct buffers should be page
     // aligned. The "-XX:+PageAlignDirectMemory" option can be used to force
     // buffers, allocated by ByteBuffer.allocateDirect, to be page aligned.
-    private static boolean pageAlignDirectMemory;
+    @Stable
+    private static Boolean pageAlignDirectMemory;
 
     // Returns {@code true} if the direct buffers should be page aligned. This
     // variable is initialized by saveAndRemoveProperties.
     public static boolean isDirectMemoryPageAligned() {
-        return pageAlignDirectMemory;
-    }
-
-    private static int classFileMajorVersion;
-    private static int classFileMinorVersion;
-    private static final int PREVIEW_MINOR_VERSION = 65535;
-
-    /**
-     * Returns the class file version of the current release.
-     * @jvms 4.1 Table 4.1-A. class file format major versions
-     */
-    public static int classFileVersion() {
-        return classFileMajorVersion;
+        return pageAlignDirectMemory != null && pageAlignDirectMemory;
     }
 
     /**
@@ -181,11 +172,11 @@ public class VM {
      * @jvms 4.1 Table 4.1-A. class file format major versions
      */
     public static boolean isSupportedClassFileVersion(int major, int minor) {
-        if (major < 45 || major > classFileMajorVersion) return false;
+        if (major < ClassFile.JAVA_1_VERSION || major > ClassFile.latestMajorVersion()) return false;
         // for major version is between 45 and 55 inclusive, the minor version may be any value
-        if (major < 56) return true;
+        if (major < ClassFile.JAVA_12_VERSION) return true;
         // otherwise, the minor version must be 0 or 65535
-        return minor == 0 || minor == PREVIEW_MINOR_VERSION;
+        return minor == 0 || (minor == ClassFile.PREVIEW_MINOR_VERSION && major == ClassFile.latestMajorVersion());
     }
 
     /**
@@ -195,12 +186,8 @@ public class VM {
      * major.minor version >= 53.0
      */
     public static boolean isSupportedModuleDescriptorVersion(int major, int minor) {
-        if (major < 53 || major > classFileMajorVersion) return false;
-        // for major version is between 45 and 55 inclusive, the minor version may be any value
-        if (major < 56) return true;
-        // otherwise, the minor version must be 0 or 65535
-        // preview features do not apply to module-info.class but JVMS allows it
-        return minor == 0 || minor == PREVIEW_MINOR_VERSION;
+        if (major < ClassFile.JAVA_9_VERSION) return false;
+        return isSupportedClassFileVersion(major, minor);
     }
 
     /**
@@ -274,18 +261,7 @@ public class VM {
         }
 
         // Check if direct buffers should be page aligned
-        s = props.get("sun.nio.PageAlignDirectMemory");
-        if ("true".equals(s))
-            pageAlignDirectMemory = true;
-
-        s = props.get("java.class.version");
-        int index = s.indexOf('.');
-        try {
-            classFileMajorVersion = Integer.parseInt(s.substring(0, index));
-            classFileMinorVersion = Integer.parseInt(s.substring(index + 1));
-        } catch (NumberFormatException e) {
-            throw new InternalError(e);
-        }
+        pageAlignDirectMemory = "true".equals(props.get("sun.nio.PageAlignDirectMemory"));
     }
 
     // Initialize any miscellaneous operating system settings that need to be
@@ -502,5 +478,12 @@ public class VM {
      */
     public static List<BufferPool> getBufferPools() {
         return BufferPoolsHolder.BUFFER_POOLS;
+    }
+
+    /**
+     * Return the initial value of System.err that was set during VM initialization.
+     */
+    public static PrintStream initialErr() {
+        return SharedSecrets.getJavaLangAccess().initialSystemErr();
     }
 }

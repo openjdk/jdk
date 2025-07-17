@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,7 @@ public class ReplaceCriticalClasses {
             .setArchiveName(ReplaceCriticalClasses.class.getName() + ".jsa")
             .setUseVersion(false)
             .addSuffix("-showversion",
+                       "-Xlog:aot",
                        "-Xlog:cds",
                        "-XX:+UnlockDiagnosticVMOptions",
                        agent);
@@ -173,7 +174,7 @@ public class ReplaceCriticalClasses {
             opts.addSuffix("-XX:+WhiteBoxAPI",
                            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"));
         }
-        opts.addSuffix("-Xlog:cds,cds+heap");
+        opts.addSuffix("-Xlog:aot,aot+heap,cds");
         opts.addSuffix("ReplaceCriticalClasses",
                        "child",
                        shared,
@@ -184,12 +185,12 @@ public class ReplaceCriticalClasses {
         final boolean expectShared = shared.equals("-shared");
         CDSTestUtils.run(opts).assertNormalExit(out -> {
                 if (expectDisable) {
-                    out.shouldContain("UseSharedSpaces: CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
+                    out.shouldContain("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
                     System.out.println("CDS disabled as expected");
                 }
                 if (checkSubgraph) {
                     if (expectShared) {
-                        if (!out.getOutput().contains("UseSharedSpaces: Unable to map at required address in java heap")) {
+                        if (!out.getOutput().contains("Unable to map at required address in java heap")) {
                             out.shouldContain(subgraphInit);
                             // If the subgraph is successfully initialized, the specified shared class must not be rewritten.
                             out.shouldNotContain("Rewriting done.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,7 @@ public class TestHumongousCodeCacheRoots {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava(finalargs);
     output.shouldHaveExitValue(0);
     return output;
   }
@@ -123,4 +122,3 @@ public class TestHumongousCodeCacheRoots {
     runWhiteBoxTest(baseArguments, TestHumongousCodeCacheRootsHelper.class.getName(), new String[] { });
   }
 }
-

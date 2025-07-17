@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8279508
  * @summary Auto-vectorize Math.round API
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx.*"
- * @requires os.simpleArch == "x64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestRoundVectFloat
  */
@@ -44,13 +44,18 @@ public class TestRoundVectFloat {
 
   public static void main(String args[]) {
       TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                 "-XX:UseAVX=1",
                                  "-XX:CompileThresholdScaling=0.3");
       System.out.println("PASSED");
   }
 
   @Test
-  @IR(applyIf = {"UseAVX", " > 1"}, counts = {"RoundVF" , " > 0 "})
+  @IR(applyIfPlatform = {"x64", "true"},
+      applyIf = {"UseAVX", " > 1"},
+      counts = {IRNode.ROUND_VF , " > 0 "})
+  @IR(applyIfPlatform = {"riscv64", "true"},
+      applyIfCPUFeature = {"rvv", "true"},
+      applyIf = {"MaxVectorSize", ">= 32"},
+      counts = {IRNode.ROUND_VF , " > 0 "})
   public void test_round_float(int[] iout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           iout[i] = Math.round(finp[i]);

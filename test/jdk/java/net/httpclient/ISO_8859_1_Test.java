@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,9 @@
 /*
  * @test
  * @bug 8252374
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
- *       ReferenceTracker AggregateRequestBodyTest
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *       ReferenceTracker
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                     ISO_8859_1_Test
@@ -81,6 +77,9 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
@@ -97,6 +96,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -413,23 +414,20 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         http1DummyServer = new DummyServer();
         http1Dummy = "http://" + http1DummyServer.serverAuthority() +"/http1/dummy/x";
 
-        HttpServer http1 = HttpServer.create(loopback, 0);
-        http1TestServer = HttpServerAdapters.HttpTestServer.of(http1);
+        http1TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(handler, "/http1/server/");
         http1URI = "http://" + http1TestServer.serverAuthority() + "/http1/server/x";
 
-        HttpsServer https1 = HttpsServer.create(loopback, 0);
-        https1.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        https1TestServer = HttpServerAdapters.HttpTestServer.of(https1);
+        https1TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1, sslContext);
         https1TestServer.addHandler(handler, "/https1/server/");
         https1URI = "https://" + https1TestServer.serverAuthority() + "/https1/server/x";
 
         // HTTP/2
-        http2TestServer = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(handler, "/http2/server/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/server/x";
 
-        https2TestServer = HttpServerAdapters.HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(handler, "/https2/server/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/server/x";
 
@@ -447,7 +445,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(1500);
         try {
             http1TestServer.stop();
             https1TestServer.stop();

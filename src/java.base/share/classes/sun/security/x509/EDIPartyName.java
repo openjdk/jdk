@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,9 @@ public class EDIPartyName implements GeneralNameInterface {
      * Encode the EDI party name into the DerOutputStream.
      *
      * @param out the DER stream to encode the EDIPartyName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tagged = new DerOutputStream();
         DerOutputStream tmp = new DerOutputStream();
 
@@ -170,30 +170,20 @@ public class EDIPartyName implements GeneralNameInterface {
      *
      * @return true if the two names match
      */
-    public boolean equals(Object other) {
-        if (!(other instanceof EDIPartyName))
-            return false;
-        String otherAssigner = ((EDIPartyName)other).assigner;
-        if (this.assigner == null) {
-            if (otherAssigner != null)
-                return false;
-        } else {
-            if (!(this.assigner.equals(otherAssigner)))
-                return false;
-        }
-        String otherParty = ((EDIPartyName)other).party;
-        if (this.party == null) {
-            return otherParty == null;
-        } else {
-            return this.party.equals(otherParty);
-        }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+
+        return obj instanceof EDIPartyName other
+                && Objects.equals(this.assigner, other.assigner)
+                && Objects.equals(this.party, other.party);
     }
 
     /**
-     * Returns the hash code value for this EDIPartyName.
-     *
-     * @return a hash code value.
+     * {@return the hash code value for this EDIPartyName}
      */
+    @Override
     public int hashCode() {
         if (myhash == -1) {
             myhash = 37 + (party == null ? 1 : party.hashCode());

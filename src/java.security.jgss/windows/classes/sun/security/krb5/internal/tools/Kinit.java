@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.util.Arrays;
 import sun.security.util.Password;
 import javax.security.auth.kerberos.KeyTab;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * Kinit tool for obtaining Kerberos v5 tickets.
  *
@@ -48,7 +50,6 @@ import javax.security.auth.kerberos.KeyTab;
 public class Kinit {
 
     private KinitOptions options;
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     /**
      * The main method is used to accept user command line input for ticket
@@ -92,14 +93,44 @@ public class Kinit {
      */
 
     public static void main(String[] args) {
-        try {
-            Kinit self = new Kinit(args);
+        Kinit kinit = new Kinit();
+        int exitCode = kinit.run(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
         }
-        catch (Exception e) {
-            String msg = null;
-            if (e instanceof KrbException) {
-                msg = ((KrbException)e).krbErrorMessage() + " " +
-                    ((KrbException)e).returnCodeMessage();
+    }
+
+    /**
+     * Run the Kinit command.
+     * @param args array of ticket request options.
+     * Available options are: -f, -p, -c, principal, password.
+     * @return the exit code
+     */
+    public int run(String[] args) {
+        try {
+            if (args == null || args.length == 0) {
+                options = new KinitOptions();
+            } else {
+                options = new KinitOptions(args);
+            }
+            switch (options.action) {
+                case 0:
+                    // Help, already displayed in new KinitOptions().
+                    break;
+                case 1:
+                    acquire();
+                    break;
+                case 2:
+                    renew();
+                    break;
+                default:
+                    throw new KrbException("kinit does not support action "
+                            + options.action);
+            }
+        } catch (Exception e) {
+            String msg;
+            if (e instanceof KrbException ke) {
+                msg = ke.krbErrorMessage() + " " + ke.returnCodeMessage();
             } else  {
                 msg = e.getMessage();
             }
@@ -109,37 +140,9 @@ public class Kinit {
                 System.out.println("Exception: " + e);
             }
             e.printStackTrace();
-            System.exit(-1);
+            return -1;
         }
-        return;
-    }
-
-    /**
-     * Constructs a new Kinit object.
-     * @param args array of ticket request options.
-     * Available options are: -f, -p, -c, principal, password.
-     * @exception IOException if an I/O error occurs.
-     * @exception RealmException if the Realm could not be instantiated.
-     * @exception KrbException if error occurs during Kerberos operation.
-     */
-    private Kinit(String[] args)
-        throws IOException, RealmException, KrbException {
-        if (args == null || args.length == 0) {
-            options = new KinitOptions();
-        } else {
-            options = new KinitOptions(args);
-        }
-        switch (options.action) {
-            case 1:
-                acquire();
-                break;
-            case 2:
-                renew();
-                break;
-            default:
-                throw new KrbException("kinit does not support action "
-                        + options.action);
-        }
+        return 0;
     }
 
     private void renew()
@@ -178,8 +181,8 @@ public class Kinit {
             princName = principal.toString();
         }
         KrbAsReqBuilder builder;
-        if (DEBUG) {
-            System.out.println("Principal is " + principal);
+        if (DEBUG != null) {
+            DEBUG.println("Principal is " + principal);
         }
         char[] psswd = options.password;
         boolean useKeytab = options.useKeytabFile();
@@ -192,15 +195,11 @@ public class Kinit {
                 System.out.print("Password for " + princName + ":");
                 System.out.flush();
                 psswd = Password.readPassword(System.in);
-                if (DEBUG) {
-                    System.out.println(">>> Kinit console input " +
-                        new String(psswd));
-                }
             }
             builder = new KrbAsReqBuilder(principal, psswd);
         } else {
-            if (DEBUG) {
-                System.out.println(">>> Kinit using keytab");
+            if (DEBUG != null) {
+                DEBUG.println(">>> Kinit using keytab");
             }
             if (princName == null) {
                 throw new IllegalArgumentException
@@ -208,8 +207,8 @@ public class Kinit {
             }
             String ktabName = options.keytabFileName();
             if (ktabName != null) {
-                if (DEBUG) {
-                    System.out.println(
+                if (DEBUG != null) {
+                    DEBUG.println(
                                        ">>> Kinit keytab file name: " + ktabName);
                 }
             }
@@ -228,15 +227,15 @@ public class Kinit {
             realm = Config.getInstance().getDefaultRealm();
         }
 
-        if (DEBUG) {
-            System.out.println(">>> Kinit realm name is " + realm);
+        if (DEBUG != null) {
+            DEBUG.println(">>> Kinit realm name is " + realm);
         }
 
         PrincipalName sname = PrincipalName.tgsService(realm, realm);
         builder.setTarget(sname);
 
-        if (DEBUG) {
-            System.out.println(">>> Creating KrbAsReq");
+        if (DEBUG != null) {
+            DEBUG.println(">>> Creating KrbAsReq");
         }
 
         if (options.getAddressOption())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,22 @@ package java.nio;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.util.Objects;
+import java.lang.ref.Reference;
+import java.util.List;
 import java.util.Spliterator;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * A container for data of a specific primitive type.
@@ -176,20 +180,23 @@ import java.util.Spliterator;
  * specified to return the buffer upon which they are invoked.  This allows
  * method invocations to be chained; for example, the sequence of statements
  *
- * <blockquote><pre>
- * b.flip();
- * b.position(23);
- * b.limit(42);</pre></blockquote>
+ * {@snippet lang=java :
+ *     b.flip();
+ *     b.position(23);
+ *     b.limit(42);
+ * }
  *
  * can be replaced by the single, more compact statement
  *
- * <blockquote><pre>
- * b.flip().position(23).limit(42);</pre></blockquote>
+ * {@snippet lang=java :
+ *     b.flip().position(23).limit(42);
+ * }
  *
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ * @sealedGraph
  */
 
 public abstract sealed class Buffer
@@ -211,7 +218,7 @@ public abstract sealed class Buffer
     private int mark = -1;
     private int position = 0;
     private int limit;
-    private int capacity;
+    private final int capacity;
 
     // Used by heap byte buffers or direct buffers with Unsafe access
     // For heap byte buffers this field will be the address relative to the
@@ -434,9 +441,10 @@ public abstract sealed class Buffer
      * <p> Invoke this method before using a sequence of channel-read or
      * <i>put</i> operations to fill this buffer.  For example:
      *
-     * <blockquote><pre>
-     * buf.clear();     // Prepare buffer for reading
-     * in.read(buf);    // Read data</pre></blockquote>
+     * {@snippet lang=java :
+     *     buf.clear();     // Prepare buffer for reading
+     *     in.read(buf);    // Read data
+     * }
      *
      * <p> This method does not actually erase the data in the buffer, but it
      * is named as if it did because it will most often be used in situations
@@ -460,11 +468,12 @@ public abstract sealed class Buffer
      * this method to prepare for a sequence of channel-write or relative
      * <i>get</i> operations.  For example:
      *
-     * <blockquote><pre>
-     * buf.put(magic);    // Prepend header
-     * in.read(buf);      // Read data into rest of buffer
-     * buf.flip();        // Flip buffer
-     * out.write(buf);    // Write header + data to channel</pre></blockquote>
+     * {@snippet lang=java :
+     *     buf.put(magic);    // Prepend header
+     *     in.read(buf);      // Read data into rest of buffer
+     *     buf.flip();        // Flip buffer
+     *     out.write(buf);    // Write header + data to channel
+     * }
      *
      * <p> This method is often used in conjunction with the {@link
      * java.nio.ByteBuffer#compact compact} method when transferring data from
@@ -487,10 +496,11 @@ public abstract sealed class Buffer
      * operations, assuming that the limit has already been set
      * appropriately.  For example:
      *
-     * <blockquote><pre>
-     * out.write(buf);    // Write remaining data
-     * buf.rewind();      // Rewind buffer
-     * buf.get(array);    // Copy data into array</pre></blockquote>
+     * {@snippet lang=java :
+     *     out.write(buf);    // Write remaining data
+     *     buf.rewind();      // Rewind buffer
+     *     buf.get(array);    // Copy data into array
+     * }
      *
      * @return  This buffer
      */
@@ -736,19 +746,54 @@ public abstract sealed class Buffer
     }
 
     /**
-     * Checks the given index against the limit, throwing an {@link
-     * IndexOutOfBoundsException} if it is not smaller than the limit
-     * or is smaller than zero.
+     * Exception formatter that returns an {@link IndexOutOfBoundsException}
+     * with no detail message.
      */
+    private static final BiFunction<String,List<Number>,IndexOutOfBoundsException>
+        IOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public IndexOutOfBoundsException apply(String s) {
+            return new IndexOutOfBoundsException();
+        }
+    });
+
+    /**
+     * Checks the given index against the limit, throwing an {@link
+     * IndexOutOfBoundsException} if it is greater than the limit
+     * or is negative.
+     */
+    @ForceInline
     final int checkIndex(int i) {                       // package-private
-        return Objects.checkIndex(i, limit);
+        return Preconditions.checkIndex(i, limit, IOOBE_FORMATTER);
     }
 
+    /**
+     * Checks the given index and number of bytes against the range
+     * {@code [0, limit]}, throwing an {@link
+     * IndexOutOfBoundsException} if the index is negative or the index
+     * plus the number of bytes is greater than the limit.
+     */
+    @ForceInline
     final int checkIndex(int i, int nb) {               // package-private
-        if ((i < 0) || (nb > limit - i))
-            throw new IndexOutOfBoundsException();
-        return i;
+        return Preconditions.checkIndex(i, limit - nb + 1, IOOBE_FORMATTER);
     }
+
+    /**
+     * {@return the scale shifts for this Buffer}
+     * <p>
+     * The scale shifts are:
+     *   ByteBuffer:               0
+     *   ShortBuffer, CharBuffer:  1
+     *   IntBuffer, FloatBuffer:   2
+     *   LongBuffer, DoubleBuffer: 3
+     */
+    abstract int scaleShifts();
+
+    abstract AbstractMemorySegmentImpl heapSegment(Object base,
+                                                   long offset,
+                                                   long length,
+                                                   boolean readOnly,
+                                                   MemorySessionImpl bufferScope);
 
     final int markValue() {                             // package-private
         return mark;
@@ -775,9 +820,11 @@ public abstract sealed class Buffer
     }
 
     static {
+
         // setup access to this package in SharedSecrets
         SharedSecrets.setJavaNioAccess(
             new JavaNioAccess() {
+
                 @Override
                 public BufferPool getDirectBufferPool() {
                     return Bits.BUFFER_POOL;
@@ -790,7 +837,9 @@ public abstract sealed class Buffer
 
                 @Override
                 public ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long address, int cap, Object obj, MemorySegment segment) {
-                    return new DirectByteBuffer(address, cap, obj, unmapperProxy.fileDescriptor(), unmapperProxy.isSync(), segment);
+                    return unmapperProxy == null
+                            ? new DirectByteBuffer(address, cap, obj, segment)
+                            : new DirectByteBuffer(address, cap, obj, unmapperProxy.fileDescriptor(), unmapperProxy.isSync(), segment);
                 }
 
                 @Override
@@ -798,6 +847,12 @@ public abstract sealed class Buffer
                     return new HeapByteBuffer(hb, -1, 0, capacity, capacity, offset, segment);
                 }
 
+                @Override
+                public ByteBuffer newDirectByteBuffer(long addr, int cap) {
+                    return new DirectByteBuffer(addr, cap);
+                }
+
+                @ForceInline
                 @Override
                 public Object getBufferBase(Buffer buffer) {
                     return buffer.base();
@@ -823,36 +878,39 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public Runnable acquireSession(Buffer buffer, boolean async) {
-                    var session = buffer.session();
-                    if (session == null) {
-                        return null;
+                public void acquireSession(Buffer buffer) {
+                    var scope = buffer.session();
+                    if (scope != null) {
+                        scope.acquire0();
                     }
-                    if (async && session.ownerThread() != null) {
-                        throw new IllegalStateException("Confined session not supported");
+                }
+
+                @Override
+                public void releaseSession(Buffer buffer) {
+                    try {
+                        var scope = buffer.session();
+                        if (scope != null) {
+                            scope.release0();
+                        }
+                    } finally {
+                        Reference.reachabilityFence(buffer);
                     }
-                    session.acquire0();
-                    return session::release0;
                 }
 
                 @Override
-                public void force(FileDescriptor fd, long address, boolean isSync, long offset, long size) {
-                    MappedMemoryUtils.force(fd, address, isSync, offset, size);
+                public boolean isThreadConfined(Buffer buffer) {
+                    var scope = buffer.session();
+                    return scope != null && scope.ownerThread() != null;
                 }
 
                 @Override
-                public void load(long address, boolean isSync, long size) {
-                    MappedMemoryUtils.load(address, isSync, size);
+                public boolean hasSession(Buffer buffer) {
+                    return buffer.session() != null;
                 }
 
                 @Override
-                public void unload(long address, boolean isSync, long size) {
-                    MappedMemoryUtils.unload(address, isSync, size);
-                }
-
-                @Override
-                public boolean isLoaded(long address, boolean isSync, long size) {
-                    return MappedMemoryUtils.isLoaded(address, isSync, size);
+                public MappedMemoryUtilsProxy mappedMemoryUtils() {
+                    return MappedMemoryUtils.PROXY;
                 }
 
                 @Override
@@ -868,6 +926,23 @@ public abstract sealed class Buffer
                 @Override
                 public int pageSize() {
                     return Bits.pageSize();
+                }
+
+                @ForceInline
+                @Override
+                public int scaleShifts(Buffer buffer) {
+                    return buffer.scaleShifts();
+                }
+
+                @ForceInline
+                @Override
+                public AbstractMemorySegmentImpl heapSegment(Buffer buffer,
+                                                             Object base,
+                                                             long offset,
+                                                             long length,
+                                                             boolean readOnly,
+                                                             MemorySessionImpl bufferScope) {
+                    return buffer.heapSegment(base, offset, length, readOnly, bufferScope);
                 }
             });
     }

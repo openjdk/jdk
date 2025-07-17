@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,11 +82,11 @@ public class DateTimeParseException extends DateTimeException {
     private static final long serialVersionUID = 4304633501674722597L;
 
     /**
-     * The text that was being parsed.
+     * @serial The text that was being parsed.
      */
     private final String parsedString;
     /**
-     * The error index in the text.
+     * @serial The error index in the text.
      */
     private final int errorIndex;
 

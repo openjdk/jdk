@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ if [ "$VERBOSE" = "true" ] ; then
   echo "idea template dir: $IDEA_TEMPLATE"
 fi
 
-cd $TOP ; make -f "$IDEA_MAKE/idea.gmk" -I $MAKE_DIR/.. idea MAKEOVERRIDES= OUT=$IDEA_OUTPUT/env.cfg MODULES="$*" $CONF_ARG || exit 1
+cd $TOP ; make idea-gen-config ALLOW=IDEA_OUTPUT,MODULES IDEA_OUTPUT=$IDEA_OUTPUT MODULES="$*" $CONF_ARG || exit 1
 cd $SCRIPT_DIR
 
 . $IDEA_OUTPUT/env.cfg
@@ -193,17 +193,7 @@ for root in $MODULE_ROOTS; do
       root=`wslpath -am $root`
     fi
 
-    VM_CI="jdk.internal.vm.ci/share/classes"
-    VM_COMPILER="src/jdk.internal.vm.compiler/share/classes"
-    if test "${root#*$VM_CI}" != "$root" || test "${root#*$VM_COMPILER}" != "$root"; then
-        for subdir in "$root"/*; do
-            if [ -d "$subdir" ]; then
-                SOURCES=$SOURCES" $SOURCE_PREFIX""$subdir"/src"$SOURCE_POSTFIX"
-            fi
-        done
-    else
-        SOURCES=$SOURCES" $SOURCE_PREFIX""$root""$SOURCE_POSTFIX"
-    fi
+    SOURCES=$SOURCES" $SOURCE_PREFIX""$root""$SOURCE_POSTFIX"
 done
 
 add_replacement "###SOURCE_ROOTS###" "$SOURCES"

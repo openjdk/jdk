@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,24 @@
 
 /*
  * @test
- * @bug 4018937 8008577
+ * @bug 4018937 8008577 8174269
  * @summary Confirm that methods which are newly added to support BigDecimal and BigInteger work as expected.
- * @library /java/text/testlib
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI BigDecimalFormat
+ * @run junit BigDecimalFormat
  */
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.*;
-import java.util.*;
+import java.text.DecimalFormat;
+import java.text.FieldPosition;
+import java.text.MessageFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
 
-public class BigDecimalFormat extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new BigDecimalFormat().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class BigDecimalFormat {
 
     static final String nonsep_int =
         "123456789012345678901234567890123456789012345678901234567890" +
@@ -99,6 +101,7 @@ public class BigDecimalFormat extends IntlTest {
     /**
      * Test for normal big numbers which have the fraction part
      */
+    @Test
     void test_Format_in_NumberFormat_BigDecimal() {
         String from, to;
 
@@ -520,6 +523,7 @@ public class BigDecimalFormat extends IntlTest {
     /**
      * Test for normal big numbers which have the fraction part with multiplier
      */
+    @Test
     void test_Format_in_NumberFormat_BigDecimal_usingMultiplier() {
         String from, to;
 
@@ -580,6 +584,7 @@ public class BigDecimalFormat extends IntlTest {
     /**
      * Test for normal big numbers which don't have the fraction part
      */
+    @Test
     void test_Format_in_NumberFormat_BigInteger() {
         String from, to;
 
@@ -720,6 +725,7 @@ public class BigDecimalFormat extends IntlTest {
      * Test for normal big numbers which don't have the fraction part with
      * multiplier
      */
+    @Test
     void test_Format_in_NumberFormat_BigInteger_usingMultiplier() {
         String from, to;
 
@@ -775,6 +781,7 @@ public class BigDecimalFormat extends IntlTest {
      * Test for normal Long numbers when maximum and minimum digits are
      * specified
      */
+    @Test
     void test_Format_in_NumberFormat_Long_checkDigits() {
         String from, to;
 
@@ -890,6 +897,7 @@ public class BigDecimalFormat extends IntlTest {
      *    Double.POSITIVE_INFINITY
      *    Double.NEGATIVE_INFINITY
      */
+    @Test
     void test_Format_in_NumberFormat_SpecialNumber() {
         String from, to;
 
@@ -908,10 +916,10 @@ public class BigDecimalFormat extends IntlTest {
         };
         int multipliers[] = {0, 5, -5};
         String[][] expected = {
-            {"-0", "0", "\ufffd", "\ufffd", "0", "0", "\ufffd", "-0", "-0"},
-            {"-0", "0", "\ufffd", "\u221e", "25.5", "25", "-\u221e", "-25.5",
+            {"-0", "0", "NaN", "NaN", "0", "0", "NaN", "-0", "-0"},
+            {"-0", "0", "NaN", "\u221e", "25.5", "25", "-\u221e", "-25.5",
              "-25"},
-            {"0", "-0", "\ufffd", "-\u221e", "-25.5", "-25", "\u221e", "25.5",
+            {"0", "-0", "NaN", "-\u221e", "-25.5", "-25", "\u221e", "25.5",
              "25"},
         };
 
@@ -932,6 +940,7 @@ public class BigDecimalFormat extends IntlTest {
      *   (Formatting Long.MIN_VALUE w/ multiplier=-1 used to return a wrong
      *    number.)
      */
+    @Test
     void test_Format_in_NumberFormat_Other() {
         String from, to;
 
@@ -964,6 +973,7 @@ public class BigDecimalFormat extends IntlTest {
     /**
      * Test for MessageFormat
      */
+    @Test
     void test_Format_in_MessageFormat() {
         MessageFormat mf = new MessageFormat(
             "  {0, number}\n" +
@@ -977,7 +987,7 @@ public class BigDecimalFormat extends IntlTest {
             "  {1, number, currency}\n" +
             "  {1, number, percent}\n" +
             "  {1, number,0.#######E0}\n",
-            Locale.US
+            Locale.forLanguageTag("en-US-u-cf-account")
         );
         Object[] testArgs = {
             new BigInteger("9876543210987654321098765432109876543210"),
@@ -998,7 +1008,7 @@ public class BigDecimalFormat extends IntlTest {
         ;
 
         if (!expected.equals(mf.format(testArgs))) {
-            errln("Wrong format.\n      got:\n" + mf.format(testArgs) +
+            fail("Wrong format.\n      got:\n" + mf.format(testArgs) +
                   "     expected:\n" + expected);
         }
     }
@@ -1014,7 +1024,7 @@ public class BigDecimalFormat extends IntlTest {
     private void checkFormat(String orig, StringBuffer got, String expected,
                              int multiplier) {
         if (!expected.equals(new String(got))) {
-            errln("Formatting... failed." +
+            fail("Formatting... failed." +
                   "\n   original:   " + orig +
                   "\n   multiplier: " + multiplier +
                   "\n   formatted:  " + got +
@@ -1027,14 +1037,14 @@ public class BigDecimalFormat extends IntlTest {
         int position;
 
         if ((position = fp.getBeginIndex()) != begin) {
-            errln("Formatting... wrong Begin index returned for " +
+            fail("Formatting... wrong Begin index returned for " +
                   fp.getFieldAttribute() + "." +
                   "\n   original: " + orig +
                   "\n   got:      " + position +
                   "\n   expected: " + begin + "\n");
         }
         if ((position = fp.getEndIndex()) != end) {
-            errln("Formatting... wrong End index returned for " +
+            fail("Formatting... wrong End index returned for " +
                   fp.getFieldAttribute() + "." +
                   "\n   original: " + orig +
                   "\n   got:      " + position +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,14 +33,12 @@
 
 class JavaThread;
 class Metadata;
+class MetadataClosure;
+class OopClosure;
 class Thread;
 class ThreadClosure;
 class ThreadsList;
 class outputStream;
-
-class CodeBlobClosure;
-class MetadataClosure;
-class OopClosure;
 
 // The active thread queue. It also keeps track of the current used
 // thread priorities.
@@ -66,7 +64,6 @@ class Threads: AllStatic {
   static void remove(JavaThread* p, bool is_daemon);
   static void non_java_threads_do(ThreadClosure* tc);
   static void java_threads_do(ThreadClosure* tc);
-  static void java_threads_and_vm_thread_do(ThreadClosure* tc);
   static void threads_do(ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
 
@@ -83,6 +80,7 @@ class Threads: AllStatic {
   // Does not include JNI_VERSION_1_1
   static jboolean is_supported_jni_version(jint version);
 
+private:
   // The "thread claim token" provides a way for threads to be claimed
   // by parallel worker tasks.
   //
@@ -99,14 +97,16 @@ class Threads: AllStatic {
   // New threads get their token set to 0 and change_thread_claim_token()
   // never sets the global token to 0.
   static uintx thread_claim_token() { return _thread_claim_token; }
+
+public:
   static void change_thread_claim_token();
   static void assert_all_threads_claimed() NOT_DEBUG_RETURN;
 
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.
-  static void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  static void oops_do(OopClosure* f, NMethodClosure* cf);
   // This version may be called by sequential or parallel code.
-  static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
+  static void possibly_parallel_oops_do(bool is_par, OopClosure* f, NMethodClosure* cf);
 
   // RedefineClasses support
   static void metadata_do(MetadataClosure* f);
@@ -126,16 +126,18 @@ class Threads: AllStatic {
   static void print_on_error(outputStream* st, Thread* current, char* buf, int buflen);
   static void print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
                              int buflen, bool* found_current);
-  static void print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
+  // Print threads busy compiling, and returns the number of printed threads.
+  static unsigned print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
 
-  // Get Java threads that are waiting to enter a monitor.
+  // Get Java threads that are waiting to enter or re-enter the specified monitor.
+  // Java threads that are executing mounted virtual threads are not included.
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
                                                          int count, address monitor);
 
-  // Get owning Java thread from the monitor's owner field.
-  static JavaThread *owning_thread_from_monitor_owner(ThreadsList * t_list,
-                                                      address owner);
+  // Get owning Java thread from the basicLock address.
+  static JavaThread *owning_thread_from_stacklock(ThreadsList * t_list, address basicLock);
 
+  static JavaThread* owning_thread_from_object(ThreadsList* t_list, oop obj);
   static JavaThread* owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* owner);
 
   // Number of threads on the active threads list

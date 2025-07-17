@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.StepEvent._itself_.stepEvent004.stepEvent004
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.StepEvent._itself_.stepEvent004.stepEvent004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -79,7 +79,9 @@ package nsk.jdi.StepEvent._itself_.stepEvent004;
 
 import java.io.*;
 import java.util.*;
+import com.sun.jdi.ReferenceType;
 import com.sun.jdi.request.StepRequest;
+import com.sun.jdi.ThreadReference;
 import nsk.share.Consts;
 import nsk.share.jdi.EventHandler;
 import nsk.share.jdi.sde.*;
@@ -98,7 +100,10 @@ public class stepEvent004 extends SDEDebugger {
     private static final int METHOD10_LINE = 971;
 
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -227,8 +232,12 @@ public class stepEvent004 extends SDEDebugger {
         StepEventListener stepEventListener = new StepEventListener();
         eventHandler.addListener(stepEventListener);
 
+        ReferenceType debuggeeClass = debuggee.classByName(SDEDebuggee.class.getName());
+        ThreadReference mainThread =
+            debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread",
+                                              SDEDebuggee.mainThreadName);
         StepRequest stepRequest = debuggee.getEventRequestManager().createStepRequest(
-                debuggee.threadByName(SDEDebuggee.mainThreadName),
+                mainThread,
                 StepRequest.STEP_LINE,
                 StepRequest.STEP_INTO);
 

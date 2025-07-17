@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -74,17 +74,39 @@ public abstract class NonBlockingInputStream extends InputStream {
         if (c == EOF) {
             return EOF;
         }
-        b[off] = (byte)c;
+        b[off] = (byte) c;
         return 1;
     }
 
     public int readBuffered(byte[] b) throws IOException {
+        return readBuffered(b, 0L);
+    }
+
+    public int readBuffered(byte[] b, long timeout) throws IOException {
+        return readBuffered(b, 0, b.length, timeout);
+    }
+
+    public int readBuffered(byte[] b, int off, int len, long timeout) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if (b.length == 0) {
+        } else if (off < 0 || len < 0 || off + len < b.length) {
+            throw new IllegalArgumentException();
+        } else if (len == 0) {
             return 0;
         } else {
-            return super.read(b, 0, b.length);
+            Timeout t = new Timeout(timeout);
+            int nb = 0;
+            while (!t.elapsed()) {
+                int r = read(nb > 0 ? 1 : t.timeout());
+                if (r < 0) {
+                    return nb > 0 ? nb : r;
+                }
+                b[off + nb++] = (byte) r;
+                if (nb >= len || t.isInfinite()) {
+                    break;
+                }
+            }
+            return nb;
         }
     }
 
@@ -93,9 +115,7 @@ public abstract class NonBlockingInputStream extends InputStream {
      * thread is currently blocked waiting for I/O it may not actually
      * shut down until the I/O is received.
      */
-    public void shutdown() {
-    }
+    public void shutdown() {}
 
     public abstract int read(long timeout, boolean isPeek) throws IOException;
-
 }

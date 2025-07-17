@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot/lib/JvmOverrideFiles.gmk))
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
 # This file contains explicit overrides of CFLAGS and/or precompiled header
 # status for individual files on specific platforms.
+################################################################################
 
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_vmStructs.cpp_CXXFLAGS := -fno-var-tracking-assignments
@@ -36,6 +38,10 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   ifeq ($(DEBUG_LEVEL), release)
     # Need extra inlining to collapse shared marking code into the hot marking loop
     BUILD_LIBJVM_shenandoahMark.cpp_CXXFLAGS := --param inline-unit-growth=1000
+  endif
+  # disable lto in g1ParScanThreadState because of special inlining/flattening used there
+  ifeq ($(call check-jvm-feature, link-time-opt), true)
+    BUILD_LIBJVM_g1ParScanThreadState.cpp_CXXFLAGS := -fno-lto
   endif
 endif
 
@@ -48,19 +54,14 @@ ifneq ($(FDLIBM_CFLAGS), )
 endif
 
 ifeq ($(call isTargetOs, linux), true)
-  BUILD_LIBJVM_ostream.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
-  BUILD_LIBJVM_logFileOutput.cpp_CXXFLAGS := -D_FILE_OFFSET_BITS=64
+  BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
+  BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
 
-  BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
-  BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
-
-  ifeq ($(TOOLCHAIN_TYPE), clang)
-    JVM_PRECOMPILED_HEADER_EXCLUDE := \
-	sharedRuntimeTrig.cpp \
-	sharedRuntimeTrans.cpp \
-        $(OPT_SPEED_SRC) \
-	#
-  endif
+  JVM_PRECOMPILED_HEADER_EXCLUDE := \
+      sharedRuntimeTrig.cpp \
+      sharedRuntimeTrans.cpp \
+      $(OPT_SPEED_SRC) \
+      #
 
   ifeq ($(call isTargetCpu, x86), true)
     # Performance measurements show that by compiling GC related code, we could
@@ -76,7 +77,7 @@ ifeq ($(call isTargetOs, linux), true)
     NONPIC_SRC := $(filter $(NONPIC_FILTER), $(ALL_SRC)) globals.cpp location.cpp
     # Declare variables for each source file that needs the pic flag like this:
     # BUILD_JVM_<srcfile>_CXXFLAGS := -fno-PIC
-    # This will get implicitly picked up by SetupNativeCompilation below.
+    # This will get implicitly picked up by SetupJdkLibrary below.
     $(foreach s, $(NONPIC_SRC), $(eval BUILD_LIBJVM_$(notdir $s)_CXXFLAGS := -fno-PIC))
   endif
 
@@ -109,7 +110,7 @@ else ifeq ($(call isTargetOs, macosx), true)
   endif
 
 else ifeq ($(call isTargetOs, aix), true)
-  BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -qnoinline
+  BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -fno-inline
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
   # Disable aggressive optimizations for functions in sharedRuntimeTrig.cpp
   # and sharedRuntimeTrans.cpp on ppc64.
@@ -123,28 +124,32 @@ else ifeq ($(call isTargetOs, aix), true)
   # mode, so don't optimize sharedRuntimeTrig.cpp at all.
   BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
 
-  ifneq ($(DEBUG_LEVEL),slowdebug)
-    # Compiling jvmtiEnterTrace.cpp with full optimization needs more than 30min
-    # (mostly because of '-qhot=level=1' and the more than 1300 'log_trace' calls
-    # which cause a lot of template expansion).
-    BUILD_LIBJVM_jvmtiEnterTrace.cpp_OPTIMIZATION := LOW
-  endif
-
   # Disable ELF decoder on AIX (AIX uses XCOFF).
   JVM_EXCLUDE_PATTERNS += elf
 
+  JVM_PRECOMPILED_HEADER_EXCLUDE := \
+      sharedRuntimeTrig.cpp \
+      sharedRuntimeTrans.cpp \
+      synchronizer.cpp \
+      $(OPT_SPEED_SRC) \
+      #
+
 else ifeq ($(call isTargetOs, windows), true)
   JVM_PRECOMPILED_HEADER_EXCLUDE := \
-      bytecodeInterpreter.cpp \
-      bytecodeInterpreterWithChecks.cpp \
       opcodes.cpp \
       os_windows.cpp \
       os_windows_x86.cpp \
       osThread_windows.cpp \
       jvmciCompilerToVMInit.cpp \
+      $(OPT_SPEED_SRC) \
       #
 
   # Workaround for jvmciCompilerToVM.cpp long compilation time
   BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
 
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,14 +188,14 @@ public class RmiRegistrySslTest {
             command.add(TEST_CLASS_PATH);
             command.add(className);
 
-            ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(command.toArray(new String[command.size()]));
+            ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(command);
 
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
 
             System.out.println("test output:");
             System.out.println(output.getOutput());
 
-            if (!output.getOutput().contains("Exception thrown by the agent : " +
+            if (!output.getOutput().contains("Exception thrown by the agent: " +
                     "java.rmi.server.ExportException: Port already in use")) {
                 return output.getExitValue();
             }

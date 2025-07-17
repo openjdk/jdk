@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,22 @@ static inline intptr_t** link_address(const frame& f) {
             : (intptr_t**)(f.unextended_sp() + f.cb()->frame_size() - 2);
 }
 
+static inline void patch_return_pc_with_preempt_stub(frame& f) {
+  if (f.is_runtime_frame()) {
+    // Unlike x86 we don't know where in the callee frame the return pc is
+    // saved so we can't patch the return from the VM call back to Java.
+    // Instead, we will patch the return from the runtime stub back to the
+    // compiled method so that the target returns to the preempt cleanup stub.
+    intptr_t* caller_sp = f.sp() + f.cb()->frame_size();
+    caller_sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
+  } else {
+    // The target will check for preemption once it returns to the interpreter
+    // or the native wrapper code and will manually jump to the preempt stub.
+    JavaThread *thread = JavaThread::current();
+    thread->set_preempt_alternate_return(StubRoutines::cont_preempt_stub());
+  }
+}
+
 inline int ContinuationHelper::frame_align_words(int size) {
 #ifdef _LP64
   return size & 1;
@@ -72,12 +88,12 @@ inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, 
   anchor->set_last_Java_fp(entry->entry_fp());
 }
 
-#ifdef ASSERT
 inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
   intptr_t* fp = *(intptr_t**)(sp - 2);
   anchor->set_last_Java_fp(fp);
 }
 
+#ifdef ASSERT
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
   address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
@@ -100,7 +116,8 @@ inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const fr
   return (address*)(f.fp() + frame::return_addr_offset);
 }
 
-inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intptr_t* sp) {
+inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
+  intptr_t* sp = caller.unextended_sp();
   assert(f.is_interpreted_frame(), "");
   intptr_t* la = f.addr_at(frame::interpreter_frame_sender_sp_offset);
   *la = f.is_heap_frame() ? (intptr_t)(sp - f.fp()) : (intptr_t)sp;
@@ -120,20 +137,25 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
   // interpreter_frame_last_sp_offset, points to unextended_sp includes arguments in the frame
   // interpreter_frame_initial_sp_offset excludes expression stack slots
   int expression_stack_sz = expression_stack_size(f, mask);
-  intptr_t* res = *(intptr_t**)f.addr_at(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
+  intptr_t* res = (intptr_t*)f.at_relative(frame::interpreter_frame_initial_sp_offset) - expression_stack_sz;
   assert(res == (intptr_t*)f.interpreter_frame_monitor_end() - expression_stack_sz, "");
   assert(res >= f.unextended_sp(),
     "res: " INTPTR_FORMAT " initial_sp: " INTPTR_FORMAT " last_sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " expression_stack_size: %d",
-    p2i(res), p2i(f.addr_at(frame::interpreter_frame_initial_sp_offset)), f.at(frame::interpreter_frame_last_sp_offset), p2i(f.unextended_sp()), expression_stack_sz);
+    p2i(res), p2i(f.addr_at(frame::interpreter_frame_initial_sp_offset)), f.at_relative_or_null(frame::interpreter_frame_last_sp_offset),
+    p2i(f.unextended_sp()), expression_stack_sz);
   return res;
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) { // exclusive; this will not be copied with the frame
-  return (intptr_t*)f.at(frame::interpreter_frame_locals_offset) + 1; // exclusive, so we add 1 word
+  return (intptr_t*)f.at_relative(frame::interpreter_frame_locals_offset) + 1; // exclusive, so we add 1 word
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
   return f.unextended_sp() + (callee_interpreted ? callee_argsize : 0);
+}
+
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  return f.fp();
 }
 
 #endif // CPU_RISCV_CONTINUATIONFRAMEHELPERS_RISCV_INLINE_HPP

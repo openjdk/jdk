@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,13 +79,7 @@ public final class MethodUtil extends SecureClassLoader {
 
     public static Method getMethod(Class<?> cls, String name, Class<?>[] args)
         throws NoSuchMethodException {
-        ReflectUtil.checkPackageAccess(cls);
         return cls.getMethod(name, args);
-    }
-
-    public static Method[] getMethods(Class<?> cls) {
-        ReflectUtil.checkPackageAccess(cls);
-        return cls.getMethods();
     }
 
     /*
@@ -98,14 +92,14 @@ public final class MethodUtil extends SecureClassLoader {
         } catch (InvocationTargetException ie) {
             Throwable t = ie.getCause();
 
-            if (t instanceof InvocationTargetException) {
-                throw (InvocationTargetException)t;
-            } else if (t instanceof IllegalAccessException) {
-                throw (IllegalAccessException)t;
-            } else if (t instanceof RuntimeException) {
-                throw (RuntimeException)t;
-            } else if (t instanceof Error) {
-                throw (Error)t;
+            if (t instanceof InvocationTargetException ite) {
+                throw ite;
+            } else if (t instanceof IllegalAccessException iae) {
+                throw iae;
+            } else if (t instanceof RuntimeException re) {
+                throw re;
+            } else if (t instanceof Error error) {
+                throw error;
             } else {
                 throw new Error("Unexpected invocation error", t);
             }
@@ -140,7 +134,6 @@ public final class MethodUtil extends SecureClassLoader {
         throws ClassNotFoundException
     {
         // First, check if the class has already been loaded
-        ReflectUtil.checkPackageAccess(name);
         Class<?> c = findLoadedClass(name);
         if (c == null) {
             try {

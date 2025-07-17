@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,10 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,7 +34,6 @@ import java.util.List;
  * @test
  * @bug     8151223
  * @summary String concatenation fails with implicit toString() on package-private class
- * @modules jdk.jdeps/com.sun.tools.classfile
  *
  * @clean *
  * @compile -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
@@ -175,19 +176,17 @@ public class Test {
     public static void readIndyTypes() throws Exception {
         actualTypes = new ArrayList<String>();
 
-        ClassFile classFile = ClassFile.read(new File(System.getProperty("test.classes", "."),
-                    Test.class.getName() + ".class"));
-        ConstantPool constantPool = classFile.constant_pool;
+        ClassModel classFile = ClassFile.of().parse(new File(System.getProperty("test.classes", "."),
+                    Test.class.getName() + ".class").toPath());
 
-        for (Method method : classFile.methods) {
-            if (method.getName(constantPool).equals("main")) {
-                Code_attribute code = (Code_attribute) method.attributes
-                        .get(Attribute.Code);
-                for (Instruction i : code.getInstructions()) {
-                    if (i.getOpcode() == Opcode.INVOKEDYNAMIC) {
-                        CONSTANT_InvokeDynamic_info indyInfo = (CONSTANT_InvokeDynamic_info) constantPool.get(i.getUnsignedShort(1));
-                        CONSTANT_NameAndType_info natInfo = indyInfo.getNameAndTypeInfo();
-                        actualTypes.add(natInfo.getType());
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString("main")) {
+                CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+                for (CodeElement i : code.elementList()) {
+                    if (i instanceof InvokeDynamicInstruction) {
+                        InvokeDynamicEntry indyInfo = ((InvokeDynamicInstruction) i).invokedynamic();
+                        NameAndTypeEntry natInfo = indyInfo.nameAndType();
+                        actualTypes.add(natInfo.type().stringValue());
                     }
                 }
             }

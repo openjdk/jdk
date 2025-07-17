@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_RUNTIME_CONTINUATION_HPP
 #define SHARE_VM_RUNTIME_CONTINUATION_HPP
 
+#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "jni.h"
 
 class ContinuationEntry;
 class frame;
@@ -39,7 +39,7 @@ class RegisterMap;
 class Continuations : public AllStatic {
 public:
   static void init();
-  static bool enabled(); // TODO: used while virtual threads are in Preview; remove when GA
+  static bool enabled();
 };
 
 void continuations_init();
@@ -47,8 +47,25 @@ void continuations_init();
 class javaVFrame;
 class JavaThread;
 
+// should match Continuation.pinnedReason() in Continuation.java
+enum freeze_result {
+  freeze_ok = 0,
+  freeze_ok_bottom = 1,
+  freeze_pinned_cs = 2,
+  freeze_pinned_native = 3,
+  freeze_pinned_monitor = 4,
+  freeze_exception = 5,
+  freeze_not_mounted = 6,
+  freeze_unsupported = 7
+};
+
 class Continuation : AllStatic {
 public:
+
+  enum preempt_kind {
+    freeze_on_monitorenter,
+    freeze_on_wait
+  };
 
   enum thaw_kind {
     thaw_top = 0,
@@ -69,16 +86,17 @@ public:
   static void init();
 
   static address freeze_entry();
+  static address freeze_preempt_entry();
   static int prepare_thaw(JavaThread* thread, bool return_barrier);
   static address thaw_entry();
 
-  static const ContinuationEntry* last_continuation(const JavaThread* thread, oop cont_scope);
+  static freeze_result try_preempt(JavaThread* target, oop continuation);
+
   static ContinuationEntry* get_continuation_entry_for_continuation(JavaThread* thread, oop continuation);
   static ContinuationEntry* get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp);
   static ContinuationEntry* get_continuation_entry_for_entry_frame(JavaThread* thread, const frame& f);
 
   static bool is_continuation_mounted(JavaThread* thread, oop continuation);
-  static bool is_continuation_scope_mounted(JavaThread* thread, oop cont_scope);
 
   static bool is_cont_barrier_frame(const frame& f);
   static bool is_return_barrier_entry(const address pc);

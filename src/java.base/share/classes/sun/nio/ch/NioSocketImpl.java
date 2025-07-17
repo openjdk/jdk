@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,13 @@ import jdk.internal.ref.CleanerFactory;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.PlatformSocketImpl;
-import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
-import sun.net.util.SocketExceptions;
+import jdk.internal.util.Exceptions;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * NIO based SocketImpl.
@@ -101,8 +102,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private static final int ST_CLOSED = 5;
     private volatile int state;  // need stateLock to change
 
-    // set by SocketImpl.create, protected by stateLock
-    private boolean stream;
     private Cleanable cleaner;
 
     // set to true when the socket is in non-blocking mode
@@ -182,6 +181,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 millis = -1;
             } else {
                 millis = NANOSECONDS.toMillis(nanos);
+                if (nanos > MILLISECONDS.toNanos(millis)) {
+                    // Round up any excess nanos to the nearest millisecond to
+                    // avoid parking for less than requested.
+                    millis++;
+                }
             }
             Net.poll(fd, event, millis);
         }
@@ -284,7 +288,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      * @throws SocketException if the socket is closed or a socket I/O error occurs
      * @throws SocketTimeoutException if the read timeout elapses
      */
-    private int implRead(byte[] b, int off, int len) throws IOException {
+    private int implRead(byte[] b, int off, int len, long remainingNanos) throws IOException {
         int n = 0;
         FileDescriptor fd = beginRead();
         try {
@@ -292,11 +296,10 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 throw new SocketException("Connection reset");
             if (isInputClosed)
                 return -1;
-            int timeout = this.timeout;
-            configureNonBlockingIfNeeded(fd, timeout > 0);
-            if (timeout > 0) {
+            configureNonBlockingIfNeeded(fd, remainingNanos > 0);
+            if (remainingNanos > 0) {
                 // read with timeout
-                n = timedRead(fd, b, off, len, MILLISECONDS.toNanos(timeout));
+                n = timedRead(fd, b, off, len, remainingNanos);
             } else {
                 // read, no timeout
                 n = tryRead(fd, b, off, len);
@@ -312,7 +315,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             connectionReset = true;
             throw new SocketException("Connection reset");
         } catch (IOException ioe) {
-            throw new SocketException(ioe.getMessage());
+            // throw SocketException to maintain compatibility
+            throw asSocketException(ioe);
         } finally {
             endRead(n > 0);
         }
@@ -330,14 +334,24 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         if (len == 0) {
             return 0;
         } else {
-            readLock.lock();
+            long remainingNanos = 0;
+            int timeout = this.timeout;
+            if (timeout > 0) {
+                remainingNanos = tryLock(readLock, timeout, MILLISECONDS);
+                if (remainingNanos <= 0) {
+                    assert !readLock.isHeldByCurrentThread();
+                    throw new SocketTimeoutException("Read timed out");
+                }
+            } else {
+                readLock.lock();
+            }
             try {
                 // emulate legacy behavior to return -1, even if socket is closed
                 if (readEOF)
                     return -1;
                 // read up to MAX_BUFFER_SIZE bytes
                 int size = Math.min(len, MAX_BUFFER_SIZE);
-                int n = implRead(b, off, size);
+                int n = implRead(b, off, size, remainingNanos);
                 if (n == -1)
                     readEOF = true;
                 return n;
@@ -410,7 +424,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         } catch (InterruptedIOException e) {
             throw e;
         } catch (IOException ioe) {
-            throw new SocketException(ioe.getMessage());
+            // throw SocketException to maintain compatibility
+            throw asSocketException(ioe);
         } finally {
             endWrite(n > 0);
         }
@@ -445,27 +460,20 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
      */
     @Override
     protected void create(boolean stream) throws IOException {
+        if (!stream) {
+            throw new IOException("Datagram socket creation not supported");
+        }
         synchronized (stateLock) {
             if (state != ST_NEW)
                 throw new IOException("Already created");
-            if (!stream)
-                ResourceManager.beforeUdpCreate();
             FileDescriptor fd;
-            try {
-                if (server) {
-                    assert stream;
-                    fd = Net.serverSocket(true);
-                } else {
-                    fd = Net.socket(stream);
-                }
-            } catch (IOException ioe) {
-                if (!stream)
-                    ResourceManager.afterUdpClose();
-                throw ioe;
+            if (server) {
+                fd = Net.serverSocket();
+            } else {
+                fd = Net.socket();
             }
-            Runnable closer = closerFor(fd, stream);
+            Runnable closer = closerFor(fd);
             this.fd = fd;
-            this.stream = stream;
             this.cleaner = CleanerFactory.cleaner().register(this, closer);
             this.state = ST_UNCONNECTED;
         }
@@ -557,7 +565,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             throw new IOException("Unsupported address type");
         InetSocketAddress isa = (InetSocketAddress) remote;
         if (isa.isUnresolved()) {
-            throw new UnknownHostException(isa.getHostName());
+            throw new UnknownHostException(
+                formatMsg(filterNonSocketInfo(isa.getHostName())));
         }
 
         InetAddress address = isa.getAddress();
@@ -601,10 +610,13 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             }
         } catch (IOException ioe) {
             close();
-            if (ioe instanceof InterruptedIOException) {
+            if (ioe instanceof SocketTimeoutException) {
                 throw ioe;
+            } else if (ioe instanceof InterruptedIOException) {
+                assert Thread.currentThread().isVirtual();
+                throw new SocketException("Closed by interrupt");
             } else {
-                throw SocketExceptions.of(ioe, isa);
+                throw Exceptions.ioException(ioe, isa);
             }
         }
     }
@@ -652,8 +664,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private FileDescriptor beginAccept() throws SocketException {
         synchronized (stateLock) {
             ensureOpen();
-            if (!stream)
-                throw new SocketException("Not a stream socket");
             if (localport == 0)
                 throw new SocketException("Not bound");
             readerThread = NativeThread.current();
@@ -763,10 +773,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         }
 
         // set the fields
-        Runnable closer = closerFor(newfd, true);
+        Runnable closer = closerFor(newfd);
         synchronized (nsi.stateLock) {
             nsi.fd = newfd;
-            nsi.stream = true;
             nsi.cleaner = CleanerFactory.cleaner().register(nsi, closer);
             nsi.localport = localAddress.getPort();
             nsi.address = isaa[0].getAddress();
@@ -893,20 +902,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             // then the socket is pre-closed and the thread(s) signalled. The
             // last thread will close the file descriptor.
             if (!tryClose()) {
-                long reader = readerThread;
-                long writer = writerThread;
-                if (NativeThread.isVirtualThread(reader)
-                        || NativeThread.isVirtualThread(writer)) {
-                    Poller.stopPoll(fdVal(fd));
-                }
-                if (NativeThread.isNativeThread(reader)
-                        || NativeThread.isNativeThread(writer)) {
-                    nd.preClose(fd);
-                    if (NativeThread.isNativeThread(reader))
-                        NativeThread.signal(reader);
-                    if (NativeThread.isNativeThread(writer))
-                        NativeThread.signal(writer);
-                }
+                nd.preClose(fd, readerThread, writerThread);
             }
         }
     }
@@ -955,8 +951,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         synchronized (stateLock) {
             ensureOpen();
             if (opt == StandardSocketOptions.IP_TOS) {
-                // maps to IP_TOS or IPV6_TCLASS
-                Net.setSocketOption(fd, family(), opt, value);
+                // maps to IPV6_TCLASS and/or IP_TOS
+                Net.setIpSocketOption(fd, family(), opt, value);
             } else if (opt == StandardSocketOptions.SO_REUSEADDR) {
                 boolean b = (boolean) value;
                 if (Net.useExclusiveBind()) {
@@ -1030,7 +1026,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 }
                 case IP_TOS: {
                     int i = intValue(value, "IP_TOS");
-                    Net.setSocketOption(fd, family(), StandardSocketOptions.IP_TOS, i);
+                    Net.setIpSocketOption(fd, family(), StandardSocketOptions.IP_TOS, i);
                     break;
                 }
                 case TCP_NODELAY: {
@@ -1084,7 +1080,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             } catch (SocketException e) {
                 throw e;
             } catch (IllegalArgumentException | IOException e) {
-                throw new SocketException(e.getMessage());
+                throw asSocketException(e);
             }
         }
     }
@@ -1136,7 +1132,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             } catch (SocketException e) {
                 throw e;
             } catch (IllegalArgumentException | IOException e) {
-                throw new SocketException(e.getMessage());
+                throw asSocketException(e);
             }
         }
     }
@@ -1199,27 +1195,14 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     /**
      * Returns an action to close the given file descriptor.
      */
-    private static Runnable closerFor(FileDescriptor fd, boolean stream) {
-        if (stream) {
-            return () -> {
-                try {
-                    nd.close(fd);
-                } catch (IOException ioe) {
-                    throw new UncheckedIOException(ioe);
-                }
-            };
-        } else {
-            return () -> {
-                try {
-                    nd.close(fd);
-                } catch (IOException ioe) {
-                    throw new UncheckedIOException(ioe);
-                } finally {
-                    // decrement
-                    ResourceManager.afterUdpClose();
-                }
-            };
-        }
+    private static Runnable closerFor(FileDescriptor fd) {
+        return () -> {
+            try {
+                nd.close(fd);
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
+            }
+        };
     }
 
     /**
@@ -1247,6 +1230,19 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         if (interrupted)
             Thread.currentThread().interrupt();
         return remainingNanos;
+    }
+
+    /**
+     * Creates a SocketException from the given exception.
+     */
+    private static SocketException asSocketException(Exception e) {
+        if (e instanceof SocketException se) {
+            return se;
+        } else {
+            var se = new SocketException(e.getMessage());
+            se.setStackTrace(e.getStackTrace());
+            return se;
+        }
     }
 
     /**

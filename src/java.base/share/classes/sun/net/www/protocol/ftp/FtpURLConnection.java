@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,6 @@
  * questions.
  */
 
-/**
- * FTP stream opener.
- */
-
 package sun.net.www.protocol.ftp;
 
 import java.io.IOException;
@@ -47,7 +43,7 @@ import java.net.ProxySelector;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.security.Permission;
-import java.util.Properties;
+
 import sun.net.NetworkClient;
 import sun.net.util.IPAddressUtil;
 import sun.net.www.MessageHeader;
@@ -56,11 +52,9 @@ import sun.net.www.URLConnection;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.net.ftp.FtpClient;
 import sun.net.ftp.FtpProtocolException;
-import sun.net.ProgressSource;
-import sun.net.ProgressMonitor;
 import sun.net.www.ParseUtil;
-import sun.security.action.GetPropertyAction;
 
+import static sun.net.util.ProxyUtil.copyProxy;
 
 /**
  * This class Opens an FTP input (or output) stream given a URL.
@@ -86,7 +80,7 @@ public class FtpURLConnection extends URLConnection {
 
     // In case we have to use proxies, we use HttpURLConnection
     HttpURLConnection http = null;
-    private Proxy instProxy;
+    private final Proxy instProxy;
 
     InputStream is = null;
     OutputStream os = null;
@@ -232,13 +226,7 @@ public class FtpURLConnection extends URLConnection {
             /**
              * Do we have to use a proxy?
              */
-            @SuppressWarnings("removal")
-            ProxySelector sel = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<ProxySelector>() {
-                        public ProxySelector run() {
-                            return ProxySelector.getDefault();
-                        }
-                    });
+            ProxySelector sel = ProxySelector.getDefault();
             if (sel != null) {
                 URI uri = sun.net.www.ParseUtil.toURI(url);
                 final List<Proxy> proxies;
@@ -248,7 +236,7 @@ public class FtpURLConnection extends URLConnection {
                     throw new IOException("Failed to select a proxy", iae);
                 }
                 for (Proxy proxy : proxies) {
-                    p = proxy;
+                    p = copyProxy(proxy);
                     if (p == null || p == Proxy.NO_PROXY ||
                         p.type() == Proxy.Type.SOCKS) {
                         break;
@@ -299,10 +287,8 @@ public class FtpURLConnection extends URLConnection {
 
         if (user == null) {
             user = "anonymous";
-            Properties props = GetPropertyAction.privilegedGetProperties();
-            String vers = props.getProperty("java.version");
-            password = props.getProperty("ftp.protocol.user",
-                    "Java" + vers + "@");
+            String vers = System.getProperty("java.version");
+            password = System.getProperty("ftp.protocol.user", "Java" + vers + "@");
         }
         try {
             ftp = FtpClient.create();
@@ -466,17 +452,7 @@ public class FtpURLConnection extends URLConnection {
 
                     // Wrap input stream with MeteredStream to ensure read() will always return -1
                     // at expected length.
-
-                    // Check if URL should be metered
-                    boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
-                    ProgressSource pi = null;
-
-                    if (meteredInput) {
-                        pi = new ProgressSource(url, "GET", l);
-                        pi.beginTracking();
-                    }
-
-                    is = new MeteredStream(is, pi, l);
+                    is = new MeteredStream(is, l);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -595,6 +571,8 @@ public class FtpURLConnection extends URLConnection {
      * @return  The {@code Permission} object.
      */
     @Override
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() {
         if (permission == null) {
             int urlport = url.getPort();

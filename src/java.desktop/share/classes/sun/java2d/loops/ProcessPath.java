@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,13 +309,13 @@ public class ProcessPath {
             if (c[a1] < (LINE_MIN)) {
                 if (c[a2] < (LINE_MIN)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MIN_CLIPPED;
                 t = (LINE_MIN);
             } else {
                 if (c[a2] > (LINE_MAX)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MAX_CLIPPED;
                 t = (LINE_MAX);
             }
@@ -334,13 +334,13 @@ public class ProcessPath {
             if (c[a1] < (LINE_MIN)) {
                 if (c[a2] < (LINE_MIN)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MIN_CLIPPED;
                 t = (LINE_MIN);
             } else {
                 if (c[a2] > (LINE_MAX)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MAX_CLIPPED;
                 t = (LINE_MAX);
             }
@@ -1469,7 +1469,6 @@ public class ProcessPath {
         float[] coords = new float[8];
         float[] tCoords = new float[8];
         float[] closeCoord = new float[] {0.0f, 0.0f};
-        float[] firstCoord = new float[2];
         int[] pixelInfo = new int[5];
         boolean subpathStarted = false;
         boolean skip = false;
@@ -1710,7 +1709,7 @@ public class ProcessPath {
             this.y = y;
             this.lastPoint = lastPoint;
         }
-    };
+    }
 
     private static class Edge {
         int x;
@@ -1726,7 +1725,7 @@ public class ProcessPath {
             this.dx = dx;
             this.dir = dir;
         }
-    };
+    }
 
     /* Size of the default buffer in the FillData structure. This buffer is
      * replaced with heap allocated in case of large paths.

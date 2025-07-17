@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,23 @@
 package sun.security.krb5;
 
 import java.io.*;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import jdk.internal.util.OperatingSystem;
 import sun.net.dns.ResolverConfiguration;
-import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.SecurityProperties;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class maintains key-value pairs of Kerberos configurable constants
@@ -73,7 +72,7 @@ public class Config {
 
     static {
         String disableReferralsProp =
-                SecurityProperties.privilegedGetOverridable(
+                SecurityProperties.getOverridableProperty(
                         "sun.security.krb5.disableReferrals");
         if (disableReferralsProp != null) {
             DISABLE_REFERRALS = "true".equalsIgnoreCase(disableReferralsProp);
@@ -83,7 +82,7 @@ public class Config {
 
         int maxReferralsValue = 5;
         String maxReferralsProp =
-                SecurityProperties.privilegedGetOverridable(
+                SecurityProperties.getOverridableProperty(
                         "sun.security.krb5.maxReferrals");
         try {
             maxReferralsValue = Integer.parseInt(maxReferralsProp);
@@ -101,8 +100,6 @@ public class Config {
      * Hashtable used to store configuration information.
      */
     private Hashtable<String,Object> stanzaTable = new Hashtable<>();
-
-    private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     // these are used for hexadecimal calculation.
     private static final int BASE16_0 = 1;
@@ -159,12 +156,11 @@ public class Config {
 
     private static boolean isMacosLionOrBetter() {
         // split the "10.x.y" version number
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
-        if (!osname.contains("OS X")) {
+        if (!OperatingSystem.isMacOS()) {
             return false;
         }
 
-        String osVersion = GetPropertyAction.privilegedGetProperty("os.version");
+        String osVersion = System.getProperty("os.version");
         String[] fragments = osVersion.split("\\.");
         if (fragments.length < 2) return false;
 
@@ -188,16 +184,14 @@ public class Config {
         /*
          * If either one system property is specified, we throw exception.
          */
-        String tmp = GetPropertyAction
-                .privilegedGetProperty("java.security.krb5.kdc");
+        String tmp = System.getProperty("java.security.krb5.kdc");
         if (tmp != null) {
             // The user can specify a list of kdc hosts separated by ":"
             defaultKDC = tmp.replace(':', ' ');
         } else {
             defaultKDC = null;
         }
-        defaultRealm = GetPropertyAction
-                .privilegedGetProperty("java.security.krb5.realm");
+        defaultRealm = System.getProperty("java.security.krb5.realm");
         if ((defaultKDC == null && defaultRealm != null) ||
             (defaultRealm == null && defaultKDC != null)) {
             throw new KrbException
@@ -213,16 +207,16 @@ public class Config {
             if (fileName != null) {
                 configFile = loadConfigFile(fileName);
                 stanzaTable = parseStanzaTable(configFile);
-                if (DEBUG) {
-                    System.out.println("Loaded from Java config");
+                if (DEBUG != null) {
+                    DEBUG.println("Loaded from Java config");
                 }
             } else {
                 boolean found = false;
                 if (isMacosLionOrBetter()) {
                     try {
                         stanzaTable = SCDynamicStoreConfig.getConfig();
-                        if (DEBUG) {
-                            System.out.println("Loaded from SCDynamicStoreConfig");
+                        if (DEBUG != null) {
+                            DEBUG.println("Loaded from SCDynamicStoreConfig");
                         }
                         found = true;
                     } catch (IOException ioe) {
@@ -233,15 +227,15 @@ public class Config {
                     fileName = getNativeFileName();
                     configFile = loadConfigFile(fileName);
                     stanzaTable = parseStanzaTable(configFile);
-                    if (DEBUG) {
-                        System.out.println("Loaded from native config");
+                    if (DEBUG != null) {
+                        DEBUG.println("Loaded from native config");
                     }
                 }
             }
         } catch (IOException ioe) {
-            if (DEBUG) {
-                System.out.println("Exception thrown in loading config:");
-                ioe.printStackTrace(System.out);
+            if (DEBUG != null) {
+                DEBUG.println("Exception thrown in loading config:");
+                ioe.printStackTrace(DEBUG.getPrintStream());
             }
             throw new KrbException("krb5.conf loading failed");
         }
@@ -440,11 +434,11 @@ public class Config {
             try {
                 value = parseIntValue(result);
             } catch (NumberFormatException e) {
-                if (DEBUG) {
-                    System.out.println("Exception in getting value of " +
+                if (DEBUG != null) {
+                    DEBUG.println("Exception in getting value of " +
                                        Arrays.toString(keys) + ": " +
                                        e.getMessage());
-                    System.out.println("Setting " + Arrays.toString(keys) +
+                    DEBUG.println("Setting " + Arrays.toString(keys) +
                                        " to minimum value");
                 }
                 value = Integer.MIN_VALUE;
@@ -584,8 +578,8 @@ public class Config {
             Path file, List<String> content, Set<Path> dups)
             throws IOException {
 
-        if (DEBUG) {
-            System.out.println("Loading krb5 profile at " + file);
+        if (DEBUG != null) {
+            DEBUG.println("Loading krb5 profile at " + file);
         }
         if (!file.isAbsolute()) {
             throw new IOException("Profile path not absolute");
@@ -610,9 +604,8 @@ public class Config {
                 } else if (line.startsWith("includedir ")) {
                     Path dir = Paths.get(
                             line.substring("includedir ".length()).trim());
-                    try (DirectoryStream<Path> files =
-                                 Files.newDirectoryStream(dir)) {
-                        for (Path p: files) {
+                    try (Stream<Path> files = Files.list(dir)) {
+                        for (Path p: files.sorted().toList()) {
                             if (Files.isDirectory(p)) continue;
                             String name = p.getFileName().toString();
                             if (name.matches("[a-zA-Z0-9_-]+") ||
@@ -629,8 +622,8 @@ public class Config {
                             content, dups);
                 } else {
                     // Unsupported directives
-                    if (DEBUG) {
-                        System.out.println("Unknown directive: " + line);
+                    if (DEBUG != null) {
+                        DEBUG.println("Unknown directive: " + line);
                     }
                 }
             } else {
@@ -667,40 +660,25 @@ public class Config {
      * @param fileName the configuration file
      * @return normalized lines
      */
-    @SuppressWarnings("removal")
     private List<String> loadConfigFile(final String fileName)
             throws IOException, KrbException {
 
+        if (DEBUG != null) {
+            DEBUG.println("Loading config file from " + fileName);
+        }
         List<String> result = new ArrayList<>();
         List<String> raw = new ArrayList<>();
         Set<Path> dupsCheck = new HashSet<>();
 
-        try {
-            Path fullp = AccessController.doPrivileged((PrivilegedAction<Path>)
-                        () -> Paths.get(fileName).toAbsolutePath(),
-                    null,
-                    new PropertyPermission("user.dir", "read"));
-            AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
-                        @Override
-                        public Void run() throws IOException {
-                            Path path = Paths.get(fileName);
-                            if (!Files.exists(path)) {
-                                // This is OK. There are other ways to get
-                                // Kerberos 5 settings
-                                return null;
-                            } else {
-                                return readConfigFileLines(
-                                        fullp, raw, dupsCheck);
-                            }
-                        }
-                    },
-                    null,
-                    // include/includedir can go anywhere
-                    new FilePermission("<<ALL FILES>>", "read"));
-        } catch (java.security.PrivilegedActionException pe) {
-            throw (IOException)pe.getException();
+        Path fullp = Paths.get(fileName).toAbsolutePath();
+        Path path = Paths.get(fileName);
+        if (!Files.exists(path)) {
+            // This is OK. There are other ways to get
+            // Kerberos 5 settings
+        } else {
+            readConfigFileLines(fullp, raw, dupsCheck);
         }
+
         String previous = null;
         for (String line: raw) {
             if (line.startsWith("[")) {
@@ -781,6 +759,9 @@ public class Config {
             throws KrbException {
         Hashtable<String,Object> current = stanzaTable;
         for (String line: v) {
+            if (DEBUG != null) {
+                DEBUG.println(line);
+            }
             // There are only 3 kinds of lines
             // 1. a = b
             // 2. a = {
@@ -857,18 +838,17 @@ public class Config {
      * The method returns null if it cannot find a Java config file.
      */
     private String getJavaFileName() {
-        String name = GetPropertyAction
-                .privilegedGetProperty("java.security.krb5.conf");
+        String name = System.getProperty("java.security.krb5.conf");
         if (name == null) {
-            name = GetPropertyAction.privilegedGetProperty("java.home")
+            name = System.getProperty("java.home")
                     + File.separator + "conf" + File.separator + "security"
                     + File.separator + "krb5.conf";
             if (!fileExists(name)) {
                 name = null;
             }
         }
-        if (DEBUG) {
-            System.out.println("Java config name: " + name);
+        if (DEBUG != null) {
+            DEBUG.println("Java config name: " + name);
         }
         return name;
     }
@@ -892,8 +872,7 @@ public class Config {
      */
     private String getNativeFileName() {
         String name = null;
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
-        if (osname.startsWith("Windows")) {
+        if (OperatingSystem.isWindows()) {
             try {
                 Credentials.ensureLoaded();
             } catch (Exception e) {
@@ -926,19 +905,19 @@ public class Config {
             if (name == null) {
                 name = "c:\\winnt\\krb5.ini";
             }
-        } else if (osname.contains("OS X")) {
+        } else if (OperatingSystem.isMacOS()) {
             name = findMacosConfigFile();
         } else {
             name =  "/etc/krb5.conf";
         }
-        if (DEBUG) {
-            System.out.println("Native config name: " + name);
+        if (DEBUG != null) {
+            DEBUG.println("Native config name: " + name);
         }
         return name;
     }
 
     private String findMacosConfigFile() {
-        String userHome = GetPropertyAction.privilegedGetProperty("user.home");
+        String userHome = System.getProperty("user.home");
         final String PREF_FILE = "/Library/Preferences/edu.mit.Kerberos";
         String userPrefs = userHome + PREF_FILE;
 
@@ -980,16 +959,22 @@ public class Config {
         String default_enctypes;
         default_enctypes = get("libdefaults", configName);
         if (default_enctypes == null && !configName.equals("permitted_enctypes")) {
+            if (DEBUG != null) {
+                DEBUG.println("Getting permitted_enctypes from libdefaults");
+            }
             default_enctypes = get("libdefaults", "permitted_enctypes");
         }
         int[] etype;
         if (default_enctypes == null) {
-            if (DEBUG) {
-                System.out.println("Using builtin default etypes for " +
+            if (DEBUG != null) {
+                DEBUG.println("default_enctypes were null, using builtin default etypes for configuration " +
                     configName);
             }
             etype = EType.getBuiltInDefaults();
         } else {
+            if (DEBUG != null) {
+                DEBUG.println("default_enctypes:" + default_enctypes);
+            }
             String delim = " ";
             StringTokenizer st;
             for (int j = 0; j < default_enctypes.length(); j++) {
@@ -1011,7 +996,8 @@ public class Config {
                 }
             }
             if (ls.isEmpty()) {
-                throw new KrbException("no supported default etypes for "
+                throw new KrbException("out of " + len +
+                        " default etypes no supported etypes found for configuration "
                         + configName);
             } else {
                 etype = new int[ls.size()];
@@ -1021,12 +1007,13 @@ public class Config {
             }
         }
 
-        if (DEBUG) {
-            System.out.print("default etypes for " + configName + ":");
+        if (DEBUG != null) {
+            String s = "default etypes for " + configName + ":";
             for (int i = 0; i < etype.length; i++) {
-                System.out.print(" " + etype[i]);
+                s += " " + etype[i];
             }
-            System.out.println(".");
+            s += ".";
+            DEBUG.println(s);
         }
         return etype;
     }
@@ -1124,8 +1111,8 @@ public class Config {
      * This method was useless. Kept here in case some class still calls it.
      */
     public void resetDefaultRealm(String realm) {
-        if (DEBUG) {
-            System.out.println(">>> Config try resetting default kdc " + realm);
+        if (DEBUG != null) {
+            DEBUG.println(">>> Config try resetting default kdc " + realm);
         }
     }
 
@@ -1173,7 +1160,6 @@ public class Config {
      * @throws KrbException where no realm can be located
      * @return the default realm, always non null
      */
-    @SuppressWarnings("removal")
     public String getDefaultRealm() throws KrbException {
         if (defaultRealm != null) {
             return defaultRealm;
@@ -1189,17 +1175,9 @@ public class Config {
             }
         }
         if (realm == null) {
-            realm = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.startsWith("Windows")) {
-                        return System.getenv("USERDNSDOMAIN");
-                    }
-                    return null;
-                }
-            });
+            if (OperatingSystem.isWindows()) {
+                realm = System.getenv("USERDNSDOMAIN");
+            }
         }
         if (realm == null) {
             KrbException ke = new KrbException("Cannot locate default realm");
@@ -1218,7 +1196,6 @@ public class Config {
      * @throws KrbException if there's no way to find KDC for the realm
      * @return the list of KDCs separated by a space, always non null
      */
-    @SuppressWarnings("removal")
     public String getKDCList(String realm) throws KrbException {
         if (realm == null) {
             realm = getDefaultRealm();
@@ -1237,28 +1214,20 @@ public class Config {
             }
         }
         if (kdcs == null) {
-            kdcs = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.startsWith("Windows")) {
-                        String logonServer = System.getenv("LOGONSERVER");
-                        if (logonServer != null
-                                && logonServer.startsWith("\\\\")) {
-                            logonServer = logonServer.substring(2);
-                        }
-                        return logonServer;
-                    }
-                    return null;
+            if (OperatingSystem.isWindows()) {
+                String logonServer = System.getenv("LOGONSERVER");
+                if (logonServer != null
+                        && logonServer.startsWith("\\\\")) {
+                    logonServer = logonServer.substring(2);
                 }
-            });
+                kdcs = logonServer;
+            }
         }
         if (kdcs == null) {
             if (defaultKDC != null) {
                 return defaultKDC;
             }
-            KrbException ke = new KrbException("Cannot locate KDC");
+            KrbException ke = new KrbException("Cannot locate KDC for " + realm);
             if (cause != null) {
                 ke.initCause(cause);
             }
@@ -1310,8 +1279,8 @@ public class Config {
      * @return the realm if correct, or null otherwise
      */
     private static String checkRealm(String mapRealm) {
-        if (DEBUG) {
-            System.out.println("getRealmFromDNS: trying " + mapRealm);
+        if (DEBUG != null) {
+            DEBUG.println("getRealmFromDNS: trying " + mapRealm);
         }
         String[] records = null;
         String newRealm = mapRealm;
@@ -1342,14 +1311,14 @@ public class Config {
         String kdcs = "";
         String[] srvs = null;
         // locate DNS SRV record using UDP
-        if (DEBUG) {
-            System.out.println("getKDCFromDNS using UDP");
+        if (DEBUG != null) {
+            DEBUG.println("getKDCFromDNS using UDP");
         }
         srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
         if (srvs == null) {
             // locate DNS SRV record using TCP
-            if (DEBUG) {
-                System.out.println("getKDCFromDNS using TCP");
+            if (DEBUG != null) {
+                DEBUG.println("getKDCFromDNS using TCP");
             }
             srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
         }
@@ -1371,24 +1340,8 @@ public class Config {
         return kdcs;
     }
 
-    @SuppressWarnings("removal")
     private boolean fileExists(String name) {
-        return java.security.AccessController.doPrivileged(
-                                new FileExistsAction(name));
-    }
-
-    static class FileExistsAction
-        implements java.security.PrivilegedAction<Boolean> {
-
-        private String fileName;
-
-        public FileExistsAction(String fileName) {
-            this.fileName = fileName;
-        }
-
-        public Boolean run() {
-            return new File(fileName).exists();
-        }
+        return new File(name).exists();
     }
 
     // Shows the content of the Config object for debug purpose.

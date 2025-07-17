@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,11 @@
 
 // The following is a AWT convention?
 #define PREFERENCES_TAG  42
+
+// Custom event that is provided by AWT to allow libraries like
+// JavaFX to forward native events to AWT even if AWT runs in
+// embedded mode.
+static NSString* awtEmbeddedEvent = @"AWTEmbeddedEvent";
 
 static void addMenuItem(NSMenuItem* menuItem, NSInteger index) {
 AWT_ASSERT_APPKIT_THREAD;
@@ -116,12 +121,29 @@ AWT_ASSERT_APPKIT_THREAD;
 
     // don't install the EAWT delegate if another kind of NSApplication is installed, like say, Safari
     BOOL shouldInstall = NO;
+    BOOL overrideDelegate = (getenv("AWT_OVERRIDE_NSDELEGATE") != NULL);
+    BOOL isApplicationOwner = NO;
     if (NSApp != nil) {
-        if ([NSApp isMemberOfClass:[NSApplication class]]) shouldInstall = YES;
-        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) shouldInstall = YES;
+        if ([NSApp isMemberOfClass:[NSApplication class]] && overrideDelegate) shouldInstall = YES;
+        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) {
+            shouldInstall = YES;
+            isApplicationOwner = YES;
+        }
     }
+
+    if (!isApplicationOwner) {
+        // Register embedded event listener
+        NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
+        Class clz = [ApplicationDelegate class];
+        [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:awtEmbeddedEvent object:nil];
+    }
+
     checked = YES;
-    if (!shouldInstall) return nil;
+    if (!shouldInstall) {
+        [ThreadUtilities setApplicationOwner:NO];
+        return nil;
+    }
+    [ThreadUtilities setApplicationOwner:isApplicationOwner];
 
     sApplicationDelegate = [[ApplicationDelegate alloc] init];
     return sApplicationDelegate;
@@ -281,11 +303,16 @@ static jclass sjc_AppEventHandler = NULL;
     GET_CLASS_RETURN(sjc_AppEventHandler, "com/apple/eawt/_AppEventHandler", ret);
 
 - (void)_handleOpenURLEvent:(NSAppleEventDescriptor *)openURLEvent withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
-AWT_ASSERT_APPKIT_THREAD;
     if (!fHandlesURLTypes) return;
 
     NSString *url = [[openURLEvent paramDescriptorForKeyword:keyDirectObject] stringValue];
+    [ApplicationDelegate _openURL:url];
 
+    [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
+}
+
++ (void)_openURL:(NSString *)url {
+AWT_ASSERT_APPKIT_THREAD;
     //fprintf(stderr,"jm_handleOpenURL\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jstring jURL = NSStringToJavaString(env, url);
@@ -294,8 +321,6 @@ AWT_ASSERT_APPKIT_THREAD;
     (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenURI, jURL);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jURL);
-
-    [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
 }
 
 // Helper for both open file and print file methods
@@ -409,6 +434,19 @@ AWT_ASSERT_APPKIT_THREAD;
     return NSTerminateLater;
 }
 
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app {
+    static BOOL checked = NO;
+    static BOOL supportsSecureState = YES;
+
+    if (checked == NO) {
+        checked = YES;
+        if (getenv("AWT_DISABLE_NSDELEGATE_SECURE_SAVE") != NULL) {
+            supportsSecureState = NO;
+        }
+    }
+    return supportsSecureState;
+}
+
 + (void)_systemWillPowerOff {
     [self _notifyJava:com_apple_eawt__AppEventHandler_NOTIFY_SHUTDOWN];
 }
@@ -451,6 +489,15 @@ AWT_ASSERT_APPKIT_THREAD;
 
 + (void)_systemDidWake {
     [self _notifyJava:com_apple_eawt__AppEventHandler_NOTIFY_SYSTEM_WAKE];
+}
+
++ (void)_embeddedEvent:(NSNotification *)notification {
+    NSString *name = notification.userInfo[@"name"];
+
+    if ([name isEqualToString:@"openURL"]) {
+        NSString *url = notification.userInfo[@"url"];
+        [ApplicationDelegate _openURL:url];
+    }
 }
 
 + (void)_registerForNotification:(NSNumber *)notificationTypeNum {
@@ -506,8 +553,10 @@ AWT_ASSERT_APPKIT_THREAD;
     [dockImageView setImageScaling:NSImageScaleProportionallyUpOrDown];
     [dockImageView setImage:image];
 
-    [[ApplicationDelegate sharedDelegate].fProgressIndicator removeFromSuperview];
-    [dockImageView addSubview:[ApplicationDelegate sharedDelegate].fProgressIndicator];
+    if ([ApplicationDelegate sharedDelegate] != nil) {
+        [[ApplicationDelegate sharedDelegate].fProgressIndicator removeFromSuperview];
+        [dockImageView addSubview:[ApplicationDelegate sharedDelegate].fProgressIndicator];
+    }
 
     // add it to the NSDockTile
     [dockTile setContentView: dockImageView];
@@ -520,14 +569,15 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
 
     ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
-    if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
-        [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
-        [delegate.fProgressIndicator setHidden:NO];
-    } else {
-        [delegate.fProgressIndicator setHidden:YES];
+    if (delegate != nil) {
+        if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
+            [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
+            [delegate.fProgressIndicator setHidden:NO];
+        } else {
+            [delegate.fProgressIndicator setHidden:YES];
+        }
+        [[NSApp dockTile] display];
     }
-
-    [[NSApp dockTile] display];
 }
 
 // Obtains the image of the Dock icon, either manually set, a drawn copy, or the default NSApplicationIcon
@@ -638,7 +688,9 @@ JNI_COCOA_ENTER(env);
 
     NSMenu *menu = (NSMenu *)jlong_to_ptr(nsMenuPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [ApplicationDelegate sharedDelegate].fDockMenu = menu;
+        if ([ApplicationDelegate sharedDelegate] != nil) {
+            [ApplicationDelegate sharedDelegate].fDockMenu = menu;
+        }
     }];
 
 JNI_COCOA_EXIT(env);
@@ -818,13 +870,15 @@ JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
-        switch (menuID) {
-            case com_apple_eawt__AppMenuBarHandler_MENU_ABOUT:
-                [delegate _updateAboutMenu:visible enabled:enabled];
-                break;
-            case com_apple_eawt__AppMenuBarHandler_MENU_PREFS:
-                [delegate _updatePreferencesMenu:visible enabled:enabled];
-                break;
+        if (delegate != nil) {
+            switch (menuID) {
+                case com_apple_eawt__AppMenuBarHandler_MENU_ABOUT:
+                    [delegate _updateAboutMenu:visible enabled:enabled];
+                    break;
+                case com_apple_eawt__AppMenuBarHandler_MENU_PREFS:
+                    [delegate _updatePreferencesMenu:visible enabled:enabled];
+                    break;
+            }
         }
     }];
 
@@ -843,7 +897,9 @@ JNI_COCOA_ENTER(env);
 
     CMenuBar *menu = (CMenuBar *)jlong_to_ptr(cMenuBarPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-        [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
+        if ([ApplicationDelegate sharedDelegate] != nil) {
+            [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
+        }
     }];
 
 JNI_COCOA_EXIT(env);

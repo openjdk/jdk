@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -131,7 +131,7 @@ public class SwingSet2 extends JPanel {
     private JEditorPane demoSrcPane = null;
 
 
-    // contentPane cache, saved from the applet or application frame
+    // contentPane cache, saved from the application frame
     Container contentPane = null;
 
 
@@ -177,7 +177,7 @@ public class SwingSet2 extends JPanel {
 
 
     /**
-     * SwingSet2 Main. Called only if we're an application, not an applet.
+     * SwingSet2 Main.
      */
     public static void main(final String[] args) {
         // must run in EDT when constructing the GUI components
@@ -716,8 +716,7 @@ public class SwingSet2 extends JPanel {
     }
 
     /**
-     * Returns the content pane whether we're in an applet
-     * or application
+     * Returns the content pane
      */
     public Container getContentPane() {
         if(contentPane == null) {
@@ -848,7 +847,14 @@ public class SwingSet2 extends JPanel {
         if (frame == null) {
             SwingUtilities.updateComponentTreeUI(this);
         } else {
+            if (currentLookAndFeel.name.contains("GTK")) {
+                this.setPreferredSize(new Dimension(PREFERRED_WIDTH + 260, PREFERRED_HEIGHT + 80));
+            } else {
+                this.setPreferredSize(new Dimension(PREFERRED_WIDTH, PREFERRED_HEIGHT));
+            }
+
             SwingUtilities.updateComponentTreeUI(frame);
+            frame.pack();
         }
 
         SwingUtilities.updateComponentTreeUI(popupMenu);

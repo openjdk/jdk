@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,12 +338,6 @@ public class X400Address implements GeneralNameInterface {
     DerValue derValue;
 
     /**
-     * Create the X400Address object from the specified byte array
-     *
-     * @param value value of the name as a byte array
-     */
-
-    /**
      * Create the X400Address object from the passed encoded Der value.
      *
      * @param derValue the encoded DER X400Address.
@@ -364,10 +358,9 @@ public class X400Address implements GeneralNameInterface {
      * Encode the X400 name into the DerOutputStream.
      *
      * @param out the DER stream to encode the X400Address to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         out.putDerValue(derValue);
     }
 

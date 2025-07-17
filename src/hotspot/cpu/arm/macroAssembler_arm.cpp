@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +23,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -37,10 +38,12 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -91,7 +94,7 @@ void AddressLiteral::set_rspec(relocInfo::relocType rtype) {
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register vtable_index,
                                            Register method_result) {
-  const int base_offset = in_bytes(Klass::vtable_start_offset()) + vtableEntry::method_offset_in_bytes();
+  const ByteSize base_offset = Klass::vtable_start_offset() + vtableEntry::method_offset();
   assert(vtableEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
   add(recv_klass, recv_klass, AsmOperand(vtable_index, lsl, LogBytesPerWord));
   ldr(method_result, Address(recv_klass, base_offset));
@@ -107,8 +110,8 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
                                          Register temp_reg3,
                                          Label& L_success) {
   Label L_failure;
-  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, NULL);
-  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, NULL);
+  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg, temp_reg2, &L_success, &L_failure, nullptr);
+  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, temp_reg2, temp_reg3, &L_success, nullptr);
   bind(L_failure);
 };
 
@@ -125,10 +128,10 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  if (L_slow_path == nullptr) { L_slow_path = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
@@ -205,9 +208,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   Label L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   // a couple of useful fields in sub_klass:
   int ss_offset = in_bytes(Klass::secondary_supers_offset());
@@ -294,11 +297,13 @@ Address MacroAssembler::receiver_argument_address(Register params_base, Register
   return Address(tmp, -Interpreter::stackElementSize);
 }
 
+void MacroAssembler::align(int modulus, int target) {
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) nop();
+}
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) {
-    nop();
-  }
+  align(modulus, offset());
 }
 
 int MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -419,7 +424,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result, tmp);
+    get_vm_result_oop(oop_result, tmp);
   }
 }
 
@@ -523,17 +528,17 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register 
   call_VM_leaf_helper(entry_point, 4);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result, Register tmp) {
+void MacroAssembler::get_vm_result_oop(Register oop_result, Register tmp) {
   assert_different_registers(oop_result, tmp);
-  ldr(oop_result, Address(Rthread, JavaThread::vm_result_offset()));
-  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_offset()));
+  ldr(oop_result, Address(Rthread, JavaThread::vm_result_oop_offset()));
+  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_oop_offset()));
   verify_oop(oop_result);
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result, Register tmp) {
+void MacroAssembler::get_vm_result_metadata(Register metadata_result, Register tmp) {
   assert_different_registers(metadata_result, tmp);
-  ldr(metadata_result, Address(Rthread, JavaThread::vm_result_2_offset()));
-  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_2_offset()));
+  ldr(metadata_result, Address(Rthread, JavaThread::vm_result_metadata_offset()));
+  str(zero_register(tmp), Address(Rthread, JavaThread::vm_result_metadata_offset()));
 }
 
 void MacroAssembler::add_rc(Register dst, Register arg1, RegisterOrConstant arg2) {
@@ -630,7 +635,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
                              AsmCondition cond
                              ) {
 
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0, cond);
     return;
   }
@@ -651,7 +656,7 @@ void MacroAssembler::mov_oop(Register rd, jobject o, int oop_index,
 }
 
 void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) {
-  if (o == NULL) {
+  if (o == nullptr) {
     mov(rd, 0);
     return;
   }
@@ -673,15 +678,11 @@ void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) 
 
 void MacroAssembler::mov_float(FloatRegister fd, jfloat c, AsmCondition cond) {
   Label skip_constant;
-  union {
-    jfloat f;
-    jint i;
-  } accessor;
-  accessor.f = c;
+  jint float_bits = PrimitiveConversions::cast<jint>(c);
 
   flds(fd, Address(PC), cond);
   b(skip_constant);
-  emit_int32(accessor.i);
+  emit_int32(float_bits);
   bind(skip_constant);
 }
 
@@ -842,7 +843,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     block_comment(buffer);
   }
 #endif
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -884,7 +885,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
-  const char* msg_buffer = NULL;
+  const char* msg_buffer = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -940,7 +941,7 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
     if (tmp == noreg) {
       tmp = Rtemp;
       assert((! Thread::current()->is_Compiler_thread()) ||
-             (! (ciEnv::current()->task() == NULL)) ||
+             (! (ciEnv::current()->task() == nullptr)) ||
              (! (ciEnv::current()->comp_level() == CompLevel_full_optimization)),
              "Rtemp not available in C2"); // explicit tmp register required
       // XXX: could we mark the code buffer as not compatible with C2 ?
@@ -970,7 +971,7 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
 
 void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register tmp) {
   // Version of AbstractAssembler::generate_stack_overflow_check optimized for ARM
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
   strb(R0, Address(tmp));
@@ -1104,7 +1105,7 @@ void MacroAssembler::debug(const char* msg, const intx* registers) {
 }
 
 void MacroAssembler::unimplemented(const char* what) {
-  const char* buf = NULL;
+  const char* buf = nullptr;
   {
     ResourceMark rm;
     stringStream ss;
@@ -1197,11 +1198,15 @@ void MacroAssembler::cas_for_lock_acquire(Register oldval, Register newval,
     atomic_cas_bool(oldval, newval, base, oopDesc::mark_offset_in_bytes(), tmp);
   }
 
+  // Here, on success, EQ is set, NE otherwise
+
   // MemBarAcquireLock barrier
   // According to JSR-133 Cookbook, this should be LoadLoad | LoadStore,
   // but that doesn't prevent a load or store from floating up between
   // the load and store in the CAS sequence, so play it safe and
   // do a full fence.
+  // Note: we preserve flags here.
+  // Todo: Do we really need this also for the CAS fail case?
   membar(Membar_mask_bits(LoadLoad | LoadStore | StoreStore | StoreLoad), noreg);
   if (!fallthrough_is_success && !allow_fallthrough_on_failure) {
     b(slow_case, ne);
@@ -1212,7 +1217,6 @@ void MacroAssembler::cas_for_lock_release(Register oldval, Register newval,
   Register base, Register tmp, Label &slow_case,
   bool allow_fallthrough_on_failure, bool one_shot)
 {
-
   bool fallthrough_is_success = false;
 
   assert_different_registers(oldval,newval,base,tmp);
@@ -1249,7 +1253,7 @@ void MacroAssembler::cas_for_lock_release(Register oldval, Register newval,
 // Preserves flags and all registers.
 // On SMP the updated value might not be visible to external observers without a synchronization barrier
 void MacroAssembler::cond_atomic_inc32(AsmCondition cond, int* counter_addr) {
-  if (counter_addr != NULL) {
+  if (counter_addr != nullptr) {
     InlinedAddress counter_addr_literal((address)counter_addr);
     Label done, retry;
     if (cond != al) {
@@ -1284,20 +1288,57 @@ void MacroAssembler::resolve_jobject(Register value,
                                      Register tmp1,
                                      Register tmp2) {
   assert_different_registers(value, tmp1, tmp2);
-  Label done, not_weak;
-  cbz(value, done);             // Use NULL as-is.
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-  tbz(value, 0, not_weak);      // Test for jweak tag.
+  Label done, tagged, weak_tagged;
 
+  cbz(value, done);           // Use null as-is.
+  tst(value, JNIHandles::tag_mask); // Test for tag.
+  b(tagged, ne);
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(tagged);
+  tst(value, JNIHandles::TypeTag::weak_global); // Test for weak tag.
+  b(weak_tagged, ne);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 Address(value, -JNIHandles::weak_tag_value), value, tmp1, tmp2, noreg);
-  b(done);
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE,
-                 Address(value, 0), value, tmp1, tmp2, noreg);
+                 Address(value, -JNIHandles::TypeTag::weak_global), value, tmp1, tmp2, noreg);
   verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value,
+                                     Register tmp1,
+                                     Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  cbz(value, done);           // Use null as-is.
+
+#ifdef ASSERT
+  {
+    Label valid_global_tag;
+    tst(value, JNIHandles::TypeTag::global); // Test for global tag.
+    b(valid_global_tag, ne);
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
+  }
+#endif
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+
   bind(done);
 }
 
@@ -1341,7 +1382,7 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
   assert_different_registers(Rklass, Rintf, Rscan, Rtmp);
 
   const int entry_size = itableOffsetEntry::size() * HeapWordSize;
-  assert(itableOffsetEntry::interface_offset_in_bytes() == 0, "not added for convenience");
+  assert(itableOffsetEntry::interface_offset() == 0, "not added for convenience");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   const int base = in_bytes(Klass::vtable_start_offset());
@@ -1365,15 +1406,15 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
 
   if (method_result != noreg) {
     // Interface found at previous position of Rscan, now load the method
-    ldr_s32(Rtmp, Address(Rscan, itableOffsetEntry::offset_offset_in_bytes() - entry_size));
+    ldr_s32(Rtmp, Address(Rscan, in_bytes(itableOffsetEntry::offset_offset()) - entry_size));
     if (itable_index.is_register()) {
       add(Rtmp, Rtmp, Rklass); // Add offset to Klass*
       assert(itableMethodEntry::size() * HeapWordSize == wordSize, "adjust the scaling in the code below");
-      assert(itableMethodEntry::method_offset_in_bytes() == 0, "adjust the offset in the code below");
+      assert(itableMethodEntry::method_offset() == 0, "adjust the offset in the code below");
       ldr(method_result, Address::indexed_ptr(Rtmp, itable_index.as_register()));
     } else {
       int method_offset = itableMethodEntry::size() * HeapWordSize * itable_index.as_constant() +
-                          itableMethodEntry::method_offset_in_bytes();
+                          in_bytes(itableMethodEntry::method_offset());
       add_slow(method_result, Rklass, method_offset);
       ldr(method_result, Address(method_result, Rtmp));
     }
@@ -1604,7 +1645,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(tmp, Address(method, Method::const_offset()));
   ldr(tmp, Address(tmp,  ConstMethod::constants_offset()));
-  ldr(tmp, Address(tmp, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(tmp, Address(tmp, ConstantPool::pool_holder_offset()));
   ldr(mirror, Address(tmp, mirror_offset));
   resolve_oop_handle(mirror);
 }
@@ -1618,7 +1659,6 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
 void MacroAssembler::load_klass(Register dst_klass, Register src_oop, AsmCondition cond) {
   ldr(dst_klass, Address(src_oop, oopDesc::klass_offset_in_bytes()), cond);
 }
-
 
 // Blows src_klass.
 void MacroAssembler::store_klass(Register src_klass, Register dst_oop) {
@@ -1643,7 +1683,7 @@ void MacroAssembler::store_heap_oop_null(Address obj, Register new_val, Register
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Address src, Register dst, Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
@@ -1655,7 +1695,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
@@ -1680,3 +1720,173 @@ void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype
   ldr(dest, Address(dest));
 }
 
+#define PUSH_REG(mask, bit, Reg)      \
+  if (mask & ((unsigned)1 << bit)) {  \
+    push(Reg);                        \
+  }
+
+#define POP_REG(mask, bit, Reg, condition)   \
+  if (mask & ((unsigned)1 << bit)) {         \
+    pop(Reg, condition);                     \
+  }
+
+#define PUSH_REGS(mask, R1, R2, R3) \
+  PUSH_REG(mask, 0, R1)             \
+  PUSH_REG(mask, 1, R2)             \
+  PUSH_REG(mask, 2, R3)
+
+#define POP_REGS(mask, R1, R2, R3, condition)   \
+  POP_REG(mask, 0, R1, condition)               \
+  POP_REG(mask, 1, R2, condition)               \
+  POP_REG(mask, 2, R3, condition)
+
+#define POISON_REG(mask, bit, Reg, poison)      \
+  if (mask & ((unsigned)1 << bit)) {            \
+    mov(Reg, poison);                           \
+  }
+
+#define POISON_REGS(mask, R1, R2, R3, poison)   \
+  POISON_REG(mask, 0, R1, poison)               \
+  POISON_REG(mask, 1, R2, poison)               \
+  POISON_REG(mask, 2, R3, poison)
+
+// Attempt to lightweight-lock an object
+// Registers:
+//  - obj: the object to be locked
+//  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+// Result:
+//  - Success: fallthrough
+//  - Error:   break to slow, Z cleared.
+void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, t1, t2, t3);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x10000001);
+#endif
+
+  PUSH_REGS(savemask, t1, t2, t3);
+
+  // Check if we would have space on lock-stack for the object.
+  ldr(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+  // cmp(t1, (unsigned)LockStack::end_offset()); //  too complicated constant: 1132 (46c)
+  movw(t2, LockStack::end_offset() - 1);
+  cmp(t1, t2);
+  POP_REGS(savemask, t1, t2, t3, gt);
+  b(slow, gt); // Z is cleared
+
+  // Prepare old, new header
+  Register old_hdr = t1;
+  Register new_hdr = t2;
+  ldr(new_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+  bic(new_hdr, new_hdr, markWord::lock_mask_in_place);  // new header (00)
+  orr(old_hdr, new_hdr, markWord::unlocked_value);      // old header (01)
+
+  Label dummy;
+
+  cas_for_lock_acquire(old_hdr /* old */, new_hdr /* new */,
+      obj /* location */, t3 /* scratch */, dummy,
+      true /* allow_fallthrough_on_failure */, true /* one_shot */);
+
+  POP_REGS(savemask, t1, t2, t3, ne); // Cas failed -> slow
+  b(slow, ne);                        // Cas failed -> slow
+
+  // After successful lock, push object onto lock-stack
+  ldr(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+  str(obj, Address(Rthread, t1));
+  add(t1, t1, oopSize);
+  str(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+
+  POP_REGS(savemask, t1, t2, t3, al);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x20000002);
+#endif
+
+  // Success: fall through
+}
+
+// Attempt to lightweight-unlock an object
+// Registers:
+//  - obj: the object to be unlocked
+//  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+// Result:
+//  - Success: fallthrough
+//  - Error:   break to slow, Z cleared.
+void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, t1, t2, t3);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x30000003);
+#endif
+
+  PUSH_REGS(savemask, t1, t2, t3);
+
+  // Prepare old, new header
+  Register old_hdr = t1;
+  Register new_hdr = t2;
+  ldr(old_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+  bic(old_hdr, old_hdr, markWord::lock_mask_in_place);    // old header (00)
+  orr(new_hdr, old_hdr, markWord::unlocked_value);        // new header (01)
+
+  // Try to swing header from locked to unlocked
+  Label dummy;
+  cas_for_lock_release(old_hdr /* old */, new_hdr /* new */,
+      obj /* location */, t3 /* scratch */, dummy,
+      true /* allow_fallthrough_on_failure */, true /* one_shot */);
+
+  POP_REGS(savemask, t1, t2, t3, ne); // Cas failed -> slow
+  b(slow, ne);                        // Cas failed -> slow
+
+  // After successful unlock, pop object from lock-stack
+  ldr(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+  sub(t1, t1, oopSize);
+  str(t1, Address(Rthread, JavaThread::lock_stack_top_offset()));
+
+#ifdef ASSERT
+  // zero out popped slot
+  mov(t2, 0);
+  str(t2, Address(Rthread, t1));
+#endif
+
+  POP_REGS(savemask, t1, t2, t3, al);
+
+#ifdef ASSERT
+  // Poison scratch regs
+  POISON_REGS((~savemask), t1, t2, t3, 0x40000004);
+#endif
+
+  // Fallthrough: success
+}
+
+int MacroAssembler::ic_check_size() {
+  return NativeInstruction::instruction_size * 7;
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = j_rarg0;
+  Register tmp1 = R4;
+  Register tmp2 = R5;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+  ldr(tmp2, Address(Ricklass, CompiledICData::speculated_klass_offset()));
+  cmp(tmp1, tmp2);
+
+  Label dont;
+  b(dont, eq);
+  jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type);
+  bind(dont);
+  return uep_offset;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,6 +636,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
                 }
             }
         }
+
         tabContext.getPainter().paintTabbedPaneTabBackground(tabContext, g,
                 x, y, width, height, tabIndex, placement);
         tabContext.getPainter().paintTabbedPaneTabBorder(tabContext, g,
@@ -652,10 +653,9 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
                     tabRect, iconRect, textRect, isSelected);
             clippedTitle = SwingUtilities2.clipStringIfNecessary(null, metrics,
                            title, textRect.width);
+            paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
             paintText(ss, g, tabPlacement, font, metrics,
                     tabIndex, clippedTitle, textRect, isSelected);
-
-            paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
         }
     }
 
@@ -673,7 +673,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
 
         ss.getStyle().getGraphicsUtils(ss).layoutText(ss, metrics, title,
                          icon, SwingUtilities.CENTER, SwingUtilities.CENTER,
-                         SwingUtilities.LEADING, SwingUtilities.CENTER,
+                         SwingUtilities.TRAILING, SwingUtilities.CENTER,
                          tabRect, iconRect, textRect, textIconGap);
 
         tabPane.putClientProperty("html", null);
@@ -837,6 +837,9 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     private FontMetrics getFontMetrics(Font font) {
+        if (font == null) {
+            font = tabPane.getFont();
+        }
         return tabPane.getFontMetrics(font);
     }
 

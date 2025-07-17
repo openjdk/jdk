@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @bug 8080774
+ * @bug 8080774 8174269
  * @modules jdk.localedata
- * @run testng/othervm -Djava.locale.providers=JRE,CLDR LocaleDateFormats
+ * @run testng LocaleDateFormats
  * @summary This file contains tests for JRE locales date formats
  */
 
@@ -54,9 +54,9 @@ public class LocaleDateFormats {
             //8080774
             //Locale, Format type, year, month, date, expected result
             {localeEnSG, DateFormat.SHORT, 2015, 5, 6, "6/5/15"},
-            {localeEnSG, DateFormat.MEDIUM, 2015, 5, 6, "6 May, 2015"},
-            {localeEnSG, DateFormat.LONG, 2015, 5, 6, "6 May, 2015"},
-            {localeEnSG, DateFormat.FULL, 2015, 5, 6, "Wednesday, 6 May, 2015"}
+            {localeEnSG, DateFormat.MEDIUM, 2015, 5, 6, "6 May 2015"},
+            {localeEnSG, DateFormat.LONG, 2015, 5, 6, "6 May 2015"},
+            {localeEnSG, DateFormat.FULL, 2015, 5, 6, "Wednesday, 6 May 2015"}
         };
     }
     // en_SG Locale instance

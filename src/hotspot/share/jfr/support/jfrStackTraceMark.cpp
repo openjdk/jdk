@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrStackTraceMark.hpp"
@@ -47,7 +46,7 @@ JfrStackTraceMark::JfrStackTraceMark(Thread* t) : _t(t), _previous_id(0), _previ
   tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(t));
 }
 
-JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId) : _t(NULL), _previous_id(0), _previous_hash(0) {
+JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId) : _t(nullptr), _previous_id(0), _previous_hash(0) {
   if (JfrEventSetting::has_stacktrace(eventId)) {
     _t = Thread::current();
     JfrThreadLocal* const tl = _t->jfr_thread_local();
@@ -59,7 +58,7 @@ JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId) : _t(NULL), _previous_i
   }
 }
 
-JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId, Thread* t) : _t(NULL), _previous_id(0), _previous_hash(0) {
+JfrStackTraceMark::JfrStackTraceMark(JfrEventId eventId, Thread* t) : _t(nullptr), _previous_id(0), _previous_hash(0) {
   if (JfrEventSetting::has_stacktrace(eventId)) {
     _t = t;
     JfrThreadLocal* const tl = _t->jfr_thread_local();
@@ -75,7 +74,7 @@ JfrStackTraceMark::~JfrStackTraceMark() {
   if (_previous_id != 0) {
     _t->jfr_thread_local()->set_cached_stack_trace_id(_previous_id, _previous_hash);
   } else {
-    if (_t != NULL) {
+    if (_t != nullptr) {
       _t->jfr_thread_local()->clear_cached_stack_trace();
     }
   }

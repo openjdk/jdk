@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @library /java/text/testlib
  * @summary test Thai Collation
  * @modules jdk.localedata
+ * @run junit ThaiTest
  */
 /*
  * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
@@ -39,11 +40,11 @@ import java.util.Locale;
 import java.text.Collator;
 import java.text.RuleBasedCollator;
 
-public class ThaiTest extends CollatorTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new ThaiTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class ThaiTest {
 
     /*
      * Data for TestPrimary()
@@ -148,8 +149,9 @@ public class ThaiTest extends CollatorTest {
          0,  0,  0
     };
 
+    @Test
     public void TestPrimary() {
-        doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 

@@ -32,6 +32,7 @@ import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
+import sun.java2d.loops.GraphicsPrimitiveMgr.GeneralPrimitives;
 
 /**
  * MaskFill
@@ -141,7 +142,7 @@ public class MaskFill extends GraphicsPrimitive
     }
 
     static {
-        GraphicsPrimitiveMgr.registerGeneral(new MaskFill(null, null, null));
+        GeneralPrimitives.register(new MaskFill(null, null, null));
     }
 
     protected GraphicsPrimitive makePrimitive(SurfaceType srctype,

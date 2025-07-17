@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@
 
 #include "sun_java2d_pipe_ShapeSpanIterator.h"
 #include "java_awt_geom_PathIterator.h"
+
+#include "ub.h"
 
 /*
  * This structure holds all of the information needed to trace and
@@ -849,16 +851,6 @@ PCPathDone(PathConsumerVec *consumer)
     return oom;
 }
 
-/*
- * REMIND: CDECL needed for WIN32 "qsort"
- */
-
-#ifdef _WIN32
-#define CDECL __cdecl
-#else
-#define CDECL
-#endif
-
 #define SUBDIVIDE_MAX   10
 #define MAX_FLAT_SQ     (1.0 * 1.0)
 #define GROW_SIZE       20
@@ -1171,7 +1163,7 @@ subdivideCubic(pathData *pd, int level,
     return appendSegment(pd, x0, y0, x3, y3);
 }
 
-static int CDECL
+static int
 sortSegmentsByLeadingY(const void *elem1, const void *elem2)
 {
     segmentData *seg1 = *(segmentData **)elem1;
@@ -1243,6 +1235,7 @@ ShapeSIIntersectClipBox(JNIEnv *env, void *private,
     }
 }
 
+ATTRIBUTE_NO_UBSAN
 static jboolean
 ShapeSINextSpan(void *state, jint spanbox[])
 {

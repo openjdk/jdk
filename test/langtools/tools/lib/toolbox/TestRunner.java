@@ -79,21 +79,24 @@ public abstract class TestRunner {
      * @throws java.lang.Exception if any errors occur
      */
     protected void runTests(Function<Method, Object[]> f) throws Exception {
+        String testQuery = System.getProperty("test.query");
         for (Method m : getClass().getDeclaredMethods()) {
             Annotation a = m.getAnnotation(Test.class);
             if (a != null) {
                 testName = m.getName();
-                try {
-                    testCount++;
-                    out.println("test: " + testName);
-                    m.invoke(this, f.apply(m));
-                } catch (InvocationTargetException e) {
-                    errorCount++;
-                    Throwable cause = e.getCause();
-                    out.println("Exception running test " + testName + ": " + e.getCause());
-                    cause.printStackTrace(out);
+                if (testQuery == null || testQuery.equals(testName)) {
+                    try {
+                        testCount++;
+                        out.println("test: " + testName);
+                        m.invoke(this, f.apply(m));
+                    } catch (InvocationTargetException e) {
+                        errorCount++;
+                        Throwable cause = e.getCause();
+                        out.println("Exception running test " + testName + ": " + e.getCause());
+                        cause.printStackTrace(out);
+                    }
+                    out.println();
                 }
-                out.println();
             }
         }
 

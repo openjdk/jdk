@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class JfrLinkedNode {
  public:
   typedef Version VersionType;
   Derived* _next;
-  JfrLinkedNode() : _next(NULL) {}
+  JfrLinkedNode() : _next(nullptr) {}
   JfrLinkedNode(JfrLinkedNode<Derived, VersionType>* next) : _next(next) {}
 };
 
@@ -79,7 +79,7 @@ class JfrKeyIsThisNode : public JfrLinkedNode<JfrKeyIsThisNode<V> > {
  public:
   typedef V Value;
   typedef const JfrKeyIsThisNode<V>* Key;
-  JfrKeyIsThisNode(const Value value = NULL) : JfrLinkedNode<JfrKeyIsThisNode<V> >(), _value(value) {}
+  JfrKeyIsThisNode(const Value value = nullptr) : JfrLinkedNode<JfrKeyIsThisNode<V> >(), _value(value) {}
   Key key() const { return this; }
   Value value() const { return _value; }
   void set_value(Value value) { _value = value; }
@@ -92,7 +92,7 @@ class JfrValueNode : public JfrLinkedNode<JfrValueNode<V> >, public CHeapObj<mtT
  public:
   typedef V Value;
   typedef Value Key;
-  JfrValueNode(const Value value = NULL) : JfrLinkedNode<JfrValueNode<V> >(), _value(value) {}
+  JfrValueNode(const Value value = nullptr) : JfrLinkedNode<JfrValueNode<V> >(), _value(value) {}
   Key key() const { return value(); }
   Value value() const { return _value; }
   void set_value(Value value) { _value = value; }
@@ -105,7 +105,7 @@ class JfrKeyIsFreeSizeNode : public JfrLinkedNode<JfrKeyIsFreeSizeNode<V> > {
  public:
   typedef V Value;
   typedef size_t Key;
-  JfrKeyIsFreeSizeNode(const Value value = NULL) : JfrLinkedNode<JfrKeyIsFreeSizeNode<V> >(), _value(value) {}
+  JfrKeyIsFreeSizeNode(const Value value = nullptr) : JfrLinkedNode<JfrKeyIsFreeSizeNode<V> >(), _value(value) {}
   Key key() const { return value()->free_size(); }
   Value value() const { return _value; }
   void set_value(Value value) { _value = value; }

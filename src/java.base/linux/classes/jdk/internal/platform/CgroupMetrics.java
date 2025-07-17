@@ -36,6 +36,11 @@ public class CgroupMetrics implements Metrics {
     }
 
     @Override
+    public boolean isContainerized() {
+        return isContainerized0();
+    }
+
+    @Override
     public String getProvider() {
         return subsystem.getProvider();
     }
@@ -122,9 +127,11 @@ public class CgroupMetrics implements Metrics {
     @Override
     public long getMemoryLimit() {
         long subsMem = subsystem.getMemoryLimit();
+        long systemTotal = getTotalMemorySize0();
+        assert(systemTotal > 0);
         // Catch the cgroup memory limit exceeding host physical memory.
         // Treat this as unlimited.
-        if (subsMem >= getTotalMemorySize0()) {
+        if (subsMem >= systemTotal) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
         return subsMem;
@@ -142,7 +149,15 @@ public class CgroupMetrics implements Metrics {
 
     @Override
     public long getMemoryAndSwapLimit() {
-        return subsystem.getMemoryAndSwapLimit();
+        long totalSystemMemSwap = getTotalMemorySize0() + getTotalSwapSize0();
+        assert(totalSystemMemSwap > 0);
+        // Catch the cgroup memory and swap limit exceeding host physical swap
+        // and memory. Treat this case as unlimited.
+        long subsSwapMem = subsystem.getMemoryAndSwapLimit();
+        if (subsSwapMem >= totalSystemMemSwap) {
+            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+        }
+        return subsSwapMem;
     }
 
     @Override
@@ -184,6 +199,8 @@ public class CgroupMetrics implements Metrics {
     }
 
     private static native boolean isUseContainerSupport();
+    private static native boolean isContainerized0();
     private static native long getTotalMemorySize0();
+    private static native long getTotalSwapSize0();
 
 }

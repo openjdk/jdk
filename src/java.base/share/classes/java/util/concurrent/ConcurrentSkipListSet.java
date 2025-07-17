@@ -35,7 +35,9 @@
 
 package java.util.concurrent;
 
-import java.lang.reflect.Field;
+import jdk.internal.misc.Unsafe;
+
+import java.lang.invoke.VarHandle;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -99,7 +101,7 @@ public class ConcurrentSkipListSet<E>
     private static final long serialVersionUID = -2479143111061671589L;
 
     /**
-     * The underlying map. Uses Boolean.TRUE as value for each
+     * @serial The underlying map. Uses Boolean.TRUE as value for each
      * element.  This field is declared final for the sake of thread
      * safety, which entails some ugliness in clone().
      */
@@ -137,6 +139,7 @@ public class ConcurrentSkipListSet<E>
      * @throws NullPointerException if the specified collection or any
      *         of its elements are null
      */
+    @SuppressWarnings("this-escape")
     public ConcurrentSkipListSet(Collection<? extends E> c) {
         m = new ConcurrentSkipListMap<E,Object>();
         addAll(c);
@@ -150,6 +153,7 @@ public class ConcurrentSkipListSet<E>
      * @throws NullPointerException if the specified sorted set or any
      *         of its elements are null
      */
+    @SuppressWarnings("this-escape")
     public ConcurrentSkipListSet(SortedSet<E> s) {
         m = new ConcurrentSkipListMap<E,Object>(s.comparator());
         addAll(s);
@@ -174,6 +178,8 @@ public class ConcurrentSkipListSet<E>
             ConcurrentSkipListSet<E> clone =
                 (ConcurrentSkipListSet<E>) super.clone();
             clone.setMap(new ConcurrentSkipListMap<E,Object>(m));
+            // Needed to ensure safe publication of setMap()
+            VarHandle.releaseFence();
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new InternalError();
@@ -187,14 +193,9 @@ public class ConcurrentSkipListSet<E>
      * contains more than {@code Integer.MAX_VALUE} elements, it
      * returns {@code Integer.MAX_VALUE}.
      *
-     * <p>Beware that, unlike in most collections, this method is
-     * <em>NOT</em> a constant-time operation. Because of the
-     * asynchronous nature of these sets, determining the current
-     * number of elements requires traversing them all to count them.
-     * Additionally, it is possible for the size to change during
-     * execution of this method, in which case the returned result
-     * will be inaccurate. Thus, this method is typically not very
-     * useful in concurrent applications.
+     * <p>It is possible for the size to change during execution of this method,
+     * in which case the returned result will be inaccurate.
+     * Thus, this method is typically not very useful in concurrent applications.
      *
      * @return the number of elements in this set
      */
@@ -404,6 +405,30 @@ public class ConcurrentSkipListSet<E>
     }
 
     /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * set's comparison method determines the position of elements, so explicit positioning
+     * is not supported.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+    public void addFirst(E e) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * set's comparison method determines the position of elements, so explicit positioning
+     * is not supported.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+    public void addLast(E e) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException if {@code fromElement} or
      *         {@code toElement} is null
@@ -506,21 +531,11 @@ public class ConcurrentSkipListSet<E>
 
     /** Initializes map field; for use in clone. */
     private void setMap(ConcurrentNavigableMap<E,Object> map) {
-        @SuppressWarnings("removal")
-        Field mapField = java.security.AccessController.doPrivileged(
-            (java.security.PrivilegedAction<Field>) () -> {
-                try {
-                    Field f = ConcurrentSkipListSet.class
-                        .getDeclaredField("m");
-                    f.setAccessible(true);
-                    return f;
-                } catch (ReflectiveOperationException e) {
-                    throw new Error(e);
-                }});
-        try {
-            mapField.set(this, map);
-        } catch (IllegalAccessException e) {
-            throw new Error(e);
-        }
+        final Unsafe U = Unsafe.getUnsafe();
+        U.putReference(
+            this,
+            U.objectFieldOffset(ConcurrentSkipListSet.class, "m"),
+            map
+        );
     }
 }

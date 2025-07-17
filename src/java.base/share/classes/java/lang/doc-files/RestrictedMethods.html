@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+ Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html lang="en">
+<head>
+    <title>Restricted methods</title>
+</head>
+<body>
+<h1 id="restricted">Restricted methods</h1>
+<p>Various methods in the Java SE API allow Java code to interoperate with resources outside the Java runtime
+    in such a way that the runtime cannot prove correct or safe use of the resources. These methods can,
+    when used incorrectly, violate the integrity of the Java Virtual Machine, but are conditionally made available
+    to users, as they provide essential functionality. They are known as <em>restricted methods</em>.</p>
+<p>Given the potential danger of restricted methods, the Java runtime issues a warning on
+    the standard error stream every time a restricted method is invoked. Such warnings can
+    be disabled by granting access to restricted methods to selected modules. This can be
+    done either via implementation-specific command line options or programmatically, e.g.
+    by calling <a href="{@docRoot}/java.base/java/lang/ModuleLayer.Controller.html#enableNativeAccess(java.lang.Module)"><code>ModuleLayer.Controller.enableNativeAccess(java.lang.Module)</code></a>.</p>
+<p>When a restricted method is invoked by <a href="{@docRoot}/../specs/jni/index.html">JNI code</a>,
+    or from an <a href="{@docRoot}/java.base/java/lang/foreign/Linker.html#upcallStub(java.lang.invoke.MethodHandle,java.lang.foreign.FunctionDescriptor,java.lang.foreign.Arena,java.lang.foreign.Linker.Option...)">upcall stub</a>
+    and there is no caller class on the stack, it is as if the restricted method call occurred in an <em>unnamed module</em>.</p>
+<p>In the reference implementation, access to restricted methods can be granted to
+    specific modules using the command line option <code>--enable-native-access=M1,M2, ... Mn</code>,
+    where <code>M1</code>, <code>M2</code>, <code>... Mn</code> are module names (for the unnamed module,
+    the special value <code>ALL-UNNAMED</code> can be used).  Access to restricted methods
+    from modules not listed by that option is deemed <em>illegal</em>. Clients can
+    control how access to restricted methods is handled, using the command line
+    option <code>--illegal-native-access</code>. If this option is not specified,
+    illegal access to restricted methods will result in runtime warnings.</p>
+</body>
+</html>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -55,12 +55,12 @@ public class StyleResolver {
                 return null;
             }
         } else {
-           // load indexed color
-           Integer color = color(name);
-           if (color != null && color != -1) {
-               color = Colors.DEFAULT_COLORS_256[color];
-           }
-           return color;
+            // load indexed color
+            Integer color = color(name);
+            if (color != null && color != -1) {
+                color = Colors.DEFAULT_COLORS_256[color];
+            }
+            return color;
         }
     }
 
@@ -241,7 +241,7 @@ public class StyleResolver {
         if (spec.length() == 1) {
 //            log.warning("Invalid style-reference; missing discriminator: " + spec);
         } else {
-            String name = spec.substring(1, spec.length());
+            String name = spec.substring(1);
             String resolvedSpec = source.apply(name);
             if (resolvedSpec != null) {
                 return apply(style, resolvedSpec);

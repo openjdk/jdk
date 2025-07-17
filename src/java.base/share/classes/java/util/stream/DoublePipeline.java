@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.function.DoublePredicate;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
@@ -167,10 +168,10 @@ abstract class DoublePipeline<E_IN>
     }
 
     private <U> Stream<U> mapToObj(DoubleFunction<? extends U> mapper, int opFlags) {
-        return new ReferencePipeline.StatelessOp<Double, U>(this, StreamShape.DOUBLE_VALUE, opFlags) {
+        return new ReferencePipeline.StatelessOp<>(this, StreamShape.DOUBLE_VALUE, opFlags) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<U> sink) {
-                return new Sink.ChainedDouble<U>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     @Override
                     public void accept(double t) {
                         downstream.accept(mapper.apply(t));
@@ -202,11 +203,11 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final DoubleStream map(DoubleUnaryOperator mapper) {
         Objects.requireNonNull(mapper);
-        return new StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
-                                       StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<Double>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     @Override
                     public void accept(double t) {
                         downstream.accept(mapper.applyAsDouble(t));
@@ -225,11 +226,11 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final IntStream mapToInt(DoubleToIntFunction mapper) {
         Objects.requireNonNull(mapper);
-        return new IntPipeline.StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
-                                                   StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new IntPipeline.StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedDouble<Integer>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     @Override
                     public void accept(double t) {
                         downstream.accept(mapper.applyAsInt(t));
@@ -242,11 +243,11 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final LongStream mapToLong(DoubleToLongFunction mapper) {
         Objects.requireNonNull(mapper);
-        return new LongPipeline.StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
-                                                    StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new LongPipeline.StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedDouble<Long>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     @Override
                     public void accept(double t) {
                         downstream.accept(mapper.applyAsLong(t));
@@ -259,47 +260,50 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final DoubleStream flatMap(DoubleFunction<? extends DoubleStream> mapper) {
         Objects.requireNonNull(mapper);
-        return new StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
-                                        StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+        return new StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<Double>(sink) {
-                    // true if cancellationRequested() has been called
-                    boolean cancellationRequestedCalled;
+                final DoubleConsumer fastPath =
+                        isShortCircuitingPipeline()
+                                ? null
+                                : (sink instanceof DoubleConsumer dc)
+                                ? dc
+                                : sink::accept;
+                final class FlatMap implements Sink.OfDouble, DoublePredicate {
+                    boolean cancel;
 
-                    // cache the consumer to avoid creation on every accepted element
-                    DoubleConsumer downstreamAsDouble = downstream::accept;
+                    @Override public void begin(long size) { sink.begin(-1); }
+                    @Override public void end() { sink.end(); }
 
                     @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
-
-                    @Override
-                    public void accept(double t) {
-                        try (DoubleStream result = mapper.apply(t)) {
+                    public void accept(double e) {
+                        try (DoubleStream result = mapper.apply(e)) {
                             if (result != null) {
-                                if (!cancellationRequestedCalled) {
-                                    result.sequential().forEach(downstreamAsDouble);
-                                }
-                                else {
-                                    var s = result.sequential().spliterator();
-                                    do { } while (!downstream.cancellationRequested() && s.tryAdvance(downstreamAsDouble));
-                                }
+                                if (fastPath == null)
+                                    result.sequential().allMatch(this);
+                                else
+                                    result.sequential().forEach(fastPath);
                             }
                         }
                     }
 
                     @Override
                     public boolean cancellationRequested() {
-                        // If this method is called then an operation within the stream
-                        // pipeline is short-circuiting (see AbstractPipeline.copyInto).
-                        // Note that we cannot differentiate between an upstream or
-                        // downstream operation
-                        cancellationRequestedCalled = true;
-                        return downstream.cancellationRequested();
+                        return cancel || (cancel |= sink.cancellationRequested());
                     }
-                };
+
+                    @Override
+                    public boolean test(double output) {
+                        if (!cancel) {
+                            sink.accept(output);
+                            return !(cancel |= sink.cancellationRequested());
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                return new FlatMap();
             }
         };
     }
@@ -320,7 +324,6 @@ abstract class DoublePipeline<E_IN>
                     }
 
                     @Override
-                    @SuppressWarnings("unchecked")
                     public void accept(double t) {
                             mapper.accept(t, (DoubleConsumer) downstream);
                     }
@@ -333,7 +336,7 @@ abstract class DoublePipeline<E_IN>
     public DoubleStream unordered() {
         if (!isOrdered())
             return this;
-        return new StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE, StreamOpFlag.NOT_ORDERED) {
+        return new StatelessOp<>(this, StreamShape.DOUBLE_VALUE, StreamOpFlag.NOT_ORDERED) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
                 return sink;
@@ -344,11 +347,11 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final DoubleStream filter(DoublePredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
-                                       StreamOpFlag.NOT_SIZED) {
+        return new StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
+                StreamOpFlag.NOT_SIZED) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<Double>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     @Override
                     public void begin(long size) {
                         downstream.begin(-1);
@@ -367,11 +370,11 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final DoubleStream peek(DoubleConsumer action) {
         Objects.requireNonNull(action);
-        return new StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
-                                       0) {
+        return new StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
+                0) {
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<Double>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     @Override
                     public void accept(double t) {
                         action.accept(t);
@@ -388,7 +391,7 @@ abstract class DoublePipeline<E_IN>
     public final DoubleStream limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
-        return SliceOps.makeDouble(this, (long) 0, maxSize);
+        return SliceOps.makeDouble(this, 0L, maxSize);
     }
 
     @Override
@@ -422,7 +425,7 @@ abstract class DoublePipeline<E_IN>
     public final DoubleStream distinct() {
         // While functional and quick to implement, this approach is not very efficient.
         // An efficient version requires a double-specific map/set implementation.
-        return boxed().distinct().mapToDouble(i -> (double) i);
+        return boxed().distinct().mapToDouble(i -> i);
     }
 
     // Terminal ops from DoubleStream

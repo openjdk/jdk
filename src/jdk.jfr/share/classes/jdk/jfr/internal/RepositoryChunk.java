@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,15 @@ package jdk.jfr.internal;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.Comparator;
 
-import jdk.jfr.internal.SecuritySupport.SafePath;
-
-final class RepositoryChunk {
+public final class RepositoryChunk {
 
     static final Comparator<RepositoryChunk> END_TIME_COMPARATOR = new Comparator<RepositoryChunk>() {
         @Override
@@ -42,33 +44,38 @@ final class RepositoryChunk {
         }
     };
 
-    private final SafePath chunkFile;
+    private final Path chunkFile;
     private final RandomAccessFile unFinishedRAF;
 
     private Instant endTime = null; // unfinished
     private Instant startTime;
-    private int refCount = 0;
+    private int refCount = 1;
     private long size;
 
-    RepositoryChunk(SafePath path) throws Exception {
+    RepositoryChunk(Path path) throws Exception {
         this.chunkFile = path;
-        this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
+        this.unFinishedRAF = new RandomAccessFile(path.toFile(), "rw");
     }
 
-    void finish(Instant endTime) {
+    boolean finish(Instant endTime) {
         try {
-            finishWithException(endTime);
+            unFinishedRAF.close();
+            size = Files.size(chunkFile);
+            this.endTime = endTime;
+            if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+                Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Chunk finished: " + chunkFile);
+            }
+            return true;
         } catch (IOException e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getClass() + " "+ e.getMessage());
-        }
-    }
-
-    private void finishWithException(Instant endTime) throws IOException {
-        unFinishedRAF.close();
-        this.size = SecuritySupport.getFileSize(chunkFile);
-        this.endTime = endTime;
-        if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Chunk finished: " + chunkFile);
+            final String reason;
+            if (isMissingFile()) {
+                reason = "Chunkfile \""+ getFile() + "\" is missing. " +
+                         "Data loss might occur from " + getStartTime() + " to " + endTime;
+            } else {
+                reason = e.getClass().getName();
+            }
+            Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + reason);
+            return false;
         }
     }
 
@@ -84,9 +91,9 @@ final class RepositoryChunk {
         return endTime;
     }
 
-    private void delete(SafePath f) {
+    private void delete(Path f) {
         try {
-            SecuritySupport.delete(f);
+            Files.delete(f);
             if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
                 Logger.log(LogTag.JFR, LogLevel.DEBUG, "Repository chunk " + f + " deleted");
             }
@@ -103,16 +110,14 @@ final class RepositoryChunk {
     }
 
     private void destroy() {
-        if (!isFinished()) {
-            finish(Instant.MIN);
-        }
-         delete(chunkFile);
         try {
             unFinishedRAF.close();
         } catch (IOException e) {
             if (Logger.shouldLog(LogTag.JFR, LogLevel.ERROR)) {
                 Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not close random access file: " + chunkFile.toString() + ". File will not be deleted due to: " + e.getMessage());
             }
+        } finally {
+            delete(chunkFile);
         }
     }
 
@@ -150,7 +155,7 @@ final class RepositoryChunk {
         if (!isFinished()) {
             throw new IOException("Chunk not finished");
         }
-        return ((SecuritySupport.newFileChannelToRead(chunkFile)));
+        return FileChannel.open(chunkFile, StandardOpenOption.READ);
     }
 
     public boolean inInterval(Instant startTime, Instant endTime) {
@@ -163,7 +168,19 @@ final class RepositoryChunk {
         return true;
     }
 
-    public SafePath getFile() {
+    public Path getFile() {
         return chunkFile;
+    }
+
+    public long getCurrentFileSize() {
+        try {
+            return Files.size(chunkFile);
+        } catch (IOException e) {
+            return 0L;
+        }
+    }
+
+    boolean isMissingFile() {
+        return !Files.exists(chunkFile);
     }
 }

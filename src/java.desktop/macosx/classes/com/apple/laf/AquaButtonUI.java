@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,56 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Stroke;
+import java.awt.event.FocusEvent;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.MouseMotionListener;
 import java.beans.PropertyChangeEvent;
 
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JRootPane;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
+import javax.swing.plaf.ButtonUI;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.RootPaneUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicButtonListener;
+import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
+import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import sun.swing.SwingUtilities2;
-
 import apple.laf.JRSUIConstants.Size;
-
 import com.apple.laf.AquaButtonExtendedTypes.TypeSpecifier;
 import com.apple.laf.AquaUtilControlSize.Sizeable;
-import com.apple.laf.AquaUtils.*;
+import com.apple.laf.AquaUtils.RecyclableSingleton;
+import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
 
 public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     private static final String BUTTON_TYPE = "JButton.buttonType";
@@ -57,6 +89,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     private boolean defaults_initialized = false;
     private Color defaultDisabledTextColor = null;
 
+    @Override
     protected void installDefaults(final AbstractButton b) {
         // load shared instance defaults
         final String pp = getPropertyPrefix();
@@ -88,6 +121,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
+    @Override
     public void applySizeFor(final JComponent c, final Size size) {
         // this space intentionally left blank
         // (subclasses need to do work here)
@@ -184,6 +218,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         return true;
     }
 
+    @Override
     protected void installListeners(final AbstractButton b) {
         super.installListeners(b);
         AquaButtonListener listener = getAquaButtonListener(b);
@@ -191,19 +226,19 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
             // put the listener in the button's client properties so that
             // we can get at it later
             b.putClientProperty(this, listener);
-
-            b.addAncestorListener(listener);
         }
         installHierListener(b);
         AquaUtilControlSize.addSizePropertyListener(b);
     }
 
+    @Override
     protected void installKeyboardActions(final AbstractButton b) {
         final BasicButtonListener listener = (BasicButtonListener)b.getClientProperty(this);
         if (listener != null) listener.installKeyboardActions(b);
     }
 
     // Uninstall PLAF
+    @Override
     public void uninstallUI(final JComponent c) {
         uninstallKeyboardActions((AbstractButton)c);
         uninstallListeners((AbstractButton)c);
@@ -211,28 +246,28 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         //BasicHTML.updateRenderer(c, "");
     }
 
+    @Override
     protected void uninstallKeyboardActions(final AbstractButton b) {
         final BasicButtonListener listener = (BasicButtonListener)b.getClientProperty(this);
         if (listener != null) listener.uninstallKeyboardActions(b);
     }
 
+    @Override
     protected void uninstallListeners(final AbstractButton b) {
         super.uninstallListeners(b);
-        final AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
         b.putClientProperty(this, null);
-        if (listener != null) {
-            b.removeAncestorListener(listener);
-        }
         uninstallHierListener(b);
         AquaUtilControlSize.removeSizePropertyListener(b);
     }
 
+    @Override
     protected void uninstallDefaults(final AbstractButton b) {
         LookAndFeel.uninstallBorder(b);
         defaults_initialized = false;
     }
 
     // Create Listeners
+    @Override
     protected AquaButtonListener createButtonListener(final AbstractButton b) {
         return new AquaButtonListener(b);
     }
@@ -255,6 +290,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     // Paint Methods
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         final AbstractButton b = (AbstractButton)c;
         final ButtonModel model = b.getModel();
@@ -305,15 +341,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         // performs icon and text rect calculations
-        final String text;
-        final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
-        if (v != null) {
-            // use zero insets for view since layout only handles text calculations
-            text = layoutAndGetText(g, b, aquaBorder, new Insets(0,0,0,0),
-                    viewRect, iconRect, textRect);
-        } else {
-            text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
-        }
+        final String text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
 
         // Paint the Icon
         if (b.getIcon() != null) {
@@ -325,6 +353,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         if (text != null && !text.isEmpty()) {
+            final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
             } else {
@@ -333,6 +362,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
+    @Override
     protected void paintFocus(Graphics g, AbstractButton b,
                               Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
         Graphics2D g2d = null;
@@ -460,13 +490,12 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
      * As of Java 2 platform v 1.4 this method should not be used or overridden.
      * Use the paintText method which takes the AbstractButton argument.
      */
+    @Override
     protected void paintText(final Graphics g, final JComponent c, final Rectangle localTextRect, final String text) {
-        final Graphics2D g2d = g instanceof Graphics2D ? (Graphics2D)g : null;
-
         final AbstractButton b = (AbstractButton)c;
         final ButtonModel model = b.getModel();
         final FontMetrics fm = g.getFontMetrics();
-        final int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
+        final int mnemonicIndex = MnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
 
         /* Draw the Text */
         if (model.isEnabled()) {
@@ -479,15 +508,18 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         SwingUtilities2.drawStringUnderlineCharAt(c, g, text, mnemonicIndex, localTextRect.x, localTextRect.y + fm.getAscent());
     }
 
+    @Override
     protected void paintText(final Graphics g, final AbstractButton b, final Rectangle localTextRect, final String text) {
         paintText(g, (JComponent)b, localTextRect, text);
     }
 
+    @Override
     protected void paintButtonPressed(final Graphics g, final AbstractButton b) {
         paint(g, b);
     }
 
     // Layout Methods
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         final Dimension d = getPreferredSize(c);
         final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
@@ -497,6 +529,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         return d;
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         final AbstractButton b = (AbstractButton)c;
 
@@ -512,6 +545,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         return d;
     }
 
+    @Override
     public Dimension getMaximumSize(final JComponent c) {
         final Dimension d = getPreferredSize(c);
 
@@ -548,9 +582,10 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
-    static class AquaHierarchyButtonListener implements HierarchyListener {
+    static final class AquaHierarchyButtonListener implements HierarchyListener {
         // Every time a hierarchy is changed we need to check if the button is moved on or from
         // the toolbar. If that is the case, we need to re-set the border of the button.
+        @Override
         public void hierarchyChanged(final HierarchyEvent e) {
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) == 0) return;
 
@@ -566,7 +601,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
     }
 
-    class AquaButtonListener extends BasicButtonListener implements AncestorListener {
+    final class AquaButtonListener extends BasicButtonListener {
         protected final AbstractButton b;
 
         public AquaButtonListener(final AbstractButton b) {
@@ -574,10 +609,12 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
             this.b = b;
         }
 
+        @Override
         public void focusGained(final FocusEvent e) {
             ((Component)e.getSource()).repaint();
         }
 
+        @Override
         public void focusLost(final FocusEvent e) {
             // 10-06-03 VL: [Radar 3187049]
             // If focusLost arrives while the button has been left-clicked this would disarm the button,
@@ -587,6 +624,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
             ((Component)e.getSource()).repaint();
         }
 
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             super.propertyChange(e);
 
@@ -632,28 +670,6 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
                     b.setBorder(AquaButtonExtendedTypes.getBorderForPosition(b, buttonType, buttonPosition));
                 }
             }
-        }
-
-        public void ancestorMoved(final AncestorEvent e) {}
-
-        public void ancestorAdded(final AncestorEvent e) {
-            updateDefaultButton();
-        }
-
-        public void ancestorRemoved(final AncestorEvent e) {
-            updateDefaultButton();
-        }
-
-        protected void updateDefaultButton() {
-            if (!(b instanceof JButton)) return;
-            if (!((JButton)b).isDefaultButton()) return;
-
-            final JRootPane rootPane = b.getRootPane();
-            if (rootPane == null) return;
-
-            final RootPaneUI ui = rootPane.getUI();
-            if (!(ui instanceof AquaRootPaneUI)) return;
-            ((AquaRootPaneUI)ui).updateDefaultButton(rootPane);
         }
     }
 }

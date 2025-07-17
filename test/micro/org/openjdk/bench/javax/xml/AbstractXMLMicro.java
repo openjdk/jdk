@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @State(Scope.Benchmark)
 public abstract class AbstractXMLMicro {
 
-  public static final String BUILDIMPL = "build-impl.xml";
-  public static final String LOGCOMP = "log_comp.xml";
   public static final String MESSAGE12 = "message_12.xml";
   public static final String MSGATTACH = "msgAttach.xml";
   public static final String REZ = "reZ003vExc23082309.xml";
 
   protected static final ConcurrentHashMap<String, byte[]> byteCache = new ConcurrentHashMap<>();
 
-  @Param({BUILDIMPL,LOGCOMP,MESSAGE12,MSGATTACH,REZ})
+  @Param({MESSAGE12,MSGATTACH,REZ})
   protected String doc;
 
   /**

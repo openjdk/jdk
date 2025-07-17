@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_GraphBuilder.hpp"
-#include "c1/c1_IR.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_Optimizer.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/resourceArea.hpp"
@@ -102,7 +101,7 @@ bool XHandlers::could_catch(ciInstanceKlass* klass, bool type_is_exact) const {
 
 
 bool XHandlers::equals(XHandlers* others) const {
-  if (others == NULL) return false;
+  if (others == nullptr) return false;
   if (length() != others->length()) return false;
 
   for (int i = 0; i < length(); i++) {
@@ -127,7 +126,7 @@ bool XHandler::equals(XHandler* other) const {
 BlockBegin* IRScope::build_graph(Compilation* compilation, int osr_bci) {
   GraphBuilder gm(compilation, this);
   NOT_PRODUCT(if (PrintValueNumbering && Verbose) gm.print_stats());
-  if (compilation->bailed_out()) return NULL;
+  if (compilation->bailed_out()) return nullptr;
   return gm.start();
 }
 
@@ -138,7 +137,7 @@ IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMe
 , _requires_phi_function(method->max_locals())
 {
   _caller             = caller;
-  _level              = caller == NULL ?  0 : caller->level() + 1;
+  _level              = caller == nullptr ?  0 : caller->level() + 1;
   _method             = method;
   _xhandlers          = new XHandlers(method);
   _number_of_locks    = 0;
@@ -146,7 +145,8 @@ IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMe
   _wrote_final        = false;
   _wrote_fields       = false;
   _wrote_volatile     = false;
-  _start              = NULL;
+  _wrote_stable       = false;
+  _start              = nullptr;
 
   if (osr_bci != -1) {
     // selective creation of phi functions is not possibel in osr-methods
@@ -173,7 +173,7 @@ int IRScope::max_stack() const {
 bool IRScopeDebugInfo::should_reexecute() {
   ciMethod* cur_method = scope()->method();
   int       cur_bci    = bci();
-  if (cur_method != NULL && cur_bci != SynchronizationEntryBCI) {
+  if (cur_method != nullptr && cur_bci != SynchronizationEntryBCI) {
     Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
     return Interpreter::bytecode_should_reexecute(code);
   } else
@@ -185,30 +185,30 @@ bool IRScopeDebugInfo::should_reexecute() {
 
 // Stack must be NON-null
 CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, bool deoptimize_on_exception)
-  : _scope_debug_info(NULL)
+  : _scope_debug_info(nullptr)
   , _scope(stack->scope())
   , _exception_handlers(exception_handlers)
-  , _oop_map(NULL)
+  , _oop_map(nullptr)
   , _stack(stack)
   , _is_method_handle_invoke(false)
   , _deoptimize_on_exception(deoptimize_on_exception)
   , _force_reexecute(false) {
-  assert(_stack != NULL, "must be non null");
+  assert(_stack != nullptr, "must be non null");
 }
 
 
 CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
-  : _scope_debug_info(NULL)
+  : _scope_debug_info(nullptr)
   , _scope(info->_scope)
-  , _exception_handlers(NULL)
-  , _oop_map(NULL)
-  , _stack(stack == NULL ? info->_stack : stack)
+  , _exception_handlers(nullptr)
+  , _oop_map(nullptr)
+  , _stack(stack == nullptr ? info->_stack : stack)
   , _is_method_handle_invoke(info->_is_method_handle_invoke)
   , _deoptimize_on_exception(info->_deoptimize_on_exception)
   , _force_reexecute(info->_force_reexecute) {
 
   // deep copy of exception handlers
-  if (info->_exception_handlers != NULL) {
+  if (info->_exception_handlers != nullptr) {
     _exception_handlers = new XHandlers(info->_exception_handlers);
   }
 }
@@ -224,7 +224,7 @@ void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_
 
 
 void CodeEmitInfo::add_register_oop(LIR_Opr opr) {
-  assert(_oop_map != NULL, "oop map must already exist");
+  assert(_oop_map != nullptr, "oop map must already exist");
   assert(opr->is_single_cpu(), "should not call otherwise");
 
   VMReg name = frame_map()->regname(opr);
@@ -241,7 +241,7 @@ int CodeEmitInfo::interpreter_frame_size() const {
   int callee_locals = 0;
   int extra_args = state->scope()->method()->max_stack() - state->stack_size();
 
-  while (state != NULL) {
+  while (state != nullptr) {
     int locks = state->locks_size();
     int temps = state->stack_size();
     bool is_top_frame = (state == _stack);
@@ -270,8 +270,8 @@ IR::IR(Compilation* compilation, ciMethod* method, int osr_bci) :
   _num_loops(0) {
   // setup IR fields
   _compilation = compilation;
-  _top_scope   = new IRScope(compilation, NULL, -1, method, osr_bci, true);
-  _code        = NULL;
+  _top_scope   = new IRScope(compilation, nullptr, -1, method, osr_bci, true);
+  _code        = nullptr;
 }
 
 
@@ -306,22 +306,22 @@ void IR::eliminate_null_checks() {
   }
 }
 
-
-static int sort_pairs(BlockPair** a, BlockPair** b) {
-  if ((*a)->from() == (*b)->from()) {
-    return (*a)->to()->block_id() - (*b)->to()->block_id();
-  } else {
-    return (*a)->from()->block_id() - (*b)->from()->block_id();
-  }
-}
-
-
+// The functionality of this class is to insert a new block between
+// the 'from' and 'to' block of a critical edge.
+// It first collects the block pairs, and then processes them.
+//
+// Some instructions may introduce more than one edge between two blocks.
+// By checking if the current 'to' block sets critical_edge_split_flag
+// (all new blocks set this flag) we can avoid repeated processing.
+// This is why BlockPair contains the index rather than the original 'to' block.
 class CriticalEdgeFinder: public BlockClosure {
   BlockPairList blocks;
-  IR*       _ir;
 
  public:
-  CriticalEdgeFinder(IR* ir): _ir(ir) {}
+  CriticalEdgeFinder(IR* ir) {
+    ir->iterate_preorder(this);
+  }
+
   void block_do(BlockBegin* bb) {
     BlockEnd* be = bb->end();
     int nos = be->number_of_sux();
@@ -329,20 +329,22 @@ class CriticalEdgeFinder: public BlockClosure {
       for (int i = 0; i < nos; i++) {
         BlockBegin* sux = be->sux_at(i);
         if (sux->number_of_preds() >= 2) {
-          blocks.append(new BlockPair(bb, sux));
+          blocks.append(new BlockPair(bb, i));
         }
       }
     }
   }
 
   void split_edges() {
-    BlockPair* last_pair = NULL;
-    blocks.sort(sort_pairs);
     for (int i = 0; i < blocks.length(); i++) {
       BlockPair* pair = blocks.at(i);
-      if (last_pair != NULL && pair->is_same(last_pair)) continue;
       BlockBegin* from = pair->from();
-      BlockBegin* to = pair->to();
+      int index = pair->index();
+      BlockBegin* to = from->end()->sux_at(index);
+      if (to->is_set(BlockBegin::critical_edge_split_flag)) {
+        // inserted
+        continue;
+      }
       BlockBegin* split = from->insert_block_between(to);
 #ifndef PRODUCT
       if ((PrintIR || PrintIR1) && Verbose) {
@@ -350,15 +352,12 @@ class CriticalEdgeFinder: public BlockClosure {
                       from->block_id(), to->block_id(), split->block_id());
       }
 #endif
-      last_pair = pair;
     }
   }
 };
 
 void IR::split_critical_edges() {
   CriticalEdgeFinder cef(this);
-
-  iterate_preorder(&cef);
   cef.split_edges();
 }
 
@@ -397,7 +396,7 @@ class UseCountComputer: public ValueVisitor, BlockClosure {
     } else {
       (*n)->input_values_do(this);
       // special handling for some instructions
-      if ((*n)->as_BlockEnd() != NULL) {
+      if ((*n)->as_BlockEnd() != nullptr) {
         // note on BlockEnd:
         //   must 'use' the stack only if the method doesn't
         //   terminate, however, in those cases stack is empty
@@ -410,7 +409,7 @@ class UseCountComputer: public ValueVisitor, BlockClosure {
   void block_do(BlockBegin* b) {
     depth = 0;
     // process all pinned nodes as the roots of expression trees
-    for (Instruction* n = b; n != NULL; n = n->next()) {
+    for (Instruction* n = b; n != nullptr; n = n->next()) {
       if (n->is_pinned()) uses_do(&n);
     }
     assert(depth == 0, "should have counted back down");
@@ -531,7 +530,7 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
   _num_blocks(0),
   _num_loops(0),
   _iterative_dominators(false),
-  _linear_scan_order(NULL), // initialized later with correct size
+  _linear_scan_order(nullptr), // initialized later with correct size
   _visited_blocks(_max_block_id),
   _active_blocks(_max_block_id),
   _dominator_blocks(_max_block_id),
@@ -543,13 +542,13 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
 {
   TRACE_LINEAR_SCAN(2, tty->print_cr("***** computing linear-scan block order"));
 
-  count_edges(start_block, NULL);
+  count_edges(start_block, nullptr);
 
   if (compilation()->is_profiling()) {
     ciMethod *method = compilation()->method();
     if (!method->is_accessor()) {
       ciMethodData* md = method->method_data_or_null();
-      assert(md != NULL, "Sanity");
+      assert(md != nullptr, "Sanity");
       md->set_compilation_stats(_num_loops, _num_blocks);
     }
   }
@@ -574,13 +573,13 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
 // * number loop header blocks
 // * create a list with all loop end blocks
 void ComputeLinearScanOrder::count_edges(BlockBegin* cur, BlockBegin* parent) {
-  TRACE_LINEAR_SCAN(3, tty->print_cr("Enter count_edges for block B%d coming from B%d", cur->block_id(), parent != NULL ? parent->block_id() : -1));
-  assert(cur->dominator() == NULL, "dominator already initialized");
+  TRACE_LINEAR_SCAN(3, tty->print_cr("Enter count_edges for block B%d coming from B%d", cur->block_id(), parent != nullptr ? parent->block_id() : -1));
+  assert(cur->dominator() == nullptr, "dominator already initialized");
 
   if (is_active(cur)) {
     TRACE_LINEAR_SCAN(3, tty->print_cr("backward branch"));
     assert(is_visited(cur), "block must be visisted when block is active");
-    assert(parent != NULL, "must have parent");
+    assert(parent != nullptr, "must have parent");
 
     cur->set(BlockBegin::backward_branch_target_flag);
 
@@ -757,20 +756,20 @@ void ComputeLinearScanOrder::assign_loop_depth(BlockBegin* start_block) {
 
 
 BlockBegin* ComputeLinearScanOrder::common_dominator(BlockBegin* a, BlockBegin* b) {
-  assert(a != NULL && b != NULL, "must have input blocks");
+  assert(a != nullptr && b != nullptr, "must have input blocks");
 
   _dominator_blocks.clear();
-  while (a != NULL) {
+  while (a != nullptr) {
     _dominator_blocks.set_bit(a->block_id());
-    assert(a->dominator() != NULL || a == _linear_scan_order->at(0), "dominator must be initialized");
+    assert(a->dominator() != nullptr || a == _linear_scan_order->at(0), "dominator must be initialized");
     a = a->dominator();
   }
-  while (b != NULL && !_dominator_blocks.at(b->block_id())) {
-    assert(b->dominator() != NULL || b == _linear_scan_order->at(0), "dominator must be initialized");
+  while (b != nullptr && !_dominator_blocks.at(b->block_id())) {
+    assert(b->dominator() != nullptr || b == _linear_scan_order->at(0), "dominator must be initialized");
     b = b->dominator();
   }
 
-  assert(b != NULL, "could not find dominator");
+  assert(b != nullptr, "could not find dominator");
   return b;
 }
 
@@ -783,7 +782,7 @@ void ComputeLinearScanOrder::compute_dominator_impl(BlockBegin* cur, BlockBegin*
   // Mark as visited to avoid recursive calls with same parent
   set_visited(cur);
 
-  if (cur->dominator() == NULL) {
+  if (cur->dominator() == nullptr) {
     TRACE_LINEAR_SCAN(4, tty->print_cr("DOM: initializing dominator of B%d to B%d", cur->block_id(), parent->block_id()));
     cur->set_dominator(parent);
 
@@ -809,7 +808,7 @@ void ComputeLinearScanOrder::compute_dominator_impl(BlockBegin* cur, BlockBegin*
 
 
 int ComputeLinearScanOrder::compute_weight(BlockBegin* cur) {
-  BlockBegin* single_sux = NULL;
+  BlockBegin* single_sux = nullptr;
   if (cur->number_of_sux() == 1) {
     single_sux = cur->sux_at(0);
   }
@@ -837,8 +836,8 @@ int ComputeLinearScanOrder::compute_weight(BlockBegin* cur) {
 
   // exceptions should not be thrown in normal control flow, so these blocks
   // are added as late as possible
-  INC_WEIGHT_IF(cur->end()->as_Throw() == NULL  && (single_sux == NULL || single_sux->end()->as_Throw()  == NULL));
-  INC_WEIGHT_IF(cur->end()->as_Return() == NULL && (single_sux == NULL || single_sux->end()->as_Return() == NULL));
+  INC_WEIGHT_IF(cur->end()->as_Throw() == nullptr  && (single_sux == nullptr || single_sux->end()->as_Throw()  == nullptr));
+  INC_WEIGHT_IF(cur->end()->as_Return() == nullptr && (single_sux == nullptr || single_sux->end()->as_Return() == nullptr));
 
   // exceptions handlers are added as late as possible
   INC_WEIGHT_IF(!cur->is_set(BlockBegin::exception_entry_flag));
@@ -880,7 +879,7 @@ void ComputeLinearScanOrder::sort_into_work_list(BlockBegin* cur) {
   }
 #endif
 
-  _work_list.append(NULL); // provide space for new element
+  _work_list.append(nullptr); // provide space for new element
 
   int insert_idx = _work_list.length() - 1;
   while (insert_idx > 0 && _work_list.at(insert_idx - 1)->linear_scan_number() > cur_weight) {
@@ -918,12 +917,12 @@ void ComputeLinearScanOrder::compute_order(BlockBegin* start_block) {
   _linear_scan_order = new BlockList(_num_blocks);
   append_block(start_block);
 
-  assert(start_block->end()->as_Base() != NULL, "start block must end with Base-instruction");
+  assert(start_block->end()->as_Base() != nullptr, "start block must end with Base-instruction");
   BlockBegin* std_entry = ((Base*)start_block->end())->std_entry();
   BlockBegin* osr_entry = ((Base*)start_block->end())->osr_entry();
 
-  BlockBegin* sux_of_osr_entry = NULL;
-  if (osr_entry != NULL) {
+  BlockBegin* sux_of_osr_entry = nullptr;
+  if (osr_entry != nullptr) {
     // special handling for osr entry:
     // ignore the edge between the osr entry and its successor for processing
     // the osr entry block is added manually below
@@ -983,7 +982,7 @@ bool ComputeLinearScanOrder::compute_dominators_iter() {
   bool changed = false;
   int num_blocks = _linear_scan_order->length();
 
-  assert(_linear_scan_order->at(0)->dominator() == NULL, "must not have dominator");
+  assert(_linear_scan_order->at(0)->dominator() == nullptr, "must not have dominator");
   assert(_linear_scan_order->at(0)->number_of_preds() == 0, "must not have predecessors");
   for (int i = 1; i < num_blocks; i++) {
     BlockBegin* block = _linear_scan_order->at(i);
@@ -1077,10 +1076,10 @@ void ComputeLinearScanOrder::print_blocks() {
       tty->print(cur->is_set(BlockBegin::linear_scan_loop_header_flag) ? " lh" : "   ");
       tty->print(cur->is_set(BlockBegin::linear_scan_loop_end_flag)    ? " le" : "   ");
 
-      if (cur->dominator() != NULL) {
+      if (cur->dominator() != nullptr) {
         tty->print("    dom: B%d ", cur->dominator()->block_id());
       } else {
-        tty->print("    dom: NULL ");
+        tty->print("    dom: null ");
       }
 
       if (cur->number_of_preds() > 0) {
@@ -1156,9 +1155,9 @@ void ComputeLinearScanOrder::verify() {
 
     // check dominator
     if (i == 0) {
-      assert(cur->dominator() == NULL, "first block has no dominator");
+      assert(cur->dominator() == nullptr, "first block has no dominator");
     } else {
-      assert(cur->dominator() != NULL, "all but first block must have dominator");
+      assert(cur->dominator() != nullptr, "all but first block must have dominator");
     }
     // Assertion does not hold for exception handlers
     assert(cur->number_of_preds() != 1 || cur->dominator() == cur->pred_at(0) || cur->is_set(BlockBegin::exception_entry_flag), "Single predecessor must also be dominator");
@@ -1269,7 +1268,7 @@ void IR::print(bool cfg_only, bool live_only) {
 class EndNotNullValidator : public BlockClosure {
  public:
   virtual void block_do(BlockBegin* block) {
-    assert(block->end() != NULL, "Expect block end to exist.");
+    assert(block->end() != nullptr, "Expect block end to exist.");
   }
 };
 
@@ -1304,11 +1303,11 @@ class PredecessorAndCodeValidator : public BlockClosure {
  public:
   PredecessorAndCodeValidator(IR* hir) {
     ResourceMark rm;
-    _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL);
+    _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), nullptr);
     _blocks = new BlockList(BlockBegin::number_of_blocks());
 
     hir->start()->iterate_preorder(this);
-    if (hir->code() != NULL) {
+    if (hir->code() != nullptr) {
       assert(hir->code()->length() == _blocks->length(), "must match");
       for (int i = 0; i < _blocks->length(); i++) {
         assert(hir->code()->contains(_blocks->at(i)), "should be in both lists");
@@ -1337,8 +1336,8 @@ class PredecessorAndCodeValidator : public BlockClosure {
   }
 
   void collect_predecessor(BlockBegin* const pred, const BlockBegin* sux) {
-    BlockList* preds = _predecessors->at_grow(sux->block_id(), NULL);
-    if (preds == NULL) {
+    BlockList* preds = _predecessors->at_grow(sux->block_id(), nullptr);
+    if (preds == nullptr) {
       preds = new BlockList();
       _predecessors->at_put(sux->block_id(), preds);
     }
@@ -1347,7 +1346,7 @@ class PredecessorAndCodeValidator : public BlockClosure {
 
   void verify_block_preds_against_collected_preds(const BlockBegin* block) const {
     BlockList* preds = _predecessors->at(block->block_id());
-    if (preds == NULL) {
+    if (preds == nullptr) {
       assert(block->number_of_preds() == 0, "should be the same");
       return;
     }
@@ -1370,7 +1369,7 @@ class PredecessorAndCodeValidator : public BlockClosure {
 class VerifyBlockBeginField : public BlockClosure {
 public:
   virtual void block_do(BlockBegin* block) {
-    for (Instruction* cur = block; cur != NULL; cur = cur->next()) {
+    for (Instruction* cur = block; cur != nullptr; cur = cur->next()) {
       assert(cur->block() == block, "Block begin is not correct");
     }
   }
@@ -1388,8 +1387,8 @@ class ValidateEdgeMutuality : public BlockClosure {
     }
 
     for (int i = 0; i < block->number_of_preds(); i++) {
-      assert(block->pred_at(i) != NULL, "Predecessor must exist");
-      assert(block->pred_at(i)->end() != NULL, "Predecessor end must exist");
+      assert(block->pred_at(i) != nullptr, "Predecessor must exist");
+      assert(block->pred_at(i)->end() != nullptr, "Predecessor end must exist");
       bool is_sux      = block->pred_at(i)->end()->is_sux(block);
       bool is_xhandler = block->pred_at(i)->is_exception_handler(block);
       assert(is_sux || is_xhandler, "Block's predecessor should have it as successor or xhandler");
@@ -1474,12 +1473,12 @@ class SubstitutionChecker: public ValueVisitor {
 
 
 void SubstitutionResolver::block_do(BlockBegin* block) {
-  Instruction* last = NULL;
-  for (Instruction* n = block; n != NULL;) {
+  Instruction* last = nullptr;
+  for (Instruction* n = block; n != nullptr;) {
     n->values_do(this);
     // need to remove this instruction from the instruction stream
     if (n->subst() != n) {
-      guarantee(last != NULL, "must have last");
+      guarantee(last != nullptr, "must have last");
       last->set_next(n->next());
     } else {
       last = n;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @library ../../regtesthelpers
  * @modules java.desktop/sun.java2d
  * @build Util
- * @run main/othervm/timeout=1000 -mx128m TwentyThousandTest
+ * @run main/othervm/timeout=1000 -Xmx128m TwentyThousandTest
  */
 
 import sun.java2d.Disposer;

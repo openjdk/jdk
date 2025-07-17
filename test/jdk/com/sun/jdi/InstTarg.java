@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,16 @@ public class InstTarg {
 
     public static void main(String args[]) {
         start();
+        // Sleep before exiting to allow disconnect efforts done on the JDI side to complete.
+        // Note that not sleeping long enough is for the most part harmless, but might render
+        // the testing insufficient because the debuggee will quickly exit naturally
+        // once the debuggee does the vm.resume(), rather than waiting for disconnect
+        // efforts to complete first.
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static void start() {

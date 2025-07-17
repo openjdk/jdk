@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 #ifndef CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
 #define CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP
 
-const size_t ZPlatformHeapViews        = 3;
-const size_t ZPlatformCacheLineSize    = 64;
+#include "utilities/globalDefinitions.hpp"
 
-size_t ZPlatformAddressOffsetBits();
-size_t ZPlatformAddressMetadataShift();
+const size_t ZPlatformCacheLineSize    = 64;
 
 #endif // CPU_AARCH64_GC_Z_ZGLOBALS_AARCH64_HPP

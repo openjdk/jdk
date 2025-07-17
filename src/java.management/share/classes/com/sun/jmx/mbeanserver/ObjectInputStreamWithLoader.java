@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class deserializes an object in the context of a specific class loader.
@@ -61,7 +60,6 @@ class ObjectInputStreamWithLoader extends ObjectInputStream {
             return super.resolveClass(aClass);
         } else {
             String name = aClass.getName();
-            ReflectUtil.checkPackageAccess(name);
             // Query the class loader ...
             return Class.forName(name, false, loader);
         }

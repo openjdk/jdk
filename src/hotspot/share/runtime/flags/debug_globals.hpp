@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@
                             develop_pd,                                     \
                             product,                                        \
                             product_pd,                                     \
-                            notproduct,                                     \
                             range,                                          \
                             constraint)                                     \
                                                                             \
@@ -55,11 +54,10 @@
                             develop_pd,                                     \
                             product,                                        \
                             product_pd,                                     \
-                            notproduct,                                     \
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(ccstr, DummyManageableStringFlag, NULL, MANAGEABLE,               \
+  product(ccstr, DummyManageableStringFlag, nullptr, MANAGEABLE,               \
           "Dummy flag for testing string handling in WriteableFlags")       \
                                                                             \
   product(bool, TestFlagFor_bool, false,                                    \

@@ -65,7 +65,7 @@ final class KeyCache {
             if (this == o) {
                 return true;
             }
-            if (o instanceof IdentityWrapper == false) {
+            if (!(o instanceof IdentityWrapper)) {
                 return false;
             }
             IdentityWrapper other = (IdentityWrapper)o;

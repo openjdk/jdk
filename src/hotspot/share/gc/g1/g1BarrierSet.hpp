@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 
@@ -70,15 +71,11 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  // NB: if you do a whole-heap invalidation, the "usual invariant" defined
-  // above no longer applies.
-  void invalidate(MemRegion mr);
-
-  void write_region(MemRegion mr)         { invalidate(mr); }
-  void write_ref_array_work(MemRegion mr) { invalidate(mr); }
+  inline void write_region(MemRegion mr);
+  void write_region(JavaThread* thread, MemRegion mr);
 
   template <DecoratorSet decorators, typename T>
-  void write_ref_field_post(T* field, oop new_val);
+  void write_ref_field_post(T* field);
   void write_ref_field_post_slow(volatile CardValue* byte);
 
   virtual void on_thread_create(Thread* thread);
@@ -115,6 +112,11 @@ class G1BarrierSet: public CardTableBarrierSet {
     // Defensive: will catch weak oops at addresses in heap
     template <typename T>
     static oop oop_load_in_heap(T* addr);
+
+    template <typename T>
+    static oop oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value);
+    template <typename T>
+    static oop oop_atomic_xchg_not_in_heap(T* addr, oop new_value);
   };
 };
 

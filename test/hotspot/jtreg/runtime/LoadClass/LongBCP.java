@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         String bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             bootCP, "Hello");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -82,7 +82,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
@@ -97,7 +97,7 @@ public class LongBCP {
 
         // run with long bootclasspath to hello.jar
         bootCP = "-Xbootclasspath/a:" + helloJar;
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
@@ -122,7 +122,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
@@ -139,7 +139,7 @@ public class LongBCP {
         Path jarPath = jarDir.resolve("hello.jar");
         Files.copy(Paths.get(helloJar), jarPath);
         bootCP = "-Xbootclasspath/a:" + jarPath.toString();
-        pb = ProcessTools.createJavaProcessBuilder(bootCP, "Hello");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Hello World")
@@ -151,7 +151,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class PrintIdealPhaseTest {
         options.add("-XX:CompileCommand=PrintIdealPhase," + getTestClass() + "::test," + cmdPhases);
         options.add(getTestClass());
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(options);
         if (valid) {
             oa.shouldHaveExitValue(0)
             .shouldContain("CompileCommand: PrintIdealPhase compiler/oracle/PrintIdealPhaseTest$TestMain.test const char* PrintIdealPhase = '"+cmdPhases.replace(',', ' ')+"'")
@@ -104,7 +104,7 @@ public class PrintIdealPhaseTest {
              Asserts.assertTrue(loggedPhases.isEmpty(), "Expect no other phases");
         } else {
             // Check that we don't pass even though bad phase names where given
-            oa.shouldHaveExitValue(0)
+            oa.shouldHaveExitValue(1)
             .shouldContain("CompileCommand: An error occurred during parsing")
             .shouldContain("Error: Unrecognized phase name in PrintIdealPhase:");
         }

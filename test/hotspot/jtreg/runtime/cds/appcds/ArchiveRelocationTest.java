@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,14 @@ public class ArchiveRelocationTest {
 
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
-        String forceRelocation = "-XX:ArchiveRelocationMode=1";
-        String runRelocArg  = run_reloc  ? forceRelocation : "-showversion";
-        String logArg = "-Xlog:cds=debug,cds+reloc=debug,cds+heap";
+        String maybeRelocation = "-XX:ArchiveRelocationMode=0";
+        String alwaysRelocation = "-XX:ArchiveRelocationMode=1";
+        String runRelocArg  = run_reloc  ? alwaysRelocation : maybeRelocation;
+        String logArg = "-Xlog:cds=debug,cds+reloc=debug,aot+heap";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String nmtArg = "-XX:NativeMemoryTracking=detail";
+        String relocMsg1 = "ArchiveRelocationMode == 1: always map archive(s) at an alternative address";
+        String relocMsg2 = "Try to map archive(s) at an alternative address";
 
         OutputAnalyzer out = TestCommon.dump(appJar,
                                              TestCommon.list(mainClass),
@@ -75,13 +78,12 @@ public class ArchiveRelocationTest {
         TestCommon.run("-cp", appJar, unlockArg, runRelocArg, logArg,  mainClass)
             .assertNormalExit(output -> {
                     if (run_reloc) {
-                        output.shouldContain("Try to map archive(s) at an alternative address");
-                        if (output.getOutput().contains("Trying to map heap") || output.getOutput().contains("Loaded heap")) {
-                          // The native data in the RO/RW regions have been relocated. If the CDS heap is
-                          // mapped/loaded, we must patch all the native pointers. (CDS heap is
-                          // not supported on all platforms)
-                          output.shouldContain("Patching native pointers in heap region");
+                        if (!output.contains(relocMsg1) && !output.contains(relocMsg2)) {
+                            throw new RuntimeException("Relocation messages \"" + relocMsg1 +
+                                "\" and \"" + relocMsg2 + "\" are missing from the output");
                         }
+                    } else {
+                        output.shouldContain("ArchiveRelocationMode: 0");
                     }
                 });
     }

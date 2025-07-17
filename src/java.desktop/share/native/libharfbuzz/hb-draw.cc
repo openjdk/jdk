@@ -28,6 +28,11 @@
 
 #include "hb-draw.hh"
 
+#include "hb-geometry.hh"
+
+#include "hb-machinery.hh"
+
+
 /**
  * SECTION:hb-draw
  * @title: hb-draw
@@ -35,6 +40,8 @@
  * @include: hb.h
  *
  * Functions for drawing (extracting) glyph shapes.
+ *
+ * The #hb_draw_funcs_t struct can be used with hb_font_draw_glyph().
  **/
 
 static void
@@ -80,6 +87,56 @@ hb_draw_close_path_nil (hb_draw_funcs_t *dfuncs HB_UNUSED, void *draw_data HB_UN
                         void *user_data HB_UNUSED) {}
 
 
+static bool
+_hb_draw_funcs_set_preamble (hb_draw_funcs_t    *dfuncs,
+                             bool                func_is_null,
+                             void              **user_data,
+                             hb_destroy_func_t  *destroy)
+{
+  if (hb_object_is_immutable (dfuncs))
+  {
+    if (*destroy)
+      (*destroy) (*user_data);
+    return false;
+  }
+
+  if (func_is_null)
+  {
+    if (*destroy)
+      (*destroy) (*user_data);
+    *destroy = nullptr;
+    *user_data = nullptr;
+  }
+
+  return true;
+}
+
+static bool
+_hb_draw_funcs_set_middle (hb_draw_funcs_t   *dfuncs,
+                           void              *user_data,
+                           hb_destroy_func_t  destroy)
+{
+  if (user_data && !dfuncs->user_data)
+  {
+    dfuncs->user_data = (decltype (dfuncs->user_data)) hb_calloc (1, sizeof (*dfuncs->user_data));
+    if (unlikely (!dfuncs->user_data))
+      goto fail;
+  }
+  if (destroy && !dfuncs->destroy)
+  {
+    dfuncs->destroy = (decltype (dfuncs->destroy)) hb_calloc (1, sizeof (*dfuncs->destroy));
+    if (unlikely (!dfuncs->destroy))
+      goto fail;
+  }
+
+  return true;
+
+fail:
+  if (destroy)
+    (destroy) (user_data);
+  return false;
+}
+
 #define HB_DRAW_FUNC_IMPLEMENT(name)                                            \
                                                                                 \
 void                                                                            \
@@ -88,42 +145,24 @@ hb_draw_funcs_set_##name##_func (hb_draw_funcs_t         *dfuncs,               
                                  void                    *user_data,            \
                                  hb_destroy_func_t        destroy)              \
 {                                                                               \
-  if (hb_object_is_immutable (dfuncs))                                          \
-    return;                                                                     \
+  if (!_hb_draw_funcs_set_preamble (dfuncs, !func, &user_data, &destroy))\
+      return;                                                            \
                                                                                 \
   if (dfuncs->destroy && dfuncs->destroy->name)                                 \
     dfuncs->destroy->name (!dfuncs->user_data ? nullptr : dfuncs->user_data->name); \
                                                                          \
-  if (user_data && !dfuncs->user_data)                                   \
-  {                                                                      \
-    dfuncs->user_data = (decltype (dfuncs->user_data)) hb_calloc (1, sizeof (*dfuncs->user_data)); \
-    if (unlikely (!dfuncs->user_data))                                   \
-      goto fail;                                                         \
-  }                                                                      \
-  if (destroy && !dfuncs->destroy)                                       \
-  {                                                                      \
-    dfuncs->destroy = (decltype (dfuncs->destroy)) hb_calloc (1, sizeof (*dfuncs->destroy)); \
-    if (unlikely (!dfuncs->destroy))                                     \
-      goto fail;                                                         \
-  }                                                                      \
+  if (!_hb_draw_funcs_set_middle (dfuncs, user_data, destroy))           \
+      return;                                                            \
                                                                         \
-  if (func) {                                                           \
+  if (func)                                                             \
     dfuncs->func.name = func;                                           \
-    if (dfuncs->user_data)                                              \
-      dfuncs->user_data->name = user_data;                              \
-    if (dfuncs->destroy)                                                \
-      dfuncs->destroy->name = destroy;                                  \
-  } else {                                                              \
+  else                                                                  \
     dfuncs->func.name = hb_draw_##name##_nil;                           \
-    if (dfuncs->user_data)                                              \
-      dfuncs->user_data->name = nullptr;                                \
-    if (dfuncs->destroy)                                                \
-      dfuncs->destroy->name = nullptr;                                  \
-  }                                                                     \
-                                                                         \
-fail:                                                                    \
-  if (destroy)                                                           \
-    destroy (user_data);                                                 \
+                                                                        \
+  if (dfuncs->user_data)                                                \
+    dfuncs->user_data->name = user_data;                                \
+  if (dfuncs->destroy)                                                  \
+    dfuncs->destroy->name = destroy;                                    \
 }
 
 HB_DRAW_FUNCS_IMPLEMENT_CALLBACKS
@@ -137,7 +176,7 @@ HB_DRAW_FUNCS_IMPLEMENT_CALLBACKS
  * Return value: (transfer full):
  * A newly allocated #hb_draw_funcs_t with a reference count of 1. The initial
  * reference count should be released with hb_draw_funcs_destroy when you are
- * done using the #hb_draw_funcs_t. This function never returns %NULL. If
+ * done using the #hb_draw_funcs_t. This function never returns `NULL`. If
  * memory cannot be allocated, a special singleton #hb_draw_funcs_t object will
  * be returned.
  *
@@ -166,13 +205,29 @@ DEFINE_NULL_INSTANCE (hb_draw_funcs_t) =
   }
 };
 
+/**
+ * hb_draw_funcs_get_empty:
+ *
+ * Fetches the singleton empty draw-functions structure.
+ *
+ * Return value: (transfer full): The empty draw-functions structure
+ *
+ * Since: 7.0.0
+ **/
+hb_draw_funcs_t *
+hb_draw_funcs_get_empty ()
+{
+  return const_cast<hb_draw_funcs_t *> (&Null (hb_draw_funcs_t));
+}
 
 /**
  * hb_draw_funcs_reference: (skip)
  * @dfuncs: draw functions
  *
- * Increases the reference count on @dfuncs by one. This prevents @buffer from
- * being destroyed until a matching call to hb_draw_funcs_destroy() is made.
+ * Increases the reference count on @dfuncs by one.
+ *
+ * This prevents @dfuncs from being destroyed until a matching
+ * call to hb_draw_funcs_destroy() is made.
  *
  * Return value: (transfer full):
  * The referenced #hb_draw_funcs_t.
@@ -208,7 +263,53 @@ hb_draw_funcs_destroy (hb_draw_funcs_t *dfuncs)
 #undef HB_DRAW_FUNC_IMPLEMENT
   }
 
+  hb_free (dfuncs->destroy);
+  hb_free (dfuncs->user_data);
+
   hb_free (dfuncs);
+}
+
+/**
+ * hb_draw_funcs_set_user_data: (skip)
+ * @dfuncs: The draw-functions structure
+ * @key: The user-data key
+ * @data: A pointer to the user data
+ * @destroy: (nullable): A callback to call when @data is not needed anymore
+ * @replace: Whether to replace an existing data with the same key
+ *
+ * Attaches a user-data key/data pair to the specified draw-functions structure.
+ *
+ * Return value: `true` if success, `false` otherwise
+ *
+ * Since: 7.0.0
+ **/
+hb_bool_t
+hb_draw_funcs_set_user_data (hb_draw_funcs_t *dfuncs,
+                             hb_user_data_key_t *key,
+                             void *              data,
+                             hb_destroy_func_t   destroy,
+                             hb_bool_t           replace)
+{
+  return hb_object_set_user_data (dfuncs, key, data, destroy, replace);
+}
+
+/**
+ * hb_draw_funcs_get_user_data: (skip)
+ * @dfuncs: The draw-functions structure
+ * @key: The user-data key to query
+ *
+ * Fetches the user-data associated with the specified key,
+ * attached to the specified draw-functions structure.
+ *
+ * Return value: (transfer none): A pointer to the user data
+ *
+ * Since: 7.0.0
+ **/
+void *
+hb_draw_funcs_get_user_data (const hb_draw_funcs_t *dfuncs,
+                             hb_user_data_key_t       *key)
+{
+  return hb_object_get_user_data (dfuncs, key);
 }
 
 /**
@@ -234,7 +335,7 @@ hb_draw_funcs_make_immutable (hb_draw_funcs_t *dfuncs)
  *
  * Checks whether @dfuncs is immutable.
  *
- * Return value: %true if @dfuncs is immutable, %false otherwise
+ * Return value: `true` if @dfuncs is immutable, `false` otherwise
  *
  * Since: 4.0.0
  **/
@@ -356,6 +457,94 @@ hb_draw_close_path (hb_draw_funcs_t *dfuncs, void *draw_data,
                     hb_draw_state_t *st)
 {
   dfuncs->close_path (draw_data, *st);
+}
+
+
+static void
+hb_draw_extents_move_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
+                         void *data,
+                         hb_draw_state_t *st,
+                         float to_x, float to_y,
+                         void *user_data HB_UNUSED)
+{
+  hb_extents_t *extents = (hb_extents_t *) data;
+
+  extents->add_point (to_x, to_y);
+}
+
+static void
+hb_draw_extents_line_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
+                         void *data,
+                         hb_draw_state_t *st,
+                         float to_x, float to_y,
+                         void *user_data HB_UNUSED)
+{
+  hb_extents_t *extents = (hb_extents_t *) data;
+
+  extents->add_point (to_x, to_y);
+}
+
+static void
+hb_draw_extents_quadratic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
+                              void *data,
+                              hb_draw_state_t *st,
+                              float control_x, float control_y,
+                              float to_x, float to_y,
+                              void *user_data HB_UNUSED)
+{
+  hb_extents_t *extents = (hb_extents_t *) data;
+
+  extents->add_point (control_x, control_y);
+  extents->add_point (to_x, to_y);
+}
+
+static void
+hb_draw_extents_cubic_to (hb_draw_funcs_t *dfuncs HB_UNUSED,
+                          void *data,
+                          hb_draw_state_t *st,
+                          float control1_x, float control1_y,
+                          float control2_x, float control2_y,
+                          float to_x, float to_y,
+                          void *user_data HB_UNUSED)
+{
+  hb_extents_t *extents = (hb_extents_t *) data;
+
+  extents->add_point (control1_x, control1_y);
+  extents->add_point (control2_x, control2_y);
+  extents->add_point (to_x, to_y);
+}
+
+static inline void free_static_draw_extents_funcs ();
+
+static struct hb_draw_extents_funcs_lazy_loader_t : hb_draw_funcs_lazy_loader_t<hb_draw_extents_funcs_lazy_loader_t>
+{
+  static hb_draw_funcs_t *create ()
+  {
+    hb_draw_funcs_t *funcs = hb_draw_funcs_create ();
+
+    hb_draw_funcs_set_move_to_func (funcs, hb_draw_extents_move_to, nullptr, nullptr);
+    hb_draw_funcs_set_line_to_func (funcs, hb_draw_extents_line_to, nullptr, nullptr);
+    hb_draw_funcs_set_quadratic_to_func (funcs, hb_draw_extents_quadratic_to, nullptr, nullptr);
+    hb_draw_funcs_set_cubic_to_func (funcs, hb_draw_extents_cubic_to, nullptr, nullptr);
+
+    hb_draw_funcs_make_immutable (funcs);
+
+    hb_atexit (free_static_draw_extents_funcs);
+
+    return funcs;
+  }
+} static_draw_extents_funcs;
+
+static inline
+void free_static_draw_extents_funcs ()
+{
+  static_draw_extents_funcs.free_instance ();
+}
+
+hb_draw_funcs_t *
+hb_draw_extents_get_funcs ()
+{
+  return static_draw_extents_funcs.get_unconst ();
 }
 
 

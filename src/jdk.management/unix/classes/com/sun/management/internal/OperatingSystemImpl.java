@@ -49,8 +49,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     private ContainerCpuTicks processLoadTicks = new ProcessCpuTicks();
 
     private abstract class ContainerCpuTicks {
-        private long usageTicks = 0;
-        private long totalTicks = 0;
+        private volatile long usageTicks;
+        private volatile long totalTicks;
 
         private double getUsageDividesTotal(long usageTicks, long totalTicks) {
             // If cpu quota or cpu shares are in effect. Calculate the cpu load
@@ -274,8 +274,13 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     private boolean isCpuSetSameAsHostCpuSet() {
-        if (containerMetrics != null && containerMetrics.getCpuSetCpus() != null) {
-            return containerMetrics.getCpuSetCpus().length == getHostOnlineCpuCount0();
+        if (containerMetrics != null) {
+            // The return value may change (including from non-null to null) and
+            // the call may involve I/O, so keep the result in a local variable.
+            int[] cpuSetCpus = containerMetrics.getCpuSetCpus();
+            if (cpuSetCpus != null) {
+                return cpuSetCpus.length == getHostOnlineCpuCount0();
+            }
         }
         return false;
     }

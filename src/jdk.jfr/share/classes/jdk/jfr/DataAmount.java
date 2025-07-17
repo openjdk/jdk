@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,11 @@ import java.lang.annotation.Target;
 
 /**
  * Event field annotation, specifies that a value represents an amount of data (for example, bytes).
+ * <p>
+ * The following example shows how the {@code DataAmount} annotation can be used to
+ * set the units {@code BITS} and {@code BYTES} to event fields.
+ *
+ * {@snippet class="Snippets" region="DataAmountOverview"}
  *
  * @since 9
  */
@@ -54,7 +59,7 @@ public @interface DataAmount {
     /**
      * Returns the unit for the data amount, by default bytes.
      *
-     * @return the data amount unit, default {@code BYTES}, not {@code null}
+     * @return the data amount unit, default {@code BYTES}
      */
     String value() default BYTES;
 }

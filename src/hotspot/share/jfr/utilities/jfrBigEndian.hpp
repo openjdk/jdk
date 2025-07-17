@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_JFR_UTILITIES_JFRBIGENDIAN_HPP
 
 #include "memory/allStatic.hpp"
-#include "utilities/bytes.hpp"
+#include "utilities/byteswap.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #ifndef VM_LITTLE_ENDIAN
@@ -34,22 +35,22 @@
 # define bigendian_32(x) (x)
 # define bigendian_64(x) (x)
 #else
-# define bigendian_16(x) Bytes::swap_u2(x)
-# define bigendian_32(x) Bytes::swap_u4(x)
-# define bigendian_64(x) Bytes::swap_u8(x)
+# define bigendian_16(x) byteswap<u2>(x)
+# define bigendian_32(x) byteswap<u4>(x)
+# define bigendian_64(x) byteswap<u8>(x)
 #endif
 
 class JfrBigEndian : AllStatic {
  private:
   template <typename T>
   static T read_bytes(const address location);
-  template <typename T>
-  static T read_unaligned(const address location);
+  template <typename R, typename T>
+  static R read_unaligned(const address location);
  public:
   static bool platform_supports_unaligned_reads(void);
   static bool is_aligned(const void* location, size_t size);
-  template <typename T>
-  static T read(const void* location);
+  template <typename R, typename T>
+  static R read(const void* location);
 };
 
 inline bool JfrBigEndian::is_aligned(const void* location, size_t size) {
@@ -81,18 +82,18 @@ inline u8 JfrBigEndian::read_bytes(const address location) {
   return Bytes::get_Java_u8(location);
 }
 
-template <typename T>
-inline T JfrBigEndian::read_unaligned(const address location) {
-  assert(location != NULL, "just checking");
+template <typename R, typename T>
+inline R JfrBigEndian::read_unaligned(const address location) {
+  assert(location != nullptr, "just checking");
   switch (sizeof(T)) {
     case sizeof(u1) :
-      return read_bytes<u1>(location);
+      return static_cast<R>(read_bytes<u1>(location));
     case sizeof(u2):
-      return read_bytes<u2>(location);
+      return static_cast<R>(read_bytes<u2>(location));
     case sizeof(u4):
-      return read_bytes<u4>(location);
+      return static_cast<R>(read_bytes<u4>(location));
     case sizeof(u8):
-      return read_bytes<u8>(location);
+      return static_cast<R>(read_bytes<u8>(location));
     default:
       assert(false, "not reach");
   }
@@ -110,27 +111,27 @@ inline bool JfrBigEndian::platform_supports_unaligned_reads(void) {
 #endif
 }
 
-template<typename T>
-inline T JfrBigEndian::read(const void* location) {
-  assert(location != NULL, "just checking");
+template<typename R, typename T>
+inline R JfrBigEndian::read(const void* location) {
+  assert(location != nullptr, "just checking");
   assert(sizeof(T) <= sizeof(u8), "no support for arbitrary sizes");
   if (sizeof(T) == sizeof(u1)) {
-    return *(T*)location;
+    return static_cast<R>(*(u1*)location);
   }
   if (is_aligned(location, sizeof(T)) || platform_supports_unaligned_reads()) {
     // fastest case
     switch (sizeof(T)) {
-      case sizeof(u1):
-        return *(T*)location;
+      case sizeof(u1) :
+        return static_cast<R>(*(u1*)location);
       case sizeof(u2):
-        return bigendian_16(*(T*)(location));
+        return static_cast<R>(bigendian_16(*(u2*)location));
       case sizeof(u4):
-        return bigendian_32(*(T*)(location));
+        return static_cast<R>(bigendian_32(*(u4*)location));
       case sizeof(u8):
-        return bigendian_64(*(T*)(location));
+        return static_cast<R>(bigendian_64(*(u8*)location));
     }
   }
-  return read_unaligned<T>((const address)location);
+  return read_unaligned<R, T>((const address)location);
 }
 
 #endif // SHARE_JFR_UTILITIES_JFRBIGENDIAN_HPP

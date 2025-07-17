@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.ResourcePoolEntryFactory;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.plugin.PluginException;
@@ -61,7 +62,8 @@ public class ResourceDuplicateCheckTest {
         input.add(newInMemoryImageFile("/com.foo/bin/myexec",
                     ResourcePoolEntry.Type.NATIVE_CMD, "mylib"));
         Path root = Paths.get(System.getProperty("test.classes"));
-        DefaultImageBuilder writer = new DefaultImageBuilder(root, Collections.emptyMap());
+        DefaultImageBuilder writer = new DefaultImageBuilder(root, Collections.emptyMap(),
+                Platform.runtime());
         try {
             writer.storeFiles(input.resourcePool());
         } catch (PluginException pe) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,14 +74,6 @@ static jlong page_size = 0;
 
 #endif /* _ALLBSD_SOURCE */
 
-#if defined(_AIX)
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
-#endif
-
 // true = get available swap in bytes
 // false = get total swap in bytes
 static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean available) {
@@ -105,6 +97,12 @@ static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean availa
         throw_internal_error(env, "sysctlbyname failed");
     }
     return available ? (jlong)vmusage.xsu_avail : (jlong)vmusage.xsu_total;
+#elif defined(_AIX)
+    perfstat_memory_total_t memory_info;
+    if (perfstat_memory_total(NULL, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
+        throw_internal_error(env, "perfstat_memory_total failed");
+    }
+    return available ? (jlong)(memory_info.pgsp_free * 4L * 1024L) : (jlong)(memory_info.pgsp_total * 4L * 1024L);
 #else /* _ALLBSD_SOURCE */
     /*
      * XXXBSD: there's no way available to get swap info in
@@ -122,29 +120,13 @@ Java_com_sun_management_internal_OperatingSystemImpl_initialize0
     page_size = sysconf(_SC_PAGESIZE);
 }
 
+// Linux-specific implementation is in UnixOperatingSystem.c
+#if !defined(__linux__)
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySize0
   (JNIEnv *env, jobject mbean)
 {
-#if defined(__linux__)
-    FILE *fp;
-    unsigned long vsize = 0;
-
-    if ((fp = fopen("/proc/self/stat", "r")) == NULL) {
-        throw_internal_error(env, "Unable to open /proc/self/stat");
-        return -1;
-    }
-
-    // Ignore everything except the vsize entry
-    if (fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %*u %*d %lu %*[^\n]\n", &vsize) == EOF) {
-        throw_internal_error(env, "Unable to get virtual memory usage");
-        fclose(fp);
-        return -1;
-    }
-
-    fclose(fp);
-    return (jlong)vsize;
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
     struct task_basic_info t_info;
     mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
 
@@ -161,6 +143,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySi
     return (64 * MB);
 #endif
 }
+#endif
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getTotalSwapSpaceSize0

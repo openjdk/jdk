@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package com.sun.security.ntlm;
-
-import sun.security.action.GetBooleanAction;
 
 import static com.sun.security.ntlm.Version.*;
 import java.io.IOException;
@@ -57,8 +55,7 @@ class NTLM {
     private final MessageDigest md4;
     private final Mac hmac;
     private final MessageDigest md5;
-    private static final boolean DEBUG
-            = GetBooleanAction.privilegedGetProperty("ntlm.debug");
+    private static final boolean DEBUG = Boolean.getBoolean("ntlm.debug");
 
     final Version v;
 

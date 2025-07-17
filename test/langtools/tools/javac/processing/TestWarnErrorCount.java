@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
             "-d", testDir.getPath(),
             "-processor", myName,
 //            "-XprintRounds",
-            "-Xlint:all,-path",
+            "-Xlint:all",
             "-AerrKind=" + ek,
             "-AmsgrWarnKind=" + mwk,
             "-AjavaWarnKind=" + jwk));
@@ -322,14 +322,11 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
     void generate(String name, boolean error, boolean warn) {
         try {
             JavaFileObject fo = filer.createSourceFile(name);
-            Writer out = fo.openWriter();
-            try {
+            try (Writer out = fo.openWriter()) {
                 out.write("class " + name + " {\n"
                         + (warn ? "    void m() throws Exception { try (AutoCloseable ac = null) { } }" : "")
                         + (error ? "   ERROR\n" : "")
                         + "}\n");
-            } finally {
-                out.close();
             }
         } catch (IOException e) {
             throw new Error(e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package build.tools.compileproperties;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,6 +34,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -220,8 +224,8 @@ public class CompileProperties {
             System.out.println("parsing: " + propertiesPath);
         }
         Properties p = new Properties();
-        try {
-            p.load(new FileInputStream(propertiesPath));
+        try (BufferedReader input = Files.newBufferedReader(Path.of(propertiesPath))) {
+            p.load(input);
         } catch ( FileNotFoundException e ) {
             ok = false;
             error("Cannot find file " + propertiesPath, e);
@@ -267,7 +271,7 @@ public class CompileProperties {
             Writer writer = null;
             try {
                 writer = new BufferedWriter(
-                        new OutputStreamWriter(new FileOutputStream(outputPath), "8859_1"));
+                        new OutputStreamWriter(new FileOutputStream(outputPath), StandardCharsets.US_ASCII));
                 MessageFormat format = new MessageFormat(FORMAT);
                 writer.write(format.format(new Object[] { packageString, className, superClass, data }));
             } catch ( IOException e ) {

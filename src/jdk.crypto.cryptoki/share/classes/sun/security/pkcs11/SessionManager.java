@@ -78,7 +78,7 @@ final class SessionManager {
     private final int maxSessions;
 
     // total number of active sessions
-    private AtomicInteger activeSessions = new AtomicInteger();
+    private final AtomicInteger activeSessions = new AtomicInteger();
 
     // pool of available object sessions
     private final Pool objSessions;
@@ -88,7 +88,7 @@ final class SessionManager {
 
     // maximum number of active sessions during this invocation, for debugging
     private int maxActiveSessions;
-    private Object maxActiveSessionsLock;
+    private final Object maxActiveSessionsLock;
 
     // flags to use in the C_OpenSession() call
     private final long openSessionFlags;
@@ -112,9 +112,9 @@ final class SessionManager {
         this.token = token;
         this.objSessions = new Pool(this, true);
         this.opSessions = new Pool(this, false);
-        if (debug != null) {
-            maxActiveSessionsLock = new Object();
-        }
+        this.maxActiveSessionsLock = (debug != null)
+                ? new Object()
+                : null;
     }
 
     // returns whether only a fairly low number of sessions are
@@ -161,7 +161,7 @@ final class SessionManager {
     }
 
     Session killSession(Session session) {
-        if ((session == null) || (token.isValid() == false)) {
+        if ((session == null) || (!token.isValid())) {
             return null;
         }
         if (debug != null) {
@@ -176,7 +176,7 @@ final class SessionManager {
     }
 
     Session releaseSession(Session session) {
-        if ((session == null) || (token.isValid() == false)) {
+        if ((session == null) || (!token.isValid())) {
             return null;
         }
         if (session.hasObjects()) {
@@ -193,7 +193,7 @@ final class SessionManager {
     }
 
     void demoteObjSession(Session session) {
-        if (token.isValid() == false) {
+        if (!token.isValid()) {
             return;
         }
         if (debug != null) {
@@ -202,14 +202,14 @@ final class SessionManager {
         }
 
         boolean present = objSessions.remove(session);
-        if (present == false) {
+        if (!present) {
             // session is currently in use
             // will be added to correct pool on release, nothing to do now
             return;
         }
         // Objects could have been added to this session by other thread between
         // check in Session.removeObject method and objSessions.remove call
-        // higher. Therefore releaseSession method, which performs additional
+        // higher. Therefore, releaseSession method, which performs additional
         // check for objects, is used here to avoid placing this session
         // in wrong pool due to race condition.
         releaseSession(session);
@@ -255,9 +255,9 @@ final class SessionManager {
         Pool(SessionManager mgr, boolean obj) {
             this.mgr = mgr;
             if (obj) {
-                pool = new LinkedBlockingQueue<Session>();
+                pool = new LinkedBlockingQueue<>();
             } else {
-                pool = new LinkedBlockingQueue<Session>(SESSION_MAX);
+                pool = new LinkedBlockingQueue<>(SESSION_MAX);
             }
         }
 

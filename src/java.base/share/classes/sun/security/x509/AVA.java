@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.util.*;
 import sun.security.pkcs.PKCS9Attribute;
 
@@ -64,8 +63,8 @@ public class AVA implements DerEncoder {
     // See CR 6391482: if enabled this flag preserves the old but incorrect
     // PrintableString encoding for DomainComponent. It may need to be set to
     // avoid breaking preexisting certificates generated with sun.security APIs.
-    private static final boolean PRESERVE_OLD_DC_ENCODING = GetBooleanAction
-            .privilegedGetProperty("com.sun.security.preserveOldDCEncoding");
+    private static final boolean PRESERVE_OLD_DC_ENCODING =
+            Boolean.getBoolean("com.sun.security.preserveOldDCEncoding");
 
     /**
      * DEFAULT format allows both RFC1779 and RFC2253 syntax and
@@ -596,6 +595,7 @@ public class AVA implements DerEncoder {
         this(in.getDerValue());
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -608,10 +608,9 @@ public class AVA implements DerEncoder {
     }
 
     /**
-     * Returns a hashcode for this AVA.
-     *
-     * @return a hashcode for this AVA.
+     * {@return a hashcode for this AVA}
      */
+    @Override
     public int hashCode() {
         return toRFC2253CanonicalString().hashCode();
     }
@@ -620,14 +619,11 @@ public class AVA implements DerEncoder {
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
-        DerOutputStream         tmp = new DerOutputStream();
+    public void encode(DerOutputStream out) {
+        DerOutputStream tmp = new DerOutputStream();
 
         tmp.putOID(oid);
         value.encode(tmp);
@@ -644,7 +640,7 @@ public class AVA implements DerEncoder {
      */
     public String toString() {
         return toKeywordValueString
-            (toKeyword(DEFAULT, Collections.emptyMap()));
+            (toKeyword(DEFAULT, Collections.emptyMap()), true);
     }
 
     /**
@@ -663,7 +659,7 @@ public class AVA implements DerEncoder {
      * OID/keyword map.
      */
     public String toRFC1779String(Map<String, String> oidMap) {
-        return toKeywordValueString(toKeyword(RFC1779, oidMap));
+        return toKeywordValueString(toKeyword(RFC1779, oidMap), false);
     }
 
     /**
@@ -705,12 +701,7 @@ public class AVA implements DerEncoder {
         if ((typeAndValue.charAt(0) >= '0' && typeAndValue.charAt(0) <= '9') ||
             !isDerString(value, false))
         {
-            byte[] data;
-            try {
-                data = value.toByteArray();
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            byte[] data = value.toByteArray();
             typeAndValue.append('#');
             HexFormat.of().formatHex(typeAndValue, data);
         } else {
@@ -722,12 +713,7 @@ public class AVA implements DerEncoder {
              * NOTE: this implementation only emits DirectoryStrings of the
              * types returned by isDerString().
              */
-            String valStr;
-            try {
-                valStr = new String(value.getDataBytes(), UTF_8);
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            String valStr = new String(value.getDataBytes(), UTF_8);
 
             /*
              * 2.4 (cont): If the UTF-8 string does not have any of the
@@ -772,12 +758,6 @@ public class AVA implements DerEncoder {
                     // escape null character
                     sbuffer.append("\\00");
 
-                } else if (debug != null && Debug.isOn("ava")) {
-
-                    // embed non-printable/non-escaped char
-                    // as escaped hex pairs for debugging
-                    byte[] valueBytes = Character.toString(c).getBytes(UTF_8);
-                    HexFormat.of().withPrefix("\\").withUpperCase().formatHex(sbuffer, valueBytes);
                 } else {
 
                     // append non-printable/non-escaped char
@@ -840,12 +820,7 @@ public class AVA implements DerEncoder {
         if ((typeAndValue.charAt(0) >= '0' && typeAndValue.charAt(0) <= '9') ||
             !isDerString(value, true))
         {
-            byte[] data;
-            try {
-                data = value.toByteArray();
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            byte[] data = value.toByteArray();
             typeAndValue.append('#');
             HexFormat.of().formatHex(typeAndValue, data);
         } else {
@@ -857,12 +832,7 @@ public class AVA implements DerEncoder {
              * NOTE: this implementation only emits DirectoryStrings of the
              * types returned by isDerString().
              */
-            String valStr;
-            try {
-                valStr = new String(value.getDataBytes(), UTF_8);
-            } catch (IOException ie) {
-                throw new IllegalArgumentException("DER Value conversion");
-            }
+            String valStr = new String(value.getDataBytes(), UTF_8);
 
             /*
              * 2.4 (cont): If the UTF-8 string does not have any of the
@@ -912,14 +882,6 @@ public class AVA implements DerEncoder {
                         }
                     }
 
-                } else if (debug != null && Debug.isOn("ava")) {
-
-                    // embed non-printable/non-escaped char
-                    // as escaped hex pairs for debugging
-
-                    previousWhite = false;
-                    byte[] valueBytes = Character.toString(c).getBytes(UTF_8);
-                    HexFormat.of().withPrefix("\\").withUpperCase().formatHex(sbuffer, valueBytes);
                 } else {
 
                     // append non-printable/non-escaped char
@@ -969,7 +931,7 @@ public class AVA implements DerEncoder {
         return AVAKeyword.hasKeyword(oid, RFC2253);
     }
 
-    private String toKeywordValueString(String keyword) {
+    private String toKeywordValueString(String keyword, Boolean isFromToString) {
         /*
          * Construct the value with as little copying and garbage
          * production as practical.  First the keyword (mandatory),
@@ -1043,7 +1005,7 @@ public class AVA implements DerEncoder {
 
                         sbuffer.append(c);
 
-                    } else if (debug != null && Debug.isOn("ava")) {
+                    } else if (debug != null && isFromToString && Debug.isOn("ava")) {
 
                         // embed non-printable/non-escaped char
                         // as escaped hex pairs for debugging

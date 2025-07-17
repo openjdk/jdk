@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logFileStreamOutput.hpp"
@@ -65,8 +64,8 @@ void LogOutput::add_to_config_string(const LogSelection& selection) {
 }
 
 
-static int tag_cmp(const void *a, const void *b) {
-  return static_cast<const LogTagType*>(a) - static_cast<const LogTagType*>(b);
+static int tag_cmp(const LogTagType *a, const LogTagType *b) {
+  return primitive_compare(a, b);
 }
 
 static void sort_tags(LogTagType tags[LogTag::MaxTags]) {
@@ -74,7 +73,7 @@ static void sort_tags(LogTagType tags[LogTag::MaxTags]) {
   while (tags[ntags] != LogTag::__NO_TAG) {
     ntags++;
   }
-  qsort(tags, ntags, sizeof(*tags), tag_cmp);
+  qsort(tags, ntags, sizeof(*tags), (_sort_Fn)tag_cmp);
 }
 
 static const size_t MaxSubsets = 1 << LogTag::MaxTags;
@@ -85,13 +84,13 @@ static const size_t MaxSubsets = 1 << LogTag::MaxTags;
 static void generate_all_subsets_of(LogTagType result[MaxSubsets][LogTag::MaxTags],
                                     size_t* result_size,
                                     const LogTagType tags[LogTag::MaxTags],
-                                    LogTagType subset[LogTag::MaxTags] = NULL,
+                                    LogTagType subset[LogTag::MaxTags] = nullptr,
                                     const size_t subset_size = 0,
                                     const size_t depth = 0) {
   assert(subset_size <= LogTag::MaxTags, "subset must never have more than MaxTags tags");
   assert(depth <= LogTag::MaxTags, "recursion depth overflow");
 
-  if (subset == NULL) {
+  if (subset == nullptr) {
     assert(*result_size == 0, "outer (non-recursive) call expects result_size to be 0");
     // Make subset the first element in the result array initially
     subset = result[0];
@@ -161,7 +160,7 @@ static void add_selections(LogSelection** selections,
     // Check if the two selections match any tag sets
     bool wildcard_match = false;
     bool exact_match = false;
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       if (!wildcard_selection.selects(*ts)) {
         continue;
       }
@@ -227,7 +226,7 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
   const LogTagSet** deviates = NEW_C_HEAP_ARRAY(const LogTagSet*, deviating_tagsets, mtLogging);
 
   // Generate all possible selections involving the deviating tag sets
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     LogLevelType level = ts->level_for(this);
     if (level == mcl) {
       continue;
@@ -259,7 +258,7 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
       }
 
       // Subtract from the score the number of tag sets it selects with an incorrect level
-      for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+      for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
         if (selections[i].selects(*ts) && ts->level_for(this) != selections[i].level()) {
           score--;
         }
@@ -285,7 +284,7 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
     }
 
     // Add back any new deviates that this selection added (no array growth since removed > added)
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       if (ts->level_for(this) == best_selection->level() || !best_selection->selects(*ts)) {
         continue;
       }
@@ -323,7 +322,7 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
 }
 
 bool LogOutput::parse_options(const char* options, outputStream* errstream) {
-  if (options == NULL || strlen(options) == 0) {
+  if (options == nullptr || strlen(options) == 0) {
     return true;
   }
   bool success = true;
@@ -333,11 +332,11 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
   char* pos = opts;
   do {
     comma_pos = strchr(pos, ',');
-    if (comma_pos != NULL) {
+    if (comma_pos != nullptr) {
       *comma_pos = '\0';
     }
     char* equals_pos = strchr(pos, '=');
-    if (equals_pos == NULL) {
+    if (equals_pos == nullptr) {
       errstream->print_cr("Invalid option '%s' for log output (%s).", pos, name());
       success = false;
       break;
@@ -354,8 +353,10 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
       }
       break;
     }
-    pos = comma_pos + 1;
-  } while (comma_pos != NULL);
+    if (comma_pos != nullptr) {
+      pos = comma_pos + 1;
+    }
+  } while (comma_pos != nullptr);
 
   os::free(opts);
   return success;

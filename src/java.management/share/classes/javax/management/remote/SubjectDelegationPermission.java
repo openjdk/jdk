@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,17 @@ import java.security.BasicPermission;
  * <code>delegate</code> of the concrete principal class
  * <code>javax.management.remote.JMXPrincipal</code>.</p>
  *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
+ * Consequently this class is deprecated for removal in a future release.
+ *
+ * @deprecated This class was only useful in conjunction with the Security Manager,
+ * which is no longer supported. There is no replacement for this class.
+ *
  * @since 1.5
  */
+@Deprecated(since="25", forRemoval=true)
 public final class SubjectDelegationPermission extends BasicPermission {
 
     private static final long serialVersionUID = 1481618113008682343L;

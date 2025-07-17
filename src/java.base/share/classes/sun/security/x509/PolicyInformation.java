@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@ import java.io.IOException;
 import java.security.cert.PolicyQualifierInfo;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
+import sun.security.util.DerEncoder;
 import sun.security.util.DerValue;
 import sun.security.util.DerOutputStream;
 /**
@@ -58,7 +60,7 @@ import sun.security.util.DerOutputStream;
  * @author Anne Anderson
  * @since       1.4
  */
-public class PolicyInformation {
+public class PolicyInformation implements DerEncoder {
 
     // Attribute names
     public static final String NAME       = "PolicyInformation";
@@ -87,7 +89,7 @@ public class PolicyInformation {
         }
         this.policyQualifiers =
                 new LinkedHashSet<>(policyQualifiers);
-        this.policyIdentifier = policyIdentifier;
+        this.policyIdentifier = Objects.requireNonNull(policyIdentifier);
     }
 
     /**
@@ -120,28 +122,22 @@ public class PolicyInformation {
     /**
      * Compare this PolicyInformation with another object for equality
      *
-     * @param other object to be compared with this
+     * @param obj object to be compared with this
      * @return true iff the PolicyInformation objects match
      */
-    public boolean equals(Object other) {
-        if (!(other instanceof PolicyInformation piOther))
-            return false;
-
-        if (!policyIdentifier.equals(piOther.getPolicyIdentifier()))
-            return false;
-
-        return policyQualifiers.equals(piOther.getPolicyQualifiers());
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PolicyInformation other
+                && policyIdentifier.equals(other.getPolicyIdentifier())
+                && policyQualifiers.equals(other.getPolicyQualifiers());
     }
 
     /**
-     * Returns the hash code for this PolicyInformation.
-     *
-     * @return a hash code value.
+     * {@return the hash code for this PolicyInformation}
      */
+    @Override
     public int hashCode() {
-        int myhash = 37 + policyIdentifier.hashCode();
-        myhash = 37 * myhash + policyQualifiers.hashCode();
-        return myhash;
+        return Objects.hash(policyIdentifier, policyQualifiers);
     }
 
     /**
@@ -177,15 +173,15 @@ public class PolicyInformation {
      * Write the PolicyInformation to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
         policyIdentifier.encode(tmp);
         if (!policyQualifiers.isEmpty()) {
             DerOutputStream tmp2 = new DerOutputStream();
             for (PolicyQualifierInfo pq : policyQualifiers) {
-                tmp2.write(pq.getEncoded());
+                tmp2.writeBytes(pq.getEncoded());
             }
             tmp.write(DerValue.tag_Sequence, tmp2);
         }

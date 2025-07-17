@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package jdk.internal.access;
 
 import jdk.internal.foreign.abi.NativeEntryPoint;
 
+import java.lang.foreign.MemoryLayout;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Constructor;
@@ -40,38 +40,27 @@ import java.util.stream.Stream;
 
 public interface JavaLangInvokeAccess {
     /**
-     * Create a new MemberName instance. Used by {@code StackFrameInfo}.
-     */
-    Object newMemberName();
-
-    /**
-     * Returns the name for the given MemberName. Used by {@code StackFrameInfo}.
-     */
-    String getName(Object mname);
-
-    /**
-     * Returns the {@code MethodType} for the given MemberName.
+     * Returns the declaring class for the given ResolvedMethodName.
      * Used by {@code StackFrameInfo}.
      */
-    MethodType getMethodType(Object mname);
+    Class<?> getDeclaringClass(Object rmname);
 
     /**
-     * Returns the descriptor for the given MemberName.
+     * Returns the {@code MethodType} for the given method descriptor
+     * and class loader.
      * Used by {@code StackFrameInfo}.
      */
-    String getMethodDescriptor(Object mname);
+    MethodType getMethodType(String descriptor, ClassLoader loader);
 
     /**
-     * Returns {@code true} if the given MemberName is a native method.
-     * Used by {@code StackFrameInfo}.
+     * Returns true if the given flags has MN_CALLER_SENSITIVE flag set.
      */
-    boolean isNative(Object mname);
+    boolean isCallerSensitive(int flags);
 
     /**
-     * Returns the declaring class for the given MemberName.
-     * Used by {@code StackFrameInfo}.
+     * Returns true if the given flags has MN_HIDDEN_MEMBER flag set.
      */
-    Class<?> getDeclaringClass(Object mname);
+    boolean isHiddenMember(int flags);
 
     /**
      * Returns a map of class name in internal forms to its corresponding
@@ -86,7 +75,7 @@ public interface JavaLangInvokeAccess {
      * Used by {@code jdk.internal.foreign.LayoutPath} and
      * {@code java.lang.invoke.MethodHandles}.
      */
-    VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order);
+    VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask, ByteOrder order, boolean constantOffset, long offset);
 
     /**
      * Var handle carrier combinator.
@@ -168,15 +157,17 @@ public interface JavaLangInvokeAccess {
     MethodHandle reflectiveInvoker(Class<?> caller);
 
     /**
-     * Defines a hidden class of the given name and bytes with class data.
-     * The given bytes is trusted.
-     */
-    Lookup defineHiddenClassWithClassData(Lookup caller, String name, byte[] bytes, Object classData, boolean initialize);
-
-    /**
      * A best-effort method that tries to find any exceptions thrown by the given method handle.
      * @param handle the handle to check
      * @return an array of exceptions, or {@code null}.
      */
     Class<?>[] exceptionTypes(MethodHandle handle);
+
+    /**
+     * Returns a method handle that allocates an instance of the given class
+     * and then invoke the given constructor of one of its superclasses.
+     *
+     * This method should only be used by ReflectionFactory::newConstructorForSerialization.
+     */
+    MethodHandle serializableConstructor(Class<?> decl, Constructor<?> ctorToCall) throws IllegalAccessException;
 }

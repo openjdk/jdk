@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +23,17 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
-
 #include "logging/log.hpp"
 #include "runtime/threads.hpp"
 
 ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool check) :
   _workers(workers) {
-  assert(msg != NULL, "Missing message");
+  assert(msg != nullptr, "Missing message");
 
   _n_workers = _workers->set_active_workers(nworkers);
   assert(_n_workers <= nworkers, "Must be");
@@ -73,7 +72,6 @@ ShenandoahPushWorkerScope::~ShenandoahPushWorkerScope() {
 }
 
 void ShenandoahWorkerThreads::on_create_worker(WorkerThread* worker) {
-  ShenandoahThreadLocalData::create(worker);
   if (_initialize_gclab) {
     ShenandoahThreadLocalData::initialize_gclab(worker);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -35,7 +34,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/statSampler.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -47,13 +45,13 @@ const char               PERFDATA_NAME[] = "hsperfdata";
 static const size_t PERFDATA_FILENAME_LEN = sizeof(PERFDATA_NAME) +
                                             UINT_CHARS + 1;
 
-char*                    PerfMemory::_start = NULL;
-char*                    PerfMemory::_end = NULL;
-char*                    PerfMemory::_top = NULL;
+char*                    PerfMemory::_start = nullptr;
+char*                    PerfMemory::_end = nullptr;
+char*                    PerfMemory::_top = nullptr;
 size_t                   PerfMemory::_capacity = 0;
-int                      PerfMemory::_initialized = false;
-PerfDataPrologue*        PerfMemory::_prologue = NULL;
-bool                     PerfMemory::_destroyed = false;
+volatile int             PerfMemory::_initialized = 0;
+PerfDataPrologue*        PerfMemory::_prologue = nullptr;
+volatile bool            PerfMemory::_destroyed = false;
 
 void perfMemory_init() {
 
@@ -67,16 +65,16 @@ void perfMemory_exit() {
   if (!UsePerfData) return;
   if (!PerfMemory::is_usable()) return;
 
-  // Only destroy PerfData objects if we're at a safepoint and the
-  // StatSampler is not active. Otherwise, we risk removing PerfData
-  // objects that are currently being used by running JavaThreads
-  // or the StatSampler. This method is invoked while we are not at
+  // Only destroy PerfData objects if we're at a safepoint.
+  // Otherwise, we risk removing PerfData objects
+  // that are currently being used by running JavaThreads.
+  // This method is invoked while we are not at
   // a safepoint during a VM abort so leaving the PerfData objects
   // around may also help diagnose the failure. In rare cases,
   // PerfData objects are used in parallel with a safepoint. See
   // the work around in PerfDataManager::destroy().
   //
-  if (SafepointSynchronize::is_at_safepoint() && !StatSampler::is_active()) {
+  if (SafepointSynchronize::is_at_safepoint()) {
     PerfDataManager::destroy();
   }
 
@@ -93,12 +91,12 @@ void PerfMemory::initialize() {
     // initialization already performed
     return;
 
-  size_t capacity = align_up(PerfDataMemorySize,
+  size_t capacity = align_up((size_t)PerfDataMemorySize,
                              os::vm_allocation_granularity());
 
   log_debug(perf, memops)("PerfDataMemorySize = %d,"
-                          " os::vm_allocation_granularity = %d,"
-                          " adjusted size = " SIZE_FORMAT,
+                          " os::vm_allocation_granularity = %zu"
+                          ", adjusted size = %zu",
                           PerfDataMemorySize,
                           os::vm_allocation_granularity(),
                           capacity);
@@ -106,7 +104,7 @@ void PerfMemory::initialize() {
   // allocate PerfData memory region
   create_memory_region(capacity);
 
-  if (_start == NULL) {
+  if (_start == nullptr) {
 
     // the PerfMemory region could not be created as desired. Rather
     // than terminating the JVM, we revert to creating the instrumentation
@@ -127,7 +125,7 @@ void PerfMemory::initialize() {
     // the PerfMemory region was created as expected.
 
     log_debug(perf, memops)("PerfMemory created: address = " INTPTR_FORMAT ","
-                            " size = " SIZE_FORMAT,
+                            " size = %zu",
                             p2i(_start),
                             _capacity);
 
@@ -136,7 +134,7 @@ void PerfMemory::initialize() {
     _top = _start + sizeof(PerfDataPrologue);
   }
 
-  assert(_prologue != NULL, "prologue pointer must be initialized");
+  assert(_prologue != nullptr, "prologue pointer must be initialized");
 
 #ifdef VM_LITTLE_ENDIAN
   _prologue->magic = (jint)0xc0c0feca;
@@ -163,7 +161,7 @@ void PerfMemory::destroy() {
 
   if (!is_usable()) return;
 
-  if (_start != NULL && _prologue->overflow != 0) {
+  if (_start != nullptr && _prologue->overflow != 0) {
 
     // This state indicates that the contiguous memory region exists and
     // that it wasn't large enough to hold all the counters. In this case,
@@ -178,8 +176,8 @@ void PerfMemory::destroy() {
     //
     if (PrintMiscellaneous && Verbose) {
       warning("PerfMemory Overflow Occurred.\n"
-              "\tCapacity = " SIZE_FORMAT " bytes"
-              "  Used = " SIZE_FORMAT " bytes"
+              "\tCapacity = %zu bytes"
+              "  Used = %zu bytes"
               "  Overflow = " INT32_FORMAT " bytes"
               "\n\tUse -XX:PerfDataMemorySize=<size> to specify larger size.",
               PerfMemory::capacity(),
@@ -188,7 +186,7 @@ void PerfMemory::destroy() {
     }
   }
 
-  if (_start != NULL) {
+  if (_start != nullptr) {
 
     // this state indicates that the contiguous memory region was successfully
     // and that persistent resources may need to be cleaned up. This is
@@ -206,7 +204,7 @@ void PerfMemory::destroy() {
 //
 char* PerfMemory::alloc(size_t size) {
 
-  if (!UsePerfData) return NULL;
+  if (!UsePerfData) return nullptr;
 
   MutexLocker ml(PerfDataMemAlloc_lock);
 
@@ -217,7 +215,7 @@ char* PerfMemory::alloc(size_t size) {
 
     _prologue->overflow += (jint)size;
 
-    return NULL;
+    return nullptr;
   }
 
   char* result = _top;
@@ -243,9 +241,9 @@ void PerfMemory::mark_updated() {
 // Returns the complete path including the file name of performance data file.
 // Caller is expected to release the allocated memory.
 char* PerfMemory::get_perfdata_file_path() {
-  char* dest_file = NULL;
+  char* dest_file = nullptr;
 
-  if (PerfDataSaveFile != NULL) {
+  if (PerfDataSaveFile != nullptr) {
     // dest_file_name stores the validated file name if file_name
     // contains %p which will be replaced by pid.
     dest_file = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtInternal);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,15 @@ import com.sun.source.doctree.CommentTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IdentifierTree;
+import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
@@ -56,6 +59,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -66,6 +70,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.util.List;
+import java.util.Optional;
 
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.SERIAL_FIELD;
@@ -78,8 +83,6 @@ public class CommentHelper {
     public final TreePath path;
     public final DocCommentTree dcTree;
     public final Element element;
-
-    public static final String SPACER = " ";
 
     /**
      * Creates a utility class to encapsulate the contextual information for a doc comment tree.
@@ -97,27 +100,17 @@ public class CommentHelper {
     }
 
     public String getTagName(DocTree dtree) {
-        switch (dtree.getKind()) {
-            case AUTHOR:
-            case DEPRECATED:
-            case PARAM:
-            case PROVIDES:
-            case RETURN:
-            case SEE:
-            case SERIAL_DATA:
-            case SERIAL_FIELD:
-            case THROWS:
-            case UNKNOWN_BLOCK_TAG:
-            case USES:
-            case VERSION:
-                return ((BlockTagTree) dtree).getTagName();
-            case UNKNOWN_INLINE_TAG:
-                return ((InlineTagTree) dtree).getTagName();
-            case ERRONEOUS:
-                return "erroneous";
-            default:
-                return dtree.getKind().tagName;
-        }
+        return switch (dtree.getKind()) {
+            case AUTHOR, DEPRECATED, PARAM, PROVIDES, RETURN, SEE, SERIAL_DATA, SERIAL_FIELD,
+                    THROWS, UNKNOWN_BLOCK_TAG, USES, VERSION ->
+                    ((BlockTagTree) dtree).getTagName();
+            case UNKNOWN_INLINE_TAG ->
+                    ((InlineTagTree) dtree).getTagName();
+            case ERRONEOUS ->
+                    "erroneous";
+            default ->
+                    dtree.getKind().tagName;
+        };
     }
 
     public String getParameterName(ParamTree p) {
@@ -125,6 +118,7 @@ public class CommentHelper {
     }
 
     Element getElement(ReferenceTree rtree) {
+        // We need to lookup type variables and other types
         Utils utils = configuration.utils;
         // likely a synthesized tree
         if (path == null) {
@@ -165,11 +159,6 @@ public class CommentHelper {
         return getTags(dtree);
     }
 
-    public TypeElement getReferencedClass(DocTree dtree) {
-        Element e = getReferencedElement(dtree);
-        return getReferencedClass(e);
-    }
-
     public TypeElement getReferencedClass(Element e) {
         Utils utils = configuration.utils;
         if (e == null) {
@@ -180,11 +169,6 @@ public class CommentHelper {
             return utils.getEnclosingTypeElement(e);
         }
         return null;
-    }
-
-    public String getReferencedModuleName(DocTree dtree) {
-        String s = getReferencedSignature(dtree);
-        return getReferencedModuleName(s);
     }
 
     public String getReferencedModuleName(String signature) {
@@ -204,6 +188,12 @@ public class CommentHelper {
         Utils utils = configuration.utils;
         if (e == null) {
             return null;
+        } else if (utils.isTypeParameterElement(e)) {
+            // Return the enclosing member for type parameters of generic methods or constructors.
+            Element encl = e.getEnclosingElement();
+            if (utils.isExecutableElement(encl)) {
+                return encl;
+            }
         }
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }
@@ -216,22 +206,12 @@ public class CommentHelper {
         return (n == -1) ? null : signature.substring(n + 1);
     }
 
-    public PackageElement getReferencedPackage(DocTree dtree) {
-        Element e = getReferencedElement(dtree);
-        return getReferencedPackage(e);
-    }
-
     public PackageElement getReferencedPackage(Element e) {
         if (e != null) {
             Utils utils = configuration.utils;
             return utils.containingPackage(e);
         }
         return null;
-    }
-
-    public ModuleElement getReferencedModule(DocTree dtree) {
-        Element e = getReferencedElement(dtree);
-        return getReferencedModule(e);
     }
 
     public ModuleElement getReferencedModule(Element e) {
@@ -243,10 +223,6 @@ public class CommentHelper {
 
     public List<? extends DocTree> getFirstSentenceTrees(List<? extends DocTree> body) {
         return configuration.docEnv.getDocTrees().getFirstSentence(body);
-    }
-
-    public List<? extends DocTree> getFirstSentenceTrees(DocTree dtree) {
-        return getFirstSentenceTrees(getBody(dtree));
     }
 
     public Element getReferencedElement(DocTree dtree) {
@@ -350,6 +326,11 @@ public class CommentHelper {
         }
 
         @Override
+        public R visitInheritDoc(InheritDocTree node, Void p) {
+            return visit(node.getSupertype(), p);
+        }
+
+        @Override
         public R visitLink(LinkTree node, Void p) {
             return visit(node.getReference(), null);
         }
@@ -385,14 +366,11 @@ public class CommentHelper {
     }
 
     public IdentifierTree getName(DocTree dtree) {
-        switch (dtree.getKind()) {
-            case PARAM:
-                return ((ParamTree)dtree).getName();
-            case SERIAL_FIELD:
-                return ((SerialFieldTree)dtree).getName();
-            default:
-                return null;
-            }
+        return switch (dtree.getKind()) {
+            case PARAM -> ((ParamTree) dtree).getName();
+            case SERIAL_FIELD -> ((SerialFieldTree) dtree).getName();
+            default -> null;
+        };
     }
 
     public List<? extends DocTree> getTags(DocTree dtree) {
@@ -423,6 +401,11 @@ public class CommentHelper {
             }
 
             @Override
+            public List<? extends DocTree> visitEscape(EscapeTree node, Void p) {
+                return asList(node.getBody());
+            }
+
+            @Override
             public List<? extends DocTree> visitLiteral(LiteralTree node, Void p) {
                 return asList(node.getBody().getBody());
             }
@@ -450,6 +433,12 @@ public class CommentHelper {
             @Override
             public List<? extends DocTree> visitParam(ParamTree node, Void p) {
                 return node.getDescription();
+            }
+
+            @Override
+            public List<? extends DocTree> visitRawText(RawTextTree node, Void p) {
+                // not ideal, but better than returning an empty list
+                return asList(node.getContent());
             }
 
             @Override
@@ -517,28 +506,36 @@ public class CommentHelper {
     }
 
     public DocTreePath getDocTreePath(DocTree dtree) {
-        if (dcTree == null && element instanceof ExecutableElement ee) {
-            return getInheritedDocTreePath(dtree, ee);
+        if (dcTree == null) {
+            // Element does not have a doc comment.
+            return getInheritedDocTreePath(dtree);
         }
-        if (path == null || dcTree == null || dtree == null) {
+        if (path == null || dtree == null) {
             return null;
         }
         DocTreePath dtPath = DocTreePath.getPath(path, dcTree, dtree);
-        if (dtPath == null && element instanceof ExecutableElement ee) {
-            // The overriding element has a doc tree, but it doesn't contain what we're looking for.
-            return getInheritedDocTreePath(dtree, ee);
-        }
-        return dtPath;
+        // Doc tree isn't in current element's comment, it must be inherited.
+        return dtPath == null ? getInheritedDocTreePath(dtree) : dtPath;
     }
 
-    private DocTreePath getInheritedDocTreePath(DocTree dtree, ExecutableElement ee) {
+    private DocTreePath getInheritedDocTreePath(DocTree dtree) {
         Utils utils = configuration.utils;
-        DocFinder.Output inheritedDoc =
-                DocFinder.search(configuration,
-                        new DocFinder.Input(utils, ee));
-        return inheritedDoc.holder == ee
-                ? null
-                : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
+        if (element instanceof ExecutableElement ee) {
+            var docFinder = utils.docFinder();
+            Optional<ExecutableElement> inheritedDoc = docFinder.search(ee,
+                    (m -> {
+                        Optional<ExecutableElement> optional = utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m);
+                        return Result.fromOptional(optional);
+                    })).toOptional();
+            return inheritedDoc.isEmpty() || inheritedDoc.get().equals(ee)
+                    ? null
+                    : utils.getCommentHelper(inheritedDoc.get()).getDocTreePath(dtree);
+        } else if (element instanceof TypeElement te
+                && te.getEnclosingElement() instanceof TypeElement enclType) {
+            // Block tags can be inherited from enclosing types.
+            return utils.getCommentHelper(enclType).getDocTreePath(dtree);
+        }
+        return null;
     }
 
     /**
@@ -547,12 +544,10 @@ public class CommentHelper {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("CommentHelper{" + "path=" + path + ", dcTree=" + dcTree);
-        sb.append(", element=");
-        sb.append(element.getEnclosingElement());
-        sb.append("::");
-        sb.append(element);
-        sb.append('}');
-        return sb.toString();
+        return "CommentHelper{"
+                + "path=" + path
+                + ", dcTree=" + dcTree
+                + ", element=" + element.getEnclosingElement() + "::" + element
+                + '}';
     }
 }

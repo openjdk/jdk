@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author or authors.
+ * Copyright (c) 2002-2019, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -24,6 +24,7 @@ public class Candidate implements Comparable<Candidate> {
     private final String suffix;
     private final String key;
     private final boolean complete;
+    private final int sort;
 
     /**
      * Simple constructor with only a single String as an argument.
@@ -31,7 +32,38 @@ public class Candidate implements Comparable<Candidate> {
      * @param value the candidate
      */
     public Candidate(String value) {
-        this(value, value, null, null, null, null, true);
+        this(value, value, null, null, null, null, true, 0);
+    }
+
+    /**
+     * Constructs a new Candidate.
+     *
+     * @param value the value
+     * @param displ the display string
+     * @param group the group
+     * @param descr the description
+     * @param suffix the suffix
+     * @param key the key
+     * @param complete the complete flag
+     * @param sort the sort flag
+     */
+    public Candidate(
+            String value,
+            String displ,
+            String group,
+            String descr,
+            String suffix,
+            String key,
+            boolean complete,
+            int sort) {
+        this.value = Objects.requireNonNull(value);
+        this.displ = Objects.requireNonNull(displ);
+        this.group = group;
+        this.descr = descr;
+        this.suffix = suffix;
+        this.key = key;
+        this.complete = complete;
+        this.sort = sort;
     }
 
     /**
@@ -45,14 +77,9 @@ public class Candidate implements Comparable<Candidate> {
      * @param key the key
      * @param complete the complete flag
      */
-    public Candidate(String value, String displ, String group, String descr, String suffix, String key, boolean complete) {
-        this.value = Objects.requireNonNull(value);
-        this.displ = Objects.requireNonNull(displ);
-        this.group = group;
-        this.descr = descr;
-        this.suffix = suffix;
-        this.key = key;
-        this.complete = complete;
+    public Candidate(
+            String value, String displ, String group, String descr, String suffix, String key, boolean complete) {
+        this(value, displ, group, descr, suffix, key, complete, 0);
     }
 
     /**
@@ -133,9 +160,35 @@ public class Candidate implements Comparable<Candidate> {
         return complete;
     }
 
+    /**
+     * Integer used to override default sort logic.
+     * @return the sort int
+     */
+    public int sort() {
+        return sort;
+    }
+
     @Override
     public int compareTo(Candidate o) {
-        return value.compareTo(o.value);
+        // If both candidates have same sort, use default behavior
+        if (sort == o.sort()) {
+            return value.compareTo(o.value);
+        } else {
+            return Integer.compare(sort, o.sort());
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Candidate candidate = (Candidate) o;
+        return Objects.equals(value, candidate.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
     }
 
     @Override

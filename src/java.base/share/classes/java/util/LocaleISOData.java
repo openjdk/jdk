@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,47 @@
 
 package java.util;
 
+import java.util.function.Supplier;
+
+// Methods and suppliers for producing ISO 639/3166 resources used by Locale.
 class LocaleISOData {
+
+    static final Supplier<String[]> ISO_639 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String[] get() {
+                    return getISO2Table(isoLanguageTable);
+                }
+            });
+
+    static final Supplier<String[]> ISO_3166_1_ALPHA2 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String[] get() {
+                    return getISO2Table(isoCountryTable);
+                }
+            });
+
+    static final Supplier<Set<String>> ISO_3166_1_ALPHA3 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public Set<String> get() {
+                    return computeISO3166_1Alpha3Countries();
+                }
+            });
+
+    static final Supplier<Set<String>> ISO_3166_3 =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public Set<String> get() {
+                    return Set.of(ISO3166_3);
+                }
+            });
+
     /**
      * The 2- and 3-letter ISO 639 language codes.
      */
-    static final String isoLanguageTable =
+    private static final String isoLanguageTable =
           "aa" + "aar"  // Afar
         + "ab" + "abk"  // Abkhazian
         + "ae" + "ave"  // Avestan
@@ -45,7 +81,7 @@ class LocaleISOData {
         + "ba" + "bak"  // Bashkir
         + "be" + "bel"  // Belarusian
         + "bg" + "bul"  // Bulgarian
-        + "bh" + "bih"  // Bihari
+        + "bh" + "bih"  // Bihari languages
         + "bi" + "bis"  // Bislama
         + "bm" + "bam"  // Bambara
         + "bn" + "ben"  // Bengali
@@ -78,10 +114,10 @@ class LocaleISOData {
         + "fj" + "fij"  // Fijian
         + "fo" + "fao"  // Faroese
         + "fr" + "fra"  // French
-        + "fy" + "fry"  // Frisian
+        + "fy" + "fry"  // Western Frisian
         + "ga" + "gle"  // Irish
         + "gd" + "gla"  // Scottish Gaelic
-        + "gl" + "glg"  // Gallegan
+        + "gl" + "glg"  // Galician
         + "gn" + "grn"  // Guarani
         + "gu" + "guj"  // Gujarati
         + "gv" + "glv"  // Manx
@@ -115,7 +151,7 @@ class LocaleISOData {
         + "kj" + "kua"  // Kwanyama
         + "kk" + "kaz"  // Kazakh
         + "kl" + "kal"  // Greenlandic
-        + "km" + "khm"  // Khmer
+        + "km" + "khm"  // Central Khmer
         + "kn" + "kan"  // Kannada
         + "ko" + "kor"  // Korean
         + "kr" + "kau"  // Kanuri
@@ -145,7 +181,7 @@ class LocaleISOData {
         + "mt" + "mlt"  // Maltese
         + "my" + "mya"  // Burmese
         + "na" + "nau"  // Nauru
-        + "nb" + "nob"  // Norwegian Bokm?l
+        + "nb" + "nob"  // Norwegian Bokmål
         + "nd" + "nde"  // North Ndebele
         + "ne" + "nep"  // Nepali
         + "ng" + "ndo"  // Ndonga
@@ -155,7 +191,7 @@ class LocaleISOData {
         + "nr" + "nbl"  // South Ndebele
         + "nv" + "nav"  // Navajo
         + "ny" + "nya"  // Nyanja
-        + "oc" + "oci"  // Occitan
+        + "oc" + "oci"  // Occitan (post 1500)
         + "oj" + "oji"  // Ojibwa
         + "om" + "orm"  // Oromo
         + "or" + "ori"  // Oriya
@@ -166,7 +202,7 @@ class LocaleISOData {
         + "ps" + "pus"  // Pushto
         + "pt" + "por"  // Portuguese
         + "qu" + "que"  // Quechua
-        + "rm" + "roh"  // Raeto-Romance
+        + "rm" + "roh"  // Romansh
         + "rn" + "run"  // Rundi
         + "ro" + "ron"  // Romanian
         + "ru" + "rus"  // Russian
@@ -176,7 +212,7 @@ class LocaleISOData {
         + "sd" + "snd"  // Sindhi
         + "se" + "sme"  // Northern Sami
         + "sg" + "sag"  // Sango
-        + "si" + "sin"  // Sinhalese
+        + "si" + "sin"  // Sinhala
         + "sk" + "slk"  // Slovak
         + "sl" + "slv"  // Slovenian
         + "sm" + "smo"  // Samoan
@@ -209,7 +245,7 @@ class LocaleISOData {
         + "uz" + "uzb"  // Uzbek
         + "ve" + "ven"  // Venda
         + "vi" + "vie"  // Vietnamese
-        + "vo" + "vol"  // Volap?k
+        + "vo" + "vol"  // Volapük
         + "wa" + "wln"  // Walloon
         + "wo" + "wol"  // Wolof
         + "xh" + "xho"  // Xhosa
@@ -223,7 +259,7 @@ class LocaleISOData {
     /**
      * The 2- and 3-letter ISO 3166 country codes.
      */
-    static final String isoCountryTable =
+    private static final String isoCountryTable =
           "AD" + "AND"  // Andorra, Principality of
         + "AE" + "ARE"  // United Arab Emirates
         + "AF" + "AFG"  // Afghanistan
@@ -239,7 +275,7 @@ class LocaleISOData {
         + "AT" + "AUT"  // Austria, Republic of
         + "AU" + "AUS"  // Australia, Commonwealth of
         + "AW" + "ABW"  // Aruba
-        + "AX" + "ALA"  // \u00c5land Islands
+        + "AX" + "ALA"  // Åland Islands
         + "AZ" + "AZE"  // Azerbaijan, Republic of
         + "BA" + "BIH"  // Bosnia and Herzegovina
         + "BB" + "BRB"  // Barbados
@@ -250,10 +286,10 @@ class LocaleISOData {
         + "BH" + "BHR"  // Bahrain, Kingdom of
         + "BI" + "BDI"  // Burundi, Republic of
         + "BJ" + "BEN"  // Benin, People's Republic of
-        + "BL" + "BLM"  // Saint Barth\u00e9lemy
+        + "BL" + "BLM"  // Saint Barthélemy
         + "BM" + "BMU"  // Bermuda
         + "BN" + "BRN"  // Brunei Darussalam
-        + "BO" + "BOL"  // Bolivia, Republic of
+        + "BO" + "BOL"  // Bolivia, Plurinational State of
         + "BQ" + "BES"  // Bonaire, Sint Eustatius and Saba
         + "BR" + "BRA"  // Brazil, Federative Republic of
         + "BS" + "BHS"  // Bahamas, Commonwealth of the
@@ -278,7 +314,7 @@ class LocaleISOData {
 //      + "CS" + "SCG"  // Serbia and Montenegro
         + "CU" + "CUB"  // Cuba, Republic of
         + "CV" + "CPV"  // Cape Verde, Republic of
-        + "CW" + "CUW"  // Cura\u00e7ao
+        + "CW" + "CUW"  // Curaçao
         + "CX" + "CXR"  // Christmas Island
         + "CY" + "CYP"  // Cyprus, Republic of
         + "CZ" + "CZE"  // Czech Republic
@@ -292,11 +328,11 @@ class LocaleISOData {
         + "EE" + "EST"  // Estonia
         + "EG" + "EGY"  // Egypt, Arab Republic of
         + "EH" + "ESH"  // Western Sahara
-        + "ER" + "ERI"  // Eritrea
+        + "ER" + "ERI"  // Eritrea, State of
         + "ES" + "ESP"  // Spain, Spanish State
         + "ET" + "ETH"  // Ethiopia
         + "FI" + "FIN"  // Finland, Republic of
-        + "FJ" + "FJI"  // Fiji, Republic of the Fiji Islands
+        + "FJ" + "FJI"  // Fiji, Republic of
         + "FK" + "FLK"  // Falkland Islands (Malvinas)
         + "FM" + "FSM"  // Micronesia, Federated States of
         + "FO" + "FRO"  // Faeroe Islands
@@ -306,7 +342,7 @@ class LocaleISOData {
         + "GD" + "GRD"  // Grenada
         + "GE" + "GEO"  // Georgia
         + "GF" + "GUF"  // French Guiana
-        + "GG" + "GGY"  // Guernsey
+        + "GG" + "GGY"  // Guernsey, Bailiwick of
         + "GH" + "GHA"  // Ghana, Republic of
         + "GI" + "GIB"  // Gibraltar
         + "GL" + "GRL"  // Greenland
@@ -325,7 +361,7 @@ class LocaleISOData {
         + "HN" + "HND"  // Honduras, Republic of
         + "HR" + "HRV"  // Hrvatska (Croatia)
         + "HT" + "HTI"  // Haiti, Republic of
-        + "HU" + "HUN"  // Hungary, Hungarian People's Republic
+        + "HU" + "HUN"  // Hungary
         + "ID" + "IDN"  // Indonesia, Republic of
         + "IE" + "IRL"  // Ireland
         + "IL" + "ISR"  // Israel, State of
@@ -336,7 +372,7 @@ class LocaleISOData {
         + "IR" + "IRN"  // Iran, Islamic Republic of
         + "IS" + "ISL"  // Iceland, Republic of
         + "IT" + "ITA"  // Italy, Italian Republic
-        + "JE" + "JEY"  // Jersey
+        + "JE" + "JEY"  // Jersey, Bailiwick of
         + "JM" + "JAM"  // Jamaica
         + "JO" + "JOR"  // Jordan, Hashemite Kingdom of
         + "JP" + "JPN"  // Japan
@@ -361,17 +397,17 @@ class LocaleISOData {
         + "LT" + "LTU"  // Lithuania
         + "LU" + "LUX"  // Luxembourg, Grand Duchy of
         + "LV" + "LVA"  // Latvia
-        + "LY" + "LBY"  // Libyan Arab Jamahiriya
+        + "LY" + "LBY"  // Libya
         + "MA" + "MAR"  // Morocco, Kingdom of
         + "MC" + "MCO"  // Monaco, Principality of
         + "MD" + "MDA"  // Moldova, Republic of
-        + "ME" + "MNE"  // Montenegro, Republic of
-        + "MF" + "MAF"  // Saint Martin
+        + "ME" + "MNE"  // Montenegro
+        + "MF" + "MAF"  // Saint Martin (French part)
         + "MG" + "MDG"  // Madagascar, Republic of
         + "MH" + "MHL"  // Marshall Islands
         + "MK" + "MKD"  // Macedonia, the former Yugoslav Republic of
         + "ML" + "MLI"  // Mali, Republic of
-        + "MM" + "MMR"  // Myanmar
+        + "MM" + "MMR"  // Myanmar, Republic of the Union of
         + "MN" + "MNG"  // Mongolia, Mongolian People's Republic
         + "MO" + "MAC"  // Macao, Special Administrative Region of China
         + "MP" + "MNP"  // Northern Mariana Islands
@@ -393,9 +429,9 @@ class LocaleISOData {
         + "NI" + "NIC"  // Nicaragua, Republic of
         + "NL" + "NLD"  // Netherlands, Kingdom of the
         + "NO" + "NOR"  // Norway, Kingdom of
-        + "NP" + "NPL"  // Nepal, Kingdom of
+        + "NP" + "NPL"  // Nepal, Federal Democratic Republic of
         + "NR" + "NRU"  // Nauru, Republic of
-        + "NU" + "NIU"  // Niue, Republic of
+        + "NU" + "NIU"  // Niue
         + "NZ" + "NZL"  // New Zealand
         + "OM" + "OMN"  // Oman, Sultanate of
         + "PA" + "PAN"  // Panama, Republic of
@@ -408,7 +444,7 @@ class LocaleISOData {
         + "PM" + "SPM"  // St. Pierre and Miquelon
         + "PN" + "PCN"  // Pitcairn Island
         + "PR" + "PRI"  // Puerto Rico
-        + "PS" + "PSE"  // Palestinian Territory, Occupied
+        + "PS" + "PSE"  // Palestine, State of
         + "PT" + "PRT"  // Portugal, Portuguese Republic
         + "PW" + "PLW"  // Palau
         + "PY" + "PRY"  // Paraguay, Republic of
@@ -421,10 +457,10 @@ class LocaleISOData {
         + "SA" + "SAU"  // Saudi Arabia, Kingdom of
         + "SB" + "SLB"  // Solomon Islands
         + "SC" + "SYC"  // Seychelles, Republic of
-        + "SD" + "SDN"  // Sudan, Democratic Republic of the
+        + "SD" + "SDN"  // Sudan, Republic of the
         + "SE" + "SWE"  // Sweden, Kingdom of
         + "SG" + "SGP"  // Singapore, Republic of
-        + "SH" + "SHN"  // St. Helena
+        + "SH" + "SHN"  // Saint Helena, Ascension and Tristan da Cunha
         + "SI" + "SVN"  // Slovenia
         + "SJ" + "SJM"  // Svalbard & Jan Mayen Islands
         + "SK" + "SVK"  // Slovakia (Slovak Republic)
@@ -433,7 +469,7 @@ class LocaleISOData {
         + "SN" + "SEN"  // Senegal, Republic of
         + "SO" + "SOM"  // Somalia, Somali Republic
         + "SR" + "SUR"  // Suriname, Republic of
-        + "SS" + "SSD"  // South Sudan
+        + "SS" + "SSD"  // South Sudan, Republic of
         + "ST" + "STP"  // Sao Tome and Principe, Democratic Republic of
         + "SV" + "SLV"  // El Salvador, Republic of
         + "SX" + "SXM"  // Sint Maarten (Dutch part)
@@ -480,18 +516,60 @@ class LocaleISOData {
     /**
      * Array to hold country codes for ISO3166-3.
      */
-    static final String[] ISO3166_3 = {
+    private static final String[] ISO3166_3 = {
         "AIDJ", "ANHH", "BQAQ", "BUMM", "BYAA", "CSHH", "CSXX", "CTKI", "DDDE",
         "DYBJ", "FQHH", "FXFR", "GEHH", "HVBF", "JTUM", "MIUM", "NHVU", "NQAQ",
         "NTHH", "PCHH", "PUUM", "PZPA", "RHZW", "SKIN", "SUHH", "TPTL", "VDVN",
         "WKUM", "YDYE", "YUCS", "ZRCD"
     };
 
+    static String getISO3LangCode(String language) {
+        return getISO3Code(language, isoLanguageTable);
+    }
+
+    static String getISO3CtryCode(String country) {
+        return getISO3Code(country, isoCountryTable);
+    }
+
+    private static String getISO3Code(String iso2Code, String table) {
+        int codeLength = iso2Code.length();
+        if (codeLength == 0) {
+            return "";
+        }
+
+        int tableLength = table.length();
+        int index = tableLength;
+        if (codeLength == 2) {
+            char c1 = iso2Code.charAt(0);
+            char c2 = iso2Code.charAt(1);
+            for (index = 0; index < tableLength; index += 5) {
+                if (table.charAt(index) == c1
+                        && table.charAt(index + 1) == c2) {
+                    break;
+                }
+            }
+        }
+        return index < tableLength ? table.substring(index + 2, index + 5) : null;
+    }
+
+    /**
+     * This method computes an array of alpha-2 codes from either ISO639 or
+     * ISO3166.
+     */
+    private static String[] getISO2Table(String table) {
+        int len = table.length() / 5;
+        String[] isoTable = new String[len];
+        for (int i = 0, j = 0; i < len; i++, j += 5) {
+            isoTable[i] = table.substring(j, j + 2);
+        }
+        return isoTable;
+    }
+
     /**
      * This method computes a set of ISO3166-1 alpha-3 country codes from
      * existing isoCountryTable.
      */
-    static Set<String> computeISO3166_1Alpha3Countries() {
+    private static Set<String> computeISO3166_1Alpha3Countries() {
         int tableLength = isoCountryTable.length();
         String[] isoTable = new String[tableLength / 5];
         for (int i = 0, index = 0; index < tableLength; i++, index += 5) {
@@ -500,6 +578,5 @@ class LocaleISOData {
         return Set.of(isoTable);
     }
 
-    private LocaleISOData() {
-    }
+    private LocaleISOData() {}
 }

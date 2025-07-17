@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
+import jdk.internal.constant.ConstantUtils;
 
 import static java.lang.invoke.MethodHandleNatives.mapLookupExceptionToError;
 import static java.util.Objects.requireNonNull;
@@ -112,7 +113,7 @@ public final class ConstantBootstraps {
             throw new IllegalArgumentException(String.format("not primitive: %s", name));
         }
 
-        return Wrapper.forPrimitiveType(name.charAt(0)).primitiveType();
+        return ConstantUtils.forPrimitiveType(name, 0).resolveConstantDesc(lookup);
     }
 
     /**
@@ -422,8 +423,7 @@ public final class ConstantBootstraps {
 
     private static <T> Class<T> validateClassAccess(MethodHandles.Lookup lookup, Class<T> type) {
         try {
-            lookup.accessClass(type);
-            return type;
+            return lookup.accessClass(type);
         }
         catch (ReflectiveOperationException ex) {
             throw mapLookupExceptionToError(ex);

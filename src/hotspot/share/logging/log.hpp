@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ class LogImpl {
     return is_level(LogLevel::level); \
   } \
   static LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>* name() { \
-    return (LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>*)NULL; \
+    return (LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>*)nullptr; \
   }
   LOG_LEVEL_LIST
 #undef LOG_LEVEL

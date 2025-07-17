@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public final class OldObjectSample {
     public static void emit(PlatformRecording recording) {
         if (isEnabled(recording)) {
             long nanos = CutoffSetting.parseValueSafe(recording.getSettings().get(OLD_OBJECT_CUTOFF));
-            long ticks = Utils.nanosToTicks(nanos);
+            long ticks = JVMSupport.nanosToTicks(nanos);
             emit(ticks);
         }
     }
@@ -74,15 +74,15 @@ public final class OldObjectSample {
             }
         }
         if (enabled) {
-            long ticks = Utils.nanosToTicks(cutoffNanos);
+            long ticks = JVMSupport.nanosToTicks(cutoffNanos);
             emit(ticks);
         }
     }
 
-    private static void emit(long ticks) {
+    public static void emit(long ticks) {
         boolean emitAll = WhiteBox.getWriteAllObjectSamples();
         boolean skipBFS = WhiteBox.getSkipBFS();
-        JVM.getJVM().emitOldObjectSamples(ticks, emitAll, skipBFS);
+        JVM.emitOldObjectSamples(ticks, emitAll, skipBFS);
     }
 
     public static void updateSettingPathToGcRoots(Map<String, String> s, Boolean pathToGcRoots) {

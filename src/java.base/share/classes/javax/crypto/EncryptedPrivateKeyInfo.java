@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
 
 package javax.crypto;
 
-import java.io.*;
+import jdk.internal.javac.PreviewFeature;
+
+import sun.security.jca.JCAUtil;
+import sun.security.pkcs.PKCS8Key;
+import sun.security.util.*;
+import sun.security.x509.AlgorithmId;
+
+import javax.crypto.spec.PBEKeySpec;
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
-import sun.security.x509.AlgorithmId;
-import sun.security.util.DerValue;
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
+import java.util.Objects;
 
 /**
  * This class implements the {@code EncryptedPrivateKeyInfo} type
@@ -55,34 +60,33 @@ import sun.security.util.DerOutputStream;
  * @since 1.4
  */
 
-public class EncryptedPrivateKeyInfo {
+public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
-    // the "encryptionAlgorithm" field
+    // The "encryptionAlgorithm" is stored in either the algid or
+    // the params field. Precisely, if this object is created by
+    // {@link #EncryptedPrivateKeyInfo(AlgorithmParameters, byte[])}
+    // with an uninitialized AlgorithmParameters, the AlgorithmParameters
+    // object is stored in the params field and algid is set to null.
+    // In all other cases, algid is non-null and params is null.
     private final AlgorithmId algid;
-
-    // the algorithm name of the encrypted private key
-    private String keyAlg;
+    private final AlgorithmParameters params;
 
     // the "encryptedData" field
     private final byte[] encryptedData;
 
     // the ASN.1 encoded contents of this class
-    private byte[] encoded;
+    private final byte[] encoded;
 
     /**
-     * Constructs (i.e., parses) an {@code EncryptedPrivateKeyInfo} from
-     * its ASN.1 encoding.
+     * Constructs an {@code EncryptedPrivateKeyInfo} from a given encrypted
+     * PKCS#8 ASN.1 encoding.
      * @param encoded the ASN.1 encoding of this object. The contents of
      * the array are copied to protect against subsequent modification.
-     * @exception NullPointerException if the {@code encoded} is
-     * {@code null}.
-     * @exception IOException if error occurs when parsing the ASN.1 encoding.
+     * @throws NullPointerException if {@code encoded} is {@code null}.
+     * @throws IOException if error occurs when parsing the ASN.1 encoding.
      */
     public EncryptedPrivateKeyInfo(byte[] encoded) throws IOException {
-        if (encoded == null) {
-            throw new NullPointerException("the encoded parameter " +
-                "must be non-null");
-        }
+        Objects.requireNonNull(encoded);
 
         this.encoded = encoded.clone();
         DerValue val = DerValue.wrap(this.encoded);
@@ -100,6 +104,7 @@ public class EncryptedPrivateKeyInfo {
         }
 
         this.algid = AlgorithmId.parse(seq[0]);
+        this.params = null;
         if (seq[0].data.available() != 0) {
             throw new IOException("encryptionAlgorithm field overrun");
         }
@@ -133,6 +138,8 @@ public class EncryptedPrivateKeyInfo {
      * is empty, i.e. 0-length.
      * @exception NoSuchAlgorithmException if the specified algName is
      * not supported.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public EncryptedPrivateKeyInfo(String algName, byte[] encryptedData)
         throws NoSuchAlgorithmException {
@@ -141,6 +148,7 @@ public class EncryptedPrivateKeyInfo {
                 throw new NullPointerException("the algName parameter " +
                                                "must be non-null");
         this.algid = AlgorithmId.get(algName);
+        this.params = null;
 
         if (encryptedData == null) {
             throw new NullPointerException("the encryptedData " +
@@ -181,7 +189,22 @@ public class EncryptedPrivateKeyInfo {
         if (algParams == null) {
             throw new NullPointerException("algParams must be non-null");
         }
-        this.algid = AlgorithmId.get(algParams);
+        AlgorithmId tmp;
+        try {
+            tmp = AlgorithmId.get(algParams);
+        } catch (IllegalStateException e) {
+            // This exception is thrown when algParams.getEncoded() fails.
+            // While the spec of this constructor requires that
+            // "getEncoded should return...", in reality people might
+            // create with an uninitialized algParams first and only
+            // initialize it before calling getEncoded(). Thus we support
+            // this case as well.
+            tmp = null;
+        }
+
+        // one and only one is non-null
+        this.algid = tmp;
+        this.params = this.algid != null ? null : algParams;
 
         if (encryptedData == null) {
             throw new NullPointerException("encryptedData must be non-null");
@@ -197,6 +220,16 @@ public class EncryptedPrivateKeyInfo {
         this.encoded = null;
     }
 
+    /**
+     * Create an EncryptedPrivateKeyInfo object from the given components
+     */
+    private EncryptedPrivateKeyInfo(byte[] encoded, byte[] eData,
+        AlgorithmId id, AlgorithmParameters p) {
+        this.encoded = encoded;
+        encryptedData = eData;
+        algid = id;
+        params = p;
+    }
 
     /**
      * Returns the encryption algorithm.
@@ -207,9 +240,11 @@ public class EncryptedPrivateKeyInfo {
      * for information about standard Cipher algorithm names.
      *
      * @return the encryption algorithm name.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public String getAlgName() {
-        return this.algid.getName();
+        return algid == null ? params.getAlgorithm() : algid.getName();
     }
 
     /**
@@ -217,7 +252,7 @@ public class EncryptedPrivateKeyInfo {
      * @return the algorithm parameters.
      */
     public AlgorithmParameters getAlgParameters() {
-        return this.algid.getParameters();
+        return algid == null ? params : algid.getParameters();
     }
 
     /**
@@ -252,14 +287,13 @@ public class EncryptedPrivateKeyInfo {
         byte[] encoded;
         try {
             encoded = cipher.doFinal(encryptedData);
-            checkPKCS8Encoding(encoded);
+            return pkcs8EncodingToSpec(encoded);
         } catch (GeneralSecurityException |
                  IOException |
                  IllegalStateException ex) {
             throw new InvalidKeySpecException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
         }
-        return new PKCS8EncodedKeySpec(encoded, keyAlg);
     }
 
     private PKCS8EncodedKeySpec getKeySpecImpl(Key decryptKey,
@@ -270,13 +304,13 @@ public class EncryptedPrivateKeyInfo {
         try {
             if (provider == null) {
                 // use the most preferred one
-                c = Cipher.getInstance(algid.getName());
+                c = Cipher.getInstance(getAlgName());
             } else {
-                c = Cipher.getInstance(algid.getName(), provider);
+                c = Cipher.getInstance(getAlgName(), provider);
             }
-            c.init(Cipher.DECRYPT_MODE, decryptKey, algid.getParameters());
+            c.init(Cipher.DECRYPT_MODE, decryptKey, getAlgParameters());
             encoded = c.doFinal(encryptedData);
-            checkPKCS8Encoding(encoded);
+            return pkcs8EncodingToSpec(encoded);
         } catch (NoSuchAlgorithmException nsae) {
             // rethrow
             throw nsae;
@@ -284,7 +318,242 @@ public class EncryptedPrivateKeyInfo {
             throw new InvalidKeyException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
         }
-        return new PKCS8EncodedKeySpec(encoded, keyAlg);
+    }
+
+    /**
+     * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
+     * {@code PrivateKey}.  A valid password-based encryption (PBE) algorithm
+     * and password must be specified.
+     *
+     * <p> The PBE algorithm string format details can be found in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
+     * Cipher section</a> of the Java Security Standard Algorithm Names
+     * Specification.
+     *
+     * @param key the {@code PrivateKey} to be encrypted
+     * @param password the password used in the PBE encryption.  This array
+     *                 will be cloned before being used.
+     * @param algorithm the PBE encryption algorithm.  The default algorithm
+     *                  will be used if {@code null}.  However, {@code null} is
+     *                  not allowed when {@code params} is non-null.
+     * @param params the {@code AlgorithmParameterSpec} to be used with
+     *               encryption.  The provider default will be used if
+     *               {@code null}.
+     * @param provider the {@code Provider} will be used for PBE
+     *                 {@link SecretKeyFactory} generation and {@link Cipher}
+     *                 encryption operations. The default provider list will be
+     *                 used if {@code null}.
+     * @return an {@code EncryptedPrivateKeyInfo}
+     * @throws IllegalArgumentException on initialization errors based on the
+     * arguments passed to the method
+     * @throws RuntimeException on an encryption error
+     * @throws NullPointerException if the key or password are {@code null}. If
+     * {@code params} is non-null when {@code algorithm} is {@code null}.
+     *
+     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
+     * defines the default encryption algorithm and the
+     * {@code AlgorithmParameterSpec} are the provider's algorithm defaults.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password, String algorithm, AlgorithmParameterSpec params,
+        Provider provider) {
+
+        SecretKey skey;
+        Objects.requireNonNull(key, "key cannot be null");
+        Objects.requireNonNull(password, "password cannot be null.");
+        PBEKeySpec keySpec = new PBEKeySpec(password);
+        if (algorithm == null) {
+            if (params != null) {
+                throw new NullPointerException("algorithm must be specified" +
+                    " if params is non-null.");
+            }
+            algorithm = Pem.DEFAULT_ALGO;
+        }
+
+        try {
+            SecretKeyFactory factory;
+            if (provider == null) {
+                factory = SecretKeyFactory.getInstance(algorithm);
+            } else {
+                factory = SecretKeyFactory.getInstance(algorithm, provider);
+            }
+            skey = factory.generateSecret(keySpec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new IllegalArgumentException(e);
+        }
+        return encryptKeyImpl(key, algorithm, skey, params, provider, null);
+    }
+
+    /**
+     * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
+     * {@code PrivateKey} and password.  Default algorithm and parameters are
+     * used.
+     *
+     * @param key the {@code PrivateKey} to be encrypted
+     * @param password the password used in the PBE encryption.  This array
+     *                 will be cloned before being used.
+     * @return an {@code EncryptedPrivateKeyInfo}
+     * @throws IllegalArgumentException on initialization errors based on the
+     * arguments passed to the method
+     * @throws RuntimeException on an encryption error
+     * @throws NullPointerException when the {@code key} or {@code password}
+     * is {@code null}
+     *
+     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
+     * defines the default encryption algorithm and the
+     * {@code AlgorithmParameterSpec} are the provider's algorithm defaults.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password) {
+        return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
+    }
+
+    /**
+     * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from the given
+     * {@link PrivateKey} using the {@code encKey} and given parameters.
+     *
+     * @param key the {@code PrivateKey} to be encrypted
+     * @param encKey the password-based encryption (PBE) {@code Key} used to
+     *              encrypt {@code key}.
+     * @param algorithm the PBE encryption algorithm.  The default algorithm is
+     *                 will be used if {@code null}; however, {@code null} is
+     *                 not allowed when {@code params} is non-null.
+     * @param params the {@code AlgorithmParameterSpec} to be used with
+     *               encryption. The provider list default will be used if
+     *               {@code null}.
+     * @param random the {@code SecureRandom} instance used during
+     *               encryption.  The default will be used if {@code null}.
+     * @param provider the {@code Provider} is used for {@link Cipher}
+     *                encryption operation.  The default provider list will be
+     *                used if {@code null}.
+     * @return an {@code EncryptedPrivateKeyInfo}
+     * @throws IllegalArgumentException on initialization errors based on the
+     * arguments passed to the method
+     * @throws RuntimeException on an encryption error
+     * @throws NullPointerException if the {@code key} or {@code encKey} are
+     * {@code null}. If {@code params} is non-null, {@code algorithm} cannot be
+     * {@code null}.
+     *
+     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
+     * defines the default encryption algorithm and the
+     * {@code AlgorithmParameterSpec} are the provider's algorithm defaults.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key, Key encKey,
+        String algorithm, AlgorithmParameterSpec params, Provider provider,
+        SecureRandom random) {
+
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(encKey);
+        if (algorithm == null) {
+            if (params != null) {
+                throw new NullPointerException("algorithm must be specified " +
+                    "if params is non-null.");
+            }
+            algorithm = Pem.DEFAULT_ALGO;
+        }
+        return encryptKeyImpl(key, algorithm, encKey, params, provider, random);
+    }
+
+    private static EncryptedPrivateKeyInfo encryptKeyImpl(PrivateKey key,
+        String algorithm, Key encryptKey, AlgorithmParameterSpec params,
+        Provider provider, SecureRandom random) {
+        AlgorithmId algId;
+        byte[] encryptedData;
+        Cipher c;
+        DerOutputStream out;
+
+        if (random == null) {
+            random = JCAUtil.getDefSecureRandom();
+        }
+        try {
+            if (provider == null) {
+                c = Cipher.getInstance(algorithm);
+            } else {
+                c = Cipher.getInstance(algorithm, provider);
+            }
+            c.init(Cipher.ENCRYPT_MODE, encryptKey, params, random);
+            encryptedData = c.doFinal(key.getEncoded());
+            algId = new AlgorithmId(Pem.getPBEID(algorithm), c.getParameters());
+            out = new DerOutputStream();
+            algId.encode(out);
+            out.putOctetString(encryptedData);
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException |
+                 NoSuchPaddingException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IllegalBlockSizeException | BadPaddingException |
+                 InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+        return new EncryptedPrivateKeyInfo(
+            DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),
+            encryptedData, algId, c.getParameters());
+    }
+
+    /**
+     * Extract the enclosed {@code PrivateKey} object from the encrypted data
+     * and return it.
+     *
+     * @param password the password used in the PBE encryption.  This array
+     *                 will be cloned before being used.
+     * @return a {@code PrivateKey}
+     * @throws GeneralSecurityException if an error occurs parsing or
+     * decrypting the encrypted data, or producing the key object.
+     * @throws NullPointerException if {@code password} is null
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public PrivateKey getKey(char[] password) throws GeneralSecurityException {
+        SecretKeyFactory skf;
+        PKCS8EncodedKeySpec p8KeySpec;
+        Objects.requireNonNull(password, "password cannot be null");
+        PBEKeySpec keySpec = new PBEKeySpec(password);
+        skf = SecretKeyFactory.getInstance(getAlgName());
+        p8KeySpec = getKeySpec(skf.generateSecret(keySpec));
+
+        return PKCS8Key.parseKey(p8KeySpec.getEncoded());
+    }
+
+    /**
+     * Extract the enclosed {@code PrivateKey} object from the encrypted data
+     * and return it.
+     *
+     * @param decryptKey the decryption key and cannot be {@code null}
+     * @param provider the {@code Provider} used for Cipher decryption and
+     *                 {@code PrivateKey} generation. A {@code null} value will
+     *                 use the default provider configuration.
+     * @return a {@code PrivateKey}
+     * @throws GeneralSecurityException if an error occurs parsing or
+     * decrypting the encrypted data, or producing the key object.
+     * @throws NullPointerException if {@code decryptKey} is null
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public PrivateKey getKey(Key decryptKey, Provider provider)
+        throws GeneralSecurityException {
+        Objects.requireNonNull(decryptKey,"decryptKey cannot be null.");
+        PKCS8EncodedKeySpec p = getKeySpecImpl(decryptKey, provider);
+        try {
+            if (provider == null) {
+                return KeyFactory.getInstance(
+                    KeyUtil.getAlgorithm(p.getEncoded())).
+                    generatePrivate(p);
+            }
+            return KeyFactory.getInstance(KeyUtil.getAlgorithm(p.getEncoded()),
+                provider).generatePrivate(p);
+        } catch (IOException e) {
+            throw new GeneralSecurityException(e);
+        }
     }
 
     /**
@@ -332,12 +601,8 @@ public class EncryptedPrivateKeyInfo {
     public PKCS8EncodedKeySpec getKeySpec(Key decryptKey,
         String providerName) throws NoSuchProviderException,
         NoSuchAlgorithmException, InvalidKeyException {
-        if (decryptKey == null) {
-            throw new NullPointerException("decryptKey is null");
-        }
-        if (providerName == null) {
-            throw new NullPointerException("provider is null");
-        }
+        Objects.requireNonNull(decryptKey, "decryptKey is null");
+        Objects.requireNonNull(providerName, "provider is null");
         Provider provider = Security.getProvider(providerName);
         if (provider == null) {
             throw new NoSuchProviderException("provider " +
@@ -366,12 +631,8 @@ public class EncryptedPrivateKeyInfo {
     public PKCS8EncodedKeySpec getKeySpec(Key decryptKey,
         Provider provider) throws NoSuchAlgorithmException,
         InvalidKeyException {
-        if (decryptKey == null) {
-            throw new NullPointerException("decryptKey is null");
-        }
-        if (provider == null) {
-            throw new NullPointerException("provider is null");
-        }
+        Objects.requireNonNull(decryptKey, "decryptKey is null");
+        Objects.requireNonNull(provider, "provider is null");
         return getKeySpecImpl(decryptKey, provider);
     }
 
@@ -388,14 +649,23 @@ public class EncryptedPrivateKeyInfo {
             DerOutputStream tmp = new DerOutputStream();
 
             // encode encryption algorithm
-            algid.encode(tmp);
+            if (algid != null) {
+                algid.encode(tmp);
+            } else {
+                try {
+                    // Let's hope params has been initialized by now.
+                    AlgorithmId.get(params).encode(tmp);
+                } catch (Exception e) {
+                    throw new IOException("not initialized", e);
+                }
+            }
 
             // encode encrypted data
             tmp.putOctetString(encryptedData);
 
             // wrap everything into a SEQUENCE
             out.write(DerValue.tag_Sequence, tmp);
-            this.encoded = out.toByteArray();
+            return out.toByteArray();
         }
         return this.encoded.clone();
     }
@@ -408,23 +678,9 @@ public class EncryptedPrivateKeyInfo {
         }
     }
 
-    @SuppressWarnings("fallthrough")
-    private void checkPKCS8Encoding(byte[] encodedKey)
+    private static PKCS8EncodedKeySpec pkcs8EncodingToSpec(byte[] encodedKey)
         throws IOException {
-        DerInputStream in = new DerInputStream(encodedKey);
-        DerValue[] values = in.getSequence(3);
-
-        switch (values.length) {
-        case 4:
-            checkTag(values[3], DerValue.TAG_CONTEXT, "attributes");
-            /* fall through */
-        case 3:
-            checkTag(values[0], DerValue.tag_Integer, "version");
-            keyAlg = AlgorithmId.parse(values[1]).getName();
-            checkTag(values[2], DerValue.tag_OctetString, "privateKey");
-            break;
-        default:
-            throw new IOException("invalid key encoding");
-        }
+            return new PKCS8EncodedKeySpec(encodedKey,
+                KeyUtil.getAlgorithm(encodedKey));
     }
 }

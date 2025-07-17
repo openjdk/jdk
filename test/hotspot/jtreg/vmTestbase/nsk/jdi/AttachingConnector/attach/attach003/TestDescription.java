@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  *     public VirtualMachine attach(Map arguments)
  *                           throws IOException,
  *                                  IllegalConnectorArgumentsException
- *          Attaches to a running application and and returns a mirror of its VM.
+ *          Attaches to a running application and returns a mirror of its VM.
  *          The connector uses the given argument map in attaching the application.
  *          These arguments will include addressing information that identifies
  *          the VM. The argument map associates argument name strings to instances
@@ -66,7 +66,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.AttachingConnector.attach.attach003
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.AttachingConnector.attach.attach003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

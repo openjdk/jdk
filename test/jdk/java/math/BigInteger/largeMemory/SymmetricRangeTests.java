@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ public class SymmetricRangeTests {
 
     private static final BigInteger MAX_VALUE = makeMaxValue();
     private static final BigInteger MIN_VALUE = MAX_VALUE.negate();
+
+    private static final Random RANDOM = RandomFactory.getRandom();
 
     private static BigInteger makeMaxValue() {
         byte[] ba = new byte[1 << 28];
@@ -117,8 +119,7 @@ public class SymmetricRangeTests {
         System.out.println("Testing overflow in BitSieve.sieveSingle");
         int bitLength = (5 << 27) - 1;
         try {
-            Random random = RandomFactory.getRandom();
-            BigInteger actual = new BigInteger(bitLength, 0, random);
+            BigInteger actual = new BigInteger(bitLength, 0, RANDOM);
             throw new RuntimeException("new BigInteger(bitLength, 0, null).bitLength()=" + actual.bitLength());
         } catch (ArithmeticException e) {
             // expected
@@ -621,45 +622,64 @@ public class SymmetricRangeTests {
     }
 
     public static void main(String... args) {
-        testOverflowInMakePositive();
-        testBug8021204();
-        testOverflowInBitSieve();
-        testAdd();
-        testSubtract();
-        testMultiply();
-        testDivide();
-        testDivideAndRemainder();
-        testBug9005933();
-        testRemainder();
-        testPow();
-        testGcd();
-        testAbs();
-        testNegate();
-        testMod();
-        testModPow();
-//        testModInverse();
-        testShiftLeft();
-        testShiftRight();
-        testAnd();
-        testOr();
-        testXor();
-        testNot();
-        testSetBit();
-        testClearBit();
-        testFlipBit();
-        testGetLowestSetBit();
-        testBitLength();
-        testBitCount();
-        testToString();
-        testToByteArrayWithConstructor();
-        testIntValue();
-        testLongValue();
-        testFloatValue();
-        testDoubleValue();
-        testSerialization();
-        testLongValueExact();
-        testIntValueExact();
-        testShortValueExact();
-        testByteValueExact();
+        // subset zero indicates to run all subsets
+        int subset = Integer.valueOf(System.getProperty("subset",
+            String.valueOf(1 + RANDOM.nextInt(4))));
+        if (subset < 0 || subset > 4) {
+            throw new RuntimeException("Unknown subset " + subset);
+        }
+        if (subset == 0)
+            System.out.println("Testing all subsets");
+        else
+            System.out.println("Testing subset " + subset);
+
+        if (subset == 0 || subset == 1) {
+            testOverflowInMakePositive();
+            testBug8021204();
+            testOverflowInBitSieve();
+            testAdd();
+            testSubtract();
+        }
+        if (subset == 0 || subset == 2) {
+            testMultiply();
+            testDivide();
+            testDivideAndRemainder();
+            testBug9005933();
+        }
+        if (subset == 0 || subset == 3) {
+            testRemainder();
+            testPow();
+            testGcd();
+            testAbs();
+            testNegate();
+            testMod();
+            testModPow();
+            //        testModInverse();
+            testShiftLeft();
+            testShiftRight();
+            testAnd();
+            testOr();
+            testXor();
+            testNot();
+            testSetBit();
+            testClearBit();
+            testFlipBit();
+            testGetLowestSetBit();
+            testBitLength();
+            testBitCount();
+        }
+        if (subset == 0 || subset == 4) {
+            testToString();
+            testToByteArrayWithConstructor();
+            testIntValue();
+            testLongValue();
+            testFloatValue();
+            testDoubleValue();
+            testSerialization();
+            testLongValueExact();
+            testIntValueExact();
+            testShortValueExact();
+            testByteValueExact();
+        }
     }
 }

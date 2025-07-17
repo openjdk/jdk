@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 7169395
  * @summary Tests that array list initialized correctly
- * @run main/othervm -Djava.security.manager=allow Test7169395
+ * @run main/othervm Test7169395
  * @author Sergey Malenkov
  */
 
@@ -38,7 +38,7 @@ import java.util.TreeMap;
 public class Test7169395 extends AbstractTest {
 
     public static void main(String[] args) {
-        new Test7169395().test(true);
+        new Test7169395().test();
     }
 
     protected Object getObject() {

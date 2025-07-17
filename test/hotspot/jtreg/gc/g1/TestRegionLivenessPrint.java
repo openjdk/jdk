@@ -44,10 +44,7 @@ public class TestRegionLivenessPrint {
   public static void main(String[] args) throws InterruptedException {
       WhiteBox wb = WhiteBox.getWhiteBox();
       // Run a concurrent mark cycle to trigger the liveness accounting log messages.
-      wb.g1StartConcMarkCycle();
-      while (wb.g1InConcurrentMark()) {
-          Thread.sleep(100);
-      }
+      wb.g1RunConcurrentGC();
   }
 
 }

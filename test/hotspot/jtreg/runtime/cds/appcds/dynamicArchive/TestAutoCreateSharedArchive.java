@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,8 +336,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD)
                       .shouldContain("The shared archive file version " + hex(version2) + " does not match the required version " + hex(currentCDSVersion))
-                      .shouldContain("UseSharedSpaces: The shared archive file has the wrong version")
-                      .shouldContain("UseSharedSpaces: Initialize dynamic archive failed")
+                      .shouldContain("The shared archive file has the wrong version")
+                      .shouldContain("Loading dynamic archive failed")
                       .shouldContain("Dumping shared data to file");
             });
         ft2 = Files.getLastModifiedTime(Paths.get(modVersion));
@@ -400,7 +400,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed")
+                    output.shouldContain("Header checksum verification failed")
                           .shouldContain("Unable to use shared archive: invalid archive")
                           .shouldNotContain("Dumping shared data to file");
                 } else {
@@ -556,10 +556,10 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                        .shouldContain(HELLO_WORLD)
                        .shouldContain("Dumping shared data to file:");
              });
-        ft2 = Files.getLastModifiedTime(Paths.get(versionB));
+        ft2 = Files.getLastModifiedTime(Paths.get(versionF));
         fileModified = !ft1.equals(ft2);
         if (!fileModified) {
-            throw new RuntimeException("Shared archive " + versionB + " should be created at exit");
+            throw new RuntimeException("Shared archive " + versionF + " should be created at exit");
         }
 
         // 22 create an archive with dynamic magic number only
@@ -605,7 +605,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed");
+                    output.shouldContain("Header checksum verification failed");
                 }
                 output.shouldContain(HELLO_WORLD)
                       .shouldContain("Dumping shared data to file");
@@ -634,7 +634,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD);
                 if (verifyOn) {
-                    output.shouldContain("UseSharedSpaces: Header checksum verification failed");
+                    output.shouldContain("Header checksum verification failed");
                 }
                 output.shouldContain("Unable to map shared spaces")
                       .shouldNotContain("Dumping shared data to file");
@@ -663,7 +663,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
-                 output.shouldContain("Specified shared archive not found (" + nonExistTop + ")")
+                 output.shouldContain("Specified shared archive file not found (" + nonExistTop + ")")
                        .shouldContain(HELLO_WORLD)
                        .shouldContain("Dumping shared data to file:");
              });
@@ -688,7 +688,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
-                 output.shouldContain("Specified shared archive not found (" + nonExistBase + ")")
+                 output.shouldContain("Specified shared archive file not found (" + nonExistBase + ")")
                        .shouldContain(HELLO_WORLD)
                        .shouldNotContain("Dumping shared data to file:");
              });

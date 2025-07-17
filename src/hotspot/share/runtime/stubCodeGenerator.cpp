@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
@@ -31,30 +30,30 @@
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
 
 
 // Implementation of StubCodeDesc
 
-StubCodeDesc* StubCodeDesc::_list = NULL;
+StubCodeDesc* StubCodeDesc::_list = nullptr;
 bool          StubCodeDesc::_frozen = false;
 
 StubCodeDesc* StubCodeDesc::desc_for(address pc) {
   StubCodeDesc* p = _list;
-  while (p != NULL && !p->contains(pc)) {
+  while (p != nullptr && !p->contains(pc)) {
     p = p->_next;
   }
   return p;
 }
 
-const char* StubCodeDesc::name_for(address pc) {
-  StubCodeDesc* p = desc_for(pc);
-  return p == NULL ? NULL : p->name();
-}
-
-
 void StubCodeDesc::freeze() {
   assert(!_frozen, "repeated freeze operation");
   _frozen = true;
+}
+
+void StubCodeDesc::unfreeze() {
+  assert(_frozen, "repeated unfreeze operation");
+  _frozen = false;
 }
 
 void StubCodeDesc::print_on(outputStream* st) const {
@@ -70,6 +69,15 @@ void StubCodeDesc::print() const { print_on(tty); }
 
 StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
   _masm = new MacroAssembler(code);
+  _blob_id = BlobId::NO_BLOBID;
+  _print_code = PrintStubCode || print_code;
+}
+
+StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, BlobId blob_id, bool print_code) {
+  assert(StubInfo::is_stubgen(blob_id),
+         "not a stubgen blob %s", StubInfo::name(blob_id));
+  _masm = new MacroAssembler(code);
+  _blob_id = blob_id;
   _print_code = PrintStubCode || print_code;
 }
 
@@ -77,7 +85,7 @@ StubCodeGenerator::~StubCodeGenerator() {
 #ifndef PRODUCT
   CodeBuffer* cbuf = _masm->code();
   CodeBlob*   blob = CodeCache::find_blob(cbuf->insts()->start());
-  if (blob != NULL) {
+  if (blob != nullptr) {
     blob->use_remarks(cbuf->asm_remarks());
     blob->use_strings(cbuf->dbg_strings());
   }
@@ -89,6 +97,13 @@ void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
 }
 
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
+  LogTarget(Debug, stubs) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    cdesc->print_on(&ls);
+    ls.cr();
+  }
+
   if (_print_code) {
 #ifndef PRODUCT
     // Find the assembly code remarks in the outer CodeBuffer.
@@ -105,6 +120,11 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   }
 }
 
+#ifdef ASSERT
+void StubCodeGenerator::verify_stub(StubId stub_id) {
+  assert(StubRoutines::stub_to_blob(stub_id) == blob_id(), "wrong blob %s for generation of stub %s", StubRoutines::get_blob_name(blob_id()), StubRoutines::get_stub_name(stub_id));
+}
+#endif
 
 // Implementation of CodeMark
 
@@ -114,6 +134,12 @@ StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, const char* group, const cha
   _cgen->stub_prolog(_cdesc);
   // define the stub's beginning (= entry point) to be after the prolog:
   _cdesc->set_begin(_cgen->assembler()->pc());
+}
+
+StubCodeMark::StubCodeMark(StubCodeGenerator* cgen, StubId stub_id) : StubCodeMark(cgen, "StubRoutines", StubRoutines::get_stub_name(stub_id)) {
+#ifdef ASSERT
+  cgen->verify_stub(stub_id);
+#endif
 }
 
 StubCodeMark::~StubCodeMark() {

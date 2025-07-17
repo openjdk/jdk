@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ import toolbox.ToolBox;
  */
 public class TestTagOrder extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestTagOrder tester = new TestTagOrder();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestTagOrder();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();
@@ -120,7 +120,7 @@ public class TestTagOrder extends JavadocTester {
         expectMethod.put("@see", """
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list">
+                <ul class="tag-list">
                 <li><a href="http://example.com">example</a></li>
                 </ul>
                 </dd>
@@ -144,7 +144,7 @@ public class TestTagOrder extends JavadocTester {
         expectClass.put("@see", """
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list">
+                <ul class="tag-list">
                 <li><a href="http://example.com">example</a></li>
                 </ul>
                 </dd>

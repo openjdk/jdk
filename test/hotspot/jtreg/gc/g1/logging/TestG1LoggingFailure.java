@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class TestG1LoggingFailure {
     }
 
     private static void startVM(List<String> options) throws Throwable, RuntimeException {
-        OutputAnalyzer out = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer out = ProcessTools.executeTestJava(options);
 
         out.shouldNotContain("pure virtual method called");
 

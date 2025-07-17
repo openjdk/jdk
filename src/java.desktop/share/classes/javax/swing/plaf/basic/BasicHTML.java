@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.text.html.*;
 
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -220,7 +221,7 @@ public class BasicHTML {
         View value = null;
         View oldValue = (View)c.getClientProperty(BasicHTML.propertyKey);
         Boolean htmlDisabled = (Boolean) c.getClientProperty(htmlDisable);
-        if (htmlDisabled != Boolean.TRUE && BasicHTML.isHTMLString(text)) {
+        if (!(Boolean.TRUE.equals(htmlDisabled)) && BasicHTML.isHTMLString(text)) {
             value = BasicHTML.createHTMLView(c, text);
         }
         if (value != oldValue && oldValue != null) {
@@ -376,15 +377,33 @@ public class BasicHTML {
      */
     static class BasicHTMLViewFactory extends HTMLEditorKit.HTMLFactory {
         public View create(Element elem) {
-            View view = super.create(elem);
 
+            View view = null;
+            try {
+                setAllowHTMLObject();
+                view = super.create(elem);
+            } finally {
+                clearAllowHTMLObject();
+            }
             if (view instanceof ImageView) {
                 ((ImageView)view).setLoadsSynchronously(true);
             }
             return view;
         }
-    }
 
+        private static Boolean useOV = null;
+
+        private static void setAllowHTMLObject() {
+            if (useOV == null) {
+                useOV = Boolean.getBoolean("swing.html.object");
+            };
+            SwingAccessor.setAllowHTMLObject(useOV);
+        }
+
+        private static void clearAllowHTMLObject() {
+            SwingAccessor.setAllowHTMLObject(null);
+        }
+    }
 
     /**
      * The subclass of HTMLDocument that is used as the model. getForeground

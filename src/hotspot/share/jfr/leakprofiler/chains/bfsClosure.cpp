@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/chains/bfsClosure.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
@@ -41,7 +40,7 @@ BFSClosure::BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, JFRBitSet* 
   _edge_queue(edge_queue),
   _edge_store(edge_store),
   _mark_bits(mark_bits),
-  _current_parent(NULL),
+  _current_parent(nullptr),
   _current_frontier_level(0),
   _next_frontier_idx(0),
   _prev_frontier_idx(0),
@@ -55,7 +54,7 @@ static void log_frontier_level_summary(size_t level,
                                        size_t edge_size) {
   const size_t nof_edges_in_frontier = high_idx - low_idx;
   log_trace(jfr, system)(
-      "BFS front: " SIZE_FORMAT " edges: " SIZE_FORMAT " size: " SIZE_FORMAT " [KB]",
+      "BFS front: %zu edges: %zu size: %zu [KB]",
       level,
       nof_edges_in_frontier,
       (nof_edges_in_frontier * edge_size) / K
@@ -85,14 +84,14 @@ void BFSClosure::log_dfs_fallback() const {
 
   // additional information about DFS fallover
   log_trace(jfr, system)(
-      "BFS front: " SIZE_FORMAT " filled edge queue at edge: " SIZE_FORMAT,
+      "BFS front: %zu filled edge queue at edge: %zu",
       _current_frontier_level,
       _dfs_fallback_idx
                         );
 
   const size_t nof_dfs_completed_edges = _edge_queue->bottom() - _dfs_fallback_idx;
   log_trace(jfr, system)(
-      "DFS to complete " SIZE_FORMAT " edges size: " SIZE_FORMAT " [KB]",
+      "DFS to complete %zu edges size: %zu [KB]",
       nof_dfs_completed_edges,
       (nof_dfs_completed_edges * edge_size) / K
                         );
@@ -106,7 +105,7 @@ void BFSClosure::process() {
 void BFSClosure::process_root_set() {
   for (size_t idx = _edge_queue->bottom(); idx < _edge_queue->top(); ++idx) {
     const Edge* edge = _edge_queue->element_at(idx);
-    assert(edge->parent() == NULL, "invariant");
+    assert(edge->parent() == nullptr, "invariant");
     process(edge->reference(), edge->pointee());
   }
 }
@@ -123,7 +122,7 @@ void BFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
   }
 
   if (_use_dfs) {
-    assert(_current_parent != NULL, "invariant");
+    assert(_current_parent != nullptr, "invariant");
     DFSClosure::find_leaks_from_edge(_edge_store, _mark_bits, _current_parent);
     return;
   }
@@ -136,7 +135,7 @@ void BFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
     }
 
     // if we are processinig initial root set, don't add to queue
-    if (_current_parent != NULL) {
+    if (_current_parent != nullptr) {
       _edge_queue->add(_current_parent, reference);
     }
 
@@ -147,10 +146,10 @@ void BFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
 }
 
 void BFSClosure::add_chain(UnifiedOopRef reference, const oop pointee) {
-  assert(pointee != NULL, "invariant");
+  assert(pointee != nullptr, "invariant");
   assert(pointee->mark().is_marked(), "invariant");
   Edge leak_edge(_current_parent, reference);
-  _edge_store->put_chain(&leak_edge, _current_parent == NULL ? 1 : _current_frontier_level + 2);
+  _edge_store->put_chain(&leak_edge, _current_parent == nullptr ? 1 : _current_frontier_level + 2);
 }
 
 void BFSClosure::dfs_fallback() {
@@ -159,7 +158,7 @@ void BFSClosure::dfs_fallback() {
   _dfs_fallback_idx = _edge_queue->bottom();
   while (!_edge_queue->is_empty()) {
     const Edge* edge = _edge_queue->remove();
-    if (edge->pointee() != NULL) {
+    if (edge->pointee() != nullptr) {
       DFSClosure::find_leaks_from_edge(_edge_store, _mark_bits, edge);
     }
   }
@@ -203,34 +202,34 @@ bool BFSClosure::is_complete() const {
 }
 
 void BFSClosure::iterate(const Edge* parent) {
-  assert(parent != NULL, "invariant");
+  assert(parent != nullptr, "invariant");
   const oop pointee = parent->pointee();
-  assert(pointee != NULL, "invariant");
+  assert(pointee != nullptr, "invariant");
   _current_parent = parent;
   pointee->oop_iterate(this);
 }
 
 void BFSClosure::do_oop(oop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  if (pointee != NULL) {
+  if (pointee != nullptr) {
     closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
   }
 }
 
 void BFSClosure::do_oop(narrowOop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  if (pointee != NULL) {
+  if (pointee != nullptr) {
     closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
   }
 }
 
 void BFSClosure::do_root(UnifiedOopRef ref) {
-  assert(ref.dereference() != NULL, "pointee must not be null");
+  assert(ref.dereference() != nullptr, "pointee must not be null");
   if (!_edge_queue->is_full()) {
-    _edge_queue->add(NULL, ref);
+    _edge_queue->add(nullptr, ref);
   }
 }

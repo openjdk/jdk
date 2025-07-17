@@ -57,7 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * capabilities of {@link ThreadPoolExecutor} (which this class
  * extends) are required.
  *
- * <p>Delayed tasks execute no sooner than they are enabled, but
+ * <p>Delayed tasks execute no sooner than they are enabled for execution, but
  * without any real-time guarantees about when, after they are
  * enabled, they will commence. Tasks scheduled for exactly the same
  * execution time are enabled in first-in-first-out (FIFO) order of
@@ -181,6 +181,11 @@ public class ScheduledThreadPoolExecutor
      * guarantee FIFO order among tied entries.
      */
     private static final AtomicLong sequencer = new AtomicLong();
+
+    /**
+     * Maximum delay is effectively 146 years
+     */
+    private static final long MAX_NANOS = (Long.MAX_VALUE >>> 1) - 1;
 
     private class ScheduledFutureTask<V>
             extends FutureTask<V> implements RunnableScheduledFuture<V> {
@@ -525,25 +530,7 @@ public class ScheduledThreadPoolExecutor
      * Returns the nanoTime-based trigger time of a delayed action.
      */
     long triggerTime(long delay) {
-        return System.nanoTime() +
-            ((delay < (Long.MAX_VALUE >> 1)) ? delay : overflowFree(delay));
-    }
-
-    /**
-     * Constrains the values of all delays in the queue to be within
-     * Long.MAX_VALUE of each other, to avoid overflow in compareTo.
-     * This may occur if a task is eligible to be dequeued, but has
-     * not yet been, while some other task is added with a delay of
-     * Long.MAX_VALUE.
-     */
-    private long overflowFree(long delay) {
-        Delayed head = (Delayed) super.getQueue().peek();
-        if (head != null) {
-            long headDelay = head.getDelay(NANOSECONDS);
-            if (headDelay < 0 && (delay - headDelay < 0))
-                delay = Long.MAX_VALUE + headDelay;
-        }
-        return delay;
+        return System.nanoTime() + Math.min(delay, MAX_NANOS);
     }
 
     /**
@@ -581,7 +568,7 @@ public class ScheduledThreadPoolExecutor
     }
 
     /**
-     * Submits a periodic action that becomes enabled first after the
+     * Submits a periodic action that becomes enabled for execution first after the
      * given initial delay, and subsequently with the given period;
      * that is, executions will commence after
      * {@code initialDelay}, then {@code initialDelay + period}, then
@@ -634,7 +621,7 @@ public class ScheduledThreadPoolExecutor
     }
 
     /**
-     * Submits a periodic action that becomes enabled first after the
+     * Submits a periodic action that becomes enabled for execution first after the
      * given initial delay, and subsequently with the given delay
      * between the termination of one execution and the commencement of
      * the next.
@@ -835,8 +822,6 @@ public class ScheduledThreadPoolExecutor
      * ContinueExistingPeriodicTasksAfterShutdownPolicy} has been set
      * {@code true}, future executions of existing periodic tasks will
      * be cancelled.
-     *
-     * @throws SecurityException {@inheritDoc}
      */
     public void shutdown() {
         super.shutdown();
@@ -864,7 +849,6 @@ public class ScheduledThreadPoolExecutor
      *         {@code ScheduledFuture}.  For tasks submitted using
      *         {@link #execute execute}, the element will be a
      *         zero-delay {@code ScheduledFuture}.
-     * @throws SecurityException {@inheritDoc}
      */
     public List<Runnable> shutdownNow() {
         return super.shutdownNow();

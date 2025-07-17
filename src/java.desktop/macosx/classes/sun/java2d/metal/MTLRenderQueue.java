@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@ import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import static sun.java2d.pipe.BufferedOpCodes.DISPOSE_CONFIG;
 import static sun.java2d.pipe.BufferedOpCodes.SYNC;
 
@@ -41,18 +38,17 @@ import static sun.java2d.pipe.BufferedOpCodes.SYNC;
  * the queue, thus ensuring that only one thread communicates with the native
  * OpenGL libraries for the entire process.
  */
-public class MTLRenderQueue extends RenderQueue {
+public final class MTLRenderQueue extends RenderQueue {
 
     private static MTLRenderQueue theInstance;
     private final QueueFlusher flusher;
 
-    @SuppressWarnings("removal")
     private MTLRenderQueue() {
         /*
          * The thread must be a member of a thread group
          * which will not get GCed before VM exit.
          */
-        flusher = AccessController.doPrivileged((PrivilegedAction<QueueFlusher>) QueueFlusher::new);
+        flusher = new QueueFlusher();
     }
 
     /**
@@ -132,6 +128,7 @@ public class MTLRenderQueue extends RenderQueue {
         }
     }
 
+    @Override
     public void flushAndInvokeNow(Runnable r) {
         // assert lock.isHeldByCurrentThread();
         try {
@@ -157,7 +154,7 @@ public class MTLRenderQueue extends RenderQueue {
         refSet.clear();
     }
 
-    private class QueueFlusher implements Runnable {
+    private final class QueueFlusher implements Runnable {
         private boolean needsFlush;
         private Runnable task;
         private Error error;
@@ -196,6 +193,7 @@ public class MTLRenderQueue extends RenderQueue {
             flushNow();
         }
 
+        @Override
         public synchronized void run() {
             boolean timedOut = false;
             while (true) {

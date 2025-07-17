@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -26,17 +26,15 @@ import java.io.InterruptedIOException;
  *          the thread that handles blocking I/O.
  * </ul>
  */
-public class NonBlockingInputStreamImpl
-    extends NonBlockingInputStream
-{
-    private InputStream in;                  // The actual input stream
-    private int         b = READ_EXPIRED;    // Recently read byte
+public class NonBlockingInputStreamImpl extends NonBlockingInputStream {
+    private InputStream in; // The actual input stream
+    private int b = READ_EXPIRED; // Recently read byte
 
-    private String      name;
-    private boolean     threadIsReading      = false;
-    private IOException exception            = null;
-    private long        threadDelay          = 60 * 1000;
-    private Thread      thread;
+    private String name;
+    private boolean threadIsReading = false;
+    private IOException exception = null;
+    private long threadDelay = 60 * 1000;
+    private Thread thread;
 
     /**
      * Creates a <code>NonBlockingReader</code> out of a normal blocking
@@ -97,8 +95,7 @@ public class NonBlockingInputStreamImpl
         if (exception != null) {
             assert b == READ_EXPIRED;
             IOException toBeThrown = exception;
-            if (!isPeek)
-                exception = null;
+            if (!isPeek) exception = null;
             throw toBeThrown;
         }
 
@@ -109,11 +106,9 @@ public class NonBlockingInputStreamImpl
          */
         if (b >= -1) {
             assert exception == null;
-        }
-        else if (!isPeek && timeout <= 0L && !threadIsReading) {
+        } else if (!isPeek && timeout <= 0L && !threadIsReading) {
             b = in.read();
-        }
-        else {
+        } else {
             /*
              * If the thread isn't reading already, then ask it to do so.
              */
@@ -123,22 +118,18 @@ public class NonBlockingInputStreamImpl
                 notifyAll();
             }
 
-            boolean isInfinite = (timeout <= 0L);
-
             /*
              * So the thread is currently doing the reading for us. So
              * now we play the waiting game.
              */
-            while (isInfinite || timeout > 0L)  {
-                long start = System.currentTimeMillis ();
-
+            Timeout t = new Timeout(timeout);
+            while (!t.elapsed()) {
                 try {
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
                     }
-                    wait(timeout);
-                }
-                catch (InterruptedException e) {
+                    wait(t.timeout());
+                } catch (InterruptedException e) {
                     exception = (IOException) new InterruptedIOException().initCause(e);
                 }
 
@@ -146,18 +137,13 @@ public class NonBlockingInputStreamImpl
                     assert b == READ_EXPIRED;
 
                     IOException toBeThrown = exception;
-                    if (!isPeek)
-                        exception = null;
+                    if (!isPeek) exception = null;
                     throw toBeThrown;
                 }
 
                 if (b >= -1) {
                     assert exception == null;
                     break;
-                }
-
-                if (!isInfinite) {
-                    timeout -= System.currentTimeMillis() - start;
                 }
             }
         }
@@ -175,7 +161,7 @@ public class NonBlockingInputStreamImpl
         return ret;
     }
 
-    private void run () {
+    private void run() {
         Log.debug("NonBlockingInputStream start");
         boolean needToRead;
 
@@ -243,5 +229,4 @@ public class NonBlockingInputStreamImpl
             }
         }
     }
-
 }

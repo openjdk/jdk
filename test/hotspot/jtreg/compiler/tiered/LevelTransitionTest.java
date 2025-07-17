@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *        compiler.tiered.LevelTransitionTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
  *                   -XX:-BackgroundCompilation
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*
@@ -204,7 +204,8 @@ public class LevelTransitionTest extends TieredLevelsTest {
         }
 
         private static class CompileMethodHolder {
-            private final int iter = 10;
+            // Make sure that loop backedge is never taken to prevent unexpected OSR compilations.
+            private final int iter = 1;
             private int field = 42;
 
             /**

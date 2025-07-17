@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Tests that the recording properties are properly reflected in the ActiveRecording event
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.runtime.TestActiveRecordingEvent
@@ -89,7 +89,7 @@ public final class TestActiveRecordingEvent {
         List<RecordedEvent> events = Events.fromRecording(recording);
 
         Events.hasEvents(events);
-        RecordedEvent ev = events.get(0);
+        RecordedEvent ev = events.getFirst();
 
         // Duration must be kept in milliseconds
         assertEquals(REC_DURATION.toMillis(), ev.getValue("recordingDuration"));
@@ -117,6 +117,8 @@ public final class TestActiveRecordingEvent {
         assertTrue(tsAfterStop >= tsRecordingStart);
 
         assertEquals(recording.getId(), ev.getValue("id"));
+
+        assertEquals(recording.isToDisk(), ev.getValue("disk"));
 
         ValueDescriptor maxAgeField = evType.getField("maxAge");
         assertEquals(maxAgeField.getAnnotation(Timespan.class).value(), Timespan.MILLISECONDS);

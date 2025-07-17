@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,13 @@ class XmlElement {
         return content;
     }
 
+    final String getContentOrEmptyQuote() {
+        if (content == null || content.isEmpty()) {
+            return "\"\"";
+        }
+        return content;
+    }
+
     final void addListener(XmlElement listener) {
         listeners.add(listener);
         listener.addProducer(this);
@@ -175,7 +182,7 @@ class XmlElement {
         if (producers.size() != 1) {
             throw new Error("Unsure how to evaluate multiple producers " + getClass());
         }
-        return producers.get(0).evaluate();
+        return producers.getFirst().evaluate();
     }
 
     protected void validateAttributes() throws JFCModelException {

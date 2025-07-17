@@ -26,14 +26,12 @@
 package com.sun.source.tree;
 
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A deconstruction pattern tree.
  *
- * @since 19
+ * @since 21
  */
-@PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
 public interface DeconstructionPatternTree extends PatternTree {
 
     /**
@@ -47,12 +45,6 @@ public interface DeconstructionPatternTree extends PatternTree {
      * @return the nested patterns.
      */
     List<? extends PatternTree> getNestedPatterns();
-
-    /**
-     * Returns the binding variable.
-     * @return the binding variable
-     */
-    VariableTree getVariable();
 
 }
 

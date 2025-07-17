@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,18 @@ import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Responsible for starting up a new DocumentParser
  * each time its parse method is invoked. Stores a
  * reference to the dtd.
+ * <p>
+ * <strong>Warning:</strong>
+ * Serialized objects of this class will not be compatible with
+ * future Swing releases. The current serialization support is
+ * appropriate for short term storage or RMI between applications running
+ * the same version of Swing.  As of 1.4, support for long term storage
+ * of all JavaBeans has been added to the <code>java.beans</code> package.
  *
  * @author  Sunita Mani
  */
@@ -116,22 +121,13 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
 
     /**
      * Fetch a resource relative to the ParserDelegator classfile.
-     * If this is called on 1.2 the loading will occur under the
-     * protection of a doPrivileged call to allow the ParserDelegator
-     * to function when used in an applet.
      *
      * @param name the name of the resource, relative to the
      *  ParserDelegator class.
      * @return a stream representing the resource
      */
-    @SuppressWarnings("removal")
     static InputStream getResourceAsStream(final String name) {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InputStream>() {
-                    public InputStream run() {
-                        return ParserDelegator.class.getResourceAsStream(name);
-                    }
-                });
+        return ParserDelegator.class.getResourceAsStream(name);
     }
 
     @Serial

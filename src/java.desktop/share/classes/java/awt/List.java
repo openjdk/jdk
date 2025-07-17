@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1552,12 +1552,12 @@ public class List extends Component implements ItemSelectable, Accessible {
         // [[[FIXME]]] need to finish implementing this!!!
 
            /**
-            * The parent {@code List}.
+            * @serial The parent {@code List}.
             */
            private List parent;
 
            /**
-            * The index in the parent.
+            * @serial The index in the parent.
             */
            private int indexInParent;
 
@@ -1697,7 +1697,7 @@ public class List extends Component implements ItemSelectable, Accessible {
              * Set the background color of this object.
              *
              * @param c the new Color for the background
-             * @see #setBackground
+             * @see #getBackground
              */
             public void setBackground(Color c) {
                 parent.setBackground(c);
@@ -1949,7 +1949,7 @@ public class List extends Component implements ItemSelectable, Accessible {
             /**
              * Resizes this object so that it has width and height.
              *
-             * @param d - The dimension specifying the new size of the object.
+             * @param d The dimension specifying the new size of the object.
              * @see #getSize
              */
             public void setSize(Dimension d) {

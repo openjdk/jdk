@@ -53,7 +53,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class DateTimeFormatterBench {
 
     private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("UTC");

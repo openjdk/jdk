@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,16 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciJavaClasses.hpp"
-#endif
 #include "memory/universe.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -49,6 +45,9 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
+#endif
 
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
@@ -85,17 +84,15 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   _handles      = _thread->active_handles();    // save previous handle block & Java frame linkage
 
   // For the profiler, the last_Java_frame information in thread must always be in
-  // legal state. We have no last Java frame if last_Java_sp == NULL so
+  // legal state. We have no last Java frame if last_Java_sp == nullptr so
   // the valid transition is to clear _last_Java_sp and then reset the rest of
   // the (platform specific) state.
 
   _anchor.copy(_thread->frame_anchor());
   _thread->frame_anchor()->clear();
 
-  debug_only(_thread->inc_java_call_counter());
+  DEBUG_ONLY(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
-
-  assert (_thread->thread_state() != _thread_in_native, "cannot set native pc to NULL");
 
   MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
@@ -112,17 +109,12 @@ JavaCallWrapper::~JavaCallWrapper() {
 
   _thread->frame_anchor()->zap();
 
-  debug_only(_thread->dec_java_call_counter());
+  DEBUG_ONLY(_thread->dec_java_call_counter());
 
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
 
   // State has been restored now make the anchor frame visible for the profiler.
-  // Do this after the transition because this allows us to put an assert
-  // the Java->vm transition which checks to see that stack is not walkable
-  // on sparc/ia64 which will catch violations of the resetting of last_Java_frame
-  // invariants (i.e. _flags always cleared on return to Java)
-
   _thread->frame_anchor()->copy(&_anchor);
 
   // Release handles after we are marked as being inside the VM again, since this
@@ -176,7 +168,7 @@ static BasicType runtime_type_from(JavaValue* result) {
 void JavaCalls::call_virtual(JavaValue* result, Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   Handle receiver = args->receiver();
-  Klass* recvrKlass = receiver.is_null() ? (Klass*)NULL : receiver->klass();
+  Klass* recvrKlass = receiver.is_null() ? (Klass*)nullptr : receiver->klass();
   LinkInfo link_info(spec_klass, name, signature);
   LinkResolver::resolve_virtual_call(
           callinfo, receiver, recvrKlass, link_info, true, CHECK);
@@ -359,14 +351,6 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   CompilationPolicy::compile_if_required(method, CHECK);
 
-  // Since the call stub sets up like the interpreter we call the from_interpreted_entry
-  // so we can go compiled via a i2c. Otherwise initial entry method will always
-  // run interpreted.
-  address entry_point = method->from_interpreted_entry();
-  if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
-    entry_point = method->interpreter_entry();
-  }
-
   // Figure out if the result value is an oop or not (Note: This is a different value
   // than result_type. result_type will be T_INT of oops. (it is about size)
   BasicType result_type = runtime_type_from(result);
@@ -400,20 +384,34 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       // the call to call_stub, the optimizer produces wrong code.
       intptr_t* result_val_address = (intptr_t*)(result->get_value_addr());
       intptr_t* parameter_address = args->parameters();
+
+      address entry_point;
+      {
+        // The enter_interp_only_mode use handshake to set interp_only mode
+        // so no safepoint should be allowed between is_interp_only_mode() and call
+        NoSafepointVerifier nsv;
+        if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
+          entry_point = method->interpreter_entry();
+        } else {
+          // Since the call stub sets up like the interpreter we call the from_interpreted_entry
+          // so we can go compiled via a i2c.
+          entry_point = method->from_interpreted_entry();
 #if INCLUDE_JVMCI
-      // Gets the alternative target (if any) that should be called
-      Handle alternative_target = args->alternative_target();
-      if (!alternative_target.is_null()) {
-        // Must extract verified entry point from HotSpotNmethod after VM to Java
-        // transition in JavaCallWrapper constructor so that it is safe with
-        // respect to nmethod sweeping.
-        address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(NULL, alternative_target());
-        if (verified_entry_point != NULL) {
-          thread->set_jvmci_alternate_call_target(verified_entry_point);
-          entry_point = method->adapter()->get_i2c_entry();
+          // Gets the alternative target (if any) that should be called
+          Handle alternative_target = args->alternative_target();
+          if (!alternative_target.is_null()) {
+            // Must extract verified entry point from HotSpotNmethod after VM to Java
+            // transition in JavaCallWrapper constructor so that it is safe with
+            // respect to nmethod sweeping.
+            address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
+            if (verified_entry_point != nullptr) {
+              thread->set_jvmci_alternate_call_target(verified_entry_point);
+              entry_point = method->adapter()->get_i2c_entry();
+            }
+          }
+#endif
         }
       }
-#endif
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
@@ -429,7 +427,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       result = link.result();  // circumvent MS C++ 5.0 compiler bug (result is clobbered across call)
       // Preserve oop return value across possible gc points
       if (oop_result_flag) {
-        thread->set_vm_result(result->get_oop());
+        thread->set_vm_result_oop(result->get_oop());
       }
     }
   } // Exit JavaCallWrapper (can block - potential return oop must be preserved)
@@ -440,8 +438,8 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // Restore possible oop return
   if (oop_result_flag) {
-    result->set_oop(thread->vm_result());
-    thread->set_vm_result(NULL);
+    result->set_oop(thread->vm_result_oop());
+    thread->set_vm_result_oop(nullptr);
   }
 }
 
@@ -473,7 +471,7 @@ inline oop resolve_indirect_oop(intptr_t value, uint state) {
 
   default:
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -551,7 +549,7 @@ class SignatureChekker : public SignatureIterator {
     if (v != 0) {
       // v is a "handle" referring to an oop, cast to integral type.
       // There shouldn't be any handles in very low memory.
-      guarantee((size_t)v >= (size_t)os::vm_page_size(),
+      guarantee((size_t)v >= os::vm_page_size(),
                 "Bad JNI oop argument %d: " PTR_FORMAT, _pos, v);
       // Verify the pointee.
       oop vv = resolve_indirect_oop(v, _value_state[_pos]);

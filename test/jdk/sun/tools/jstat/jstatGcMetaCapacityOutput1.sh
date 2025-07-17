@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,4 +34,9 @@ verify_os
 JSTAT="${TESTJAVA}/bin/jstat"
 
 ${JSTAT} ${COMMON_JSTAT_FLAGS} -gcmetacapacity 0 2>&1 | awk -f ${TESTSRC}/gcMetaCapacityOutput1.awk
+RC=$?
+if [ $RC -ne 0 ]; then
+  exit $RC
+fi
+
 ${JSTAT} ${COMMON_JSTAT_FLAGS} -J-XX:+UseParallelGC -gcmetacapacity 0 2>&1 | awk -f ${TESTSRC}/gcMetaCapacityOutput1.awk

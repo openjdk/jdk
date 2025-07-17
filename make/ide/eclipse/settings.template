@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project>
+    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" name="C/C++">
+        <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
+            <provider build-parser-id="" cdb-modified-time="" class="org.eclipse.cdt.managedbuilder.internal.language.settings.providers.CompilationDatabaseParser" id="org.eclipse.cdt.managedbuilder.core.CompilationDatabaseParser" name="Compilation Database Parser" prefer-non-shared="true" store-entries-with-project="true"/>
+            <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuildCommandParser" id="org.eclipse.cdt.managedbuilder.core.GCCBuildCommandParser" keep-relative-paths="false" name="CDT GCC Build Output Parser" parameter="([^/\\\\]*)((g?cc)|([gc]\+\+)|(clang))" prefer-non-shared="true" store-entries-with-project="true"/>
+            <provider class="org.eclipse.cdt.internal.build.crossgcc.CrossGCCBuiltinSpecsDetector" console="true" env-hash="" id="org.eclipse.cdt.build.crossgcc.CrossGCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT Cross GCC Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true" store-entries-with-project="true">
+                <language-scope id="org.eclipse.cdt.core.c"/>
+                <language-scope id="org.eclipse.cdt.core.c++"/>
+            </provider>
+            <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">
+                <language id="org.eclipse.cdt.core.c">
+                    @@CSETTINGS@@
+                </language>
+
+                <language id="org.eclipse.cdt.core.c++">
+                    @@CXXSETTINGS@@
+                </language>
+           </provider>
+        </extension>
+    </configuration>
+</project>

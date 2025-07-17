@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,11 @@ public class ScriptException extends Exception {
 
     private static final long serialVersionUID = 8265071037049225001L;
 
+    /** @serial */
     private final String fileName;
+    /** @serial */
     private final int lineNumber;
+    /** @serial */
     private final int columnNumber;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test that the initial derived gauge is (Integer)0
  * @author Daniel Fuchs
  *
+ * @library /test/lib
+ *
  * @run clean DerivedGaugeMonitorTest
  * @run build DerivedGaugeMonitorTest
  * @run main DerivedGaugeMonitorTest
@@ -40,8 +42,11 @@ import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import javax.management.monitor.CounterMonitor;
 import javax.management.monitor.GaugeMonitor;
+import jdk.test.lib.Utils;
 
 public class DerivedGaugeMonitorTest {
+
+    public static final int WAIT_TIME = 1000;
 
     public static interface Things {
         public long getALong();
@@ -239,7 +244,7 @@ public class DerivedGaugeMonitorTest {
             mon1.setGranularityPeriod(5);
             mon2.setGranularityPeriod(5);
 
-            my.cdl.await(1000, TimeUnit.MILLISECONDS);
+            my.cdl.await(Utils.adjustTimeout(WAIT_TIME), TimeUnit.MILLISECONDS);
             if (my.cdl.getCount() > 0)
                 throw new Exception(attr+": Count down not reached!");
 

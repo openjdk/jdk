@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -38,7 +37,7 @@ ciObject* ciObjArray::obj_at(int index) {
   objArrayOop array = get_objArrayOop();
   assert(index >= 0 && index < array->length(), "OOB access");
   oop o = array->obj_at(index);
-  if (o == NULL) {
+  if (o == nullptr) {
     return ciNullObject::make();
   } else {
     return CURRENT_ENV->get_object(o);

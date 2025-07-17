@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ extern "C" {
   extern OM_uint32 getGSSTime(jint);
   extern void checkStatus(JNIEnv *, jobject, OM_uint32, OM_uint32, char*);
   extern jint checkTime(OM_uint32);
-  extern void throwOutOfMemoryError(JNIEnv *, const char*);
+  extern void gssThrowOutOfMemoryError(JNIEnv *, const char*);
   extern void initGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
   extern void resetGSSBuffer(gss_buffer_t);
 
@@ -84,10 +84,10 @@ extern "C" {
   extern jfieldID FID_NativeGSSContext_flags;
   extern jfieldID FID_NativeGSSContext_lifetime;
   extern jfieldID FID_NativeGSSContext_actualMech;
-  #define TRACE0(s) { if (JGSS_DEBUG) { printf("[GSSLibStub:%d] %s\n", __LINE__, s); fflush(stdout); }}
-  #define TRACE1(s, p1) { if (JGSS_DEBUG) { printf("[GSSLibStub:%d] "s"\n", __LINE__, p1); fflush(stdout); }}
-  #define TRACE2(s, p1, p2) { if (JGSS_DEBUG) { printf("[GSSLibStub:%d] "s"\n", __LINE__, p1, p2); fflush(stdout); }}
-  #define TRACE3(s, p1, p2, p3) { if (JGSS_DEBUG) { printf("[GSSLibStub:%d] "s"\n", __LINE__, p1, p2, p3); fflush(stdout); }}
+  #define TRACE0(s) { if (JGSS_DEBUG) { fprintf(stderr, "[GSSLibStub:%d] %s\n", __LINE__, s); fflush(stderr); }}
+  #define TRACE1(s, p1) { if (JGSS_DEBUG) { fprintf(stderr, "[GSSLibStub:%d] "s"\n", __LINE__, p1); fflush(stderr); }}
+  #define TRACE2(s, p1, p2) { if (JGSS_DEBUG) { fprintf(stderr, "[GSSLibStub:%d] "s"\n", __LINE__, p1, p2); fflush(stderr); }}
+  #define TRACE3(s, p1, p2, p3) { if (JGSS_DEBUG) { fprintf(stderr, "[GSSLibStub:%d] "s"\n", __LINE__, p1, p2, p3); fflush(stderr); }}
 
 
 #ifdef __cplusplus

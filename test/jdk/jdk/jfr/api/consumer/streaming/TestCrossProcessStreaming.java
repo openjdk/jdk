@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @summary Test scenario where JFR event producer is in a different process
  *          with respect to the JFR event stream consumer.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.attach
@@ -127,7 +127,7 @@ public class TestCrossProcessStreaming {
 
         static Process start() throws Exception {
             String[] args = {"-XX:StartFlightRecording", EventProducer.class.getName()};
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
             return ProcessTools.startProcess("Event-Producer", pb,
                                              line -> line.contains(MAIN_STARTED),
                                              0, TimeUnit.SECONDS);

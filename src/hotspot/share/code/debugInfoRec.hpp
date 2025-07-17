@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,9 +109,9 @@ class DebugInformationRecorder: public ResourceObj {
                       bool        return_oop = false,
                       bool        has_ea_local_in_scope = false,
                       bool        arg_escape = false,
-                      DebugToken* locals      = NULL,
-                      DebugToken* expressions = NULL,
-                      DebugToken* monitors    = NULL);
+                      DebugToken* locals      = nullptr,
+                      DebugToken* expressions = nullptr,
+                      DebugToken* monitors    = nullptr);
 
 
   void dump_object_pool(GrowableArray<ScopeValue*>* objects);

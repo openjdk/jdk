@@ -7,76 +7,88 @@
 	<metadata>
 		<validity>
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->
-			<!-- This list contains ONLY those languages considered to be 'of interest' as part of CLDR, -->
-			<!-- and is maintained manually by the CLDR TC -->
-			<!-- The following are in $language but not in common/main or in modern coverage: cu lij prg vo -->
+			<!-- This $language list contains ONLY those languages that TC Locale's IDs (after maximizing with LikelySubtags) -->
 			<variable id='$language' type='choice'>
-				af agq ak am ann ar as asa ast az
-				bas be bem bez bg bgc bho bm bn bo br brx bs
-				ca ccp ce ceb cgg chr ckb cs cu cv cy
-				da dav de dje doi dsb dua dyo dz
-				ebu ee el en eo es et eu ewo
-				fa ff fi fil fo fr frr fur fy
-				ga gd gl gsw gu guz gv
-				ha haw he hi hr hsb hu hy
-				ia id ig ii is it
-				ja jgo jmc jv
-				ka kab kam kde kea kgp khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh ku kw ky
-				lag lb lg lij lkt ln lo lrc lt lu luo luy lv
-				mai mas mer mfe mg mgh mgo mi mk ml mn mni mr ms mt mua my mzn
-				naq nb nd nds ne nl nmg nn nnh no nus nyn
-				om or os
-				pa pcm pis pl prg ps pt
+			    af am ar as az
+			    be bg bgc bho bn brx bs
+			    ca ceb cs cv cy
+			    da de doi
+			    el en es et eu
+			    fa fi fil fr
+			    ga gd gl gu
+			    ha he hi hr hu hy
+			    id ig is it
+			    ja jv
+			    ka kk km kn ko kok ks ky
+			    lo lt lv
+			    mai mi mk ml mn mni mr ms my
+			    ne nl nn no
+			    or
+			    pa pcm pl ps pt
+			    raj ro ru
+			    sa sat sd si sk sl so sq sr su sv sw
+			    ta te tg th ti tk tr tt
+			    uk ur uz
+			    vi
+			    wo
+			    xh
+			    yo yue
+			    zh zu
+			</variable>
+			<!-- The following are non-TC locales that have reached at least Basic, plus specials mul root zxx und -->
+			<variable id='$languageNonTcGeqBasic' type='choice'>
+				ast
+				blo br
+				chr csw
+				dsb
+				eo
+				ff fo fy
+				hsb
+				ia ie
+				kea kgp ku kxv
+				lb lij lmo
+				mt
+				nds nqo
+				oc
+				prg
 				qu
-				raj rm rn ro rof
-				und
-				ru rw rwk
-				sa sah saq sat sbp sc sd se seh ses sg shi si sk sl smn sms sn so sq sr su sv sw
-				ta te teo tg th ti tk to tok tr tt twq tzm
-				ug uk ur uz
-				vai vec vi vo vun
-				wae wo
-				xh xog
-				yav yi yo yrl yue
-				zgh zh zu
+				rm
+				sah sc syr szl
+				to
+				ug
+				vec vmw
+				xnr
+				yrl
+				za
+				mul root zxx und
 			</variable>
-			<variable id='$languageExceptions' type='choice'>
-				mul root zxx
-				ab ace ada ady ain ale alt an anp arn arp ars atj av awa ay
-				ba ban bi bin bla bug byn
-				cay ch chk chm cho chp chy clc co crg crj crk crl crm crr csw
-				dak dar dgr dv dzg
-				efi eka
-				fj fon frc
-				gaa gez gil gn gor gwi
-				hai hax hil hmn ht hup hur hz
-				iba ibb ikt ilo inh io iu
-				jbo
-				kac kaj kbd kcg kfo kha kj kmb kpe kr krc krl kru kum kv kwk
-				la lad lez li lil lou loz lsm lua lun lus
-				mad mag mak mdf men mh mic min moe moh mos mus mwl myv
-				na nap new ng nia niu nog nqo nr nso nv ny
-				oc ojb ojc ojs ojw oka
-				pag pam pap pau pqm
-				rap rar rhg rup
-				sad sba scn sco shn slh sm snk srn ss st str suk swb syr
-				tce tem tet tgx tht tig tlh tli tn tpi trv ts ttm tum tvl ty tyv
-				udm umb
-				ve
-				wa wal war wuu
-				xal
-				ybb
-				zun zza
-			</variable>
-			<!-- The following are not in modern coverage: -->
-			<variable id='$oldLanguages' type='choice'>
-				aa
-				crs
-				gan
-				hak hsn
-				nan
-				quc
-				sma smj sms ssy
+			<!-- The following have not yet made it to Basic -->
+			<variable id='$languageNonTcLtBasic' type='choice'>
+				 aa ab agq ak an ann apc arn asa
+				 ba bal bas bem bew bez bgn blt bm bo bss byn
+				 cad cch ccp ce cgg cho cic ckb co cop cu
+				 dav dje dua dv dyo dz
+				 ebu ee ewo
+				 ff frr fur
+				 gaa gez gn gsw guz gv
+				 haw hnj ht
+				 ii io iu
+				 jbo jgo jmc
+				 kaa kab kaj kam kcg kde ken khq ki kkj kl kln kpe ksb ksf ksh kw
+				 la lag lg lkt lld ln lrc ltg lu luo luy
+				 mas mdf mer mfe mhn mg mgh mgo mic moh mua mus myv mzn
+				 naq nb nd nmg nnh nr nso nus nv ny nyn om
+				 os osa
+				 pap pis
+				 quc
+				 rhg rif rn rof rw rwk
+				 saq sbp scn sdh se seh ses sg shi shn sid skr sma smj smn sms sn ss ssy st
+				 teo tig tn tok tpi trv trw ts twq tyv tzm
+				 vai ve vo vun
+				 wa wae wal wbp
+				 xog
+				 yav yi
+				 zgh
 			</variable>
 			<variable id='$scriptNonUnicode' type='choice'>Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kpel Latf Latg Loma Maya Moon
 				Nkgb Phlv Roro Sara Syre Syrj Syrn Teng Visp Wole
@@ -420,26 +432,13 @@
 			<attributeValues dtds='ldml' elements='displayName' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
 			<attributeValues dtds='ldml' elements='relativeTimePattern' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
 			<attributeValues dtds='ldml' elements='unitPattern' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
-			<attributeValues dtds='keyboard' elements='keyMap' attributes='modifiers' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='keyboard' attributes='locale' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='map' attributes='iso' type='list'>A00 A01 A02 A03 A04 A05 B00 B01 B02 B03 B04 B05 B06 B07 B08
-				B09 B10 B11 B12 C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 D01 D02 D03 D04 D05 D06 D07 D08 D09 D10 D11 D12 D13 E00 E01 E02 E03 E04 E05 E06
-				E07 E08 E09 E10 E11 E12 E13</attributeValues>
-			<attributeValues dtds='keyboard' elements='map' attributes='longPress' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='map' attributes='to' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='name' attributes='value' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transform' attributes='from' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transform' attributes='to' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transforms' attributes='type' type='choice'>simple</attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='cldrVersion' type='list'>28</attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='number' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='platform' type='TODO'></attributeValues>
-			<attributeValues dtds='platform' elements='map' attributes='iso' type='list'>A03 B00 B01 B02 B03 B04 B05 B06 B07 B08 B09 B10 B11 C01 C02
-				C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 D01 D02 D03 D04 D05 D06 D07 D08 D09 D10 D11 D12 D13 E00 E01 E02 E03 E04 E05 E06 E07 E08 E09 E10 E11 E12
-				E13</attributeValues>
-			<attributeValues dtds='platform' elements='map' attributes='keycode' type='list'>0 1 10 11 115 12 13 132 14 15 16 17 18 19 2 20 21 22 23
-				24 25 26 27 28 29 3 30 31 32 33 34 35 36 37 38 39 4 40 41 42 43 44 45 46 47 48 49 5 50 51 52 53 54 55 56 57 58 59 6 60 61 65 7 8 86 9 93 94 97</attributeValues>
-			<attributeValues dtds='platform' elements='platform' attributes='id' type='list'>android chromeos osx windows</attributeValues>
+			<attributeValues dtds='keyboard3' elements='keyboard3' attributes='locale' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='info' attributes='name' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transform' attributes='from' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transform' attributes='to' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transforms' attributes='type' type='choice'>simple</attributeValues>
+			<attributeValues dtds='keyboard3' elements='version' attributes='cldrVersion' type='list'>28</attributeValues>
+			<attributeValues dtds='keyboard3' elements='version' attributes='number' type='TODO'></attributeValues>
 		</validity>
 	</metadata>
 </supplementalData>

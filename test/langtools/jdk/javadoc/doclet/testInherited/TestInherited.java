@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8269722 8270866
+ * @bug 8269722 8270866 8307377
  * @summary NPE in HtmlDocletWriter, reporting errors on inherited tags
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -39,8 +39,8 @@ import toolbox.ToolBox;
 public class TestInherited extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestInherited tester = new TestInherited();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestInherited();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();
@@ -149,7 +149,7 @@ public class TestInherited extends JavadocTester {
         checkOutput("BadReference.Intf.html", true, """
                 <div class="block">
                 <details class="invalid-tag">
-                <summary>invalid @link</summary>
+                <summary>invalid reference</summary>
                 <pre><code>NonExistingClass</code></pre>
                 </details>
                 </div>
@@ -157,7 +157,7 @@ public class TestInherited extends JavadocTester {
         checkOutput("BadReference.Impl1.html", true, """
                 <div class="block">
                 <details class="invalid-tag">
-                <summary>invalid @link</summary>
+                <summary>invalid reference</summary>
                 <pre><code>NonExistingClass</code></pre>
                 </details>
                 </div>
@@ -165,7 +165,7 @@ public class TestInherited extends JavadocTester {
         checkOutput("BadReference.Impl2.html", true, """
                 <div class="block">
                 <details class="invalid-tag">
-                <summary>invalid @link</summary>
+                <summary>invalid reference</summary>
                 <pre><code>NonExistingClass</code></pre>
                 </details>
                 </div>
@@ -173,7 +173,7 @@ public class TestInherited extends JavadocTester {
         checkOutput("BadReference.Impl3.html", true, """
                 <div class="block">
                 <details class="invalid-tag">
-                <summary>invalid @link</summary>
+                <summary>invalid reference</summary>
                 <pre><code>NonExistingClass</code></pre>
                 </details>
                 </div>

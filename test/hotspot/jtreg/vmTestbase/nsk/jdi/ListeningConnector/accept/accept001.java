@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,10 @@ public class accept001 {
     IORedirector errRedirector;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -81,12 +84,12 @@ public class accept001 {
         String java = argHandler.getLaunchExecPath()
                           + " " + argHandler.getLaunchOptions();
         String cmd = java +
-            " -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,server=n,address=" +
+            " -Xrunjdwp:transport=dt_socket,server=n,address=" +
             connAddr + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);
         log.display("command: " + cmd);
-        Debugee debugee = binder.startLocalDebugee(cmd);
+        Debugee debugee = binder.startDebugee(cmd);
         debugee.redirectOutput(log);
 
         if ((vm = attachTarget()) == null) {

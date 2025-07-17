@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,7 @@ abstract class DSA extends SignatureSpi {
             checkKey(params, md.getDigestLength()*8, md.getAlgorithm());
         }
 
+        this.signingRandom = null;
         this.params = params;
         this.presetX = priv.getX();
         this.presetY = null;
@@ -260,18 +261,13 @@ abstract class DSA extends SignatureSpi {
             return outseq;
         } else {
             // Return the DER-encoded ASN.1 form
-            try {
-                DerOutputStream outseq = new DerOutputStream(100);
-                outseq.putInteger(r);
-                outseq.putInteger(s);
-                DerValue result = new DerValue(DerValue.tag_Sequence,
-                        outseq.toByteArray());
+            DerOutputStream outseq = new DerOutputStream(100);
+            outseq.putInteger(r);
+            outseq.putInteger(s);
+            DerValue result = new DerValue(DerValue.tag_Sequence,
+                    outseq.toByteArray());
 
-                return result.toByteArray();
-
-            } catch (IOException e) {
-                throw new SignatureException("error encoding signature");
-            }
+            return result.toByteArray();
         }
     }
 

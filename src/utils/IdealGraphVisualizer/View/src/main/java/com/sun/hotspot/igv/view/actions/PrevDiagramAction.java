@@ -54,12 +54,12 @@ public final class PrevDiagramAction extends ModelAwareAction {
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(NextDiagramAction.class, "CTL_PrevDiagramAction");
+        return NbBundle.getMessage(PrevDiagramAction.class, "CTL_PrevDiagramAction");
     }
 
     @Override
     protected String getDescription() {
-        return NbBundle.getMessage(NextDiagramAction.class, "HINT_PrevDiagramAction");
+        return NbBundle.getMessage(PrevDiagramAction.class, "HINT_PrevDiagramAction");
     }
 
     @Override

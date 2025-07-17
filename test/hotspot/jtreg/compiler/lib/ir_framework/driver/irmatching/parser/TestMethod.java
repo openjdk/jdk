@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,80 +23,40 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledIRMethod;
+import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
 
 import java.lang.reflect.Method;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
- * This class represents a test method that is incrementally updated with new information parsed by {@link IREncodingParser}
- * and {@link HotSpotPidFileParser}. Once the parsers are finished, an {@link IRMethod} object can be fetched from the
- * collected data with {@link TestMethod#createIRMethod()}.
+ * This class represents a test method parsed by {@link IREncodingParser}. In combination with the associated
+ * {@link LoggedMethod}, a new {@link IRMethod} is created to IR match on later.
  *
  * @see IREncodingParser
- * @see HotSpotPidFileParser
+ * @see LoggedMethod
  * @see IRMethod
  */
 public class TestMethod {
     private final Method method;
+    private final IR[] irAnnos;
     private final int[] irRuleIds;
-    private final Map<CompilePhase, String> compilationOutputMap;
-    private boolean compiled; // Was this method compiled (i.e. found in hotspot_pid* file?)
 
-    public TestMethod(Method m, int[] irRuleIds) {
+    public TestMethod(Method m, IR[] irAnnos, int[] irRuleIds) {
         this.method = m;
+        this.irAnnos = irAnnos;
         this.irRuleIds = irRuleIds;
-        this.compilationOutputMap = new LinkedHashMap<>(); // Keep order of insertion
-        this.compiled = false;
     }
 
-    public void setCompiled() {
-        this.compiled = true;
+    public Method method() {
+        return method;
     }
 
-    public IRMethodMatchable createIRMethod() {
-        IR[] irAnnos = method.getAnnotationsByType(IR.class);
-        TestFramework.check(irAnnos.length > 0, "must have at least one IR rule");
-        TestFramework.check(irRuleIds.length > 0, "must have at least one IR rule");
-        if (compiled) {
-            return new IRMethod(method, irRuleIds, irAnnos, new Compilation(compilationOutputMap));
-        } else {
-            return new NotCompiledIRMethod(method, irRuleIds.length);
-        }
+    public IR[] irAnnos() {
+        return irAnnos;
     }
 
-    /**
-     * Clear the collected ideal and opto assembly output of all phases. This is necessary when having multiple
-     * compilations of the same method. We only want to keep the very last compilation which is the one requested by
-     * the framework.
-     */
-    public void clearOutput() {
-        compilationOutputMap.clear();
-    }
-
-    /**
-     * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
-     */
-    public void setIdealOutput(String idealOutput, CompilePhase compilePhase) {
-        String idealOutputWithHeader = "> Phase \"" + compilePhase.getName()+ "\":" + System.lineSeparator()
-                                       + idealOutput;
-        if (!compilationOutputMap.containsKey(compilePhase) || compilePhase.overrideRepeatedPhase()) {
-            compilationOutputMap.put(compilePhase, idealOutputWithHeader);
-        }
-    }
-
-    /**
-     * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
-     */
-    public void setOptoAssemblyOutput(String optoAssemblyOutput) {
-        optoAssemblyOutput = "> Phase \"PrintOptoAssembly\":" + System.lineSeparator() + optoAssemblyOutput;
-        compilationOutputMap.put(CompilePhase.PRINT_OPTO_ASSEMBLY, optoAssemblyOutput);
+    public int[] irRuleIds() {
+        return irRuleIds;
     }
 }

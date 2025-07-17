@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,9 @@
 /*
  * @test
  * @summary Test for CONTINUATION frame handling
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- * @library /test/lib server
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm ContinuationFrameTest
  */
 
@@ -56,6 +51,13 @@ import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
 import jdk.internal.net.http.frame.Http2Frame;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.BodyOutputStream;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -297,10 +299,11 @@ public class ContinuationFrameTest {
             assert headerFrames.size() > 0;  // there must always be at least 1
 
             if(headerFrames.get(0).getFlag(HeaderFrame.END_STREAM))
-                os.closeInternal();
+                os.markClosed();
 
-            for (Http2Frame f : headerFrames)
-                conn.outputQ.put(f);
+            for (Http2Frame f : headerFrames) {
+                conn.addToOutputQ(f);
+            }
 
             os.goodToGo();
             System.err.println("Sent response headers " + rCode);

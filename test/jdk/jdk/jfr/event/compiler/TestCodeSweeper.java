@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import jdk.test.whitebox.code.CodeBlob;
  */
 /**
  * @test TestCodeSweeper
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -65,8 +65,8 @@ public class TestCodeSweeper {
     private static final String METHOD_NAME = "verifyFullEvent";
     private static final String pathFull = EventNames.CodeCacheFull;
     private static final String pathFailure = EventNames.CompilationFailure;
-    public static final long SEGMENT_SIZE = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheSegmentSize");
-    public static final long MIN_BLOCK_LENGTH = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheMinBlockLength");
+    public static final long SEGMENT_SIZE = WhiteBox.getWhiteBox().getSizeTVMFlag("CodeCacheSegmentSize");
+    public static final long MIN_BLOCK_LENGTH = WhiteBox.getWhiteBox().getSizeTVMFlag("CodeCacheMinBlockLength");
     public static final long MIN_ALLOCATION = SEGMENT_SIZE * MIN_BLOCK_LENGTH;
     private static final double CACHE_USAGE_COEF = 0.95d;
 

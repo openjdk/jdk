@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ public final class ZipPlugin extends AbstractPlugin {
 
     private Predicate<String> predicate;
 
+    private static final int DEFAULT_COMPRESSION = 6;
+    private final int compressionLevel;
+
     public ZipPlugin() {
         this((Predicate<String>) null);
     }
@@ -54,8 +57,13 @@ public final class ZipPlugin extends AbstractPlugin {
     }
 
     ZipPlugin(Predicate<String> predicate) {
+        this(predicate, DEFAULT_COMPRESSION);
+    }
+
+    ZipPlugin(Predicate<String> predicate, int compressionLevel) {
         super("zip");
         this.predicate = predicate;
+        this.compressionLevel = compressionLevel;
     }
 
     @Override
@@ -73,28 +81,28 @@ public final class ZipPlugin extends AbstractPlugin {
         predicate = ResourceFilter.includeFilter(config.get(getName()));
     }
 
-    static byte[] compress(byte[] bytesIn) {
-        Deflater deflater = new Deflater();
-        deflater.setInput(bytesIn);
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length);
-        byte[] buffer = new byte[1024];
+    static byte[] compress(byte[] bytesIn, int compressionLevel) {
+        try (Deflater deflater = new Deflater(compressionLevel);
+             ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length)) {
 
-        deflater.finish();
-        while (!deflater.finished()) {
-            int count = deflater.deflate(buffer);
-            stream.write(buffer, 0, count);
-        }
+            deflater.setInput(bytesIn);
 
-        try {
-            stream.close();
-        } catch (IOException ex) {
+            byte[] buffer = new byte[1024];
+
+            deflater.finish();
+            while (!deflater.finished()) {
+                int count = deflater.deflate(buffer);
+                stream.write(buffer, 0, count);
+            }
+            return stream.toByteArray(); // the compressed output
+        } catch (IOException e) {
+            // the IOException is only declared by ByteArrayOutputStream.close()
+            // but the impl of ByteArrayOutputStream.close() is a no-op, so for
+            // all practical purposes there should never be an IOException thrown
+            assert false : "unexpected " + e;
+            // don't propagate the exception, instead return the original uncompressed input
             return bytesIn;
         }
-
-        byte[] bytesOut = stream.toByteArray();
-        deflater.end();
-
-        return bytesOut;
     }
 
     @Override
@@ -104,9 +112,9 @@ public final class ZipPlugin extends AbstractPlugin {
             if (resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)
                     && predicate.test(resource.path())) {
                 byte[] compressed;
-                compressed = compress(resource.contentBytes());
+                compressed = compress(resource.contentBytes(), this.compressionLevel);
                 res = ResourcePoolManager.newCompressedResource(resource,
-                        ByteBuffer.wrap(compressed), getName(), null,
+                        ByteBuffer.wrap(compressed), getName(),
                         ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;

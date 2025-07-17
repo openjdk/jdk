@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.ClassFileDumper;
 
+import java.lang.reflect.ClassFileFormatVersion;
 import java.util.Properties;
 
 import static java.lang.invoke.LambdaForm.basicTypeSignature;
@@ -47,10 +47,8 @@ class MethodHandleStatics {
     private MethodHandleStatics() { }  // do not instantiate
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    static final int CLASSFILE_VERSION = VM.classFileVersion();
-
+    static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
     static final boolean DEBUG_METHOD_HANDLE_NAMES;
-    static final boolean DUMP_CLASS_FILES;
     static final boolean TRACE_INTERPRETER;
     static final boolean TRACE_METHOD_LINKAGE;
     static final boolean TRACE_RESOLVE;
@@ -63,13 +61,14 @@ class MethodHandleStatics {
     static final boolean VAR_HANDLE_GUARDS;
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
+    static final boolean VAR_HANDLE_SEGMENT_FORCE_EXACT;
+    static final ClassFileDumper DUMP_CLASS_FILES;
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.DEBUG_NAMES"));
-        DUMP_CLASS_FILES = Boolean.parseBoolean(
-                props.getProperty("java.lang.invoke.MethodHandle.DUMP_CLASS_FILES"));
+
         TRACE_INTERPRETER = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.TRACE_INTERPRETER"));
         TRACE_METHOD_LINKAGE = Boolean.parseBoolean(
@@ -92,10 +91,15 @@ class MethodHandleStatics {
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
         VAR_HANDLE_IDENTITY_ADAPT = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT", "false"));
+        VAR_HANDLE_SEGMENT_FORCE_EXACT = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT", "false"));
 
         // Do not adjust this except for special platforms:
         MAX_ARITY = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandleImpl.MAX_ARITY", "255"));
+
+        DUMP_CLASS_FILES = ClassFileDumper.getInstance("jdk.invoke.MethodHandle.dumpMethodHandleInternals",
+                "DUMP_METHOD_HANDLE_INTERNALS");
 
         if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
             throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");
@@ -108,10 +112,14 @@ class MethodHandleStatics {
     /*non-public*/
     static boolean debugEnabled() {
         return (DEBUG_METHOD_HANDLE_NAMES |
-                DUMP_CLASS_FILES |
+                DUMP_CLASS_FILES.isEnabled() |
                 TRACE_INTERPRETER |
                 TRACE_METHOD_LINKAGE |
                 LOG_LF_COMPILATION_FAILURE);
+    }
+
+    static ClassFileDumper dumper() {
+        return DUMP_CLASS_FILES;
     }
 
     /**
@@ -125,8 +133,8 @@ class MethodHandleStatics {
                     shortenSignature(basicTypeSignature(type)) +
                     (resolvedMember != null ? " (success)" : " (fail)"));
         }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)));
+        if (CDS.isLoggingLambdaFormInvokers()) {
+            CDS.logLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)));
         }
     }
 
@@ -139,8 +147,8 @@ class MethodHandleStatics {
         if (TRACE_RESOLVE) {
             System.out.println("[SPECIES_RESOLVE] " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
         }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceSpeciesType("[SPECIES_RESOLVE]", cn);
+        if (CDS.isLoggingLambdaFormInvokers()) {
+            CDS.logSpeciesType("[SPECIES_RESOLVE]", cn);
         }
     }
     // handy shared exception makers (they simplify the common case code)
@@ -179,8 +187,8 @@ class MethodHandleStatics {
     /** Propagate unchecked exceptions and errors, but wrap anything checked and throw that instead. */
     /*non-public*/
     static Error uncaughtException(Throwable ex) {
-        if (ex instanceof Error)  throw (Error) ex;
-        if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
+        if (ex instanceof Error error) throw error;
+        if (ex instanceof RuntimeException re) throw re;
         throw new InternalError("uncaught exception", ex);
     }
     private static String message(String message, Object obj) {

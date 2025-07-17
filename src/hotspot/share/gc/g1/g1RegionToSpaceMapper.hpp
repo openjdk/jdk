@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
+class ReservedSpace;
 class WorkerThreads;
 
 class G1MappingChangedListener {
@@ -49,13 +50,12 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   // Backing storage.
   G1PageBasedVirtualSpace _storage;
 
-  size_t _region_granularity;
   // Mapping management
   CHeapBitMap _region_commit_map;
 
-  MEMFLAGS _memory_type;
+  MemTag _memory_tag;
 
-  G1RegionToSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MEMFLAGS type);
+  G1RegionToSpaceMapper(ReservedSpace rs, size_t used_size, size_t page_size, size_t region_granularity, size_t commit_factor, MemTag mem_tag);
 
   void fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled);
  public:
@@ -70,7 +70,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   virtual ~G1RegionToSpaceMapper() {}
 
-  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkerThreads* pretouch_workers = NULL) = 0;
+  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkerThreads* pretouch_workers = nullptr) = 0;
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1) = 0;
 
   // Creates an appropriate G1RegionToSpaceMapper for the given parameters.
@@ -86,7 +86,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
                                               size_t page_size,
                                               size_t region_granularity,
                                               size_t byte_translation_factor,
-                                              MEMFLAGS type);
+                                              MemTag mem_tag);
 };
 
 #endif // SHARE_GC_G1_G1REGIONTOSPACEMAPPER_HPP

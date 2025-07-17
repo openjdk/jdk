@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.Objects;
  * @since   1.0
  */
 public class ByteArrayInputStream extends InputStream {
+    private static final int MAX_TRANSFER_SIZE = 128*1024;
 
     /**
      * An array of bytes that was provided
@@ -53,10 +54,10 @@ public class ByteArrayInputStream extends InputStream {
      * stream;  element {@code buf[pos]} is
      * the next byte to be read.
      */
-    protected byte buf[];
+    protected byte[] buf;
 
     /**
-     * The index of the next character to read from the input stream buffer.
+     * The index of the next byte to read from the input stream buffer.
      * This value should always be nonnegative
      * and not larger than the value of {@code count}.
      * The next byte to be read from the input stream buffer
@@ -80,7 +81,7 @@ public class ByteArrayInputStream extends InputStream {
     protected int mark = 0;
 
     /**
-     * The index one greater than the last valid character in the input
+     * The index one greater than the last valid byte in the input
      * stream buffer.
      * This value should always be nonnegative
      * and not larger than the length of {@code buf}.
@@ -205,8 +206,31 @@ public class ByteArrayInputStream extends InputStream {
     @Override
     public synchronized long transferTo(OutputStream out) throws IOException {
         int len = count - pos;
-        out.write(buf, pos, len);
-        pos = count;
+        if (len > 0) {
+            // 'tmpbuf' is null if and only if 'out' is trusted
+            byte[] tmpbuf;
+            Class<?> outClass = out.getClass();
+            if (outClass == ByteArrayOutputStream.class ||
+                outClass == FileOutputStream.class ||
+                outClass == PipedOutputStream.class)
+                tmpbuf = null;
+            else
+                tmpbuf = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];
+
+            int nwritten = 0;
+            while (nwritten < len) {
+                int nbyte = Integer.min(len - nwritten, MAX_TRANSFER_SIZE);
+                // if 'out' is not trusted, transfer via a temporary buffer
+                if (tmpbuf != null) {
+                    System.arraycopy(buf, pos, tmpbuf, 0, nbyte);
+                    out.write(tmpbuf, 0, nbyte);
+                } else
+                    out.write(buf, pos, nbyte);
+                pos += nbyte;
+                nwritten += nbyte;
+            }
+            assert pos == count;
+        }
         return len;
     }
 

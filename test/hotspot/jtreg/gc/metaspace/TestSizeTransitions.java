@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Twitter, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -119,8 +119,7 @@ public class TestSizeTransitions {
       System.out.println("  " + a);
     }
 
-    final ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(jvmArgs);
-    final OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    final OutputAnalyzer output = ProcessTools.executeLimitedTestJava(jvmArgs);
     System.out.println(output.getStdout());
     output.shouldHaveExitValue(0);
 

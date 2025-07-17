@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.math.BigInteger;
 import java.security.*;
+import jdk.test.lib.security.SecurityUtils;
 
 import static jdk.test.lib.Asserts.assertEquals;
 
@@ -160,7 +161,7 @@ public class SignatureKeyInfo {
 
     private static KeyPair getKeyPair(String algorithm) throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-        keyGen.initialize(2048);
+        keyGen.initialize(SecurityUtils.getTestKeySize(algorithm));
 
         return keyGen.genKeyPair();
     }

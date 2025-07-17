@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
-#include "jvmti_thread.h"
+#include "jvmti_common.hpp"
+#include "jvmti_thread.hpp"
 
 
 extern "C" {
@@ -65,10 +65,10 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object, jcla
 
   LOG("VMObjectAlloc: \"%s\", size=%ld\n", signature, (long)size);
 
-  if (signature != NULL)
+  if (signature != nullptr)
     jvmti->Deallocate((unsigned char*)signature);
 
-  if (generic != NULL)
+  if (generic != nullptr)
     jvmti->Deallocate((unsigned char*)generic);
 
 }
@@ -92,7 +92,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 }
 
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv* jvmti = NULL;
+  jvmtiEnv* jvmti = nullptr;
   jvmtiCapabilities caps;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
@@ -103,7 +103,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   /* create JVMTI environment */
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -127,12 +127,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   /* enable VMObjectAlloc event */
-  if (jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL) != JVMTI_ERROR_NONE) {
+  if (jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, nullptr) != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
 
   /* register agent proc and arg */
-  set_agent_proc(agentProc, NULL);
+  set_agent_proc(agentProc, nullptr);
 
   return JNI_OK;
 }

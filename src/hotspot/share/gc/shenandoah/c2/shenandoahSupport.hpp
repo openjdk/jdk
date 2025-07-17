@@ -49,7 +49,7 @@ private:
   };
 
   static bool verify_helper(Node* in, Node_Stack& phis, VectorSet& visited, verify_type t, bool trace, Unique_Node_List& barriers_used);
-  static void report_verify_failure(const char* msg, Node* n1 = NULL, Node* n2 = NULL);
+  static void report_verify_failure(const char* msg, Node* n1 = nullptr, Node* n2 = nullptr);
 #endif
   static Node* dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase);
   static Node* no_branches(Node* c, Node* dom, bool allow_one_proj, PhaseIdealLoop* phase);
@@ -62,12 +62,12 @@ private:
                             PhaseIdealLoop* phase, int flags);
   static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr,
                             DecoratorSet decorators, PhaseIdealLoop* phase);
+
+  static void collect_nodes_above_barrier(Unique_Node_List &nodes_above_barrier, PhaseIdealLoop* phase, Node* ctrl,
+                                          Node* init_raw_mem);
+
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
-  static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
-  static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
-  static bool identical_backtoback_ifs(Node *n, PhaseIdealLoop* phase);
-  static void fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& uses_to_ignore, uint last, PhaseIdealLoop* phase);
-  static IfNode* find_unswitching_candidate(const IdealLoopTree *loop, PhaseIdealLoop* phase);
+  static void fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& nodes_above_barrier, uint last, PhaseIdealLoop* phase);
 
   static Node* get_load_addr(PhaseIdealLoop* phase, VectorSet& visited, Node* lrb);
 public:
@@ -79,28 +79,15 @@ public:
 
   static bool expand(Compile* C, PhaseIterGVN& igvn);
   static void pin_and_expand(PhaseIdealLoop* phase);
-  static void optimize_after_expansion(VectorSet& visited, Node_Stack& nstack, Node_List& old_new, PhaseIdealLoop* phase);
 
+  static void push_data_inputs_at_control(PhaseIdealLoop* phase, Node* n, Node* ctrl,
+                                          Unique_Node_List &wq);
+  static bool is_anti_dependent_load_at_control(PhaseIdealLoop* phase, Node* maybe_load, Node* store, Node* control);
+
+  static void maybe_push_anti_dependent_loads(PhaseIdealLoop* phase, Node* maybe_store, Node* control, Unique_Node_List &wq);
 #ifdef ASSERT
   static void verify(RootNode* root);
 #endif
-};
-
-class ShenandoahIUBarrierNode : public Node {
-public:
-  ShenandoahIUBarrierNode(Node* val);
-
-  const Type *bottom_type() const;
-  const Type* Value(PhaseGVN* phase) const;
-  Node* Identity(PhaseGVN* phase);
-
-  int Opcode() const;
-
-private:
-  enum { Needed, NotNeeded, MaybeNeeded };
-
-  static int needed(Node* n);
-  static Node* next(Node* n);
 };
 
 class MemoryGraphFixer : public ResourceObj {
@@ -142,10 +129,10 @@ public:
     : CompareAndSwapPNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
       return new CompareAndSwapPNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -157,10 +144,10 @@ public:
     : CompareAndSwapNNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
       return new CompareAndSwapNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -172,10 +159,10 @@ public:
     : WeakCompareAndSwapPNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
       return new WeakCompareAndSwapPNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -187,10 +174,10 @@ public:
     : WeakCompareAndSwapNNode(c, mem, adr, val, ex, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
       return new WeakCompareAndSwapNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -202,10 +189,10 @@ public:
     : CompareAndExchangePNode(c, mem, adr, val, ex, at, t, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
       return new CompareAndExchangePNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), adr_type(), bottom_type(), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;
@@ -217,10 +204,10 @@ public:
     : CompareAndExchangeNNode(c, mem, adr, val, ex, at, t, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
-    if (in(ExpectedIn) != NULL && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
+    if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
       return new CompareAndExchangeNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), adr_type(), bottom_type(), order());
     }
-    return NULL;
+    return nullptr;
   }
 
   virtual int Opcode() const;

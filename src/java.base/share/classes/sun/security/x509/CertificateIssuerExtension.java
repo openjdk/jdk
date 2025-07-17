@@ -66,7 +66,7 @@ public class CertificateIssuerExtension extends Extension {
     /**
      * Encode this extension
      */
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (names == null || names.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -80,10 +80,12 @@ public class CertificateIssuerExtension extends Extension {
      * Create a CertificateIssuerExtension containing the specified issuer name.
      * Criticality is automatically set to true.
      *
-     * @param issuer the certificate issuer
-     * @throws IOException on error
+     * @param issuer the certificate issuer, cannot be null or empty.
      */
-    public CertificateIssuerExtension(GeneralNames issuer) throws IOException {
+    public CertificateIssuerExtension(GeneralNames issuer) {
+        if (issuer == null || issuer.isEmpty()) {
+            throw new IllegalArgumentException("issuer cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.CertificateIssuer_Id;
         this.critical = true;
         this.names = issuer;
@@ -125,10 +127,9 @@ public class CertificateIssuerExtension extends Extension {
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to
-     * @exception IOException on encoding errors
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.CertificateIssuer_Id;
             critical = true;

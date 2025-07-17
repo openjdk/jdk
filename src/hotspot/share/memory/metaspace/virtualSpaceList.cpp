@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkManager.hpp"
@@ -45,7 +44,7 @@ namespace metaspace {
 // Create a new, empty, expandable list.
 VirtualSpaceList::VirtualSpaceList(const char* name, CommitLimiter* commit_limiter) :
   _name(name),
-  _first_node(NULL),
+  _first_node(nullptr),
   _can_expand(true),
   _commit_limiter(commit_limiter),
   _reserved_words_counter(),
@@ -57,7 +56,7 @@ VirtualSpaceList::VirtualSpaceList(const char* name, CommitLimiter* commit_limit
 // It will be not expandable beyond that first node.
 VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLimiter* commit_limiter) :
   _name(name),
-  _first_node(NULL),
+  _first_node(nullptr),
   _can_expand(false),
   _commit_limiter(commit_limiter),
   _reserved_words_counter(),
@@ -67,9 +66,9 @@ VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLim
   // for this list since we cannot expand.
   VirtualSpaceNode* vsn = VirtualSpaceNode::create_node(rs, _commit_limiter,
                                                         &_reserved_words_counter, &_committed_words_counter);
-  assert(vsn != NULL, "node creation failed");
+  assert(vsn != nullptr, "node creation failed");
   _first_node = vsn;
-  _first_node->set_next(NULL);
+  _first_node->set_next(nullptr);
   _nodes_counter.increment();
 }
 
@@ -81,7 +80,7 @@ VirtualSpaceList::~VirtualSpaceList() {
   // lists in metaspace are immortal.
   VirtualSpaceNode* vsn = _first_node;
   VirtualSpaceNode* vsn2 = vsn;
-  while (vsn != NULL) {
+  while (vsn != nullptr) {
     vsn2 = vsn->next();
     delete vsn;
     vsn = vsn2;
@@ -110,14 +109,14 @@ void VirtualSpaceList::create_new_node() {
 Metachunk*  VirtualSpaceList::allocate_root_chunk() {
   assert_lock_strong(Metaspace_lock);
 
-  if (_first_node == NULL ||
+  if (_first_node == nullptr ||
       _first_node->free_words() < chunklevel::MAX_CHUNK_WORD_SIZE) {
 
 #ifdef ASSERT
     // Since all allocations from a VirtualSpaceNode happen in
     // root-chunk-size units, and the node size must be root-chunk-size aligned,
     // we should never have left-over space.
-    if (_first_node != NULL) {
+    if (_first_node != nullptr) {
       assert(_first_node->free_words() == 0, "Sanity");
     }
 #endif
@@ -127,12 +126,12 @@ Metachunk*  VirtualSpaceList::allocate_root_chunk() {
       UL2(debug, "added new node (now: %d).", num_nodes());
     } else {
       UL(debug, "list cannot expand.");
-      return NULL; // We cannot expand this list.
+      return nullptr; // We cannot expand this list.
     }
   }
 
   Metachunk* c = _first_node->allocate_root_chunk();
-  assert(c != NULL, "This should have worked");
+  assert(c != nullptr, "This should have worked");
 
   return c;
 }
@@ -144,28 +143,28 @@ void VirtualSpaceList::print_on(outputStream* st) const {
   st->print_cr("vsl %s:", _name);
   const VirtualSpaceNode* vsn = _first_node;
   int n = 0;
-  while (vsn != NULL) {
+  while (vsn != nullptr) {
     st->print("- node #%d: ", n);
     vsn->print_on(st);
     vsn = vsn->next();
     n++;
   }
-  st->print_cr("- total %d nodes, " SIZE_FORMAT " reserved words, " SIZE_FORMAT " committed words.",
+  st->print_cr("- total %d nodes, %zu reserved words, %zu committed words.",
                n, reserved_words(), committed_words());
 }
 
 #ifdef ASSERT
 void VirtualSpaceList::verify_locked() const {
   assert_lock_strong(Metaspace_lock);
-  assert(_name != NULL, "Sanity");
+  assert(_name != nullptr, "Sanity");
 
   int n = 0;
 
-  if (_first_node != NULL) {
+  if (_first_node != nullptr) {
     size_t total_reserved_words = 0;
     size_t total_committed_words = 0;
     const VirtualSpaceNode* vsn = _first_node;
-    while (vsn != NULL) {
+    while (vsn != nullptr) {
       n++;
       vsn->verify_locked();
       total_reserved_words += vsn->word_size();
@@ -191,7 +190,7 @@ void VirtualSpaceList::verify() const {
 bool VirtualSpaceList::contains(const MetaWord* p) const {
   // Note: needs to work without locks.
   const VirtualSpaceNode* vsn = Atomic::load_acquire(&_first_node);
-  while (vsn != NULL) {
+  while (vsn != nullptr) {
     if (vsn->contains(p)) {
       return true;
     }
@@ -203,11 +202,11 @@ bool VirtualSpaceList::contains(const MetaWord* p) const {
 // Convenience methods to return the global class-space chunkmanager
 //  and non-class chunkmanager, respectively.
 VirtualSpaceList* VirtualSpaceList::vslist_class() {
-  return MetaspaceContext::context_class() == NULL ? NULL : MetaspaceContext::context_class()->vslist();
+  return MetaspaceContext::context_class() == nullptr ? nullptr : MetaspaceContext::context_class()->vslist();
 }
 
 VirtualSpaceList* VirtualSpaceList::vslist_nonclass() {
-  return MetaspaceContext::context_nonclass() == NULL ? NULL : MetaspaceContext::context_nonclass()->vslist();
+  return MetaspaceContext::context_nonclass() == nullptr ? nullptr : MetaspaceContext::context_nonclass()->vslist();
 }
 
 } // namespace metaspace

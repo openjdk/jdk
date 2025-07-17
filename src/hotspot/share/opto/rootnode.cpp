@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -58,7 +57,7 @@ Node *RootNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // If we want to get the rest of the win later, we should pattern match
   // simple recursive call trees to closed-form solutions.
 
-  return modified ? this : NULL;
+  return modified ? this : nullptr;
 }
 
 //=============================================================================
@@ -78,7 +77,7 @@ uint HaltNode::size_of() const { return sizeof(*this); }
 
 //------------------------------Ideal------------------------------------------
 Node *HaltNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //------------------------------Value------------------------------------------

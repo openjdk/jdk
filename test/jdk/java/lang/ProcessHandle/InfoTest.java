@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,17 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
 import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
 
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
+
 /*
  * @test
  * @bug 8077350 8081566 8081567 8098852 8136597
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.management
@@ -81,7 +83,6 @@ public class InfoTest {
     }
 
     // Main can be used to run the tests from the command line with only testng.jar.
-    @SuppressWarnings("raw_types")
     public static void main(String[] args) {
         Class<?>[] testclass = {InfoTest.class};
         TestNG testng = new TestNG();
@@ -160,11 +161,7 @@ public class InfoTest {
                     ProcessHandle.Info info = p1.info();
                     System.out.printf(" info: %s%n", info);
 
-                    if (info.user().isPresent()) {
-                        String user = info.user().get();
-                        Assert.assertNotNull(user, "User name");
-                        Assert.assertEquals(user, whoami, "User name");
-                    }
+                    assertUser(info);
 
                     Optional<String> command = info.command();
                     if (command.isPresent()) {
@@ -291,20 +288,19 @@ public class InfoTest {
                 ProcessHandle.Info info = p.info();
                 System.out.printf(" info: %s%n", info);
 
-                if (info.user().isPresent()) {
-                    String user = info.user().get();
-                    Assert.assertNotNull(user);
-                    Assert.assertEquals(user, whoami);
-                }
+                assertUser(info);
+
                 if (info.command().isPresent()) {
                     String command = info.command().get();
                     String expected = "sleep";
                     if (Platform.isWindows()) {
                         expected = "sleep.exe";
-                    } else if (Platform.isBusybox("/bin/sleep")) {
-                        // With busybox sleep is just a sym link to busybox.
-                        // The busbox executable is seen as ProcessHandle.Info command.
-                        expected = "busybox";
+                    } else if (Files.isSymbolicLink(Paths.get("/bin/sleep"))) {
+                        // Busybox sleep is a symbolic link to /bin/busybox.
+                        // Rust coreutils sleep is a symbolic link to coreutils
+                        // The busbox/coreutils executables are seen as ProcessHandle.Info command.
+                        Path executable = Files.readSymbolicLink(Paths.get("/bin/sleep"));
+                        expected = executable.getFileName().toString();
                     }
                     Assert.assertTrue(command.endsWith(expected), "Command: expected: \'" +
                             expected + "\', actual: " + command);
@@ -397,7 +393,7 @@ public class InfoTest {
             Instant end = Instant.now().plusMillis(500L);
             while (end.isBefore(Instant.now())) {
                 // burn the cpu time checking the time
-                long x = r.nextLong();
+                r.nextLong();
             }
             if (self.info().totalCpuDuration().isPresent()) {
                 Duration totalCpu = self.info().totalCpuDuration().get();
@@ -410,6 +406,7 @@ public class InfoTest {
             }
         }
     }
+
     /**
      * Check two Durations, the second should be greater than the first or
      * within the supplied Epsilon.
@@ -442,5 +439,32 @@ public class InfoTest {
             list.add(arg);
         pb.command(list);
         return pb.start();
+    }
+
+    /**
+     * Asserts the expected process user.
+     *
+     * The Expected user is determined by creating a file and reading its owner, see static block above.
+     *
+     * On Windows, when run privileged as member of the Administrators group, this does not always
+     * work because new files can be owned by BUILTIN\Administrators instead, depending on system
+     * settings. In that case we resort to comparing System property user.name, which does not contain
+     * the domain name, though.
+     *
+     * @param info ProcessHanlde info object
+     */
+    static void assertUser(ProcessHandle.Info info) {
+        if (!info.user().isPresent()) {
+            return;
+        }
+        String user = info.user().get();
+        Assert.assertNotNull(user, "User name");
+        if (Platform.isWindows() && "BUILTIN\\Administrators".equals(whoami)) {
+            int bsi = user.lastIndexOf("\\");
+            Assert.assertEquals(bsi == -1 ? user : user.substring(bsi + 1),
+                    System.getProperty("user.name"), "User name");
+        } else {
+            Assert.assertEquals(user, whoami, "User name");
+        }
     }
 }

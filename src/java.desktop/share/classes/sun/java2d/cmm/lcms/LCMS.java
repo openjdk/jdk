@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ final class LCMS implements PCMM {
         return null;
     }
 
-    private static LCMSProfile getLcmsProfile(Profile p) {
+    static LCMSProfile getLcmsProfile(Profile p) {
         if (p instanceof LCMSProfile) {
             return (LCMSProfile)p;
         }
@@ -95,14 +95,10 @@ final class LCMS implements PCMM {
         }
     }
 
-    static synchronized native LCMSProfile getProfileID(ICC_Profile profile);
-
-    /* Helper method used from LCMSColorTransfrom */
-    static long createTransform(
-        LCMSProfile[] profiles, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef)
+    /* Helper method used from LCMSColorTransform */
+    static long createTransform(LCMSProfile[] profiles, int renderingIntent,
+                                int inFormatter, int outFormatter,
+                                Object disposerRef)
     {
         long[] ptrs = new long[profiles.length];
         long stamp = lock.readLock();
@@ -115,17 +111,17 @@ final class LCMS implements PCMM {
             }
 
             return createNativeTransform(ptrs, renderingIntent, inFormatter,
-                    isInIntPacked, outFormatter, isOutIntPacked, disposerRef);
+                                         outFormatter, disposerRef);
         } finally {
             lock.unlockRead(stamp);
         }
     }
 
-    private static native long createNativeTransform(
-        long[] profileIDs, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef);
+    private static native long createNativeTransform(long[] profileIDs,
+                                                     int renderingIntent,
+                                                     int inFormatter,
+                                                     int outFormatter,
+                                                     Object disposerRef);
 
     /**
      * Constructs ColorTransform object corresponding to the ICC_profiles.
@@ -143,27 +139,21 @@ final class LCMS implements PCMM {
                                     Object srcData, Object dstData,
                                     int srcType, int dstType);
 
-    private LCMS() {};
+    private LCMS() {}
 
     private static LCMS theLcms = null;
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     static synchronized PCMM getModule() {
         if (theLcms != null) {
             return theLcms;
         }
 
-        java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Object>() {
-                    public Object run() {
-                        /* We need to load awt here because of usage trace and
-                         * disposer frameworks
-                         */
-                        System.loadLibrary("awt");
-                        System.loadLibrary("lcms");
-                        return null;
-                    }
-                });
+        /* We need to load awt here because of usage trace and
+         * disposer frameworks
+         */
+        System.loadLibrary("awt");
+        System.loadLibrary("lcms");
 
         theLcms = new LCMS();
 

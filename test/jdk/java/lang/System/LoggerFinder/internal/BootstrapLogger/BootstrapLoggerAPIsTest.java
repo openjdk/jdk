@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
+
 import jdk.internal.logger.BootstrapLogger;
 import jdk.internal.logger.LazyLoggers;
 
@@ -38,9 +38,10 @@ import jdk.internal.logger.LazyLoggers;
  * @bug     8144460 8144214
  * @summary Cover the logXX and LogEvent.valueOf APIs of BootstrapLogger
  *          and logXX APIs of SimpleConsoleLogger.
+ * @library ../../lib
  * @modules java.base/jdk.internal.logger:+open
  *          java.base/sun.util.logging
- * @build BootstrapLoggerUtils LogStream
+ * @build LogStream
  * @run main/othervm BootstrapLoggerAPIsTest
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class JfrDoublyLinkedList {
 
  public:
   typedef T Node;
-  JfrDoublyLinkedList() : _head(NULL), _tail(NULL), _count(0) {}
+  JfrDoublyLinkedList() : _head(nullptr), _tail(nullptr), _count(0) {}
   T* head() const { return _head; }
   T* tail() const { return _tail; }
   size_t count() const { return _count; }
@@ -54,44 +54,44 @@ class JfrDoublyLinkedList {
 
 template <typename T>
 inline void JfrDoublyLinkedList<T>::prepend(T* const node) {
-  assert(node != NULL, "invariant");
-  node->set_prev(NULL);
+  assert(node != nullptr, "invariant");
+  node->set_prev(nullptr);
   assert(!in_list(node), "already in list error");
   T** lh = list_head();
-  if (*lh != NULL) {
+  if (*lh != nullptr) {
     (*lh)->set_prev(node);
     node->set_next(*lh);
   } else {
     T** lt = list_tail();
-    assert(*lt == NULL, "invariant");
+    assert(*lt == nullptr, "invariant");
     *lt = node;
-    node->set_next(NULL);
+    node->set_next(nullptr);
     assert(tail() == node, "invariant");
-    assert(node->next() == NULL, "invariant");
+    assert(node->next() == nullptr, "invariant");
   }
   *lh = node;
   ++_count;
   assert(head() == node, "head error");
   assert(in_list(node), "not in list error");
-  assert(node->prev() == NULL, "invariant");
+  assert(node->prev() == nullptr, "invariant");
 }
 
 template <typename T>
 void JfrDoublyLinkedList<T>::append(T* const node) {
-  assert(node != NULL, "invariant");
-  node->set_next(NULL);
+  assert(node != nullptr, "invariant");
+  node->set_next(nullptr);
   assert(!in_list(node), "already in list error");
   T** lt = list_tail();
-  if (*lt != NULL) {
+  if (*lt != nullptr) {
     // already an existing tail
     node->set_prev(*lt);
     (*lt)->set_next(node);
   } else {
     // if no tail, also update head
-    assert(*lt == NULL, "invariant");
+    assert(*lt == nullptr, "invariant");
     T** lh = list_head();
-    assert(*lh == NULL, "invariant");
-    node->set_prev(NULL);
+    assert(*lh == nullptr, "invariant");
+    node->set_prev(nullptr);
     *lh = node;
     assert(head() == node, "invariant");
   }
@@ -99,32 +99,32 @@ void JfrDoublyLinkedList<T>::append(T* const node) {
   ++_count;
   assert(tail() == node, "invariant");
   assert(in_list(node), "not in list error");
-  assert(node->next() == NULL, "invariant");
+  assert(node->next() == nullptr, "invariant");
 }
 
 template <typename T>
 T* JfrDoublyLinkedList<T>::remove(T* const node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   assert(in_list(node), "invariant");
   T* const prev = (T*)node->prev();
   T* const next = (T*)node->next();
-  if (prev == NULL) {
+  if (prev == nullptr) {
     assert(head() == node, "head error");
-    if (next != NULL) {
-      next->set_prev(NULL);
+    if (next != nullptr) {
+      next->set_prev(nullptr);
     } else {
-      assert(next == NULL, "invariant");
+      assert(next == nullptr, "invariant");
       assert(tail() == node, "tail error");
       T** lt = list_tail();
-      *lt = NULL;
-      assert(tail() == NULL, "invariant");
+      *lt = nullptr;
+      assert(tail() == nullptr, "invariant");
     }
     T** lh = list_head();
     *lh = next;
     assert(head() == next, "invariant");
   } else {
-    assert(prev != NULL, "invariant");
-    if (next == NULL) {
+    assert(prev != nullptr, "invariant");
+    if (next == nullptr) {
       assert(tail() == node, "tail error");
       T** lt = list_tail();
       *lt = prev;
@@ -143,19 +143,19 @@ template <typename T>
 T* JfrDoublyLinkedList<T>::clear(bool return_tail /* false */) {
   T* const node = return_tail ? tail() : head();
   T** l = list_head();
-  *l = NULL;
+  *l = nullptr;
   l = list_tail();
-  *l = NULL;
+  *l = nullptr;
   _count = 0;
-  assert(head() == NULL, "invariant");
-  assert(tail() == NULL, "invariant");
+  assert(head() == nullptr, "invariant");
+  assert(tail() == nullptr, "invariant");
   return node;
 }
 
 template <typename T>
 bool JfrDoublyLinkedList<T>::locate(const T* node, const T* const target) const {
-  assert(target != NULL, "invariant");
-  while (node != NULL) {
+  assert(target != nullptr, "invariant");
+  while (node != nullptr) {
     if (node == target) {
       return true;
     }
@@ -166,13 +166,13 @@ bool JfrDoublyLinkedList<T>::locate(const T* node, const T* const target) const 
 
 template <typename T>
 bool JfrDoublyLinkedList<T>::in_list(const T* const target) const {
-  assert(target != NULL, "invariant");
+  assert(target != nullptr, "invariant");
   return locate(head(), target);
 }
 
 template <typename T>
 inline void validate_count_param(T* node, size_t count_param) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   size_t count = 0;
   while (node) {
     ++count;
@@ -183,29 +183,29 @@ inline void validate_count_param(T* node, size_t count_param) {
 
 template <typename T>
 void JfrDoublyLinkedList<T>::append_list(T* const head_node, T* const tail_node, size_t count) {
-  assert(head_node != NULL, "invariant");
+  assert(head_node != nullptr, "invariant");
   assert(!in_list(head_node), "already in list error");
-  assert(tail_node != NULL, "invariant");
+  assert(tail_node != nullptr, "invariant");
   assert(!in_list(tail_node), "already in list error");
-  assert(tail_node->next() == NULL, "invariant");
+  assert(tail_node->next() == nullptr, "invariant");
   // ensure passed in list nodes are connected
   assert(locate(head_node, tail_node), "invariant");
   T** lt = list_tail();
-  if (*lt != NULL) {
+  if (*lt != nullptr) {
     head_node->set_prev(*lt);
     (*lt)->set_next(head_node);
   } else {
     // no head
-    assert(*lt == NULL, "invariant");
+    assert(*lt == nullptr, "invariant");
     T** lh = list_head();
-    assert(*lh == NULL, "invariant");
-    head_node->set_prev(NULL);
+    assert(*lh == nullptr, "invariant");
+    head_node->set_prev(nullptr);
     *lh = head_node;
     assert(head() == head_node, "invariant");
   }
   *lt = tail_node;
   const T* node = head_node;
-  debug_only(validate_count_param(node, count);)
+  DEBUG_ONLY(validate_count_param(node, count);)
     _count += count;
   assert(tail() == tail_node, "invariant");
   assert(in_list(tail_node), "not in list error");

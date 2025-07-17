@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.net;
 
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Determines the ephemeral port range in use on this system.
@@ -35,31 +35,34 @@ import sun.security.action.GetPropertyAction;
 
 public final class PortConfig {
 
-    private static int defaultUpper, defaultLower;
     private static final int upper, lower;
 
     private PortConfig() {}
 
     static {
         jdk.internal.loader.BootLoader.loadLibrary("net");
-        String os = GetPropertyAction.privilegedGetProperty("os.name");
-        if (os.startsWith("Linux")) {
-            defaultLower = 32768;
-            defaultUpper = 61000;
-        } else if (os.contains("OS X")) {
-            defaultLower = 49152;
-            defaultUpper = 65535;
-        } else if (os.startsWith("AIX")) {
-            // The ephemeral port is OS version dependent on AIX:
-            // http://publib.boulder.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.rsct315.admin/bl503_ephport.htm
-            // However, on AIX 5.3 / 6.1 / 7.1 we always see the
-            // settings below by using:
-            // /usr/sbin/no -a | fgrep ephemeral
-            defaultLower = 32768;
-            defaultUpper = 65535;
-        } else {
-            throw new InternalError(
-                "sun.net.PortConfig: unknown OS");
+        int defaultUpper;
+        int defaultLower;
+        switch (OperatingSystem.current()) {
+            case LINUX:
+                defaultLower = 32768;
+                defaultUpper = 61000;
+                break;
+            case MACOS:
+                defaultLower = 49152;
+                defaultUpper = 65535;
+                break;
+            case AIX:
+                // The ephemeral port is OS version dependent on AIX:
+                // https://www.ibm.com/support/pages/node/886227
+                // However, on AIX 5.3 / 6.1 / 7.1 we always see the
+                // settings below by using:
+                // /usr/sbin/no -a | fgrep ephemeral
+                defaultLower = 32768;
+                defaultUpper = 65535;
+                break;
+            default:
+                throw new InternalError("sun.net.PortConfig: unsupported OS: " + OperatingSystem.current());
         }
 
         int v = getLower0();

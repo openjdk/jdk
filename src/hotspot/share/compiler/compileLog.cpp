@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jvm.h"
 #include "ci/ciMethod.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileLog.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
-CompileLog* CompileLog::_first = NULL;
+CompileLog* volatile CompileLog::_list_head = nullptr;
 
 // ------------------------------------------------------------------
 // CompileLog::CompileLog
@@ -50,15 +50,18 @@ CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
    strcpy((char*)_file, file_name);
 
   // link into the global list
-  { MutexLocker locker(CompileTaskAlloc_lock);
-    _next = _first;
-    _first = this;
+  while (true) {
+    CompileLog* head = Atomic::load_acquire(&_list_head);
+    _next = head;
+    if (Atomic::cmpxchg(&_list_head, head, this) == head) {
+      break;
+    }
   }
 }
 
 CompileLog::~CompileLog() {
   delete _out; // Close fd in fileStream::~fileStream()
-  _out = NULL;
+  _out = nullptr;
   // Remove partial file after merging in CompileLog::finish_log_on_error
   unlink(_file);
   FREE_C_HEAP_ARRAY(char, _identities);
@@ -69,7 +72,7 @@ CompileLog::~CompileLog() {
 // see_tag, pop_tag:  Override the default do-nothing methods on xmlStream.
 // These methods provide a hook for managing the extra context markup.
 void CompileLog::see_tag(const char* tag, bool push) {
-  if (_context.size() > 0 && _out != NULL) {
+  if (_context.size() > 0 && _out != nullptr) {
     _out->write(_context.base(), _context.size());
     _context.reset();
   }
@@ -84,7 +87,7 @@ void CompileLog::pop_tag(const char* tag) {
 // ------------------------------------------------------------------
 // CompileLog::identify
 int CompileLog::identify(ciBaseObject* obj) {
-  if (obj == NULL)  return 0;
+  if (obj == nullptr)  return 0;
   int id = obj->ident();
   if (id < 0)  return id;
   // If it has already been identified, just return the id.
@@ -169,7 +172,7 @@ int CompileLog::identify(ciBaseObject* obj) {
 }
 
 void CompileLog::name(ciSymbol* name) {
-  if (name == NULL)  return;
+  if (name == nullptr)  return;
   print(" name='");
   name->print_symbol_on(text());  // handles quoting conventions
   print("'");
@@ -203,8 +206,8 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
   if (called_exit)  return;
   called_exit = true;
 
-  CompileLog* log = _first;
-  while (log != NULL) {
+  CompileLog* log = Atomic::load_acquire(&_list_head);
+  while (log != nullptr) {
     log->flush();
     const char* partial_file = log->file();
     int partial_fd = open(partial_file, O_RDONLY);
@@ -212,7 +215,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       // print/print_cr may need to allocate large stack buffer to format
       // strings, here we use snprintf() and print_raw() instead.
       file->print_raw("<compilation_log thread='");
-      jio_snprintf(buf, buflen, UINTX_FORMAT, log->thread_id());
+      jio_snprintf(buf, buflen, "%zu", log->thread_id());
       file->print_raw(buf);
       file->print_raw_cr("'>");
 
@@ -291,7 +294,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
     delete log; // Removes partial file
     log = next_log;
   }
-  _first = NULL;
+  Atomic::store(&_list_head, (CompileLog*)nullptr);
 }
 
 // ------------------------------------------------------------------

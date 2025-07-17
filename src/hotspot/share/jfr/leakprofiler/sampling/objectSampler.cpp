@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -35,6 +34,7 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
@@ -57,13 +57,32 @@ static bool volatile _dead_samples = false;
 // The OopStorage instance is used to hold weak references to sampled objects.
 // It is constructed and registered during VM initialization. This is a singleton
 // that persist independent of the state of the ObjectSampler.
-static OopStorage* _oop_storage = NULL;
+static OopStorage* _oop_storage = nullptr;
+
+// A notification mechanism to let class unloading determine if to save unloaded typesets.
+static JfrSignal _unresolved_entry;
+
+static inline void signal_unresolved_entry() {
+  _unresolved_entry.signal_if_not_set();
+}
+
+static inline void clear_unresolved_entry() {
+  _unresolved_entry.reset();
+}
+
+static inline void signal_resolved() {
+  clear_unresolved_entry();
+}
+
+bool ObjectSampler::has_unresolved_entry() {
+  return _unresolved_entry.is_signaled();
+}
 
 OopStorage* ObjectSampler::oop_storage() { return _oop_storage; }
 
 // Callback invoked by the GC after an iteration over the oop storage
 // that may have cleared dead referents. num_dead is the number of entries
-// already NULL or cleared by the iteration.
+// already nullptr or cleared by the iteration.
 void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
   if (num_dead != 0) {
     // The ObjectSampler instance may have already been cleaned or a new
@@ -76,15 +95,15 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
 
 bool ObjectSampler::create_oop_storage() {
   _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples", mtTracing);
-  assert(_oop_storage != NULL, "invariant");
+  assert(_oop_storage != nullptr, "invariant");
   _oop_storage->register_num_dead_callback(&oop_storage_gc_notification);
   return true;
 }
 
-static ObjectSampler* _instance = NULL;
+static ObjectSampler* _instance = nullptr;
 
 static ObjectSampler& instance() {
-  assert(_instance != NULL, "invariant");
+  assert(_instance != nullptr, "invariant");
   return *_instance;
 }
 
@@ -100,22 +119,24 @@ ObjectSampler::ObjectSampler(size_t size) :
 
 ObjectSampler::~ObjectSampler() {
   delete _priority_queue;
-  _priority_queue = NULL;
+  _priority_queue = nullptr;
   delete _list;
-  _list = NULL;
+  _list = nullptr;
 }
 
 bool ObjectSampler::create(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(_oop_storage != NULL, "should be already created");
+  assert(_oop_storage != nullptr, "should be already created");
+  clear_unresolved_entry();
+  assert(!has_unresolved_entry(), "invariant");
   ObjectSampleCheckpoint::clear();
-  assert(_instance == NULL, "invariant");
+  assert(_instance == nullptr, "invariant");
   _instance = new ObjectSampler(size);
-  return _instance != NULL;
+  return _instance != nullptr;
 }
 
 bool ObjectSampler::is_created() {
-  return _instance != NULL;
+  return _instance != nullptr;
 }
 
 ObjectSampler* ObjectSampler::sampler() {
@@ -125,9 +146,9 @@ ObjectSampler* ObjectSampler::sampler() {
 
 void ObjectSampler::destroy() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  if (_instance != NULL) {
+  if (_instance != nullptr) {
     ObjectSampler* const sampler = _instance;
-    _instance = NULL;
+    _instance = nullptr;
     delete sampler;
   }
 }
@@ -145,13 +166,13 @@ void ObjectSampler::release() {
 }
 
 static traceid get_thread_id(JavaThread* thread, bool* virtual_thread) {
-  assert(thread != NULL, "invariant");
-  assert(virtual_thread != NULL, "invariant");
-  if (thread->threadObj() == NULL) {
+  assert(thread != nullptr, "invariant");
+  assert(virtual_thread != nullptr, "invariant");
+  if (thread->threadObj() == nullptr) {
     return 0;
   }
   const JfrThreadLocal* const tl = thread->jfr_thread_local();
-  assert(tl != NULL, "invariant");
+  assert(tl != nullptr, "invariant");
   if (tl->is_excluded()) {
     return 0;
   }
@@ -160,9 +181,9 @@ static traceid get_thread_id(JavaThread* thread, bool* virtual_thread) {
 }
 
 static JfrBlobHandle get_thread_blob(JavaThread* thread, traceid tid, bool virtual_thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   JfrThreadLocal* const tl = thread->jfr_thread_local();
-  assert(tl != NULL, "invariant");
+  assert(tl != nullptr, "invariant");
   assert(!tl->is_excluded(), "invariant");
   if (virtual_thread) {
     // TODO: blob cache for virtual threads
@@ -195,7 +216,7 @@ class RecordStackTrace {
 };
 
 void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   assert(is_created(), "invariant");
   bool virtual_thread = false;
   const traceid thread_id = get_thread_id(thread, &virtual_thread);
@@ -215,9 +236,9 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
 }
 
 void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool virtual_thread, const JfrBlobHandle& bh, JavaThread* thread) {
-  assert(obj != NULL, "invariant");
+  assert(obj != nullptr, "invariant");
   assert(thread_id != 0, "invariant");
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
 
   if (Atomic::load(&_dead_samples)) {
     // There's a small race where a GC scan might reset this to true, potentially
@@ -236,12 +257,26 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
       // quick reject, will not fit
       return;
     }
-    sample = _list->reuse(_priority_queue->pop());
+    ObjectSample* popped = _priority_queue->pop();
+    size_t popped_span = popped->span();
+    ObjectSample* previous = popped->prev();
+    sample = _list->reuse(popped);
+    assert(sample != nullptr, "invariant");
+    if (previous != nullptr) {
+      push_span(previous, popped_span);
+      sample->set_span(span);
+    } else {
+      // The removed sample was the youngest sample in the list, which means the new sample is now the youngest
+      // sample. It should cover the spans of both.
+      sample->set_span(span + popped_span);
+    }
   } else {
     sample = _list->get();
+    assert(sample != nullptr, "invariant");
+    sample->set_span(span);
   }
 
-  assert(sample != NULL, "invariant");
+  signal_unresolved_entry();
   sample->set_thread_id(thread_id);
   if (virtual_thread) {
     sample->set_thread_is_virtual();
@@ -249,13 +284,12 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
   sample->set_thread(bh);
 
   const JfrThreadLocal* const tl = thread->jfr_thread_local();
-  const unsigned int stacktrace_hash = tl->cached_stack_trace_hash();
+  const traceid stacktrace_hash = tl->cached_stack_trace_hash();
   if (stacktrace_hash != 0) {
     sample->set_stack_trace_id(tl->cached_stack_trace_id());
     sample->set_stack_trace_hash(stacktrace_hash);
   }
 
-  sample->set_span(allocated);
   sample->set_object(cast_to_oop(obj));
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
@@ -265,7 +299,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
 
 void ObjectSampler::scavenge() {
   ObjectSample* current = _list->last();
-  while (current != NULL) {
+  while (current != nullptr) {
     ObjectSample* next = current->next();
     if (current->is_dead()) {
       remove_dead(current);
@@ -275,19 +309,23 @@ void ObjectSampler::scavenge() {
 }
 
 void ObjectSampler::remove_dead(ObjectSample* sample) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   assert(sample->is_dead(), "invariant");
   sample->release();
 
   ObjectSample* const previous = sample->prev();
   // push span onto previous
-  if (previous != NULL) {
-    _priority_queue->remove(previous);
-    previous->add_span(sample->span());
-    _priority_queue->push(previous);
+  if (previous != nullptr) {
+    push_span(previous, sample->span());
   }
   _priority_queue->remove(sample);
   _list->release(sample);
+}
+
+void ObjectSampler::push_span(ObjectSample* sample, size_t span) {
+    _priority_queue->remove(sample);
+    sample->add_span(span);
+    _priority_queue->push(sample);
 }
 
 ObjectSample* ObjectSampler::last() const {
@@ -304,6 +342,7 @@ const ObjectSample* ObjectSampler::last_resolved() const {
 
 void ObjectSampler::set_last_resolved(const ObjectSample* sample) {
   _list->set_last_resolved(sample);
+  signal_resolved();
 }
 
 int ObjectSampler::item_count() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,37 +25,38 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemoryAddress;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.foreign.UnmapperProxy;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
+import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.ForceInline;
+import sun.nio.ch.DirectBuffer;
+
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
+import java.lang.reflect.Array;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.CharBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.util.*;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Spliterator;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.foreign.UnmapperProxy;
-import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.Preconditions;
-import jdk.internal.vm.annotation.ForceInline;
-
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -66,32 +67,30 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegment, SegmentAllocator, Scoped, BiFunction<String, List<Number>, RuntimeException> {
+public abstract sealed class AbstractMemorySegmentImpl
+        implements MemorySegment, SegmentAllocator, BiFunction<String, List<Number>, RuntimeException>
+        permits HeapMemorySegmentImpl, NativeMemorySegmentImpl {
 
-    private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
-
-    static final long NONCE = new Random().nextLong();
-
-    static final JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
+    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     final long length;
     final boolean readOnly;
-    final MemorySession session;
+    final MemorySessionImpl scope;
 
     @ForceInline
-    AbstractMemorySegmentImpl(long length, boolean readOnly, MemorySession session) {
+    AbstractMemorySegmentImpl(long length, boolean readOnly, MemorySessionImpl scope) {
         this.length = length;
         this.readOnly = readOnly;
-        this.session = session;
+        this.scope = scope;
     }
 
-    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session);
+    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope);
 
     abstract ByteBuffer makeByteBuffer();
 
     @Override
     public AbstractMemorySegmentImpl asReadOnly() {
-        return dup(0, length, true, session);
+        return dup(0, length, true, scope);
     }
 
     @Override
@@ -111,8 +110,75 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         return asSliceNoCheck(offset, length - offset);
     }
 
+    @Override
+    public MemorySegment asSlice(long offset, long newSize, long byteAlignment) {
+        checkBounds(offset, newSize);
+        Utils.checkAlign(byteAlignment);
+
+        if (!isAlignedForElement(offset, byteAlignment)) {
+            throw new IllegalArgumentException("Target offset incompatible with alignment constraints");
+        }
+        return asSliceNoCheck(offset, newSize);
+    }
+
+    @Override
+    public MemorySegment asSlice(long offset, MemoryLayout layout) {
+        Objects.requireNonNull(layout);
+        return asSlice(offset, layout.byteSize(), layout.byteAlignment());
+    }
+
+    @Override
+    @CallerSensitive
+    @ForceInline
+    public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
+        Objects.requireNonNull(arena);
+        return reinterpretInternal(Reflection.getCallerClass(), newSize,
+                MemorySessionImpl.toMemorySession(arena), cleanup);
+    }
+
+    @Override
+    @CallerSensitive
+    @ForceInline
+    public final MemorySegment reinterpret(long newSize) {
+        return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
+    }
+
+    @Override
+    @CallerSensitive
+    @ForceInline
+    public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
+        Objects.requireNonNull(arena);
+        return reinterpretInternal(Reflection.getCallerClass(), byteSize(),
+                MemorySessionImpl.toMemorySession(arena), cleanup);
+    }
+
+    private NativeMemorySegmentImpl reinterpretInternal(Class<?> callerClass, long newSize, MemorySessionImpl scope, Consumer<MemorySegment> cleanup) {
+        Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret", false);
+        Utils.checkNonNegativeArgument(newSize, "newSize");
+        if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
+        Runnable action = cleanupAction(address(), newSize, cleanup);
+        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, scope, readOnly, action);
+    }
+
+    // Using a static helper method ensures there is no unintended lambda capturing of `this`
+    private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
+
+        record CleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) implements Runnable {
+            @Override
+            public void run() {
+                cleanup().accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize()));
+            }
+        }
+
+        return cleanup != null
+                // Use a record (which is always static) instead of a lambda to avoid
+                // capturing and to enable early use in the init sequence.
+                ? new CleanupAction(address, newSize, cleanup)
+                : null;
+    }
+
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
-        return dup(offset, newSize, readOnly, session);
+        return dup(offset, newSize, readOnly, scope);
     }
 
     @Override
@@ -121,11 +187,11 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         if (elementLayout.byteSize() == 0) {
             throw new IllegalArgumentException("Element layout size cannot be zero");
         }
-        Utils.checkElementAlignment(elementLayout, "Element layout alignment greater than its size");
+        Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
         if (!isAlignedForElement(0, elementLayout)) {
             throw new IllegalArgumentException("Incompatible alignment constraints");
         }
-        if (!Utils.isAligned(byteSize(), elementLayout.byteSize())) {
+        if ((byteSize() % elementLayout.byteSize()) != 0) {
             throw new IllegalArgumentException("Segment size is not a multiple of layout size");
         }
         return new SegmentSplitter(elementLayout.byteSize(), byteSize() / elementLayout.byteSize(),
@@ -137,91 +203,16 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         return StreamSupport.stream(spliterator(elementLayout), false);
     }
 
+    @ForceInline
     @Override
-    public final MemorySegment fill(byte value){
-        checkAccess(0, length, false);
-        SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
-        return this;
+    public final MemorySegment fill(byte value) {
+        return SegmentBulkOperations.fill(this, value);
     }
 
     @Override
-    public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        Utils.checkAllocationSizeAndAlign(bytesSize, bytesAlignment);
-        return asSlice(0, bytesSize);
-    }
-
-    @Override
-    public long mismatch(MemorySegment other) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        final long thisSize = this.byteSize();
-        final long thatSize = that.byteSize();
-        final long length = Math.min(thisSize, thatSize);
-        this.checkAccess(0, length, true);
-        that.checkAccess(0, length, true);
-        if (this == other) {
-            checkValidState();
-            return -1;
-        }
-
-        long i = 0;
-        if (length > 7) {
-            if (get(JAVA_BYTE, 0) != that.get(JAVA_BYTE, 0)) {
-                return 0;
-            }
-            i = vectorizedMismatchLargeForBytes(sessionImpl(), that.sessionImpl(),
-                    this.unsafeGetBase(), this.unsafeGetOffset(),
-                    that.unsafeGetBase(), that.unsafeGetOffset(),
-                    length);
-            if (i >= 0) {
-                return i;
-            }
-            long remaining = ~i;
-            assert remaining < 8 : "remaining greater than 7: " + remaining;
-            i = length - remaining;
-        }
-        for (; i < length; i++) {
-            if (get(JAVA_BYTE, i) != that.get(JAVA_BYTE, i)) {
-                return i;
-            }
-        }
-        return thisSize != thatSize ? length : -1;
-    }
-
-    /**
-     * Mismatch over long lengths.
-     */
-    private static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
-                                                        Object a, long aOffset,
-                                                        Object b, long bOffset,
-                                                        long length) {
-        long off = 0;
-        long remaining = length;
-        int i, size;
-        boolean lastSubRange = false;
-        while (remaining > 7 && !lastSubRange) {
-            if (remaining > Integer.MAX_VALUE) {
-                size = Integer.MAX_VALUE;
-            } else {
-                size = (int) remaining;
-                lastSubRange = true;
-            }
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
-                    a, aOffset + off,
-                    b, bOffset + off,
-                    size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0)
-                return off + i;
-
-            i = size - ~i;
-            off += i;
-            remaining -= i;
-        }
-        return ~remaining;
-    }
-
-    @Override
-    public MemoryAddress address() {
-        throw new UnsupportedOperationException("Cannot obtain address of on-heap segment");
+    public MemorySegment allocate(long byteSize, long byteAlignment) {
+        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        return asSlice(0, byteSize, byteAlignment);
     }
 
     @Override
@@ -252,48 +243,61 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or heap
-            final long thisStart = this.unsafeGetOffset();
-            final long thatStart = that.unsafeGetOffset();
-            final long thisEnd = thisStart + this.byteSize();
-            final long thatEnd = thatStart + that.byteSize();
-
-            if (thisStart < thatEnd && thisEnd > thatStart) {  //overlap occurs
-                long offsetToThat = this.segmentOffset(that);
-                long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-                return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
-            }
+        final AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
+        if (overlaps(that)) {
+            final long offsetToThat = that.address() - this.address();
+            final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
+            return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
         }
         return Optional.empty();
     }
 
-    @Override
-    public final long segmentOffset(MemorySegment other) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl) Objects.requireNonNull(other);
-        if (unsafeGetBase() == that.unsafeGetBase()) {
-            return that.unsafeGetOffset() - this.unsafeGetOffset();
+    @ForceInline
+    boolean overlaps(AbstractMemorySegmentImpl that) {
+        if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or the same heap segment
+            final long thisStart = this.unsafeGetOffset();
+            final long thatStart = that.unsafeGetOffset();
+            final long thisEnd = thisStart + this.byteSize();
+            final long thatEnd = thatStart + that.byteSize();
+            return (thisStart < thatEnd && thisEnd > thatStart); //overlap occurs?
         }
-        throw new UnsupportedOperationException("Cannot compute offset from native to heap (or vice versa).");
+        return false;
+    }
+
+    @Override
+    public MemorySegment copyFrom(MemorySegment src) {
+        MemorySegment.copy(src, 0, this, 0, src.byteSize());
+        return this;
+    }
+
+    @Override
+    public long mismatch(MemorySegment other) {
+        Objects.requireNonNull(other);
+        return SegmentBulkOperations.mismatch(this, 0, byteSize(),
+                (AbstractMemorySegmentImpl) other, 0, other.byteSize());
     }
 
     @Override
     public void load() {
-        throw new UnsupportedOperationException("Not a mapped segment");
+        throw notAMappedSegment();
     }
 
     @Override
     public void unload() {
-        throw new UnsupportedOperationException("Not a mapped segment");
+        throw notAMappedSegment();
     }
 
     @Override
     public boolean isLoaded() {
-        throw new UnsupportedOperationException("Not a mapped segment");
+        throw notAMappedSegment();
     }
 
     @Override
     public void force() {
+        throw notAMappedSegment();
+    }
+
+    private static UnsupportedOperationException notAMappedSegment() {
         throw new UnsupportedOperationException("Not a mapped segment");
     }
 
@@ -341,15 +345,26 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     @ForceInline
-    public void checkAccess(long offset, long length, boolean readOnly) {
+    public void checkReadOnly(boolean readOnly) {
         if (!readOnly && this.readOnly) {
-            throw new UnsupportedOperationException("Attempt to write a read-only segment");
+            throw new IllegalArgumentException("Attempt to write a read-only segment");
         }
+    }
+
+    @ForceInline
+    public void checkAccess(long offset, long length, boolean readOnly) {
+        checkReadOnly(readOnly);
         checkBounds(offset, length);
     }
 
-    public void checkValidState() {
-        sessionImpl().checkValidState();
+    @ForceInline
+    public final void checkEnclosingLayout(long offset, MemoryLayout enclosing, boolean readOnly) {
+        checkAccess(offset, enclosing.byteSize(), readOnly);
+        if (!isAlignedForElement(offset, enclosing)) {
+            throw new IllegalArgumentException(String.format(
+                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+                    , offset, enclosing.byteAlignment(), enclosing, this));
+        }
     }
 
     public abstract long unsafeGetOffset();
@@ -362,15 +377,21 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     @ForceInline
     public final boolean isAlignedForElement(long offset, MemoryLayout layout) {
-        return (((unsafeGetOffset() + offset) | maxAlignMask()) & (layout.byteAlignment() - 1)) == 0;
+        return isAlignedForElement(offset, layout.byteAlignment());
+    }
+
+    @ForceInline
+    public final boolean isAlignedForElement(long offset, long byteAlignment) {
+        return (((unsafeGetOffset() + offset) | maxAlignMask()) & (byteAlignment - 1)) == 0;
     }
 
     private int checkArraySize(String typeName, int elemSize) {
+        // elemSize is guaranteed to be a power of two, so we can use an alignment check
         if (!Utils.isAligned(length, elemSize)) {
             throw new IllegalStateException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
         long arraySize = length / elemSize;
-        if (arraySize > (Integer.MAX_VALUE - 8)) { //conservative check
+        if (arraySize > ArraysSupport.SOFT_MAX_ARRAY_LENGTH) { //conservative check
             throw new IllegalStateException(String.format("Segment is too large to wrap as %s. Size: %d", typeName, length));
         }
         return (int)arraySize;
@@ -394,18 +415,23 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     @Override
-    public MemorySession session() {
-        return session;
+    public MemorySessionImpl scope() {
+        return scope;
+    }
+
+    @Override
+    public boolean isAccessibleBy(Thread thread) {
+        return sessionImpl().isAccessibleBy(thread);
+    }
+
+    @ForceInline
+    public final MemorySessionImpl sessionImpl() {
+        return scope;
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
         return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; new offset = %d; new length = %d",
                         this, offset, length));
-    }
-
-    protected int id() {
-        //compute a stable and random id for this memory segment
-        return Math.abs(Objects.hash(unsafeGetBase(), unsafeGetOffset(), NONCE));
     }
 
     static class SegmentSplitter implements Spliterator<MemorySegment> {
@@ -486,92 +512,443 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     @Override
     public String toString() {
-        return "MemorySegment{ id=0x" + Long.toHexString(id()) + " limit: " + length + " }";
+        final String kind;
+        if (this instanceof HeapMemorySegmentImpl) {
+            kind = "heap";
+        } else if (this instanceof MappedMemorySegmentImpl) {
+            kind = "mapped";
+        } else {
+            kind = "native";
+        }
+        return "MemorySegment{ kind: " +
+                kind +
+                heapBase().map(hb -> ", heapBase: " + hb).orElse("") +
+                ", address: " + Utils.toHexString(address()) +
+                ", byteSize: " + length +
+                " }";
     }
 
     @Override
     public boolean equals(Object o) {
         return o instanceof AbstractMemorySegmentImpl that &&
-                isNative() == that.isNative() &&
-                unsafeGetOffset() == that.unsafeGetOffset() &&
                 unsafeGetBase() == that.unsafeGetBase() &&
-                length == that.length &&
-                session.equals(that.session);
+                unsafeGetOffset() == that.unsafeGetOffset();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
-                isNative(),
                 unsafeGetOffset(),
-                unsafeGetBase(),
-                length,
-                session
-        );
+                unsafeGetBase());
     }
 
-    public static AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
-        Objects.requireNonNull(bb);
-        long bbAddress = nioAccess.getBufferAddress(bb);
-        Object base = nioAccess.getBufferBase(bb);
-        UnmapperProxy unmapper = nioAccess.unmapper(bb);
+    @ForceInline
+    public static AbstractMemorySegmentImpl ofBuffer(Buffer b) {
+        // Implicit null check via NIO_ACCESS.scaleShifts(b)
+        final int scaleShifts = NIO_ACCESS.scaleShifts(b);
+        return ofBuffer(b, offset(b, scaleShifts), length(b, scaleShifts));
+    }
 
-        int pos = bb.position();
-        int limit = bb.limit();
-        int size = limit - pos;
+    @ForceInline
+    private static AbstractMemorySegmentImpl ofBuffer(Buffer b, long offset, long length) {
+        final Object base = NIO_ACCESS.getBufferBase(b);
+        return (base == null)
+                ? nativeSegment(b, offset, length)
+                : NIO_ACCESS.heapSegment(b, base, offset, length, b.isReadOnly(), bufferScope(b));
+    }
 
-        AbstractMemorySegmentImpl bufferSegment = (AbstractMemorySegmentImpl)nioAccess.bufferSegment(bb);
-        final MemorySession bufferSession;
-        if (bufferSegment != null) {
-            bufferSession = bufferSegment.session;
-        } else {
-            bufferSession = MemorySessionImpl.heapSession(bb);
+    @ForceInline
+    private static long offset(Buffer b, int scaleShifts) {
+        final long bbAddress = NIO_ACCESS.getBufferAddress(b);
+        return bbAddress + (((long) b.position()) << scaleShifts);
+    }
+
+    @ForceInline
+    private static long length(Buffer b, int scaleShifts) {
+        return ((long) b.limit() - b.position()) << scaleShifts;
+    }
+
+    @ForceInline
+    private static NativeMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
+        if (!b.isDirect()) {
+            throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
         }
-        boolean readOnly = bb.isReadOnly();
-        int scaleFactor = getScaleFactor(bb);
-        if (base != null) {
-            if (base instanceof byte[]) {
-                return new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
-            } else if (base instanceof short[]) {
-                return new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
-            } else if (base instanceof char[]) {
-                return new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
-            } else if (base instanceof int[]) {
-                return new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
-            } else if (base instanceof float[]) {
-                return new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
-            } else if (base instanceof long[]) {
-                return new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
-            } else if (base instanceof double[]) {
-                return new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
-            } else {
-                throw new AssertionError("Cannot get here");
-            }
-        } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferSession);
+        final UnmapperProxy unmapper = NIO_ACCESS.unmapper(b);
+        return unmapper == null
+                ? new NativeMemorySegmentImpl(offset, length, b.isReadOnly(), bufferScope(b))
+                : new MappedMemorySegmentImpl(offset, unmapper, length, b.isReadOnly(), bufferScope(b));
+    }
+
+    @ForceInline
+    private static MemorySessionImpl bufferScope(Buffer b) {
+        final AbstractMemorySegmentImpl bufferSegment =
+                (AbstractMemorySegmentImpl) NIO_ACCESS.bufferSegment(b);
+        return bufferSegment == null
+                ? MemorySessionImpl.createHeap(bufferRef(b))
+                : bufferSegment.scope;
+    }
+
+    @ForceInline
+    private static Object bufferRef(Buffer buffer) {
+        if (buffer instanceof DirectBuffer directBuffer) {
+            // direct buffer, return either the buffer attachment (for slices and views), or the buffer itself
+            return directBuffer.attachment() != null ?
+                    directBuffer.attachment() : directBuffer;
         } else {
-            // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferSession);
+            // heap buffer, return the underlying array
+            return NIO_ACCESS.getBufferBase(buffer);
         }
     }
 
-    private static int getScaleFactor(Buffer buffer) {
-        if (buffer instanceof ByteBuffer) {
-            return 0;
-        } else if (buffer instanceof CharBuffer) {
-            return 1;
-        } else if (buffer instanceof ShortBuffer) {
-            return 1;
-        } else if (buffer instanceof IntBuffer) {
-            return 2;
-        } else if (buffer instanceof FloatBuffer) {
-            return 2;
-        } else if (buffer instanceof LongBuffer) {
-            return 3;
-        } else if (buffer instanceof DoubleBuffer) {
-            return 3;
-        } else {
-            throw new AssertionError("Cannot get here");
+    @ForceInline
+    public static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
+                            MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
+                            long elementCount) {
+
+        Utils.checkNonNegativeIndex(elementCount, "elementCount");
+        AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
+        AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)dstSegment;
+        if (srcElementLayout.byteSize() != dstElementLayout.byteSize()) {
+            throw new IllegalArgumentException("Source and destination layouts must have same size");
         }
+        Utils.checkElementAlignment(srcElementLayout, "Source layout alignment greater than its size");
+        Utils.checkElementAlignment(dstElementLayout, "Destination layout alignment greater than its size");
+        if (!srcImpl.isAlignedForElement(srcOffset, srcElementLayout)) {
+            throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
+        }
+        if (!dstImpl.isAlignedForElement(dstOffset, dstElementLayout)) {
+            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
+        }
+        long size = elementCount * srcElementLayout.byteSize();
+        srcImpl.checkAccess(srcOffset, size, true);
+        dstImpl.checkAccess(dstOffset, size, false);
+        if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
+        } else {
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, srcElementLayout.byteSize());
+        }
+    }
+
+    @ForceInline
+    public static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
+                            Object dstArray, int dstIndex,
+                            int elementCount) {
+        Utils.checkNonNegativeIndex(elementCount, "elementCount");
+        var dstInfo = Utils.BaseAndScale.of(dstArray);
+        if (dstArray.getClass().componentType() != srcLayout.carrier()) {
+            throw new IllegalArgumentException("Incompatible value layout: " + srcLayout);
+        }
+        AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
+        Utils.checkElementAlignment(srcLayout, "Source layout alignment greater than its size");
+        if (!srcImpl.isAlignedForElement(srcOffset, srcLayout)) {
+            throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
+        }
+        srcImpl.checkAccess(srcOffset, elementCount * dstInfo.scale(), true);
+        Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
+        if (dstInfo.scale() == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), null,
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()), elementCount * dstInfo.scale());
+        } else {
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.sessionImpl(), null,
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstArray, dstInfo.base() + (dstIndex * dstInfo.scale()), elementCount * dstInfo.scale(), dstInfo.scale());
+        }
+    }
+
+    @ForceInline
+    public static void copy(Object srcArray, int srcIndex,
+                            MemorySegment dstSegment, ValueLayout dstLayout, long dstOffset,
+                            int elementCount) {
+        var srcInfo = Utils.BaseAndScale.of(srcArray);
+        if (srcArray.getClass().componentType() != dstLayout.carrier()) {
+            throw new IllegalArgumentException("Incompatible value layout: " + dstLayout);
+        }
+        Objects.checkFromIndexSize(srcIndex, elementCount, Array.getLength(srcArray));
+        AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dstSegment;
+        Utils.checkElementAlignment(dstLayout, "Destination layout alignment greater than its size");
+        if (!destImpl.isAlignedForElement(dstOffset, dstLayout)) {
+            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
+        }
+        destImpl.checkAccess(dstOffset, elementCount * srcInfo.scale(), false);
+        if (srcInfo.scale() == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(null, destImpl.sessionImpl(),
+                    srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
+                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale());
+        } else {
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(null, destImpl.sessionImpl(),
+                    srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
+                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale(), srcInfo.scale());
+        }
+    }
+
+    // accessors
+
+    @ForceInline
+    @Override
+    public byte get(ValueLayout.OfByte layout, long offset) {
+        return (byte) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfByte layout, long offset, byte value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public boolean get(ValueLayout.OfBoolean layout, long offset) {
+        return (boolean) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public char get(ValueLayout.OfChar layout, long offset) {
+        return (char) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfChar layout, long offset, char value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public short get(ValueLayout.OfShort layout, long offset) {
+        return (short) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfShort layout, long offset, short value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public int get(ValueLayout.OfInt layout, long offset) {
+        return (int) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfInt layout, long offset, int value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public float get(ValueLayout.OfFloat layout, long offset) {
+        return (float) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfFloat layout, long offset, float value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public long get(ValueLayout.OfLong layout, long offset) {
+        return (long) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfLong layout, long offset, long value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public double get(ValueLayout.OfDouble layout, long offset) {
+        return (double) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(ValueLayout.OfDouble layout, long offset, double value) {
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public MemorySegment get(AddressLayout layout, long offset) {
+        return (MemorySegment) layout.varHandle().get((MemorySegment)this, offset);
+    }
+
+    @ForceInline
+    @Override
+    public void set(AddressLayout layout, long offset, MemorySegment value) {
+        Objects.requireNonNull(value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
+    }
+
+    @ForceInline
+    @Override
+    public byte getAtIndex(ValueLayout.OfByte layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (byte) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public boolean getAtIndex(ValueLayout.OfBoolean layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (boolean) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public char getAtIndex(ValueLayout.OfChar layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (char) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public short getAtIndex(ValueLayout.OfShort layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (short) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfByte layout, long index, byte value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public int getAtIndex(ValueLayout.OfInt layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (int) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public float getAtIndex(ValueLayout.OfFloat layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (float) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public long getAtIndex(ValueLayout.OfLong layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (long) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public double getAtIndex(ValueLayout.OfDouble layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (double) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public MemorySegment getAtIndex(AddressLayout layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (MemorySegment) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
+    }
+
+    @ForceInline
+    @Override
+    public void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
+        Objects.requireNonNull(value);
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
+    }
+
+    @ForceInline
+    @Override
+    public String getString(long offset) {
+        return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
+    }
+
+    @ForceInline
+    @Override
+    public String getString(long offset, Charset charset) {
+        Objects.requireNonNull(charset);
+        return StringSupport.read(this, offset, charset);
+    }
+
+    @ForceInline
+    @Override
+    public void setString(long offset, String str) {
+        Objects.requireNonNull(str);
+        setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
+    }
+
+    @ForceInline
+    @Override
+    public void setString(long offset, String str, Charset charset) {
+        Objects.requireNonNull(charset);
+        Objects.requireNonNull(str);
+        StringSupport.write(this, offset, charset, str);
     }
 }

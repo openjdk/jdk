@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifndef __APPLE__
 #include "os_posix.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 // POSIX unnamed semaphores are not supported on OS X.
 #include "semaphore_posix.hpp"
 #include <semaphore.h>
-
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 PosixSemaphore::PosixSemaphore(uint value) {
   int ret = sem_init(&_semaphore, 0, value);

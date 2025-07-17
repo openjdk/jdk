@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,13 @@ class OSContainer: AllStatic {
 
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();
+  static jlong memory_and_swap_usage_in_bytes();
   static jlong memory_soft_limit_in_bytes();
+  static jlong memory_throttle_limit_in_bytes();
   static jlong memory_usage_in_bytes();
   static jlong memory_max_usage_in_bytes();
+  static jlong rss_usage_in_bytes();
+  static jlong cache_usage_in_bytes();
 
   static int active_processor_count();
 
@@ -65,6 +69,8 @@ class OSContainer: AllStatic {
   static int cpu_period();
 
   static int cpu_shares();
+
+  static jlong cpu_usage_in_micros();
 
   static jlong pids_max();
   static jlong pids_current();

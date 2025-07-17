@@ -8,6 +8,24 @@ HotSpot code, making it easier to read and maintain.  Failure to
 follow these guidelines may lead to discussion during code reviews, if
 not outright rejection of a change.
 
+### Changing this Document
+
+Proposed changes should be discussed on the
+[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
+list.  Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.
+
+Substantive changes are approved by
+[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
+the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
+The Group Lead determines whether consensus has been reached.
+
+Editorial changes (changes that only affect the description of HotSpot
+style, not its substance) do not require the full consensus gathering
+process.  The normal HotSpot pull request process may be used for
+editorial changes, with the additional requirement that the requisite
+reviewers are also HotSpot Group Members.
+
 ### Why Care About Style?
 
 Some programmers seem to have lexers and even C preprocessors
@@ -38,7 +56,7 @@ reformatting the whole thing.  Also consider separating changes that
 make extensive stylistic updates from those which make functional
 changes.
 
-### Counterexamples and Updates
+### Counterexamples
 
 Many of the guidelines mentioned here have (sometimes widespread)
 counterexamples in the HotSpot code base. Finding a counterexample is
@@ -53,22 +71,6 @@ bring it up for discussion and possible change. The architectural
 rule, of course, is "When in Rome do as the Romans". Sometimes in the
 suburbs of Rome the rules are a little different; these differences
 can be pointed out here.
-
-Proposed changes should be discussed on the
-[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
-list.  Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.
-
-Substantive changes are approved by
-[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
-the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
-The Group Lead determines whether consensus has been reached.
-
-Editorial changes (changes that only affect the description of HotSpot
-style, not its substance) do not require the full consensus gathering
-process.  The normal HotSpot pull request process may be used for
-editorial changes, with the additional requirement that the requisite
-reviewers are also HotSpot Group Members.
 
 ## Structure and Formatting
 
@@ -135,8 +137,20 @@ change should be done with a "setter" accessor matched to the simple
 
 ### Source Files
 
-* All source files must have a globally unique basename.  The build
+* All source files must have a globally unique basename. The build
 system depends on this uniqueness.
+
+* Keep the include lines within a section alphabetically sorted by their
+lowercase value. If an include must be out of order for correctness,
+suffix with it a comment such as `// do not reorder`. Source code
+processing tools can also use this hint.
+
+* Put conditional inclusions (`#if ...`) at the end of the section of HotSpot
+include lines. This also applies to macro-expanded includes of platform
+dependent files.
+
+* Put system includes in a section after the HotSpot include lines with a blank
+line separating the two sections.
 
 * Do not put non-trivial function implementations in .hpp files. If
 the implementation depends on other .hpp files, put it in a .cpp or
@@ -146,18 +160,22 @@ a .inline.hpp file.
 files.
 
 * All .inline.hpp files should include their corresponding .hpp file as
-the first include line. Declarations needed by other files should be put
-in the .hpp file, and not in the .inline.hpp file. This rule exists to
-resolve problems with circular dependencies between .inline.hpp files.
+the first include line with a blank line separating it from the rest of the
+include lines. Declarations needed by other files should be put in the .hpp
+file, and not in the .inline.hpp file. This rule exists to resolve problems
+with circular dependencies between .inline.hpp files.
 
-* All .cpp files include precompiled.hpp as the first include line.
+* Do not include a .hpp file if the corresponding .inline.hpp file is included.
 
-* precompiled.hpp is just a build time optimization, so don't rely on
-it to resolve include problems.
+* Use include guards for .hpp and .inline.hpp files. The name of the defined
+guard should be derived from the full search path of the file relative to the
+hotspot source directory. The guard should be all upper case with all paths
+separators and periods replaced by underscores.
 
-* Keep the include lines alphabetically sorted.
-
-* Put conditional inclusions (`#if ...`) at the end of the include list.
+* Some build configurations use precompiled headers to speed up the
+build times. The precompiled headers are included in the precompiled.hpp
+file. Note that precompiled.hpp is just a build time optimization, so
+don't rely on it to resolve include problems.
 
 ### JTReg Tests
 
@@ -572,8 +590,12 @@ There are a few exceptions to this rule.
 
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>`.
-* `#include <cstddef>` to use `std::nullptr_t`.
+* `#include <type_traits>` with some restrictions, listed below.
+* `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
+
+Certain restrictions apply to the declarations provided by `<type_traits>`.
+
+* The `alignof` operator should be used rather than `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -651,6 +673,51 @@ constant members.  Compilers having such bugs are no longer supported.
 Except where an enum is semantically appropriate, new code should use
 integral constants.
 
+### alignas
+
+_Alignment-specifiers_ (`alignas`
+[n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
+are permitted, with restrictions.
+
+_Alignment-specifiers_ are permitted when the requested alignment is a
+_fundamental alignment_ (not greater than `alignof(std::max_align_t)`
+[C++14 3.11/2](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+
+_Alignment-specifiers_ with an _extended alignment_ (greater than
+`alignof(std::max_align_t)`
+[C++14 3.11/3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf))
+may only be used to align variables with static or automatic storage duration
+([C++14 3.7.1, 3.7.3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+As a consequence, _over-aligned types_ are forbidden; this may change if
+HotSpot updates to using C++17 or later
+([p0035r4](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html)).
+
+Large _extended alignments_ should be avoided, particularly for stack
+allocated objects. What is a large value may depend on the platform and
+configuration. There may also be hard limits for some platforms.
+
+An _alignment-specifier_ must always be applied to a definition
+([C++14 10.6.2/6](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+(C++ allows an _alignment-specifier_ to optionally also be applied to a
+declaration, so long as the definition has equivalent alignment. There isn't
+any known benefit from duplicating the alignment in a non-definition
+declaration, so such duplication should be avoided in HotSpot code.)
+
+Enumerations are forbidden from having _alignment-specifiers_. Aligned
+enumerations were originally permitted but insufficiently specified, and were
+later (C++20) removed
+([CWG 2354](https://cplusplus.github.io/CWG/issues/2354.html)).
+Permitting such usage in HotSpot now would just cause problems in the future.
+
+_Alignment-specifiers_ are forbidden in `typedef` and _alias-declarations_.
+This may work or may have worked in some versions of some compilers, but was
+later (C++14) explicitly disallowed
+([CWG 1437](https://cplusplus.github.io/CWG/issues/1437.html)).
+
+The HotSpot macro `ATTRIBUTE_ALIGNED` provides similar capabilities for
+platforms that define it. This macro predates the use by HotSpot of C++
+versions providing `alignas`. New code should use `alignas`.
+
 ### thread_local
 
 Avoid use of `thread_local`
@@ -676,12 +743,14 @@ for further discussion.
 
 ### nullptr
 
-Prefer `nullptr`
+Use `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-to `NULL`.  Don't use (constexpr or literal) 0 for pointers.
+rather than `NULL`.  See the paper for reasons to avoid `NULL`.
 
-For historical reasons there are widespread uses of both `NULL` and of
-integer 0 as a pointer value.
+Don't use (constant expression or literal) 0 for pointers.  Note that C++14
+removed non-literal 0 constants from _null pointer constants_, though some
+compilers continue to treat them as such.  For historical reasons there may be
+lingering uses of 0 as a pointer.
 
 ### &lt;atomic&gt;
 
@@ -700,6 +769,32 @@ In addition, HotSpot `Atomic` has a concept of "conservative" memory
 ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
+
+### Initializing variables with static storage duration
+
+Variables with static storage duration and _dynamic initialization_
+[C++14 3.6.2](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+should be avoided, unless an implementation is permitted to perform the
+initialization as a static initialization. The order in which dynamic
+initializations occur is incompletely specified.  Initialization order
+problems can be difficult to deal with and lead to surprises.
+
+Variables with static storage duration and non-trivial destructors should be
+avoided. HotSpot doesn't generally try to cleanup on exit, and running
+destructors at exit can lead to problems.
+
+Some of the approaches used in HotSpot to avoid dynamic initialization
+include:
+
+* Use the `Deferred<T>` class template. Add a call to its initialization
+function at an appropriate place during VM initialization. The underlying
+object is never destroyed.
+
+* For objects of class type, use a variable whose value is a pointer to the
+class, initialized to `nullptr`. Provide an initialization function that sets
+the variable to a dynamically allocated object. Add a call to that function at
+an appropriate place during VM initialization. Such objects are usually never
+destroyed.
 
 ### Uniform Initialization
 
@@ -1009,7 +1104,87 @@ and other supported compilers may not have anything similar.
 [p0136r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html
   "p0136r1"
 
+### Attributes
+
+The use of some attributes
+([n2761](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf))
+(listed below) is permitted.  (Note that some of the attributes defined in
+that paper didn't make it into the final specification.)
+
+Attributes are syntactically permitted in a broad set of locations, but
+specific attributes are only permitted in a subset of those locations.  In
+some cases an attribute that appertains to a given element may be placed in
+any of several locations with the same meaning.  In those cases HotSpot has a
+preferred location.
+
+* An attribute that appertains to a function is placed at the beginning of the
+function's declaration, rather than between the function name and the parameter
+list.
+
+Only the following attributes are permitted:
+
+* `[[noreturn]]`
+
+The following attributes are expressly forbidden:
+
+* `[[carries_dependency]]` - Related to `memory_order_consume`.
+* `[[deprecated]]` - Not relevant in HotSpot code.
+
+### noexcept
+
+Use of `noexcept` exception specifications
+([n3050](http://wg21.link/n3050))
+are permitted with restrictions described below.
+
+* Only the argument-less form of `noexcept` exception specifications are
+permitted.
+* Allocation functions that may return `nullptr` to indicate allocation
+failure must be declared `noexcept`.
+* All other uses of `noexcept` exception specifications are forbidden.
+* `noexcept` expressions are forbidden.
+* Dynamic exception specifications are forbidden.
+
+HotSpot is built with exceptions disabled, e.g. compile with `-fno-exceptions`
+(gcc, clang) or no `/EH` option (MSVC++). So why do we need to consider
+`noexcept` at all? It's because `noexcept` exception specifications serve two
+distinct purposes.
+
+The first is to allow the compiler to avoid generating code or data in support
+of exceptions being thrown by a function. But this is unnecessary, because
+exceptions are disabled.
+
+The second is to allow the compiler and library code to choose different
+algorithms, depending on whether some function may throw exceptions. This is
+only relevant to a certain set of functions.
+
+* Some allocation functions (`operator new` and `operator new[]`) return
+`nullptr` to indicate allocation failure. If a `new` expression calls such an
+allocation function, it must check for and handle that possibility. Declaring
+such a function `noexcept` informs the compiler that `nullptr` is a possible
+result. If an allocation function is not declared `noexcept` then the compiler
+may elide that checking and handling for a `new` expression calling that
+function.
+
+* Certain Standard Library facilities (notably containers) provide different
+guarantees for some operations (and may choose different algorithms to
+implement those operations), depending on whether certain functions
+(constructors, copy/move operations, swap) are nothrow or not. They detect
+this using type traits that test whether a function is declared `noexcept`.
+This can have a significant performance impact if, for example, copying is
+chosen over a potentially throwing move. But this isn't relevant, since
+HotSpot forbids the use of most Standard Library facilities.
+
+HotSpot code can assume no exceptions will ever be thrown, even from functions
+not declared `noexcept`. So HotSpot code doesn't ever need to check, either
+with conditional exception specifications or with `noexcept` expressions.
+
+Dynamic exception specifications were deprecated in C++11. C++17 removed all
+but `throw()`, with that remaining a deprecated equivalent to `noexcept`.
+
 ### Additional Permitted Features
+
+* `alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))
@@ -1101,17 +1276,6 @@ namespace std;` to avoid needing to qualify Standard Library names.
 ([n2179](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html)) &mdash;
 HotSpot does not permit the use of exceptions, so this feature isn't useful.
 
-* Avoid non-local variables with non-constexpr initialization.
-In particular, avoid variables with types requiring non-trivial
-initialization or destruction.  Initialization order problems can be
-difficult to deal with and lead to surprises, as can destruction
-ordering.  HotSpot doesn't generally try to cleanup on exit, and
-running destructors at exit can also lead to problems.
-
-* `[[deprecated]]` attribute
-([n3760](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3760.html)) &mdash;
-Not relevant in HotSpot code.
-
 * Avoid most operator overloading, preferring named functions.  When
 operator overloading is used, ensure the semantics conform to the
 normal expected behavior of the operation.
@@ -1135,9 +1299,6 @@ features that have not yet been discussed.
 
 * Member initializers and aggregates
 ([n3653](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html))
-
-* `[[noreturn]]` attribute
-([n2761](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2761.pdf))
 
 * Rvalue references and move semantics
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class SunMiscUnsafeAccessTestByte {
 
     static final long STATIC_V_OFFSET;
 
-    static int ARRAY_OFFSET;
+    static long ARRAY_OFFSET;
 
     static int ARRAY_SHIFT;
 

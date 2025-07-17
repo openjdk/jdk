@@ -26,9 +26,9 @@
 #ifndef SHARE_GC_SHARED_GCOVERHEADCHECKER_HPP
 #define SHARE_GC_SHARED_GCOVERHEADCHECKER_HPP
 
-#include "memory/allocation.hpp"
-#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcCause.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 
 class SoftRefPolicy;
@@ -42,9 +42,6 @@ class GCOverheadChecker: public CHeapObj<mtGC> {
   // This is a hint for the heap:  we've detected that GC times
   // are taking longer than GCTimeLimit allows.
   bool _gc_overhead_limit_exceeded;
-  // Use for diagnostics only.  If UseGCOverheadLimit is false,
-  // this variable is still set.
-  bool _print_gc_overhead_limit_would_be_exceeded;
   // Count of consecutive GC that have exceeded the
   // GC time limit criterion
   uint _gc_overhead_limit_count;

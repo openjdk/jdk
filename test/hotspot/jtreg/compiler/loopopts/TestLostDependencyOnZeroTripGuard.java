@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,9 +28,9 @@
  * @bug 8263971
  * @summary C2 crashes with SIGFPE with -XX:+StressGCM and -XX:+StressIGVN
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLostDependencyOnZeroTripGuard -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLostDependencyOnZeroTripGuard::* -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM -XX:StressSeed=886771365 TestLostDependencyOnZeroTripGuard
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLostDependencyOnZeroTripGuard -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestLostDependencyOnZeroTripGuard::* -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM TestLostDependencyOnZeroTripGuard
  *
  */

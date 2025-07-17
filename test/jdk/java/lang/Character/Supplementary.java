@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4533872 4985214 4985217 4993841 5017268 5017280
+ * @bug 4533872 4985214 4985217 4993841 5017268 5017280 8298033
  * @summary Unit tests for supplementary character support (JSR-204)
  * @compile Supplementary.java
  * @run main/timeout=600 Supplementary
@@ -797,12 +797,12 @@ public class Supplementary {
     }
 
     private static void callCodePoint(boolean isAt, char[] a, int index, int limit,
-                                      Class expectedException) {
+                                      Class<? extends Exception> expectedException) {
         try {
             int c = isAt ? Character.codePointAt(a, index, limit)
                          : Character.codePointBefore(a, index, limit);
         } catch (Exception e) {
-            if (expectedException.isInstance(e)) {
+            if (expectedException == e.getClass()) {
                 return;
             }
             throw new RuntimeException("Unspecified exception", e);

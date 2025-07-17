@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/unsigned5.hpp"
 
@@ -44,8 +43,8 @@ print_on(outputStream* st, int count,
          const char* left,   // "U5: ["
          const char* right   // "] (values=%d/length=%d)\n"
          ) {
-  if (left == NULL)   left = "U5: [";
-  if (right == NULL)  right = "] (values=%d/length=%d)\n";
+  if (left == nullptr)   left = "U5: [";
+  if (right == nullptr)  right = "] (values=%d/length=%d)\n";
   int printed = 0;
   st->print("%s", left);
   for (;;) {

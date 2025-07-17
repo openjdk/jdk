@@ -65,8 +65,7 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
      *
      * @param distributionPoints the list of delta CRL distribution points.
      */
-    public FreshestCRLExtension(List<DistributionPoint> distributionPoints)
-        throws IOException {
+    public FreshestCRLExtension(List<DistributionPoint> distributionPoints) {
 
         super(PKIXExtensions.FreshestCRL_Id, false, distributionPoints, NAME);
     }
@@ -88,10 +87,9 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
      * Writes the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         super.encode(out, PKIXExtensions.FreshestCRL_Id, false);
     }
 }

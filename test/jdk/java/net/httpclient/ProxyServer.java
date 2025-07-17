@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.*;
-import java.security.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.util.Arrays.asList;
@@ -49,9 +47,9 @@ public class ProxyServer extends Thread implements Closeable {
     // build it. Let's keep it simple.
     static final boolean IS_WINDOWS;
     static {
-        PrivilegedAction<String> action =
-                () -> System.getProperty("os.name", "unknown");
-        String osName = AccessController.doPrivileged(action);
+        // Parses os.name directly in order to avoid depending on test
+        // libraries in an auxiliary test class
+        String osName = System.getProperty("os.name", "unknown");
         IS_WINDOWS = osName.toLowerCase(Locale.ROOT).startsWith("win");
     }
 
@@ -151,20 +149,6 @@ public class ProxyServer extends Thread implements Closeable {
     volatile boolean done;
 
     public void run() {
-        if (System.getSecurityManager() == null) {
-            execute();
-        } else {
-            // so calling domain does not need to have socket permission
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    execute();
-                    return null;
-                }
-            });
-        }
-    }
-
-    public void execute() {
         int id = 0;
         try {
             while (!done) {
@@ -194,6 +178,9 @@ public class ProxyServer extends Thread implements Closeable {
         Thread out, in;
         volatile InputStream clientIn, serverIn;
         volatile OutputStream clientOut, serverOut;
+
+        boolean proxyInClosed;  // only accessed from synchronized block
+        boolean proxyOutClosed; // only accessed from synchronized block
 
         final static int CR = 13;
         final static int LF = 10;
@@ -331,8 +318,10 @@ public class ProxyServer extends Thread implements Closeable {
                     // check authorization credentials, if required by the server
                     if (credentials != null) {
                         if (!authorized(credentials, headers)) {
+                            boolean shouldClose = shouldCloseAfter407(headers);
+                            var closestr = shouldClose ? "Connection: close\r\n" : "";
                             String resp = "HTTP/1.1 407 Proxy Authentication Required\r\n" +
-                                    "Content-Length: 0\r\n" +
+                                    "Content-Length: 0\r\n" + closestr +
                                     "Proxy-Authenticate: Basic realm=\"proxy realm\"\r\n\r\n";
                             clientSocket.setOption(StandardSocketOptions.TCP_NODELAY, true);
                             clientSocket.setOption(StandardSocketOptions.SO_LINGER, 2);
@@ -344,7 +333,7 @@ public class ProxyServer extends Thread implements Closeable {
                                 System.out.printf("Proxy: unauthorized; 407 sent (%s/%s), linger: %s, nodelay: %s%n",
                                         buffer.position(), buffer.position() + buffer.remaining(), linger, nodelay);
                             }
-                            if (shouldCloseAfter407(headers)) {
+                            if (shouldClose) {
                                 closeConnection();
                                 return;
                             }
@@ -445,6 +434,11 @@ public class ProxyServer extends Thread implements Closeable {
         // If the client sends a request body we will need to close the connection
         // otherwise, we can keep it open.
         private boolean shouldCloseAfter407(List<String> headers) throws IOException {
+            var cmdline = headers.get(0);
+            int m = cmdline.indexOf(' ');
+            var method = (m > 0) ? cmdline.substring(0, m) : null;
+            var nobody = List.of("GET", "HEAD");
+
             var te = findFirst(headers, "transfer-encoding");
             if (te != null) {
                 // processing transfer encoding not implemented
@@ -455,28 +449,37 @@ public class ProxyServer extends Thread implements Closeable {
             }
             var cl = findFirst(headers, "content-length");
             int n = -1;
-            try {
-                n = Integer.parseInt(cl);
-                if (debug) {
-                    System.out.printf("Proxy: content-length: %d%n", cl);
+            if (cl == null) {
+                if (nobody.contains(method)) {
+                    n = 0;
+                    System.out.printf("Proxy: no content length for %s, assuming 0%n", method);
+                } else {
+                    System.out.printf("Proxy: no content-length for %s, closing connection%n", method);
+                    return true;
                 }
-            } catch (IllegalFormatException x) {
-                if (debug) {
-                    System.out.println("Proxy: bad content-length, closing connection");
+            } else {
+                try {
+                    n = Integer.parseInt(cl);
+                    if (debug) {
+                        System.out.printf("Proxy: content-length: %d%n", n);
+                    }
+                } catch (NumberFormatException x) {
+                    if (debug) {
+                        System.out.println("Proxy: bad content-length, closing connection");
+                        System.out.println("Proxy: \tcontent-length: " + cl);
+                        System.out.println("Proxy: \theaders: " + headers);
+                        System.out.println("Proxy: \t" + x);
+                    }
+                    return true;  // should close
                 }
-                return true;  // should close
             }
-            if (n > 0 || n < -1) {
+            if (n > 0) {
                 if (debug) {
                     System.out.println("Proxy: request body with 407, closing connection");
                 }
                 return true;  // should close
             }
-            var cmdline = headers.get(0);
-            int m = cmdline.indexOf(' ');
-            var method = (m > 0) ? cmdline.substring(0, m) : null;
-            var nobody = List.of("GET", "HEAD");
-            if (n == 0 || nobody.contains(m)) {
+            if (n == 0) {
                 var available = clientIn.available();
                 var drained = drain(clientSocket);
                 if (drained > 0 || available > 0) {
@@ -578,9 +581,7 @@ public class ProxyServer extends Thread implements Closeable {
                         if (log)
                             System.out.printf("Proxy Forwarding [request body]: total %d%n", body);
                     }
-                    closing = true;
-                    serverSocket.close();
-                    clientSocket.close();
+                    closeClientIn();
                 } catch (IOException e) {
                     if (!closing && debug) {
                         System.out.println("Proxy: " + e);
@@ -599,9 +600,7 @@ public class ProxyServer extends Thread implements Closeable {
                         if (log) System.out.printf("Proxy Forwarding [response]: %s%n", new String(bb, 0, n, UTF_8));
                         if (log) System.out.printf("Proxy Forwarding [response]: total %d%n", resp);
                     }
-                    closing = true;
-                    serverSocket.close();
-                    clientSocket.close();
+                    closeClientOut();
                 } catch (IOException e) {
                     if (!closing && debug) {
                         System.out.println("Proxy: " + e);
@@ -623,6 +622,28 @@ public class ProxyServer extends Thread implements Closeable {
             // might fail if we're closing, but we don't care.
             clientOut.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
             proxyCommon(false);
+        }
+
+        synchronized void closeClientIn() throws IOException {
+            closing = true;
+            proxyInClosed = true;
+            clientSocket.shutdownInput();
+            serverSocket.shutdownOutput();
+            if (proxyOutClosed) {
+                serverSocket.close();
+                clientSocket.close();
+            }
+        }
+
+        synchronized void closeClientOut() throws IOException {
+            closing = true;
+            proxyOutClosed = true;
+            serverSocket.shutdownInput();
+            clientSocket.shutdownOutput();
+            if (proxyInClosed) {
+                serverSocket.close();
+                clientSocket.close();
+            }
         }
 
         @Override

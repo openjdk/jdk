@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,9 @@ public abstract class AbstractProcessor implements Processor {
     protected AbstractProcessor() {}
 
     /**
+     * Returns the options recognized by this processor.
+     *
+     * @implSpec
      * If the processor class is annotated with {@link
      * SupportedOptions}, return an unmodifiable set with the same set
      * of strings as the annotation.  If the class is not so
@@ -85,6 +88,9 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
+     * Returns the names of the annotation interfaces supported by this processor.
+     *
+     * @implSpec
      * If the processor class is annotated with {@link
      * SupportedAnnotationTypes}, return an unmodifiable set with the
      * same set of strings as the annotation.  If the class is not so
@@ -96,8 +102,7 @@ public abstract class AbstractProcessor implements Processor {
      * then any leading {@linkplain Processor#getSupportedAnnotationTypes
      * module prefixes} are stripped from the names.
      *
-     * @return the names of the annotation interfaces supported by
-     * this processor, or an empty set if none
+     * @return {@inheritDoc Processor}
      */
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -120,12 +125,15 @@ public abstract class AbstractProcessor implements Processor {
         }
 
     /**
+     * {@inheritDoc Processor}
+     *
+     * @implSpec
      * If the processor class is annotated with {@link
      * SupportedSourceVersion}, return the source version in the
      * annotation.  If the class is not so annotated, {@link
      * SourceVersion#RELEASE_6} is returned.
      *
-     * @return the latest source version supported by this processor
+     * @return {@inheritDoc Processor}
      */
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -145,8 +153,11 @@ public abstract class AbstractProcessor implements Processor {
 
 
     /**
+     * {@inheritDoc Processor}
+     *
+     * @implSpec
      * Initializes the processor with the processing environment by
-     * setting the {@code processingEnv} field to the value of the
+     * setting the {@link #processingEnv} field to the value of the
      * {@code processingEnv} argument.  An {@code
      * IllegalStateException} will be thrown if this method is called
      * more than once on the same object.
@@ -165,7 +176,9 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc Processor}
+     * @param annotations {@inheritDoc Processor}
+     * @param roundEnv {@inheritDoc Processor}
      */
     @Override
     public abstract boolean process(Set<? extends TypeElement> annotations,
@@ -174,10 +187,10 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * {@return an empty iterable of completions}
      *
-     * @param element {@inheritDoc}
-     * @param annotation {@inheritDoc}
-     * @param member {@inheritDoc}
-     * @param userText {@inheritDoc}
+     * @param element {@inheritDoc Processor}
+     * @param annotation {@inheritDoc Processor}
+     * @param member {@inheritDoc Processor}
+     * @param userText {@inheritDoc Processor}
      */
     @Override
     public Iterable<? extends Completion> getCompletions(Element element,

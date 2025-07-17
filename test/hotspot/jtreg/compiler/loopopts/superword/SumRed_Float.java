@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,66 +25,44 @@
  * @test
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : float test
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRed_Float
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRed_Float
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRed_Float
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRed_Float
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRed_Float
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRed_Float
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRed_Float
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRed_Float
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.SumRed_Float
  */
 
 package compiler.loopopts.superword;
 
+import compiler.lib.ir_framework.*;
+
 public class SumRed_Float {
     public static void main(String[] args) throws Exception {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                           "-XX:LoopUnrollLimit=250",
+                           "-XX:CompileThresholdScaling=0.1");
+        int i = 0;
+        Scenario[] scenarios = new Scenario[6];
+        for (String reductionSign : new String[] {"+", "-"}) {
+            for (int maxUnroll : new int[] {4, 8, 16}) {
+                scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
+                                               "-XX:LoopMaxUnroll=" + maxUnroll);
+                i++;
+            }
+        }
+        framework.addScenarios(scenarios);
+        framework.start();
+    }
+
+    @Run(test = {"sumReductionImplement"},
+         mode = RunMode.STANDALONE)
+    public static void runTests() throws Exception {
         float[] a = new float[256 * 1024];
         float[] b = new float[256 * 1024];
         float[] c = new float[256 * 1024];
-        float[] d = new float[256 * 1024];
         sumReductionInit(a, b, c);
         float total = 0;
         float valid = (float) 4.611686E18;
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionImplement(a, b, c, total);
         }
         if (total == valid) {
             System.out.println("Success");
@@ -108,15 +86,23 @@ public class SumRed_Float {
         }
     }
 
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.ADD_REDUCTION_VF})
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VF, ">= 1"})
     public static float sumReductionImplement(
             float[] a,
             float[] b,
             float[] c,
-            float[] d,
             float total) {
         for (int i = 0; i < a.length; i++) {
-            d[i] = (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
-            total += d[i];
+            total += (a[i] * b[i]) + (a[i] * c[i]) + (b[i] * c[i]);
         }
         return total;
     }

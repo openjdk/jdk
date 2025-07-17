@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.guard.has.constant.expression.false
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class GuardHasConstantFalse {
     private void doSwitch(Object o) {

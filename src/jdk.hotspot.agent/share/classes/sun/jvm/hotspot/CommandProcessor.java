@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.jvm.hotspot.ci.ciEnv;
 import sun.jvm.hotspot.code.CodeBlob;
 import sun.jvm.hotspot.code.CodeCacheVisitor;
 import sun.jvm.hotspot.code.NMethod;
@@ -66,8 +65,6 @@ import sun.jvm.hotspot.oops.Oop;
 import sun.jvm.hotspot.oops.RawHeapVisitor;
 import sun.jvm.hotspot.oops.Symbol;
 import sun.jvm.hotspot.oops.UnknownOopException;
-import sun.jvm.hotspot.opto.Compile;
-import sun.jvm.hotspot.opto.InlineTree;
 import sun.jvm.hotspot.runtime.CompiledVFrame;
 import sun.jvm.hotspot.runtime.CompilerThread;
 import sun.jvm.hotspot.runtime.JavaThread;
@@ -562,57 +559,6 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("dumpreplaydata", "dumpreplaydata { <address > | -a | <thread_id> }", false) {
-            // This is used to dump replay data from ciInstanceKlass, ciMethodData etc
-            // default file name is replay.txt, also if java crashes in compiler
-            // thread, this file will be dumped in error processing.
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                    return;
-                }
-                String name = t.nextToken();
-                Address a = null;
-                try {
-                    a = VM.getVM().getDebugger().parseAddress(name);
-                } catch (NumberFormatException e) { }
-                if (a != null) {
-                    // only nmethod, Method, MethodData and InstanceKlass needed to
-                    // dump replay data
-
-                    CodeBlob cb = VM.getVM().getCodeCache().findBlob(a);
-                    if (cb instanceof NMethod nMethod) {
-                        nMethod.dumpReplayData(out);
-                        return;
-                    }
-                    // assume it is Metadata
-                    Metadata meta = Metadata.instantiateWrapperFor(a);
-                    if (meta != null) {
-                        meta.dumpReplayData(out);
-                    } else {
-                        usage();
-                        return;
-                    }
-                }
-                // Not an address
-                boolean all = name.equals("-a");
-                Threads threads = VM.getVM().getThreads();
-                for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-                    JavaThread thread = threads.getJavaThreadAt(i);
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    thread.printThreadIDOn(new PrintStream(bos));
-                    if (all || bos.toString().equals(name)) {
-                        if (thread instanceof CompilerThread) {
-                            CompilerThread ct = (CompilerThread)thread;
-                            ciEnv env = ct.env();
-                            if (env != null) {
-                               env.dumpReplayData(out);
-                            }
-                        }
-                    }
-                }
-            }
-        },
         new Command("buildreplayjars", "buildreplayjars [ all | app | boot ]  | [ prefix ]", false) {
             // This is used to dump jar files of all the classes
             // loaded in the core.  Everything with null classloader
@@ -973,94 +919,6 @@ public class CommandProcessor {
                 }
             }
         },
-        new Command("dumpideal", "dumpideal { -a | id }", false) {
-            // Do a full dump of the nodes reachable from root in each compiler thread.
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                } else {
-                    String name = t.nextToken();
-                    boolean all = name.equals("-a");
-                    Threads threads = VM.getVM().getThreads();
-                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-                        JavaThread thread = threads.getJavaThreadAt(i);
-                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        thread.printThreadIDOn(new PrintStream(bos));
-                        if (all || bos.toString().equals(name)) {
-                          if (thread instanceof CompilerThread) {
-                            CompilerThread ct = (CompilerThread)thread;
-                            out.println(ct);
-                            ciEnv env = ct.env();
-                            if (env != null) {
-                              Compile c = env.compilerData();
-                              c.root().dump(9999, out);
-                            } else {
-                              out.println("  not compiling");
-                            }
-                          }
-                        }
-                    }
-                }
-            }
-        },
-        new Command("dumpcfg", "dumpcfg { -a | id }", false) {
-            // Dump the PhaseCFG for every compiler thread that has one live.
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                } else {
-                    String name = t.nextToken();
-                    boolean all = name.equals("-a");
-                    Threads threads = VM.getVM().getThreads();
-                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-                        JavaThread thread = threads.getJavaThreadAt(i);
-                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        thread.printThreadIDOn(new PrintStream(bos));
-                        if (all || bos.toString().equals(name)) {
-                          if (thread instanceof CompilerThread) {
-                            CompilerThread ct = (CompilerThread)thread;
-                            out.println(ct);
-                            ciEnv env = ct.env();
-                            if (env != null) {
-                              Compile c = env.compilerData();
-                              c.cfg().dump(out);
-                            }
-                          }
-                        }
-                    }
-                }
-            }
-        },
-        new Command("dumpilt", "dumpilt { -a | id }", false) {
-            // dumps the InlineTree of a C2 compile
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                } else {
-                    String name = t.nextToken();
-                    boolean all = name.equals("-a");
-                    Threads threads = VM.getVM().getThreads();
-                    for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-                        JavaThread thread = threads.getJavaThreadAt(i);
-                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        thread.printThreadIDOn(new PrintStream(bos));
-                        if (all || bos.toString().equals(name)) {
-                            if (thread instanceof CompilerThread) {
-                                CompilerThread ct = (CompilerThread)thread;
-                                ciEnv env = ct.env();
-                                if (env != null) {
-                                    Compile c = env.compilerData();
-                                    InlineTree ilt = c.ilt();
-                                    if (ilt != null) {
-                                        ilt.print(out);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         new Command("vmstructsdump", "vmstructsdump", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 0) {
@@ -1143,13 +1001,22 @@ public class CommandProcessor {
                  histo.run(out, err);
             }
         },
-        new Command("jstack", "jstack [-v]", false) {
+        new Command("jstack", "jstack [-v] [-l]", false) {
             public void doit(Tokens t) {
                 boolean verbose = false;
-                if (t.countTokens() > 0 && t.nextToken().equals("-v")) {
-                    verbose = true;
+                boolean concurrentLocks = false;
+                while (t.countTokens() > 0) {
+                    String arg = t.nextToken();
+                    if (arg.equals("-v")) {
+                        verbose = true;
+                    } else if (arg.equals("-l")) {
+                        concurrentLocks = true;
+                    } else {
+                        usage();
+                        return;
+                    }
                 }
-                StackTrace jstack = new StackTrace(verbose, true);
+                StackTrace jstack = new StackTrace(verbose, concurrentLocks);
                 jstack.run(out);
             }
         },
@@ -1201,13 +1068,22 @@ public class CommandProcessor {
                 pmap.run(out, debugger.getAgent().getDebugger());
             }
         },
-        new Command("pstack", "pstack [-v]", false) {
+        new Command("pstack", "pstack [-v] [-l]", false) {
             public void doit(Tokens t) {
                 boolean verbose = false;
-                if (t.countTokens() > 0 && t.nextToken().equals("-v")) {
-                    verbose = true;
+                boolean concurrentLocks = false;
+                while (t.countTokens() > 0) {
+                    String arg = t.nextToken();
+                    if (arg.equals("-v")) {
+                        verbose = true;
+                    } else if (arg.equals("-l")) {
+                        concurrentLocks = true;
+                    } else {
+                        usage();
+                        return;
+                    }
                 }
-                PStack pstack = new PStack(verbose, true, debugger.getAgent());
+                PStack pstack = new PStack(verbose, concurrentLocks, debugger.getAgent());
                 pstack.run(out, debugger.getAgent().getDebugger());
             }
         },

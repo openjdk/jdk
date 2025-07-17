@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ public final class Grapheme {
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
-     * is based on the annex for Unicode version 15.0.
-     * (http://www.unicode.org/reports/tr29/tr29-40.html)
+     * is based on the annex for Unicode version 16.0.
      *
+     * @spec http://www.unicode.org/reports/tr29/tr29-45.html
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
      * @param limit limit offset in the src (exclusive)
@@ -56,6 +56,15 @@ public final class Grapheme {
             int ch1 = Character.codePointAt(src, ret);
             int t1 = getType(ch1);
 
+            // GB9c
+            if (IndicConjunctBreak.isConsonant(ch0)) {
+                var advance = checkIndicConjunctBreak(src, ret, limit);
+                if (advance >= 0) {
+                    ret += advance;
+                    continue;
+                }
+            }
+
             if (gb11 && t0 == ZWJ && t1 == EXTENDED_PICTOGRAPHIC) {
                 // continue for gb11
             } else if (riCount % 2 == 1 && t0 == RI && t1 == RI) {
@@ -70,6 +79,7 @@ public final class Grapheme {
             }
 
             riCount += (t1 == RI) ? 1 : 0;
+            ch0 = ch1;
             t0 = t1;
 
             ret += Character.charCount(ch1);
@@ -176,7 +186,7 @@ public final class Grapheme {
             return OTHER;
         }
 
-        if (EmojiData.isExtendedPictographic(cp)) {
+        if (Character.isExtendedPictographic(cp)) {
             return EXTENDED_PICTOGRAPHIC;
         }
 
@@ -257,7 +267,10 @@ public final class Grapheme {
             if (cp >= 0xA960 && cp <= 0xA97C)
                 return L;
             //  hangul jamo_extended B
-            if (cp >= 0xD7B0 && cp <= 0xD7C6)
+            //  Kirat Rai vowel sign
+            if (cp >= 0xD7B0 && cp <= 0xD7C6 ||
+                cp == 0x16D63 ||
+                cp >= 0x16D67 && cp <= 0x16D6A)
                 return V;
             if (cp >= 0xD7CB && cp <= 0xD7FB)
                 return T;
@@ -267,6 +280,7 @@ public final class Grapheme {
                 case 0x0D4E:
                 case 0x111C2:
                 case 0x111C3:
+                case 0x113D1:
                 case 0x1193F:
                 case 0x11941:
                 case 0x11A3A:
@@ -282,5 +296,41 @@ public final class Grapheme {
             }
         }
         return OTHER;
+    }
+
+    /**
+     * Checks for a possible GB9c Indic Conjunct Break sequence. If it is
+     * repetitive, e.g., Consonant1/Linker1/Consonant2/Linker2/Consonant3, only
+     * the first part of the sequence (Consonant1/Linker1/Consonant2) is
+     * recognized. The rest is analyzed in the next iteration of the grapheme
+     * cluster boundary search.
+     *
+     * @param src the source char sequence
+     * @param index the index that points to the starting Linking Consonant
+     * @param limit limit to the char sequence
+     * @return the advance in index if the indic conjunct break sequence
+     *      is found, it will be negative if the sequence is not found
+     */
+    private static int checkIndicConjunctBreak(CharSequence src, int index, int limit) {
+        boolean linkerFound = false;
+        int advance = 0;
+
+        while (index + advance < limit) {
+            int ch1 = Character.codePointAt(src, index + advance);
+            advance += Character.charCount(ch1);
+
+            if (IndicConjunctBreak.isLinker(ch1)) {
+                linkerFound = true;
+            } else if (IndicConjunctBreak.isConsonant(ch1)) {
+                if (linkerFound) {
+                    return advance;
+                } else {
+                    break;
+                }
+            } else if (!IndicConjunctBreak.isExtend(ch1)) {
+                break;
+            }
+        }
+        return -1;
     }
 }

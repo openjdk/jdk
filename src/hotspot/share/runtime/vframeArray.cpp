@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vmreg.inline.hpp"
 #include "interpreter/bytecode.hpp"
+#include "interpreter/bytecode.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -37,22 +37,19 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }
 
-void vframeArrayElement::free_monitors(JavaThread* jt) {
-  if (_monitors != NULL) {
+void vframeArrayElement::free_monitors() {
+  if (_monitors != nullptr) {
      MonitorChunk* chunk = _monitors;
-     _monitors = NULL;
-     jt->remove_monitor_chunk(chunk);
+     _monitors = nullptr;
      delete chunk;
   }
 }
@@ -72,7 +69,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
   int index;
 
   {
-    Thread* current_thread = Thread::current();
+    JavaThread* current_thread = JavaThread::current();
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
 
@@ -80,12 +77,11 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
 
     GrowableArray<MonitorInfo*>* list = vf->monitors();
     if (list->is_empty()) {
-      _monitors = NULL;
+      _monitors = nullptr;
     } else {
 
       // Allocate monitor chunk
       _monitors = new MonitorChunk(list->length());
-      vf->thread()->add_monitor_chunk(_monitors);
 
       // Migrate the BasicLocks from the stack to the monitor chunk
       for (index = 0; index < list->length(); index++) {
@@ -93,11 +89,18 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         assert(!monitor->owner_is_scalar_replaced() || realloc_failures, "object should be reallocated already");
         BasicObjectLock* dest = _monitors->at(index);
         if (monitor->owner_is_scalar_replaced()) {
-          dest->set_obj(NULL);
+          dest->set_obj(nullptr);
         } else {
-          assert(monitor->owner() == NULL || !monitor->owner()->is_unlocked(), "object must be null or locked");
+          assert(monitor->owner() != nullptr, "monitor owner must not be null");
+          assert(!monitor->owner()->is_unlocked(), "monitor must be locked");
           dest->set_obj(monitor->owner());
+          assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
+                 "should be held, before move_to");
+
           monitor->lock()->move_to(monitor->owner(), dest->lock());
+
+          assert(ObjectSynchronizer::current_thread_holds_lock(current_thread, Handle(current_thread, dest->obj())),
+                 "should be held, after move_to");
         }
       }
     }
@@ -133,7 +136,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         _locals->add( new StackValue());
         break;
       case T_INT:
-        _locals->add( new StackValue(value->get_int()));
+        _locals->add( new StackValue(value->get_intptr()));
         break;
       default:
         ShouldNotReachHere();
@@ -160,7 +163,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         _expressions->add( new StackValue());
         break;
       case T_INT:
-        _expressions->add( new StackValue(value->get_int()));
+        _expressions->add( new StackValue(value->get_intptr()));
         break;
       default:
         ShouldNotReachHere();
@@ -218,7 +221,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   // For realloc failure exception we just pop frames, skip the guarantee.
 
   assert(*bcp != Bytecodes::_monitorenter || is_top_frame, "a _monitorenter must be a top frame");
-  assert(thread->deopt_compiled_method() != NULL, "compiled method should be known");
+  assert(thread->deopt_compiled_method() != nullptr, "compiled method should be known");
   guarantee(realloc_failure_exception || !(thread->deopt_compiled_method()->is_compiled_by_c2() &&
               *bcp == Bytecodes::_monitorenter             &&
               exec_mode == Deoptimization::Unpack_exception),
@@ -242,14 +245,14 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         // Deoptimization::fetch_unroll_info_helper
         popframe_preserved_args_size_in_words = in_words(thread->popframe_preserved_args_size_in_words());
       }
-    } else if (!realloc_failure_exception && JvmtiExport::can_force_early_return() && state != NULL &&
+    } else if (!realloc_failure_exception && JvmtiExport::can_force_early_return() && state != nullptr &&
                state->is_earlyret_pending()) {
       // Force early return from top frame after deoptimization
       pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
     } else {
-      if (realloc_failure_exception && JvmtiExport::can_force_early_return() && state != NULL && state->is_earlyret_pending()) {
+      if (realloc_failure_exception && JvmtiExport::can_force_early_return() && state != nullptr && state->is_earlyret_pending()) {
         state->clr_earlyret_pending();
-        state->set_earlyret_oop(NULL);
+        state->set_earlyret_oop(nullptr);
         state->clr_earlyret_value();
       }
       // Possibly override the previous pc computation of the top (youngest) frame
@@ -278,10 +281,10 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 
   // Setup the interpreter frame
 
-  assert(method() != NULL, "method must exist");
+  assert(method() != nullptr, "method must exist");
   int temps = expressions()->size();
 
-  int locks = monitors() == NULL ? 0 : monitors()->number_of_monitors();
+  int locks = monitors() == nullptr ? 0 : monitors()->number_of_monitors();
 
   Interpreter::layout_activation(method(),
                                  temps + callee_parameters,
@@ -308,15 +311,19 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     top = iframe()->previous_monitor_in_interpreter_frame(top);
     BasicObjectLock* src = _monitors->at(index);
     top->set_obj(src->obj());
+    assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
+           "should be held, before move_to");
     src->lock()->move_to(src->obj(), top->lock());
+    assert(src->obj() != nullptr || ObjectSynchronizer::current_thread_holds_lock(thread, Handle(thread, src->obj())),
+           "should be held, after move_to");
   }
   if (ProfileInterpreter) {
-    iframe()->interpreter_frame_set_mdp(0); // clear out the mdp.
+    iframe()->interpreter_frame_set_mdp(nullptr); // clear out the mdp.
   }
   iframe()->interpreter_frame_set_bcp(bcp);
   if (ProfileInterpreter) {
     MethodData* mdo = method()->method_data();
-    if (mdo != NULL) {
+    if (mdo != nullptr) {
       int bci = iframe()->interpreter_frame_bci();
       if (use_next_mdp) ++bci;
       address mdp = mdo->bci_to_dp(bci);
@@ -342,7 +349,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
-        *addr = value->get_int();
+        *addr = value->get_intptr();
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print_cr(" - Reconstructed expression %d (INT): %d", i, (int)(*addr));
@@ -350,13 +357,13 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #endif // !PRODUCT
         break;
       case T_OBJECT:
-        *addr = value->get_int(T_OBJECT);
+        *addr = value->get_intptr(T_OBJECT);
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print(" - Reconstructed expression %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
-          if (o == NULL) {
-            tty->print_cr("NULL");
+          if (o == nullptr) {
+            tty->print_cr("null");
           } else {
             ResourceMark rm;
             tty->print_raw_cr(o->klass()->name()->as_C_string());
@@ -386,7 +393,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
-        *addr = value->get_int();
+        *addr = value->get_intptr();
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print_cr(" - Reconstructed local %d (INT): %d", i, (int)(*addr));
@@ -394,13 +401,13 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #endif // !PRODUCT
         break;
       case T_OBJECT:
-        *addr = value->get_int(T_OBJECT);
+        *addr = value->get_intptr(T_OBJECT);
 #ifndef PRODUCT
         if (PrintDeoptimizationDetails) {
           tty->print(" - Reconstructed local %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
-          if (o == NULL) {
-            tty->print_cr("NULL");
+          if (o == nullptr) {
+            tty->print_cr("null");
           } else {
             ResourceMark rm;
             tty->print_raw_cr(o->klass()->name()->as_C_string());
@@ -409,7 +416,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #endif // !PRODUCT
         break;
       case T_CONFLICT:
-        // A dead location. If it is an oop then we need a NULL to prevent GC from following it
+        // A dead location. If it is an oop then we need a null to prevent GC from following it
         *addr = NULL_WORD;
         break;
       default:
@@ -427,7 +434,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     // addresses.
     if (popframe_preserved_args_size_in_words != 0) {
       void* saved_args = thread->popframe_preserved_args();
-      assert(saved_args != NULL, "must have been saved by interpreter");
+      assert(saved_args != nullptr, "must have been saved by interpreter");
 #ifdef ASSERT
       assert(popframe_preserved_args_size_in_words <=
              iframe()->interpreter_frame_expression_stack_size()*Interpreter::stackElementWords,
@@ -467,7 +474,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   // a dangling pointer in the vframeArray we leave around for debug
   // purposes
 
-  _locals = _expressions = NULL;
+  _locals = _expressions = nullptr;
 
 }
 
@@ -476,7 +483,7 @@ int vframeArrayElement::on_stack_size(int callee_parameters,
                                       bool is_top_frame,
                                       int popframe_extra_stack_expression_els) const {
   assert(method()->max_locals() == locals()->size(), "just checking");
-  int locks = monitors() == NULL ? 0 : monitors()->number_of_monitors();
+  int locks = monitors() == nullptr ? 0 : monitors()->number_of_monitors();
   int temps = expressions()->size();
   return Interpreter::size_activation(method()->max_stack(),
                                       temps + callee_parameters,
@@ -506,7 +513,7 @@ vframeArray* vframeArray::allocate(JavaThread* thread, int frame_size, GrowableA
   result->_sender = sender;
   result->_caller = caller;
   result->_original = self;
-  result->set_unroll_block(NULL); // initialize it
+  result->set_unroll_block(nullptr); // initialize it
   result->fill_in(thread, frame_size, chunk, reg_map, realloc_failures);
   return result;
 }
@@ -524,7 +531,7 @@ void vframeArray::fill_in(JavaThread* thread,
   }
 
   // Copy registers for callee-saved registers
-  if (reg_map != NULL) {
+  if (reg_map != nullptr) {
     for(int i = 0; i < RegisterMap::reg_count; i++) {
 #ifdef AMD64
       // The register map has one entry for every int (32-bit value), so
@@ -538,19 +545,16 @@ void vframeArray::fill_in(JavaThread* thread,
       // in amd64.ad.
       //      if (VMReg::Name(i) < SharedInfo::stack0 && is_even(i)) {
         intptr_t* src = (intptr_t*) reg_map->location(VMRegImpl::as_VMReg(i), _caller.sp());
-        _callee_registers[i] = src != NULL ? *src : NULL_WORD;
+        _callee_registers[i] = src != nullptr ? *src : NULL_WORD;
         //      } else {
         //      jint* src = (jint*) reg_map->location(VMReg::Name(i));
-        //      _callee_registers[i] = src != NULL ? *src : NULL_WORD;
+        //      _callee_registers[i] = src != nullptr ? *src : NULL_WORD;
         //      }
 #else
       jint* src = (jint*) reg_map->location(VMRegImpl::as_VMReg(i), _caller.sp());
-      _callee_registers[i] = src != NULL ? *src : NULL_WORD;
+      _callee_registers[i] = src != nullptr ? *src : NULL_WORD;
 #endif
-      if (src == NULL) {
-        set_location_valid(i, false);
-      } else {
-        set_location_valid(i, true);
+      if (src != nullptr) {
         jint* dst = (jint*) register_location(i);
         *dst = *src;
       }
@@ -607,10 +611,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
       methodHandle caller(current, elem->method());
       methodHandle callee(current, element(index - 1)->method());
       Bytecode_invoke inv(caller, elem->bci());
-      // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
-      // NOTE:  Use machinery here that avoids resolving of any kind.
-      const bool has_member_arg =
-          !inv.is_invokedynamic() && MethodHandles::has_member_arg(inv.klass(), inv.name());
+      const bool has_member_arg = inv.has_member_arg();
       callee_parameters = callee->size_of_parameters() + (has_member_arg ? 1 : 0);
       callee_locals     = callee->max_locals();
     }
@@ -652,9 +653,8 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
 }
 
 void vframeArray::deallocate_monitor_chunks() {
-  JavaThread* jt = JavaThread::current();
   for (int index = 0; index < frames(); index++ ) {
-     element(index)->free_monitors(jt);
+     element(index)->free_monitors();
   }
 }
 

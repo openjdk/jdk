@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
  * A generator of uniform pseudorandom values (with period 2<sup>64</sup>)
@@ -48,7 +47,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * <li>Series of generated values pass the DieHarder suite testing
  * independence and uniformity properties of random number generators.
  * (Most recently validated with <a
- * href="http://www.phy.duke.edu/~rgb/General/dieharder.php"> version
+ * href="https://webhome.phy.duke.edu/~rgb/General/dieharder.php"> version
  * 3.31.1</a>.) These tests validate only the methods for certain
  * types and ranges, but similar properties are expected to hold, at
  * least approximately, for others as well. The <em>period</em>
@@ -87,11 +86,6 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * @author  Doug Lea
  * @since   1.8
  */
-@RandomGeneratorProperties(
-        name = "SplittableRandom",
-        i = 64, j = 0, k = 0,
-        equidistribution = 1
-)
 public final class SplittableRandom implements RandomGenerator, SplittableGenerator {
 
     /*

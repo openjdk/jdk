@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,17 @@
  *     Directory Information Models</a></li>
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc1779
+ *      RFC 1779: A String Representation of Distinguished Names
+ * @spec https://www.rfc-editor.org/info/rfc2253
+ *      RFC 2253: Lightweight Directory Access Protocol (v3):
+ *              UTF-8 String Representation of Distinguished Names
+ * @spec https://www.rfc-editor.org/info/rfc4512
+ *      RFC 4512: Lightweight Directory Access Protocol (LDAP):
+ *              Directory Information Models
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @since 1.4
  */
 package javax.security.auth.x500;

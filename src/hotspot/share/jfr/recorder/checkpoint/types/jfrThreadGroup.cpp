@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadGroup.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
@@ -43,7 +42,7 @@ class ThreadGroupExclusiveAccess : public StackObj {
 };
 
 Semaphore ThreadGroupExclusiveAccess::_mutex_semaphore(1);
-JfrThreadGroup* JfrThreadGroup::_instance = NULL;
+JfrThreadGroup* JfrThreadGroup::_instance = nullptr;
 
 class JfrThreadGroupPointers : public ResourceObj {
  private:
@@ -53,7 +52,7 @@ class JfrThreadGroupPointers : public ResourceObj {
   JfrThreadGroupPointers(Handle thread_group_handle, jweak thread_group_weak_ref);
   Handle thread_group_handle() const;
   jweak thread_group_weak_ref() const;
-  oopDesc* const thread_group_oop() const;
+  oopDesc* thread_group_oop() const;
   jweak transfer_weak_global_handle_ownership();
   void clear_weak_ref();
 };
@@ -70,20 +69,20 @@ jweak JfrThreadGroupPointers::thread_group_weak_ref() const {
   return _thread_group_weak_ref;
 }
 
-oopDesc* const JfrThreadGroupPointers::thread_group_oop() const {
-  assert(_thread_group_weak_ref == NULL ||
+oopDesc* JfrThreadGroupPointers::thread_group_oop() const {
+  assert(_thread_group_weak_ref == nullptr ||
          JNIHandles::resolve_non_null(_thread_group_weak_ref) == _thread_group_handle(), "invariant");
   return _thread_group_handle();
 }
 
 jweak JfrThreadGroupPointers::transfer_weak_global_handle_ownership() {
   jweak temp = _thread_group_weak_ref;
-  _thread_group_weak_ref = NULL;
+  _thread_group_weak_ref = nullptr;
   return temp;
 }
 
 void JfrThreadGroupPointers::clear_weak_ref() {
-  if (NULL != _thread_group_weak_ref) {
+  if (nullptr != _thread_group_weak_ref) {
     JNIHandles::destroy_weak_global(_thread_group_weak_ref);
   }
 }
@@ -118,7 +117,7 @@ JfrThreadGroupsHelper::~JfrThreadGroupsHelper() {
 }
 
 JfrThreadGroupPointers& JfrThreadGroupsHelper::at(int index) {
-  assert(_thread_group_hierarchy != NULL, "invariant");
+  assert(_thread_group_hierarchy != nullptr, "invariant");
   assert(index > invalid_iterator_pos && index < _thread_group_hierarchy->length(), "invariant");
   return *(_thread_group_hierarchy->at(index));
 }
@@ -128,7 +127,7 @@ bool JfrThreadGroupsHelper::has_next() const {
 }
 
 bool JfrThreadGroupsHelper::is_valid() const {
-  return (_thread_group_hierarchy != NULL && _thread_group_hierarchy->length() > 0);
+  return (_thread_group_hierarchy != nullptr && _thread_group_hierarchy->length() > 0);
 }
 
 JfrThreadGroupPointers& JfrThreadGroupsHelper::next() {
@@ -147,9 +146,9 @@ JfrThreadGroupPointers& JfrThreadGroupsHelper::next() {
  * (not here).
  */
 int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt, Thread* current) {
-  assert(jt != NULL && jt->is_Java_thread(), "invariant");
-  assert(current != NULL, "invariant");
-  assert(_thread_group_hierarchy != NULL, "invariant");
+  assert(jt != nullptr && jt->is_Java_thread(), "invariant");
+  assert(current != nullptr, "invariant");
+  assert(_thread_group_hierarchy != nullptr, "invariant");
 
   oop thread_oop = jt->threadObj();
   if (thread_oop == nullptr) {
@@ -157,12 +156,12 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
   }
   // immediate thread group
   Handle thread_group_handle(current, java_lang_Thread::threadGroup(thread_oop));
-  if (thread_group_handle == NULL) {
+  if (thread_group_handle == nullptr) {
     return 0;
   }
 
   const bool use_weak_handles = !SafepointSynchronize::is_at_safepoint();
-  jweak thread_group_weak_ref = use_weak_handles ? JNIHandles::make_weak_global(thread_group_handle) : NULL;
+  jweak thread_group_weak_ref = use_weak_handles ? JNIHandles::make_weak_global(thread_group_handle) : nullptr;
 
   JfrThreadGroupPointers* thread_group_pointers = new JfrThreadGroupPointers(thread_group_handle, thread_group_weak_ref);
   _thread_group_hierarchy->append(thread_group_pointers);
@@ -172,7 +171,7 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
 
   // and check parents parents...
   while (parent_thread_group_handle != nullptr) {
-    const jweak parent_group_weak_ref = use_weak_handles ? JNIHandles::make_weak_global(parent_thread_group_handle) : NULL;
+    const jweak parent_group_weak_ref = use_weak_handles ? JNIHandles::make_weak_global(parent_thread_group_handle) : nullptr;
     thread_group_pointers = new JfrThreadGroupPointers(parent_thread_group_handle, parent_group_weak_ref);
     _thread_group_hierarchy->append(thread_group_pointers);
     parent_thread_group_obj = java_lang_ThreadGroup::parent(parent_thread_group_handle());
@@ -209,7 +208,7 @@ class JfrThreadGroup::JfrThreadGroupEntry : public JfrCHeapObj {
   traceid thread_group_id() const { return _thread_group_id; }
   void set_thread_group_id(traceid tgid) { _thread_group_id = tgid; }
 
-  const char* const thread_group_name() const { return _thread_group_name; }
+  const char* thread_group_name() const { return _thread_group_name; }
   void set_thread_group_name(const char* tgname);
 
   traceid parent_group_id() const { return _parent_group_id; }
@@ -217,48 +216,48 @@ class JfrThreadGroup::JfrThreadGroupEntry : public JfrCHeapObj {
 
   void set_thread_group(JfrThreadGroupPointers& ptrs);
   bool is_equal(const JfrThreadGroupPointers& ptrs) const;
-  const oop thread_group() const;
+  oop thread_group() const;
 };
 
 JfrThreadGroup::JfrThreadGroupEntry::JfrThreadGroupEntry(const char* tgname, JfrThreadGroupPointers& ptrs) :
   _thread_group_id(0),
   _parent_group_id(0),
-  _thread_group_name(NULL),
-  _thread_group_oop(NULL),
-  _thread_group_weak_ref(NULL) {
+  _thread_group_name(nullptr),
+  _thread_group_oop(nullptr),
+  _thread_group_weak_ref(nullptr) {
   set_thread_group_name(tgname);
   set_thread_group(ptrs);
 }
 
 JfrThreadGroup::JfrThreadGroupEntry::~JfrThreadGroupEntry() {
-  if (_thread_group_name != NULL) {
+  if (_thread_group_name != nullptr) {
     JfrCHeapObj::free(_thread_group_name, strlen(_thread_group_name) + 1);
   }
-  if (_thread_group_weak_ref != NULL) {
+  if (_thread_group_weak_ref != nullptr) {
     JNIHandles::destroy_weak_global(_thread_group_weak_ref);
   }
 }
 
 void JfrThreadGroup::JfrThreadGroupEntry::set_thread_group_name(const char* tgname) {
-  assert(_thread_group_name == NULL, "invariant");
-  if (tgname != NULL) {
+  assert(_thread_group_name == nullptr, "invariant");
+  if (tgname != nullptr) {
     size_t len = strlen(tgname);
     _thread_group_name = JfrCHeapObj::new_array<char>(len + 1);
     strncpy(_thread_group_name, tgname, len + 1);
   }
 }
 
-const oop JfrThreadGroup::JfrThreadGroupEntry::thread_group() const {
-  return _thread_group_weak_ref != NULL ? JNIHandles::resolve(_thread_group_weak_ref) : _thread_group_oop;
+oop JfrThreadGroup::JfrThreadGroupEntry::thread_group() const {
+  return _thread_group_weak_ref != nullptr ? JNIHandles::resolve(_thread_group_weak_ref) : _thread_group_oop;
 }
 
 void JfrThreadGroup::JfrThreadGroupEntry::set_thread_group(JfrThreadGroupPointers& ptrs) {
   _thread_group_weak_ref = ptrs.transfer_weak_global_handle_ownership();
-  if (_thread_group_weak_ref == NULL) {
+  if (_thread_group_weak_ref == nullptr) {
     _thread_group_oop = ptrs.thread_group_oop();
-    assert(_thread_group_oop != NULL, "invariant");
+    assert(_thread_group_oop != nullptr, "invariant");
   } else {
-    _thread_group_oop = NULL;
+    _thread_group_oop = nullptr;
   }
 }
 
@@ -266,7 +265,7 @@ JfrThreadGroup::JfrThreadGroup() :
   _list(new (mtTracing) GrowableArray<JfrThreadGroupEntry*>(initial_array_size, mtTracing)) {}
 
 JfrThreadGroup::~JfrThreadGroup() {
-  if (_list != NULL) {
+  if (_list != nullptr) {
     for (int i = 0; i < _list->length(); i++) {
       JfrThreadGroupEntry* e = _list->at(i);
       delete e;
@@ -296,22 +295,22 @@ traceid JfrThreadGroup::thread_group_id(JavaThread* const jt) {
 traceid JfrThreadGroup::thread_group_id_internal(JfrThreadGroupsHelper& helper) {
   ThreadGroupExclusiveAccess lock;
   JfrThreadGroup* tg_instance = instance();
-  if (tg_instance == NULL) {
+  if (tg_instance == nullptr) {
     tg_instance = new JfrThreadGroup();
-    if (tg_instance == NULL) {
+    if (tg_instance == nullptr) {
       return 0;
     }
     set_instance(tg_instance);
   }
 
-  JfrThreadGroupEntry* tge = NULL;
-  int parent_thread_group_id = 0;
+  JfrThreadGroupEntry* tge = nullptr;
+  traceid parent_thread_group_id = 0;
   while (helper.has_next()) {
     JfrThreadGroupPointers& ptrs = helper.next();
     tge = tg_instance->find_entry(ptrs);
-    if (NULL == tge) {
+    if (nullptr == tge) {
       tge = tg_instance->new_entry(ptrs);
-      assert(tge != NULL, "invariant");
+      assert(tge != nullptr, "invariant");
       tge->set_parent_group_id(parent_thread_group_id);
     }
     parent_thread_group_id = tge->thread_group_id();
@@ -332,7 +331,7 @@ JfrThreadGroup::find_entry(const JfrThreadGroupPointers& ptrs) const {
       return curtge;
     }
   }
-  return (JfrThreadGroupEntry*) NULL;
+  return (JfrThreadGroupEntry*) nullptr;
 }
 
 // Assumes you already searched for the existence
@@ -345,22 +344,22 @@ JfrThreadGroup::new_entry(JfrThreadGroupPointers& ptrs) {
 }
 
 int JfrThreadGroup::add_entry(JfrThreadGroupEntry* tge) {
-  assert(tge != NULL, "attempting to add a null entry!");
+  assert(tge != nullptr, "attempting to add a null entry!");
   assert(0 == tge->thread_group_id(), "id must be unassigned!");
   tge->set_thread_group_id(next_id());
   return _list->append(tge);
 }
 
 void JfrThreadGroup::write_thread_group_entries(JfrCheckpointWriter& writer) const {
-  assert(_list != NULL && !_list->is_empty(), "should not need be here!");
+  assert(_list != nullptr && !_list->is_empty(), "should not need be here!");
   const int number_of_tg_entries = _list->length();
   writer.write_count(number_of_tg_entries + 1); // + VirtualThread group
   writer.write_key(1);      // 1 is reserved for VirtualThread group
   writer.write<traceid>(0); // parent
   const oop vgroup = java_lang_Thread_Constants::get_VTHREAD_GROUP();
-  assert(vgroup != (oop)NULL, "invariant");
+  assert(vgroup != (oop)nullptr, "invariant");
   const char* const vgroup_name = java_lang_ThreadGroup::name(vgroup);
-  assert(vgroup_name != NULL, "invariant");
+  assert(vgroup_name != nullptr, "invariant");
   writer.write(vgroup_name);
   for (int index = 0; index < number_of_tg_entries; ++index) {
     const JfrThreadGroupEntry* const curtge = _list->at(index);
@@ -371,8 +370,8 @@ void JfrThreadGroup::write_thread_group_entries(JfrCheckpointWriter& writer) con
 }
 
 void JfrThreadGroup::write_selective_thread_group(JfrCheckpointWriter* writer, traceid thread_group_id) const {
-  assert(writer != NULL, "invariant");
-  assert(_list != NULL && !_list->is_empty(), "should not need be here!");
+  assert(writer != nullptr, "invariant");
+  assert(_list != nullptr && !_list->is_empty(), "should not need be here!");
   assert(thread_group_id != 1, "should not need be here!");
   const int number_of_tg_entries = _list->length();
 
@@ -404,15 +403,15 @@ void JfrThreadGroup::write_selective_thread_group(JfrCheckpointWriter* writer, t
 void JfrThreadGroup::serialize(JfrCheckpointWriter& writer) {
   ThreadGroupExclusiveAccess lock;
   JfrThreadGroup* tg_instance = instance();
-  assert(tg_instance != NULL, "invariant");
+  assert(tg_instance != nullptr, "invariant");
   tg_instance->write_thread_group_entries(writer);
 }
 
 // for writing a particular thread group
 void JfrThreadGroup::serialize(JfrCheckpointWriter* writer, traceid thread_group_id) {
-  assert(writer != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
   ThreadGroupExclusiveAccess lock;
   JfrThreadGroup* const tg_instance = instance();
-  assert(tg_instance != NULL, "invariant");
+  assert(tg_instance != nullptr, "invariant");
   tg_instance->write_selective_thread_group(writer, thread_group_id);
 }

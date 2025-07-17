@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadCrashProtection.hpp"
 
-Thread* ThreadCrashProtection::_protected_thread = NULL;
-ThreadCrashProtection* ThreadCrashProtection::_crash_protection = NULL;
+Thread* ThreadCrashProtection::_protected_thread = nullptr;
+ThreadCrashProtection* ThreadCrashProtection::_crash_protection = nullptr;
 
 ThreadCrashProtection::ThreadCrashProtection() {
   _protected_thread = Thread::current();
@@ -49,7 +48,7 @@ bool ThreadCrashProtection::call(CrashProtectionCallback& cb) {
     // only for protection, nothing to do
     success = false;
   }
-  _crash_protection = NULL;
-  _protected_thread = NULL;
+  _crash_protection = nullptr;
+  _protected_thread = nullptr;
   return success;
 }

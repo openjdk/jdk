@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="doi"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="de">जर्मन</language>
 			<language type="de_AT">आस्ट्रियाई जर्मन</language>
@@ -92,18 +87,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u0951\u0952 \u093C \u0901 \u0902 ः ॐ अ आ इ ई उ ऊ ऋ ॠ ऌ ॡ ए ऐ ओ औ क {क\u094Dष} ख ग घ ङ च छ ज झ ञ ट ठ ड {ड\u093C} ढ {ढ\u093C} ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0962 \u0963 \u0947 \u0948 ो ौ \u094D]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D ऍ ऑ \u0945]</exemplarCharacters>
+		<exemplarCharacters>[॑ ॒ ़ ँ ंः ॐ अ आ इ ई उ ऊ ऋ ॠ ऌ ॡ ए ऐ ओ औ क {क्ष} ख ग घ ङ च छ ज झ ञ ट ठ ड{ड़} ढ{ढ़} ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ऽ ा ि ी ु ू ृ ॄ ॢ ॣ े ै ो ौ ्]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D ऍ ऑ ॅ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[अ आ इ ई उ ऊ ऋ ॠ ऌ ॡ ए ऐ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह]</exemplarCharacters>
-		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[_ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[_ – — , ; \: ! ? . … '‘’ &quot;“” ( ) § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -111,19 +99,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, MMMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>MMMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>MMM d, y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -182,20 +167,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">नव.</month>
 							<month type="12">दिस.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ज</month>
-							<month type="2">फ</month>
-							<month type="3">मा</month>
-							<month type="4">अ</month>
-							<month type="5">मे</month>
-							<month type="6">जू</month>
-							<month type="7">जु</month>
-							<month type="8">अ</month>
-							<month type="9">सि</month>
-							<month type="10">अ</month>
-							<month type="11">न</month>
-							<month type="12">दि</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">जनवरी</month>
 							<month type="2">फरवरी</month>
@@ -212,20 +183,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">जन.</month>
-							<month type="2">फर.</month>
-							<month type="3">मार्च</month>
-							<month type="4">अप्रैल</month>
-							<month type="5">मेई</month>
-							<month type="6">जून</month>
-							<month type="7">जुलाई</month>
-							<month type="8">अग.</month>
-							<month type="9">सित.</month>
-							<month type="10">अक्तू.</month>
-							<month type="11">नव.</month>
-							<month type="12">दिस.</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ज</month>
 							<month type="2">फ</month>
@@ -239,20 +196,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">अ</month>
 							<month type="11">न</month>
 							<month type="12">दि</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">जनवरी</month>
-							<month type="2">फरवरी</month>
-							<month type="3">मार्च</month>
-							<month type="4">अप्रैल</month>
-							<month type="5">मेई</month>
-							<month type="6">जून</month>
-							<month type="7">जुलाई</month>
-							<month type="8">अगस्त</month>
-							<month type="9">सितंबर</month>
-							<month type="10">अक्तूबर</month>
-							<month type="11">नवंबर</month>
-							<month type="12">दिसंबर</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -276,15 +219,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">शु.</day>
 							<day type="sat">श.</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">ऐत</day>
-							<day type="mon">सोम</day>
-							<day type="tue">मंगल</day>
-							<day type="wed">बुध</day>
-							<day type="thu">बीर</day>
-							<day type="fri">शुक्र</day>
-							<day type="sat">शनि</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">ऐतबार</day>
 							<day type="mon">सोमबार</day>
@@ -296,15 +230,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">ऐत</day>
-							<day type="mon">सोम</day>
-							<day type="tue">मंगल</day>
-							<day type="wed">बुध</day>
-							<day type="thu">बीर</day>
-							<day type="fri">शुक्र</day>
-							<day type="sat">शनि</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">ऐ</day>
 							<day type="mon">सो</day>
@@ -313,24 +238,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">बी.</day>
 							<day type="fri">शु.</day>
 							<day type="sat">श.</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">ऐत</day>
-							<day type="mon">सोम</day>
-							<day type="tue">मंगल</day>
-							<day type="wed">बुध</day>
-							<day type="thu">बीर</day>
-							<day type="fri">शुक्र</day>
-							<day type="sat">शनि</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">ऐतबार</day>
-							<day type="mon">सोमबार</day>
-							<day type="tue">मंगलबार</day>
-							<day type="wed">बुधबार</day>
-							<day type="thu">बीरबार</day>
-							<day type="fri">शुक्रबार</day>
-							<day type="sat">शनिबार</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -341,32 +248,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2">त्र.2</quarter>
 							<quarter type="3">त्र.3</quarter>
 							<quarter type="4">त्र.4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">पैहली त्रमाही</quarter>
-							<quarter type="2">दूई त्रमाही</quarter>
-							<quarter type="3">त्री त्रमाही</quarter>
-							<quarter type="4">चौथी त्रमाही</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">त्र.1</quarter>
-							<quarter type="2">त्र.2</quarter>
-							<quarter type="3">त्र.3</quarter>
-							<quarter type="4">त्र.4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">पैहली त्रमाही</quarter>
@@ -382,27 +263,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">सवेर</dayPeriod>
 							<dayPeriod type="pm">स’ञ</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">सवेर</dayPeriod>
-							<dayPeriod type="pm">स’ञ</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">सवेर</dayPeriod>
 							<dayPeriod type="pm">दपैहर बाद</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">सवेर</dayPeriod>
-							<dayPeriod type="pm">स’ञ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">सवेर</dayPeriod>
-							<dayPeriod type="pm">स’ञ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">सवेर</dayPeriod>
-							<dayPeriod type="pm">स’ञ</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -420,19 +283,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d, MMMM y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d, MMMM y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d, MMM y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -496,43 +356,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d, MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d, MMM G y</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM दा हफ्ता W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM दा हफ्ता W</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
@@ -545,17 +378,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="one">Y दा हफ्ता w</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y दा हफ्ता w</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -601,14 +429,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">E, MMM d, y – E, MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
@@ -617,7 +443,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
@@ -626,7 +451,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
@@ -648,7 +472,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM d – d</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, MMM d – E, MMM d</greatestDifference>
@@ -692,6 +515,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">चेत्तर</month>
+							<month type="2">बसाख</month>
+							<month type="3">जेठ</month>
+							<month type="4">हाड़</month>
+							<month type="5">सौन</month>
+							<month type="6">भाद्रो</month>
+							<month type="7">अस्सू</month>
+							<month type="8">कत्ता</month>
+							<month type="9">मग्घर</month>
+							<month type="10">पोह्</month>
+							<month type="11">माघ</month>
+							<month type="12">फग्गन</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
@@ -699,39 +542,72 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>ब’रा</displayName>
+				<relative type="-1">पिछला ब’रा</relative>
+				<relative type="0">एह् ब’रा</relative>
+				<relative type="1">अगला ब’रा</relative>
 			</field>
 			<field type="year-short">
 				<displayName>ब.</displayName>
+				<relative type="-1">पिछला ब’रा/पिछले ब’रै</relative>
+				<relative type="0">एह् ब’रा/इस ब’रै</relative>
+				<relative type="1">अगला ब’रा/अगले ब’रै</relative>
 			</field>
 			<field type="year-narrow">
-				<displayName>ब.</displayName>
+				<relative type="-1">पिछला ब’रा</relative>
+				<relative type="0">एह् ब’रा</relative>
+				<relative type="1">अगला ब’रा</relative>
 			</field>
 			<field type="quarter">
 				<displayName>त्रमाही</displayName>
+				<relative type="-1">आखरी त्रमाही</relative>
+				<relative type="0">एह् त्रमाही</relative>
+				<relative type="1">अगली त्रमाही</relative>
 			</field>
 			<field type="quarter-short">
 				<displayName>त्रमा.</displayName>
 			</field>
-			<field type="quarter-narrow">
-				<displayName>त्रमा.</displayName>
-			</field>
 			<field type="month">
 				<displayName>म्हीना</displayName>
+				<relative type="-1">पिछला म्हीना/पिछले म्हीनै</relative>
+				<relative type="0">एह् म्हीना/इस म्हीनै</relative>
+				<relative type="1">अगला म्हीना/अगले म्हीनै</relative>
 			</field>
 			<field type="month-short">
 				<displayName>म्ही.</displayName>
+				<relative type="-1">पिछला म्हीना/पिछले म्हीनै</relative>
+				<relative type="0">एह् म्हीना/इस म्हीनै</relative>
+				<relative type="1">अगला म्हीना/अगले म्हीनै</relative>
 			</field>
 			<field type="month-narrow">
-				<displayName>म्ही.</displayName>
+				<relative type="-1">पिछला म्हीना/पिछले म्हीनै</relative>
+				<relative type="0">एह् म्हीना/इस म्हीनै</relative>
+				<relative type="1">अगला म्हीना/अगले म्हीनै</relative>
 			</field>
 			<field type="week">
 				<displayName>हफ्ता</displayName>
+				<relative type="-1">पिछला हफ्ता/पिछले हफ्तै</relative>
+				<relative type="0">एह् हफ्ता/इस हफ्तै</relative>
+				<relative type="1">अगला हफ्ता/अगले हफ्तै</relative>
 			</field>
 			<field type="week-short">
 				<displayName>ह.</displayName>
+				<relative type="-1">पिछला हफ्ता/पिछले हफ्तै</relative>
+				<relative type="0">एह् हफ्ता/इस हफ्तै</relative>
+				<relative type="1">अगला हफ्ता/अगले हफ्तै</relative>
 			</field>
 			<field type="week-narrow">
-				<displayName>ह.</displayName>
+				<relative type="-1">पिछला हफ्ता/पिछले हफ्तै</relative>
+				<relative type="0">एह् हफ्ता/इस हफ्तै</relative>
+				<relative type="1">अगला हफ्ता/अगले हफ्तै</relative>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>म्हीने दा हफ्ता</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>म्ही.दा ह.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>म्ही.दा ह.</displayName>
 			</field>
 			<field type="day">
 				<displayName>दिन</displayName>
@@ -739,63 +615,177 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">अज्ज</relative>
 				<relative type="1">औंदे कल</relative>
 			</field>
-			<field type="day-short">
-				<displayName>दिन</displayName>
-				<relative type="-1">जंदा कल</relative>
-				<relative type="0">अज्ज</relative>
-				<relative type="1">औंदे कल</relative>
+			<field type="dayOfYear">
+				<displayName>ब’रे दा दिन</displayName>
 			</field>
-			<field type="day-narrow">
-				<displayName>दिन</displayName>
-				<relative type="-1">जंदा कल</relative>
-				<relative type="0">अज्ज</relative>
-				<relative type="1">औंदे कल</relative>
+			<field type="dayOfYear-short">
+				<displayName>ब’रे दा दिन</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ब’रे दा दिन</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>हफ्ते दा दिन</displayName>
 			</field>
+			<field type="weekday-short">
+				<displayName>कम्म-दिन</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>कम्म-दिन</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>म्हीने दा कम्म-दिन</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>म्हीने दा कम्म-दिन</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>म्हीने दा कम्म-दिन</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">पिछला ऐतबार/पिछले ऐतबारें</relative>
+				<relative type="0">एह् ऐतबार/इस ऐतबारें</relative>
+				<relative type="1">अगला ऐतबार/अगले ऐतबारें</relative>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">पिछला ऐत./पिछले ऐत.</relative>
+				<relative type="0">एह् ऐत./इस ऐत.</relative>
+				<relative type="1">अगला ऐत./अगले ऐत.</relative>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">पिछला ऐ./पिछले ऐ.</relative>
+				<relative type="0">एह् ऐ./इस ऐ.</relative>
+				<relative type="1">अगला ऐ./अगले ऐ.</relative>
+			</field>
+			<field type="mon">
+				<relative type="-1">पिछला सोमबार/पिछले सोमबारें</relative>
+				<relative type="0">एह् सोमबार/इस सोमबारें</relative>
+				<relative type="1">अगला सोमबार/अगले सोमबारें</relative>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">पिछला सोम./पिछले सोम.</relative>
+				<relative type="0">एह् सोम./इस सोम.</relative>
+				<relative type="1">अगला सोम./अगले सोम.</relative>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">पिछला सो./पिछले सो.</relative>
+				<relative type="0">एह् सो./इस सो.</relative>
+				<relative type="1">अगला सो./अगले सो.</relative>
+			</field>
+			<field type="tue">
+				<relative type="-1">पिछला मंगलबार/पिछले मंगलबारें</relative>
+				<relative type="0">एह् मंगलबार/इस मंगलबारें</relative>
+				<relative type="1">अगला मंगलबार/अगले मंगलबारें</relative>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">पिछला मंगल./पिछले मंगल.</relative>
+				<relative type="0">एह् मंगल./इस मंगल.</relative>
+				<relative type="1">अगला मंगल./अगले मंगल.</relative>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">पिछला मं./पिछले मं.</relative>
+				<relative type="0">एह् मं./इस मं.</relative>
+				<relative type="1">अगला मं./अगले मं.</relative>
+			</field>
+			<field type="wed">
+				<relative type="-1">पिछला बुद्धबार/पिछले बुद्धबारें</relative>
+				<relative type="0">एह् बुद्धबार/इस बुद्धबारें</relative>
+				<relative type="1">अगला बुद्धबार/अगले बुद्धबारें</relative>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">पिछला बुद्ध./पिछले बुद्ध.</relative>
+				<relative type="0">एह् बुद्ध./इस बुद्ध.</relative>
+				<relative type="1">अगला बुद्ध./अगले बुद्ध.</relative>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">पिछला बु./पिछले बु.</relative>
+				<relative type="0">एह् बु./इस बु.</relative>
+				<relative type="1">अगला बु./अगले बु.</relative>
+			</field>
+			<field type="thu">
+				<relative type="-1">पिछला बीरबार/पिछले बीरबारें</relative>
+				<relative type="0">एह् बीरबार/इस बीरबारें</relative>
+				<relative type="1">अगला बीरबार/अगले बीरबारें</relative>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">पिछला बीर./पिछले बीर.</relative>
+				<relative type="0">एह् बीर./इस बीर.</relative>
+				<relative type="1">अगला बीर./अगले बीर.</relative>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">पिछला बी./पिछले बी.</relative>
+				<relative type="0">एह् बी./इस बी.</relative>
+				<relative type="1">अगला बी./अगले बी.</relative>
+			</field>
+			<field type="fri">
+				<relative type="-1">पिछला शुक्करबार/पिछले शुक्करबारें</relative>
+				<relative type="0">एह् शुक्करबार/इस शुक्करबारें</relative>
+				<relative type="1">अगला शुक्करबार/अगले शुक्करबारें</relative>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">पिछला शुक्कर./पिछले शुक्कर.</relative>
+				<relative type="0">एह् शुक्कर./इस शुक्कर.</relative>
+				<relative type="1">अगला शुक्कर./अगले शुक्कर.</relative>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">पिछला शु./पिछले शु.</relative>
+				<relative type="0">एह् शु./इस शु.</relative>
+				<relative type="1">अगला शु./अगले शु.</relative>
+			</field>
+			<field type="sat">
+				<relative type="-1">पिछला शनी./पिछले शनी.</relative>
+				<relative type="0">एह् शनी./इस शनी.</relative>
+				<relative type="1">अगला शनी./अगले शनी.</relative>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">पिछला श./पिछले श.</relative>
+				<relative type="0">एह् श./इस श.</relative>
+				<relative type="1">अगला श./अगले श.</relative>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>बडलै/स’ञां</displayName>
+			</field>
 			<field type="dayperiod">
 				<displayName>सवेर/बा.दपै.</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>बडलै/स’ञां</displayName>
+			</field>
 			<field type="hour">
 				<displayName>घैंटा</displayName>
+				<relative type="0">एह् घैंटा/ इस घैंटे</relative>
 			</field>
 			<field type="hour-short">
 				<displayName>घैं.</displayName>
 			</field>
-			<field type="hour-narrow">
-				<displayName>घैं.</displayName>
-			</field>
 			<field type="minute">
 				<displayName>मिंट्‌ट</displayName>
+				<relative type="0">एह् मिंट/ इस मिंट</relative>
 			</field>
 			<field type="minute-short">
 				<displayName>मिं.</displayName>
 			</field>
-			<field type="minute-narrow">
-				<displayName>मिं.</displayName>
-			</field>
 			<field type="second">
 				<displayName>सकैंट</displayName>
+				<relative type="0">हून/इसलै</relative>
 			</field>
 			<field type="second-short">
-				<displayName>सकैं.</displayName>
-			</field>
-			<field type="second-narrow">
 				<displayName>सकैं.</displayName>
 			</field>
 			<field type="zone">
 				<displayName>समां खेत्तर</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>ज़ोन</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>ज़ोन</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} समां</regionFormat>
 			<regionFormat type="daylight">{0} डेलाइट समां</regionFormat>
 			<regionFormat type="standard">{0} मानक समां</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>तालमेली आलमी समां</standard>
@@ -878,105 +868,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>deva</native>
 		</otherNumberingSystems>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
 				<displayName>ब्राजीली रियाल</displayName>
-				<displayName count="one">ब्राजीली रियाल</displayName>
-				<displayName count="other">ब्राजीली रियाल</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>चीनी युआन</displayName>
-				<displayName count="one">चीनी युआन</displayName>
-				<displayName count="other">चीनी युआन</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>यूरो</displayName>
-				<displayName count="one">यूरो</displayName>
-				<displayName count="other">यूरो</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>ब्रिटिश पाउंड</displayName>
-				<displayName count="one">ब्रिटिश पाउंड</displayName>
-				<displayName count="other">ब्रिटिश पाउंड</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>भारती रपेऽ</displayName>
-				<displayName count="one">भारती रपेऽ</displayName>
-				<displayName count="other">भारती रपेऽ</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>जापानी येन</displayName>
-				<displayName count="one">जापानी येन</displayName>
-				<displayName count="other">जापानी येन</displayName>
 				<symbol draft="contributed">¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>रूसी रूबल</displayName>
-				<displayName count="one">रूसी रूबल</displayName>
-				<displayName count="other">रूसी रूबल</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>यूएस डालर</displayName>
-				<displayName count="one">यूएस डालर</displayName>
-				<displayName count="other">यूएस डालर</displayName>
 				<symbol draft="contributed">$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>अनजांती करंसी</displayName>
@@ -987,49 +915,1399 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<unit type="acceleration-g-force">
+				<displayName>ग्रै-फोर्स</displayName>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>मीटर फी सकिंट²</displayName>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>घमघेरे</displayName>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>रेडियन</displayName>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>डिग्रियां</displayName>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>आर्क मिंट</displayName>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>आर्क सकिंट</displayName>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>वर्ग किलोमीटर</displayName>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>हैक्टर</displayName>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>वर्ग मीटर</displayName>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>वर्ग सैंटीमीटर</displayName>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>वर्ग मील</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName>किल्ले</displayName>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>वर्ग गज</displayName>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>वर्ग फुट</displayName>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>वर्ग इंच</displayName>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>डोनम</displayName>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>कैरट</displayName>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>मिलिग्राम फी डैसीलीटर</displayName>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>मिलीमोल फी लीटर</displayName>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>हिस्से फी दस लक्ख</displayName>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>प्रतिशत/फीसदी</displayName>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>फी ज्हार</displayName>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>फी दस ज्हार</displayName>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>मोल</displayName>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>लीटर प्रति किलोमीटर</displayName>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>लीटर प्रति 100 किलोमीटर</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>मील प्रति गैलन</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>मील प्रति इंपीरियल गैलन</displayName>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>पेटाबाइट</displayName>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>टैराबाइट</displayName>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>टैराबिट</displayName>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>गीगाबाइट</displayName>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>गीगाबिट</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>मैगाबाइट</displayName>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>मैगाबिट</displayName>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>किलोबाइट</displayName>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>किलोबिट</displayName>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>बाइट</displayName>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>बिट</displayName>
+			</unit>
+			<unit type="duration-century">
+				<displayName>सदियां</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>द्हाके</displayName>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ब’रे/साल</displayName>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>त्रमाहियां</displayName>
+			</unit>
+			<unit type="duration-month">
+				<displayName>म्हीने</displayName>
+			</unit>
+			<unit type="duration-week">
+				<displayName>हफ्ते</displayName>
+			</unit>
+			<unit type="duration-day">
+				<displayName>दिन</displayName>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>घैंटे</displayName>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>मिंट</displayName>
+			</unit>
+			<unit type="duration-second">
+				<displayName>सकिंट</displayName>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>मिलीसकिंट</displayName>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>माइक्रोसकिंट</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>नैनो सकिंट</displayName>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>एंपीयर</displayName>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>मिलीएंपीयर</displayName>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ओम</displayName>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>वोल्ट</displayName>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>किलो कैलोरी</displayName>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>कैलोरियां</displayName>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>किलो जूल</displayName>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>जूल</displayName>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>किलोवॉट-घैंटे</displayName>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>इलैक्ट्रॉनवोल्ट</displayName>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>ब्रिटिश थर्मल यूनटां</displayName>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>यूऐस्स थर्म</displayName>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>पौंड-बल</displayName>
+			</unit>
+			<unit type="force-newton">
+				<displayName>न्यूटन</displayName>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>किलोवॉट-घैंटे फी 100किलोमीटर</displayName>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>गीगाहर्ट्ज़</displayName>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>मैगाहर्ट्ज़</displayName>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>किलोहर्ट्ज़</displayName>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>हर्ट्ज़</displayName>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>टाइपोग्राफ़िक ऐम्म</displayName>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>पिक्सल</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>मैगापिक्सल</displayName>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>पिक्सल फी सैंटीमीटर</displayName>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>पिक्सल फी इंच</displayName>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>धरती दा घेरा</displayName>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>किलोमीटर</displayName>
+			</unit>
+			<unit type="length-meter">
+				<displayName>मीटर</displayName>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>डैसीमीटर</displayName>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>सैंटीमीटर</displayName>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>मिलीमीटर</displayName>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>माइक्रोमीटर</displayName>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>नैनोमीटर</displayName>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>पिकोमीटर</displayName>
+			</unit>
+			<unit type="length-mile">
+				<displayName>मील</displayName>
+			</unit>
+			<unit type="length-yard">
+				<displayName>गज</displayName>
+			</unit>
+			<unit type="length-foot">
+				<displayName>फुट</displayName>
+			</unit>
+			<unit type="length-inch">
+				<displayName>इंच</displayName>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>पारसेक</displayName>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>रुशनाई ब’रे</displayName>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>खगोली यूनटां</displayName>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>फरलांग</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>मसातरां</displayName>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>नॉटिकल मील</displayName>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>मील-स्कैण्डिनेवियन</displayName>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>सौर अद्धाव्यास</displayName>
+			</unit>
+			<unit type="light-lux">
+				<displayName>लक्स</displayName>
+			</unit>
+			<unit type="light-candela">
+				<displayName>कैंडेला</displayName>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>लुमेन</displayName>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>सौर चानन</displayName>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>मीट्रिक टन</displayName>
+			</unit>
 			<unit type="mass-kilogram">
-				<displayName>किल्लो</displayName>
+				<displayName>किलोग्राम</displayName>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ग्राम</displayName>
 			</unit>
+			<unit type="mass-milligram">
+				<displayName>मिलीग्राम</displayName>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>माइक्रोग्राम</displayName>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>स्टोन</displayName>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>पौंड</displayName>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>औंस</displayName>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>ट्राय औंस</displayName>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>कैरट</displayName>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>डाल्टन</displayName>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>धरती पिंड</displayName>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>सौर पिंड</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>डेढ रत्ती</displayName>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>गीगावॉट</displayName>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>किलोवॉट</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>वॉट</displayName>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>मिलीवॉट</displayName>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>हार्सपावर</displayName>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>पाराई मिलीमीटर</displayName>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>पौंड-फोर्स फी वर्ग इंच</displayName>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>पाराई इंच</displayName>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>बार</displayName>
+			</unit>
+			<unit type="pressure-millibar">
+				<displayName>मिलीबार</displayName>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>वायुमंडली दबाऽ</displayName>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>पास्कल</displayName>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>हैक्टोपास्कल</displayName>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>किलोपास्कल</displayName>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>मैगापास्कल</displayName>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>किलोमीटर फी घैंटा</displayName>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>मीटर प्रति सकिंट</displayName>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>मील प्रति घैंटा</displayName>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>नॉट</displayName>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName>डिग्री सेल्सियस</displayName>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>डिग्री फारेनहाइट</displayName>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>केल्विन</displayName>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>पौंड-फोर्स-फुट</displayName>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>न्यूटन-मीटर</displayName>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>क्यूबिक किलोमीटर</displayName>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>क्यूबिक मीटर</displayName>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>क्यूबिक सेंटीमीटर</displayName>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>क्यूबिक मील</displayName>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>क्यूबिक गज</displayName>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>क्यूबिक फुट</displayName>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>क्यूबिक इंच</displayName>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>मैगालीटर</displayName>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>हैक्टोलीटर</displayName>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>लीटर</displayName>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>डैसीलीटर</displayName>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>सैंटीलीटर</displayName>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>मिलीलीटर</displayName>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>मीट्रिक पिंट</displayName>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>मीट्रिक कप</displayName>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>किल्ला-फुट</displayName>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>बुशल</displayName>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>गैलनां</displayName>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>इंपीरियल गैलनां</displayName>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>कुआर्ट</displayName>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>पिंट</displayName>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>कप</displayName>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>फ्लूइड औंस</displayName>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>टेबलस्पून</displayName>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>टी स्पून</displayName>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>बैरल</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>डेज़र्ट स्पून</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>इंपी. डेज़र्टस्पून</displayName>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>बूंद</displayName>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ड्रैम फ्लूइड</displayName>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>जिगर</displayName>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>चूंडियां</displayName>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>इंपी. कुआर्ट</displayName>
+			</unit>
+			<coordinateUnit>
+				<displayName>प्रधान दिशा</displayName>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="acceleration-g-force">
+				<displayName>ग्रै-फोर्स</displayName>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>मीटर/सकिं²</displayName>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>घमघेरे</displayName>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>रेडियन</displayName>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>डिग्रियां</displayName>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>आर्क मिंट</displayName>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>आर्क सकिं</displayName>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>व. कि.मी.</displayName>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>हैक्टर</displayName>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>व. मीटर</displayName>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>व. सैं.मी.</displayName>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>व.मील</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName>किल्ले</displayName>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>व.गज</displayName>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>व.फु.</displayName>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>व.इं॰</displayName>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>डोनम</displayName>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>कैरट</displayName>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>मि॰ग्रा॰/डै.ली.</displayName>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>मिलीमोल/लीटर</displayName>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>हिस्से/दस लक्ख</displayName>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>प्रतिशत/फीसदी</displayName>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>फी ज्हार</displayName>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>मोल</displayName>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>लीटर/किमी</displayName>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>ली./100 कि.मी.</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>मील/गैल</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>मील/गैल इंपी.</displayName>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>पेबाइट</displayName>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>टैबाइट</displayName>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>गीबाइट</displayName>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>गीबिट</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>मैबाइट</displayName>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>मैबिट</displayName>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>किबाइट</displayName>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>किबिट</displayName>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>बाइट</displayName>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>बिट</displayName>
+			</unit>
+			<unit type="duration-century">
+				<displayName>स.</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>द्हा.</displayName>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ब’रे/साल</displayName>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>त्रमा.</displayName>
+			</unit>
+			<unit type="duration-month">
+				<displayName>म्हीने</displayName>
+			</unit>
+			<unit type="duration-week">
+				<displayName>हफ्ते</displayName>
+			</unit>
+			<unit type="duration-day">
+				<displayName>दिन</displayName>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>घैंटे</displayName>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>मिं.</displayName>
+			</unit>
+			<unit type="duration-second">
+				<displayName>सकिं.</displayName>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>मिलीसकिं.</displayName>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>माइक्रोसकिं</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>नैनो सकिं</displayName>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>एंपी</displayName>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>मिलीएंप</displayName>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ओम</displayName>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>वोल्ट</displayName>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>किकैल</displayName>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>कैल</displayName>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>किलो जूल</displayName>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>जूल</displayName>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>किवॉघैं</displayName>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>इलैक्ट्रॉनवोल्ट</displayName>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>ब्रिथयू</displayName>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>यूऐस्स थर्म</displayName>
+			</unit>
+			<unit type="force-newton">
+				<displayName>न्यूटन</displayName>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>पिक्सल</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>मैगापिक्सल</displayName>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>कि.मी.</displayName>
+			</unit>
+			<unit type="length-meter">
+				<displayName>मी.</displayName>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>डै.मी.</displayName>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>सैं.मी.</displayName>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>मि.मी.</displayName>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>मामी</displayName>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>नैमी</displayName>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>पिमी</displayName>
+			</unit>
+			<unit type="length-mile">
+				<displayName>मील</displayName>
+			</unit>
+			<unit type="length-yard">
+				<displayName>गज</displayName>
+			</unit>
+			<unit type="length-foot">
+				<displayName>फुट</displayName>
+			</unit>
+			<unit type="length-inch">
+				<displayName>इंच</displayName>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>पारसेक</displayName>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>रुशनाई ब’रे</displayName>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>खगो.यू.</displayName>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>फरलांग</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>मसातरां</displayName>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>नॉमी</displayName>
+			</unit>
+			<unit type="light-lux">
+				<displayName>लक्स</displayName>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>टन</displayName>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName>कि.ग्रा.</displayName>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>ग्राम</displayName>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>मि.ग्रा.</displayName>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>मा.ग्रा.</displayName>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>स्टोन</displayName>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>पौंड</displayName>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>औं.</displayName>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>औं. ट्राय</displayName>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>कैरट</displayName>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>डाल्टन</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>डेढ रत्ती</displayName>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>मैवॉ</displayName>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>किवॉ</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>वॉट</displayName>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>मिवॉ</displayName>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>हापा</displayName>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>बार</displayName>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>पा.</displayName>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>किपा.</displayName>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>मेपा.</displayName>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>कि.मी./घैंटा</displayName>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>मीटर/सकिं</displayName>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>मील/घैंटा</displayName>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>नॉट</displayName>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName>डिग्री सेल्सियस</displayName>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>डिग्री फारेनहाइट</displayName>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>न्यू.मी.</displayName>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>क्यू. कि.मी.</displayName>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>क्यू.मी.</displayName>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>क्यू.सैं.मी.</displayName>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>क्यू. मील</displayName>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>क्यू.ग.</displayName>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>क्यू. फुट</displayName>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>क्यू. इंच</displayName>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>मै.ली.</displayName>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>है.ली.</displayName>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>लीटर</displayName>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>डै.ली.</displayName>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>सैं.ली.</displayName>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>मि.ली.</displayName>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>मी.पिं.</displayName>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>मी.क.</displayName>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>किल्ला फु.</displayName>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>बुशल</displayName>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>गैल.</displayName>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>इंपी. गैल.</displayName>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>कुआर्ट</displayName>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>पिंट</displayName>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>कप</displayName>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>फ्लू. औं.</displayName>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>टेस्पून</displayName>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>टीस्पून</displayName>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>बैरल</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>डेस्पून</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>इंपी डेस्पून</displayName>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>बूंद</displayName>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ड्रैम फ्लूइड</displayName>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>जिगर</displayName>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>चूंडी</displayName>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>कु इंपी</displayName>
+			</unit>
+			<coordinateUnit>
+				<displayName>दिशा</displayName>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="acceleration-g-force">
+				<displayName>ग्रै-फोर्स</displayName>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>मीटर/स²</displayName>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>घमघेरा</displayName>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>रेडि</displayName>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>डिग.</displayName>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>आर्क मिंट</displayName>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>आर्कसकिं</displayName>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>व. किमी</displayName>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>हैक्टर</displayName>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>व. मीटर</displayName>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>व.सैंमी</displayName>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>व.मील</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName>किल्ला</displayName>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>वग</displayName>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>वफु</displayName>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>वइं</displayName>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>डोनम</displayName>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>कैरट</displayName>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>मि॰ग्रा॰/डैली</displayName>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>मिलीमोल/ली</displayName>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>हिफीदल</displayName>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>मोल</displayName>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>लीटर/किमी</displayName>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>ली/100 किमी</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>मील/गै</displayName>
+			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>मी/गै यूके</displayName>
 				<unitPattern count="one">{0}m/gUK</unitPattern>
 				<unitPattern count="other">{0}m/gUK</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName>पेबा</displayName>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>टैबा</displayName>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>टैबा</displayName>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>गीबा</displayName>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>गीबि</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>मैबा</displayName>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>मैबि</displayName>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>किबा</displayName>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>किबी</displayName>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>बा</displayName>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>बिट</displayName>
+			</unit>
+			<unit type="duration-century">
+				<displayName>स.</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>द्हा.</displayName>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ब’रा/साल</displayName>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>त्रमा.</displayName>
+			</unit>
+			<unit type="duration-month">
+				<displayName>म्हीना</displayName>
+			</unit>
+			<unit type="duration-week">
+				<displayName>हफ्</displayName>
+			</unit>
+			<unit type="duration-day">
+				<displayName>दिन</displayName>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>घैंटा</displayName>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>मिं</displayName>
+			</unit>
+			<unit type="duration-second">
+				<displayName>सकिं</displayName>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>मि.सकिं</displayName>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>मासकिं</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>नैसकिं</displayName>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>एंपी</displayName>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>मिएं</displayName>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ओम</displayName>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>वोल्ट</displayName>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>किकैल</displayName>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>कैल</displayName>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>किजू</displayName>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>जूल</displayName>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>किवॉघैं</displayName>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>इवो</displayName>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>ब्रिथयू</displayName>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>यूऐस्स थर्म</displayName>
+			</unit>
+			<unit type="force-newton">
+				<displayName>न्यू.</displayName>
+			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>किवॉघैं/100किमी</displayName>
 				<unitPattern count="one">{0}किल्लोवाट/100किमी</unitPattern>
 				<unitPattern count="other">{0} किल्लोवाट/100किमी</unitPattern>
 			</unit>
+			<unit type="length-kilometer">
+				<displayName>किमी</displayName>
+			</unit>
+			<unit type="length-meter">
+				<displayName>मी</displayName>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>डैमी</displayName>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>सैंमी</displayName>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>मिमी</displayName>
+			</unit>
+			<unit type="length-mile">
+				<displayName>मील</displayName>
+			</unit>
+			<unit type="length-yard">
+				<displayName>ग.</displayName>
+			</unit>
+			<unit type="length-foot">
+				<displayName>फु.</displayName>
+			</unit>
+			<unit type="length-inch">
+				<displayName>इं.</displayName>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>पारसेक</displayName>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>रुब</displayName>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>खगोयू</displayName>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>फरलांग</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>मसातर</displayName>
+			</unit>
+			<unit type="light-lux">
+				<displayName>लक्स</displayName>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>टन</displayName>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName>किग्रा</displayName>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>ग्राम</displayName>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>मिग्रा</displayName>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>माग्रा</displayName>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>स्टोन</displayName>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>पौंड</displayName>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>औं</displayName>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>औं.ट्रा</displayName>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>कैरट</displayName>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>डा</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>डे. रत्ती</displayName>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>मैवॉ</displayName>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>किवॉ</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>वॉट</displayName>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>मिवॉ</displayName>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>हापा</displayName>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>बार</displayName>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>पा</displayName>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>किपा</displayName>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>मेपा</displayName>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>किमी/घैं</displayName>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>मीटर/स</displayName>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>मील/घैं</displayName>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>नॉट</displayName>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName>°से॰</displayName>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>डिग्री फारेनहाइट</displayName>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>न्यू.मी.</displayName>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>क्यू.किमी</displayName>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>क्यू मी</displayName>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>क्यू सैंमी</displayName>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>क्यू मील</displayName>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>क्यूग</displayName>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>क्यूफु</displayName>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>क्यूइं</displayName>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>मैली</displayName>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>हैली</displayName>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>लीटर</displayName>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>डैली</displayName>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>सैली</displayName>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>मिली</displayName>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>मीपिं</displayName>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>मीक</displayName>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>किल्ला फु</displayName>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>बुशल</displayName>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>गैल</displayName>
+			</unit>
 			<unit type="volume-gallon-imperial">
+				<displayName>इंपी गैल</displayName>
 				<unitPattern count="one">{0}galIm</unitPattern>
 				<unitPattern count="other">{0}galIm</unitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>कुआर्ट</displayName>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>पिं.</displayName>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>कप</displayName>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<unitPattern count="one">{0}fl oz Im</unitPattern>
 				<unitPattern count="other">{0}fl oz Im</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>बैर.</displayName>
+			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
+			<unit type="volume-drop">
+				<displayName>बूंद</displayName>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ड्रै.फ्लू.</displayName>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>जिगर</displayName>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>चूं</displayName>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>कु इंपी</displayName>
+			</unit>
+			<coordinateUnit>
+				<displayName>दिशा</displayName>
+			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, ते {1}</listPatternPart>
 			<listPatternPart type="2">{0} ते {1}</listPatternPart>
 		</listPattern>

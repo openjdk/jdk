@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,61 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @summary Test virtual threads using park/unpark
+ * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} Parking.java
- * @run testng/othervm --enable-preview Parking
+ * @run junit Parking
+ */
+
+/*
+ * @test id=Xint
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @run junit/othervm -Xint Parking
+ */
+
+/*
+ * @test id=Xcomp
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @run junit/othervm -Xcomp Parking
+ */
+
+/*
+ * @test id=Xcomp-noTieredCompilation
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @run junit/othervm -Xcomp -XX:-TieredCompilation Parking
  */
 
 import java.time.Duration;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.SkipException;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import jdk.test.lib.thread.VThreadScheduler;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
-public class Parking {
-    private static final Object lock = new Object();
+class Parking {
+    static final int MAX_VTHREAD_COUNT = 4 * Runtime.getRuntime().availableProcessors();
+    static final Object lock = new Object();
 
     /**
      * Park, unparked by platform thread.
      */
     @Test
-    public void testPark1() throws Exception {
+    void testPark1() throws Exception {
         var thread = Thread.ofVirtual().start(LockSupport::park);
         Thread.sleep(1000); // give time for virtual thread to park
         LockSupport.unpark(thread);
@@ -56,7 +86,7 @@ public class Parking {
      * Park, unparked by virtual thread.
      */
     @Test
-    public void testPark2() throws Exception {
+    void testPark2() throws Exception {
         var thread1 = Thread.ofVirtual().start(LockSupport::park);
         Thread.sleep(1000); // give time for virtual thread to park
         var thread2 = Thread.ofVirtual().start(() -> LockSupport.unpark(thread1));
@@ -68,7 +98,7 @@ public class Parking {
      * Park while holding monitor, unparked by platform thread.
      */
     @Test
-    public void testPark3() throws Exception {
+    void testPark3() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 LockSupport.park();
@@ -83,15 +113,15 @@ public class Parking {
      * Park with native frame on stack.
      */
     @Test
-    public void testPark4() throws Exception {
-        throw new SkipException("Not implemented");
+    void testPark4() throws Exception {
+        // not implemented
     }
 
     /**
      * Unpark before park.
      */
     @Test
-    public void testPark5() throws Exception {
+    void testPark5() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             LockSupport.unpark(Thread.currentThread());
             LockSupport.park();
@@ -103,7 +133,7 @@ public class Parking {
      * 2 x unpark before park.
      */
     @Test
-    public void testPark6() throws Exception {
+    void testPark6() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             Thread me = Thread.currentThread();
             LockSupport.unpark(me);
@@ -120,7 +150,7 @@ public class Parking {
      * 2 x park and unpark by platform thread.
      */
     @Test
-    public void testPark7() throws Exception {
+    void testPark7() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             LockSupport.park();
             LockSupport.park();
@@ -142,7 +172,7 @@ public class Parking {
      * Park with interrupt status set.
      */
     @Test
-    public void testPark8() throws Exception {
+    void testPark8() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
@@ -155,7 +185,7 @@ public class Parking {
      * Thread interrupt when parked.
      */
     @Test
-    public void testPark9() throws Exception {
+    void testPark9() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             scheduleInterrupt(t, 1000);
@@ -169,7 +199,7 @@ public class Parking {
      * Park while holding monitor and with interrupt status set.
      */
     @Test
-    public void testPark10() throws Exception {
+    void testPark10() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
@@ -184,7 +214,7 @@ public class Parking {
      * Thread interrupt when parked while holding monitor
      */
     @Test
-    public void testPark11() throws Exception {
+    void testPark11() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             scheduleInterrupt(t, 1000);
@@ -200,7 +230,7 @@ public class Parking {
      * parkNanos(-1) completes immediately
      */
     @Test
-    public void testParkNanos1() throws Exception {
+    void testParkNanos1() throws Exception {
         VThreadRunner.run(() -> LockSupport.parkNanos(-1));
     }
 
@@ -208,7 +238,7 @@ public class Parking {
      * parkNanos(0) completes immediately
      */
     @Test
-    public void testParkNanos2() throws Exception {
+    void testParkNanos2() throws Exception {
         VThreadRunner.run(() -> LockSupport.parkNanos(0));
     }
 
@@ -216,7 +246,7 @@ public class Parking {
      * parkNanos(1000ms) parks thread.
      */
     @Test
-    public void testParkNanos3() throws Exception {
+    void testParkNanos3() throws Exception {
         VThreadRunner.run(() -> {
             // park for 1000ms
             long nanos = TimeUnit.NANOSECONDS.convert(1000, TimeUnit.MILLISECONDS);
@@ -234,7 +264,7 @@ public class Parking {
      * Park with parkNanos, unparked by platform thread.
      */
     @Test
-    public void testParkNanos4() throws Exception {
+    void testParkNanos4() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             long nanos = TimeUnit.NANOSECONDS.convert(1, TimeUnit.DAYS);
             LockSupport.parkNanos(nanos);
@@ -248,7 +278,7 @@ public class Parking {
      * Park with parkNanos, unparked by virtual thread.
      */
     @Test
-    public void testParkNanos5() throws Exception {
+    void testParkNanos5() throws Exception {
         var thread1 = Thread.ofVirtual().start(() -> {
             long nanos = TimeUnit.NANOSECONDS.convert(1, TimeUnit.DAYS);
             LockSupport.parkNanos(nanos);
@@ -263,7 +293,7 @@ public class Parking {
      * Unpark before parkNanos.
      */
     @Test
-    public void testParkNanos6() throws Exception {
+    void testParkNanos6() throws Exception {
         VThreadRunner.run(() -> {
             LockSupport.unpark(Thread.currentThread());
             long nanos = TimeUnit.NANOSECONDS.convert(1, TimeUnit.DAYS);
@@ -275,7 +305,7 @@ public class Parking {
      * Unpark before parkNanos(0), should consume parking permit.
      */
     @Test
-    public void testParkNanos7() throws Exception {
+    void testParkNanos7() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             LockSupport.unpark(Thread.currentThread());
             LockSupport.parkNanos(0);  // should consume parking permit
@@ -291,7 +321,7 @@ public class Parking {
      * Park with parkNanos and interrupt status set.
      */
     @Test
-    public void testParkNanos8() throws Exception {
+    void testParkNanos8() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
@@ -304,7 +334,7 @@ public class Parking {
      * Thread interrupt when parked in parkNanos.
      */
     @Test
-    public void testParkNanos9() throws Exception {
+    void testParkNanos9() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             scheduleInterrupt(t, 1000);
@@ -318,7 +348,7 @@ public class Parking {
      * Park with parkNanos while holding monitor and with interrupt status set.
      */
     @Test
-    public void testParkNanos10() throws Exception {
+    void testParkNanos10() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
@@ -333,7 +363,7 @@ public class Parking {
      * Thread interrupt when parked in parkNanos and while holding monitor.
      */
     @Test
-    public void testParkNanos11() throws Exception {
+    void testParkNanos11() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             scheduleInterrupt(t, 1000);
@@ -343,6 +373,89 @@ public class Parking {
                 }
             }
         });
+    }
+
+    /**
+     * Test that parking while holding a monitor releases the carrier.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testParkWhenHoldingMonitor(boolean reenter) throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            var lock = new Object();
+
+            // thread enters (and maybe reenters) a monitor and parks
+            var started = new CountDownLatch(1);
+            var vthread1 = factory.newThread(() -> {
+                started.countDown();
+                synchronized (lock) {
+                    if (reenter) {
+                        synchronized (lock) {
+                            LockSupport.park();
+                        }
+                    } else {
+                        LockSupport.park();
+                    }
+                }
+            });
+
+            vthread1.start();
+            try {
+                // wait for thread to start and park
+                started.await();
+                await(vthread1, Thread.State.WAITING);
+
+                // carrier should be released, use it for another thread
+                var executed = new AtomicBoolean();
+                var vthread2 = factory.newThread(() -> {
+                    executed.set(true);
+                });
+                vthread2.start();
+                vthread2.join();
+                assertTrue(executed.get());
+            } finally {
+                LockSupport.unpark(vthread1);
+                vthread1.join();
+            }
+        }
+    }
+
+    /**
+     * Test lots of virtual threads parked while holding a monitor. If the number of
+     * virtual threads exceeds the number of carrier threads then this test will hang if
+     * parking doesn't release the carrier.
+     */
+    @Test
+    void testManyParkedWhenHoldingMonitor() throws Exception {
+        Thread[] vthreads = new Thread[MAX_VTHREAD_COUNT];
+        var done = new AtomicBoolean();
+        for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
+            var lock = new Object();
+            var started = new CountDownLatch(1);
+            var vthread = Thread.ofVirtual().start(() -> {
+                started.countDown();
+                synchronized (lock) {
+                    while (!done.get()) {
+                        LockSupport.park();
+                    }
+                }
+            });
+            // wait for thread to start and park
+            started.await();
+            await(vthread, Thread.State.WAITING);
+            vthreads[i] = vthread;
+        }
+
+        // cleanup
+        done.set(true);
+        for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
+            var vthread = vthreads[i];
+            LockSupport.unpark(vthread);
+            vthread.join();
+        }
     }
 
     /**
@@ -358,5 +471,17 @@ public class Parking {
             }
         };
         new Thread(interruptTask).start();
+    }
+
+    /**
+     * Waits for the given thread to reach a given state.
+     */
+    private void await(Thread thread, Thread.State expectedState) throws InterruptedException {
+        Thread.State state = thread.getState();
+        while (state != expectedState) {
+            assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
+            Thread.sleep(10);
+            state = thread.getState();
+        }
     }
 }

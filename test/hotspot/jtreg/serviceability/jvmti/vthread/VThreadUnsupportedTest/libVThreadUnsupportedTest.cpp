@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 #include <atomic>
 
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static std::atomic<bool> is_completed_test_in_event;
 
@@ -60,15 +60,15 @@ Java_VThreadUnsupportedTest_isCompletedTestInEvent(JNIEnv *env, jobject obj) {
 }
 
 /*
- * Execute JVMTI functions which currently don't support vthreads and check that they
- * return error code JVMTI_ERROR_INVALID_THREAD or JVMTI_ERROR_OPAQUE_FRAME correctly.
+ * Execute JVMTI functions that don't support vthreads and check they return error
+ * code JVMTI_ERROR_UNSUPPORTED_OPERATION or JVMTI_ERROR_OPAQUE_FRAME correctly.
  */
 static void
 test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
   jvmtiError err;
   jboolean is_vthread;
   jvmtiCapabilities caps;
-  void* local_storage_data = NULL;
+  void* local_storage_data = nullptr;
   jlong nanos;
 
   LOG("test_unsupported_jvmti_functions: started\n");
@@ -87,18 +87,6 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
 
   LOG("Testing JVMTI functions which should not accept a virtual thread argument\n");
 
-  LOG("Testing StopThread\n");
-  err = jvmti->StopThread(vthread, vthread);
-  check_jvmti_error_unsupported_operation(jni, "StopThread", err);
-
-  LOG("Testing PopFrame\n");
-  err = jvmti->PopFrame(vthread);
-  check_jvmti_error_opaque_frame(jni, "PopFrame", err);
-
-  LOG("Testing ForceEarlyReturnVoid\n");
-  err = jvmti->ForceEarlyReturnVoid(vthread);
-  check_jvmti_error_opaque_frame(jni, "ForceEarlyReturnVoid", err);
-
   LOG("Testing GetThreadCpuTime\n");
   err = jvmti->GetThreadCpuTime(vthread, &nanos);
   check_jvmti_error_unsupported_operation(jni, "GetThreadCpuTime", err);
@@ -110,7 +98,7 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
     check_jvmti_error_unsupported_operation(jni, "GetCurrentThreadCpuTime", err);
   }
 
-  err = jvmti->RunAgentThread(vthread, agent_proc, (const void*)NULL, JVMTI_THREAD_NORM_PRIORITY);
+  err = jvmti->RunAgentThread(vthread, agent_proc, nullptr, JVMTI_THREAD_NORM_PRIORITY);
   check_jvmti_error_unsupported_operation(jni, "RunAgentThread", err);
 
   LOG("test_unsupported_jvmti_functions: finished\n");
@@ -133,8 +121,8 @@ Java_VThreadUnsupportedTest_testJvmtiFunctionsInJNICall(JNIEnv *jni, jobject obj
 static void JNICALL
 VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   va_list ap;
-  JNIEnv* jni = NULL;
-  jthread thread = NULL;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
 
   va_start(ap, jvmti);
   jni = va_arg(ap, JNIEnv*);
@@ -187,7 +175,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
     return JNI_ERR;

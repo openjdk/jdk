@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,17 @@
 
 /*
  * @test
- * @bug 4074599
+ * @bug 4074599 8301205
+ * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build Log10Tests
+ * @run main Log10Tests
  * @summary Tests for StrictMath.log10
  */
-
+import jdk.test.lib.RandomFactory;
 
 /**
  * The tests in ../Math/Log10Tests.java test properties that should
@@ -41,6 +48,19 @@
 
 public class Log10Tests {
     private Log10Tests(){}
+
+    public static void main(String... args) {
+        int failures = 0;
+
+        failures += testLog10();
+        failures += testAgainstTranslit();
+
+        if (failures > 0) {
+            System.err.println("Testing log10 incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
 
     static int testLog10Case(double input, double expected) {
         return Tests.test("StrictMath.log10(double)", input,
@@ -701,6 +721,13 @@ public class Log10Tests {
             {0x1.3fffffffffadfp25,      0x1.e7d9a8edb474dp2},
             {0x1.3fffffffffebdp25,      0x1.e7d9a8edb47a2p2},
             {0x1.4p25,                  0x1.e7d9a8edb47bfp2},
+
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {0x1.de02157073b31p-1,     -0x1.e8cfabf160ec6p-6},
+            {0x1.10fdf4211fd45p+0,      0x1.c946e0d48c148p-6},
+            {0x1.55535a0140a21p+0,      0x1.ffb56ebe85597p-4},
+            {0x1.803dea263187fp-1,     -0x1.fea1086f5a316p-4},
         };
 
         for (double[] testCase: testCases)
@@ -709,15 +736,47 @@ public class Log10Tests {
         return failures;
     }
 
-    public static void main(String [] argv) {
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test StrictMath.log10 against transliteration port of log10.
+     */
+    private static int testAgainstTranslit() {
         int failures = 0;
+        double x;
 
-        failures += testLog10();
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRange(x, Math.ulp(x), 1000);
 
-        if (failures > 0) {
-            System.err.println("Testing log10 incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
+        // ... and just below subnormal threshold ...
+         x =  Math.nextDown(Double.MIN_NORMAL);
+         failures += testRange(x, -Math.ulp(x), 1000);
+
+        // ... and near 1.0 ...
+         x = 1.0;
+         failures += testRange(x, Math.ulp(x), 1000);
+         x = Math.nextDown(1.0);
+         failures += testRange(x, -Math.ulp(x), 1000);
+
+         x = Tests.createRandomDouble(random);
+
+         // Make the increment twice the ulp value in case the random
+         // value is near an exponent threshold. Don't worry about test
+         // elements overflowing to infinity if the starting value is
+         // near Double.MAX_VALUE.
+         failures += testRange(x, 2.0 * Math.ulp(x), 1000);
+
+         return failures;
+    }
+
+    private static int testRange(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testLog10Case(x, FdlibmTranslit.log10(x));
         }
+        return failures;
     }
 }

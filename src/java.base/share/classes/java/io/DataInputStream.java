@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,11 @@
 
 package java.io;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ByteArray;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -43,6 +49,10 @@ import java.util.Objects;
  * @since   1.0
  */
 public class DataInputStream extends FilterInputStream implements DataInput {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    private static final char[] EMPTY_CHAR_ARRAY = new char[0];
 
     /**
      * Creates a DataInputStream that uses the specified
@@ -54,11 +64,13 @@ public class DataInputStream extends FilterInputStream implements DataInput {
         super(in);
     }
 
+    private final byte[] readBuffer = new byte[8];
+
     /**
      * working arrays initialized on demand by readUTF
      */
-    private byte[] bytearr = new byte[80];
-    private char[] chararr = new char[80];
+    private byte[] bytearr = EMPTY_BYTE_ARRAY;
+    private char[] chararr = EMPTY_CHAR_ARRAY;
 
     /**
      * Reads some number of bytes from the contained input stream and
@@ -309,7 +321,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final short readShort() throws IOException {
-        return (short) readUnsignedShort();
+        readFully(readBuffer, 0, 2);
+        return ByteArray.getShort(readBuffer, 0);
     }
 
     /**
@@ -330,12 +343,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final int readUnsignedShort() throws IOException {
-        InputStream in = this.in;
-        int ch1 = in.read();
-        int ch2 = in.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (ch1 << 8) + (ch2 << 0);
+        readFully(readBuffer, 0, 2);
+        return ByteArray.getUnsignedShort(readBuffer, 0);
     }
 
     /**
@@ -356,7 +365,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final char readChar() throws IOException {
-        return (char) readUnsignedShort();
+        readFully(readBuffer, 0, 2);
+        return ByteArray.getChar(readBuffer, 0);
     }
 
     /**
@@ -377,17 +387,9 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final int readInt() throws IOException {
-        InputStream in = this.in;
-        int ch1 = in.read();
-        int ch2 = in.read();
-        int ch3 = in.read();
-        int ch4 = in.read();
-        if ((ch1 | ch2 | ch3 | ch4) < 0)
-            throw new EOFException();
-        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+        readFully(readBuffer, 0, 4);
+        return ByteArray.getInt(readBuffer, 0);
     }
-
-    private final byte[] readBuffer = new byte[8];
 
     /**
      * See the general contract of the {@code readLong}
@@ -408,14 +410,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final long readLong() throws IOException {
         readFully(readBuffer, 0, 8);
-        return (((long)readBuffer[0] << 56) +
-                ((long)(readBuffer[1] & 255) << 48) +
-                ((long)(readBuffer[2] & 255) << 40) +
-                ((long)(readBuffer[3] & 255) << 32) +
-                ((long)(readBuffer[4] & 255) << 24) +
-                ((readBuffer[5] & 255) << 16) +
-                ((readBuffer[6] & 255) <<  8) +
-                ((readBuffer[7] & 255) <<  0));
+        return ByteArray.getLong(readBuffer, 0);
     }
 
     /**
@@ -437,7 +432,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.lang.Float#intBitsToFloat(int)
      */
     public final float readFloat() throws IOException {
-        return Float.intBitsToFloat(readInt());
+        readFully(readBuffer, 0, 4);
+        return ByteArray.getFloat(readBuffer, 0);
     }
 
     /**
@@ -459,7 +455,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.lang.Double#longBitsToDouble(long)
      */
     public final double readDouble() throws IOException {
-        return Double.longBitsToDouble(readLong());
+        readFully(readBuffer, 0, 8);
+        return ByteArray.getDouble(readBuffer, 0);
     }
 
     private char[] lineBuffer;
@@ -582,17 +579,15 @@ loop:   while (true) {
     public static final String readUTF(DataInput in) throws IOException {
         int utflen = in.readUnsignedShort();
         byte[] bytearr = null;
-        char[] chararr = null;
         if (in instanceof DataInputStream dis) {
-            if (dis.bytearr.length < utflen){
-                dis.bytearr = new byte[utflen*2];
-                dis.chararr = new char[utflen*2];
+            if (dis.bytearr.length >= utflen) {
+                bytearr = dis.bytearr;
             }
-            chararr = dis.chararr;
-            bytearr = dis.bytearr;
-        } else {
+        }
+        boolean trusted = false;
+        if (bytearr == null) {
             bytearr = new byte[utflen];
-            chararr = new char[utflen];
+            trusted = true;
         }
 
         int c, char2, char3;
@@ -600,12 +595,35 @@ loop:   while (true) {
         int chararr_count=0;
 
         in.readFully(bytearr, 0, utflen);
+        int ascii = JLA.countPositives(bytearr, 0, utflen);
+        if (ascii == utflen) {
+            String str;
+            if (trusted) {
+                str = JLA.uncheckedNewStringNoRepl(bytearr, StandardCharsets.ISO_8859_1);
+            } else {
+                str = new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
+            }
+            return str;
+        }
+        if (trusted && in instanceof DataInputStream dis) {
+            dis.bytearr = bytearr;
+            trusted = false;
+        }
 
-        while (count < utflen) {
-            c = (int) bytearr[count] & 0xff;
-            if (c > 127) break;
-            count++;
-            chararr[chararr_count++]=(char)c;
+        char[] chararr;
+        if (in instanceof DataInputStream dis) {
+            if (dis.chararr.length < (utflen << 1)) {
+                dis.chararr = new char[utflen << 1];
+            }
+            chararr = dis.chararr;
+        } else {
+            chararr = new char[utflen];
+        }
+
+        if (ascii != 0) {
+            JLA.inflateBytesToChars(bytearr, 0, chararr, 0, ascii);
+            count += ascii;
+            chararr_count += ascii;
         }
 
         while (count < utflen) {

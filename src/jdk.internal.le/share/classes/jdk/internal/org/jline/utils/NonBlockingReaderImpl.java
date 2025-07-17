@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -28,19 +28,17 @@ import java.io.Reader;
  * @since 2.7
  * @author Scott C. Gray &lt;scottgray1@gmail.com&gt;
  */
-public class NonBlockingReaderImpl
-    extends NonBlockingReader
-{
+public class NonBlockingReaderImpl extends NonBlockingReader {
     public static final int READ_EXPIRED = -2;
 
-    private Reader in;                  // The actual input stream
-    private int    ch   = READ_EXPIRED; // Recently read character
+    private Reader in; // The actual input stream
+    private int ch = READ_EXPIRED; // Recently read character
 
-    private String      name;
-    private boolean     threadIsReading      = false;
-    private IOException exception            = null;
-    private long        threadDelay          = 60 * 1000;
-    private Thread      thread;
+    private String name;
+    private boolean threadIsReading = false;
+    private IOException exception = null;
+    private long threadDelay = 60 * 1000;
+    private Thread thread;
 
     /**
      * Creates a <code>NonBlockingReader</code> out of a normal blocking
@@ -91,10 +89,12 @@ public class NonBlockingReaderImpl
     }
 
     @Override
-    public int readBuffered(char[] b) throws IOException {
+    public int readBuffered(char[] b, int off, int len, long timeout) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if (b.length == 0) {
+        } else if (off < 0 || len < 0 || off + len < b.length) {
+            throw new IllegalArgumentException();
+        } else if (len == 0) {
             return 0;
         } else if (exception != null) {
             assert ch == READ_EXPIRED;
@@ -105,15 +105,16 @@ public class NonBlockingReaderImpl
             b[0] = (char) ch;
             ch = READ_EXPIRED;
             return 1;
-        } else if (!threadIsReading) {
-            return in.read(b);
+        } else if (!threadIsReading && timeout <= 0) {
+            return in.read(b, off, len);
         } else {
-            int c = read(-1, false);
+            // TODO: rework implementation to read as much as possible
+            int c = read(timeout, false);
             if (c >= 0) {
-                b[0] = (char) c;
+                b[off] = (char) c;
                 return 1;
             } else {
-                return -1;
+                return c;
             }
         }
     }
@@ -132,8 +133,7 @@ public class NonBlockingReaderImpl
         if (exception != null) {
             assert ch == READ_EXPIRED;
             IOException toBeThrown = exception;
-            if (!isPeek)
-                exception = null;
+            if (!isPeek) exception = null;
             throw toBeThrown;
         }
 
@@ -144,11 +144,9 @@ public class NonBlockingReaderImpl
          */
         if (ch >= -1) {
             assert exception == null;
-        }
-        else if (!isPeek && timeout <= 0L && !threadIsReading) {
+        } else if (!isPeek && timeout <= 0L && !threadIsReading) {
             ch = in.read();
-        }
-        else {
+        } else {
             /*
              * If the thread isn't reading already, then ask it to do so.
              */
@@ -158,22 +156,18 @@ public class NonBlockingReaderImpl
                 notifyAll();
             }
 
-            boolean isInfinite = (timeout <= 0L);
-
             /*
              * So the thread is currently doing the reading for us. So
              * now we play the waiting game.
              */
-            while (isInfinite || timeout > 0L)  {
-                long start = System.currentTimeMillis ();
-
+            Timeout t = new Timeout(timeout);
+            while (!t.elapsed()) {
                 try {
                     if (Thread.interrupted()) {
                         throw new InterruptedException();
                     }
-                    wait(timeout);
-                }
-                catch (InterruptedException e) {
+                    wait(t.timeout());
+                } catch (InterruptedException e) {
                     exception = (IOException) new InterruptedIOException().initCause(e);
                 }
 
@@ -181,18 +175,13 @@ public class NonBlockingReaderImpl
                     assert ch == READ_EXPIRED;
 
                     IOException toBeThrown = exception;
-                    if (!isPeek)
-                        exception = null;
+                    if (!isPeek) exception = null;
                     throw toBeThrown;
                 }
 
                 if (ch >= -1) {
                     assert exception == null;
                     break;
-                }
-
-                if (!isInfinite) {
-                    timeout -= System.currentTimeMillis() - start;
                 }
             }
         }
@@ -210,7 +199,7 @@ public class NonBlockingReaderImpl
         return ret;
     }
 
-    private void run () {
+    private void run() {
         Log.debug("NonBlockingReader start");
         boolean needToRead;
 
@@ -249,12 +238,12 @@ public class NonBlockingReaderImpl
                 IOException failure = null;
                 try {
                     charRead = in.read();
-//                    if (charRead < 0) {
-//                        continue;
-//                    }
+                    //                    if (charRead < 0) {
+                    //                        continue;
+                    //                    }
                 } catch (IOException e) {
                     failure = e;
-//                    charRead = -1;
+                    //                    charRead = -1;
                 }
 
                 /*

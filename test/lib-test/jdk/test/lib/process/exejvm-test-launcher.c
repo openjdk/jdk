@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,12 @@
 #include <jni.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef AIX
+#include <pthread.h>
+#endif //AIX
 
-JNIEnv* create_vm(JavaVM **jvm)
-{
+static void* run(void *arg) {
+    JavaVM *jvm;
     JNIEnv* env;
     JavaVMInitArgs args;
     JavaVMOption options[1];
@@ -41,39 +44,43 @@ JNIEnv* create_vm(JavaVM **jvm)
     args.options = &options[0];
     args.ignoreUnrecognized = 0;
 
-    int ret = JNI_CreateJavaVM(jvm, (void**)&env, &args);
+    int ret = JNI_CreateJavaVM(&jvm, (void**)&env, &args);
     if (ret < 0) {
       exit(10);
     }
 
-    return env;
+    jclass test_class;
+    jmethodID test_method;
+
+    test_class = (*env)->FindClass(env, "TestNativeProcessBuilder$Test");
+    if (test_class == NULL) {
+      exit(11);
+    }
+
+    test_method = (*env)->GetStaticMethodID(env, test_class, "test", "()V");
+    if (test_method == NULL) {
+      exit(12);
+    }
+
+    (*env)->CallStaticVoidMethod(env, test_class, test_method);
+    return 0;
 }
 
-
-void run(JNIEnv *env) {
-  jclass test_class;
-  jmethodID test_method;
-
-  test_class = (*env)->FindClass(env, "TestNativeProcessBuilder$Test");
-  if (test_class == NULL) {
-    exit(11);
-  }
-
-  test_method = (*env)->GetStaticMethodID(env, test_class, "test", "()V");
-  if (test_method == NULL) {
-    exit(12);
-  }
-
-  (*env)->CallStaticVoidMethod(env, test_class, test_method);
-}
-
-
-int main(int argc, char **argv)
-{
-  JavaVM *jvm;
-  JNIEnv *env = create_vm(&jvm);
-
-  run(env);
-
-  return 0;
+int main(int argc, char *argv[]) {
+#ifdef AIX
+    size_t adjusted_stack_size = 1024*1024;
+    pthread_t id;
+    int result;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, adjusted_stack_size);
+    result = pthread_create(&id, &attr, run, (void *)argv);
+    if (result != 0) {
+      fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
+      return -1;
+    }
+    pthread_join(id, NULL);
+#else
+    run(&argv);
+#endif //AIX
 }

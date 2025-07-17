@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6998583 8141039
  * @summary NativeSeedGenerator is making 8192 byte read requests from
  *             entropy pool on each init.
- * @run main/othervm -Djava.security.egd=file:/dev/random SeedGeneratorChoice
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom SeedGeneratorChoice
  * @run main/othervm -Djava.security.egd=file:filename  SeedGeneratorChoice
  */
 

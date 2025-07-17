@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,10 +349,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * unchanged.
      *
      * @param infinity the string representing infinity
+     * @throws NullPointerException if {@code infinity} is {@code null}
      */
     public void setInfinity(String infinity) {
+        this.infinity = Objects.requireNonNull(infinity);
         hashCode = 0;
-        this.infinity = infinity;
     }
 
     /**
@@ -370,10 +371,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * unchanged.
      *
      * @param NaN the string representing "not a number"
+     * @throws NullPointerException if {@code NaN} is {@code null}
      */
     public void setNaN(String NaN) {
+        this.NaN = Objects.requireNonNull(NaN);
         hashCode = 0;
-        this.NaN = NaN;
     }
 
     /**
@@ -414,14 +416,18 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the currency symbol for the currency of these
-     * DecimalFormatSymbols in their locale.
+     * Sets the currency symbol for the currency of this
+     * {@code DecimalFormatSymbols} in their locale. Unlike {@link
+     * #setInternationalCurrencySymbol(String)}, this method does not update
+     * the currency attribute nor the international currency symbol attribute.
      *
      * @param currency the currency symbol
+     * @throws NullPointerException if {@code currency} is {@code null}
      * @since 1.2
      */
     public void setCurrencySymbol(String currency)
     {
+        Objects.requireNonNull(currency);
         initializeCurrency(locale);
         hashCode = 0;
         currencySymbol = currency;
@@ -448,35 +454,29 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * this also sets the currency attribute to the corresponding Currency
      * instance and the currency symbol attribute to the currency's symbol
      * in the DecimalFormatSymbols' locale. If the currency code is not valid,
-     * then the currency attribute is set to null and the currency symbol
-     * attribute is not modified.
+     * then the currency attribute and the currency symbol attribute are not modified.
      *
      * @param currencyCode the currency code
+     * @throws NullPointerException if {@code currencyCode} is {@code null}
      * @see #setCurrency
      * @see #setCurrencySymbol
      * @since 1.2
      */
-    public void setInternationalCurrencySymbol(String currencyCode)
-    {
+    public void setInternationalCurrencySymbol(String currencyCode) {
+        Objects.requireNonNull(currencyCode);
+        // init over setting currencyInit flag as true so that currency has
+        // fallback if code is not valid
         initializeCurrency(locale);
         hashCode = 0;
         intlCurrencySymbol = currencyCode;
-        currency = null;
-        if (currencyCode != null) {
-            try {
-                currency = Currency.getInstance(currencyCode);
-                currencySymbol = currency.getSymbol();
-            } catch (IllegalArgumentException e) {
-            }
-        }
+        try {
+            currency = Currency.getInstance(currencyCode);
+            currencySymbol = currency.getSymbol(locale);
+        } catch (IllegalArgumentException _) {} // Simply ignore if not valid
     }
 
     /**
-     * Gets the currency of these DecimalFormatSymbols. May be null if the
-     * currency symbol attribute was previously set to a value that's not
-     * a valid ISO 4217 currency code.
-     *
-     * @return the currency used, or null
+     * {@return the {@code Currency} of this {@code DecimalFormatSymbols}}
      * @since 1.4
      */
     public Currency getCurrency() {
@@ -485,7 +485,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the currency of these DecimalFormatSymbols.
+     * Sets the currency of this {@code DecimalFormatSymbols}.
      * This also sets the currency symbol attribute to the currency's symbol
      * in the DecimalFormatSymbols' locale, and the international currency
      * symbol attribute to the currency's ISO 4217 currency code.
@@ -497,9 +497,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @see #setInternationalCurrencySymbol
      */
     public void setCurrency(Currency currency) {
-        if (currency == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(currency);
         initializeCurrency(locale);
         hashCode = 0;
         this.currency = currency;
@@ -555,9 +553,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setExponentSeparator(String exp)
     {
-        if (exp == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(exp);
         hashCode = 0;
         exponentialSeparator = exp;
     }
@@ -737,13 +733,22 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Override equals.
+     * Compares the specified object with this {@code DecimalFormatSymbols} for equality.
+     * Returns true if the object is also a {@code DecimalFormatSymbols} and the two
+     * {@code DecimalFormatSymbols} objects represent the same set of symbols.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DecimalFormatSymbols}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) return false;
         if (this == obj) return true;
-        if (getClass() != obj.getClass()) return false;
+        if (obj == null || getClass() != obj.getClass()) return false;
         DecimalFormatSymbols other = (DecimalFormatSymbols) obj;
         return (zeroDigit == other.zeroDigit &&
             groupingSeparator == other.groupingSeparator &&
@@ -758,7 +763,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             patternSeparator == other.patternSeparator &&
             infinity.equals(other.infinity) &&
             NaN.equals(other.NaN) &&
-            getCurrencySymbol().equals(other.getCurrencySymbol()) && // possible currency init occurs here
+            // Currency fields are lazy. Init via get call to ensure non-null
+            getCurrencySymbol().equals(other.getCurrencySymbol()) &&
             intlCurrencySymbol.equals(other.intlCurrencySymbol) &&
             currency == other.currency &&
             monetarySeparator == other.monetarySeparator &&
@@ -768,7 +774,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Override hashCode.
+     * {@return the hash code for this {@code DecimalFormatSymbols}}
+     *
+     * @implSpec Non-transient instance fields of this class are used to calculate
+     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}.
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
@@ -787,7 +797,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
                 patternSeparator,
                 infinity,
                 NaN,
-                getCurrencySymbol(), // possible currency init occurs here
+                // Currency fields are lazy. Init via get call to ensure non-null
+                getCurrencySymbol(),
                 intlCurrencySymbol,
                 currency,
                 monetarySeparator,
@@ -849,10 +860,13 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * Obtains non-format single character from String
      */
     private char findNonFormatChar(String src, char defChar) {
-        return (char)src.chars()
-            .filter(c -> Character.getType(c) != Character.FORMAT)
-            .findFirst()
-            .orElse(defChar);
+        for (int i = 0; i < src.length(); i++) {
+            char c = src.charAt(i);
+            if (Character.getType(c) != Character.FORMAT) {
+                return c;
+            }
+        }
+        return defChar;
     }
 
     /**

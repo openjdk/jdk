@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ import java.util.*;
  * <p> ACL entries are immutable and are safe for use by multiple concurrent
  * threads.
  *
+ * @spec https://www.rfc-editor.org/info/rfc3530
+ *      RFC 3530: Network File System (NFS) version 4 Protocol
  * @since 1.7
  */
 
@@ -355,10 +357,6 @@ public final class AclEntry {
         return true;
     }
 
-    private static int hash(int h, Object o) {
-        return h * 127 + o.hashCode();
-    }
-
     /**
      * Returns the hash-code value for this ACL entry.
      *
@@ -368,14 +366,12 @@ public final class AclEntry {
     @Override
     public int hashCode() {
         // return cached hash if available
-        if (hash != 0)
-            return hash;
-        int h = type.hashCode();
-        h = hash(h, who);
-        h = hash(h, perms);
-        h = hash(h, flags);
-        hash = h;
-        return hash;
+        int h = hash;
+        if (h == 0) {
+            h = Objects.hash(type, who, perms, flags);
+            hash = h;
+        }
+        return h;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 /**
  *
@@ -228,9 +227,7 @@ public class StringSharingDecompressor implements ResourceDecompressor {
         return StringSharingDecompressorFactory.NAME;
     }
 
-    public StringSharingDecompressor(Properties properties) {
-
-    }
+    public StringSharingDecompressor() {}
 
     @Override
     public byte[] decompress(StringsProvider reader, byte[] content,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package toolbox;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -38,6 +37,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.processing.Processor;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -55,6 +55,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private List<Path> classpath;
     private List<Path> sourcepath;
     private Path outdir;
+    private Path headerdir;
     private List<String> options;
     private List<String> classes;
     private List<String> files;
@@ -62,6 +63,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private JavaFileManager fileManager;
     private Consumer<com.sun.source.util.JavacTask> callback;
     private List<Processor> procs;
+    private DiagnosticListener<? super JavaFileObject> diagnosticListener;
 
     private JavaCompiler compiler;
     private StandardJavaFileManager internalFileManager;
@@ -89,7 +91,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
      * @return this task object
      */
     public JavacTask classpath(String classpath) {
-        this.classpath = Stream.of(classpath.split(File.pathSeparator))
+        this.classpath = Stream.of(classpath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
@@ -122,7 +124,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
      * @return this task object
      */
     public JavacTask sourcepath(String sourcepath) {
-        this.sourcepath = Stream.of(sourcepath.split(File.pathSeparator))
+        this.sourcepath = Stream.of(sourcepath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
@@ -166,6 +168,26 @@ public class JavacTask extends AbstractTask<JavacTask> {
      */
     public JavacTask outdir(Path outdir) {
         this.outdir = outdir;
+        return this;
+    }
+
+    /**
+     * Sets the native header output directory.
+     * @param headerdir the native header output directory
+     * @return this task object
+     */
+    public JavacTask headerdir(String headerdir) {
+        this.headerdir = Paths.get(headerdir);
+        return this;
+    }
+
+    /**
+     * Sets the native header output directory.
+     * @param headerdir the native header output directory
+     * @return this task object
+     */
+    public JavacTask headerdir(Path headerdir) {
+        this.headerdir = headerdir;
         return this;
     }
 
@@ -266,6 +288,14 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Sets the diagnostic listener to be used.
+     */
+    public JavacTask diagnosticListener(DiagnosticListener<? super JavaFileObject> diagnosticListener) {
+        this.diagnosticListener = diagnosticListener;
+        return this;
+    }
+
+    /**
      * Sets the file manager to be used by this task.
      * @param fileManager the file manager
      * @return this task object
@@ -292,6 +322,26 @@ public class JavacTask extends AbstractTask<JavacTask> {
     @Override
     public String name() {
         return "javac";
+    }
+
+    @Override
+    public Result run(Expect expect) {
+        int expectedExitCode = expect == Expect.SUCCESS ? 0 : 1;
+
+        return run(expect, (exitCode, testName) -> {
+            if (exitCode == 4) {
+                throw new TaskError("Task " + testName + " failed due to a javac crash "
+                    + "(exit code 4)");
+            }
+        });
+    }
+
+    @Override
+    public Result run(Expect expect, int exitCode) {
+        if (exitCode == 4) {
+            throw new IllegalArgumentException("Disallowed exit code: 4");
+        }
+        return super.run(expect, exitCode);
     }
 
     /**
@@ -353,6 +403,8 @@ public class JavacTask extends AbstractTask<JavacTask> {
                 fileManager = internalFileManager = compiler.getStandardFileManager(null, null, null);
             if (outdir != null)
                 setLocationFromPaths(StandardLocation.CLASS_OUTPUT, Collections.singletonList(outdir));
+            if (headerdir != null)
+                setLocationFromPaths(StandardLocation.NATIVE_HEADER_OUTPUT, Collections.singletonList(headerdir));
             if (classpath != null)
                 setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
             if (sourcepath != null)
@@ -364,7 +416,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
             Iterable<? extends JavaFileObject> allFiles = joinFiles(files, fileObjects);
             JavaCompiler.CompilationTask task = compiler.getTask(pw,
                     fileManager,
-                    null,  // diagnostic listener; should optionally collect diags
+                    diagnosticListener,  // diagnostic listener; should optionally collect diags
                     allOpts,
                     classes,
                     allFiles);
@@ -422,6 +474,10 @@ public class JavacTask extends AbstractTask<JavacTask> {
             args.add("-d");
             args.add(outdir.toString());
         }
+        if (headerdir != null) {
+            args.add("-h");
+            args.add(headerdir.toString());
+        }
         if (classpath != null) {
             args.add("-classpath");
             args.add(toSearchPath(classpath));
@@ -441,7 +497,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private String toSearchPath(List<Path> files) {
         return files.stream()
             .map(Path::toString)
-            .collect(Collectors.joining(File.pathSeparator));
+            .collect(Collectors.joining(ToolBox.pathSeparator));
     }
 
     private Iterable<? extends JavaFileObject> joinFiles(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,26 @@
 
 package sun.security.ssl;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.net.ssl.SSLProtocolException;
+import javax.net.ssl.SSLSessionContext;
 
 import static sun.security.ssl.SSLExtension.CH_SESSION_TICKET;
 import static sun.security.ssl.SSLExtension.SH_SESSION_TICKET;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -70,16 +74,17 @@ final class SessionTicketExtension {
             new T12SHSessionTicketConsumer();
 
     static final SSLStringizer steStringizer = new SessionTicketStringizer();
+    // No need to compress a ticket if it can fit in a single packet.
+    // Besides, small buffers often end up to be larger when compressed.
+    static final int MIN_COMPRESS_SIZE = 600;
 
     // Time in milliseconds until key is changed for encrypting session state
     private static final int TIMEOUT_DEFAULT = 3600 * 1000;
     private static final int keyTimeout;
-    private static int currentKeyID = new SecureRandom().nextInt();
     private static final int KEYLEN = 256;
 
     static {
-        String s = GetPropertyAction.privilegedGetProperty(
-                "jdk.tls.server.statelessKeyTimeout");
+        String s = System.getProperty("jdk.tls.server.statelessKeyTimeout");
         if (s != null) {
             int kt;
             try {
@@ -115,7 +120,8 @@ final class SessionTicketExtension {
         final SecretKey key;
         final int num;
 
-        StatelessKey(HandshakeContext hc, int newNum) {
+        // package-private, used only by SSLContextImpl
+        StatelessKey(HandshakeContext hc, int num) {
             SecretKey k = null;
             try {
                 KeyGenerator kg = KeyGenerator.getInstance("AES");
@@ -126,8 +132,7 @@ final class SessionTicketExtension {
             }
             key = k;
             timeout = System.currentTimeMillis() + keyTimeout;
-            num = newNum;
-            hc.sslContext.keyHashMap.put(Integer.valueOf(num), this);
+            this.num = num;
         }
 
         // Check if key needs to be changed
@@ -136,7 +141,8 @@ final class SessionTicketExtension {
         }
 
         // Check if this key is ready for deletion.
-        boolean isInvalid(long sessionTimeout) {
+        boolean isInvalid(SSLSessionContext sslSessionContext) {
+            int sessionTimeout = sslSessionContext.getSessionTimeout() * 1000;
             return ((System.currentTimeMillis()) > (timeout + sessionTimeout));
         }
     }
@@ -145,9 +151,11 @@ final class SessionTicketExtension {
 
         // Get a key with a specific key number
         static StatelessKey getKey(HandshakeContext hc, int num)  {
-            StatelessKey ssk = hc.sslContext.keyHashMap.get(num);
+            SSLSessionContextImpl serverCache =
+                (SSLSessionContextImpl)hc.sslContext.engineGetServerSessionContext();
+            StatelessKey ssk = serverCache.getKey(num);
 
-            if (ssk == null || ssk.isInvalid(getSessionTimeout(hc))) {
+            if (ssk == null || ssk.isInvalid(serverCache)) {
                 return null;
             }
             return ssk;
@@ -155,69 +163,9 @@ final class SessionTicketExtension {
 
         // Get the current valid key, this will generate a new key if needed
         static StatelessKey getCurrentKey(HandshakeContext hc) {
-            StatelessKey ssk = hc.sslContext.keyHashMap.get(currentKeyID);
-
-            if (ssk != null && !ssk.isExpired()) {
-                return ssk;
-            }
-            return nextKey(hc);
-        }
-
-        // This method locks when the first getCurrentKey() finds it to be too
-        // old and create a new key to replace the current key.  After the new
-        // key established, the lock can be released so following
-        // operations will start using the new key.
-        // The first operation will take a longer code path by generating the
-        // next key and cleaning up old keys.
-        private static StatelessKey nextKey(HandshakeContext hc) {
-            StatelessKey ssk;
-
-            synchronized (hc.sslContext.keyHashMap) {
-                // If the current key is no longer expired, it was already
-                // updated by a previous operation, and we can return.
-                ssk = hc.sslContext.keyHashMap.get(currentKeyID);
-                if (ssk != null && !ssk.isExpired()) {
-                    return ssk;
-                }
-                int newNum;
-                if (currentKeyID == Integer.MAX_VALUE) {
-                    newNum = 0;
-                } else {
-                    newNum = currentKeyID + 1;
-                }
-                // Get new key
-                ssk = new StatelessKey(hc, newNum);
-                currentKeyID = newNum;
-                // Release lock since the new key is ready to be used.
-            }
-
-            // Clean up any old keys, then return the current key
-            cleanup(hc);
-            return ssk;
-        }
-
-        // Deletes any invalid SessionStateKeys.
-        static void cleanup(HandshakeContext hc) {
-            int sessionTimeout = getSessionTimeout(hc);
-
-            StatelessKey ks;
-            for (Object o : hc.sslContext.keyHashMap.keySet().toArray()) {
-                Integer i = (Integer)o;
-                ks = hc.sslContext.keyHashMap.get(i);
-                if (ks.isInvalid(sessionTimeout)) {
-                    try {
-                        ks.key.destroy();
-                    } catch (Exception e) {
-                        // Suppress
-                    }
-                    hc.sslContext.keyHashMap.remove(i);
-                }
-            }
-        }
-
-        static int getSessionTimeout(HandshakeContext hc) {
-            return hc.sslContext.engineGetServerSessionContext().
-                    getSessionTimeout() * 1000;
+            SSLSessionContextImpl serverCache =
+                (SSLSessionContextImpl)hc.sslContext.engineGetServerSessionContext();
+            return serverCache.getKey(hc);
         }
     }
 
@@ -255,7 +203,7 @@ final class SessionTicketExtension {
             data = buf;
         }
 
-        public byte[] encrypt(HandshakeContext hc, SSLSessionImpl session) {
+        byte[] encrypt(HandshakeContext hc, SSLSessionImpl session) {
             byte[] encrypted;
 
             if (!hc.statelessResumption ||
@@ -272,26 +220,34 @@ final class SessionTicketExtension {
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
                 c.init(Cipher.ENCRYPT_MODE, key.key,
                         new GCMParameterSpec(GCM_TAG_LEN, iv));
-                c.updateAAD(new byte[] {
-                        (byte)(key.num >>> 24),
-                        (byte)(key.num >>> 16),
-                        (byte)(key.num >>> 8),
-                        (byte)(key.num)}
-                );
+
                 byte[] data = session.write();
                 if (data.length == 0) {
                     return data;
                 }
+
+                // Compress the session before encryption if needed.
+                byte compressed = 0;
+                if (data.length >= MIN_COMPRESS_SIZE) {
+                    data = compress(data);
+                    compressed = 1;
+                }
+
+                ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
+                aad.putInt(key.num).put(compressed);
+                c.updateAAD(aad);
+
                 encrypted = c.doFinal(data);
                 byte[] result = new byte[encrypted.length + Integer.BYTES +
-                        iv.length];
+                        iv.length + 1];
                 result[0] = (byte)(key.num >>> 24);
                 result[1] = (byte)(key.num >>> 16);
                 result[2] = (byte)(key.num >>> 8);
                 result[3] = (byte)(key.num);
                 System.arraycopy(iv, 0, result, Integer.BYTES, iv.length);
+                result[Integer.BYTES + iv.length] = compressed;
                 System.arraycopy(encrypted, 0, result,
-                        Integer.BYTES + iv.length, encrypted.length);
+                        Integer.BYTES + iv.length + 1, encrypted.length);
                 return result;
             } catch (Exception e) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -316,24 +272,65 @@ final class SessionTicketExtension {
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
                 c.init(Cipher.DECRYPT_MODE, key.key,
                         new GCMParameterSpec(GCM_TAG_LEN, iv));
-                c.updateAAD(new byte[] {
-                        (byte)(keyID >>> 24),
-                        (byte)(keyID >>> 16),
-                        (byte)(keyID >>> 8),
-                        (byte)(keyID)}
-                );
 
-                ByteBuffer out;
-                out = ByteBuffer.allocate(data.remaining() - GCM_TAG_LEN / 8);
+                byte compressed = data.get();
+                ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
+                aad.putInt(keyID).put(compressed);
+                c.updateAAD(aad);
+
+                ByteBuffer out = ByteBuffer.allocate(
+                        data.remaining() - GCM_TAG_LEN / 8);
                 c.doFinal(data, out);
                 out.flip();
+
+                // Decompress the session after decryption if needed.
+                if (compressed == 1) {
+                    out = decompress(out);
+                }
+
                 return out;
             } catch (Exception e) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Decryption failed." + e.getMessage());
                 }
             }
+
             return null;
+        }
+
+        private static byte[] compress(byte[] input) throws IOException {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+                final int decompressedLen = input.length;
+                gos.write(input, 0, decompressedLen);
+                gos.finish();
+
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("decompressed bytes: " + decompressedLen
+                            + "; compressed bytes: " + baos.size());
+                }
+
+                return baos.toByteArray();
+            }
+        }
+
+        private static ByteBuffer decompress(ByteBuffer input)
+                throws IOException {
+            final int compressedLen = input.remaining();
+            byte[] bytes = new byte[compressedLen];
+            input.get(bytes);
+
+            try (GZIPInputStream gis = new GZIPInputStream(
+                    new ByteArrayInputStream(bytes))) {
+                byte[] out = gis.readAllBytes();
+
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("compressed bytes: " + compressedLen
+                            + "; decompressed bytes: " + out.length);
+                }
+
+                return ByteBuffer.wrap(out);
+            }
         }
 
         byte[] getEncoded() {
@@ -411,12 +408,7 @@ final class SessionTicketExtension {
                 return new byte[0];
             }
 
-            if (chc.localSupportedSignAlgs == null) {
-                chc.localSupportedSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                chc.sslConfig,
-                                chc.algorithmConstraints, chc.activeProtocols);
-            }
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             return chc.resumingSession.getPskIdentity();
         }

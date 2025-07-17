@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.internal.jshell.tool;
 
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.Charset;
 
 /**
  * Interface for defining user interaction with the shell.
@@ -56,7 +58,35 @@ abstract class IOContext implements AutoCloseable {
 
     public abstract int readUserInput() throws IOException;
 
+    public int readUserInputChar() throws IOException {
+        return -1;
+    }
+
+    public String readUserLine(String prompt) throws IOException {
+        userOutput().write(prompt);
+        userOutput().flush();
+        return null;
+    }
+
+    public String readUserLine() throws IOException {
+        return null;
+    }
+
+    public Writer userOutput() {
+        throw new UnsupportedOperationException();
+    }
+
+    public char[] readPassword(String prompt) throws IOException {
+        userOutput().write(prompt);
+        userOutput().flush();
+        return null;
+    }
+
     public void setIndent(int indent) {}
+
+    public Charset charset() {
+        throw new UnsupportedOperationException();
+    }
 
     class InputInterruptedException extends Exception {
         private static final long serialVersionUID = 1L;

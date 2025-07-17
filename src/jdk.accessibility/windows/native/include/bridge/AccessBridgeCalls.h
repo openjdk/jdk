@@ -628,9 +628,8 @@ extern "C" {
     AccessibleContext getActiveDescendent (const long vmID, const AccessibleContext accessibleContext);
 
     /**
-       /**
-       * Accessible Value routines
-       */
+     * Accessible Value routines
+     */
     BOOL GetCurrentAccessibleValueFromContext(long vmID, AccessibleValue av, wchar_t *value, short len);
     BOOL GetMaximumAccessibleValueFromContext(long vmID, AccessibleValue av, wchar_t *value, short len);
     BOOL GetMinimumAccessibleValueFromContext(long vmID, AccessibleValue av, wchar_t *value, short len);

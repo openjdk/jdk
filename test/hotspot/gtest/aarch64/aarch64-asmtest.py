@@ -14,10 +14,9 @@ immediates8 \
 
 immediates16 \
      = [0x1, 0x38, 0x7e, 0xff, 0x1fc, 0x1ff, 0x3f0,
-        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x7e00,
-        0x8000, 0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff,
-        0xe03f, 0xe10f, 0xe1ff, 0xf801, 0xfc00, 0xfc07,
-        0xff03, 0xfffe]
+        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x8000,
+        0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff, 0xe03f,
+        0xe1ff, 0xf801, 0xfc00, 0xfc07, 0xff03, 0xfffe]
 
 immediates32 \
      = [0x1, 0x3f, 0x1f0, 0x7e0,
@@ -77,9 +76,27 @@ class FloatRegister(Register):
     def __str__(self):
         return self.astr("v")
 
+    def generate(self):
+        self.number = random.randint(0, 31)
+        return self
+
     def nextReg(self):
         next = FloatRegister()
         next.number = (self.number + 1) % 32
+        return next
+
+class LowFloatRegister(Register):
+
+    def __str__(self):
+        return self.astr("v")
+
+    def generate(self):
+        self.number = random.randint(0, 15)
+        return self
+
+    def nextReg(self):
+        next = FloatRegister()
+        next.number = (self.number + 1) % 16
         return next
 
 class GeneralRegister(Register):
@@ -350,6 +367,67 @@ class OneRegOp(Instruction):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
 
+class SystemRegOp(Instruction):
+    def __init__(self, args):
+        name, self.system_reg = args
+        Instruction.__init__(self, name)
+        if self.system_reg == 'fpsr':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0100
+            self.op2 = 0b001
+        elif self.system_reg == 'dczid_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b111
+        elif self.system_reg == 'ctr_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b001
+        elif self.system_reg == 'nzcv':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0010
+            self.op2 = 0b000
+
+    def generate(self):
+        self.reg = [GeneralRegister().generate()]
+        return self
+
+class SystemOneRegOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(SystemOneRegOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(SystemOneRegOp, self).astr()
+                + '%s' % self.system_reg
+                + ', %s' % self.reg[0].astr(prefix))
+
+class OneRegSystemOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(OneRegSystemOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(OneRegSystemOp, self).astr()
+                + '%s' % self.reg[0].astr(prefix)
+                + ', %s' % self.system_reg)
+
 class PostfixExceptionOneRegOp(OneRegOp):
 
     def __init__(self, op):
@@ -483,6 +561,33 @@ class SVEComparisonWithZero(Instruction):
           val = ("%s%s\t%s%s, %s/z, %s%s, #0.0"
                  % (self._name, self.condition.lower(), str(self.dest), self._width.astr(),
                     str(self.preg), str(self.reg), self._width.astr()))
+          return val
+
+class SVEComparisonWithImm(Instruction):
+    def __init__(self, arg):
+          Instruction.__init__(self, "cmp")
+          self.condition = arg
+          self.dest = OperandFactory.create('p').generate()
+          self.reg = SVEVectorRegister().generate()
+          self._width = RegVariant(0, 3)
+          self.preg = OperandFactory.create('P').generate()
+
+    def generate(self):
+          if self.condition in ['HI', 'HS', 'LO', 'LS']:
+            self.immed = random.randint(0, 127)
+          else:
+            self.immed = random.randint(-16, 15)
+          return Instruction.generate(self)
+
+    def cstr(self):
+          return ("%s(%s, %s, %s, %s, %s, %d);"
+                  % ("__ sve_" + self._name, "Assembler::" + self.condition,
+                     str(self.dest), self._width.cstr(), str(self.preg), str(self.reg), self.immed))
+
+    def astr(self):
+          val = ("%s%s\t%s%s, %s/z, %s%s, #%d"
+                 % (self._name, self.condition.lower(), str(self.dest), self._width.astr(),
+                    str(self.preg), str(self.reg), self._width.astr(), self.immed))
           return val
 
 class MultiOp():
@@ -957,7 +1062,9 @@ class LoadStorePairOp(InstructionWithModes):
 class FloatInstruction(Instruction):
 
     def aname(self):
-        if (self._name.endswith("s") | self._name.endswith("d")):
+        if (self._name in ["fcvtsh", "fcvths"]):
+            return self._name[:len(self._name)-2]
+        elif (self._name.endswith("h") | self._name.endswith("s") | self._name.endswith("d")):
             return self._name[:len(self._name)-1]
         else:
             return self._name
@@ -1009,9 +1116,11 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
+        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
+        elif name == "revb":
+            self._width = RegVariant(1, 3)
         else:
             self._width = RegVariant(0, 3)
 
@@ -1036,7 +1145,8 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)])
+        firstArg = 0 if self._name == "eor3" else 1
+        formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
             dnReg = [str(self.reg[0]) + self._width.astr()]
@@ -1046,7 +1156,7 @@ class SVEVectorOp(Instruction):
         if self._isPredicated:
             restRegs = [str(self.reg[1]) + self._merge] + dnReg + [str(self.reg[i]) + self._width.astr() for i in range(2, self.numRegs)]
         else:
-            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(1, self.numRegs)]
+            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(firstArg, self.numRegs)]
         return (formatStr
                 % tuple([Instruction.astr(self)] +
                         [str(self.reg[0]) + self._width.astr()] +
@@ -1178,6 +1288,75 @@ class CommonNEONInstruction(Instruction):
     def aname(self):
         return self._name
 
+class VectorScalarNEONInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.arrangement = args
+
+    def generate(self):
+        vectorLength = {"8B" : 8, "16B" : 16, "4H" : 4, "8H" : 8, "2S" : 2, "4S" : 4, "1D" : 1, "2D" : 2} [self.arrangement]
+        self.elemIndex = random.randrange(0, vectorLength)
+        self.elemSizeSpecifier = self.arrangement[len(self.arrangement) - 1:]
+        self._firstSIMDreg = LowFloatRegister().generate()
+        self.numRegs = 3
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self._firstSIMDreg)
+        buf = '%s, __ T%s' % (buf, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs - 1):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, %s, %d' % (buf, current.nextReg(), self.elemIndex)
+        return '%s);' % (buf)
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self.insname, self._firstSIMDreg, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs - 1):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.arrangement)
+            current = current.nextReg()
+        buf = '%s, %s.%s[%d]' % (buf, current.nextReg(), self.elemSizeSpecifier, self.elemIndex)
+        return buf
+
+    def aname(self):
+        return self._name
+
+class WideningNEONInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.widerArrangement, self.narrowerArrangement = args
+
+    def generate(self):
+        self._firstSIMDreg = FloatRegister().generate()
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self._firstSIMDreg)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numWiderRegs):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, __ T%s' % (buf, self.widerArrangement)
+        for cnt in range(0, self.numNarrowerRegs):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, __ T%s' % (buf, self.narrowerArrangement)
+        return '%s);' % (buf)
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self.insname, self._firstSIMDreg, self.widerArrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numWiderRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.widerArrangement)
+            current = current.nextReg()
+        for cnt in range(0, self.numNarrowerRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.narrowerArrangement)
+            current = current.nextReg()
+        return buf
+
+    def aname(self):
+        return self._name
+
 class SHA512SIMDOp(Instruction):
 
     def generate(self):
@@ -1297,6 +1476,56 @@ class TwoRegNEONOp(CommonNEONInstruction):
 class ThreeRegNEONOp(TwoRegNEONOp):
     numRegs = 3
 
+class AddWideNEONOp(WideningNEONInstruction):
+    numWiderRegs = 2
+    numNarrowerRegs = 1
+
+class NEONFloatCompareWithZero(TwoRegNEONOp):
+    def __init__(self, args):
+        self._name = 'fcm'
+        self.arrangement, self.condition = args
+        self.insname = self._name + (self.condition).lower()
+
+    def cstr(self):
+        return ("%s(%s, %s, %s, %s);"
+                % ("__ " + self._name,
+                   "Assembler::" + self.condition,
+                   self._firstSIMDreg,
+                   "__ T" + self.arrangement,
+                   self._firstSIMDreg.nextReg()))
+
+    def astr(self):
+        return ("%s\t%s.%s, %s.%s, #0.0"
+                % (self.insname,
+                   self._firstSIMDreg,
+                   self.arrangement,
+                   self._firstSIMDreg.nextReg(),
+                   self.arrangement))
+
+class NEONVectorCompare(ThreeRegNEONOp):
+    def __init__(self, args):
+        self._name, self.arrangement, self.condition = args
+        self.insname = self._name + (self.condition).lower()
+
+    def cstr(self):
+        return ("%s(%s, %s, %s, %s, %s);"
+                % ("__ " + self._name,
+                   "Assembler::" + self.condition,
+                   self._firstSIMDreg,
+                   "__ T" + self.arrangement,
+                   self._firstSIMDreg.nextReg(),
+                   self._firstSIMDreg.nextReg().nextReg()))
+
+    def astr(self):
+        return ("%s\t%s.%s, %s.%s, %s.%s"
+                % (self.insname,
+                   self._firstSIMDreg,
+                   self.arrangement,
+                   self._firstSIMDreg.nextReg(),
+                   self.arrangement,
+                   self._firstSIMDreg.nextReg().nextReg(),
+                   self.arrangement))
+
 class SpecialCases(Instruction):
     def __init__(self, data):
         self._name = data[0]
@@ -1376,7 +1605,7 @@ generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps
 generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
-               "eret", "drps", "isb",])
+               "eret", "drps", "isb", "sb",])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])
@@ -1390,6 +1619,12 @@ generate (OneRegOp, ["br", "blr",
                      "paciza", "pacizb", "pacdza", "pacdzb",
                      "autiza", "autizb", "autdza", "autdzb", "xpacd",
                      "braaz", "brabz", "blraaz", "blrabz"])
+
+for system_reg in ["fpsr", "nzcv"]:
+    generate (SystemOneRegOp, [ ["msr", system_reg] ])
+
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+    generate (OneRegSystemOp, [ ["mrs", system_reg] ])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOneRegOp, ["xpaci"])
@@ -1448,19 +1683,24 @@ generate(FourRegMulOp,
          ["maddw", "msubw", "madd", "msub", "smaddl", "smsubl", "umaddl", "umsubl"])
 
 generate(ThreeRegFloatOp,
-         [["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+         [["fabdh", "hhh"], ["fmulh", "hhh"], ["fdivh", "hhh"], ["faddh", "hhh"], ["fsubh", "hhh"],
+          ["fmaxh", "hhh"], ["fminh", "hhh"], ["fnmulh", "hhh"],
+          ["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+          ["fmaxs", "sss"], ["fmins", "sss"], ["fnmuls", "sss"],
           ["fabdd", "ddd"], ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
+          ["fmaxd", "ddd"], ["fmind", "ddd"], ["fnmuld", "ddd"]
           ])
 
 generate(FourRegFloatOp,
-         [["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"], ["fnmadds", "ssss"],
-          ["fmaddd", "dddd"], ["fmsubd", "dddd"], ["fnmaddd", "dddd"], ["fnmaddd", "dddd"],])
+         [["fmaddh", "hhhh"], ["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"],
+          ["fnmadds", "ssss"], ["fmaddd", "dddd"], ["fmsubd", "dddd"], ["fnmaddd", "dddd"],
+          ["fnmaddd", "dddd"],])
 
 generate(TwoRegFloatOp,
          [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
-          ["fcvts", "ds"],
+          ["fcvts", "ds"], ["fcvtsh", "hs"], ["fcvths", "sh"],
           ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
-          ["fcvtd", "sd"],
+          ["fcvtd", "sd"], ["fsqrth", "hh"]
           ])
 
 generate(FloatConvertOp, [["fcvtzsw", "fcvtzs", "ws"], ["fcvtzs", "fcvtzs", "xs"],
@@ -1524,17 +1764,30 @@ generate(NEONReduceInstruction,
           ["fminp", "fminp", "2S"], ["fminp", "fminp", "2D"],
           ])
 
+neonFloatCompareWithZeroConditions = ['GT', 'GE', 'EQ', 'LT', 'LE']
+neonFloatArrangement = ['2S', '4S', '2D']
+neonFloatCompareWithZeroArgs = []
+for condition in neonFloatCompareWithZeroConditions:
+    for currentArrangement in neonFloatArrangement:
+        currentArgs = [currentArrangement, condition]
+        neonFloatCompareWithZeroArgs.append(currentArgs)
+
+generate(NEONFloatCompareWithZero, neonFloatCompareWithZeroArgs)
+
 generate(TwoRegNEONOp,
          [["absr", "abs", "8B"], ["absr", "abs", "16B"],
           ["absr", "abs", "4H"], ["absr", "abs", "8H"],
           ["absr", "abs", "2S"], ["absr", "abs", "4S"],
           ["absr", "abs", "2D"],
           ["fabs", "fabs", "2S"], ["fabs", "fabs", "4S"],
-          ["fabs", "fabs", "2D"],
+          ["fabs", "fabs", "2D"], ["fabs", "fabs", "4H"],
+          ["fabs", "fabs", "8H"],
           ["fneg", "fneg", "2S"], ["fneg", "fneg", "4S"],
-          ["fneg", "fneg", "2D"],
+          ["fneg", "fneg", "2D"], ["fneg", "fneg", "4H"],
+          ["fneg", "fneg", "8H"],
           ["fsqrt", "fsqrt", "2S"], ["fsqrt", "fsqrt", "4S"],
-          ["fsqrt", "fsqrt", "2D"],
+          ["fsqrt", "fsqrt", "2D"], ["fsqrt", "fsqrt", "4H"],
+          ["fsqrt", "fsqrt", "8H"],
           ["notr", "not", "8B"], ["notr", "not", "16B"],
           ])
 
@@ -1546,78 +1799,121 @@ generate(ThreeRegNEONOp,
           ["addv", "add", "4H"], ["addv", "add", "8H"],
           ["addv", "add", "2S"], ["addv", "add", "4S"],
           ["addv", "add", "2D"],
+          ["sqaddv", "sqadd", "8B"], ["sqaddv", "sqadd", "16B"],
+          ["sqaddv", "sqadd", "4H"], ["sqaddv", "sqadd", "8H"],
+          ["sqaddv", "sqadd", "2S"], ["sqaddv", "sqadd", "4S"],
+          ["sqaddv", "sqadd", "2D"],
+          ["uqaddv", "uqadd", "8B"], ["uqaddv", "uqadd", "16B"],
+          ["uqaddv", "uqadd", "4H"], ["uqaddv", "uqadd", "8H"],
+          ["uqaddv", "uqadd", "2S"], ["uqaddv", "uqadd", "4S"],
+          ["uqaddv", "uqadd", "2D"],
           ["fadd", "fadd", "2S"], ["fadd", "fadd", "4S"],
-          ["fadd", "fadd", "2D"],
+          ["fadd", "fadd", "2D"], ["fadd", "fadd", "4H"],
+          ["fadd", "fadd", "8H"],
           ["subv", "sub", "8B"], ["subv", "sub", "16B"],
           ["subv", "sub", "4H"], ["subv", "sub", "8H"],
           ["subv", "sub", "2S"], ["subv", "sub", "4S"],
           ["subv", "sub", "2D"],
+          ["sqsubv", "sqsub", "8B"], ["sqsubv", "sqsub", "16B"],
+          ["sqsubv", "sqsub", "4H"], ["sqsubv", "sqsub", "8H"],
+          ["sqsubv", "sqsub", "2S"], ["sqsubv", "sqsub", "4S"],
+          ["sqsubv", "sqsub", "2D"],
+          ["uqsubv", "uqsub", "8B"], ["uqsubv", "uqsub", "16B"],
+          ["uqsubv", "uqsub", "4H"], ["uqsubv", "uqsub", "8H"],
+          ["uqsubv", "uqsub", "2S"], ["uqsubv", "uqsub", "4S"],
+          ["uqsubv", "uqsub", "2D"],
           ["fsub", "fsub", "2S"], ["fsub", "fsub", "4S"],
-          ["fsub", "fsub", "2D"],
+          ["fsub", "fsub", "2D"], ["fsub", "fsub", "4H"],
+          ["fsub", "fsub", "8H"],
           ["mulv", "mul", "8B"], ["mulv", "mul", "16B"],
           ["mulv", "mul", "4H"], ["mulv", "mul", "8H"],
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
           ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
-          ["fabd", "fabd", "2D"],
+          ["fabd", "fabd", "2D"], ["fabd", "fabd", "4H"],
+          ["fabd", "fabd", "8H"],
+          ["faddp", "faddp", "2S"], ["faddp", "faddp", "4S"],
+          ["faddp", "faddp", "2D"], ["faddp", "faddp", "4H"],
+          ["faddp", "faddp", "8H"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
-          ["fmul", "fmul", "2D"],
+          ["fmul", "fmul", "2D"], ["fmul", "fmul", "4H"],
+          ["fmul", "fmul", "8H"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
           ["mlav", "mla", "2S"], ["mlav", "mla", "4S"],
           ["fmla", "fmla", "2S"], ["fmla", "fmla", "4S"],
-          ["fmla", "fmla", "2D"],
+          ["fmla", "fmla", "2D"], ["fmla", "fmla", "4H"],
+          ["fmla", "fmla", "8H"],
           ["mlsv", "mls", "4H"], ["mlsv", "mls", "8H"],
           ["mlsv", "mls", "2S"], ["mlsv", "mls", "4S"],
           ["fmls", "fmls", "2S"], ["fmls", "fmls", "4S"],
-          ["fmls", "fmls", "2D"],
+          ["fmls", "fmls", "2D"], ["fmls", "fmls", "4H"],
+          ["fmls", "fmls", "8H"],
           ["fdiv", "fdiv", "2S"], ["fdiv", "fdiv", "4S"],
-          ["fdiv", "fdiv", "2D"],
+          ["fdiv", "fdiv", "2D"], ["fdiv", "fdiv", "4H"],
+          ["fdiv", "fdiv", "8H"],
           ["maxv", "smax", "8B"], ["maxv", "smax", "16B"],
           ["maxv", "smax", "4H"], ["maxv", "smax", "8H"],
           ["maxv", "smax", "2S"], ["maxv", "smax", "4S"],
+          ["umaxv", "umax", "8B"], ["umaxv", "umax", "16B"],
+          ["umaxv", "umax", "4H"], ["umaxv", "umax", "8H"],
+          ["umaxv", "umax", "2S"], ["umaxv", "umax", "4S"],
           ["smaxp", "smaxp", "8B"], ["smaxp", "smaxp", "16B"],
           ["smaxp", "smaxp", "4H"], ["smaxp", "smaxp", "8H"],
           ["smaxp", "smaxp", "2S"], ["smaxp", "smaxp", "4S"],
           ["fmax", "fmax", "2S"], ["fmax", "fmax", "4S"],
-          ["fmax", "fmax", "2D"],
+          ["fmax", "fmax", "2D"], ["fmax", "fmax", "4H"],
+          ["fmax", "fmax", "8H"],
           ["minv", "smin", "8B"], ["minv", "smin", "16B"],
           ["minv", "smin", "4H"], ["minv", "smin", "8H"],
           ["minv", "smin", "2S"], ["minv", "smin", "4S"],
+          ["uminv", "umin", "8B"], ["uminv", "umin", "16B"],
+          ["uminv", "umin", "4H"], ["uminv", "umin", "8H"],
+          ["uminv", "umin", "2S"], ["uminv", "umin", "4S"],
           ["sminp", "sminp", "8B"], ["sminp", "sminp", "16B"],
           ["sminp", "sminp", "4H"], ["sminp", "sminp", "8H"],
           ["sminp", "sminp", "2S"], ["sminp", "sminp", "4S"],
+          ["sqdmulh", "sqdmulh", "4H"], ["sqdmulh", "sqdmulh", "8H"],
+          ["sqdmulh", "sqdmulh", "2S"], ["sqdmulh", "sqdmulh", "4S"],
+          ["shsubv", "shsub", "8B"], ["shsubv", "shsub", "16B"],
+          ["shsubv", "shsub", "4H"], ["shsubv", "shsub", "8H"],
+          ["shsubv", "shsub", "2S"], ["shsubv", "shsub", "4S"],
           ["fmin", "fmin", "2S"], ["fmin", "fmin", "4S"],
-          ["fmin", "fmin", "2D"],
-          ["cmeq", "cmeq", "8B"], ["cmeq", "cmeq", "16B"],
-          ["cmeq", "cmeq", "4H"], ["cmeq", "cmeq", "8H"],
-          ["cmeq", "cmeq", "2S"], ["cmeq", "cmeq", "4S"],
-          ["cmeq", "cmeq", "2D"],
-          ["fcmeq", "fcmeq", "2S"], ["fcmeq", "fcmeq", "4S"],
-          ["fcmeq", "fcmeq", "2D"],
-          ["cmgt", "cmgt", "8B"], ["cmgt", "cmgt", "16B"],
-          ["cmgt", "cmgt", "4H"], ["cmgt", "cmgt", "8H"],
-          ["cmgt", "cmgt", "2S"], ["cmgt", "cmgt", "4S"],
-          ["cmgt", "cmgt", "2D"],
-          ["cmhi", "cmhi", "8B"], ["cmhi", "cmhi", "16B"],
-          ["cmhi", "cmhi", "4H"], ["cmhi", "cmhi", "8H"],
-          ["cmhi", "cmhi", "2S"], ["cmhi", "cmhi", "4S"],
-          ["cmhi", "cmhi", "2D"],
-          ["cmhs", "cmhs", "8B"], ["cmhs", "cmhs", "16B"],
-          ["cmhs", "cmhs", "4H"], ["cmhs", "cmhs", "8H"],
-          ["cmhs", "cmhs", "2S"], ["cmhs", "cmhs", "4S"],
-          ["cmhs", "cmhs", "2D"],
-          ["fcmgt", "fcmgt", "2S"], ["fcmgt", "fcmgt", "4S"],
-          ["fcmgt", "fcmgt", "2D"],
-          ["cmge", "cmge", "8B"], ["cmge", "cmge", "16B"],
-          ["cmge", "cmge", "4H"], ["cmge", "cmge", "8H"],
-          ["cmge", "cmge", "2S"], ["cmge", "cmge", "4S"],
-          ["cmge", "cmge", "2D"],
-          ["fcmge", "fcmge", "2S"], ["fcmge", "fcmge", "4S"],
-          ["fcmge", "fcmge", "2D"],
+          ["fmin", "fmin", "2D"], ["fmin", "fmin", "4H"],
+          ["fmin", "fmin", "8H"],
           ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
-          ["facgt", "facgt", "2D"],
+          ["facgt", "facgt", "2D"], ["facgt", "facgt", "4H"],
+          ["facgt", "facgt", "8H"],
           ])
 
+generate(VectorScalarNEONInstruction,
+         [["fmlavs", "fmla", "2S"], ["mulvs", "mul", "4S"],
+          ["fmlavs", "fmla", "2D"],
+          ["fmlsvs", "fmls", "2S"], ["mulvs", "mul", "4S"],
+          ["fmlsvs", "fmls", "2D"],
+          ["fmulxvs", "fmulx", "2S"], ["mulvs", "mul", "4S"],
+          ["fmulxvs", "fmulx", "2D"],
+          ["mulvs", "mul", "4H"], ["mulvs", "mul", "8H"],
+          ["mulvs", "mul", "2S"], ["mulvs", "mul", "4S"],
+          ])
+
+neonVectorCompareInstructionPrefix = ['cm', 'fcm']
+neonIntegerVectorCompareConditions = ['GT', 'GE', 'EQ', 'HI', 'HS']
+neonFloatVectorCompareConditions = ['EQ', 'GT', 'GE']
+neonIntegerArrangement = ['8B', '16B', '4H', '8H', '2S', '4S', '2D']
+neonFloatArrangement = ['2S', '4S', '2D']
+neonVectorCompareArgs = []
+for pre in neonVectorCompareInstructionPrefix:
+    conditions = neonFloatVectorCompareConditions if pre == 'fcm' else neonIntegerVectorCompareConditions
+    arrangements = neonFloatArrangement if pre == 'fcm' else neonIntegerArrangement
+    for condition in conditions:
+        for currentArrangement in arrangements:
+            currentArgs = [pre, currentArrangement, condition]
+            neonVectorCompareArgs.append(currentArgs)
+
+generate(NEONVectorCompare, neonVectorCompareArgs)
+
 generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
+
+generate(SVEComparisonWithImm, ["EQ", "GT", "GE", "LT", "LE", "NE", "HS", "HI", "LS", "LO"])
 
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
@@ -1646,8 +1942,14 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["fmov",   "__ fmovd(v14, __ T2D, 0.5f);",                       "fmov\tv14.2d, 0.5"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
                         ["fcvtzs", "__ fcvtzs(v0, __ T2S, v1);",                         "fcvtzs\tv0.2s, v1.2s"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T4H, v1);",                         "fcvtzs\tv0.4h, v1.4h"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T8H, v1);",                         "fcvtzs\tv0.8h, v1.8h"],
                         ["fcvtas", "__ fcvtas(v2, __ T4S, v3);",                         "fcvtas\tv2.4s, v3.4s"],
+                        ["fcvtas", "__ fcvtas(v2, __ T4H, v3);",                         "fcvtas\tv2.4h, v3.4h"],
+                        ["fcvtas", "__ fcvtas(v2, __ T8H, v3);",                         "fcvtas\tv2.8h, v3.8h"],
                         ["fcvtms", "__ fcvtms(v4, __ T2D, v5);",                         "fcvtms\tv4.2d, v5.2d"],
+                        ["fcvtms", "__ fcvtms(v4, __ T4H, v5);",                         "fcvtms\tv4.4h, v5.4h"],
+                        ["fcvtms", "__ fcvtms(v4, __ T8H, v5);",                         "fcvtms\tv4.8h, v5.8h"],
                         # SVE instructions
                         ["cpy",      "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
                         ["cpy",      "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],
@@ -1765,6 +2067,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["scvtf",    "__ sve_scvtf(z6, __ H, p3, z1, __ H);",              "scvtf\tz6.h, p3/m, z1.h"],
                         ["fcvt",     "__ sve_fcvt(z5, __ D, p3, z4, __ S);",               "fcvt\tz5.d, p3/m, z4.s"],
                         ["fcvt",     "__ sve_fcvt(z1, __ S, p3, z0, __ D);",               "fcvt\tz1.s, p3/m, z0.d"],
+                        ["fcvt",     "__ sve_fcvt(z5, __ S, p3, z4, __ H);",               "fcvt\tz5.s, p3/m, z4.h"],
+                        ["fcvt",     "__ sve_fcvt(z1, __ H, p3, z0, __ S);",               "fcvt\tz1.h, p3/m, z0.s"],
+                        ["fcvt",     "__ sve_fcvt(z5, __ D, p3, z4, __ H);",               "fcvt\tz5.d, p3/m, z4.h"],
+                        ["fcvt",     "__ sve_fcvt(z1, __ H, p3, z0, __ D);",               "fcvt\tz1.h, p3/m, z0.d"],
                         ["fcvtzs",   "__ sve_fcvtzs(z19, __ D, p2, z1, __ D);",            "fcvtzs\tz19.d, p2/m, z1.d"],
                         ["fcvtzs",   "__ sve_fcvtzs(z9, __ S, p1, z8, __ S);",             "fcvtzs\tz9.s, p1/m, z8.s"],
                         ["fcvtzs",   "__ sve_fcvtzs(z1, __ S, p2, z0, __ D);",             "fcvtzs\tz1.s, p2/m, z0.d"],
@@ -1871,6 +2177,10 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["fadd", "ZZZ"],
                        ["fmul", "ZZZ"],
                        ["fsub", "ZZZ"],
+                       ["sqadd", "ZZZ"],
+                       ["sqsub", "ZZZ"],
+                       ["uqadd", "ZZZ"],
+                       ["uqsub", "ZZZ"],
                        ["abs", "ZPZ", "m"],
                        ["add", "ZPZ", "m", "dn"],
                        ["and", "ZPZ", "m", "dn"],
@@ -1889,6 +2199,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["revb", "ZPZ", "m"],
                        ["smax", "ZPZ", "m", "dn"],
                        ["smin", "ZPZ", "m", "dn"],
+                       ["umax", "ZPZ", "m", "dn"],
+                       ["umin", "ZPZ", "m", "dn"],
                        ["sub", "ZPZ", "m", "dn"],
                        ["fabs", "ZPZ", "m"],
                        ["fadd", "ZPZ", "m", "dn"],
@@ -1922,10 +2234,24 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["eor3", "ZZZ"],
+                       ["sqadd", "ZPZ", "m", "dn"],
+                       ["sqsub", "ZPZ", "m", "dn"],
+                       ["uqadd", "ZPZ", "m", "dn"],
+                       ["uqsub", "ZPZ", "m", "dn"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
                           ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
+
+generate(AddWideNEONOp,
+         [["saddwv", "saddw", "8H", "8B"], ["saddwv2", "saddw2", "8H", "16B"],
+          ["saddwv", "saddw", "4S", "4H"], ["saddwv2", "saddw2", "4S", "8H"],
+          ["saddwv", "saddw", "2D", "2S"], ["saddwv2", "saddw2", "2D", "4S"],
+          ["uaddwv", "uaddw", "8H", "8B"], ["uaddwv2", "uaddw2", "8H", "16B"],
+          ["uaddwv", "uaddw", "4S", "4H"], ["uaddwv2", "uaddw2", "4S", "8H"],
+          ["uaddwv", "uaddw", "2D", "2S"], ["uaddwv2", "uaddw2", "2D", "4S"],
+          ])
 
 print "\n    __ bind(forth);"
 outfile.write("forth:\n")

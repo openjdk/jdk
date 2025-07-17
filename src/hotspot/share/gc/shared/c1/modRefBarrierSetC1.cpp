@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/c1/modRefBarrierSetC1.hpp"
 #include "utilities/macros.hpp"
 
@@ -54,7 +53,7 @@ void ModRefBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
 LIR_Opr ModRefBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cmp_value, LIRItem& new_value) {
   if (access.is_oop()) {
     pre_barrier(access, access.resolved_addr(),
-                LIR_OprFact::illegalOpr /* pre_val */, NULL);
+                LIR_OprFact::illegalOpr /* pre_val */, nullptr);
   }
 
   LIR_Opr result = BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
@@ -69,7 +68,7 @@ LIR_Opr ModRefBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRIte
 LIR_Opr ModRefBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value) {
   if (access.is_oop()) {
     pre_barrier(access, access.resolved_addr(),
-                LIR_OprFact::illegalOpr /* pre_val */, NULL);
+                LIR_OprFact::illegalOpr /* pre_val */, nullptr);
   }
 
   LIR_Opr result = BarrierSetC1::atomic_xchg_at_resolved(access, value);

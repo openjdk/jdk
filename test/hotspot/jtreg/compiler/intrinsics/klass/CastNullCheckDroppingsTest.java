@@ -37,7 +37,7 @@
  *                   -Xmixed -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:-StressReflectiveCode
  *                   -XX:+UncommonNullCast -XX:-StressMethodHandleLinkerInlining -XX:TypeProfileLevel=0
- *                   -XX:-AlwaysIncrementalInline
+ *                   -XX:-AlwaysIncrementalInline -XX:-StressIncrementalInlining
  *                   -XX:CompileCommand=exclude,compiler.intrinsics.klass.CastNullCheckDroppingsTest::runTest
  *                   compiler.intrinsics.klass.CastNullCheckDroppingsTest
  */
@@ -132,7 +132,7 @@ public class CastNullCheckDroppingsTest {
         t.runTest(methodClassCastNull, false, svalue);
         t.runTest(methodNullClassCast, false, svalue);
         t.runTest(methodClassCastObj,  false, svalue);
-        t.runTest(methodObjClassCast,  true,  svalue);
+        t.runTest(methodObjClassCast,  false,  svalue);
         t.runTest(methodClassCastInt,  false, svalue);
         t.runTest(methodIntClassCast,  true,  svalue);
         t.runTest(methodClassCastint,  false, svalue);

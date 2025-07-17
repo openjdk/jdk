@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,8 +213,6 @@ final class ClientHello {
                 // ignore cookie
                 hos.putBytes16(getEncodedCipherSuites());
                 hos.putBytes8(compressionMethod);
-                extensions.send(hos);       // In TLS 1.3, use of certain
-                                            // extensions is mandatory.
             } catch (IOException ioe) {
                 // unlikely
             }
@@ -827,6 +825,10 @@ final class ClientHello {
                     "Negotiated protocol version: " + negotiatedProtocol.name);
             }
 
+            // Protocol version is negotiated, update locally supported
+            // signature schemes according to the protocol being used.
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(context);
+
             // Consume the handshake message for the specific protocol version.
             if (negotiatedProtocol.isDTLS) {
                 if (negotiatedProtocol.useTLS13PlusSpec()) {
@@ -903,8 +905,8 @@ final class ClientHello {
             throw context.conContext.fatal(Alert.PROTOCOL_VERSION,
                 "The client supported protocol versions " + Arrays.toString(
                     ProtocolVersion.toStringArray(clientSupportedVersions)) +
-                " are not accepted by server preferences " +
-                context.activeProtocols);
+                " are not accepted by server preferences " + Arrays.toString(
+                ProtocolVersion.toStringArray(context.activeProtocols)));
         }
     }
 
@@ -1378,25 +1380,30 @@ final class ClientHello {
                 shc.resumingSession = resumingSession ? previous : null;
             }
 
-            HelloCookieManager hcm =
-                shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
-            if (!shc.isResumption &&
-                !hcm.isCookieValid(shc, clientHello, clientHello.cookie)) {
-                //
-                // Perform cookie exchange for DTLS handshaking if no cookie
-                // or the cookie is invalid in the ClientHello message.
-                //
-                // update the responders
-                shc.handshakeProducers.put(
-                        SSLHandshake.HELLO_VERIFY_REQUEST.id,
-                        SSLHandshake.HELLO_VERIFY_REQUEST);
 
-                //
-                // produce response handshake message
-                //
-                SSLHandshake.HELLO_VERIFY_REQUEST.produce(context, clientHello);
+            // We will by default exchange DTLS cookies for all handshakes
+            // (new and resumed) unless jdk.tls.enableDtlsResumeCookie=false.
+            // The property only affects the cookie exchange for resumption.
+            if (!shc.isResumption || SSLConfiguration.enableDtlsResumeCookie) {
+                HelloCookieManager hcm =
+                        shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
+                if (!hcm.isCookieValid(shc, clientHello, clientHello.cookie)) {
+                    //
+                    // Perform cookie exchange for DTLS handshaking if no cookie
+                    // or the cookie is invalid in the ClientHello message.
+                    //
+                    // update the responders
+                    shc.handshakeProducers.put(
+                            SSLHandshake.HELLO_VERIFY_REQUEST.id,
+                            SSLHandshake.HELLO_VERIFY_REQUEST);
 
-                return;
+                    //
+                    // produce response handshake message
+                    //
+                    SSLHandshake.HELLO_VERIFY_REQUEST.produce(context, clientHello);
+
+                    return;
+                }
             }
 
             // cache the client random number for further using
@@ -1420,6 +1427,9 @@ final class ClientHello {
             // Only need to ServerHello, which may add more responders later.
             shc.handshakeProducers.put(SSLHandshake.SERVER_HELLO.id,
                     SSLHandshake.SERVER_HELLO);
+
+            // Reset the ClientHello non-zero offset fragment allowance
+            shc.acceptCliHelloFragments = false;
 
             //
             // produce

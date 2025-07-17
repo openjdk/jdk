@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
@@ -75,12 +75,12 @@
 // Return a node which is more "ideal" than the current node.
 // Move constants to the right.
 Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(0) != NULL && remove_dead_region(phase, can_reshape)) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
   // Don't bother trying to transform a dead node
-  if (in(0) != NULL && in(0)->is_top()) {
-    return NULL;
+  if (in(0) != nullptr && in(0)->is_top()) {
+    return nullptr;
   }
   assert(in(Condition) != this &&
          in(IfFalse)   != this &&
@@ -88,14 +88,27 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (phase->type(in(Condition)) == Type::TOP ||
       phase->type(in(IfFalse))   == Type::TOP ||
       phase->type(in(IfTrue))    == Type::TOP) {
-    return NULL;
+    return nullptr;
   }
+  Node* progress = TypeNode::Ideal(phase, can_reshape);
+  if (progress != nullptr) {
+    return progress;
+  }
+
+  // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
+  // make BoolTests non-canonical.
+  Node* minmax = Ideal_minmax(phase, this);
+  if (minmax != nullptr) {
+    return minmax;
+  }
+
   // Canonicalize the node by moving constants to the right input.
   if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
-    return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
+    return make(phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
-  return NULL;
+
+  return nullptr;
 }
 
 //------------------------------is_cmove_id------------------------------------
@@ -108,7 +121,7 @@ Node *CMoveNode::is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f
        // Give up this identity check for floating points because it may choose incorrect
        // value around 0.0 and -0.0
        if ( cmp->Opcode()==Op_CmpF || cmp->Opcode()==Op_CmpD )
-       return NULL;
+       return nullptr;
        // Check for "(t==f)?t:f;" and replace with "f"
        if( b->_test._test == BoolTest::eq )
        return f;
@@ -117,7 +130,7 @@ Node *CMoveNode::is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f
        if( b->_test._test == BoolTest::ne )
        return t;
      }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Identity---------------------------------------
@@ -162,6 +175,13 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(IfTrue)) == Type::TOP || phase->type(in(IfFalse)) == Type::TOP) {
     return Type::TOP;
   }
+  if (phase->type(in(Condition)) == TypeInt::ZERO) {
+    return phase->type(in(IfFalse))->filter(_type); // Always pick left (false) input
+  }
+  if (phase->type(in(Condition)) == TypeInt::ONE) {
+    return phase->type(in(IfTrue))->filter(_type);  // Always pick right (true) input
+  }
+
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
   return t->filter(_type);
 }
@@ -169,18 +189,91 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
 //------------------------------make-------------------------------------------
 // Make a correctly-flavored CMove.  Since _type is directly determined
 // from the inputs we do not need to specify it here.
-CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Type *t) {
-  switch( t->basic_type() ) {
-    case T_INT:     return new CMoveINode( bol, left, right, t->is_int() );
-    case T_FLOAT:   return new CMoveFNode( bol, left, right, t );
-    case T_DOUBLE:  return new CMoveDNode( bol, left, right, t );
-    case T_LONG:    return new CMoveLNode( bol, left, right, t->is_long() );
-    case T_OBJECT:  return new CMovePNode( c, bol, left, right, t->is_oopptr() );
-    case T_ADDRESS: return new CMovePNode( c, bol, left, right, t->is_ptr() );
-    case T_NARROWOOP: return new CMoveNNode( c, bol, left, right, t );
+CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
+  switch (t->basic_type()) {
+    case T_INT:     return new CMoveINode(bol, left, right, t->is_int());
+    case T_FLOAT:   return new CMoveFNode(bol, left, right, t);
+    case T_DOUBLE:  return new CMoveDNode(bol, left, right, t);
+    case T_LONG:    return new CMoveLNode(bol, left, right, t->is_long());
+    case T_OBJECT:  return new CMovePNode(bol, left, right, t->is_oopptr());
+    case T_ADDRESS: return new CMovePNode(bol, left, right, t->is_ptr());
+    case T_NARROWOOP: return new CMoveNNode(bol, left, right, t);
     default:
-    ShouldNotReachHere();
-    return NULL;
+      ShouldNotReachHere();
+      return nullptr;
+  }
+}
+
+bool CMoveNode::supported(const Type* t) {
+  switch (t->basic_type()) {
+    case T_INT:     return Matcher::match_rule_supported(Op_CMoveI);
+    case T_FLOAT:   return Matcher::match_rule_supported(Op_CMoveF);
+    case T_DOUBLE:  return Matcher::match_rule_supported(Op_CMoveD);
+    case T_LONG:    return Matcher::match_rule_supported(Op_CMoveL);
+    case T_OBJECT:  return Matcher::match_rule_supported(Op_CMoveP);
+    case T_ADDRESS: return Matcher::match_rule_supported(Op_CMoveP);
+    case T_NARROWOOP: return Matcher::match_rule_supported(Op_CMoveN);
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+}
+
+// Try to identify min/max patterns in CMoves
+Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
+  // Only create MinL/MaxL if we are allowed to create macro nodes.
+  if (!phase->C->allow_macro_nodes()) {
+    return nullptr;
+  }
+
+  // The BoolNode may have been idealized into a constant. If that's the case, then Identity should take care of it instead.
+  BoolNode* bol = cmove->in(CMoveNode::Condition)->isa_Bool();
+  if (bol == nullptr) {
+    return nullptr;
+  }
+
+  Node* cmp = bol->in(1);
+  int cmove_op = cmove->Opcode();
+  int cmp_op = cmp->Opcode();
+
+  // Ensure comparison is an integral type, and that the cmove is of the same type.
+  if (!((cmp_op == Op_CmpI && cmove_op == Op_CMoveI) || (cmp_op == Op_CmpL && cmove_op == Op_CMoveL))) {
+    return nullptr;
+  }
+
+  // Only accept canonicalized le and lt comparisons
+  int test = bol->_test._test;
+  if (test != BoolTest::le && test != BoolTest::lt) {
+    return nullptr;
+  }
+
+  // The values being compared
+  Node* cmp_l = cmp->in(1);
+  Node* cmp_r = cmp->in(2);
+
+  // The values being selected
+  Node* cmove_l = cmove->in(CMoveNode::IfTrue);
+  Node* cmove_r = cmove->in(CMoveNode::IfFalse);
+
+  // For this transformation to be valid, the values being compared must be the same as the values being selected.
+  // We accept two different forms, "a < b ? a : b" and "a < b ? b : a". For the first form, the lhs and rhs of the
+  // comparison and cmove are the same, resulting in a minimum. For the second form, the lhs and rhs of both are flipped,
+  // resulting in a maximum. If neither form is found, bail out.
+
+  bool is_max;
+  if (cmp_l == cmove_l && cmp_r == cmove_r) {
+    is_max = false;
+  } else if (cmp_l == cmove_r && cmp_r == cmove_l) {
+    is_max = true;
+  } else {
+    return nullptr;
+  }
+
+  // Create the Min/Max node based on the type and kind
+  if (cmp_op == Op_CmpL) {
+    return MaxNode::build_min_max_long(phase, cmp_l, cmp_r, is_max);
+  } else {
+    return MaxNode::build_min_max_int(cmp_l, cmp_r, is_max);
   }
 }
 
@@ -203,8 +296,13 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( in(Condition)->is_Bool() ) {
       BoolNode* b  = in(Condition)->as_Bool();
       BoolNode* b2 = b->negate(phase);
-      return make(in(Control), phase->transform(b2), in(IfTrue), in(IfFalse), _type);
+      return make(phase->transform(b2), in(IfTrue), in(IfFalse), _type);
     }
+  }
+
+  // If we're late in the optimization process, we may have already expanded Conv2B nodes
+  if (phase->C->post_loop_opts_phase() && !Matcher::match_rule_supported(Op_Conv2B)) {
+    return nullptr;
   }
 
   // Now check for booleans
@@ -214,33 +312,34 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( phase->type(in(IfFalse)) == TypeInt::ZERO && phase->type(in(IfTrue)) == TypeInt::ONE ) {
     flip = 1 - flip;
   } else if( phase->type(in(IfFalse)) == TypeInt::ONE && phase->type(in(IfTrue)) == TypeInt::ZERO ) {
-  } else return NULL;
+  } else return nullptr;
 
   // Check for eq/ne test
-  if( !in(1)->is_Bool() ) return NULL;
+  if( !in(1)->is_Bool() ) return nullptr;
   BoolNode *bol = in(1)->as_Bool();
   if( bol->_test._test == BoolTest::eq ) {
   } else if( bol->_test._test == BoolTest::ne ) {
     flip = 1-flip;
-  } else return NULL;
+  } else return nullptr;
 
   // Check for vs 0 or 1
-  if( !bol->in(1)->is_Cmp() ) return NULL;
+  if( !bol->in(1)->is_Cmp() ) return nullptr;
   const CmpNode *cmp = bol->in(1)->as_Cmp();
   if( phase->type(cmp->in(2)) == TypeInt::ZERO ) {
   } else if( phase->type(cmp->in(2)) == TypeInt::ONE ) {
     // Allow cmp-vs-1 if the other input is bounded by 0-1
     if( phase->type(cmp->in(1)) != TypeInt::BOOL )
-    return NULL;
+    return nullptr;
     flip = 1 - flip;
-  } else return NULL;
+  } else return nullptr;
 
   // Convert to a bool (flipped)
   // Build int->bool conversion
   if (PrintOpto) { tty->print_cr("CMOV to I2B"); }
-  Node *n = new Conv2BNode( cmp->in(1) );
-  if( flip )
-  n = new XorINode( phase->transform(n), phase->intcon(1) );
+  Node* n = new Conv2BNode(cmp->in(1));
+  if (flip) {
+    n = new XorINode(phase->transform(n), phase->intcon(1));
+  }
 
   return n;
 }
@@ -258,7 +357,7 @@ Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int  phi_x_idx = 0;           // Index of phi input where to find naked x
 
   // Find the Bool
-  if( !in(1)->is_Bool() ) return NULL;
+  if( !in(1)->is_Bool() ) return nullptr;
   BoolNode *bol = in(1)->as_Bool();
   // Check bool sense
   switch( bol->_test._test ) {
@@ -266,13 +365,13 @@ Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = IfFalse; break;
     case BoolTest::gt: cmp_zero_idx = 2; phi_x_idx = IfTrue;  break;
     case BoolTest::ge: cmp_zero_idx = 1; phi_x_idx = IfFalse; break;
-    default:           return NULL;                           break;
+    default:           return nullptr;                        break;
   }
 
   // Find zero input of CmpF; the other input is being abs'd
   Node *cmpf = bol->in(1);
-  if( cmpf->Opcode() != Op_CmpF ) return NULL;
-  Node *X = NULL;
+  if( cmpf->Opcode() != Op_CmpF ) return nullptr;
+  Node *X = nullptr;
   bool flip = false;
   if( phase->type(cmpf->in(cmp_zero_idx)) == TypeF::ZERO ) {
     X = cmpf->in(3 - cmp_zero_idx);
@@ -281,18 +380,18 @@ Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     X = cmpf->in(cmp_zero_idx);
     flip = true;
   } else {
-    return NULL;
+    return nullptr;
   }
 
   // If X is found on the appropriate phi input, find the subtract on the other
-  if( X != in(phi_x_idx) ) return NULL;
+  if( X != in(phi_x_idx) ) return nullptr;
   int phi_sub_idx = phi_x_idx == IfTrue ? IfFalse : IfTrue;
   Node *sub = in(phi_sub_idx);
 
   // Allow only SubF(0,X) and fail out for all others; NegF is not OK
   if( sub->Opcode() != Op_SubF ||
      sub->in(2) != X ||
-     phase->type(sub->in(1)) != TypeF::ZERO ) return NULL;
+     phase->type(sub->in(1)) != TypeF::ZERO ) return nullptr;
 
   Node *abs = new AbsFNode( X );
   if( flip )
@@ -314,7 +413,7 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int  phi_x_idx = 0;           // Index of phi input where to find naked x
 
   // Find the Bool
-  if( !in(1)->is_Bool() ) return NULL;
+  if( !in(1)->is_Bool() ) return nullptr;
   BoolNode *bol = in(1)->as_Bool();
   // Check bool sense
   switch( bol->_test._test ) {
@@ -322,13 +421,13 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     case BoolTest::le: cmp_zero_idx = 2; phi_x_idx = IfFalse; break;
     case BoolTest::gt: cmp_zero_idx = 2; phi_x_idx = IfTrue;  break;
     case BoolTest::ge: cmp_zero_idx = 1; phi_x_idx = IfFalse; break;
-    default:           return NULL;                           break;
+    default:           return nullptr;                        break;
   }
 
   // Find zero input of CmpD; the other input is being abs'd
   Node *cmpd = bol->in(1);
-  if( cmpd->Opcode() != Op_CmpD ) return NULL;
-  Node *X = NULL;
+  if( cmpd->Opcode() != Op_CmpD ) return nullptr;
+  Node *X = nullptr;
   bool flip = false;
   if( phase->type(cmpd->in(cmp_zero_idx)) == TypeD::ZERO ) {
     X = cmpd->in(3 - cmp_zero_idx);
@@ -337,18 +436,18 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     X = cmpd->in(cmp_zero_idx);
     flip = true;
   } else {
-    return NULL;
+    return nullptr;
   }
 
   // If X is found on the appropriate phi input, find the subtract on the other
-  if( X != in(phi_x_idx) ) return NULL;
+  if( X != in(phi_x_idx) ) return nullptr;
   int phi_sub_idx = phi_x_idx == IfTrue ? IfFalse : IfTrue;
   Node *sub = in(phi_sub_idx);
 
   // Allow only SubD(0,X) and fail out for all others; NegD is not OK
   if( sub->Opcode() != Op_SubD ||
      sub->in(2) != X ||
-     phase->type(sub->in(1)) != TypeD::ZERO ) return NULL;
+     phase->type(sub->in(1)) != TypeD::ZERO ) return nullptr;
 
   Node *abs = new AbsDNode( X );
   if( flip )
@@ -364,7 +463,7 @@ Node* MoveNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     // Fold reinterpret cast into memory operation:
     //    MoveX2Y (LoadX mem) => LoadY mem
     LoadNode* ld = in(1)->isa_Load();
-    if (ld != NULL && (ld->outcnt() == 1)) { // replace only
+    if (ld != nullptr && (ld->outcnt() == 1)) { // replace only
       const Type* rt = bottom_type();
       if (ld->has_reinterpret_variant(rt)) {
         if (phase->C->post_loop_opts_phase()) {
@@ -375,7 +474,7 @@ Node* MoveNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* MoveNode::Identity(PhaseGVN* phase) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "c2_intelJccErratum_x86.hpp"
-#include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/machnode.hpp"
 #include "opto/node.hpp"
@@ -60,7 +58,7 @@ int IntelJccErratum::jcc_erratum_taint_node(MachNode* node, PhaseRegAlloc* regal
 int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegAlloc* regalloc) {
   ResourceMark rm;
   int nop_size = 0;
-  MachNode* last_m = NULL;
+  MachNode* last_m = nullptr;
 
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
@@ -86,7 +84,7 @@ int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegA
             }
           }
         }
-        last_m = NULL;
+        last_m = nullptr;
       } else {
         last_m = m;
       }
@@ -100,7 +98,7 @@ int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* m
   if (index_in_block < block->number_of_nodes() - 1) {
     Node* next = block->get_node(index_in_block + 1);
     if (next->is_Mach() && (next->as_Mach()->flags() & Node::PD::Flag_intel_jcc_erratum)) {
-      jcc_size += mach->size(regalloc);
+      jcc_size += next->size(regalloc);
     }
   }
   if (jcc_size > largest_jcc_size()) {
@@ -114,13 +112,13 @@ int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* m
   }
 }
 
-#define __ _masm.
+#define __ _masm->
 
 uintptr_t IntelJccErratumAlignment::pc() {
   return (uintptr_t)__ pc();
 }
 
-IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler& masm, int jcc_size) :
+IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler* masm, int jcc_size) :
     _masm(masm),
     _start_pc(pc()) {
   if (!VM_Version::has_intel_jcc_erratum()) {
@@ -146,5 +144,6 @@ IntelJccErratumAlignment::~IntelJccErratumAlignment() {
     return;
   }
 
+  assert(pc() - _start_pc > 0, "No instruction aligned");
   assert(!IntelJccErratum::is_crossing_or_ending_at_32_byte_boundary(_start_pc, pc()), "Invalid jcc_size estimate");
 }

@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +24,16 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/atomic.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomic.hpp"
 
 static ReferenceType reference_type(oop reference) {
   return InstanceKlass::cast(reference->klass())->reference_type();
@@ -53,7 +55,24 @@ static const char* reference_type_name(ReferenceType type) {
 
     default:
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
+  }
+}
+
+template <typename T>
+static void card_mark_barrier(T* field, oop value) {
+  assert(ShenandoahCardBarrier, "Card-mark barrier should be on");
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  assert(heap->is_in_or_null(value), "Should be in heap");
+  if (heap->is_in_old(field) && heap->is_in_young(value)) {
+    // For Shenandoah, each generation collects all the _referents_ that belong to the
+    // collected generation. We can end up with discovered lists that contain a mixture
+    // of old and young _references_. These references are linked together through the
+    // discovered field in java.lang.Reference. In some cases, creating or editing this
+    // list may result in the creation of _new_ old-to-young pointers which must dirty
+    // the corresponding card. Failing to do this may cause heap verification errors and
+    // lead to incorrect GC behavior.
+    heap->old_generation()->mark_card_as_dirty(field);
   }
 }
 
@@ -63,15 +82,21 @@ static void set_oop_field(T* field, oop value);
 template <>
 void set_oop_field<oop>(oop* field, oop value) {
   *field = value;
+  if (ShenandoahCardBarrier) {
+    card_mark_barrier(field, value);
+  }
 }
 
 template <>
 void set_oop_field<narrowOop>(narrowOop* field, oop value) {
   *field = CompressedOops::encode(value);
+  if (ShenandoahCardBarrier) {
+    card_mark_barrier(field, value);
+  }
 }
 
 static oop lrb(oop obj) {
-  if (obj != NULL && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
+  if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
     return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
   } else {
     return obj;
@@ -83,14 +108,25 @@ static volatile T* reference_referent_addr(oop reference) {
   return (volatile T*)java_lang_ref_Reference::referent_addr_raw(reference);
 }
 
+inline oop reference_coop_decode_raw(narrowOop v) {
+  return CompressedOops::is_null(v) ? nullptr : CompressedOops::decode_raw(v);
+}
+
+inline oop reference_coop_decode_raw(oop v) {
+  return v;
+}
+
+// Raw referent, it can be dead. You cannot treat it as oop without additional safety
+// checks, this is why it is HeapWord*. The decoding uses a special-case inlined
+// CompressedOops::decode method that bypasses normal oop-ness checks.
 template <typename T>
-static oop reference_referent(oop reference) {
-  T heap_oop = Atomic::load(reference_referent_addr<T>(reference));
-  return CompressedOops::decode(heap_oop);
+static HeapWord* reference_referent_raw(oop reference) {
+  T raw_oop = Atomic::load(reference_referent_addr<T>(reference));
+  return cast_from_oop<HeapWord*>(reference_coop_decode_raw(raw_oop));
 }
 
 static void reference_clear_referent(oop reference) {
-  java_lang_ref_Reference::clear_referent(reference);
+  java_lang_ref_Reference::clear_referent_raw(reference);
 }
 
 template <typename T>
@@ -120,7 +156,7 @@ void reference_set_discovered<narrowOop>(oop reference, oop discovered) {
 template<typename T>
 static bool reference_cas_discovered(oop reference, oop discovered) {
   T* addr = reinterpret_cast<T *>(java_lang_ref_Reference::discovered_addr_raw(reference));
-  return ShenandoahHeap::atomic_update_oop_check(discovered, addr, NULL);
+  return ShenandoahHeap::atomic_update_oop_check(discovered, addr, nullptr);
 }
 
 template <typename T>
@@ -144,15 +180,15 @@ static void soft_reference_update_clock() {
 }
 
 ShenandoahRefProcThreadLocal::ShenandoahRefProcThreadLocal() :
-  _discovered_list(NULL),
+  _discovered_list(nullptr),
   _encountered_count(),
   _discovered_count(),
   _enqueued_count() {
 }
 
 void ShenandoahRefProcThreadLocal::reset() {
-  _discovered_list = NULL;
-  _mark_closure = NULL;
+  _discovered_list = nullptr;
+  _mark_closure = nullptr;
   for (uint i = 0; i < reference_type_count; i++) {
     _encountered_count[i] = 0;
     _discovered_count[i] = 0;
@@ -186,9 +222,9 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
 }
 
 ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
-  _soft_reference_policy(NULL),
+  _soft_reference_policy(nullptr),
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
-  _pending_list(NULL),
+  _pending_list(nullptr),
   _pending_list_tail(&_pending_list),
   _iterate_discovered_list_id(0U),
   _stats() {
@@ -227,11 +263,11 @@ bool ShenandoahReferenceProcessor::is_inactive(oop reference, oop referent, Refe
   if (type == REF_FINAL) {
     // A FinalReference is inactive if its next field is non-null. An application can't
     // call enqueue() or clear() on a FinalReference.
-    return reference_next<T>(reference) != NULL;
+    return reference_next<T>(reference) != nullptr;
   } else {
     // A non-FinalReference is inactive if the referent is null. The referent can only
     // be null if the application called Reference.enqueue() or Reference.clear().
-    return referent == NULL;
+    return referent == nullptr;
   }
 }
 
@@ -248,7 +284,7 @@ bool ShenandoahReferenceProcessor::is_softly_live(oop reference, ReferenceType t
   // Ask SoftReference policy
   const jlong clock = java_lang_ref_SoftReference::clock();
   assert(clock != 0, "Clock not initialized");
-  assert(_soft_reference_policy != NULL, "Policy not initialized");
+  assert(_soft_reference_policy != nullptr, "Policy not initialized");
   return !_soft_reference_policy->should_clear_reference(reference, clock);
 }
 
@@ -257,6 +293,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(reference);
   T heap_oop = RawAccess<>::oop_load(referent_addr);
   oop referent = CompressedOops::decode(heap_oop);
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (is_inactive<T>(reference, referent, type)) {
     log_trace(gc,ref)("Reference inactive: " PTR_FORMAT, p2i(reference));
@@ -273,25 +310,31 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
     return false;
   }
 
+  if (!heap->is_in_active_generation(referent)) {
+    log_trace(gc,ref)("Referent outside of active generation: " PTR_FORMAT, p2i(referent));
+    return false;
+  }
+
   return true;
 }
 
 template <typename T>
 bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type) const {
-  const oop referent = reference_referent<T>(reference);
-  if (referent == NULL) {
+  HeapWord* raw_referent = reference_referent_raw<T>(reference);
+  if (raw_referent == nullptr) {
     // Reference has been cleared, by a call to Reference.enqueue()
     // or Reference.clear() from the application, which means we
     // should drop the reference.
     return true;
   }
 
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   // Check if the referent is still alive, in which case we should
   // drop the reference.
   if (type == REF_PHANTOM) {
-    return ShenandoahHeap::heap()->complete_marking_context()->is_marked(referent);
+    return heap->active_generation()->complete_marking_context()->is_marked(raw_referent);
   } else {
-    return ShenandoahHeap::heap()->complete_marking_context()->is_marked_strong(referent);
+    return heap->active_generation()->complete_marking_context()->is_marked_strong(raw_referent);
   }
 }
 
@@ -302,8 +345,8 @@ void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType ty
     // to finalize(). A FinalReference is instead made inactive by self-looping the
     // next field. An application can't call FinalReference.enqueue(), so there is
     // no race to worry about when setting the next field.
-    assert(reference_next<T>(reference) == NULL, "Already inactive");
-    assert(ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only make inactive final refs with alive referents");
+    assert(reference_next<T>(reference) == nullptr, "Already inactive");
+    assert(ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(reference_referent_raw<T>(reference)), "only make inactive final refs with alive referents");
     reference_set_next(reference, reference);
   } else {
     // Clear referent
@@ -318,7 +361,7 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
     return false;
   }
 
-  if (reference_discovered<T>(reference) != NULL) {
+  if (reference_discovered<T>(reference) != nullptr) {
     // Already discovered. This can happen if the reference is marked finalizable first, and then strong,
     // in which case it will be seen 2x by marking.
     log_trace(gc,ref)("Reference already discovered: " PTR_FORMAT, p2i(reference));
@@ -338,14 +381,28 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
   }
 
   // Add reference to discovered list
+  // Each worker thread has a private copy of refproc_data, which includes a private discovered list.  This means
+  // there's no risk that a different worker thread will try to manipulate my discovered list head while I'm making
+  // reference the head of my discovered list.
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   oop discovered_head = refproc_data.discovered_list_head<T>();
-  if (discovered_head == NULL) {
+  if (discovered_head == nullptr) {
     // Self-loop tail of list. We distinguish discovered from not-discovered references by looking at their
-    // discovered field: if it is NULL, then it is not-yet discovered, otherwise it is discovered
+    // discovered field: if it is null, then it is not-yet discovered, otherwise it is discovered
     discovered_head = reference;
   }
   if (reference_cas_discovered<T>(reference, discovered_head)) {
+    // We successfully set this reference object's next pointer to discovered_head.  This marks reference as discovered.
+    // If reference_cas_discovered fails, that means some other worker thread took credit for discovery of this reference,
+    // and that other thread will place reference on its discovered list, so I can ignore reference.
+
+    // In case we have created an interesting pointer, mark the remembered set card as dirty.
+    if (ShenandoahCardBarrier) {
+      T* addr = reinterpret_cast<T*>(java_lang_ref_Reference::discovered_addr_raw(reference));
+      card_mark_barrier(addr, discovered_head);
+    }
+
+    // Make the discovered_list_head point to reference.
     refproc_data.set_discovered_list_head<T>(reference);
     assert(refproc_data.discovered_list_head<T>() == reference, "reference must be new discovered head");
     log_trace(gc, ref)("Discovered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
@@ -360,9 +417,10 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
     return false;
   }
 
-  log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
+  log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s, %s)",
+          p2i(reference), reference_type_name(type), ShenandoahHeap::heap()->heap_region_containing(reference)->affiliation_name());
   uint worker_id = WorkerThread::worker_id();
-  _ref_proc_thread_locals->inc_encountered(type);
+  _ref_proc_thread_locals[worker_id].inc_encountered(type);
 
   if (UseCompressedOops) {
     return discover<narrowOop>(reference, type, worker_id);
@@ -375,15 +433,23 @@ template <typename T>
 oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
+  HeapWord* raw_referent = reference_referent_raw<T>(reference);
+
 #ifdef ASSERT
-  oop referent = reference_referent<T>(reference);
-  assert(referent == NULL || ShenandoahHeap::heap()->marking_context()->is_marked(referent),
+  assert(raw_referent == nullptr || ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(raw_referent),
          "only drop references with alive referents");
 #endif
 
   // Unlink and return next in list
   oop next = reference_discovered<T>(reference);
-  reference_set_discovered<T>(reference, NULL);
+  reference_set_discovered<T>(reference, nullptr);
+  // When this reference was discovered, it would not have been marked. If it ends up surviving
+  // the cycle, we need to dirty the card if the reference is old and the referent is young.  Note
+  // that if the reference is not dropped, then its pointer to the referent will be nulled before
+  // evacuation begins so card does not need to be dirtied.
+  if (ShenandoahCardBarrier) {
+    card_mark_barrier(cast_from_oop<HeapWord*>(reference), cast_to_oop(raw_referent));
+  }
   return next;
 }
 
@@ -402,7 +468,7 @@ T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type, uint wo
 }
 
 template <typename T>
-void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id) {;
+void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id) {
   log_trace(gc, ref)("Processing discovered list #%u : " PTR_FORMAT, worker_id, p2i(refproc_data.discovered_list_head<T>()));
   T* list = refproc_data.discovered_list_addr<T>();
   // The list head is basically a GC root, we need to resolve and update it,
@@ -414,7 +480,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   T* p = list;
   while (true) {
     const oop reference = lrb(CompressedOops::decode(*p));
-    if (reference == NULL) {
+    if (reference == nullptr) {
       break;
     }
     log_trace(gc, ref)("Processing reference: " PTR_FORMAT, p2i(reference));
@@ -428,25 +494,26 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
 
     const oop discovered = lrb(reference_discovered<T>(reference));
     if (reference == discovered) {
-      // Reset terminating self-loop to NULL
-      reference_set_discovered<T>(reference, oop(NULL));
+      // Reset terminating self-loop to null
+      reference_set_discovered<T>(reference, oop(nullptr));
       break;
     }
   }
 
   // Prepend discovered references to internal pending list
+  // set_oop_field maintains the card mark barrier as this list is constructed.
   if (!CompressedOops::is_null(*list)) {
     oop head = lrb(CompressedOops::decode_not_null(*list));
     shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
     oop prev = Atomic::xchg(&_pending_list, head);
-    RawAccess<>::oop_store(p, prev);
-    if (prev == NULL) {
+    set_oop_field(p, prev);
+    if (prev == nullptr) {
       // First to prepend to list, record tail
       _pending_list_tail = reinterpret_cast<void*>(p);
     }
 
     // Clear discovered list
-    set_oop_field(list, oop(NULL));
+    set_oop_field(list, oop(nullptr));
   }
 }
 
@@ -511,19 +578,31 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
   // Prepend internal pending list to external pending list
   shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+
+  // During reference processing, we maintain a local list of references that are identified by
+  //   _pending_list and _pending_list_tail.  _pending_list_tail points to the next field of the last Reference object on
+  //   the local list.
+  //
+  // There is also a global list of reference identified by Universe::_reference_pending_list
+
+  // The following code has the effect of:
+  //  1. Making the global Universe::_reference_pending_list point to my local list
+  //  2. Overwriting the next field of the last Reference on my local list to point at the previous head of the
+  //     global Universe::_reference_pending_list
+
+  oop former_head_of_global_list = Universe::swap_reference_pending_list(_pending_list);
   if (UseCompressedOops) {
-    *reinterpret_cast<narrowOop*>(_pending_list_tail) = CompressedOops::encode(Universe::swap_reference_pending_list(_pending_list));
+    set_oop_field<narrowOop>(reinterpret_cast<narrowOop*>(_pending_list_tail), former_head_of_global_list);
   } else {
-    *reinterpret_cast<oop*>(_pending_list_tail) = Universe::swap_reference_pending_list(_pending_list);
+    set_oop_field<oop>(reinterpret_cast<oop*>(_pending_list_tail), former_head_of_global_list);
   }
 }
 
 void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
-  if (_pending_list == NULL) {
+  if (_pending_list == nullptr) {
     // Nothing to enqueue
     return;
   }
-
   if (!concurrent) {
     // When called from mark-compact or degen-GC, the locking is done by the VMOperation,
     enqueue_references_locked();
@@ -538,7 +617,7 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
   }
 
   // Reset internal pending list
-  _pending_list = NULL;
+  _pending_list = nullptr;
   _pending_list_tail = &_pending_list;
 }
 
@@ -547,7 +626,7 @@ void ShenandoahReferenceProcessor::clean_discovered_list(T* list) {
   T discovered = *list;
   while (!CompressedOops::is_null(discovered)) {
     oop discovered_ref = CompressedOops::decode_not_null(discovered);
-    set_oop_field<T>(list, oop(NULL));
+    set_oop_field<T>(list, oop(nullptr));
     list = reference_discovered_addr<T>(discovered_ref);
     discovered = *list;
   }
@@ -562,9 +641,9 @@ void ShenandoahReferenceProcessor::abandon_partial_discovery() {
       clean_discovered_list<oop>(_ref_proc_thread_locals[index].discovered_list_addr<oop>());
     }
   }
-  if (_pending_list != NULL) {
+  if (_pending_list != nullptr) {
     oop pending = _pending_list;
-    _pending_list = NULL;
+    _pending_list = nullptr;
     if (UseCompressedOops) {
       narrowOop* list = reference_discovered_addr<narrowOop>(pending);
       clean_discovered_list<narrowOop>(list);
@@ -594,11 +673,10 @@ void ShenandoahReferenceProcessor::collect_statistics() {
                                    discovered[REF_FINAL],
                                    discovered[REF_PHANTOM]);
 
-  log_info(gc,ref)("Encountered references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+  log_info(gc,ref)("Encountered references: Soft: %zu, Weak: %zu, Final: %zu, Phantom: %zu",
                    encountered[REF_SOFT], encountered[REF_WEAK], encountered[REF_FINAL], encountered[REF_PHANTOM]);
-  log_info(gc,ref)("Discovered  references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+  log_info(gc,ref)("Discovered  references: Soft: %zu, Weak: %zu, Final: %zu, Phantom: %zu",
                    discovered[REF_SOFT], discovered[REF_WEAK], discovered[REF_FINAL], discovered[REF_PHANTOM]);
-  log_info(gc,ref)("Enqueued    references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+  log_info(gc,ref)("Enqueued    references: Soft: %zu, Weak: %zu, Final: %zu, Phantom: %zu",
                    enqueued[REF_SOFT], enqueued[REF_WEAK], enqueued[REF_FINAL], enqueued[REF_PHANTOM]);
 }
-

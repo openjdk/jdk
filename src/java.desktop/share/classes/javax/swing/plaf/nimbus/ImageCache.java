@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class ImageCache {
             new LinkedHashMap<Integer, PixelCountSoftReference>(16, 0.75f, true);
     // Maximum number of pixels to cache, this is used if maxCount
     private final int maxPixelCount;
-    // Maximum cached image size in pxiels
+    // Maximum cached image size in pixels
     private final int maxSingleImagePixelSize;
     // The current number of pixels stored in the cache
     private int currentPixelCount = 0;

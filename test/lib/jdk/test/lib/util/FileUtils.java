@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -48,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.test.lib.Platform;
 
 import com.sun.management.UnixOperatingSystemMXBean;
@@ -266,7 +269,7 @@ public final class FileUtils {
                     (new InputStreamReader(proc.getInputStream()));
                 // Skip the first line as it is the "df" output header.
                 if (reader.readLine() != null ) {
-                    Set mountPoints = new HashSet();
+                    Set<String> mountPoints = new HashSet<>();
                     String mountPoint = null;
                     while ((mountPoint = reader.readLine()) != null) {
                         if (!mountPoints.add(mountPoint)) {
@@ -299,8 +302,8 @@ public final class FileUtils {
             };
         });
 
-        final AtomicReference throwableReference =
-            new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> throwableReference =
+            new AtomicReference<>();
         thr.setUncaughtExceptionHandler(
             new Thread.UncaughtExceptionHandler() {
                 public void uncaughtException(Thread t, Throwable e) {
@@ -315,7 +318,7 @@ public final class FileUtils {
             throw new RuntimeException(ie);
         }
 
-        Throwable uncaughtException = (Throwable)throwableReference.get();
+        Throwable uncaughtException = throwableReference.get();
         if (uncaughtException != null) {
             throw new RuntimeException(uncaughtException);
         }
@@ -364,7 +367,32 @@ public final class FileUtils {
         });
     }
 
+    /**
+     * Copies a directory and all entries in the directory to a destination path.
+     * Makes the access permission of the destination entries writable.
+     *
+     * @param src the path of the source directory
+     * @param dst the path of the destination directory
+     * @throws IOException      if an I/O error occurs while walking the file tree
+     * @throws RuntimeException if an I/O error occurs during the copy operation
+     *                          or if the source or destination paths are invalid
+     */
+    public static void copyDirectory(Path src, Path dst) throws IOException {
+        try (Stream<Path> stream = Files.walk(src)) {
+            stream.forEach(sourcePath -> {
+                try {
+                    Path destPath = dst.resolve(src.relativize(sourcePath));
+                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    destPath.toFile().setWritable(true);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+
     // Return the current process handle count
+    @SuppressWarnings("restricted")
     public static long getProcessHandleCount() {
         if (IS_WINDOWS) {
             if (!nativeLibLoaded) {

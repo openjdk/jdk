@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -36,7 +35,7 @@ void OrderAccess::StubRoutines_fence() {
   // nothing in that case but assert if no fence code exists after threads have been created
   void (*func)() = CAST_TO_FN_PTR(void (*)(), StubRoutines::fence_entry());
 
-  if (func != NULL) {
+  if (func != nullptr) {
     (*func)();
     return;
   }

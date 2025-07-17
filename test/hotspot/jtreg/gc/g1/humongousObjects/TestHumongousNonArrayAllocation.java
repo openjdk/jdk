@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,7 @@ public class TestHumongousNonArrayAllocation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final String CLASS_NAME_PREFIX = TestHumongousNonArrayAllocation.class.getSimpleName() + "_";
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
-            IllegalAccessException, IOException {
+    public static void main(String[] args) throws Exception {
 
         if (args.length != 1) {
             throw new Error("Test Bug: Expected class name wasn't provided as command line argument");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,6 +329,16 @@ public class BasicDoubleObject extends Basic {
         test("%3.0e", "1e+08", 100000000.00);
 
         //---------------------------------------------------------------------
+        // %e - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.1e", "9.9e-324", 1e-323);
+        test("%.1e", "9.9e-323", 1e-322);
+        test("%.15e", "7.387900000000000e+20", 7.3879e20);
+        test("%.15e", "1.000000000000000e+23", 1e23);
+        test("%.16e", "2.0000000000000000e+23", 2e23);
+        test("%.16e", "1.9400994884341945e+25", 1.9400994884341945E25);
+
+        //---------------------------------------------------------------------
         // %f
         //
         // Floating-point conversions applicable to float, double, and
@@ -388,6 +398,14 @@ public class BasicDoubleObject extends Basic {
         test("%,3.0f", "100,000,000", 100000000.00);
         test("%,3.0f", "10,000,000",  10000000.00);
         test("%,3.0f", "100,000,000", 100000000.00);
+
+        //---------------------------------------------------------------------
+        // %f - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.0f", "738790000000000000000", 7.3879e20);
+        test("%.0f", "100000000000000000000000", 1e23);
+        test("%.0f", "200000000000000000000000", 2e23);
+        test("%.0f", "19400994884341945000000000", 1.9400994884341945E25);
 
         //---------------------------------------------------------------------
         // %f - float, double, Double, BigDecimal
@@ -485,6 +503,16 @@ public class BasicDoubleObject extends Basic {
         test("%3.10g", "100000000.0", 100000000.00);
 
         tryCatch("%#3.0g", FormatFlagsConversionMismatchException.class, 1000.00);
+
+        //---------------------------------------------------------------------
+        // %g - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.2g", "9.9e-324", 1e-323);
+        test("%.2g", "9.9e-323", 1e-322);
+        test("%.16g", "7.387900000000000e+20", 7.3879e20);
+        test("%.16g", "1.000000000000000e+23", 1e23);
+        test("%.17g", "2.0000000000000000e+23", 2e23);
+        test("%.17g", "1.9400994884341945e+25", 1.9400994884341945E25);
 
         // double PI^300
         //    = 13962455701329742638131355433930076081862072808 ... e+149

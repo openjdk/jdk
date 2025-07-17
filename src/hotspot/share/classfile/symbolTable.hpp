@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class constantPoolHandle;
 class SymbolClosure;
 
 class SymbolTable : public AllStatic {
-  friend class VMStructs;
   friend class Symbol;
   friend class ClassFileParser;
   friend class SymbolTableConfig;
@@ -59,7 +58,6 @@ class SymbolTable : public AllStatic {
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static volatile bool _needs_rehashing;
 
-  static void delete_symbol(Symbol* sym);
   static void grow(JavaThread* jt);
   static void clean_dead_entries(JavaThread* jt);
 
@@ -75,9 +73,8 @@ class SymbolTable : public AllStatic {
   static void mark_has_items_to_clean();
   static bool has_items_to_clean();
 
-  static Symbol* allocate_symbol(const char* name, int len, bool c_heap); // Assumes no characters larger than 0x7F
   static Symbol* do_lookup(const char* name, int len, uintx hash);
-  static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap);
+  static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent);
 
   // lookup only, won't add. Also calculate hash. Used by the ClassfileParser.
   static Symbol* lookup_only(const char* name, int len, unsigned int& hash);
@@ -89,7 +86,7 @@ class SymbolTable : public AllStatic {
                           const char** name, int* lengths,
                           int* cp_indices, unsigned int* hashValues);
 
-  static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(NULL);
+  static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(nullptr);
   static Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
   static Symbol* lookup_common(const char* name, int len, unsigned int hash);
 
@@ -100,7 +97,6 @@ class SymbolTable : public AllStatic {
   static void print_table_statistics(outputStream* st);
 
   static void try_rehash_table();
-  static bool do_rehash();
 
 public:
   // The symbol table
@@ -116,13 +112,13 @@ public:
   static void create_table();
 
   static void do_concurrent_work(JavaThread* jt);
-  static bool has_work() { return _has_work; }
+  static bool has_work();
   static void trigger_cleanup();
 
   // Probing
   // Needed for preloading classes in signatures when compiling.
   // Returns the symbol is already present in symbol table, otherwise
-  // NULL.  NO ALLOCATION IS GUARANTEED!
+  // null.  NO ALLOCATION IS GUARANTEED!
   static Symbol* probe(const char* name, int len) {
     unsigned int ignore_hash;
     return lookup_only(name, len, ignore_hash);
@@ -146,13 +142,14 @@ public:
   static Symbol* new_permanent_symbol(const char* name);
 
   // Rehash the string table if it gets out of balance
+private:
+  static bool should_grow();
+  static bool maybe_rehash_table();
+
+public:
   static void rehash_table();
   static bool needs_rehashing() { return _needs_rehashing; }
-  static inline void update_needs_rehash(bool rehash) {
-    if (rehash) {
-      _needs_rehashing = true;
-    }
-  }
+  static inline void update_needs_rehash(bool rehash);
 
   // Heap dumper and CDS
   static void symbols_do(SymbolClosure *cl);
@@ -163,7 +160,6 @@ private:
   static void copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
                                        CompactHashtableWriter* ch_table);
 public:
-  static size_t estimate_size_for_archive() NOT_CDS_RETURN_(0);
   static void write_to_archive(GrowableArray<Symbol*>* symbols) NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc,
                                             bool is_static_archive = true) NOT_CDS_RETURN;

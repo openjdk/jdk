@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,10 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
+import jdk.jfr.internal.JVM;
+
 abstract class Command {
     public static final String title = "Tool for working with Flight Recorder files";
     private static final Command HELP = new Help();
@@ -48,6 +52,10 @@ abstract class Command {
     private static List<Command> createCommands() {
         List<Command> commands = new ArrayList<>();
         commands.add(new Print());
+        if (!JVM.isProduct()) {
+            commands.add(new Query());
+        }
+        commands.add(new View());
         commands.add(new Configure());
         commands.add(new Metadata());
         commands.add(new Scrub());
@@ -116,7 +124,7 @@ abstract class Command {
         StringBuilder sb = new StringBuilder();
         if (aliases.size() == 1) {
             sb.append(" (alias ");
-            sb.append(aliases.get(0));
+            sb.append(aliases.getFirst());
             sb.append(")");
             return sb.toString();
          }
@@ -168,6 +176,18 @@ abstract class Command {
             return true;
         }
         return false;
+    }
+
+    protected int acceptInt(Deque<String> options, String text) throws UserSyntaxException {
+        if (options.size() < 1) {
+            throw new UserSyntaxException("missing integer value");
+        }
+        String t = options.remove();
+        try {
+            return Integer.parseInt(t);
+        } catch (NumberFormatException nfe) {
+            throw new UserSyntaxException("could not parse integer value " + t);
+        }
     }
 
     protected void warnForWildcardExpansion(String option, String filter) throws UserDataException {
@@ -296,6 +316,10 @@ abstract class Command {
 
     protected final void println(String text) {
         System.out.println(text);
+    }
+
+    protected final void printf(String text, Object ... args) {
+        System.out.printf(text, args);
     }
 
     public static void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {

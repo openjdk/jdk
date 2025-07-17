@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8267988
  * @summary C2: assert(!addp->is_AddP() || addp->in(AddPNode::Base)->is_top() || addp->in(AddPNode::Base) == n->in(AddPNode::Base)) failed: Base pointers must match (addp 1301)
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestAddPChainWithDifferentBase TestAddPChainWithDifferentBase
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestAddPChainWithDifferentBase::* TestAddPChainWithDifferentBase
  *
  */
 

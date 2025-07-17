@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,21 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include "ExceptionCheckingJniEnv.hpp"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
-static jrawMonitorID syncLock = NULL;
+static jrawMonitorID syncLock = nullptr;
 
 /* constant names */
 #define JVMTI_EVENT_COUNT   (int)(JVMTI_MAX_EVENT_TYPE_VAL - JVMTI_MIN_EVENT_TYPE_VAL + 1)
@@ -187,7 +187,7 @@ classEventsHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
     if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)className))) {
         nsk_jvmti_setFailStatus();
     }
-    if (generic != NULL)
+    if (generic != nullptr)
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
             nsk_jvmti_setFailStatus();
         }
@@ -239,7 +239,7 @@ threadEventHandler(jvmtiEvent event, jvmtiEnv* jvmti_env, JNIEnv* jni_env,
     if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)className))) {
         nsk_jvmti_setFailStatus();
     }
-    if (generic != NULL)
+    if (generic != nullptr)
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
             nsk_jvmti_setFailStatus();
         }
@@ -350,7 +350,7 @@ enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
     }
 
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, nullptr))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -494,7 +494,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     classLoaderCount = nsk_jvmti_findOptionIntValue(CLASS_LOADER_COUNT_PARAM, 10);
 
     jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
@@ -519,7 +519,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     currentPhase = JVMTI_PHASE_PRIMORDIAL;
