@@ -208,6 +208,10 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Print any relevant tracing info that flags imply.
+  // Default implementation does nothing.
+  virtual void print_tracing_info() const = 0;
+
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() = 0;
 
@@ -458,10 +462,6 @@ protected:
 
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
-
-  // Print any relevant tracing info that flags imply.
-  // Default implementation does nothing.
-  virtual void print_tracing_info() const = 0;
 
   double elapsed_gc_cpu_time() const;
 

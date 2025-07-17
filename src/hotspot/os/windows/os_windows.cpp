@@ -2640,14 +2640,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
-#endif
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT

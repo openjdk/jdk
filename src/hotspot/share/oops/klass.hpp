@@ -734,10 +734,10 @@ public:
 
   void clean_subklass();
 
+  // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
-  static void clean_subklass_tree() {
-    clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
-  }
+  // Clean out unnecessary weak klass links from the given InstanceKlass.
+  static void clean_weak_instanceklass_links(InstanceKlass* ik);
 
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.

@@ -155,7 +155,7 @@ class Compilation: public StackObj {
   CodeOffsets* offsets()                         { return &_offsets; }
   Arena* arena()                                 { return _arena; }
   bool has_access_indexed()                      { return _has_access_indexed; }
-  bool should_install_code()                     { return _install_code && InstallMethods; }
+  bool should_install_code()                     { return _install_code; }
   LinearScan* allocator()                        { return _allocator; }
 
   // Instruction ids
