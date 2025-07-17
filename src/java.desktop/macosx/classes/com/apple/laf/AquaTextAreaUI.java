@@ -32,7 +32,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
 import javax.swing.text.*;
 
-public class AquaTextAreaUI extends BasicTextAreaUI {
+public final class AquaTextAreaUI extends BasicTextAreaUI {
     public static ComponentUI createUI(final JComponent c) {
         return new AquaTextAreaUI();
     }

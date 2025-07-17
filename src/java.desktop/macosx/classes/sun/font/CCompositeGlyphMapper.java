@@ -46,6 +46,7 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
         return mapper;
     }
 
+    @Override
     public boolean canDisplay(char ch) {
         int glyph = charToGlyph(ch);
         return glyph != missingGlyph;
@@ -67,6 +68,7 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
         return missingGlyph;
     }
 
+    @Override
     public int getNumGlyphs() {
         int numGlyphs = 0;
         for (int slot=0; slot<1 /*font.numSlots*/; slot++) {
@@ -80,14 +82,17 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
         return numGlyphs;
     }
 
+    @Override
     public int charToGlyph(int unicode) {
         return convertToGlyph(unicode);
     }
 
+    @Override
     public int charToGlyph(char unicode) {
         return convertToGlyph(unicode);
     }
 
+    @Override
     public boolean charsToGlyphsNS(int count, char[] unicodes, int[] glyphs) {
 
         for (int i=0; i<count; i++) {
@@ -122,6 +127,7 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
         return false;
     }
 
+    @Override
     public void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
         for (int i=0; i<count; i++) {
             int code = unicodes[i]; // char is unsigned.
@@ -146,6 +152,7 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
         }
     }
 
+    @Override
     public void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
         for (int i=0; i<count; i++) {
              glyphs[i] = convertToGlyph(unicodes[i]);
