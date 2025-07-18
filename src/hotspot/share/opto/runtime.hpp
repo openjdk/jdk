@@ -791,6 +791,30 @@ struct TypeMap<jint> {
 };
 
 template <>
+struct TypeMap<jchar> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = TypeInt::CHAR;
+  }
+  static uint arg_width() { return 1; }
+};
+
+template <>
+struct TypeMap<jshort> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = TypeInt::SHORT;
+  }
+  static uint arg_width() { return 1; }
+};
+
+template <>
+struct TypeMap<jboolean> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = TypeInt::BOOL;
+  }
+  static uint arg_width() { return 1; }
+};
+
+template <>
 struct TypeMap<jlong> {
   static void put(const Type** fields, int* argp) {
     fields[(*argp)++] = TypeLong::LONG;

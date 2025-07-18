@@ -155,6 +155,14 @@ class SharedRuntime: AllStatic {
     tty->print("[%c] ", x);
   }
 
+  static void print_primitive(jshort x) {
+    tty->print("[%d] ", x);
+  }
+
+  static void print_primitive(jboolean x) {
+    tty->print("[%d] ", x);
+  }
+
   static void print_primitive(jint x) {
     tty->print("[%d] ", x);
   }
@@ -165,7 +173,6 @@ class SharedRuntime: AllStatic {
 
   template <typename T, typename... Rest>
   static void debug_print_t(T arg, Rest... args) {
-    // TODO we could use a polymorphic function here to have a different behavior depending on type
     print_primitive(arg);
     debug_print_t(args...);
   }
