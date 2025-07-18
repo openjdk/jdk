@@ -2000,6 +2000,12 @@ const int ObjectAlignmentInBytes = 8;
   develop(uint, BinarySearchThreshold, 16,                                  \
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
+                                                                            \
+  product(uint, ShortHistoryInterval, 0, DIAGNOSTIC,                        \
+          "Interval, in ms, at which metrics will be "                      \
+          "measured and stored into short history. A value of 0 "           \
+          "(default) disables short history.")                              \
+          range(0, UINT_MAX)                                                \
 
 // end of RUNTIME_FLAGS
 

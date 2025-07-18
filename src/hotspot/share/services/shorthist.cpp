@@ -51,7 +51,7 @@ struct Data {
   unsigned _id;
   struct {
     time_t time;
-    ShortHistoryData_pd _pd;
+    ShortHistoryData_pd pd;
     size_t heap_committed;
     size_t heap_used;
     size_t meta_nclass_used;
@@ -62,29 +62,37 @@ struct Data {
   void measure() {
     // Note: only measure things one can measure quickly and without locking
     time(&_d.time);
-    _pd.measure();
+    _d.pd.measure();
     _d.heap_committed = btokb(Universe::heap()->capacity());
-    _d.heap_used = btokb(Universe::heap()->used());
-    _d.meta_nclass_used = btokb(MetaspaceUtils::used_bytes());
+//    _d.heap_used = btokb(Universe::heap()->used());
+    _d.heap_used = 0;
+    _d.meta_nclass_used = btokb(MetaspaceUtils::used_bytes(Metaspace::NonClassType));
     _d.meta_class_used = btokb(UseCompressedClassPointers ? MetaspaceUtils::used_bytes(Metaspace::ClassType) : 0);
     _d.meta_gc_threshold = btokb(MetaspaceGC::capacity_until_GC());
   }
+//                 012345678901234567890123456789012345678901234567890123456789
+#define HEADER1_a "                         "
+#define HEADER2_a "  id                time "
+#define HEADER1_b "---- java heap ---- ------- metaspace used ------ "
+#define HEADER2_b "     comm      used    nclass     class     gcthr "
 
   static void print_header_1(outputStream* st) {
-    st->print_cr("                         ");
+    st->print_raw(HEADER1_a);
     ShortHistoryData_pd::print_header_1(st);
-    st->print_cr("----- java heap ----- ------- metaspace used ------");
+    st->print_raw(HEADER1_b);
+    st->cr();
   }
 
   static void print_header_2(outputStream* st) {
-    st->print_cr("id   time                ");
+    st->print_raw(HEADER2_a);
     ShortHistoryData_pd::print_header_2(st);
-    st->print_cr("committed  used       non-class  class      nextgc ");
+    st->print_raw(HEADER2_b);
+    st->cr();
   }
 
   void print_on(outputStream* st) const {
     st->print("%4u ", _id);
-    char buf[64] = "Now";
+    char buf[64] = "                Now";
     if (_d.time > 0) {
       const char* const timefmt = "%Y-%m-%d %H-%M-%S";
       struct tm local_time;
@@ -92,9 +100,9 @@ struct Data {
       strftime(buf, sizeof(buf), timefmt, &local_time);
     }
     st->print("%s ", buf);
-    _pr.print_on(st);
-    st->print("%10zu %10zu ", _d.heap_committed, _d.heap_used);
-    st->print("%10zu %10zu %10zu ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
+    _d.pd.print_on(st);
+    st->print("%9zu %9zu ", _d.heap_committed, _d.heap_used);
+    st->print("%9zu %9zu %9zu ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
     st->cr();
   }
 };
@@ -168,11 +176,19 @@ struct ShortHistoryTask : public PeriodicTask {
 DeferredStatic<ShortHistoryTask> g_task;
 
 void ShortHistory::initialize() {
-  if (ShortHistoryInterval > 0) {
+  if (enabled()) {
     FLAG_SET_ERGO(ShortHistoryInterval, MAX2(ShortHistoryInterval, min_interval));
     g_store.initialize(ShortHistoryInterval);
+    g_task.initialize(ShortHistoryInterval);
     g_task->enroll();
-    log_info(os)("ShortHistory enabled (interval: %u ms)", ShortHistoryInterval);
+    log_info(os)("ShortHistory task enrolled (interval: %u ms)", ShortHistoryInterval);
+  }
+}
+
+void ShortHistory::cleanup() {
+  if (enabled()) {
+    g_task->disenroll(); // is this even necessary?
+    log_info(os)("ShortHistory task disenrolled");
   }
 }
 
@@ -188,19 +204,24 @@ void ShortHistory::print_state(outputStream* st) {
 void ShortHistory::print(outputStream* st, bool measure_now) {
   st->print_cr("ShortHistory:");
   st->cr();
-  if (g_store.is_initialized()) {
-    Data::print_header_1(st);
-    Data::print_header_2(st);
-    // Measure now, to have current values
-    if (measure_now) {
-      Data d_now;
-      d_now.measure();
-      d_now._d.time = 0;
-      d_now.print_on(st);
-    }
-    // Print history
-    g_store->print_on(st);
-  } else {
-    st->print_cr("(disabled)");
+  if (!g_store.is_initialized()) {
+    st->print_cr("(inactive)");
+    return;
   }
+  if (!g_store->has_data()) {
+    st->print_cr("(no data)");
+    return;
+  }
+  Data::print_header_1(st);
+  Data::print_header_2(st);
+  // Measure now, to have current values
+  if (measure_now) {
+    Data d_now;
+    d_now._id = 0;
+    d_now.measure();
+    d_now._d.time = 0;
+    d_now.print_on(st);
+  }
+  // Print history
+  g_store->print_on(st);
 }
