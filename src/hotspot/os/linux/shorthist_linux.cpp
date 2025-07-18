@@ -59,16 +59,18 @@ void ShortHistoryData_pd::measure() {
 #endif
 }
 
-//         012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-//         1000000000 1000000000 1000000000 1000000000 1000000000
+//               012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+#define HEADER1 "------------- process -------- ----- glibc ------ "
+#define HEADER2 "    vsize       rss      swap      live  retained "
+
 void ShortHistoryData_pd::print_header_1(outputStream* st) {
-  st->print("------------- process ---------- ---- glibc malloc --- ");
+  st->print_raw(HEADER1);
 }
 void ShortHistoryData_pd::print_header_2(outputStream* st) {
-  st->print("vsize      rss        swap       allocated  retained   ");
+  st->print(HEADER2);
 }
 
 void ShortHistoryData_pd::print_on(outputStream* st) const {
-  st->print("%10zu %10zu %10zu ", _vsize, _rss, _swap);
-  st->print("%10zu %10zu ", _glibc_heap_allocated, _glibc_heap_retained);
+  st->print("%9zu %9zu %9zu ", _vsize, _rss, _swap);
+  st->print("%9zu %9zu ", _glibc_heap_allocated, _glibc_heap_retained);
 }

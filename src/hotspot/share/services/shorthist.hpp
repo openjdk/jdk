@@ -27,12 +27,14 @@
 #ifndef SHARE_RUNTIME_SHORTHIST_HPP
 #define SHARE_RUNTIME_SHORTHIST_HPP
 
+#include "runtime/globals.hpp"
 #include "memory/allStatic.hpp"
 
 class outputStream;
 
 class ShortHistory : public AllStatic {
 public:
+  static bool enabled() { return ShortHistoryInterval > 0; }
   static void initialize();
   static void cleanup();
   static void print_state(outputStream* st);

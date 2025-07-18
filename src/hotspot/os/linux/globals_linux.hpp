@@ -89,12 +89,6 @@
   product(bool, PrintMemoryMapAtExit, false, DIAGNOSTIC,                \
           "Print an annotated memory map at exit")                      \
                                                                         \
-  product(uint, ShortHistoryInterval, 0, DIAGNOSTIC,                    \
-          "Interval, in ms, at which JVM/process/host metrics will be " \
-          "measured and stored into short history. A value of 0 "       \
-          "(default) disables short history.")                          \
-          range(0, UINT_MAX)                                            \
-
 // end of RUNTIME_OS_FLAGS
 
 //
