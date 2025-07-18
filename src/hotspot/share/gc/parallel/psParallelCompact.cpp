@@ -732,16 +732,6 @@ void PSParallelCompact::post_compact()
     ct->dirty_MemRegion(old_mr);
   }
 
-  {
-    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-    GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", gc_timer());
-    ClassLoaderDataGraph::purge(true /* at_safepoint */);
-    DEBUG_ONLY(MetaspaceUtils::verify();)
-  }
-
-  // Need to clear claim bits for the next mark.
-  ClassLoaderDataGraph::clear_claimed_marks();
-
   heap->prune_scavengable_nmethods();
 
 #if COMPILER2_OR_JVMCI
@@ -1044,10 +1034,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
 
     ref_processor()->start_discovery(clear_all_soft_refs);
 
-    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                              false /* unregister_nmethods_during_purge */,
-                              false /* lock_nmethod_free_separately */);
-
     marking_phase(&_gc_tracer);
 
     summary_phase();
@@ -1337,7 +1323,9 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
 
-    ClassUnloadingContext* ctx = ClassUnloadingContext::context();
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
+                              false /* lock_nmethod_free_separately */);
 
     bool unloading_occurred;
     {
@@ -1353,7 +1341,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     {
       GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
       // Release unloaded nmethod's memory.
-      ctx->purge_nmethods();
+      ctx.purge_nmethods();
     }
     {
       GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", &_gc_timer);
@@ -1361,7 +1349,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_nmethods();
+      ctx.free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -1369,6 +1357,15 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     // Clean JVMCI metadata handles.
     JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
+    {
+      // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+      GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", gc_timer());
+      ClassLoaderDataGraph::purge(true /* at_safepoint */);
+      DEBUG_ONLY(MetaspaceUtils::verify();)
+    }
+
+    // Need to clear claim bits for the next mark.
+    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   {

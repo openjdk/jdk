@@ -95,18 +95,6 @@ public final class PlatformEventType extends Type {
         return false;
     }
 
-    private boolean isStaticCommit() {
-        switch (getName()) {
-            case Type.EVENT_NAME_PREFIX + "SocketRead"  :
-            case Type.EVENT_NAME_PREFIX + "SocketWrite" :
-            case Type.EVENT_NAME_PREFIX + "FileRead"    :
-            case Type.EVENT_NAME_PREFIX + "FileWrite"   :
-            case Type.EVENT_NAME_PREFIX + "FileForce"   :
-                return true;
-        }
-        return false;
-    }
-
     private int determineStackTraceOffset() {
         if (isJDK) {
             // Order matters
@@ -116,9 +104,14 @@ public final class PlatformEventType extends Type {
             if (getModification() == Modification.TRACING) {
                 return 5;
             }
-            if (isStaticCommit()) {
-                return 3;
-            }
+            return switch (getName()) {
+                case Type.EVENT_NAME_PREFIX + "SocketRead",
+                     Type.EVENT_NAME_PREFIX + "SocketWrite",
+                     Type.EVENT_NAME_PREFIX + "FileRead",
+                     Type.EVENT_NAME_PREFIX + "FileWrite" -> 6;
+                case Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
+                default -> 3;
+            };
         }
         return 3;
     }
