@@ -44,9 +44,8 @@ TEST_OTHER_VM(G1FreeRegionList, length) {
 
   // Create a fake heap. It does not need to be valid, as the G1HeapRegion constructor
   // does not access it.
-  int val = 1;
-  HeapWord* ptr = reinterpret_cast<HeapWord*>(&val);
-  ptr = align_up(ptr, os::vm_page_size());
+  HeapWord val{};
+  HeapWord* ptr = align_up(&val, os::vm_page_size());
 
   MemRegion heap(ptr, num_regions_in_test * G1HeapRegion::GrainWords);
 
