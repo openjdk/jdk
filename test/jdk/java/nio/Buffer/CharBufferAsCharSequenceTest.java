@@ -195,9 +195,10 @@ public class CharBufferAsCharSequenceTest {
     @MethodSource("charBufferArguments")
     void testGetCharsRange(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
-        actual.getChars(1, 5, val, 3);
+        int length = Math.min(10, stop - start - 1);
+        actual.getChars(1, length + 1, val, 3);
 
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < length; ++i) {
             assertEquals(expected[i + start + 1], val[i + 3], "val at offset of " + i + " from " + description);
         }
         // test that calling getChars did not move the position
@@ -262,7 +263,7 @@ public class CharBufferAsCharSequenceTest {
     @ParameterizedTest
     @MethodSource("charBufferArguments")
     void testGetCharsNullDst(CharSequence actual, char[] expected, int start, int stop, String description) {
-        assertThrows(NullPointerException.class, () -> actual.getChars(1, 4, null, 0));
+        assertThrows(NullPointerException.class, () -> actual.getChars(0, 1, null, 0));
     }
 
     @ParameterizedTest
