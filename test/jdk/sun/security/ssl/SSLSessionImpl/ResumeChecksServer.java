@@ -107,16 +107,16 @@ public class ResumeChecksServer extends SSLContextTemplate {
             // fail if session is not resumed
             if (firstSession.getCreationTime() !=
                 secondSession.getCreationTime()) {
-                throw new RuntimeException("Session was not reused");
+                throw new AssertionError("Session was not reused: FAIL");
             }
 
             // Fail if session's certificates are not restored correctly.
             if (!Arrays.equals(
                     firstSession.getLocalCertificates(),
                     secondSession.getLocalCertificates())) {
-                throw new RuntimeException("Certificates do not match");
+                throw new AssertionError("Certificates do not match: FAIL");
             }
-
+            System.out.println("secondSession used resumption: PASS");
             break;
         case CLIENT_AUTH:
             // throws an exception if the client is not authenticated
@@ -129,8 +129,9 @@ public class ResumeChecksServer extends SSLContextTemplate {
         case LOCAL_CERTS:
             // fail if a new session is not created
             if (secondSession.getCreationTime() < secondStartTime) {
-                throw new RuntimeException("Existing session was used");
+                throw new AssertionError("Existing session was used: FAIL");
             }
+            System.out.println("secondSession not resumed: PASS");
             break;
         default:
             throw new AssertionError("unknown mode: " + testMode);
@@ -272,8 +273,8 @@ public class ResumeChecksServer extends SSLContextTemplate {
                             }
                         }
                         default ->
-                            throw new AssertionError("unknown mode: " +
-                                testMode);
+                            throw new AssertionError("Server: " +
+                                "unknown mode: " + testMode);
                     }
                     sock.setSSLParameters(params);
                     BufferedReader reader = new BufferedReader(

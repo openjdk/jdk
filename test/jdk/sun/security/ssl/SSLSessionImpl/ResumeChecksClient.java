@@ -88,7 +88,12 @@ public class ResumeChecksClient extends SSLContextTemplate {
         switch (testMode) {
         case BASIC:
             // fail if session is not resumed
-            checkResumedSession(firstSession, secondSession);
+            try {
+                checkResumedSession(firstSession, secondSession);
+            } catch (Exception e) {
+                throw new AssertionError("secondSession did not resume: FAIL",
+                    e);
+            }
             System.out.println("secondSession used resumption: PASS");
             break;
         case VERSION_2_TO_3:
@@ -100,9 +105,9 @@ public class ResumeChecksClient extends SSLContextTemplate {
                 checkResumedSession(firstSession, secondSession);
                 System.err.println("firstSession  = " + firstSession);
                 System.err.println("secondSession = " + secondSession);
-                throw new RuntimeException("Second connection should not " +
-                    "have resumed first session.");
-            } catch (RuntimeException e) {
+                throw new AssertionError("Second connection should not " +
+                    "have resumed first session:  FAIL");
+            } catch (Exception e) {
                 System.out.println("secondSession didn't use resumption: PASS");
             }
             break;
@@ -182,7 +187,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
             return result;
         } catch (Exception ex) {
             // unexpected exception
-            throw new RuntimeException(ex);
+            throw new AssertionError(ex);
         }
     }
 
@@ -291,7 +296,7 @@ public class ResumeChecksClient extends SSLContextTemplate {
                 }).start();
 
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new AssertionError(e);
             }
         }
 
