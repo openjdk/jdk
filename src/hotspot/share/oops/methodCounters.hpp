@@ -25,9 +25,9 @@
 #ifndef SHARE_OOPS_METHODCOUNTERS_HPP
 #define SHARE_OOPS_METHODCOUNTERS_HPP
 
-#include "oops/metadata.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "oops/metadata.hpp"
 #include "utilities/align.hpp"
 
 class MethodTrainingData;

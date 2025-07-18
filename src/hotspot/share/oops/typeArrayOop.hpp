@@ -27,6 +27,7 @@
 
 #include "oops/arrayOop.hpp"
 #include "oops/typeArrayKlass.hpp"
+
 #include <type_traits>
 
 // A typeArrayOop is an array containing basic types (non oop elements).

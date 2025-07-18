@@ -24,8 +24,8 @@
 #ifndef SHARE_OOPS_OOPCAST_INLINE_HPP
 #define SHARE_OOPS_OOPCAST_INLINE_HPP
 
-#include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 template<typename T>
 static bool is_oop_type(oop theOop) {

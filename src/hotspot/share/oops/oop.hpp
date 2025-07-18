@@ -27,14 +27,15 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "oops/compressedKlass.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/objLayout.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
 #include <type_traits>
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe

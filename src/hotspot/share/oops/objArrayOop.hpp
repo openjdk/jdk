@@ -27,6 +27,7 @@
 
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
+
 #include <type_traits>
 
 class Klass;

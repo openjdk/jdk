@@ -22,8 +22,8 @@
  *
  */
 
-#include "memory/resourceArea.hpp"
 #include "cds/cdsConfig.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/fieldInfo.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/packedTable.hpp"

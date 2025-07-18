@@ -28,8 +28,8 @@
 #include "oops/typeArrayOop.hpp"
 
 #include "oops/access.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/oop.inline.hpp"
 
 size_t typeArrayOopDesc::object_size(const TypeArrayKlass* tk) const {
   return object_size(tk->layout_helper(), length());
