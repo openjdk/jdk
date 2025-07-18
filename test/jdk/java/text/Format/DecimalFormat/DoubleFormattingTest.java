@@ -42,8 +42,6 @@ public class DoubleFormattingTest {
 
     private static final boolean COMPAT = Boolean.getBoolean("jdk.compat.DecimalFormat");
 
-    // 4.8726570057E288 7.3879E20 6.3E-322 1.9400994884341945E25
-
     @Test
     void testXL() {
         double v = 4.8726570057E288;
