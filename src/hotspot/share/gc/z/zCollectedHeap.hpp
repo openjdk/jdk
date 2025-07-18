@@ -55,6 +55,9 @@ private:
                               size_t requested_size,
                               size_t* actual_size) override;
 
+  void print_tracing_info() const override;
+  void stop() override;
+
 public:
   static ZCollectedHeap* heap();
 
@@ -63,7 +66,6 @@ public:
   const char* name() const override;
   jint initialize() override;
   void initialize_serviceability() override;
-  void stop() override;
 
   size_t max_capacity() const override;
   size_t capacity() const override;
@@ -116,7 +118,6 @@ public:
 
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override;
-  void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 
   void prepare_for_verify() override;

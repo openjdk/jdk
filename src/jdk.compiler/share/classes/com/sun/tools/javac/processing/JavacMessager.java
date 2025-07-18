@@ -128,7 +128,7 @@ public class JavacMessager implements Messager {
 
             case MANDATORY_WARNING:
                 warningCount++;
-                log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
+                log.warning(DiagnosticFlag.MANDATORY, pos, Warnings.ProcMessager(msg.toString()));
                 break;
 
             default:
