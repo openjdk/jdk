@@ -875,7 +875,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     free(opts);
   }
 
-  printf("Debugger enabled: %s\n", debugger_enabled ? "true" : "false");
+  debug("Debugger enabled: %s\n", debugger_enabled ? "true" : "false");
   mdata = mdata_init(debugger_enabled);
 
   get_capabilities(jvmti);

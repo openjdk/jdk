@@ -1,0 +1,71 @@
+#
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#############################################################################
+#
+# List of quarantined tests failing with jvmti stress agent in any mode.
+#
+#############################################################################
+
+gc/g1/ihop/TestIHOPStatic.java                          8362532 generic-all
+gc/g1/plab/TestPLABResize.java                          8362532 generic-all
+gc/g1/plab/TestPLABPromotion.java                       8362532 generic-all
+gc/g1/plab/TestPLABEvacuationFailure.java               8362532 generic-all
+
+gc/stringdedup/TestStringDeduplicationAgeThreshold.java#Shenandoah     8362562 generic-all
+gc/stringdedup/TestStringDeduplicationInterned.java#G1                 8362562 generic-all
+
+serviceability/jvmti/events/SingleStep/singlestep02/singlestep02.java       8362350 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t007/TestDescription.java	8362350 generic-all
+
+# TBD
+vmTestbase/nsk/jvmti/GetPhase/getphase001/TestDescription.java
+
+
+# Incompatbile tests
+runtime/6294277/SourceDebugExtension.java
+
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorArrayAllSampledTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorEventOnOffTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorGCParallelTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorGCSerialTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorGCTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorIllegalArgumentTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInitialAllocationTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInterpreterArrayTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInterpreterObjectTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorNoCapabilityTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorRecursiveTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatObjectCorrectnessTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatSimpleTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorThreadDisabledTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorThreadOnOffTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorThreadTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorTwoAgentsTest.java
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id0
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id1
+
