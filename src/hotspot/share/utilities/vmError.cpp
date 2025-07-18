@@ -1337,11 +1337,11 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef END
 }
 
-void VMError::set_handshake_timed_out_thread(intptr_t x){
+void VMError::set_handshake_timed_out_thread(intptr_t x) {
   handshakeTimedOutThread = x;
 }
 
-void VMError::set_safepoint_timed_out_thread(intptr_t x){
+void VMError::set_safepoint_timed_out_thread(intptr_t x) {
   safepointTimedOutThread = x;
 }
 
