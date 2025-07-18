@@ -163,7 +163,11 @@ public class ISO_8859_1
             Objects.requireNonNull(sa, "sa");
             Objects.requireNonNull(da, "da");
             Preconditions.checkFromIndexSize(sp, len, sa.length, Preconditions.AIOOBE_FORMATTER);
-            Preconditions.checkFromIndexSize(dp, len, da.length, Preconditions.AIOOBE_FORMATTER);
+            // Not checking the `dp + len < da.length` invariant, since "as many
+            // codepoints as possible" contract still holds with a `da` of
+            // insufficient capacity, and the compiler intrinsic matches this
+            // behavior too.
+            Preconditions.checkIndex(dp, da.length, Preconditions.AIOOBE_FORMATTER);
             return encodeISOArray0(sa, sp, da, dp, len);
         }
 
