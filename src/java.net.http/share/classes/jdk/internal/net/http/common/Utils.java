@@ -369,7 +369,7 @@ public final class Utils {
     }
 
     /**
-     * {@return a new {@link ByteBuffer} instance of configured capacity for the HTTP Client}
+     * {@return a new {@link ByteBuffer} instance of {@link #BUFSIZE} capacity}
      */
     public static ByteBuffer getBuffer() {
         return ByteBuffer.allocate(BUFSIZE);
