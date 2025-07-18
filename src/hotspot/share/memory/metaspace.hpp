@@ -162,16 +162,16 @@ public:
     outside,                          // 1
     // inside but does not meet alignment requirements (esp. for Klass)
     inside_but_misaligned,            // 2
-    // inside but in uncommitted part of metaspace
+    // inside but in the uncommitted part of metaspace
     // (potentially released after class unloading, or never committed in the first place)
     inside_but_unreadable,            // 3
-    // inside, but marked as dead chunk
+    // inside, but marked as a dead chunk
     // (likely released after class unloading)
     inside_but_dead_chunk,            // 4
-    // inside, but marked as dead block
-    // (possibly prematurely returned block, e.g. after class redefinition)
+    // inside, but marked as a dead block
+    // (possibly prematurely returned block, e.g., after class redefinition)
     inside_but_dead_block,            // 5
-    // inside, but token is invalid (overwriter, maybe?)
+    // inside, but the token is invalid (overwriter, maybe?)
     inside_but_invalid_token,         // 6
     // a klass needs to be encodable but is not (either outside of encoding range,
     // so, not in class space nor in CDS archive range) or misaligned
@@ -182,18 +182,19 @@ public:
   // valid metadata. In release builds, it is equivalent to Metaspace::contains. In debug
   // builds, it checks that:
   // - the specified metadata is inside class-space or metaspace in committed, readable memory
-  // - not marked as dead space (i.e. not returned prematurely via Metaspace::deallocate)
+  // - not marked as dead space (i.e., not returned prematurely via Metaspace::deallocate)
   // - correctly aligned for the type (esp. Klass)
   // - Metadata token is valid specific to this type
-  // Note: Uses SafeFetch, so its fine to use it on questionable pointers.
+  // Note: Uses SafeFetch, so it's fine to use it on questionable pointers.
 
-  // Checks if a assumed klass location points to live metaspace (including Klass). Optional hint
+  // Checks if an assumed klass location points to live metaspace (including Klass). Optional hint
   // argument returns failure details.
   static bool metadata_is_live(const Metadata* md, FailureHint* hint);
 
-  // Checks if a assumed klass location points to a live klass.
-  // "must_have_narrow_klass_id" should be true if you know the klass should be encodable with a narrow Klass,
-  // e.g. if you grabbed the Klass* from an oop header. Set to false if you don't know.
+  // Checks if an assumed klass location points to a live klass.
+  // Set "must_have_narrow_klass_id" to true if you know the klass should be encodable by narrow Klass,
+  // e.g., if you grabbed the Klass* from an oop header. Set to false if you don't know (if it could
+  // be abstract or interface, which don't have a narrow Klass).
   // Optional hint argument returns failure details.
   static bool klass_is_live(const Klass* k, bool must_have_narrow_klass_id, FailureHint* hint);
   static bool klass_is_live(const Klass* k, bool must_have_narrow_klass_id);
