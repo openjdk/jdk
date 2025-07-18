@@ -49,13 +49,12 @@ class DeferredStatic {
     T _t;
   };
 
-  DEBUG_ONLY(bool _initialized);
+  bool _initialized;
 
 public:
   NONCOPYABLE(DeferredStatic);
 
-  DeferredStatic()
-  DEBUG_ONLY(: _initialized(false)) {
+  DeferredStatic() : _initialized(false) {
     // Do not construct value, on purpose.
   }
 
@@ -79,10 +78,12 @@ public:
   template<typename... Ts>
   void initialize(Ts&... args) {
     assert(!_initialized, "Double initialization forbidden");
-    DEBUG_ONLY(_initialized = true);
+    _initialized = true;
     using NCVP = std::add_pointer_t<std::remove_cv_t<T>>;
     ::new (const_cast<NCVP>(get())) T(args...);
   }
+
+  bool is_initialized() const { return _initialized; }
 };
 
 #endif // SHARE_UTILITIES_DEFERREDSTATIC_HPP
