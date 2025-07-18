@@ -525,6 +525,7 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 }
 
 extern "C" {
+  // needs local assembler label '4:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
@@ -536,10 +537,11 @@ extern "C" {
     assert(SpinWait::ISB   == 2, "SpinWait::Inst value 2 reserved for 'isb' instruction");
     assert(SpinWait::SB    == 4, "SpinWait::Inst value 4 reserved for 'sb' instruction");
     assert(SpinWait::NOP   == 8, "SpinWait::Inst value 8 reserved for 'nop' instruction");
-    assert(inst_id == 0 || is_power_of_2((uint64_t)inst_id), "Values of SpinWait::Inst must be 0 or power of 2");
-    assert(inst_id != SpinWait::SB || VM_Version::supports_sb(), "current CPU does not support SB instruction");
 
-    if (inst_id < SpinWait::NONE || inst_id > SpinWait::NOP) {
+    const unit64_t inst_id = VM_Version::spin_wait_desc().inst();
+    assert(inst_id == 0 || is_power_of_2(inst_id), "Values of SpinWait::Inst must be 0 or power of 2");
+    assert(inst_id != SpinWait::SB || VM_Version::supports_sb(), "current CPU does not support SB instruction");
+    if (inst_id > SpinWait::NOP) {
       warining("Unsupported type of SpinWait::Inst: %d", inst_id);
       ShouldNotReachHere();
     }
@@ -575,7 +577,7 @@ extern "C" {
         "  nop                   \n"
         "4:                      \n"
         :
-        : [id]"r"((uint64_t)inst_id)
+        : [id]"r"(inst_id)
         : "memory");
     return 1;
   }
