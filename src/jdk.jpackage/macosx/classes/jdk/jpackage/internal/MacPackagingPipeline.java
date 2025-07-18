@@ -311,7 +311,7 @@ final class MacPackagingPipeline {
 
         if (app.isRuntime()) {
             template = "Runtime-Info.plist.template";
-            publicName = "Runtime-Info.plist";
+            publicName = "Info.plist";
             category = "resource.runtime-info-plist";
         } else {
             template = "ApplicationRuntime-Info.plist.template";
