@@ -1765,6 +1765,9 @@ bool G1CollectedHeap::wait_full_mark_finished(GCCause::Cause cause,
   return false;
 }
 
+// After calling wait_full_mark_finished(), this method determines whether we
+// previously failed for ordinary reasons (concurrent cycle in progress, whitebox
+// has control). Returns if this has been such an ordinary reason.
 static bool should_retry_vm_op(GCCause::Cause cause,
                                VM_G1TryInitiateConcMark* op) {
   if (op->cycle_already_in_progress()) {
@@ -1883,7 +1886,12 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       if (should_retry_vm_op(cause, &op)) {
         continue;
       }
-     } else if (!GCCause::is_user_requested_gc(cause)) {
+    } else if (!GCCause::is_user_requested_gc(cause)) {
+      assert(cause == GCCause::_g1_humongous_allocation ||
+             cause == GCCause::_g1_periodic_collection ||
+             cause == GCCause::_wb_breakpoint ||
+             cause == GCCause::_java_lang_system_gc ||
+             cause == GCCause::_dcmd_gc_run, "Unsupported cause %s", GCCause::to_string(cause));
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.
       //

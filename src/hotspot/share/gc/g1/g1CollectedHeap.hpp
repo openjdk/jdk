@@ -281,6 +281,7 @@ private:
                                uint old_marking_started_before,
                                uint old_marking_started_after,
                                uint old_marking_completed_after);
+
   // Attempt to start a concurrent cycle with the indicated cause.
   // precondition: should_do_concurrent_full_gc(cause)
   bool try_collect_concurrently(GCCause::Cause cause,
