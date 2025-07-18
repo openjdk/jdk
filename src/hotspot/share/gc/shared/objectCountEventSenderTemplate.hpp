@@ -6,8 +6,6 @@
 #include "memory/heapInspection.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-#include "iostream"
-
 #if INCLUDE_SERVICES
 
 class KlassInfoEntry;
@@ -77,6 +75,7 @@ void ObjectCountEventSenderTemplate<Event>::send(const KlassInfoEntry* entry, co
 
   send_event_if_enabled<Event>(klass, count, total_size, timestamp);
   // If sending ObjectCountAfterGCEvent, check if ObjectCount is enabled and send event data to ObjectCount
+  // If sending ObjectCountEvent, do not send send ObjectCountAfterGCEvent
   if (std::is_same<Event, EventObjectCountAfterGC>::value && ObjectCountEventSender::should_send_event()) {
     send_event_if_enabled<EventObjectCount>(klass, count, total_size, timestamp);
   }

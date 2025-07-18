@@ -33,7 +33,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 
