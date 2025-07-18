@@ -34,7 +34,7 @@ public interface MacPackage extends Package, MacPackageMixin {
     @Override
     default AppImageLayout appImageLayout() {
         if (isRuntimeInstaller()) {
-            return RuntimeLayout.DEFAULT;
+            return RUNTIME_PACKAGE_LAYOUT;
         } else {
             return Package.super.appImageLayout();
         }

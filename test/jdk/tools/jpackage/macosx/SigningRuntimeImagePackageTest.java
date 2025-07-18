@@ -21,20 +21,19 @@
  * questions.
  */
 
-import java.nio.file.Path;
 import java.io.IOException;
-
-import jdk.jpackage.test.ApplicationLayout;
+import java.nio.file.Path;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.JavaTool;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.internal.util.FileUtils;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments.
@@ -85,122 +84,70 @@ import jdk.jpackage.internal.util.FileUtils;
  */
 public class SigningRuntimeImagePackageTest {
 
-    private static void verifyPKG(JPackageCommand cmd) {
-        Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle, isPKGSigned(cmd), getCertIndex(cmd));
-        if (isPKGSigned(cmd)) {
-            SigningBase.verifySpctl(outputBundle, "install", getCertIndex(cmd));
-        }
-    }
-
-    private static void verifyDMG(JPackageCommand cmd) {
-        Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyDMG(outputBundle);
-    }
-
-    private static void verifyRuntimeImageInDMG(JPackageCommand cmd,
-                                                boolean isRuntimeImageSigned,
-                                                int jdkBundleCertIndex) {
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            Path launcherPath = ApplicationLayout.platformAppImage()
-                    .resolveAt(dmgImage).launchersDirectory().resolve("libjli.dylib");
-            // We will be called with all folders in DMG since JDK-8263155, but
-            // we only need to verify JDK bundle.
-            if (dmgImage.endsWith(cmd.name() + ".jdk")) {
-                SigningBase.verifyCodesign(launcherPath, isRuntimeImageSigned,
-                        jdkBundleCertIndex);
-                SigningBase.verifyCodesign(dmgImage, isRuntimeImageSigned,
-                        jdkBundleCertIndex);
-                if (isRuntimeImageSigned) {
-                    SigningBase.verifySpctl(dmgImage, "exec", jdkBundleCertIndex);
-                }
-            }
-        });
-    }
-
-    private static boolean isPKGSigned(JPackageCommand cmd) {
-        return cmd.hasArgument("--mac-signing-key-user-name") ||
-               cmd.hasArgument("--mac-installer-sign-identity");
-    }
-
-    private static int getCertIndex(JPackageCommand cmd) {
-        if (cmd.hasArgument("--mac-signing-key-user-name")) {
-            String devName = cmd.getArgumentValue("--mac-signing-key-user-name");
-            return SigningBase.getDevNameIndex(devName);
-        } else {
-            return SigningBase.CertIndex.INVALID_INDEX.value();
-        }
-    }
-
-    // Creates runtime image or bundle based on input parameters to be used as
-    // input to jpackage. Returns path to created image or bundle.
-    private static Path createInputRuntimeImageOrBundle(boolean useJDKBundle,
-                                                        boolean isRuntimeImageSigned,
-                                                        int jdkBundleCertIndex) throws IOException {
-        final Path runtimeBundleDir =
-                TKit.createTempDirectory("runtimebundle");
-        final Path runtimeImageImage =
-                runtimeBundleDir.resolve("image");
-
-        new Executor()
-            .setToolProvider(JavaTool.JLINK)
-            .dumpOutput()
-            .addArguments(
-                "--output", runtimeImageImage.toString(),
-                "--add-modules", "java.desktop",
-                "--strip-debug",
-                "--no-header-files",
-                "--no-man-pages")
-            .execute();
-
-        if (useJDKBundle) {
-            // We will use jpackage to create JDK bundle from image signed or
-            // unsigned.
-
-            final Path runtimeBundleDMG =
-                runtimeBundleDir.resolve("dmg");
-            final Path runtimeBundleBundle =
-                runtimeBundleDir.resolve("bundle");
-
-            Executor ex = new Executor();
-            ex.setToolProvider(JavaTool.JPACKAGE)
-            .dumpOutput()
-            .addArguments(
-                "--type", "dmg",
-                "--name", "foo",
-                "--runtime-image", runtimeImageImage.toAbsolutePath().toString(),
-                "--dest", runtimeBundleDMG.toAbsolutePath().toString());
-
-            if (isRuntimeImageSigned) {
-                ex.addArguments(
+    private static JPackageCommand addSignOptions(JPackageCommand cmd, int certIndex) {
+        if (certIndex != SigningBase.CertIndex.INVALID_INDEX.value()) {
+            cmd.addArguments(
                     "--mac-sign",
                     "--mac-signing-keychain", SigningBase.getKeyChain(),
-                    "--mac-signing-key-user-name", SigningBase.getDevName(jdkBundleCertIndex));
-            }
-
-            ex.execute();
-
-            var cmd = new JPackageCommand()
-                .useToolProvider(true)
-                .dumpOutput(true)
-                .addArguments(
-                "--type", "dmg",
-                "--name", "foo",
-                "--dest", runtimeBundleDMG.toAbsolutePath().toString());
-
-            MacHelper.withExplodedDmg(cmd, dmgImage -> {
-                if (dmgImage.endsWith(cmd.name() + ".jdk")) {
-                    Executor.of("cp", "-R")
-                            .addArgument(dmgImage)
-                            .addArgument(runtimeBundleBundle.toAbsolutePath().toString())
-                            .execute(0);
-                }
-            });
-
-            return runtimeBundleBundle.toAbsolutePath();
-        } else {
-            return runtimeImageImage.toAbsolutePath();
+                    "--mac-signing-key-user-name", SigningBase.getDevName(certIndex));
         }
+        return cmd;
+    }
+
+    private static Path createInputRuntimeImage() throws IOException {
+
+        final Path runtimeImageDir;
+
+        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
+            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
+        } else {
+            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+
+            new Executor().setToolProvider(JavaTool.JLINK)
+                    .dumpOutput()
+                    .addArguments(
+                            "--output", runtimeImageDir.toString(),
+                            "--add-modules", "java.desktop",
+                            "--strip-debug",
+                            "--no-header-files",
+                            "--no-man-pages")
+                    .execute();
+        }
+
+        return runtimeImageDir;
+    }
+
+    private static Path createInputRuntimeBundle(int certIndex) throws IOException {
+
+        final var runtimeImage = createInputRuntimeImage();
+
+        final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
+
+        final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
+
+        var cmd = new JPackageCommand()
+                .useToolProvider(true)
+                .ignoreDefaultRuntime(true)
+                .dumpOutput(true)
+                .setPackageType(PackageType.MAC_DMG)
+                .setArgumentValue("--name", "foo")
+                .addArguments("--runtime-image", runtimeImage)
+                .addArguments("--dest", runtimeBundleWorkDir);
+
+        addSignOptions(cmd, certIndex);
+
+        cmd.execute();
+
+        MacHelper.withExplodedDmg(cmd, dmgImage -> {
+            if (dmgImage.endsWith(cmd.appInstallationDirectory().getFileName())) {
+                Executor.of("cp", "-R")
+                        .addArgument(dmgImage)
+                        .addArgument(unpackadeRuntimeBundleDir)
+                        .execute(0);
+            }
+        });
+
+        return unpackadeRuntimeBundleDir;
     }
 
     @Test
@@ -223,43 +170,41 @@ public class SigningRuntimeImagePackageTest {
     public static void test(boolean useJDKBundle,
                             SigningBase.CertIndex jdkBundleCert,
                             SigningBase.CertIndex signCert) throws Exception {
-        final int jdkBundleCertIndex = jdkBundleCert.value();
-        final int signCertIndex = signCert.value();
 
-        final boolean isRuntimeImageSigned =
-            (jdkBundleCertIndex != SigningBase.CertIndex.INVALID_INDEX.value());
-        final boolean isSigned =
-            (signCertIndex != SigningBase.CertIndex.INVALID_INDEX.value());
+        final Path inputRuntime[] = new Path[1];
 
         new PackageTest()
-                .addInitializer(cmd -> {
-                    cmd.addArguments("--runtime-image",
-                        createInputRuntimeImageOrBundle(useJDKBundle,
-                            isRuntimeImageSigned, jdkBundleCertIndex));
-                    // Remove --input parameter from jpackage command line as we don't
-                    // create input directory in the test and jpackage fails
-                    // if --input references non existant directory.
-                    cmd.removeArgumentWithValue("--input");
-
-                    if (isSigned) {
-                        cmd.addArguments("--mac-sign",
-                                "--mac-signing-keychain", SigningBase.getKeyChain());
-                        cmd.addArguments("--mac-signing-key-user-name",
-                                         SigningBase.getDevName(signCertIndex));
+                .addRunOnceInitializer(() -> {
+                    if (useJDKBundle) {
+                        inputRuntime[0] = createInputRuntimeBundle(jdkBundleCert.value());
+                    } else {
+                        inputRuntime[0] = createInputRuntimeImage();
                     }
                 })
-                .forTypes(PackageType.MAC_PKG)
-                .addBundleVerifier(SigningRuntimeImagePackageTest::verifyPKG)
-                .forTypes(PackageType.MAC_DMG)
-                .addBundleVerifier(SigningRuntimeImagePackageTest::verifyDMG)
-                .addBundleVerifier(cmd -> {
-                    int certIndex = SigningBase.CertIndex.INVALID_INDEX.value();
-                    if (isSigned)
-                        certIndex = signCertIndex;
-                    else if (isRuntimeImageSigned)
-                        certIndex = jdkBundleCertIndex;
-                    verifyRuntimeImageInDMG(cmd, isRuntimeImageSigned || isSigned,
-                        certIndex);
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--runtime-image", inputRuntime[0]);
+                    // Remove --input parameter from jpackage command line as we don't
+                    // create input directory in the test and jpackage fails
+                    // if --input references non existent directory.
+                    cmd.removeArgumentWithValue("--input");
+                    addSignOptions(cmd, signCert.value());
+                })
+                .addInstallVerifier(cmd -> {
+                    final var certIndex = Stream.of(signCert, jdkBundleCert)
+                            .filter(Predicate.isEqual(SigningBase.CertIndex.INVALID_INDEX).negate())
+                            .findFirst().orElse(SigningBase.CertIndex.INVALID_INDEX).value();
+
+                    final var signed = certIndex != SigningBase.CertIndex.INVALID_INDEX.value();
+
+                    final var unfoldedBundleDir = cmd.appRuntimeDirectory();
+
+                    final var libjli = unfoldedBundleDir.resolve("Contents/MacOS/libjli.dylib");
+
+                    SigningBase.verifyCodesign(libjli, signed, certIndex);
+                    SigningBase.verifyCodesign(unfoldedBundleDir, signed, certIndex);
+                    if (signed) {
+                        SigningBase.verifySpctl(unfoldedBundleDir, "exec", certIndex);
+                    }
                 })
                 .run();
     }

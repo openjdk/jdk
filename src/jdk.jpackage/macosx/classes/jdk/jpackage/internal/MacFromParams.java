@@ -43,21 +43,16 @@ import static jdk.jpackage.internal.model.MacPackage.RUNTIME_PACKAGE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
-import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
-import java.util.NoSuchElementException;
-import java.util.stream.Stream;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
 import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
@@ -81,8 +76,7 @@ final class MacFromParams {
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params).map(predefinedRuntimeImage -> {
-            if (!isRuntimeInstaller(params) &&
-                    Files.isDirectory(RUNTIME_PACKAGE_LAYOUT.resolveAt(predefinedRuntimeImage).runtimeDirectory())) {
+            if (Files.isDirectory(RUNTIME_PACKAGE_LAYOUT.resolveAt(predefinedRuntimeImage).runtimeDirectory())) {
                 return RUNTIME_PACKAGE_LAYOUT;
             } else {
                 return RuntimeLayout.DEFAULT;
@@ -182,16 +176,11 @@ final class MacFromParams {
                 .map(MacAppImageFileExtras::signed)
                 .ifPresent(builder::predefinedAppImageSigned);
 
-        // Make sure we have valid runtime image.
-        if (PREDEFINED_RUNTIME_IMAGE.findIn(params).isPresent()) {
-            Path runtimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-            if (!isRuntimeImageJDKBundle(runtimeImage)
-                    && !isRuntimeImageJDKImage(runtimeImage)) {
-                throw new ConfigException(
-                    I18N.format("message.runtime-image-invalid", runtimeImage),
-                    I18N.getString("message.runtime-image-invalid.advice"));
-            }
-        }
+        PREDEFINED_RUNTIME_IMAGE.findIn(params)
+                .map(MacBundle::new)
+                .filter(MacBundle::isValid)
+                .map(MacBundle::isSigned)
+                .ifPresent(builder::predefinedAppImageSigned);
 
         return builder;
     }
@@ -208,36 +197,6 @@ final class MacFromParams {
         DMG_CONTENT.copyInto(params, pkgBuilder::dmgContent);
 
         return pkgBuilder.create();
-    }
-
-
-    // JDK bundle: "Contents/Home", "Contents/MacOS/libjli.dylib"
-    // and "Contents/Info.plist"
-    private static boolean isRuntimeImageJDKBundle(Path runtimeImage) {
-        Path path1 = runtimeImage.resolve("Contents/Home");
-        Path path2 = runtimeImage.resolve("Contents/MacOS/libjli.dylib");
-        Path path3 = runtimeImage.resolve("Contents/Info.plist");
-        return Files.exists(path1) &&
-                    Optional.ofNullable(path1.toFile().list())
-                            .map(list -> list.length > 0).orElse(false) &&
-                    Files.exists(path2) &&
-                    Files.exists(path3);
-    }
-
-    // JDK image: "lib/*/libjli.dylib"
-    private static boolean isRuntimeImageJDKImage(Path runtimeImage) {
-        final Path jliName = Path.of("libjli.dylib");
-        try (Stream<Path> walk = Files.walk(runtimeImage.resolve("lib"))) {
-            final Path jli = walk
-                    .filter(file -> file.getFileName().equals(jliName))
-                    .findFirst()
-                    .get();
-            return Files.exists(jli);
-        } catch (NoSuchElementException | NoSuchFileException ex) {
-            return false;
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
     }
 
     private record WithExpiredCertificateException<T>(Optional<T> obj, Optional<ExpiredCertificateException> certEx) {

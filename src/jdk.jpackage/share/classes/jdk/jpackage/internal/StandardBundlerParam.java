@@ -97,7 +97,7 @@ final class StandardBundlerParam {
     static final BundlerParamInfo<ExternalApplication> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
             ExternalApplication.class, params -> {
                 if (hasPredefinedAppImage(params)) {
-                    var appImage = getpredefinedAppImage(params);
+                    var appImage = getPredefinedAppImage(params);
                     return AppImageFile.load(appImage, PLATFORM_APPLICATION_LAYOUT);
                 } else {
                     return null;
@@ -533,20 +533,16 @@ final class StandardBundlerParam {
         return params.containsKey(PREDEFINED_APP_IMAGE.getID());
     }
 
-    // Returns predefined application image or in case of runtime installer
-    // returns predefined runtime image.
-    static Path getpredefinedAppImage(Map<String, ? super Object> params) {
-        Path appOrRuntimeImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-        if (appOrRuntimeImage != null && !Files.exists(appOrRuntimeImage)) {
+    static Path getPredefinedAppImage(Map<String, ? super Object> params) {
+        Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+        if (applicationImage != null && !IOUtils.exists(applicationImage)) {
             throw new RuntimeException(
                     MessageFormat.format(I18N.getString(
                             "message.app-image-dir-does-not-exist"),
                             PREDEFINED_APP_IMAGE.getID(),
-                            appOrRuntimeImage.toString()));
-        } else if (isRuntimeInstaller(params)) {
-            return PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+                            applicationImage.toString()));
         }
-        return appOrRuntimeImage;
+        return applicationImage;
     }
 
     private static String getDefaultAppVersion(Map<String, ? super Object> params) {
