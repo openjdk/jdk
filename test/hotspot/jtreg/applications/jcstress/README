@@ -27,12 +27,12 @@ correctness of concurrency support in the JDK.
 All the tests are run through the test driver class -- JcstressRunner, 
 spawns a new JVM to run one jcstress test and checks that it finishes
 successfully. Before you start these tests, you should get the specified
-build of org.openjdk.jcstress:jcstress-tests-all, the quickest way of
-get specified build is download the prebuilt JAR from
+build of org.openjdk.jcstress:jcstress-tests-all. The quickest way to
+get the specified build is to download the prebuilt JAR from
 [here](https://builds.shipilev.net/jcstress/).
 You should specific the JAR location with jtreg option such as
--Djdk.test.lib.artifacts.jcstress-tests-all=jcstress-tests-all-20241217-2035.jar
-when start jcstress tests in jtreg.
+-javaoption:-Djdk.test.lib.artifacts.jcstress-tests-all=
+jcstress-tests-all-20241217-2035.jar when start jcstress tests in jtreg.
 
 When the used version of org.openjdk.jcstress:jcstress-tests-all needs to be
 changed, one should make corresponding changes to the artifact description in
