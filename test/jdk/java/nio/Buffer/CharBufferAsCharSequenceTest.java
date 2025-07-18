@@ -27,6 +27,9 @@ import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PrimitiveIterator.OfInt;
+import java.util.Random;
+
+import jdk.test.lib.RandomFactory;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -38,13 +41,69 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
+ * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @summary tests the CharBuffer implementations behaving as CharSequence in various states (postion, limit, offset)
  * @run junit CharBufferAsCharSequenceTest
  */
 public class CharBufferAsCharSequenceTest {
 
+    private static final Random RAND = RandomFactory.getRandom();
+    private static final int SIZE = 128 + RAND.nextInt(1024);
+
+    private static char[] randomChars() {
+        char[] chars = new char[SIZE];
+        for (int i=0; i<SIZE; ++i) {
+            chars[i] = (char) RAND.nextInt();
+        }
+        return chars;
+    }
+
+    private static CharBuffer randomizeRange(CharBuffer cb) {
+        int mid = cb.capacity() >>> 1;
+        int start = RAND.nextInt(mid + 1); // from 0 to mid
+        int end = mid + RAND.nextInt(cb.capacity() - mid + 1); // from mid to capacity
+        cb.position(start);
+        cb.limit(end);
+        return cb;
+    }
+
+    private static void populateAndAddCases(String type, CharBuffer cb, List<Arguments> cases) {
+        assert cb.position() == 0 && cb.limit() == cb.capacity();
+        char[] buf = randomChars();
+        cb.put(buf);
+        cb.clear();
+        addCases(type, buf, cb, cases);
+    }
+
+    private static void addCases(String type, char[] buf, CharBuffer cb, List<Arguments> cases) {
+        assert cb.position() == 0 && cb.limit() == cb.capacity();
+        cases.add(Arguments.of(cb, buf, 0, buf.length, type + " full"));
+
+        CharBuffer rndRange = randomizeRange(cb.duplicate());
+        cases.add(Arguments.of(rndRange, buf, rndRange.position(), rndRange.limit(), type + "  at " + rndRange.position() + " through " + rndRange.limit()));
+        cases.add(Arguments.of(rndRange.slice(), buf, rndRange.position(), rndRange.limit(), type + " sliced at " + rndRange.position() + " through " + rndRange.limit()));
+
+        CharBuffer rndSlicedRange = randomizeRange(rndRange.slice());
+        cases.add(Arguments.of(rndSlicedRange, buf, rndRange.position() + rndSlicedRange.position(), rndRange.position() + rndSlicedRange.limit(), type + " sliced at " + rndRange.position() + " with position " + rndSlicedRange.position() + " and limit " + rndSlicedRange.limit()));
+    }
+
     static List<Arguments> charBufferArguments() {
         List<Arguments> args = new ArrayList<>();
+
+        populateAndAddCases("HeapCharBuffer", CharBuffer.allocate(SIZE), args);
+        populateAndAddCases("BEHeapByteBuffer", ByteBuffer.allocate(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("LEHeapByteBuffer", ByteBuffer.allocate(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("BEDirectByteBuffer", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("LEDirectByteBuffer", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
+
+        char[] randomChars = randomChars();
+        CharBuffer cb = CharBuffer.wrap(randomChars);
+        addCases("StringCharBuffer over CharBuffer", randomChars, CharBuffer.wrap(cb), args);
+
+        addCases("StringCharBuffer over String", randomChars, CharBuffer.wrap(new String(randomChars)), args);
+
         char[] buf = new char[1273];
         for (int i = 0; i < buf.length; ++i) {
             buf[i] = (char) i;
@@ -202,6 +261,12 @@ public class CharBufferAsCharSequenceTest {
 
     @ParameterizedTest
     @MethodSource("charBufferArguments")
+    void testGetCharsNullDst(CharSequence actual, char[] expected, int start, int stop, String description) {
+        assertThrows(NullPointerException.class, () -> actual.getChars(1, 4, null, 0));
+    }
+
+    @ParameterizedTest
+    @MethodSource("charBufferArguments")
     void testCharAt(CharSequence actual, char[] expected, int start, int stop, String description) {
         for (int i = 0, j = stop - start; i < j; ++i) {
             assertEquals(expected[start + i], actual.charAt(i), "chart at " + i + ": " + description);
@@ -238,7 +303,7 @@ public class CharBufferAsCharSequenceTest {
             char c1 = expected[start + i];
             int expectedCodePoint = c1;
             if (Character.isHighSurrogate(c1) && (i + 1) < j) {
-                char c2 = expected[i + 1];
+                char c2 = expected[start + i + 1];
                 if (Character.isLowSurrogate(c2)) {
                     expectedCodePoint = Character.toCodePoint(c1, c2);
                     ++i;
