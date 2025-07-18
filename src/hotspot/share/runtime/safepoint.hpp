@@ -46,6 +46,9 @@
 // exit safepoint methods, when a thread is blocked/restarted. Hence, all mutex exter/
 // exit points *must* be at a safepoint.
 
+// Indicate VMError::report() that SIGILL came from safepoint timeout handler, report which thread timed out
+extern intptr_t safepointTimedOutThread;
+
 class ThreadSafepointState;
 
 class SafepointStateTracker {

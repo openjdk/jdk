@@ -1342,11 +1342,4 @@ std::add_rvalue_reference_t<T> declval() noexcept;
 // handled.
 bool IEEE_subnormal_handling_OK();
 
-//----------------------------------------------------------------------------------------------------
-// Indicate VMError::report() that SIGILL came from handshake timeout handler, report which thread timed out
-extern intptr_t handshakeTimedOutThread;
-
-// Indicate VMError::report() that SIGILL came from safepoint timeout handler, report which thread timed out
-extern intptr_t safepointTimedOutThread;
-
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
