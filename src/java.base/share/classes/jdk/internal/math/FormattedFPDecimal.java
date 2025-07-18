@@ -47,8 +47,13 @@ public final class FormattedFPDecimal {
     public static final char PLAIN      = 'f';
     public static final char GENERAL    = 'g';
 
-    private boolean exact;  // this decimal is an exact fp
-    private boolean away;  // this decimal has a larger magnitude than fp
+    /* Whether the decimal exactly represents the double */
+    private boolean exact;
+    /*
+     * When not exact, whether the magnitude of the decimal is larger than
+     * the magnitude of the double. Aka "away from zero".
+     */
+    private boolean away;
     private int e;  // normalized to 0 when f = 0
     private int n;
     private long f;
