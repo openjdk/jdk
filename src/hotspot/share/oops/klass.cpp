@@ -1104,6 +1104,7 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 // The point is not to assert it is but to check if it could be.
 bool Klass::is_valid(Klass* k) {
   return Metaspace::klass_is_live(k, false) &&
+         Symbol::is_valid(k->name()) &&
          ClassLoaderDataGraph::is_valid(k->class_loader_data());
 }
 
