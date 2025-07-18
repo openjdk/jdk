@@ -35,7 +35,7 @@ inline void exec_spin_wait_inst(SpinWait::Inst inst_id) {
   assert(SpinWait::ISB   == 2, "SpinWait::Inst value 2 reserved for 'isb' instruction");
   assert(SpinWait::SB    == 4, "SpinWait::Inst value 4 reserved for 'sb' instruction");
   assert(SpinWait::NOP   == 8, "SpinWait::Inst value 8 reserved for 'nop' instruction");
-  assert(inst_id == 0 || is_power_of_2((uint64_t)inst_id), "Values of SpinWait::Inst must be 0 or use only one bit");
+  assert(inst_id == 0 || is_power_of_2((uint64_t)inst_id), "Values of SpinWait::Inst must be 0 or power of 2");
   assert(inst_id <= SpinWait::NOP, "Unsupported type of SpinWait::Inst: %d", inst_id);
   assert(inst_id != SpinWait::SB || VM_Version::supports_sb(), "current CPU does not support SB instruction");
 
