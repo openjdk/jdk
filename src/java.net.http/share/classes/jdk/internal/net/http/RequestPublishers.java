@@ -465,12 +465,12 @@ public final class RequestPublishers {
         }
 
         @Override
-        public synchronized boolean hasNext() {
+        public boolean hasNext() {
             return position < limit && !terminated;
         }
 
         @Override
-        public synchronized ByteBuffer next() {
+        public ByteBuffer next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
