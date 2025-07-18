@@ -35,8 +35,8 @@ namespace metaspace {
 class Zapper : public AllStatic {
 public:
 
-  static constexpr uintptr_t zap_pattern_chunk = NOT_LP64(0xdead) LP64_ONLY(0xdeaddeadULL);
-  static constexpr uintptr_t zap_pattern_block = NOT_LP64(0xdead) LP64_ONLY(0xdeaddeadULL);
+  static constexpr uintptr_t zap_pattern_chunk = NOT_LP64(0xdead) LP64_ONLY(0xdeadccccdeadccccULL);
+  static constexpr uintptr_t zap_pattern_block = NOT_LP64(0xdead) LP64_ONLY(0xdeadbbbbdeadbbbbULL);
 
   static void zap_memory(MetaWord* start, size_t word_size, uintptr_t pattern) {
     for (size_t pos = 0; pos < word_size; pos ++) {
