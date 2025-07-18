@@ -88,7 +88,7 @@ private:
   bool coalesce_and_fill();
 
 public:
-  ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity);
+  ShenandoahOldGeneration(uint max_queues, size_t max_capacity);
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 

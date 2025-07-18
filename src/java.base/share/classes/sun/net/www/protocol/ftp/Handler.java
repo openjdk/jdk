@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.Proxy;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Objects;
-import sun.net.ftp.FtpClient;
-import sun.net.www.protocol.http.HttpURLConnection;
+
+import static sun.net.util.ProxyUtil.copyProxy;
 
 /** open an ftp connection given a URL */
 public class Handler extends java.net.URLStreamHandler {
@@ -57,11 +55,11 @@ public class Handler extends java.net.URLStreamHandler {
         return openConnection(u, null);
     }
 
-    protected java.net.URLConnection openConnection(URL u, Proxy p)
+    protected java.net.URLConnection openConnection(URL u, Proxy proxy)
         throws IOException {
-        FtpURLConnection connection = null;
+        FtpURLConnection connection;
         try {
-            connection = new FtpURLConnection(u, p);
+            connection = new FtpURLConnection(u, copyProxy(proxy));
         } catch (IllegalArgumentException e) {
             var mfue = new MalformedURLException(e.getMessage());
             mfue.initCause(e);

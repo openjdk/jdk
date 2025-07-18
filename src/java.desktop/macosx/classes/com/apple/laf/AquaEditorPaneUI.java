@@ -33,7 +33,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicEditorPaneUI;
 import javax.swing.text.*;
 
-public class AquaEditorPaneUI extends BasicEditorPaneUI {
+public final class AquaEditorPaneUI extends BasicEditorPaneUI {
     public static ComponentUI createUI(final JComponent c){
         return new AquaEditorPaneUI();
     }

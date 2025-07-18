@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@
 #include "gdefs.h"
 #include <dlfcn.h>
 #include "Trace.h"
+#include <math.h>
 
 int awt_numScreens;     /* Xinerama-aware number of screens */
 
@@ -75,6 +76,8 @@ jmethodID awtWaitMID = NULL;
 jmethodID awtNotifyMID = NULL;
 jmethodID awtNotifyAllMID = NULL;
 jboolean awtLockInited = JNI_FALSE;
+
+static Bool useNewConfigDisplayMode = True;
 
 /** Convenience macro for loading the lock-related method IDs. */
 #define GET_STATIC_METHOD(klass, method_id, method_name, method_sig) \
@@ -897,18 +900,18 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
                                IPC_CREAT|mitShmPermissionMask);
         if (shminfo.shmid < 0) {
             AWT_UNLOCK();
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                           "TryInitMITShm: shmget has failed: %s",
-                           strerror(errno));
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "TryInitMITShm: shmget has failed: %s",
+                          strerror(errno));
             return;
         }
         shminfo.shmaddr = (char *) shmat(shminfo.shmid, 0, 0);
         if (shminfo.shmaddr == ((char *) -1)) {
             shmctl(shminfo.shmid, IPC_RMID, 0);
             AWT_UNLOCK();
-            J2dRlsTraceLn1(J2D_TRACE_ERROR,
-                           "TryInitMITShm: shmat has failed: %s",
-                           strerror(errno));
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "TryInitMITShm: shmat has failed: %s",
+                          strerror(errno));
             return;
         }
         shminfo.readOnly = True;
@@ -1505,6 +1508,20 @@ typedef XRRCrtcInfo* (*XRRGetCrtcInfoType)(Display *dpy,
 
 typedef void (*XRRFreeCrtcInfoType)(XRRCrtcInfo *crtcInfo);
 
+typedef void (*XRRSetScreenSizeType)(Display *dpy, Window window,
+                                     int width, int height,
+                                     int mmWidth, int mmHeight);
+
+typedef Status (*XRRSetCrtcConfigType)(Display *dpy,
+                                       XRRScreenResources *resources,
+                                       RRCrtc crtc,
+                                       Time timestamp,
+                                       int x, int y,
+                                       RRMode mode,
+                                       Rotation rotation,
+                                       RROutput *outputs,
+                                       int noutputs);
+
 static XRRQueryVersionType               awt_XRRQueryVersion;
 static XRRGetScreenInfoType              awt_XRRGetScreenInfo;
 static XRRFreeScreenConfigInfoType       awt_XRRFreeScreenConfigInfo;
@@ -1520,13 +1537,15 @@ static XRRGetOutputInfoType              awt_XRRGetOutputInfo;
 static XRRFreeOutputInfoType             awt_XRRFreeOutputInfo;
 static XRRGetCrtcInfoType                awt_XRRGetCrtcInfo;
 static XRRFreeCrtcInfoType               awt_XRRFreeCrtcInfo;
+static XRRSetScreenSizeType              awt_XRRSetScreenSize;
+static XRRSetCrtcConfigType              awt_XRRSetCrtcConfig;
 
 #define LOAD_XRANDR_FUNC(f) \
     do { \
         awt_##f = (f##Type)dlsym(pLibRandR, #f); \
         if (awt_##f == NULL) { \
-            J2dRlsTraceLn1(J2D_TRACE_ERROR, \
-                           "X11GD_InitXrandrFuncs: Could not load %s", #f); \
+            J2dRlsTraceLn(J2D_TRACE_ERROR, \
+                          "X11GD_InitXrandrFuncs: Could not load %s", #f); \
             dlclose(pLibRandR); \
             return JNI_FALSE; \
         } \
@@ -1564,9 +1583,9 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
          * a fake one provided by RANDR itself. See Java bug 6636469 for info.
          */
         if (!(rr_maj_ver > 1 || (rr_maj_ver == 1 && rr_min_ver >= 2))) {
-            J2dRlsTraceLn2(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
-                           "Xinerama is active and Xrandr version is %d.%d",
-                           rr_maj_ver, rr_min_ver);
+            J2dRlsTraceLn(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
+                          "Xinerama is active and Xrandr version is %d.%d",
+                          rr_maj_ver, rr_min_ver);
             dlclose(pLibRandR);
             return JNI_FALSE;
         }
@@ -1597,6 +1616,8 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
     LOAD_XRANDR_FUNC(XRRFreeOutputInfo);
     LOAD_XRANDR_FUNC(XRRGetCrtcInfo);
     LOAD_XRANDR_FUNC(XRRFreeCrtcInfo);
+    LOAD_XRANDR_FUNC(XRRSetScreenSize);
+    LOAD_XRANDR_FUNC(XRRSetCrtcConfig);
 
     return JNI_TRUE;
 }
@@ -1697,11 +1718,11 @@ X11GD_SetFullscreenMode(Window win, jboolean enabled)
 /*
  * Class:     sun_awt_X11GraphicsDevice
  * Method:    initXrandrExtension
- * Signature: ()Z
+ * Signature: (Z)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11GraphicsDevice_initXrandrExtension
-    (JNIEnv *env, jclass x11gd)
+    (JNIEnv *env, jclass x11gd, jboolean useOldConfigDisplayMode)
 {
 #if defined(NO_XRANDR)
     return JNI_FALSE;
@@ -1717,9 +1738,304 @@ Java_sun_awt_X11GraphicsDevice_initXrandrExtension
     }
     AWT_FLUSH_UNLOCK();
 
+    useNewConfigDisplayMode = !useOldConfigDisplayMode;
+
     return ret;
 #endif /* NO_XRANDR */
 }
+
+// ---------------------------------------------------
+// display mode change via XRRSetCrtcConfig
+// ---------------------------------------------------
+#if !defined(NO_XRANDR)
+static jint refreshRateFromModeInfo(const XRRModeInfo *modeInfo) {
+    if (!modeInfo->hTotal || !modeInfo->vTotal) {
+        return 0;
+    }
+
+    double vTotal = modeInfo->vTotal;
+
+    if (modeInfo->modeFlags & RR_Interlace) {
+        vTotal /= 2;
+    }
+
+    if (modeInfo->modeFlags & RR_DoubleScan) {
+        vTotal *= 2;
+    }
+
+    return (jint) round((double) modeInfo->dotClock / (vTotal * (double) modeInfo->hTotal));
+}
+
+static inline Bool isLandscapeOrientation(XRRCrtcInfo* info) {
+    if (!info) {
+        return True;
+    }
+    return info->rotation == RR_Rotate_0 || info->rotation == RR_Rotate_180;
+}
+
+static Bool xrrGetInfoForScreen(XRRScreenResources *res,
+                                int screen,
+                                XRRCrtcInfo **outCrtcInfo,
+                                XRROutputInfo **outOutputInfo) {
+    if (!res) {
+        return False;
+    }
+
+    int screenX = 0;
+    int screenY = 0;
+
+    if (usingXinerama) {
+        int nscreens = 0;
+        XineramaScreenInfo *screens = XineramaQueryScreens(awt_display, &nscreens);
+
+        if (!screens) {
+            return False;
+        }
+
+        if (screen >= nscreens) {
+            XFree(screens);
+            return False;
+        }
+
+        XineramaScreenInfo xScreenInfo = screens[screen];
+
+        screenX = xScreenInfo.x_org;
+        screenY= xScreenInfo.y_org;
+
+        XFree(screens);
+    }
+
+    for (int i = 0; i < res->noutput; ++i) {
+        XRROutputInfo *output = awt_XRRGetOutputInfo(awt_display, res, res->outputs[i]);
+        if (!output) {
+            continue;
+        }
+        if (output->connection == RR_Connected && output->crtc) {
+            // output is connected and has an active mode
+            XRRCrtcInfo *crtcInfo = awt_XRRGetCrtcInfo(awt_display, res, output->crtc);
+            if (crtcInfo) {
+                if (crtcInfo->mode != None
+                    && crtcInfo->x == screenX
+                    && crtcInfo->y == screenY) {
+                    if (outCrtcInfo) {
+                        *outCrtcInfo = crtcInfo;
+                    } else {
+                        awt_XRRFreeCrtcInfo(crtcInfo);
+                    }
+                    if (outOutputInfo) {
+                        *outOutputInfo = output;
+                    } else {
+                        awt_XRRFreeOutputInfo(output);
+                    }
+                    return True;
+                }
+                awt_XRRFreeCrtcInfo(crtcInfo);
+            }
+        }
+        awt_XRRFreeOutputInfo(output);
+    }
+
+    return False;
+}
+
+static jobject xrrGetCurrentDisplayMode(JNIEnv* env, int screen) {
+    XRRScreenResources *res = awt_XRRGetScreenResources(awt_display, DefaultRootWindow(awt_display));
+    if (!res) {
+        return NULL;
+    }
+
+    XRRCrtcInfo* currentCrtcInfo = NULL;
+    if (!xrrGetInfoForScreen(res, screen, &currentCrtcInfo, NULL)) {
+        goto cleanup;
+    }
+
+    if (!currentCrtcInfo || currentCrtcInfo->mode == None) {
+        goto cleanup;
+    }
+
+    for (int i = 0; i < res->nmode; ++i) {
+        if (res->modes[i].id == currentCrtcInfo->mode) {
+            XRRModeInfo mode = res->modes[i];
+            DisplayMode dm = {
+                    mode.width,
+                    mode.height,
+                    refreshRateFromModeInfo(&mode)
+            };
+
+            Bool isLandscape =  isLandscapeOrientation(currentCrtcInfo);
+
+            jint resultWidth = isLandscape ? (jint)  dm.width : (jint) dm.height;
+            jint resultHeight = isLandscape ? (jint)  dm.height : (jint) dm.width;
+
+            jobject displayMode = X11GD_CreateDisplayMode(env,
+                                                          resultWidth,
+                                                          resultHeight,
+                                                          BIT_DEPTH_MULTI,
+                                                          dm.refresh);
+
+            awt_XRRFreeCrtcInfo(currentCrtcInfo);
+            awt_XRRFreeScreenResources(res);
+
+            return displayMode;
+        }
+    }
+
+    cleanup:
+        if (currentCrtcInfo) {
+            awt_XRRFreeCrtcInfo(currentCrtcInfo);
+        }
+        awt_XRRFreeScreenResources(res);
+    return NULL;
+}
+
+static Bool isUniqueDisplayMode(DisplayMode seen[], int count, unsigned int width, unsigned int height, int refresh) {
+    for (int i = 0; i < count; ++i) {
+        if (seen[i].width == width &&
+            seen[i].height == height &&
+            seen[i].refresh == refresh) {
+            return False;
+        }
+    }
+    return True;
+}
+
+static void xrrEnumDisplayModes(JNIEnv *env, jobject arrayList, jint screen) {
+    XRRScreenResources *res = awt_XRRGetScreenResources(awt_display, DefaultRootWindow(awt_display));
+    if (!res) {
+        return;
+    }
+
+    XRRCrtcInfo *crtcInfo = NULL;
+    XRROutputInfo *outputInfo = NULL;
+    if (!xrrGetInfoForScreen(res, screen, &crtcInfo, &outputInfo)) {
+        goto cleanup;
+    }
+
+    DisplayMode seenModes[MAX_DISPLAY_MODES];
+    int seenCount = 0;
+
+    Bool isLandscape = isLandscapeOrientation(crtcInfo);
+
+    for (int i = 0; i < outputInfo->nmode; ++i) {
+        RRMode mode_id = outputInfo->modes[i];
+
+        for (int j = 0; j < res->nmode; ++j) {
+            if (res->modes[j].id == mode_id) {
+                XRRModeInfo mode = res->modes[j];
+                jint rr = refreshRateFromModeInfo(&mode);
+
+                // The refresh rate is stored as an integer in Java, so we need to round the double value.
+                // Because of this rounding, duplicate modes may appear. We only keep the first one encountered.
+                if (isUniqueDisplayMode(seenModes, seenCount, mode.width, mode.height, rr)) {
+                    seenModes[seenCount++] = (DisplayMode) {
+                            mode.width,
+                            mode.height,
+                            rr
+                    };
+                    X11GD_AddDisplayMode(env, arrayList,
+                                         isLandscape ? (jint) mode.width : (jint) mode.height,
+                                         isLandscape ? (jint) mode.height : (jint) mode.width,
+                                         BIT_DEPTH_MULTI,
+                                         rr);
+                    if ((*env)->ExceptionCheck(env)) {
+                        goto cleanup;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    cleanup:
+        if (outputInfo) {
+            awt_XRRFreeOutputInfo(outputInfo);
+        }
+        if (crtcInfo) {
+            awt_XRRFreeCrtcInfo(crtcInfo);
+        }
+        awt_XRRFreeScreenResources(res);
+}
+
+static void xrrChangeDisplayMode(jint screen, jint width, jint height, jint refreshRate) {
+    Drawable root = DefaultRootWindow(awt_display);
+
+
+    XRRScreenResources *res = awt_XRRGetScreenResources(awt_display, root);
+    if (!res) {
+        return;
+    }
+
+    XRRCrtcInfo *crtcInfo = NULL;
+    XRROutputInfo *outputInfo = NULL;
+
+    if (!xrrGetInfoForScreen(res, screen, &crtcInfo, &outputInfo)) {
+        goto cleanup;
+    }
+
+    RRMode new_mode = None;
+
+    Bool isLandscape = isLandscapeOrientation(crtcInfo);
+
+    for (int i = 0; i < res->nmode; ++i) {
+        XRRModeInfo mode = res->modes[i];
+        jint rr = refreshRateFromModeInfo(&mode);
+
+        Bool matchW = (isLandscape ? mode.width : mode.height) == (unsigned int) width;
+        Bool matchH = (isLandscape ? mode.height : mode.width) == (unsigned int) height;
+
+        if (matchW && matchH && rr == refreshRate) {
+            for (int j = 0; j < outputInfo->nmode; ++j) {
+                if (mode.id == outputInfo->modes[j]) {
+                    // belongs to our output
+                    new_mode = mode.id;
+                    break;
+                }
+            }
+            if (new_mode != None) {
+                break;
+            }
+        }
+    }
+
+    if (new_mode == None) {
+        goto cleanup;
+    }
+
+    awt_XRRSetCrtcConfig (awt_display, res, outputInfo->crtc, CurrentTime,
+                          0, 0, None, RR_Rotate_0, NULL, 0);
+
+    int resultMmWidth = outputInfo->mm_width
+                        ? (int) outputInfo->mm_width
+                        : DisplayWidthMM(awt_display, DefaultScreen(awt_display));
+
+    int resultMmHeight = outputInfo->mm_height
+                         ? (int) outputInfo->mm_height
+                         : XDisplayHeightMM(awt_display, DefaultScreen(awt_display));
+
+    awt_XRRSetScreenSize(awt_display, root,
+                         width, height,
+                         resultMmWidth, resultMmHeight);
+
+    Status s = awt_XRRSetCrtcConfig(awt_display, res, outputInfo->crtc,
+                         CurrentTime,
+                         crtcInfo->x, crtcInfo->y,
+                         new_mode, crtcInfo->rotation,
+                         crtcInfo->outputs, crtcInfo->noutput);
+
+    cleanup:
+        if (crtcInfo) {
+            awt_XRRFreeCrtcInfo(crtcInfo);
+        }
+        if (outputInfo) {
+            awt_XRRFreeOutputInfo(outputInfo);
+        }
+        awt_XRRFreeScreenResources(res);
+}
+#endif
+
+// ---------------------------------------------------
+// display mode change via XRRSetCrtcConfig
+// ---------------------------------------------------
 
 /*
  * Class:     sun_awt_X11GraphicsDevice
@@ -1733,8 +2049,16 @@ Java_sun_awt_X11GraphicsDevice_getCurrentDisplayMode
 #if defined(NO_XRANDR)
     return NULL;
 #else
-    XRRScreenConfiguration *config;
     jobject displayMode = NULL;
+
+    if (useNewConfigDisplayMode) {
+        AWT_LOCK();
+        displayMode = xrrGetCurrentDisplayMode(env, screen);
+        AWT_FLUSH_UNLOCK();
+        return displayMode;
+    }
+
+    XRRScreenConfiguration *config;
 
     AWT_LOCK();
 
@@ -1786,7 +2110,12 @@ Java_sun_awt_X11GraphicsDevice_enumDisplayModes
 {
 #if !defined(NO_XRANDR)
 
-    AWT_LOCK();
+    if (useNewConfigDisplayMode) {
+        AWT_LOCK();
+        xrrEnumDisplayModes(env, arrayList, screen);
+        AWT_FLUSH_UNLOCK();
+        return;
+    }
 
     if (XScreenCount(awt_display) > 0) {
 
@@ -1836,6 +2165,15 @@ Java_sun_awt_X11GraphicsDevice_configDisplayMode
      jint screen, jint width, jint height, jint refreshRate)
 {
 #if !defined(NO_XRANDR)
+    if (useNewConfigDisplayMode) {
+        AWT_LOCK();
+        XGrabServer(awt_display);
+        xrrChangeDisplayMode(screen, width, height, refreshRate);
+        XUngrabServer(awt_display);
+        AWT_FLUSH_UNLOCK();
+        return;
+    }
+
     jboolean success = JNI_FALSE;
     XRRScreenConfiguration *config;
     Drawable root;
