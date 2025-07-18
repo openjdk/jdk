@@ -330,10 +330,10 @@ public final class CPrinterJob extends RasterPrinterJob {
 
         int firstPage = getFirstPage();
         int lastPage = getLastPage();
+        int totalPages = mDocument.getNumberOfPages();
         if(lastPage == Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-            int totalPages = mDocument.getNumberOfPages();
             if (totalPages != Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-                lastPage = mDocument.getNumberOfPages() - 1;
+                lastPage = totalPages - 1;
             }
         }
 
@@ -360,7 +360,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     try {
                         // Fire off the print rendering loop on the AppKit thread, and don't have
                         //  it wait and block this thread.
-                        if (printLoop(false, firstPage, lastPage)) {
+                        if (printLoop(false, firstPage, totalPages)) {
                             // Start a secondary loop on EDT until printing operation is finished or cancelled
                             printingLoop.enter();
                         }
@@ -374,7 +374,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     onEventThread = false;
 
                     try {
-                        printLoop(true, firstPage, lastPage);
+                        printLoop(true, firstPage, totalPages);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -634,7 +634,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private native boolean printLoop(boolean waitUntilDone, int firstPage, int lastPage) throws PrinterException;
+    private native boolean printLoop(boolean waitUntilDone, int firstPage, int totalPages) throws PrinterException;
 
     private PageFormat getPageFormat(int pageIndex) {
         // This is called from the native side.

@@ -656,7 +656,7 @@ JNI_COCOA_EXIT(env);
  * Signature: ()V
  */
 JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
-  (JNIEnv *env, jobject jthis, jboolean blocks, jint firstPage, jint lastPage)
+  (JNIEnv *env, jobject jthis, jboolean blocks, jint firstPage, jint totalPages)
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
@@ -679,7 +679,7 @@ JNI_COCOA_ENTER(env);
         CHECK_EXCEPTION();
 
         PrinterView* printerView = [[PrinterView alloc] initWithFrame:JavaToNSRect(env, pageFormatArea) withEnv:env withPrinterJob:jthis];
-        [printerView setFirstPage:firstPage lastPage:lastPage];
+        [printerView setTotalPages:totalPages];
 
         GET_NSPRINTINFO_METHOD_RETURN(NO)
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr((*env)->CallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)

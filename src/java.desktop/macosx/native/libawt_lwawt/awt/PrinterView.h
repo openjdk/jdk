@@ -32,12 +32,12 @@
     jobject fCurPainter;
     jobject fCurPeekGraphics;
 
-    jint fFirstPage, fLastPage;
+    jint fFirstPage, fTotalPages;
 }
 
 - (id)initWithFrame:(NSRect)aRect withEnv:(JNIEnv*)env withPrinterJob:(jobject)printerJob;
 
-- (void)setFirstPage:(jint)firstPage lastPage:(jint)lastPage;
+- (void)setTotalPages:(jint)totalPages;
 
 - (void)releaseReferences:(JNIEnv*)env;
 
