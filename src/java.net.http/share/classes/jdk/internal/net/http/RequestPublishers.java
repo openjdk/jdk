@@ -427,20 +427,12 @@ public final class RequestPublishers {
 
         private final long limit;
 
-        public FileChannelPublisher(FileChannel channel, long offset, long length) {
+        public FileChannelPublisher(FileChannel channel, long offset, long length) throws IOException {
             this.channel = Objects.requireNonNull(channel, "channel");
-            long fileSize = fileSize(channel);
+            long fileSize = channel.size();
             Objects.checkFromIndexSize(offset, length, fileSize);
             this.position = offset;
             this.limit = offset + length;
-        }
-
-        private static long fileSize(FileChannel channel) {
-            try {
-                return channel.size();
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe);
-            }
         }
 
         @Override

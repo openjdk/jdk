@@ -26,6 +26,7 @@
 package java.net.http;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -739,11 +740,18 @@ public abstract class HttpRequest {
          * @param length the number of bytes to read from the file channel
          *
          * @throws IndexOutOfBoundsException if the specified byte range is
-         * found to be {@linkplain Objects.checkFromIndexSize(long, long, long) out of bounds}
-         * compared with the size of the file referred by the channel
+         * found to be {@linkplain Objects#checkFromIndexSize(long, long, long)
+         * out of bounds} compared with the size of the file referred by the
+         * channel
+         *
+         * @throws IOException if the size of the file referred by the provided
+         * channel cannot be read while verifying the specified byte range
+         *
+         * @throws NullPointerException if {@code channel} is null
+         *
          * @since 26
          */
-        public static BodyPublisher ofFileChannel(FileChannel channel, long offset, long length) {
+        public static BodyPublisher ofFileChannel(FileChannel channel, long offset, long length) throws IOException {
             Objects.requireNonNull(channel, "channel");
             return new RequestPublishers.FileChannelPublisher(channel, offset, length);
         }
