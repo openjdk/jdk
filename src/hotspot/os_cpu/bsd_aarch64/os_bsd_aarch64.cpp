@@ -538,7 +538,7 @@ extern "C" {
     assert(SpinWait::SB    == 4, "SpinWait::Inst value 4 reserved for 'sb' instruction");
     assert(SpinWait::NOP   == 8, "SpinWait::Inst value 8 reserved for 'nop' instruction");
 
-    const unit64_t inst_id = VM_Version::spin_wait_desc().inst();
+    const uint64_t inst_id = VM_Version::spin_wait_desc().inst();
     assert(inst_id == 0 || is_power_of_2(inst_id), "Values of SpinWait::Inst must be 0 or power of 2");
     assert(inst_id != SpinWait::SB || VM_Version::supports_sb(), "current CPU does not support SB instruction");
     if (inst_id > SpinWait::NOP) {
