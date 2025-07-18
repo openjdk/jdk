@@ -26,7 +26,6 @@
 #ifndef CPU_AARCH64_GLOBALS_AARCH64_HPP
 #define CPU_AARCH64_GLOBALS_AARCH64_HPP
 
-#include "spin_wait_aarch64.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -115,11 +114,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
           range(-1, 4096)                                               \
-  product(ccstr, OnSpinWaitInst, DEFAULT_SPIN_WAIT_INST, DIAGNOSTIC,    \
+  product(ccstr, OnSpinWaitInst, "yield", DIAGNOSTIC,                   \
           "The instruction to use to implement "                        \
           "java.lang.Thread.onSpinWait()."                              \
-          "Options: "                                                   \
-          SPIN_WAIT_INST_OPTIONS)                                       \
+          "Options: none, nop, isb, yield, sb.")                        \
   product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
           "The number of OnSpinWaitInst instructions to generate."      \
           "It cannot be used with OnSpinWaitInst=none.")                \

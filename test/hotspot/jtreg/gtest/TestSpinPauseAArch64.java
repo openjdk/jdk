@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test TestSpinPauseAArch64
  * @bug 8362193
  * @summary Run SpinPause gtest using different instructions for SpinPause
@@ -33,4 +33,14 @@
  * @run main/native GTestWrapper --gtest_filter=SpinPause* -XX:+UnlockDiagnosticVMOptions -XX:OnSpinWaitInst=nop
  * @run main/native GTestWrapper --gtest_filter=SpinPause* -XX:+UnlockDiagnosticVMOptions -XX:OnSpinWaitInst=isb
  * @run main/native GTestWrapper --gtest_filter=SpinPause* -XX:+UnlockDiagnosticVMOptions -XX:OnSpinWaitInst=yield
+ */
+
+/*
+ * @test TestSpinPauseSBAArch64
+ * @bug 8362193
+ * @summary Run SpinPause gtest using SB instruction for SpinPause
+ * @library /test/lib
+ * @requires vm.flagless
+ * @requires (os.arch=="aarch64" & vm.cpu.features ~= ".*sb.*")
+ * @run main/native GTestWrapper --gtest_filter=SpinPause* -XX:+UnlockDiagnosticVMOptions -XX:OnSpinWaitInst=sb
  */

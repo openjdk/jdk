@@ -24,7 +24,6 @@
 #ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
 #define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
 
-#define DEFAULT_SPIN_WAIT_INST "yield"
 #define SPIN_WAIT_INST_OPTIONS "nop, isb, yield, sb, none"
 
 class SpinWait {
