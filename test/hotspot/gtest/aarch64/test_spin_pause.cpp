@@ -21,40 +21,13 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
-#define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#if defined(AARCH64) && !defined(ZERO)
 
-#define DEFAULT_SPIN_WAIT_INST "yield"
-#define SPIN_WAIT_INST_OPTIONS "nop, isb, yield, sb, none"
+#include "utilities/spinYield.hpp"
+#include "unittest.hpp"
 
-class SpinWait {
-public:
-  // Non-zero values are chosen to have only one bit set.
-  // This simplifies testing values in assembly code.
-  // This limits us to 64 possible implementation.
-  // Value 1 is used for the default implementation.
-  enum Inst {
-    NONE  = 0,
-    YIELD = (1 << 0),
-    ISB   = (1 << 1),
-    SB    = (1 << 2),
-    NOP   = (1 << 3)
-  };
+TEST_VM(SpinPause, sanity) {
+  ASSERT_EQ(SpinPause(), 1);
+}
 
-private:
-  Inst _inst;
-  int _count;
-
-  Inst from_name(const char *name);
-
-public:
-  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(inst == NONE ? 0 : count) {}
-  SpinWait(const char *name, int count) : SpinWait(from_name(name), count) {}
-
-  Inst inst() const { return _inst; }
-  int inst_count() const { return _count; }
-
-  static bool supports(const char *name);
-};
-
-#endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#endif  // AARCH64

@@ -21,40 +21,31 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
-#define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#include "spin_wait_aarch64.hpp"
 
-#define DEFAULT_SPIN_WAIT_INST "yield"
-#define SPIN_WAIT_INST_OPTIONS "nop, isb, yield, sb, none"
+#include <string.h>
 
-class SpinWait {
-public:
-  // Non-zero values are chosen to have only one bit set.
-  // This simplifies testing values in assembly code.
-  // This limits us to 64 possible implementation.
-  // Value 1 is used for the default implementation.
-  enum Inst {
-    NONE  = 0,
-    YIELD = (1 << 0),
-    ISB   = (1 << 1),
-    SB    = (1 << 2),
-    NOP   = (1 << 3)
-  };
+bool SpinWait::supports(const char *name) {
+  return name != nullptr &&
+         (strcmp(name, "nop")   == 0 ||
+          strcmp(name, "isb")   == 0 ||
+          strcmp(name, "yield") == 0 ||
+          strcmp(name, "sb")    == 0 ||
+          strcmp(name, "none")  == 0);
+}
 
-private:
-  Inst _inst;
-  int _count;
+SpinWait::Inst SpinWait::from_name(const char* name) {
+  assert(supports(name), "spin wait instruction name must be one of: " SPIN_WAIT_INST_OPTIONS);
 
-  Inst from_name(const char *name);
+  if (strcmp(name, "nop") == 0) {
+    return SpinWait::NOP;
+  } else if (strcmp(name, "isb") == 0) {
+    return SpinWait::ISB;
+  } else if (strcmp(name, "yield") == 0) {
+    return SpinWait::YIELD;
+  } else if (strcmp(name, "sb") == 0) {
+    return SpinWait::SB;
+  }
 
-public:
-  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(inst == NONE ? 0 : count) {}
-  SpinWait(const char *name, int count) : SpinWait(from_name(name), count) {}
-
-  Inst inst() const { return _inst; }
-  int inst_count() const { return _count; }
-
-  static bool supports(const char *name);
-};
-
-#endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+  return SpinWait::NONE;
+}
