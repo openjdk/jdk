@@ -65,4 +65,4 @@ runs:
       with:
         name: bundles-jtreg-${{ steps.version.outputs.value }}
         path: jtreg/installed
-        retention-days: 1
+        retention-days: 5
