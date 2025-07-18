@@ -61,6 +61,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
+#include "shorthist.hpp"
 #include "semaphore_posix.hpp"
 #include "services/runtimeService.hpp"
 #include "signals_posix.hpp"
