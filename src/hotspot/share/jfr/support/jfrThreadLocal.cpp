@@ -45,6 +45,7 @@
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "utilities/sizes.hpp"
+#include "utilities/spinYield.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :
   _sample_request(),
@@ -600,7 +601,10 @@ bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
 }
 
 void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
-  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED);
+  SpinYield s;
+  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED) {
+    s.wait();
+  }
 }
 
 void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {

@@ -1477,16 +1477,6 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
         }
       }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
-      }
     }
 
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
@@ -1530,16 +1520,6 @@ void VM_Version::get_processor_features() {
       } else {
         UseXmmI2D = false;
       }
-    }
-    if (supports_sse4_2()) {
-      if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-      }
-    } else {
-      if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
 
     // some defaults for AMD family 15h
@@ -1629,16 +1609,6 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
-      }
     }
     if (is_atom_family() || is_knights_family()) {
 #ifdef COMPILER2
@@ -1699,7 +1669,16 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif
-
+  if (supports_sse4_2()) {
+    if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
+    }
+  } else {
+    if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+    }
+    FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
+  }
   if (UseSSE42Intrinsics) {
     if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       UseVectorizedMismatchIntrinsic = true;
