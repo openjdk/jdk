@@ -491,7 +491,9 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
     // Start tracing from roots, there are 3 kinds of roots in full-gc.
     //
-    // 1. CLD.
+    // 1. CLD. This method internally takes care of whether class loading is
+    // enabled or not, applying the closure to both strong and weak or only
+    // strong CLDs.
     ClassLoaderDataGraph::always_strong_cld_do(&follow_cld_closure);
 
     // 2. Threads stack frames and active nmethods in them.
@@ -726,11 +728,12 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-    // Remap roots
-    // 1. CLD
+    // Remap strong and weak roots in adjust phase.
+    // 1. All (strong and weak) CLDs.
     ClassLoaderDataGraph::cld_do(&adjust_cld_closure);
 
-    // 2. Threads stack frames and all nmethods
+    // 2. Threads stack frames. No need to visit on-stack nmethods, because all
+    // nmethods are visited in one go via CodeCache::nmethods_do.
     Threads::oops_do(&adjust_pointer_closure, nullptr);
     NMethodToOopClosure nmethod_cl(&adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
     CodeCache::nmethods_do(&nmethod_cl);

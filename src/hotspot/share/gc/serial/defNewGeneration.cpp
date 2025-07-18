@@ -608,12 +608,12 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
 
   {
     StrongRootsScope srs(0);
-    RootScanClosure oop_cl{this};
-    CLDScanClosure cld_cl{this};
+    RootScanClosure oop_closure{this};
+    CLDScanClosure cld_closure{this};
 
-    MarkingNMethodClosure nmethod_cl(&oop_cl,
-                                     NMethodToOopClosure::FixRelocations,
-                                     false /* keepalive_nmethods */);
+    MarkingNMethodClosure nmethod_closure(&oop_closure,
+                                          NMethodToOopClosure::FixRelocations,
+                                          false /* keepalive_nmethods */);
 
     // Starting tracing from roots, there are 4 kinds of roots in young-gc.
     //
@@ -623,16 +623,16 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
 
     // 2. CLD; visit all (strong+weak) clds with the same closure, because we
     // don't perform class unloading during young-gc.
-    ClassLoaderDataGraph::cld_do(&cld_cl);
+    ClassLoaderDataGraph::cld_do(&cld_closure);
 
     // 3. Threads stack frames and nmethods.
     // Only nmethods that contain pointers into-young need to be processed
     // during young-gc, and they are tracked in ScavengableNMethods
-    Threads::oops_do(&oop_cl, &nmethod_cl);
-    ScavengableNMethods::nmethods_do(&nmethod_cl);
+    Threads::oops_do(&oop_closure, nullptr);
+    ScavengableNMethods::nmethods_do(&nmethod_closure);
 
     // 4. VM internal roots.
-    OopStorageSet::strong_oops_do(&oop_cl);
+    OopStorageSet::strong_oops_do(&oop_closure);
   }
 
   // "evacuate followers".
