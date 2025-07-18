@@ -35,7 +35,7 @@ bool SpinWait::supports(const char *name) {
 }
 
 SpinWait::Inst SpinWait::from_name(const char* name) {
-  assert(supports(name), "spin wait instruction name must be one of: " SPIN_WAIT_INST_OPTIONS);
+  assert(supports(name), "checked by OnSpinWaitInstNameConstraintFunc");
 
   if (strcmp(name, "nop") == 0) {
     return SpinWait::NOP;

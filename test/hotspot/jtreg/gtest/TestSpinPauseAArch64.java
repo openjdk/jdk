@@ -22,7 +22,7 @@
  */
 
 /*
- * @test TestSpinPauseAArch64
+ * @test id=default_armv8_0
  * @bug 8362193
  * @summary Run SpinPause gtest using different instructions for SpinPause
  * @library /test/lib
@@ -36,7 +36,7 @@
  */
 
 /*
- * @test TestSpinPauseSBAArch64
+ * @test id=sb_armv8_5
  * @bug 8362193
  * @summary Run SpinPause gtest using SB instruction for SpinPause
  * @library /test/lib

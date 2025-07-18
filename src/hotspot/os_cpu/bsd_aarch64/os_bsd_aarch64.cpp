@@ -52,7 +52,6 @@
 #include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -542,10 +541,7 @@ extern "C" {
     const uint64_t inst_id = VM_Version::spin_wait_desc().inst();
     assert(inst_id == 0 || is_power_of_2(inst_id), "Values of SpinWait::Inst must be 0 or power of 2");
     assert(inst_id != SpinWait::SB || VM_Version::supports_sb(), "current CPU does not support SB instruction");
-    if (inst_id > SpinWait::NOP) {
-      warining("Unsupported type of SpinWait::Inst: %d", inst_id);
-      ShouldNotReachHere();
-    }
+    assert(inst_id <= SpinWait::NOP, "Unsupported type of SpinWait::Inst: %llu", inst_id);
 
     // The assembly code below is equivalent to the following:
     //

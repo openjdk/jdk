@@ -51,14 +51,6 @@ uintptr_t VM_Version::_pac_mask;
 SpinWait VM_Version::_spin_wait;
 
 static SpinWait get_spin_wait_desc() {
-  if (!SpinWait::supports(OnSpinWaitInst)) {
-    vm_exit_during_initialization("OnSpinWaitInst is not one of "
-                                  SPIN_WAIT_INST_OPTIONS,
-                                  OnSpinWaitInst);
-  }
-
-  assert(OnSpinWaitInstCount != 0, "allowed range for OnSpinWaitInstCount must not include 0");
-
   SpinWait spin_wait(OnSpinWaitInst, OnSpinWaitInstCount);
   if (spin_wait.inst() == SpinWait::SB && !VM_Version::supports_sb()) {
     vm_exit_during_initialization("OnSpinWaitInst is SB but current CPU does not support SB instruction");
