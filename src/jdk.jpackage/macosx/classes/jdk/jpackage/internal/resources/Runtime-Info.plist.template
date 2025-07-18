@@ -20,5 +20,20 @@
         <string>????</string>
         <key>CFBundleVersion</key>
         <string>CF_BUNDLE_VERSION</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>The application is requesting access to the microphone.</string>
+        <key>JavaVM</key>
+        <dict>
+                <key>JVMCapabilities</key>
+                <array>
+                        <string>CommandLine</string>
+                </array>
+                <key>JVMPlatformVersion</key>
+                <string>CF_BUNDLE_VERSION</string>
+                <key>JVMVendor</key>
+                <string>CF_BUNDLE_VENDOR</string>
+                <key>JVMVersion</key>
+                <string>CF_BUNDLE_VERSION</string>
+        </dict>
 </dict>
 </plist>

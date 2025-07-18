@@ -310,13 +310,13 @@ final class MacPackagingPipeline {
         final String category;
 
         if (app.isRuntime()) {
-            template = "RuntimeBundle-Info.plist.template";
-            publicName = "RuntimeBundle-Info.plist";
-            category = "resource.runtime-bundle-info-plist";
-        } else {
             template = "Runtime-Info.plist.template";
             publicName = "Runtime-Info.plist";
             category = "resource.runtime-info-plist";
+        } else {
+            template = "ApplicationRuntime-Info.plist.template";
+            publicName = "Runtime-Info.plist";
+            category = "resource.app-runtime-info-plist";
         }
 
         env.env().createResource(template)
