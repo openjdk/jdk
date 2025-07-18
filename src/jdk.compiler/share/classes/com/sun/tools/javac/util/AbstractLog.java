@@ -192,47 +192,40 @@ public abstract class AbstractLog {
         report(diags.warning(null, source, wrap(pos), warningKey));
     }
 
-    /** Report a warning.
-     *  @param pos    The source position at which to report the warning.
-     *  @param warningKey    The key for the localized warning message.
-     */
-    public void mandatoryWarning(DiagnosticPosition pos, Warning warningKey) {
-        report(diags.mandatoryWarning(source, pos, warningKey));
-    }
-
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
      *  @param noteKey    The key for the localized notification message.
      */
     public void note(Note noteKey) {
-        report(diags.note(source, null, noteKey));
+        report(diags.note(null, source, null, noteKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
      *  @param noteKey    The key for the localized notification message.
      */
     public void note(DiagnosticPosition pos, Note noteKey) {
-        report(diags.note(source, pos, noteKey));
+        report(diags.note(null, source, pos, noteKey));
+    }
+
+    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
+     *  @param flag       A flag to set on the diagnostic
+     *  @param noteKey    The key for the localized notification message.
+     */
+    public void note(DiagnosticFlag flag, DiagnosticPosition pos, Note noteKey) {
+        report(diags.note(flag, source, pos, noteKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
      *  @param noteKey    The key for the localized notification message.
      */
     public void note(int pos, Note noteKey) {
-        report(diags.note(source, wrap(pos), noteKey));
+        report(diags.note(null, source, wrap(pos), noteKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
      *  @param noteKey    The key for the localized notification message.
      */
     public void note(JavaFileObject file, Note noteKey) {
-        report(diags.note(getSource(file), null, noteKey));
-    }
-
-    /** Provide a non-fatal notification, unless suppressed by the -nowarn option.
-     *  @param noteKey    The key for the localized notification message.
-     */
-    public void mandatoryNote(final JavaFileObject file, Note noteKey) {
-        report(diags.mandatoryNote(getSource(file), noteKey));
+        report(diags.note(null, getSource(file), null, noteKey));
     }
 
     protected abstract void report(JCDiagnostic diagnostic);
