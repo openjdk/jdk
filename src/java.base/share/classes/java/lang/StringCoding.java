@@ -129,12 +129,12 @@ class StringCoding {
      * This method assumes that {@code sa} is encoded in UTF-16, and hence,
      * each {@code char} maps to 2 bytes.
      * </p><p>
-     * {@code sp} is encoded in ISO-8859-1. There each {@code byte} corresponds
+     * {@code da} is encoded in ISO-8859-1. There each {@code byte} corresponds
      * to a {@code char}.
      * </p>
      *
      * @param sa the source byte array containing characters encoded in UTF-16
-     * @param sp the index of the <em>byte (not character!)</em> from the source array to start reading from
+     * @param sp the index of the <em>character (not byte!)</em> from the source array to start reading from
      * @param da the target byte array
      * @param dp the index of the target array to start writing to
      * @param len the total number of <em>characters (not bytes!)</em> to be encoded
@@ -147,7 +147,12 @@ class StringCoding {
                               byte[] da, int dp, int len) {
         Objects.requireNonNull(sa, "sa");
         Objects.requireNonNull(da, "da");
-        Preconditions.checkFromIndexSize(sp, len << 1, sa.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(
+                sp,
+                len,
+                // Halving the length of `sa` to obtain the number of characters:
+                sa.length >>> 1,
+                Preconditions.AIOOBE_FORMATTER);
         // Not checking the `dp + len < da.length` invariant, since "as many
         // codepoints as possible" contract still holds with a `da` of
         // insufficient capacity, and the compiler intrinsic matches this
