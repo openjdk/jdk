@@ -212,9 +212,6 @@
   develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
-  develop(bool, TimeEachLinearScan, false,                                  \
-          "print detailed timing of each LinearScan run")                   \
-                                                                            \
   develop(bool, CountLinearScan, false,                                     \
           "collect statistic counters during LinearScan")                   \
                                                                             \
@@ -267,9 +264,6 @@
                                                                             \
   develop(bool, BailoutOnExceptionHandlers, false,                          \
           "bailout of compilation for methods with exception handlers")     \
-                                                                            \
-  develop(bool, InstallMethods, true,                                       \
-          "Install methods at the end of successful compilations")          \
                                                                             \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \

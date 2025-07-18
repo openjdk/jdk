@@ -68,7 +68,7 @@ import apple.laf.JRSUIUtils;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaScrollBarUI extends ScrollBarUI {
+public final class AquaScrollBarUI extends ScrollBarUI {
     private static final int kInitialDelay = 300;
     private static final int kNormalDelay = 100;
 
@@ -96,12 +96,14 @@ public class AquaScrollBarUI extends ScrollBarUI {
 
     public AquaScrollBarUI() { }
 
+    @Override
     public void installUI(final JComponent c) {
         fScrollBar = (JScrollBar)c;
         installListeners();
         configureScrollBarColors();
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         uninstallListeners();
         fScrollBar = null;
@@ -169,6 +171,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
         scrollBarState.set(shouldShowArrows() ? ShowArrows.YES : ShowArrows.NO);
     }
 
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         syncState(c);
         Rectangle trackBounds = getTrackBounds();
@@ -268,7 +271,8 @@ public class AquaScrollBarUI extends ScrollBarUI {
                 fScrollBar.getHeight() - (insets.top + insets.bottom), x, y);
     }
 
-    protected class PropertyChangeHandler implements PropertyChangeListener {
+    protected final class PropertyChangeHandler implements PropertyChangeListener {
+        @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String propertyName = e.getPropertyName();
 
@@ -285,20 +289,22 @@ public class AquaScrollBarUI extends ScrollBarUI {
         }
     }
 
-    protected class ModelListener implements ChangeListener {
+    protected final class ModelListener implements ChangeListener {
+        @Override
         public void stateChanged(final ChangeEvent e) {
             layoutContainer(fScrollBar);
         }
     }
 
     // Track mouse drags.
-    protected class TrackListener extends MouseAdapter implements MouseMotionListener {
+    protected final class TrackListener extends MouseAdapter implements MouseMotionListener {
         protected transient int fCurrentMouseX, fCurrentMouseY;
         protected transient boolean fInArrows; // are we currently tracking arrows?
         protected transient boolean fStillInArrow = false; // Whether mouse is in an arrow during arrow tracking
         protected transient boolean fStillInTrack = false; // Whether mouse is in the track during pageup/down tracking
         protected transient int fFirstMouseX, fFirstMouseY, fFirstValue; // Values for getValueFromOffset
 
+        @Override
         public void mouseReleased(final MouseEvent e) {
             if (!fScrollBar.isEnabled()) return;
             if (fInArrows) {
@@ -315,6 +321,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
             fScrollBar.revalidate();
         }
 
+        @Override
         public void mousePressed(final MouseEvent e) {
             if (!fScrollBar.isEnabled()) return;
 
@@ -331,6 +338,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
             }
         }
 
+        @Override
         public void mouseDragged(final MouseEvent e) {
             if (!fScrollBar.isEnabled()) return;
 
@@ -541,7 +549,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
     /**
      * Listener for scrolling events initiated in the ScrollPane.
      */
-    protected class ScrollListener implements ActionListener {
+    protected final class ScrollListener implements ActionListener {
         boolean fUseBlockIncrement;
         int fDirection = 1;
 
@@ -553,6 +561,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
             this.fUseBlockIncrement = block;
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             Component parent = fScrollBar.getParent();
             do {
@@ -625,14 +634,17 @@ public class AquaScrollBarUI extends ScrollBarUI {
      * @see #getMaximumSize
      * @see #getMinimumSize
      */
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         return isHorizontal() ? new Dimension(96, 15) : new Dimension(15, 96);
     }
 
+    @Override
     public Dimension getMinimumSize(final JComponent c) {
         return isHorizontal() ? new Dimension(54, 15) : new Dimension(15, 54);
     }
 
+    @Override
     public Dimension getMaximumSize(final JComponent c) {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
@@ -699,7 +711,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
         return startPoint;
     }
 
-    static class HitUtil {
+    static final class HitUtil {
         static boolean isIncrement(final Hit hit) {
             return (hit == ScrollBarHit.ARROW_MAX) || (hit == ScrollBarHit.ARROW_MAX_INSIDE);
         }

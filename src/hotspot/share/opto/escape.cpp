@@ -3272,10 +3272,12 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
 
 // Optimize objects compare.
 const TypeInt* ConnectionGraph::optimize_ptr_compare(Node* left, Node* right) {
-  assert(OptimizePtrCompare, "sanity");
+  const TypeInt* UNKNOWN = TypeInt::CC;    // [-1, 0,1]
+  if (!OptimizePtrCompare) {
+    return UNKNOWN;
+  }
   const TypeInt* EQ = TypeInt::CC_EQ; // [0] == ZERO
   const TypeInt* NE = TypeInt::CC_GT; // [1] == ONE
-  const TypeInt* UNKNOWN = TypeInt::CC;    // [-1, 0,1]
 
   PointsToNode* ptn1 = ptnode_adr(left->_idx);
   PointsToNode* ptn2 = ptnode_adr(right->_idx);
