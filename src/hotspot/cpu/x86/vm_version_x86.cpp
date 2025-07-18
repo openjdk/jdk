@@ -49,7 +49,7 @@ VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
 #define DECLARE_CPU_FEATURE_NAME(id, name, bit) name,
 const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
-#undef DECLARE_CPU_FEATURE_FLAG
+#undef DECLARE_CPU_FEATURE_NAME
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = nullptr;
