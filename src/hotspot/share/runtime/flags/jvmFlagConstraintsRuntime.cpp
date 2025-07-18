@@ -147,10 +147,11 @@ JVMFlag::Error OnSpinWaitInstNameConstraintFunc(ccstr value, bool verbose) {
       strcmp(value, "isb")   != 0 &&
       strcmp(value, "yield") != 0 &&
       strcmp(value, "sb")    != 0 &&
+      strcmp(value, "wfet")  != 0 &&
       strcmp(value, "none")  != 0) {
     JVMFlag::printError(verbose,
                         "Unrecognized value %s for OnSpinWaitInst. Must be one of the following: "
-                        "nop, isb, yield, sb, none\n",
+                        "nop, isb, yield, sb, wfet, none\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
