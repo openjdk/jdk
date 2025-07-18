@@ -32,7 +32,7 @@
  * @build java.base/java.lang.Helper
  * @comment `vm.debug == true` is required since `VerifyIntrinsicChecks` is a
  *          development flag
- * @requires vm.debug == true & vm.flavor == "server"
+ * @requires vm.debug == true & vm.flavor == "server" & !vm.graal.enabled
  * @run main/othervm compiler.intrinsics.TestVerifyIntrinsicChecks verify
  */
 
