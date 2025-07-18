@@ -913,15 +913,6 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     }
 
     /**
-     * Ends this print job once it is no longer referenced.
-     * @see #end
-     */
-    @SuppressWarnings("removal")
-    public void finalize() {
-        end();
-    }
-
-    /**
      * Prints the page at the specified index into the specified
      * {@link Graphics} context in the specified
      * format.  A {@code PrinterJob} calls the
