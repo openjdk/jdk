@@ -25,16 +25,19 @@
  * @test
  * @bug 8362448
  * @summary Verify DecimalFormat::format on doubles.
- * @run junit/othervm DoubleFormattingTest
+ * @run junit DoubleFormattingTest
  * @run junit/othervm -Djdk.compat.DecimalFormat=true DoubleFormattingTest
  */
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,63 +45,24 @@ public class DoubleFormattingTest {
 
     private static final boolean COMPAT = Boolean.getBoolean("jdk.compat.DecimalFormat");
 
-    @Test
-    void testXL() {
-        double v = 4.8726570057E288;
-        DecimalFormat df = (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-        df.setGroupingUsed(false);
-        String actual = df.format(v);
-        Formatter fmt = new Formatter(Locale.ROOT);
-        fmt.format("%.0f", v);
-        String expected = fmt.toString();
-        if (COMPAT) {
-            assertNotEquals(expected, actual);
-        } else {
-            assertEquals(expected, actual);
-        }
+    static Stream<Arguments> testFormat() {
+        return Stream.of(
+                Arguments.of(4.8726570057E288, 0),
+                Arguments.of(7.3879E20, 0),
+                Arguments.of(1.9400994884341945E25, 0),
+                Arguments.of(6.3E-322, 324)
+        );
     }
 
-    @Test
-    void testM() {
-        double v = 7.3879E20;
+    @ParameterizedTest
+    @MethodSource
+    void testFormat(double v, int minFractionDigits) {
         DecimalFormat df = (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
         df.setGroupingUsed(false);
+        df.setMinimumFractionDigits(minFractionDigits);
         String actual = df.format(v);
         Formatter fmt = new Formatter(Locale.ROOT);
-        fmt.format("%.0f", v);
-        String expected = fmt.toString();
-        if (COMPAT) {
-            assertNotEquals(expected, actual);
-        } else {
-            assertEquals(expected, actual);
-        }
-    }
-
-    @Test
-    void testL() {
-        double v = 1.9400994884341945E25;
-        DecimalFormat df = (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-        df.setGroupingUsed(false);
-        String actual = df.format(v);
-        Formatter fmt = new Formatter(Locale.ROOT);
-        fmt.format("%.0f", v);
-        String expected = fmt.toString();
-        if (COMPAT) {
-            assertNotEquals(expected, actual);
-        } else {
-            assertEquals(expected, actual);
-        }
-    }
-
-    @Test
-    void testXS() {
-        double v = 6.3E-322;
-        DecimalFormat df = (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-        df.setGroupingUsed(false);
-        df.setMinimumFractionDigits(324);
-        String actual = df.format(v);
-        Formatter fmt = new Formatter(Locale.ROOT);
-        fmt.format("%.324f", v);
+        fmt.format("%." + minFractionDigits + "f", v);
         String expected = fmt.toString();
         if (COMPAT) {
             assertNotEquals(expected, actual);
