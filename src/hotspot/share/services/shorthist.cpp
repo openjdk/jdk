@@ -45,7 +45,7 @@
 constexpr unsigned min_interval = 5000;
 
 // all memory sizes in KB
-#define btokb(s) (s / K)
+#define btokb(s) ( (s) / K)
 
 struct Data {
   unsigned _id;
