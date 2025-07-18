@@ -381,7 +381,7 @@ public final class Utils {
      * ({@value BUFSIZE})}
      *
      * @param maxCapacity a buffer capacity, in bytes
-     * @throws IllegalArgumentException if {@code capacity < 0}
+     * @throws IllegalArgumentException if {@code maxCapacity < 0}
      */
     public static ByteBuffer getBufferWithAtMost(long maxCapacity) {
         if (maxCapacity < 0) {
