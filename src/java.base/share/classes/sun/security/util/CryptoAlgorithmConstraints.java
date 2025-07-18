@@ -1,0 +1,146 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package sun.security.util;
+
+import java.lang.ref.SoftReference;
+import java.security.AlgorithmParameters;
+import java.security.CryptoPrimitive;
+import java.security.Key;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import sun.security.util.KnownOIDs;
+
+/**
+ * Algorithm constraints for disabled crypto algorithms property
+ *
+ * See the "jdk.crypto.disabledAlgorithms" specification in java.security
+ * for the syntax of the disabled algorithm string.
+ */
+public class CryptoAlgorithmConstraints extends AbstractAlgorithmConstraints {
+    private static final Debug debug = Debug.getInstance("jca");
+
+    private static class CryptoHolder {
+        static final CryptoAlgorithmConstraints CONSTRAINTS =
+                new CryptoAlgorithmConstraints("jdk.crypto.disabledAlgorithms");
+    }
+
+    private static void debug(String msg) {
+        if (debug != null) {
+            debug.println("CryptoAlgoConstraints: ", msg);
+        }
+    }
+
+    public static final boolean permits(String service, String algo) {
+        return CryptoHolder.CONSTRAINTS.permits(null, service + "." + algo, null);
+    }
+
+    private final Set<String> disabledServices; // syntax is <service>.<algo>
+    private volatile SoftReference<Map<String, Boolean>> cacheRef =
+            new SoftReference<>(null);
+
+    /**
+     * Initialize algorithm constraints with the specified security property.
+     *
+     * @param propertyName the security property name that define the disabled
+     *        algorithm constraints
+     */
+    CryptoAlgorithmConstraints(String propertyName) {
+        super(null);
+        disabledServices = getAlgorithms(propertyName);
+        debug("Before " + Arrays.deepToString(disabledServices.toArray()));
+        for (String dk : disabledServices) {
+            int idx = dk.indexOf(".");
+            if (idx == -1) {
+                debug("Remove invalid entry: " + dk);
+                disabledServices.remove(dk);
+                continue;
+            }
+            String service = dk.substring(0, idx);
+            String algo = dk.substring(idx + 1);
+            KnownOIDs oid = KnownOIDs.findMatch(algo);
+            if (oid != null) {
+                debug("Add oid: " + oid.value());
+                disabledServices.add(service + "." + oid.value());
+                debug("Add oid stdName: " + oid.stdName());
+                disabledServices.add(service + "." + oid.stdName());
+                for (String a : oid.aliases()) {
+                    debug("Add oid alias: " + a);
+                    disabledServices.add(service + "." + a);
+                }
+            }
+        }
+        debug("After " + Arrays.deepToString(disabledServices.toArray()));
+    }
+
+    /*
+     * This checks if the specified service descriptor is in the
+     * disabledServices Set. If found, this method return false.
+     */
+    @Override
+    public final boolean permits(Set<CryptoPrimitive> notUsed1,
+            String serviceDesc, AlgorithmParameters notUsed2) {
+        if (serviceDesc == null || serviceDesc.isEmpty()) {
+            throw new IllegalArgumentException("No algorithm name specified");
+        }
+
+        return cachedCheckAlgorithm(serviceDesc);
+    }
+
+    @Override
+    public final boolean permits(Set<CryptoPrimitive> primitives, Key key) {
+        throw new UnsupportedOperationException("Unsupported permits() method");
+    }
+
+    @Override
+    public final boolean permits(Set<CryptoPrimitive> primitives,
+            String algorithm, Key key, AlgorithmParameters parameters) {
+        throw new UnsupportedOperationException("Unsupported permits() method");
+    }
+
+    // Return false if algorithm is found in the disabledAlgorithms Set.
+    // Otherwise, return true.
+    private boolean cachedCheckAlgorithm(String serviceDesc) {
+        Map<String, Boolean> cache;
+        if ((cache = cacheRef.get()) == null) {
+            synchronized (this) {
+                if ((cache = cacheRef.get()) == null) {
+                    cache = new ConcurrentHashMap<>();
+                    cacheRef = new SoftReference<>(cache);
+                }
+            }
+        }
+        Boolean result = cache.get(serviceDesc);
+        if (result != null) {
+            return result;
+        }
+        // We won't check patterns if algorithm check fails.
+        result = checkAlgorithm(disabledServices, serviceDesc, null);
+        cache.put(serviceDesc, result);
+        return result;
+    }
+}

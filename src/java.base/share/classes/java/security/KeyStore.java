@@ -37,6 +37,7 @@ import javax.security.auth.DestroyFailedException;
 import javax.security.auth.callback.*;
 
 import sun.security.util.Debug;
+import sun.security.util.CryptoAlgorithmConstraints;
 
 /**
  * This class represents a storage facility for cryptographic
@@ -841,12 +842,19 @@ public class KeyStore {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
+     * The JDK Reference Implementation additionally uses
+     * <ul>
+     * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
+     * the preferred provider order for the specified keystore type. This
      * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
+     * </li>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed.
+     * </li>
+     * </ul>
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -869,6 +877,11 @@ public class KeyStore {
         throws KeyStoreException
     {
         Objects.requireNonNull(type, "null type name");
+
+        if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
+            throw new KeyStoreException(type + " is disabled");
+        }
+
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", (String)null);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
@@ -887,6 +900,12 @@ public class KeyStore {
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed.
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -917,8 +936,15 @@ public class KeyStore {
         throws KeyStoreException, NoSuchProviderException
     {
         Objects.requireNonNull(type, "null type name");
-        if (provider == null || provider.isEmpty())
+
+        if (provider == null || provider.isEmpty()) {
             throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
+            throw new KeyStoreException(type + " is disabled");
+        }
+
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
@@ -934,6 +960,12 @@ public class KeyStore {
      * {@code KeyStoreSpi} implementation from the specified provider
      * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed.
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
@@ -963,8 +995,15 @@ public class KeyStore {
         throws KeyStoreException
     {
         Objects.requireNonNull(type, "null type name");
-        if (provider == null)
+
+        if (provider == null) {
             throw new IllegalArgumentException("missing provider");
+        }
+
+        if (!CryptoAlgorithmConstraints.permits("KEYSTORE", type)) {
+            throw new KeyStoreException(type + " is disabled");
+        }
+
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
@@ -1677,6 +1716,13 @@ public class KeyStore {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed. Disallowed type will be
+     * skipped.
+     *
      * @param  file the keystore file
      * @param  password the keystore password, which may be {@code null}
      *
@@ -1729,6 +1775,13 @@ public class KeyStore {
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified keystore type is allowed. Disallowed type will be
+     * skipped.
      *
      * @param  file the keystore file
      * @param  param the {@code LoadStoreParameter} that specifies how to load
@@ -1790,7 +1843,9 @@ public class KeyStore {
             // Detect the keystore type
             for (Provider p : Security.getProviders()) {
                 for (Provider.Service s : p.getServices()) {
-                    if (s.getType().equals("KeyStore")) {
+                    if (s.getType().equals("KeyStore") &&
+                            CryptoAlgorithmConstraints.permits("KEYSTORE",
+                            s.getAlgorithm())) {
                         try {
                             KeyStoreSpi impl = (KeyStoreSpi) s.newInstance(null);
                             if (impl.engineProbe(dataStream)) {
