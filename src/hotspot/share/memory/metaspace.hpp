@@ -157,7 +157,6 @@ public:
 
   // For metadata_is_live and klass_is_live
   enum class FailureHint {
-    // outside class space/metaspace
     unknown = 0,
     // outside class space/metaspace
     outside,                          // 1
