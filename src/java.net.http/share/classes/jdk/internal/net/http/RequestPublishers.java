@@ -480,8 +480,7 @@ public final class RequestPublishers {
                 int readLength = channel.read(buffer, position);
                 // Short-circuit if `read()` has failed, e.g., due to file content being changed in the meantime
                 if (readLength < 0) {
-                    // We *must* throw to signal that the request needs to be cancelled.
-                    // Otherwise, the server will continue waiting data.
+                    // Throw to signal that the request needs to be cancelled
                     throw new IOException("Unexpected EOF (position=%s)".formatted(position));
                 } else {
                     position += readLength;
