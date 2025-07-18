@@ -818,10 +818,10 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
       if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
-        if (HandshakeTimedOutThread != p2i(nullptr)) {
-          st->print(" (sent by handshake timeout handler, timed out thread " PTR_FORMAT ")", HandshakeTimedOutThread);
-        } else if (SafepointTimedOutThread != p2i(nullptr)) {
-          st->print(" (sent by safepoint timeout handler, timed out thread " PTR_FORMAT ")", SafepointTimedOutThread);
+        if (handshakeTimedOutThread == p2i(_thread)) {
+          st->print(" (sent by handshake timeout handler, timed out thread " PTR_FORMAT ")", handshakeTimedOutThread);
+        } else if (safepointTimedOutThread == p2i(_thread)) {
+          st->print(" (sent by safepoint timeout handler, timed out thread " PTR_FORMAT ")", safepointTimedOutThread);
         } else {
           st->print(" (sent by kill)");
         }
