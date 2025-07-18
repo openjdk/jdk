@@ -31,7 +31,7 @@
 #include OS_HEADER(os)
 
 // all memory sizes in KB
-#define btokb(s) (s / K)
+#define btokb(s) ( (s) / K)
 
 void ShortHistoryData_pd::measure() {
   // Process memory info
@@ -60,7 +60,7 @@ void ShortHistoryData_pd::measure() {
 }
 
 //               012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-#define HEADER1 "------------- process -------- ----- glibc ------ "
+#define HEADER1 "------------- process ------- ------ glibc ------ "
 #define HEADER2 "    vsize       rss      swap      live  retained "
 
 void ShortHistoryData_pd::print_header_1(outputStream* st) {
