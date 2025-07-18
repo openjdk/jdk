@@ -37,6 +37,7 @@ inline void exec_spin_wait_inst(SpinWait::Inst inst_id) {
   assert(SpinWait::NOP   == 8, "SpinWait::Inst value 8 reserved for 'nop' instruction");
   assert(inst_id == 0 || is_power_of_2((uint64_t)inst_id), "Values of SpinWait::Inst must be 0 or use only one bit");
   assert(inst_id <= SpinWait::NOP, "Unsupported type of SpinWait::Inst: %d", inst_id);
+  assert(inst_id != SpinWait::SB || VM_Version::supports_sb(), "current CPU does not support SB instruction");
 
   if (inst_id < SpinWait::NONE || inst_id > SpinWait::NOP) {
     ShouldNotReachHere();
@@ -90,6 +91,7 @@ inline void generate_spin_wait(MacroAssembler *masm, const SpinWait &spin_wait_d
         masm->yield();
         break;
       case SpinWait::SB:
+        assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
         masm->sb();
         break;
       default:
