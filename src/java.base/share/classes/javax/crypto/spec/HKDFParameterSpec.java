@@ -112,7 +112,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *
          * @implNote HKDF implementations will enforce that the length
          *         is not greater than 255 * HMAC length. HKDF implementations
-         *         will also enforce that a {code null} info value is treated as
+         *         will also enforce that a {@code null} info value is treated as
          *         zero-length byte array.
          *
          * @param info
@@ -261,7 +261,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * @implNote HKDF implementations will enforce that the length is
      *         not greater than 255 * HMAC length. Implementations will also
      *         enforce that the prk argument is at least as many bytes as the
-     *         HMAC length. Implementations will also enforce that a {code null}
+     *         HMAC length. Implementations will also enforce that a {@code null}
      *         info value is treated as zero-length byte array.
      *
      * @param prk
