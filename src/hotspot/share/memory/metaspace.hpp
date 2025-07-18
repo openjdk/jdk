@@ -185,6 +185,7 @@ public:
   // - not marked as dead space (i.e. not returned prematurely via Metaspace::deallocate)
   // - correctly aligned for the type (esp. Klass)
   // - Metadata token is valid specific to this type
+  // Note: Uses SafeFetch, so its fine to use it on questionable pointers.
 
   // Checks if a assumed klass location points to live metaspace (including Klass). Optional hint
   // argument returns failure details.
