@@ -26,13 +26,15 @@
  * @bug 8257860
  * @summary SCDynamicStoreConfig works
  * @modules java.security.jgss/sun.security.krb5
- * @library /test/lib /java/awt/regtesthelpers
- * @run main/manual/native TestDynamicStore
+ * @library /test/lib
+ * @run main/manual/native/timeout=180 TestDynamicStore
  * @requires (os.family == "mac")
  */
 
 import jdk.test.lib.Asserts;
 import sun.security.krb5.Config;
+
+import javax.swing.JOptionPane;
 
 // =================== Attention ===================
 // This test calls a native method implemented in libTestDynamicStore.m
@@ -58,15 +60,13 @@ public class TestDynamicStore {
 
         // Show a popup to remind to run this test as sudo user
         // this will only trigger if sudo (root) user is not detected
-        if (!"root".equals(System.getProperty("user.name"))) {
-            PassFailJFrame.builder()
-                    .instructions("""
-                            This test MUST be run with SUDO user.\s
+        if ("root".equals(System.getProperty("user.name"))) {
 
-                            Please press FAIL and RESTART the test if it is not,\s
-                            else press PASS and the test will be executed automatically""")
-                    .build()
-                    .awaitAndCheck();
+            JOptionPane.showMessageDialog(null, """
+                            This test MUST be run with SUDO user.\s
+                            Please close and RESTART the test.""");
+
+            Asserts.assertFalse(true, "Test must be run with SUDO");
         }
 
         System.loadLibrary("TestDynamicStore");
