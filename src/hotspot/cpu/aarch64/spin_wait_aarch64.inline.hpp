@@ -56,7 +56,7 @@ inline void exec_spin_wait_inst(SpinWait::Inst inst_id) {
   // }
   asm volatile(
       "  tbz %[id], 0, 0f      \n" // The default instruction for SpinWait is YIELD.
-                                   // We check it first before going to switch. 
+                                   // We check it first before going to switch.
       "  yield                 \n"
       "  b    4f               \n"
       "0:                      \n"
