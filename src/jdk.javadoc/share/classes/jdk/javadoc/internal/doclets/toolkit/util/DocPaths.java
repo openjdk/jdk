@@ -121,9 +121,6 @@ public class DocPaths {
     /** The name of the sun icon for the light theme. */
     public static final DocPath SUN_SVG = DocPath.create("sun.svg");
 
-    /** The name of the sun icon for the theme set by system setting. */
-    public static final DocPath SYSTEM_SVG = DocPath.create("system.svg");
-
     /** The name of the syntax highlighting style sheet. */
     public static final DocPath HIGHLIGHT_CSS = DocPath.create("highlight.css");
 

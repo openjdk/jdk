@@ -329,7 +329,6 @@ public class HtmlDoclet extends AbstractDoclet {
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
         copyResource(DocPaths.MOON_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.MOON_SVG), true);
         copyResource(DocPaths.SUN_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.SUN_SVG), true);
-        copyResource(DocPaths.SYSTEM_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.SYSTEM_SVG), true);
 
         if (options.createIndex()) {
             copyResource(DocPaths.SEARCH_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS), true);

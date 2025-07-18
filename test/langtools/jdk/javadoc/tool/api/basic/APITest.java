@@ -213,7 +213,6 @@ class APITest {
             "resource-files/right.svg",
             "resource-files/stylesheet.css",
             "resource-files/sun.svg",
-            "resource-files/system.svg",
             "resource-files/x.svg",
             "resource-files/fonts/dejavu.css",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff",

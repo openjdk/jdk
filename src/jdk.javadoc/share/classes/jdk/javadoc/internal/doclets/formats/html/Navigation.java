@@ -543,29 +543,6 @@ public class Navigation {
         navContent.add(navList);
         var aboutDiv = HtmlTree.DIV(HtmlStyles.aboutLanguage, aboutContent);
         navContent.add(aboutDiv);
-        var selectTheme = contents.getContent("doclet.theme.select_theme");
-        navContent.add(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
-                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SUN_SVG),
-                        selectTheme.toString()).addStyle(HtmlIds.THEME_LIGHT.name()))
-                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.MOON_SVG),
-                        selectTheme.toString()).addStyle(HtmlIds.THEME_DARK.name()))
-                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SYSTEM_SVG),
-                        selectTheme.toString()).addStyle(HtmlIds.THEME_OS.name()))
-                .put(HtmlAttr.ARIA_LABEL, selectTheme.toString()));
-        navContent.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
-                .add(HtmlTree.DIV(selectTheme))
-                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
-                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
-                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.light"))))
-                        .add(HtmlTree.LABEL(HtmlIds.THEME_DARK.name(), Text.EMPTY)
-                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_DARK)
-                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_DARK.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.dark"))))
-                        .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
-                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
-                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
         navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
 
 
@@ -580,6 +557,27 @@ public class Navigation {
         var breadcrumbNav = HtmlTree.OL(HtmlStyles.subNavList);
         breadcrumbNav.addAll(subNavLinks, HtmlTree::LI);
         subNavContent.addUnchecked(breadcrumbNav);
+        var selectTheme = contents.getContent("doclet.theme.select_theme");
+        subNavContent.add(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
+                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SUN_SVG),
+                        selectTheme.toString()).addStyle(HtmlIds.THEME_LIGHT.name()))
+                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.MOON_SVG),
+                        selectTheme.toString()).addStyle(HtmlIds.THEME_DARK.name()))
+                .put(HtmlAttr.ARIA_LABEL, selectTheme.toString()));
+        subNavContent.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
+                .add(HtmlTree.DIV(selectTheme))
+                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.light"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_DARK.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_DARK)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_DARK.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.dark"))))
+                        .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
+                                .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
+                                        .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
 
         if (options.createIndex() && documentedPage != PageMode.SEARCH) {
             addSearch(subNavContent);
