@@ -32,9 +32,6 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/filterQueue.hpp"
 
-// Indicate VMError::report() that SIGILL came from handshake timeout handler, report which thread timed out
-extern intptr_t handshakeTimedOutThread;
-
 class HandshakeOperation;
 class AsyncHandshakeOperation;
 class JavaThread;
