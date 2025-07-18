@@ -69,7 +69,7 @@ public class MacAppBundler extends AppImageBundler {
             }
         }
 
-        if (StandardBundlerParam.getPredefinedAppImage(params) != null) {
+        if (StandardBundlerParam.hasPredefinedAppImage(params)) {
             if (!Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 throw new ConfigException(
