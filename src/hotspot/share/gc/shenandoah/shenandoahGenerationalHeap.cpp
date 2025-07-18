@@ -827,16 +827,13 @@ private:
       assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      bool region_progress = false;
       if (r->is_active() && !r->is_cset()) {
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-          region_progress = true;
         } else if (r->is_old()) {
           if (gc_generation->is_global()) {
 
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-            region_progress = true;
           }
           // Otherwise, this is an old region in a young or mixed cycle.  Process it during a second phase, below.
         } else {
