@@ -322,20 +322,9 @@ public final class CPrinterJob extends RasterPrinterJob {
             validateDestination(destinationAttr);
         }
 
-        /* Get the range of pages we are to print. If the
-         * last page to print is unknown, then we print to
-         * the end of the document. Note that firstPage
-         * and lastPage are 0 based page indices.
-         */
-
+        // Note that firstPage is 0 based page index.
         int firstPage = getFirstPage();
-        int lastPage = getLastPage();
         int totalPages = mDocument.getNumberOfPages();
-        if(lastPage == Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-            if (totalPages != Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-                lastPage = totalPages - 1;
-            }
-        }
 
         try {
             synchronized (this) {
@@ -384,7 +373,6 @@ public final class CPrinterJob extends RasterPrinterJob {
                 }
                 if (++loopi < prMembers.length) {
                      firstPage = prMembers[loopi][0]-1;
-                     lastPage = prMembers[loopi][1] -1;
                 }
             }  while (loopi < prMembers.length);
         } finally {
