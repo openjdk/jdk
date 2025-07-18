@@ -217,14 +217,14 @@ public final class Decoder {
      * consumer of decoded headers is represented by {@linkplain DecodingCallback the callback}
      * registered within the provided {@code headerFrameReader}.
      * Then to decode the header block, the following approach might be used:
-     * <pre>{@code
+     * {@snippet :
      *     HeaderFrameReader headerFrameReader =
-     *          constructHeaderFrameReaderWithCallback(decodingCallback);
+     *          newHeaderFrameReader(decodingCallback);
      *     while (buffers.hasNext()) {
      *         ByteBuffer input = buffers.next();
      *         decoder.decodeHeader(input, !buffers.hasNext(), headerFrameReader);
      *     }
-     * }</pre>
+     * }
      *
      * <p> The decoder reads as much as possible of the header block from the
      * given buffer, starting at the buffer's position, and increments its
