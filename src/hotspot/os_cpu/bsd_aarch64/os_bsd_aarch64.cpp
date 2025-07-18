@@ -530,7 +530,7 @@ extern "C" {
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
     // We should return 1 if SpinPause is implemented, and since there
     // will be always a sequence of instructions, SpinPause will always return 1.
-    exec_spin_wait(VM_Version::spin_wait_desc().inst());
+    exec_spin_wait_inst(VM_Version::spin_wait_desc().inst());
     return 1;
   }
 

@@ -25,15 +25,22 @@
 #define CPU_AARCH64_SPIN_WAIT_AARCH64_INLINE_HPP
 
 #include "asm/macroAssembler.hpp"
+#include "runtime/vm_version.hpp"
 #include "spin_wait_aarch64.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 inline void exec_spin_wait_inst(SpinWait::Inst inst_id) {
-  assert(inst_id == 0 || is_power_of_2((uint64_t)inst_id), "Values of SpinWait::Inst must be 0 or use only one bit");
+  assert(SpinWait::NONE  == 0, "SpinWait::Inst value 0 reserved to indicate no implementation");
   assert(SpinWait::YIELD == 1, "SpinWait::Inst value 1 reserved for 'yield' instruction");
   assert(SpinWait::ISB   == 2, "SpinWait::Inst value 2 reserved for 'isb' instruction");
   assert(SpinWait::SB    == 4, "SpinWait::Inst value 4 reserved for 'sb' instruction");
   assert(SpinWait::NOP   == 8, "SpinWait::Inst value 8 reserved for 'nop' instruction");
+  assert(inst_id == 0 || is_power_of_2((uint64_t)inst_id), "Values of SpinWait::Inst must be 0 or use only one bit");
+  assert(inst_id <= SpinWait::NOP, "Unsupported type of SpinWait::Inst: %d", inst_id);
+
+  if (inst_id < SpinWait::NONE || inst_id > SpinWait::NOP) {
+    ShouldNotReachHere();
+  }
 
   // The assembly code below is equivalent to the following:
   //
@@ -46,8 +53,6 @@ inline void exec_spin_wait_inst(SpinWait::Inst inst_id) {
   // } else if (inst_id == 8) {
   //   exec_nop_inst();
   // }
-  //
-  // New values don't break the code. They will have an effect of NONE.
   asm volatile(
       "  tbz %[id], 0, 0f      \n" // The default instruction for SpinWait is YIELD.
                                    // We check it first before going to switch. 
