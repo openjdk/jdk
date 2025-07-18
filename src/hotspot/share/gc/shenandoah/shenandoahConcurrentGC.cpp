@@ -29,6 +29,7 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/objectCountEventSenderTemplate.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -773,7 +774,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
   }
 
   ShenandoahIsAliveClosure is_alive;
-  heap->tracer()->report_object_count(&is_alive, heap->workers());
+  heap->tracer()->report_object_count<ObjectCountEventSender>(&is_alive, heap->workers());
 
   if (!heap->cancelled_gc()) {
     _mark.finish_mark();
