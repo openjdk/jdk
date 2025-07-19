@@ -462,8 +462,15 @@ bool ConnectionGraph::compute_escape() {
 // if at least one scalar replaceable allocation participates in the merge.
 bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
   bool found_sr_allocate = false;
-
+  bool input_phi_node_exists = false;
   for (uint i = 1; i < ophi->req(); i++) {
+    if (ophi->in(i)->is_Phi()) {
+      // ignore phi node with more than one input phi node
+      if (input_phi_node_exists) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Phi %d. More than one input phi node.", ophi->_idx);)
+        return false;
+      }
+    }
     JavaObjectNode* ptn = unique_java_object(ophi->in(i));
     if (ptn != nullptr && ptn->scalar_replaceable()) {
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
@@ -483,7 +490,7 @@ bool ConnectionGraph::can_reduce_phi_check_inputs(PhiNode* ophi) const {
     }
   }
 
-  NOT_PRODUCT(if (TraceReduceAllocationMerges && !found_sr_allocate) tty->print_cr("Can NOT reduce Phi %d on invocation %d. No SR Allocate as input.", ophi->_idx, _invocation);)
+  NOT_PRODUCT(if (TraceReduceAllocationMerges && !found_sr_allocate) tty->print_cr("Cannot reduce Phi %d on invocation %d. No SR Allocate as input.", ophi->_idx, _invocation);)
   return found_sr_allocate;
 }
 
@@ -526,41 +533,51 @@ bool ConnectionGraph::has_been_reduced(PhiNode* n, SafePointNode* sfpt) const {
 //  - Phi -> AddP -> Load
 //  - Phi -> CastPP -> SafePoints
 //  - Phi -> CastPP -> AddP -> Load
-bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
+//  - Phi -> Phi -> AddP -> Load
+bool ConnectionGraph::can_reduce_check_users(Node* n, uint phi_nest_level) const {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i);
-
-    if (use->is_SafePoint()) {
+    // Skip Phi -> Phi -> SafePoints and allow only Phi -> SafePoints and Phi -> CastPP -> SafePoints
+    if (use->is_SafePoint() && (!n->is_Phi() || phi_nest_level < 1)) {
       if (use->is_Call() && use->as_Call()->has_non_debug_use(n)) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Call has non_debug_use().", n->_idx, _invocation);)
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Phi %d on invocation %d. Call has non_debug_use().", n->_idx, _invocation);)
         return false;
       } else if (has_been_reduced(n->is_Phi() ? n->as_Phi() : n->as_CastPP()->in(1)->as_Phi(), use->as_SafePoint())) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. It has already been reduced.", n->_idx, _invocation);)
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Phi %d on invocation %d. It has already been reduced.", n->_idx, _invocation);)
         return false;
       }
     } else if (use->is_AddP()) {
+      assert(phi_nest_level <= 1, "unexpected nesting level");
       Node* addp = use;
       for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
         Node* use_use = addp->fast_out(j);
         const Type* load_type = _igvn->type(use_use);
 
-        if (!use_use->is_Load() || !use_use->as_Load()->can_split_through_phi_base(_igvn)) {
-          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. AddP user isn't a [splittable] Load(): %s", n->_idx, _invocation, use_use->Name());)
+        if (!use_use->is_Load() || !use_use->as_Load()->can_split_through_phi_base(_igvn, (phi_nest_level > 0))) {
+          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce %s Phi %d on invocation %d. AddP user isn't a [splittable] Load(): %s", (phi_nest_level > 0)?"nested":"", n->_idx, _invocation, use_use->Name());)
           return false;
         } else if (load_type->isa_narrowklass() || load_type->isa_klassptr()) {
-          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. [Narrow] Klass Load: %s", n->_idx, _invocation, use_use->Name());)
+          NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce %s Phi %d on invocation %d. [Narrow] Klass Load: %s", (phi_nest_level > 0)?"nested":"", n->_idx, _invocation, use_use->Name());)
           return false;
         }
       }
-    } else if (nesting > 0) {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. Unsupported user %s at nesting level %d.", n->_idx, _invocation, use->Name(), nesting);)
+    } else if (phi_nest_level > 0) {
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Phi %d on invocation %d. Unsupported user %s at nesting level %d.", n->_idx, _invocation, use->Name(), phi_nest_level);)
       return false;
+    } else if (use->is_Phi()) {
+      if (n->_idx == use->_idx) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce self loop nested Phi");)
+        return false;
+      } else if (!can_reduce_phi_check_inputs(use->as_Phi()) || !can_reduce_check_users(use->as_Phi(), phi_nest_level+1)) {
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce parent Phi %d on invocation %d. Nested Phi %d isn't reducible.", n->_idx, _invocation, use->_idx);)
+        return false;
+      }
     } else if (use->is_CastPP()) {
       const Type* cast_t = _igvn->type(use);
       if (cast_t == nullptr || cast_t->make_ptr()->isa_instptr() == nullptr) {
 #ifndef PRODUCT
         if (TraceReduceAllocationMerges) {
-          tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);
+          tty->print_cr("Cannot reduce Phi %d on invocation %d. CastPP is not to an instance.", n->_idx, _invocation);
           use->dump();
         }
 #endif
@@ -584,7 +601,7 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
           if (!can_reduce) {
 #ifndef PRODUCT
             if (TraceReduceAllocationMerges) {
-              tty->print_cr("Can NOT reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
+              tty->print_cr("Cannot reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
               n->dump(5);
             }
 #endif
@@ -593,16 +610,16 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint nesting) const {
         }
       }
 
-      if (!can_reduce_check_users(use, nesting+1)) {
+      if (!can_reduce_check_users(use, phi_nest_level+1)) {
         return false;
       }
     } else if (use->Opcode() == Op_CmpP || use->Opcode() == Op_CmpN) {
       if (!can_reduce_cmp(n, use)) {
-        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. CmpP/N %d isn't reducible.", n->_idx, _invocation, use->_idx);)
+        NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Phi %d on invocation %d. CmpP/N %d isn't reducible.", n->_idx, _invocation, use->_idx);)
         return false;
       }
     } else {
-      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Can NOT reduce Phi %d on invocation %d. One of the uses is: %d %s", n->_idx, _invocation, use->_idx, use->Name());)
+      NOT_PRODUCT(if (TraceReduceAllocationMerges) tty->print_cr("Cannot reduce Phi %d on invocation %d. One of the uses is: %d %s", n->_idx, _invocation, use->_idx, use->Name());)
       return false;
     }
   }
@@ -629,7 +646,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
     return false;
   }
 
-  if (!can_reduce_phi_check_inputs(ophi) || !can_reduce_check_users(ophi, /* nesting: */ 0)) {
+  if (!can_reduce_phi_check_inputs(ophi) || !can_reduce_check_users(ophi, /* phi_nest_level: */ 0)) {
     return false;
   }
 
@@ -736,7 +753,7 @@ Node* ConnectionGraph::specialize_castpp(Node* castpp, Node* base, Node* current
   return _igvn->transform(ConstraintCastNode::make_cast_for_type(not_eq_control, base, _igvn->type(castpp), ConstraintCastNode::UnconditionalDependency, nullptr));
 }
 
-Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist) {
+Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist, Unique_Node_List &reducible_merges) {
   const Type* load_type = _igvn->type(curr_load);
   Node* nsr_value = _igvn->zerocon(load_type->basic_type());
   Node* memory = curr_load->in(MemNode::Memory);
@@ -786,7 +803,7 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 
   // Takes care of updating CG and split_unique_types worklists due
   // to cloned AddP->Load.
-  updates_after_load_split(data_phi, curr_load, alloc_worklist);
+  updates_after_load_split(data_phi, curr_load, alloc_worklist, reducible_merges);
 
   return _igvn->transform(data_phi);
 }
@@ -863,7 +880,7 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 //                      \|/
 //                      Phi        # "Field" Phi
 //
-void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist) {
+void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist, Unique_Node_List &reducible_merges) {
   Node* ophi = curr_castpp->in(1);
   assert(ophi->is_Phi(), "Expected this to be a Phi node.");
 
@@ -911,7 +928,7 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
         // 'split_castpp_load_through_phi` method will add an
         // 'If-Then-Else-Region` around nullable bases and only load from them
         // when the input is not null.
-        Node* phi = split_castpp_load_through_phi(use, use_use, ophi->in(0), &bases_for_loads, alloc_worklist);
+        Node* phi = split_castpp_load_through_phi(use, use_use, ophi->in(0), &bases_for_loads, alloc_worklist, reducible_merges);
         _igvn->replace_node(use_use, phi);
 
         --j;
@@ -1019,7 +1036,7 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
 // the connection graph. Note that the changes in the CG below
 // won't affect the ES of objects since the new nodes have the
 // same status as the old ones.
-void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist) {
+void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist, Unique_Node_List &reducible_merges) {
   assert(data_phi != nullptr, "Output of split_through_phi is null.");
   assert(data_phi != previous_load, "Output of split_through_phi is same as input.");
   assert(data_phi->is_Phi(), "Output of split_through_phi isn't a Phi.");
@@ -1048,8 +1065,14 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
       // The base might not be something that we can create an unique
       // type for. If that's the case we are done with that input.
       PointsToNode* jobj_ptn = unique_java_object(base);
-      if (jobj_ptn == nullptr || !jobj_ptn->scalar_replaceable()) {
-        continue;
+      if (base->is_Phi()) {
+        if (!reducible_merges.member(base)) {
+          continue;
+        }
+      } else {
+        if (jobj_ptn == nullptr || !jobj_ptn->scalar_replaceable()) {
+          continue;
+        }
       }
 
       // Push to alloc_worklist since the base has an unique_type
@@ -1072,7 +1095,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
   }
 }
 
-void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist) {
+void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist, Unique_Node_List &reducible_merges) {
   // We'll pass this to 'split_through_phi' so that it'll do the split even
   // though the load doesn't have an unique instance type.
   bool ignore_missing_instance_id = true;
@@ -1088,7 +1111,7 @@ void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableAr
 
       // Takes care of updating CG and split_unique_types worklists due to cloned
       // AddP->Load.
-      updates_after_load_split(data_phi, previous_load, alloc_worklist);
+      updates_after_load_split(data_phi, previous_load, alloc_worklist, reducible_merges);
 
       _igvn->replace_node(previous_load, data_phi);
     }
@@ -1279,7 +1302,24 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
   return true;
 }
 
-void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist) {
+void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist, Unique_Node_List &reducible_merges) {
+  Unique_Node_List nested_phis;
+  // Collect nested phi nodes first because the graph will change while splitting the child/nested phi node.
+  for (DUIterator_Fast imax, i = ophi->fast_outs(imax); i < imax; i++) {
+    Node* use = ophi->fast_out(i);
+    if (use->is_Phi()) {
+      assert(use->_idx != ophi->_idx, "Unexpected selfloop Phi.");
+      nested_phis.push(use);
+    }
+  }
+
+  // Splitting through the child phi nodes ahead of parent phi nodes in nested scenarios is crucial.
+  // Ensure that the splits are applied to the load fields of child phi nodes before the parent phi nodes take place.
+  for (uint i = 0; i < nested_phis.size(); i++) {
+    Node* nested_phi = nested_phis.at(i);
+    reduce_phi(nested_phi->as_Phi(), alloc_worklist, memnode_worklist, reducible_merges);
+  }
+
   bool delay = _igvn->delay_transform();
   _igvn->set_delay_transform(true);
   _igvn->hash_delete(ophi);
@@ -1307,14 +1347,14 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
   // splitting CastPPs we make reference to the inputs of the Cmp that is used
   // by the If controlling the CastPP.
   for (uint i = 0; i < castpps.size(); i++) {
-    reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist, memnode_worklist);
+    reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist, memnode_worklist, reducible_merges);
   }
 
   for (uint i = 0; i < others.size(); i++) {
     Node* use = others.at(i);
 
     if (use->is_AddP()) {
-      reduce_phi_on_field_access(use, alloc_worklist);
+      reduce_phi_on_field_access(use, alloc_worklist, reducible_merges);
     } else if(use->is_Cmp()) {
       reduce_phi_on_cmp(use);
     }
@@ -4487,6 +4527,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         continue;
       }
       Node* addp_base = get_addp_base(n);
+      // Nested phi node, this Addp will go away when phi node is reduced
+      if (addp_base->is_Phi()) {
+        assert(reducible_merges.member(addp_base), "nestedphi node must be part of reduce merge list");
+        continue;
+      }
       JavaObjectNode* jobj = unique_java_object(addp_base);
       if (jobj == nullptr || jobj == phantom_obj) {
 #ifdef ASSERT
@@ -4512,7 +4557,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // finishes. For now we just try to split out the SR inputs of the merge.
       Node* parent = n->in(1);
       if (reducible_merges.member(n)) {
-        reduce_phi(n->as_Phi(), alloc_worklist, memnode_worklist);
+        reduce_phi(n->as_Phi(), alloc_worklist, memnode_worklist, reducible_merges);
 #ifdef ASSERT
         if (VerifyReduceAllocationMerges) {
           reduced_merges.push(n);
