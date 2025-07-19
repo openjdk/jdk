@@ -63,7 +63,6 @@
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -470,11 +469,6 @@ jint ShenandoahHeap::initialize() {
   _phase_timings = new ShenandoahPhaseTimings(max_workers());
   ShenandoahCodeRoots::initialize();
 
-  if (ShenandoahPacing) {
-    _pacer = new ShenandoahPacer(this);
-    _pacer->setup_for_idle();
-  }
-
   initialize_controller();
 
   if (ShenandoahUncommit) {
@@ -558,7 +552,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _free_set(nullptr),
-  _pacer(nullptr),
   _verifier(nullptr),
   _phase_timings(nullptr),
   _monitoring_support(nullptr),
@@ -716,8 +709,7 @@ void ShenandoahHeap::decrease_committed(size_t bytes) {
 //   require padding in front of the PLAB (a filler object). Because this padding
 //   is included in the region's used memory we include the padding in the usage
 //   accounting as waste.
-// * Mutator allocations are used to compute an allocation rate. They are also
-//   sent to the Pacer for those purposes.
+// * Mutator allocations are used to compute an allocation rate.
 // * There are three sources of waste:
 //  1. The padding used to align a PLAB on card size
 //  2. Region's free is less than minimum TLAB size and is retired
@@ -737,9 +729,6 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
 
     // only actual size counts toward usage for mutator allocations
     increase_used(generation, actual_bytes);
-
-    // notify pacer of both actual size and waste
-    notify_mutator_alloc_words(req.actual_size(), req.waste());
 
     if (wasted_bytes > 0 && ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
       increase_humongous_waste(generation,wasted_bytes);
@@ -772,15 +761,6 @@ void ShenandoahHeap::decrease_used(ShenandoahGeneration* generation, size_t byte
   generation->decrease_used(bytes);
   if (!generation->is_global()) {
     global_generation()->decrease_used(bytes);
-  }
-}
-
-void ShenandoahHeap::notify_mutator_alloc_words(size_t words, size_t waste) {
-  if (ShenandoahPacing) {
-    control_thread()->pacing_notify_alloc(words);
-    if (waste > 0) {
-      pacer()->claim_for_alloc<true>(waste);
-    }
   }
 }
 
@@ -965,15 +945,10 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
 }
 
 HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
-  intptr_t pacer_epoch = 0;
   bool in_new_region = false;
   HeapWord* result = nullptr;
 
   if (req.is_mutator_alloc()) {
-    if (ShenandoahPacing) {
-      pacer()->pace_for_alloc(req.size());
-      pacer_epoch = pacer()->epoch();
-    }
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
       result = allocate_memory_under_lock(req, in_new_region);
@@ -1048,15 +1023,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     assert (req.is_lab_alloc() || (requested == actual),
             "Only LAB allocations are elastic: %s, requested = %zu, actual = %zu",
             ShenandoahAllocRequest::alloc_type_to_string(req.type()), requested, actual);
-
-    if (req.is_mutator_alloc()) {
-      // If we requested more than we were granted, give the rest back to pacer.
-      // This only matters if we are in the same pacing epoch: do not try to unpace
-      // over the budget for the other phase.
-      if (ShenandoahPacing && (pacer_epoch > 0) && (requested > actual)) {
-        pacer()->unpace_for_alloc(pacer_epoch, requested - actual);
-      }
-    }
   }
 
   return result;
@@ -1205,10 +1171,6 @@ private:
     while ((r =_cs->claim_next()) != nullptr) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
-
-      if (ShenandoahPacing) {
-        _sh->pacer()->report_evac(r->used() >> LogHeapWordSize);
-      }
 
       if (_sh->check_cancelled_gc_and_yield(_concurrent)) {
         break;
@@ -2484,9 +2446,6 @@ private:
       assert (update_watermark >= r->bottom(), "sanity");
       if (r->is_active() && !r->is_cset()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-        if (ShenandoahPacing) {
-          _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
-        }
       }
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
         return;
