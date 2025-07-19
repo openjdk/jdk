@@ -159,6 +159,43 @@ class MutableBigInteger {
     }
 
     /**
+     * Returns a MutableBigInteger with a magnitude specified by
+     * the absolute value of {@code val * 2^pow}. Any fractional part is discarded.
+     *
+     * Assume val is in the finite double range.
+     */
+    static MutableBigInteger valueOf(double val, int pow) {
+        // Translate the double into exponent and significand, according
+        // to the formulae in JLS, Section 20.10.22.
+        long valBits = Double.doubleToRawLongBits(val);
+        int exponent = (int) ((valBits >> 52) & 0x7ffL);
+        long significand = (exponent == 0
+                ? (valBits & ((1L << 52) - 1)) << 1
+                : (valBits & ((1L << 52) - 1)) | (1L << 52));
+        exponent -= 1075;
+        // At this point, |val| == significand * 2^exponent
+
+        long shiftL = (long) exponent + pow;
+        int shift = (int) shiftL;
+        if (shift != shiftL) {
+            if (shiftL > 0L)
+                throw new ArithmeticException("BigInteger Overflow");
+
+            return new MutableBigInteger();
+        }
+
+        MutableBigInteger result;
+        if (shift > 0) {
+            result = new MutableBigInteger(significand);
+            result.leftShift(shift);
+        } else {
+            shift = -shift;
+            result = new MutableBigInteger(shift < Long.SIZE ? significand >> shift : 0L);
+        }
+        return result;
+    }
+
+    /**
      * Makes this number an {@code n}-int number all of whose bits are ones.
      * Used by Burnikel-Ziegler division.
      * @param n number of ints in the {@code value} array
@@ -1890,6 +1927,154 @@ class MutableBigInteger {
      */
     private boolean unsignedLongCompare(long one, long two) {
         return (one+Long.MIN_VALUE) > (two+Long.MIN_VALUE);
+    }
+
+    /**
+     * Calculate the integer {@code n}th root {@code floor(nthRoot(this, n))} and the remainder,
+     * where {@code nthRoot(., n)} denotes the mathematical {@code n}th root.
+     * The contents of {@code this} are <em>not</em> changed. The value of {@code this}
+     * is assumed to be non-negative and the root degree {@code n >= 3}.
+     *
+     * @implNote The implementation is based on the material in Richard P. Brent
+     * and Paul Zimmermann, <a href="https://maths-people.anu.edu.au/~brent/pd/mca-cup-0.5.9.pdf">
+     * Modern Computer Arithmetic</a>, 27-28.
+     *
+     * @return the integer {@code n}th root of {@code this} and the remainder
+     */
+    MutableBigInteger[] nthRootRem(int n) {
+        // Special cases.
+        if (this.isZero() || this.isOne())
+            return new MutableBigInteger[] { this, new MutableBigInteger() };
+
+        final int bitLength = (int) this.bitLength();
+        // if this < 2^n, result is unity
+        if (bitLength <= n) {
+            MutableBigInteger rem = new MutableBigInteger(this);
+            rem.subtract(ONE);
+            return new MutableBigInteger[] { new MutableBigInteger(1), rem };
+        }
+
+        MutableBigInteger r;
+        if (bitLength <= Long.SIZE) {
+            // Initial estimate is the root of the unsigned long value.
+            final long x = this.toLong();
+            // Use fp arithmetic to get an upper bound of the root
+            final double rad = Math.nextUp(x >= 0 ? x : x + 0x1p64);
+            final double approx = n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n));
+            long rLong = (long) Math.ceil(Math.nextUp(approx));
+
+            if (BigInteger.bitLengthForLong(rLong) * (n - 1) <= Long.SIZE) {
+                // Refine the estimate.
+                long r1 = rLong, rToN1;
+                do {
+                    rLong = r1;
+                    rToN1 = BigInteger.unsignedLongPow(rLong, n - 1);
+                    r1 = ((n - 1) * rLong + Long.divideUnsigned(x, rToN1)) / n;
+                } while (r1 < rLong); // Terminate when non-decreasing.
+
+                return new MutableBigInteger[] {
+                        new MutableBigInteger(rLong), new MutableBigInteger(x - rToN1 * rLong)
+                };
+            } else { // r^(n - 1) could overflow long range, use MutableBigInteger loop instead
+                r = new MutableBigInteger(rLong);
+            }
+        } else {
+            // Set up the initial estimate of the iteration.
+            // Determine a right shift that is a multiple of n into finite double range.
+            long shift;
+            double rad;
+            // Try to shift as many bits as possible
+            // without losing precision in double's representation
+            if (bitLength > Double.PRECISION) {
+                shift = bitLength - Double.PRECISION;
+                int shiftExcess = (int) (shift % n);
+
+                if (bitLength - (shift - shiftExcess) <= Double.MAX_EXPONENT) {
+                    shift -= shiftExcess; // Adjust shift to a multiple of n
+                    // Shift the value into finite double range
+                    rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
+                } else { // this >> (shift - shiftExcess) could exceed finite double range, must lose precision
+                    // Shift the value into finite double range
+                    rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
+                    // Complete the shift to a multiple of n,
+                    // avoiding to lose more bits than necessary.
+                    if (shiftExcess != 0) {
+                        int shiftLack = n - shiftExcess;
+                        shift += shiftLack; // shift is long, no overflow
+                        rad /= Double.parseDouble("0x1p" + shiftLack);
+                    }
+                }
+            } else {
+                shift = 0L;
+                rad = this.toBigInteger().doubleValue();
+            }
+
+            // Use the root of the shifted value as an estimate.
+            rad = Math.nextUp(rad);
+            final double approx = Math.nextUp(n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n)));
+            if (shift == 0L) {
+                r = valueOf(approx, 0);
+            } else {
+                // Allocate sufficient space to store the final root
+                r = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
+                int approxExp = Math.getExponent(approx);
+                if (approxExp == Double.MIN_EXPONENT - 1) // Handle subnormals
+                    approxExp = Double.MIN_EXPONENT;
+
+                // Avoid to lose fraction bits
+                if (approxExp >= Double.PRECISION - 1) {
+                    r.copyValue(valueOf(approx, 0));
+                } else {
+                    int pow = Math.min((Double.PRECISION - 1) - approxExp, (int) (shift / n));
+                    shift -= (long) pow * n;
+                    r.copyValue(valueOf(approx, pow));
+                }
+
+                // Refine the estimate, avoiding to compute non-significant bits
+                final int trailingZeros = this.getLowestSetBit();
+                int rootShift = (int) (shift / n);
+                for (int rootBits = (int) r.bitLength(); rootShift >= rootBits; rootBits <<= 1) {
+                    r.leftShift(rootBits);
+                    rootShift -= rootBits;
+
+                    // Remove useless bits from the radicand
+                    MutableBigInteger x = new MutableBigInteger(this);
+                    int removedBits = rootShift * n;
+                    x.rightShift(removedBits);
+                    if (removedBits > trailingZeros)
+                        x.add(ONE); // round up to ensure r is an upper bound of the root
+
+                    newtonRecurrenceNthRoot(x, r, n, r.toBigInteger().pow(n - 1));
+                }
+
+                // Shift the approximate root back into the original range.
+                r.safeLeftShift(rootShift);
+            }
+        }
+
+        // Refine the estimate.
+        do {
+            BigInteger rBig = r.toBigInteger();
+            BigInteger rToN1 = rBig.pow(n - 1);
+            MutableBigInteger rem = new MutableBigInteger(rToN1.multiply(rBig).mag);
+            if (rem.subtract(this) <= 0)
+                return new MutableBigInteger[] { r, rem };
+
+            newtonRecurrenceNthRoot(this, r, n, rToN1);
+        } while (true);
+    }
+
+    /**
+     * Computes {@code ((n-1)*r + x/rToN1)/n} and places the result in {@code r}.
+     */
+    private static void newtonRecurrenceNthRoot(
+            MutableBigInteger x, MutableBigInteger r, int n, BigInteger rToN1) {
+        MutableBigInteger dividend = new MutableBigInteger();
+        r.mul(n - 1, dividend);
+        MutableBigInteger xDivRToN1 = new MutableBigInteger();
+        x.divide(new MutableBigInteger(rToN1.mag), xDivRToN1, false);
+        dividend.add(xDivRToN1);
+        dividend.divideOneWord(n, r);
     }
 
     /**
