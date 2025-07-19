@@ -82,8 +82,6 @@ compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
-compiler/debug/TestStressBailout.java 8361752 generic-all
-
 #############################################################################
 
 # :hotspot_gc
