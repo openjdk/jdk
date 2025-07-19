@@ -87,9 +87,9 @@ TEST_VM(NMTNumbers, totals) {
 
   void* p[NUM_ALLOCS];
   for (int i = 0; i < NUM_ALLOCS; i ++) {
-    // spread over categories
-    int category = i % (mt_number_of_tags - 1);
-    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemTag)category);
+    // spread over mem-tags
+    int mtag = i % (mt_number_of_tags - 1);
+    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemTag)mtag);
   }
 
   const totals_t t2 = get_totals();
