@@ -66,6 +66,11 @@ void ParallelArguments::initialize() {
     }
   }
 
+  // True in product build, since tests using debug build often stress GC
+  if (FLAG_IS_DEFAULT(UseGCOverheadLimit)) {
+    FLAG_SET_DEFAULT(UseGCOverheadLimit, trueInProduct);
+  }
+
   if (InitialSurvivorRatio < MinSurvivorRatio) {
     if (FLAG_IS_CMDLINE(InitialSurvivorRatio)) {
       if (FLAG_IS_CMDLINE(MinSurvivorRatio)) {
