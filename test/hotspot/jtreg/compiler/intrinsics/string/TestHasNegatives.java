@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  * @build java.base/java.lang.Helper
  * @run main compiler.intrinsics.string.TestHasNegatives
  */
+
 /*
  * @test
  * @bug 8054307 8318509
@@ -46,11 +47,27 @@
  * @run main/othervm/timeout=1200 -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 compiler.intrinsics.string.TestHasNegatives
  */
 
+/*
+ * @test
+ * @summary Verify `StringCoding::hasNegatives` intrinsic Java wrapper checks
+ *          by enabling the ones in the compiler intrinsic using
+ *          `-XX:+VerifyIntrinsicChecks`
+ * @key randomness
+ * @library /compiler/patches
+ * @library /test/lib
+ * @comment `vm.debug == true` is required since `VerifyIntrinsicChecks` is a
+ *          development flag
+ * @requires vm.debug == true
+ * @build java.base/java.lang.Helper
+ * @run main/othervm
+ *      -XX:+VerifyIntrinsicChecks
+ *      compiler.intrinsics.string.TestHasNegatives
+ */
+
 package compiler.intrinsics.string;
 
 import java.lang.Helper;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import jdk.test.lib.Utils;
 
