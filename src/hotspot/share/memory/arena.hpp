@@ -104,6 +104,7 @@ public:
   FN(states,      C2 Matcher States Arena) \
   FN(reglive,     C2 Register Allocation Live Arenas) \
   FN(regsplit,    C2 Register Allocation Split Arena) \
+  FN(regmask,     C2 Short-Lived Register Mask Arena) \
   FN(superword,   C2 SuperWord Arenas) \
   FN(cienv,       CI Env Arena) \
   FN(ha,          Handle area) \
