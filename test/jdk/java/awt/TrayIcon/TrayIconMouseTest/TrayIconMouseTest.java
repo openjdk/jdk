@@ -26,6 +26,7 @@ import jtreg.SkippedException;
 
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.InputEvent;
@@ -49,7 +50,6 @@ import java.awt.image.BufferedImage;
  *          java.desktop/java.awt.Helper
  *          jdk.test.lib.Platform
  *          jtreg.SkippedException
- *          ExtendedRobot
  *          SystemTrayIconHelper
  * @run main TrayIconMouseTest
  */
@@ -57,8 +57,7 @@ import java.awt.image.BufferedImage;
 public class TrayIconMouseTest {
 
     TrayIcon icon;
-    ExtendedRobot robot;
-
+    Robot robot;
     volatile boolean actionPerformed = false;
     final Object actionLock = new Object();
 
@@ -99,7 +98,7 @@ public class TrayIconMouseTest {
     }
 
     TrayIconMouseTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
     }
 

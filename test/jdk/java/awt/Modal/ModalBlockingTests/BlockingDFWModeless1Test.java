@@ -32,9 +32,8 @@ import java.awt.Dialog;
  *          and respond to key events. Check also if the other windows
  *          receive mouse and key events.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame

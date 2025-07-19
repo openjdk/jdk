@@ -29,7 +29,7 @@
  * @summary JPopupMenu is overlapped by a Dock on Mac OS X
  * @library /test/lib
  *          /lib/client
- * @build ExtendedRobot jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform
  * @run main bug7154841
  */
 
@@ -75,7 +75,7 @@ public class bug7154841 {
         }
 
         try {
-            ExtendedRobot r = new ExtendedRobot();
+            Robot r = new Robot();
             r.setAutoDelay(100);
             r.setAutoWaitForIdle(true);
             r.mouseMove(0, 0);
