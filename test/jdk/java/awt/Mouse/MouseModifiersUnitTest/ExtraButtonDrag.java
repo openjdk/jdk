@@ -26,14 +26,24 @@
   @key headful
   @bug 6315717
   @summary verifies that drag events are coming for every button if the property is set to true
-  @author Andrei Dmitriev : area=awt.mouse
   @run main ExtraButtonDrag
  */
 
 //events from standard should also come
 
-import java.awt.*;
-import java.awt.event.*;
+
+import java.awt.AWTException;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.lang.reflect.InvocationTargetException;
+
 
 public class ExtraButtonDrag extends Frame {
     static String tk = Toolkit.getDefaultToolkit().getClass().getName();
@@ -43,13 +53,14 @@ public class ExtraButtonDrag extends Frame {
     static int [] buttonsClicked;
     volatile static boolean dragged = false;
     volatile static boolean moved = false;
+    private static Frame frame;
 
     public ExtraButtonDrag(){
         super("ExtraButtonDrag");
     }
 
-    public static void main(String []s){
-        Frame frame = new ExtraButtonDrag();
+    public static void main(String []s) throws InvocationTargetException, InterruptedException, AWTException{
+        frame = new ExtraButtonDrag();
 
         MouseAdapter ma = new MouseAdapter() {
                 public void mouseDragged(MouseEvent e) {
@@ -84,6 +95,7 @@ public class ExtraButtonDrag extends Frame {
 
         try {
             robot = new Robot();
+            robot.waitForIdle();
             robot.delay(1000);
             Point centerFrame = new Point(frame.getLocationOnScreen().x + frame.getWidth()/2, frame.getLocationOnScreen().y + frame.getHeight()/2);
             Point outboundsFrame = new Point(frame.getLocationOnScreen().x + frame.getWidth()*3/2, frame.getLocationOnScreen().y + frame.getHeight()/2);
@@ -120,8 +132,9 @@ public class ExtraButtonDrag extends Frame {
                     }
                 }
             }
-        } catch (Exception e){
-            throw new RuntimeException("", e);
+        }finally
+        {
+            EventQueue.invokeAndWait(ExtraButtonDrag::disposeFrame);
         }
     }
 
@@ -149,6 +162,12 @@ public class ExtraButtonDrag extends Frame {
             robot.delay(5);
         }
         robot.mouseRelease(button);
+    }
+    static void disposeFrame() {
+        if (frame != null) {
+            frame.dispose();
+            frame = null;
+        }
     }
 
 }
