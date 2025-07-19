@@ -1109,6 +1109,10 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   // We cannot call Exceptions::_throw(...) here because we cannot block
   set_pending_exception(java_throwable, __FILE__, __LINE__);
 
+  oop vt_oop = vthread();
+  if (vt_oop == nullptr || !vt_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+    java_lang_Thread::set_interrupted(threadObj(), false);
+  }
   clear_scopedValueBindings();
 
   LogTarget(Info, exceptions) lt;
