@@ -1082,11 +1082,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
             if (TKit.isOSX()) {
                 var libjliPath = cmd.appRuntimeDirectory().resolve("Contents/MacOS/libjli.dylib");
-                if (cmd.isRuntime()) {
-                    TKit.assertPathExists(libjliPath, false);
-                } else {
-                    TKit.assertFileExists(libjliPath);
-                }
+                TKit.assertFileExists(libjliPath);
             }
         }),
         MAC_BUNDLE_STRUCTURE(cmd -> {

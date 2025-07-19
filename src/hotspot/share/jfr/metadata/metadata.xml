@@ -948,22 +948,24 @@
     <Field type="long" contentType="bytes" name="freeSize" label="Free Size" description="Free swap space" />
   </Event>
 
-  <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Method Profiling Sample" description="Snapshot of a threads state"
+  <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Java Execution Sample"
+         description="Snapshot of a thread executing Java code. Threads that are not executing Java code, including those waiting or executing native code, are not included."
     period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="ThreadState" name="state" label="Thread State" />
   </Event>
 
-  <Event name="NativeMethodSample" category="Java Virtual Machine, Profiling" label="Method Profiling Sample Native" description="Snapshot of a threads state when in native"
+  <Event name="NativeMethodSample" category="Java Virtual Machine, Profiling" label="Native Sample"
+         description="Snapshot of a thread in native code, executing or waiting. Threads that are executing Java code are not included."
     period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="ThreadState" name="state" label="Thread State" />
   </Event>
 
-  <Event name="CPUTimeSample" category="Java Virtual Machine, Profiling" label="CPU Time Method Sample"
-    description="Snapshot of a threads state from the CPU time sampler. The throttle can be either an upper bound for the event emission rate, e.g. 100/s, or the cpu-time period, e.g. 10ms, with s, ms, us and ns supported as time units."
+  <Event name="CPUTimeSample" category="Java Virtual Machine, Profiling" label="CPU Time Sample"
+    description="Snapshot of a threads state from the CPU time sampler, both threads executing native and Java code are included. The throttle setting can be either an upper bound for the event emission rate, e.g. 100/s, or the cpu-time period, e.g. 10ms, with s, ms, us and ns supported as time units."
     throttle="true" thread="false" experimental="true" startTime="false">
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="Thread" name="eventThread" label="Thread" />
@@ -972,7 +974,7 @@
     <Field type="boolean" name="biased" label="Biased" description="The sample is safepoint-biased" />
   </Event>
 
-  <Event name="CPUTimeSamplesLost" category="Java Virtual Machine, Profiling" label="CPU Time Method Profiling Lost Samples" description="Records that the CPU time sampler lost samples"
+  <Event name="CPUTimeSamplesLost" category="Java Virtual Machine, Profiling" label="CPU Time Samples Lost" description="Records that the CPU time sampler lost samples"
     thread="false" stackTrace="false" startTime="false" experimental="true">
     <Field type="int" name="lostSamples" label="Lost Samples" />
     <Field type="Thread" name="eventThread" label="Thread" />

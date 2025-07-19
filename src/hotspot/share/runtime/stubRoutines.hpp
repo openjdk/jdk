@@ -31,7 +31,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
-#include "runtime/stubDeclarations.hpp"
+#include "runtime/stubInfo.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -151,51 +151,6 @@ class UnsafeMemoryAccessMark : public StackObj {
   ~UnsafeMemoryAccessMark();
 };
 
-// declare stubgen blob id enum
-
-#define BLOB_ENUM_DECLARE(blob_name) \
-  STUB_ID_NAME(blob_name),
-
-enum StubGenBlobId : int {
-  NO_BLOBID = -1,
-  STUBGEN_BLOBS_DO(BLOB_ENUM_DECLARE)
-  NUM_BLOBIDS
-};
-
-#undef BLOB_ENUM_DECLARE
-
-// declare blob local stub id enums
-
-#define BLOB_LOCAL_ENUM_START(blob_name)        \
-  enum StubGenStubId_ ## blob_name {            \
-    NO_STUBID_ ## blob_name = -1,
-
-#define BLOB_LOCAL_ENUM_END(blob_name)   \
-    NUM_STUBIDS_ ## blob_name            \
-  };
-
-#define BLOB_LOCAL_STUB_ENUM_DECLARE(blob_name, stub_name) \
-  blob_name ## _ ## stub_name ## _id,
-
-STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_STUB_ENUM_DECLARE)
-
-#undef BLOB_LOCAL_ENUM_START
-#undef BLOB_LOCAL_ENUM_END
-#undef BLOB_LOCAL_STUB_ENUM_DECLARE
-
-// declare global stub id enum
-
-#define STUB_ENUM_DECLARE(blob_name, stub_name) \
-  STUB_ID_NAME(stub_name) ,
-
-enum StubGenStubId : int {
-  NO_STUBID = -1,
-  STUBGEN_STUBS_DO(STUB_ENUM_DECLARE)
-  NUM_STUBIDS
-};
-
-#undef STUB_ENUM_DECLARE
-
 class StubRoutines: AllStatic {
 
 public:
@@ -208,17 +163,8 @@ public:
 
 #include CPU_HEADER(stubRoutines)
 
-// declare blob and stub name storage and associated lookup methods
-
-private:
-  static bool _inited_names;
-  static const char* _blob_names[StubGenBlobId::NUM_BLOBIDS];
-  static const char* _stub_names[StubGenStubId::NUM_STUBIDS];
-
-public:
-  static bool init_names();
-  static const char* get_blob_name(StubGenBlobId id);
-  static const char* get_stub_name(StubGenStubId id);
+  static const char* get_blob_name(BlobId id);
+  static const char* get_stub_name(StubId id);
 
 // declare blob fields
 
@@ -329,8 +275,7 @@ public:
 #undef DEFINE_BLOB_GETTER
 
 #ifdef ASSERT
-  // provide a translation from stub id to its associated blob id
-  static StubGenBlobId stub_to_blob(StubGenStubId stubId);
+  static BlobId stub_to_blob(StubId id);
 #endif
 
   // Debugging
