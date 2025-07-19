@@ -52,6 +52,7 @@ compiler/loopopts/superword/TestDependencyOffsets.java                      0000
 
 
 com/sun/jdi/EATests.java                                                    0000000 generic-all
+com/sun/jdi/ThreadMemoryLeakTest.java                                       0000000 generic-all
 
 # weak referenced are not cleared
 java/lang/WeakPairMap/Driver.java                                           0000000 generic-all

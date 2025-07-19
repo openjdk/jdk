@@ -269,7 +269,7 @@ stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   debug("In stack_trace: %p", thread);
   err =jvmti->GetStackTrace(thread, 0, 5, frames, &count);
-  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE || err == JVMTI_ERROR_WRONG_PHASE) {
     return;
   }
   check_jvmti_error(err, "GetStackTrace");
@@ -280,9 +280,15 @@ stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
     char *method_name = nullptr;
     jint method_modifiers = 0;
     err =jvmti->GetMethodName(frames[frame_index].method, &method_name, nullptr, nullptr);
+    if (err == JVMTI_ERROR_WRONG_PHASE) {
+      return;
+    }
     check_jvmti_status(jni, err, "GetMethodName");
 
     err =jvmti->GetMethodModifiers(frames[frame_index].method, &method_modifiers);
+    if (err == JVMTI_ERROR_WRONG_PHASE) {
+      return;
+    }
     check_jvmti_status(jni, err, "GetMethodModifiers");
 
     debug("Inspecting method: %s, %d", method_name, method_modifiers);
@@ -320,11 +326,17 @@ all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
     jvmtiError err = JVMTI_ERROR_NONE;
     debug("Inspect:  Starting cycle...");
     err =jvmti->GetAllThreads(&threads_count, &threads);
+    if (err == JVMTI_ERROR_WRONG_PHASE) {
+      return;
+    }
     check_jvmti_status(jni, err, "GetAllThreads");
     for (int t = 0; t < (int)threads_count; t++) {
       jvmtiThreadInfo info;
       debug("Inspecting thread num %d at addr [%p]",t, threads[t]);
       err = jvmti->GetThreadInfo(threads[t], &info);
+      if (err == JVMTI_ERROR_WRONG_PHASE) {
+        return;
+      }
       check_jvmti_status(jni, err, "GetThreadInfo");
       // Skip agent thread itself and JFR threads to avoid potential deadlocks
       if (strstr(info.name, JVMTI_AGENT_NAME) == nullptr
@@ -352,7 +364,9 @@ all_threads_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni) {
 
           debug("Inspect: Trying to resume thread %s", info.name);
           err =jvmti->ResumeThread(thread);
-          // Shouldn't be in DEAD phase here.
+          if (err == JVMTI_ERROR_WRONG_PHASE) {
+            return;
+          }
           check_jvmti_status(jni, err, "ResumeThread");
           debug("Inspect:  Resumed thread %s", info.name);
         }
