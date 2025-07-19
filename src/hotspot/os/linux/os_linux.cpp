@@ -2315,12 +2315,12 @@ void os::Linux::print_system_memory_info(outputStream* st) {
 
 bool os::Linux::query_process_info(os::Linux::process_info_t* info) {
   FILE* f = os::fopen("/proc/self/status", "r");
-  const int num_values = sizeof(os::Linux::process_info_t) / sizeof(size_t);
-  int num_found = 0;
   char buf[256];
   info->vmsize = info->vmpeak = info->vmrss = info->vmhwm = info->vmswap =
       info->rssanon = info->rssfile = info->rssshmem = info->vmpte = -1;
   info->threads = info->fdsize = -1;
+  constexpr int num_values = 11;
+  int num_found = 0;
   if (f != nullptr) {
     while (::fgets(buf, sizeof(buf), f) != nullptr && num_found < num_values) {
       if ( (info->vmsize == -1    && sscanf(buf, "VmSize: %zd kB", &info->vmsize) == 1) ||
@@ -2332,8 +2332,8 @@ bool os::Linux::query_process_info(os::Linux::process_info_t* info) {
            (info->rssfile == -1   && sscanf(buf, "RssFile: %zd kB", &info->rssfile) == 1) || // Needs Linux 4.5
            (info->rssshmem == -1  && sscanf(buf, "RssShmem: %zd kB", &info->rssshmem) == 1) || // Needs Linux 4.5
            (info->vmpte == -1     && sscanf(buf, "VmPTE: %zd kB", &info->vmpte) == 1) || // Needs Linux 2.6.10
-           (info->threads == -1   && sscanf(buf, "Threads: %d", &info->threads) == 1) ||
-           (info->fdsize == -1    && sscanf(buf, "FDSize: %d", &info->fdsize) == 1)
+           (info->fdsize == -1    && sscanf(buf, "FDSize: %d", &info->fdsize) == 1) ||
+           (info->threads == -1   && sscanf(buf, "Threads: %d", &info->threads) == 1)
            )
       {
         num_found ++;
@@ -5313,6 +5313,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
 }
 
 #ifdef __GLIBC__
+static unsigned g_num_trims = 0;
 void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
   if (g_mallinfo2) {
     new_mallinfo mi = g_mallinfo2();
@@ -5326,6 +5327,7 @@ void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
     out->uordblks = mi.uordblks;
     out->fordblks = mi.fordblks;
     out->keepcost =  mi.keepcost;
+    out->num_trims = g_num_trims;
     *might_have_wrapped = false;
   } else if (g_mallinfo) {
     old_mallinfo mi = g_mallinfo();
@@ -5340,6 +5342,7 @@ void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
     out->uordblks = (size_t)(unsigned)mi.uordblks;
     out->fordblks = (size_t)(unsigned)mi.fordblks;
     out->keepcost = (size_t)(unsigned)mi.keepcost;
+    out->num_trims = g_num_trims;
     *might_have_wrapped = NOT_LP64(false) LP64_ONLY(true);
   } else {
     // We should have either mallinfo or mallinfo2
@@ -5377,6 +5380,8 @@ bool os::trim_native_heap(os::size_change_t* rss_change) {
       rss_change->after = rss_change->before = SIZE_MAX;
     }
   }
+
+  g_num_trims ++;
 
   return true;
 #else

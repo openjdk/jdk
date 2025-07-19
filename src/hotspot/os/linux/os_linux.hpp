@@ -456,6 +456,7 @@ class os::Linux {
     size_t uordblks;
     size_t fordblks;
     size_t keepcost;
+    unsigned num_trims; // Number of times the hotspot trimmed by calling os::trim_native_heap.
   };
   static void get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped);
 
