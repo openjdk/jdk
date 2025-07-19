@@ -54,23 +54,23 @@ public:
 
   jint get_immediate() const { return int_at(imm_offset); }
   void set_immediate(jint imm, int bit_mask) {
-    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+    assert((imm & ~bit_mask) == 0, "trying to set bits outside the mask");
 
-    uint64_t *instr = static_cast<uint64_t*>(instruction_address());
+    uint64_t *instr = (uint64_t*)instruction_address();
     assert(instruction_size >= sizeof(instr), "must be");
     union {
-      char buf[instruction_size];
-      uint64_t instr;
+      unsigned char buf[instruction_size];
+      uint64_t u64;
     } new_mov_instr, old_mov_instr;
     while (true) {
-      new_mov_instr.instr = old_mov_instr.instr = Atomic::load(instr);
-      int old_value = nativeNMethodCmpBarrier_at(&old_mov_instr.buf)->get_immediate();
+      new_mov_instr.u64 = old_mov_instr.u64 = Atomic::load(instr);
+      int old_value = nativeNMethodCmpBarrier_at(old_mov_instr.buf)->get_immediate();
       // Only bits in the mask are changed
-      int new_value = value | (old_value & ~bit_mask);
-      nativeNMethodCmpBarrier_at(&new_mov_instr.buf)->set_int_at(imm_offset, new_value);
+      int new_value = imm | (old_value & ~bit_mask);
+      nativeNMethodCmpBarrier_at(new_mov_instr.buf)->set_int_at(imm_offset, new_value);
       // Swap in the new value
-      int v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_release);
-      if (v == old) break;
+      uint64_t v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_release);
+      if (v == old_mov_instr.u64) break;
     }
   }
   bool check_barrier(err_msg& msg) const;
