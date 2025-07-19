@@ -39,10 +39,10 @@ public class TestUnorderedReductionPartialVectorization {
     static final int ITER  = 10;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
-        TestFramework.runWithFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
-        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
-        TestFramework.runWithFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
     }
 
     @Run(test = {"test1"})
