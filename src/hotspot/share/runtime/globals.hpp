@@ -873,10 +873,6 @@ const int ObjectAlignmentInBytes = 8;
           "and can affect tests that expect specific methods to be EMCP. "  \
           "This option should be used with caution.")                       \
                                                                             \
-  product(bool, AllowRedefinitionToAddDeleteMethods, false,                 \
-          "(Deprecated) Allow redefinition to add and delete private "      \
-          "static or final methods for compatibility with old releases")    \
-                                                                            \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
