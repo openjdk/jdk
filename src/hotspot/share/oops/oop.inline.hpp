@@ -141,6 +141,17 @@ Klass* oopDesc::klass_without_asserts() const {
   }
 }
 
+narrowKlass oopDesc::narrow_klass() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return mark().narrow_klass();
+    case ObjLayout::Compressed:
+      return _metadata._compressed_klass;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   assert(!UseCompactObjectHeaders, "don't set Klass* with compact headers");
