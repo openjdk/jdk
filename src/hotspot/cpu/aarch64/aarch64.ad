@@ -2362,17 +2362,34 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  int max_size = max_vector_size(bt);
-  // Limit the min vector size to 8 bytes.
-  int size = 8 / type2aelembytes(bt);
-  if (bt == T_BYTE) {
-    // To support vector api shuffle/rearrange.
-    size = 4;
-  } else if (bt == T_BOOLEAN) {
-    // To support vector api load/store mask.
-    size = 2;
+  // Usually, the shortest vector length supported by AArch64 ISA and
+  // Vector API species is 64 bits. However, we allow 32-bit or 16-bit
+  // vectors in a few special cases.
+  int size;
+  switch(bt) {
+    case T_BOOLEAN:
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
+      size = 2;
+      break;
+    case T_BYTE:
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
+      size = 4;
+      break;
+    case T_SHORT:
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
+      size = 2;
+      break;
+    default:
+      // Limit the min vector length to 64-bit.
+      size = 8 / type2aelembytes(bt);
+      // The number of elements in a vector should be at least 2.
+      size = MAX2(size, 2);
   }
-  if (size < 2) size = 2;
+
+  int max_size = max_vector_size(bt);
   return MIN2(size, max_size);
 }
 
