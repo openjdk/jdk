@@ -1080,6 +1080,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                         logger.fine("response code received " + responseCode);
                     }
+                    if (sa.length > 2)
+                        responseMessage = String.join(" ", Arrays.copyOfRange(sa, 2, sa.length));
+                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                        logger.fine("response message received " + responseMessage);
+                    }
                 } catch (NumberFormatException numberFormatException) {
                 }
             }
