@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CharBufferAsCharSequenceTest {
 
     private static final Random RAND = RandomFactory.getRandom();
-    private static final int SIZE = 128 + RAND.nextInt(1024);
+    private static final int SIZE = RAND.nextInt(128, 1153);
 
     private static char[] randomChars() {
         char[] chars = new char[SIZE];
@@ -62,8 +62,8 @@ public class CharBufferAsCharSequenceTest {
 
     private static CharBuffer randomizeRange(CharBuffer cb) {
         int mid = cb.capacity() >>> 1;
-        int start = RAND.nextInt(mid + 1); // from 0 to mid
-        int end = mid + RAND.nextInt(cb.capacity() - mid + 1); // from mid to capacity
+        int start = RAND.nextInt(mid - 3); // from 0 to mid
+        int end = RAND.nextInt(mid + 3, cb.capacity()); // from mid to capacity
         cb.position(start);
         cb.limit(end);
         return cb;
