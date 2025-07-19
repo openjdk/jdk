@@ -184,7 +184,7 @@ public enum KnownOIDs {
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*
     PKCS1("1.2.840.113549.1.1", "RSA", false), // RSA KeyPairGenerator and KeyFactory
-    RSA("1.2.840.113549.1.1.1"), // RSA encryption
+    RSA("1.2.840.113549.1.1.1", "RSA", "RSA/ECB/PKCS1Padding"), // RSA encryption
 
     MD2withRSA("1.2.840.113549.1.1.2"),
     MD5withRSA("1.2.840.113549.1.1.4"),

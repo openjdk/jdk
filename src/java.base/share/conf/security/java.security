@@ -772,6 +772,30 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
 
 #
+# Algorithm restrictions for Java Crypto API services
+# The syntax of the disabled services string is described as follows:
+#       "DisabledService {, DisabledService}"
+#
+#   DisabledService:
+#       Service.AlgorithmName
+#
+# Service:  (one of the following, more service may be added later)
+#     Cipher | KeyStore | MessageDigest | Signature
+#
+#   AlgorithmName:
+#       (see below)
+#
+# The "AlgorithmName" is the standard algorithm name of the disabled
+# service. See the Java Security Standard Algorithm Names Specification
+# for information about Standard Algorithm Names.  Matching is
+# performed using a case-insensitive exact matching rule. For Cipher service,
+# its algorithm is the transformation string.
+#
+# Note: Entries with unsupported services will be ignored
+#
+#jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
+
+#
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
 # processing in JSSE implementation.
 #
