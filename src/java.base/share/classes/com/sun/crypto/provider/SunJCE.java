@@ -30,6 +30,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
+import sun.security.util.SecurityProperties;
 import static sun.security.util.SecurityProviderConstants.*;
 
 /*
@@ -136,9 +137,12 @@ public final class SunJCE extends Provider {
     void putEntries() {
         // reuse attribute map and reset before each reuse
         HashMap<String, String> attrs = new HashMap<>(3);
-        attrs.put("SupportedModes", "ECB");
-        attrs.put("SupportedPaddings", "NOPADDING|PKCS1PADDING|OAEPPADDING"
-                + "|OAEPWITHMD5ANDMGF1PADDING"
+        attrs.put("SupportedKeyClasses",
+                "java.security.interfaces.RSAPublicKey" +
+                "|java.security.interfaces.RSAPrivateKey");
+
+        String supportedPaddingsStr =
+                "NOPADDING|OAEPPADDING|OAEPWITHMD5ANDMGF1PADDING"
                 + "|OAEPWITHSHA1ANDMGF1PADDING"
                 + "|OAEPWITHSHA-1ANDMGF1PADDING"
                 + "|OAEPWITHSHA-224ANDMGF1PADDING"
@@ -146,12 +150,19 @@ public final class SunJCE extends Provider {
                 + "|OAEPWITHSHA-384ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512/224ANDMGF1PADDING"
-                + "|OAEPWITHSHA-512/256ANDMGF1PADDING");
-        attrs.put("SupportedKeyClasses",
-                "java.security.interfaces.RSAPublicKey" +
-                "|java.security.interfaces.RSAPrivateKey");
-        ps("Cipher", "RSA",
+                + "|OAEPWITHSHA-512/256ANDMGF1PADDING";
+
+        if (SecurityProperties.getPKCS1PaddingSecurityProp()) {
+            attrs.put("SupportedModes", "ECB");
+            supportedPaddingsStr += "|PKCS1PADDING";
+            attrs.put("SupportedPaddings", supportedPaddingsStr);
+            ps("Cipher", "RSA",
                 "com.sun.crypto.provider.RSACipher", null, attrs);
+        } else {
+            attrs.put("SupportedPaddings", supportedPaddingsStr);
+            ps("Cipher", "RSA/ECB",
+                "com.sun.crypto.provider.RSACipher", null, attrs);
+        }
 
         // common block cipher modes, pads
         final String BLOCK_MODES = "ECB|CBC|PCBC|CTR|CTS|CFB|OFB" +

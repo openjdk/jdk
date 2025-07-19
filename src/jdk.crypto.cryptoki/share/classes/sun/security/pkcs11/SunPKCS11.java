@@ -48,6 +48,7 @@ import jdk.internal.misc.InnocuousThread;
 import sun.security.rsa.PSSParameters;
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
+import sun.security.util.SecurityProperties;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 import static sun.security.util.SecurityProviderConstants.getAliases;
 
@@ -67,6 +68,8 @@ public final class SunPKCS11 extends AuthProvider {
 
     @Serial
     private static final long serialVersionUID = -1354835039035306505L;
+
+    private static final Descriptor RSA_CIPHER_DESC;
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
     // the PKCS11 object through which we make the native calls
@@ -846,9 +849,12 @@ public final class SunPKCS11 extends AuthProvider {
         dA(CIP, "ChaCha20-Poly1305",            P11AEADCipher,
                 m(CKM_CHACHA20_POLY1305));
 
-        d(CIP, "RSA/ECB/PKCS1Padding",          P11RSACipher,
+        RSA_CIPHER_DESC = new Descriptor(
+                CIP, "RSA/ECB/PKCS1Padding",  P11RSACipher,
                 List.of("RSA"),
                 m(CKM_RSA_PKCS));
+        register(RSA_CIPHER_DESC);
+
         d(CIP, "RSA/ECB/NoPadding",             P11RSACipher,
                 m(CKM_RSA_X_509));
 
@@ -1213,6 +1219,7 @@ public final class SunPKCS11 extends AuthProvider {
                 ("Token info for token in slot " + slotID + ":");
             System.out.println(token.tokenInfo);
         }
+
         Set<Long> brokenMechanisms = Set.of();
         if (P11Util.isNSS(token)) {
             CK_VERSION nssVersion = slotInfo.hardwareVersion;
@@ -1342,6 +1349,10 @@ public final class SunPKCS11 extends AuthProvider {
                     }
                 }
             }
+        }
+
+        if (!SecurityProperties.getPKCS1PaddingSecurityProp()) {
+            supportedAlgs.remove(RSA_CIPHER_DESC);
         }
 
         // register algorithms in provider
