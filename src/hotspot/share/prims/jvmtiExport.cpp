@@ -865,47 +865,6 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   return JVMTI_ERROR_NONE;
 }
 
-// Convert an oop to a JavaThread found on the specified ThreadsList.
-// The ThreadsListHandle in the caller "protects" the returned
-// JavaThread *.
-//
-// On success, *jt_pp is set to the converted JavaThread * and
-// JVMTI_ERROR_NONE is returned. On error, returns various
-// JVMTI_ERROR_* values.
-//
-jvmtiError
-JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
-                                  JavaThread ** jt_pp) {
-  assert(t_list != nullptr, "must have a ThreadsList");
-  assert(thread_oop != nullptr, "must have an oop");
-  assert(jt_pp != nullptr, "must have a return JavaThread pointer");
-
-  if (!thread_oop->is_a(vmClasses::Thread_klass())) {
-    // The oop is not a java.lang.Thread.
-    return JVMTI_ERROR_INVALID_THREAD;
-  }
-  // Looks like a java.lang.Thread oop at this point.
-
-  JavaThread * java_thread = java_lang_Thread::thread(thread_oop);
-  if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread * so it has
-    // not yet run or it has died.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-  // Looks like a live JavaThread at this point.
-
-  if (!t_list->includes(java_thread)) {
-    // Not on the JavaThreads list so it is not alive.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-
-  // Return a live JavaThread that is "protected" by the
-  // ThreadsListHandle in the caller.
-  *jt_pp = java_thread;
-
-  return JVMTI_ERROR_NONE;
-}
-
 class JvmtiClassFileLoadHookPoster : public StackObj {
  private:
   Symbol*            _h_name;

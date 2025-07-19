@@ -789,12 +789,14 @@ ThreadsListHandle::~ThreadsListHandle() {
 
 // Convert an internal thread reference to a JavaThread found on the
 // associated ThreadsList. This ThreadsListHandle "protects" the
-// returned JavaThread *.
+// returned JavaThread *. If the jthread resolves to a virtual thread
+// then the JavaThread * for its current carrier thread (if any) is
+// returned via *jt_pp.
 //
 // If thread_oop_p is not null, then the caller wants to use the oop
-// after this call so the oop is returned. On success, *jt_pp is set
+// after this call so the oop is always returned. On success, *jt_pp is set
 // to the converted JavaThread * and true is returned. On error,
-// returns false.
+// returns false, and *jt_pp is unchanged.
 //
 bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
                                                          JavaThread ** jt_pp,
@@ -815,13 +817,41 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
     // the oop even if this function returns false.
     *thread_oop_p = thread_oop;
   }
+  return cv_thread_oop_to_JavaThread(thread_oop, jt_pp);
+}
 
-  JavaThread *java_thread = java_lang_Thread::thread_acquire(thread_oop);
+// Convert a thread oop to a JavaThread found on the associated ThreadsList.
+// This ThreadsListHandle "protects" the returned JavaThread *.  If the oop
+// is a virtual thread then the JavaThread * for its current carrier thread
+// (if any) is returned via *jt_pp.
+// On success, *jt_pp is set to the converted JavaThread * and true is returned.
+// On error, returns false, and *jt_pp is unchanged.
+//
+bool ThreadsListHandle::cv_thread_oop_to_JavaThread(oop thread_oop,
+                                                    JavaThread ** jt_pp) {
+
+  assert(this->list() != nullptr, "must have a ThreadsList");
+  assert(jt_pp != nullptr, "must have a return JavaThread pointer");
+  assert(thread_oop->is_a(vmClasses::Thread_klass()), "must be a valid j.l.Thread oop");
+
+  JavaThread* java_thread = java_lang_Thread::thread_acquire(thread_oop);
   if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread* so it has not
-    // run enough to be put on a ThreadsList or it has exited enough to
-    // make it past ensure_join() where the JavaThread* is cleared.
-    return false;
+    if (!java_lang_VirtualThread::is_instance(thread_oop)) {
+      // The java.lang.Thread does not contain a JavaThread* so it has not
+      // run enough to be put on a ThreadsList or it has exited enough to
+      // make it past ensure_join() where the JavaThread* is cleared.
+      return false;
+    } else {
+      // For virtual thread's we need to extract the carrier's JavaThread - if any.
+       oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+       if (carrier_thread != nullptr) {
+         java_thread = java_lang_Thread::thread(carrier_thread);
+       }
+       if (java_thread == nullptr) {
+         // Virtual thread was unbound, or else carrier has now terminated.
+         return false;
+       }
+    }
   }
   // Looks like a live JavaThread at this point.
 

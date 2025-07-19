@@ -454,8 +454,6 @@ class JvmtiExport : public AllStatic {
                                                      jthread thread,
                                                      JavaThread ** jt_pp,
                                                      oop * thread_oop_p);
-  static jvmtiError cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
-                                         JavaThread ** jt_pp);
 };
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It
