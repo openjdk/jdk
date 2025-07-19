@@ -125,6 +125,13 @@ void VM_Version::initialize() {
     ContendedPaddingWidth = dcache_line;
   }
 
+  if (!(is_aligned(CryptoPmullForCRC32LowLimit, 128))) {
+    // the instrinsic handle 128 bytes in an iteration of the loop, so aligning
+    // to 128 helps consistency.
+    warning("CryptoPmullForCRC32LowLimit must be a multiple of 128");
+    CryptoPmullForCRC32LowLimit = align_down(CryptoPmullForCRC32LowLimit, 128);
+  }
+
   if (os::supports_map_sync()) {
     // if dcpop is available publish data cache line flush size via
     // generic field, otherwise let if default to zero thereby
@@ -153,6 +160,9 @@ void VM_Version::initialize() {
   if (_cpu == CPU_AMPERE && ((_model == CPU_MODEL_AMPERE_1)  ||
                              (_model == CPU_MODEL_AMPERE_1A) ||
                              (_model == CPU_MODEL_AMPERE_1B))) {
+    if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
+      FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+    }
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -269,6 +279,9 @@ void VM_Version::initialize() {
   if (_cpu == CPU_ARM && (model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+    }
+    if (FLAG_IS_DEFAULT(CryptoPmullForCRC32LowLimit)) {
+      FLAG_SET_DEFAULT(CryptoPmullForCRC32LowLimit, 384);
     }
     if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
       FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
