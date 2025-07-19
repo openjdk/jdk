@@ -77,9 +77,14 @@ public sealed interface ClassFileVersion
     int minorVersion();
 
     /**
-     * {@return a {@link ClassFileVersion} element}
+     * {@return a {@link ClassFileVersion} element}  The minor version number
+     * may be {@code -1} to represent {@value ClassFile#PREVIEW_MINOR_VERSION}.
+     *
      * @param majorVersion the major version
      * @param minorVersion the minor version
+     * @throws IllegalArgumentException if the major version is not in the range
+     * {@code [0, 65535]}, or the minor version is not in the range {@code [-1,
+     * 65535]}
      */
     static ClassFileVersion of(int majorVersion, int minorVersion) {
         return new ClassFileVersionImpl(majorVersion, minorVersion);
