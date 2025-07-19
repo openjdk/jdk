@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 package sun.java2d;
 
-import sun.awt.util.ThreadGroupUtils;
-
+import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.PhantomReference;
 import java.lang.ref.WeakReference;
 import java.util.Hashtable;
 import java.util.concurrent.ConcurrentLinkedDeque;
+
+import sun.awt.util.ThreadGroupUtils;
 
 /**
  * This class is used for registering and disposing the native
@@ -54,24 +54,11 @@ public class Disposer implements Runnable {
     private static final Hashtable<java.lang.ref.Reference<Object>, DisposerRecord> records =
         new Hashtable<>();
 
-    private static Disposer disposerInstance;
-    public static final int WEAK = 0;
-    public static final int PHANTOM = 1;
-    public static int refType = PHANTOM;
+    private static final Disposer disposerInstance;
 
     static {
         System.loadLibrary("awt");
         initIDs();
-        String type = System.getProperty("sun.java2d.reftype");
-        if (type != null) {
-            if (type.equals("weak")) {
-                refType = WEAK;
-                System.err.println("Using WEAK refs");
-            } else {
-                refType = PHANTOM;
-                System.err.println("Using PHANTOM refs");
-            }
-        }
         disposerInstance = new Disposer();
         String name = "Java2D Disposer";
         ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
@@ -118,13 +105,7 @@ public class Disposer implements Runnable {
         if (target instanceof DisposerTarget) {
             target = ((DisposerTarget)target).getDisposerReferent();
         }
-        java.lang.ref.Reference<Object> ref;
-        if (refType == PHANTOM) {
-            ref = new PhantomReference<>(target, queue);
-        } else {
-            ref = new WeakReference<>(target, queue);
-        }
-        records.put(ref, rec);
+        records.put(new PhantomReference<>(target, queue), rec);
     }
 
     public void run() {
