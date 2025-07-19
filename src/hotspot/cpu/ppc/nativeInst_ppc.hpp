@@ -462,7 +462,7 @@ class NativeMovRegMem: public NativeInstruction {
     return ((*hi_ptr) << 16) | ((*lo_ptr) & 0xFFFF);
   }
 
-  void set_offset(intptr_t x, bool flush_icash = true) {
+  void set_offset(intptr_t x, bool flush_icache = true) {
 #ifdef VM_LITTLE_ENDIAN
     short *hi_ptr = (short*)(addr_at(0));
     short *lo_ptr = (short*)(addr_at(4));
@@ -472,7 +472,7 @@ class NativeMovRegMem: public NativeInstruction {
 #endif
     *hi_ptr = x >> 16;
     *lo_ptr = x & 0xFFFF;
-    if (flush_icashe) {
+    if (flush_icache) {
       ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
     }
   }
