@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,11 @@ import sun.awt.AppContext;
  * from Images. Images that are created from a URL, filename or byte array
  * are preloaded using MediaTracker to monitor the loaded state
  * of the image.
+ * If the image source parameter to a constructor is non-null,
+ * but does not reference valid accessible image data,
+ * no exceptions will be thrown but the image will be 'effectively' null,
+ * as it will have no dimensions and never be drawn, and
+ * getImageLoadStatus() will report ERRORED.
  *
  * <p>
  * For further information and examples of using image icons, see
@@ -176,6 +181,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Creates an ImageIcon from the specified URL. The image will
      * be preloaded by using MediaTracker to monitor the loaded state
      * of the image.
+     * Passing {@code null} URL will result in {@code NullPointerException}.
      * @param location the URL for the image
      * @param description a brief textual description of the image
      * @see #ImageIcon(String)
@@ -194,6 +200,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Creates an ImageIcon from the specified URL. The image will
      * be preloaded by using MediaTracker to monitor the loaded state
      * of the image.
+     * Passing {@code null} URL will result in {@code NullPointerException}.
      * The icon's description is initialized to be
      * a string representation of the URL.
      * @param location the URL for the image
@@ -205,6 +212,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Creates an ImageIcon from the image.
+     * Passing {@code null} Image will result in {@code NullPointerException}.
      * @param image the image
      * @param description a brief textual description of the image
      */
@@ -217,6 +225,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Creates an ImageIcon from an image object.
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
+     * Passing {@code null} Image will result in {@code NullPointerException}.
      * @param image the image
      * @see #getDescription
      * @see java.awt.Image#getProperty
@@ -237,6 +246,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Normally this array is created
      * by reading an image using Class.getResourceAsStream(), but
      * the byte array may also be statically stored in a class.
+     * Passing {@code null} imageData will result in {@code NullPointerException}.
      *
      * @param  imageData an array of pixels in an image format supported
      *         by the AWT Toolkit, such as GIF, JPEG, or (as of 1.3) PNG
@@ -261,6 +271,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * the byte array may also be statically stored in a class.
      * If the resulting image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
+     * Passing {@code null} imageData will result in {@code NullPointerException}.
      *
      * @param  imageData an array of pixels in an image format supported by
      *             the AWT Toolkit, such as GIF, JPEG, or (as of 1.3) PNG
@@ -367,10 +378,18 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Sets the image displayed by this icon.
+     * Setting a {@code null} image means
+     * any existing icon will be removed
+     * and no icon will be rendered.
      * @param image the image
      */
     public void setImage(Image image) {
         this.image = image;
+        if (image == null) {
+            width = -1;
+            height = -1;
+            return;
+        }
         loadImage(image);
     }
 
