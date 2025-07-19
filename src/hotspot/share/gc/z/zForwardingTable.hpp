@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZFORWARDINGTABLE_HPP
 
 #include "gc/z/zGranuleMap.hpp"
-#include "gc/z/zIndexDistributor.hpp"
 
 class ZForwarding;
 
