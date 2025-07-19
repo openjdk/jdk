@@ -713,7 +713,7 @@ public class JavacTrees extends DocTrees {
     public TypeMirror getTypeMirror(TreePath path) {
         Tree leaf = path.getLeaf();
         Type ty = ((JCTree) leaf).type;
-        return ty == null ? null : ty.stripMetadataIfNeeded();
+        return ty;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
