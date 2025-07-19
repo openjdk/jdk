@@ -27,7 +27,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/objectCountEventSender.hpp"
+#include "gc/shared/objectCountEventSenderTemplate.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
@@ -74,6 +74,8 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
 }
 
 #if INCLUDE_SERVICES
+
+template <typename Event>
 class ObjectCountEventSenderClosure : public KlassInfoClosure {
   const double _size_threshold_percentage;
   const size_t _total_size_in_words;
@@ -88,7 +90,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
 
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
-      ObjectCountEventSender::send(entry, _timestamp);
+      Event::send(entry, _timestamp);
     }
   }
 
@@ -99,21 +101,22 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
+template <typename Event>
+void GCTracer::report_object_count(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
   assert(is_alive_cl != nullptr, "Must supply function to check liveness");
-
-  if (ObjectCountEventSender::should_send_event()) {
+  if (Event::should_send_event()) {
     ResourceMark rm;
 
     KlassInfoTable cit(false);
     if (!cit.allocation_failed()) {
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
-      ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure<Event> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }
 }
+
 #endif // INCLUDE_SERVICES
 
 void GCTracer::report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const {
@@ -187,3 +190,8 @@ void ParallelOldTracer::report_dense_prefix(void* dense_prefix) {
 void OldGCTracer::report_concurrent_mode_failure() {
   send_concurrent_mode_failure_event();
 }
+
+#if INCLUDE_SERVICES
+template void GCTracer::report_object_count<ObjectCountEventSender>(BoolObjectClosure*, WorkerThreads*);
+template void GCTracer::report_object_count<ObjectCountAfterGCEventSender>(BoolObjectClosure*, WorkerThreads*);
+#endif // INCLUDE_SERVICES
