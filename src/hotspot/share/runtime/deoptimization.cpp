@@ -2767,8 +2767,8 @@ const char* Deoptimization::_trap_reason_name[] = {
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",
+  "short_running_loop" JVMCI_ONLY("_or_aliasing"),
 #if INCLUDE_JVMCI
-  "aliasing",
   "transfer_to_interpreter",
   "not_compiled_exception_handler",
   "unresolved",
