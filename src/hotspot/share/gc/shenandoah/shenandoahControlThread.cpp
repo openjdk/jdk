@@ -150,6 +150,7 @@ void ShenandoahControlThread::run_service() {
       // If GC was requested, we better dump freeset data for performance debugging
       heap->free_set()->log_status_under_lock();
 
+      heap->print_before_gc();
       switch (mode) {
         case concurrent_normal:
           service_concurrent_normal_cycle(cause);
@@ -163,6 +164,7 @@ void ShenandoahControlThread::run_service() {
         default:
           ShouldNotReachHere();
       }
+      heap->print_after_gc();
 
       // If this was the requested GC cycle, notify waiters about it
       if (is_gc_requested) {
