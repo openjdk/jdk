@@ -27,22 +27,22 @@
 
 #include "oops/oop.hpp"
 
-#include "memory/universe.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/objLayout.inline.hpp"
 #include "oops/markWord.inline.hpp"
+#include "oops/objLayout.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
