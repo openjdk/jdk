@@ -286,6 +286,7 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
       if (notep->n_type == NT_PRSTATUS) {
         if (core_handle_prstatus(ph, descdata, notep->n_descsz) != true) {
           print_error("failed to handle NT_PRSTATUS note\n");
+          free(buf);
           return false;
         }
       } else if (notep->n_type == NT_AUXV) {
