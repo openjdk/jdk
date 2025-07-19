@@ -1849,6 +1849,26 @@ public class IRNode {
         optoOnly(SCOPE_OBJECT, regex);
     }
 
+    public static final String COPYSIGN_F = PREFIX + "COPYSIGN_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COPYSIGN_F, "CopySignF");
+    }
+
+    public static final String COPYSIGN_D = PREFIX + "COPYSIGN_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(COPYSIGN_D, "CopySignD");
+    }
+
+    public static final String COPYSIGN_VD = VECTOR_PREFIX + "COPYSIGN_VD" + POSTFIX;
+    static {
+        vectorNode(COPYSIGN_VD, "CopySignVD", TYPE_DOUBLE);
+    }
+
+    public static final String COPYSIGN_VF = VECTOR_PREFIX + "COPYSIGN_VF" + POSTFIX;
+    static {
+        vectorNode(COPYSIGN_VF, "CopySignVF", TYPE_FLOAT);
+    }
+
     public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
         vectorNode(SIGNUM_VD, "SignumVD", TYPE_DOUBLE);
