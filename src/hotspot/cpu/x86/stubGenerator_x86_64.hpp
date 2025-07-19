@@ -555,6 +555,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmSin();
   address generate_libmCos();
   address generate_libmTan();
+  address generate_libmSinh();
   address generate_libmTanh();
   address generate_libmCbrt();
   address generate_libmExp();

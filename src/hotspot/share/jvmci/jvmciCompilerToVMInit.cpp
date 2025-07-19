@@ -144,6 +144,7 @@ int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
+address CompilerToVM::Data::dsinh;
 address CompilerToVM::Data::dtanh;
 address CompilerToVM::Data::dcbrt;
 address CompilerToVM::Data::dexp;
@@ -287,6 +288,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     name = nullptr;                                             \
   }
 
+  SET_TRIGFUNC_OR_NULL(dsinh);
   SET_TRIGFUNC_OR_NULL(dtanh);
   SET_TRIGFUNC_OR_NULL(dcbrt);
 
