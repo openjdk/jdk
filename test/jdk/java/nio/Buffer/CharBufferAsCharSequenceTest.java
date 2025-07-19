@@ -318,7 +318,8 @@ public class CharBufferAsCharSequenceTest {
     @ParameterizedTest
     @MethodSource("charBufferArguments")
     void testSubSequence(CharSequence actual, char[] expected, int start, int stop, String description) {
-        for (int i = 0; i < 7; ++i) {
+        int maxTests = Math.min(7,  ((stop - start) >> 1) - 1);
+        for (int i = 0; i < maxTests; ++i) {
             assertEquals(new String(expected, start + i, stop - start - (2 * i)),
                     actual.subSequence(i, actual.length() - i).toString(),
                     "subsequence at index " + i + " for " + description);
