@@ -22,6 +22,7 @@
  */
 
 #include "spin_wait_aarch64.hpp"
+#include "utilities/debug.hpp"
 
 #include <string.h>
 
