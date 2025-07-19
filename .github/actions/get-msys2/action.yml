@@ -30,15 +30,15 @@ runs:
   using: composite
   steps:
     - name: 'Install MSYS2'
-      uses: msys2/setup-msys2@v2.22.0
+      id: msys2
+      uses: msys2/setup-msys2@v2.28.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
-        location: ${{ runner.tool_cache }}/msys2
+        release: false
 
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path'
       run: |
-        # Prepend msys2/msys64/usr/bin to the PATH
-        echo "$env:RUNNER_TOOL_CACHE/msys2/msys64/usr/bin" >> $env:GITHUB_PATH
+        echo "${{ steps.msys2.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
