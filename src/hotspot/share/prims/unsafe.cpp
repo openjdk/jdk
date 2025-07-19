@@ -493,7 +493,10 @@ static jlong find_field_offset(jclass clazz, jstring name, TRAPS) {
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     Symbol *name = fs.name();
     if (name->equals(utf_name)) {
-      offset = fs.offset();
+      // fail fast for static fields upon match
+      if (!fs.access_flags().is_static()) {
+        offset = fs.offset();
+      }
       break;
     }
   }
