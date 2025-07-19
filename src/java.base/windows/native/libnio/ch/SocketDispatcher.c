@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,15 @@
 /**************************************************************
  * SocketDispatcher.c
  */
+
+/**
+ * The maximum buffer size for WSASend/WSARecv. Microsoft recommendation for
+ * blocking operations is to use buffers no larger than 64k. We need the
+ * maximum to be less than 128k to support asynchronous close on Windows
+ * Server 2003 and newer editions of Windows.
+ */
+#define MAX_BUFFER_SIZE             ((128*1024)-1)
+
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_SocketDispatcher_read0(JNIEnv *env, jclass clazz, jobject fdo,
