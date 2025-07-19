@@ -26,12 +26,13 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/unloadableMethodHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -44,11 +45,9 @@ CompileTask::CompileTask(int compile_id,
                          int comp_level,
                          int hot_count,
                          CompileReason compile_reason,
-                         bool is_blocking) {
-  Thread* thread = Thread::current();
+                         bool is_blocking) :
+  _method_handle(method()) {
   _compile_id = compile_id;
-  _method = method();
-  _method_holder = JNIHandles::make_weak_global(Handle(thread, method->method_holder()->klass_holder()));
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -81,11 +80,6 @@ CompileTask::CompileTask(int compile_id,
 }
 
 CompileTask::~CompileTask() {
-  if (_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder)) {
-    JNIHandles::destroy_weak_global(_method_holder);
-  } else {
-    JNIHandles::destroy_global(_method_holder);
-  }
   if (_failure_reason_on_C_heap && _failure_reason != nullptr) {
     os::free((void*) _failure_reason);
     _failure_reason = nullptr;
@@ -112,38 +106,36 @@ AbstractCompiler* CompileTask::compiler() const {
   return CompileBroker::compiler(_comp_level);
 }
 
-// Replace weak handles by strong handles to avoid unloading during compilation.
 CompileTask* CompileTask::select_for_compilation() {
-  if (is_unloaded()) {
-    // Guard against concurrent class unloading
-    return nullptr;
+  if (_method_handle.is_safe()) {
+    _method_handle.make_always_safe();
+    return this;
   }
-  Thread* thread = Thread::current();
-  assert(_method->method_holder()->is_loader_alive(), "should be alive");
-  Handle method_holder(thread, _method->method_holder()->klass_holder());
-  JNIHandles::destroy_weak_global(_method_holder);
-  _method_holder = JNIHandles::make_global(method_holder);
-  return this;
-}
-
-void CompileTask::mark_on_stack() {
-  if (is_unloaded()) {
-    return;
-  }
-  // Mark these methods as something redefine classes cannot remove.
-  _method->set_on_stack(true);
+  return nullptr;
 }
 
 bool CompileTask::is_unloaded() const {
-  return _method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_weak_global_cleared(_method_holder);
+  return !_method_handle.is_safe();
 }
 
+// ------------------------------------------------------------------
 // RedefineClasses support
+
+void CompileTask::mark_on_stack() {
+  // Mark these methods as something redefine classes cannot remove.
+  // Redefinition runs in VM thread, which cannot ask about the method
+  // safety. This is why we end up asking for method unsafely.
+  assert_at_safepoint();
+  assert(Thread::current()->is_VM_thread(), "Sanity");
+  _method_handle.method_unsafe()->set_on_stack(true);
+}
+
 void CompileTask::metadata_do(MetadataClosure* f) {
-  if (is_unloaded()) {
-    return;
-  }
-  f->do_metadata(method());
+  // Redefinition runs in VM thread, which cannot ask about the method
+  // safety. This is why we end up asking for method unsafely.
+  assert_at_safepoint();
+  assert(Thread::current()->is_VM_thread(), "Sanity");
+  f->do_metadata(_method_handle.method_unsafe());
 }
 
 // ------------------------------------------------------------------

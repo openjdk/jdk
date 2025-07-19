@@ -37,6 +37,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -1707,7 +1708,8 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 
   JavaThread* thread = JavaThread::current();
 
-  methodHandle method(thread, task->method());
+  methodHandle method(thread, task->is_unloaded() ? nullptr : task->method());
+
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());
