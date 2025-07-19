@@ -109,6 +109,87 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocReque
   }
 }
 
+HeapWord* ShenandoahHeapRegion::allocate_lab(const ShenandoahAllocRequest& req, size_t &actual_size) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(req.is_lab_alloc(), "Only lab alloc");
+  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
+
+  size_t adjusted_size = req.size();
+  HeapWord* obj = nullptr;
+  HeapWord* old_top = top();
+  size_t free_words = align_down(byte_size(old_top, end()) >> LogHeapWordSize, MinObjAlignment);
+  if (adjusted_size > free_words) {
+    adjusted_size = free_words;
+  }
+  if (adjusted_size >= req.min_size()) {
+    obj = allocate(adjusted_size, req);
+    actual_size = adjusted_size;
+    assert(obj == old_top, "Must be");
+  }
+  return obj;
+}
+
+HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAllocRequest& req) {
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
+  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
+  assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
+
+  for (;;) {
+    if (!reserved_for_direct_allocation()) {
+      return nullptr;
+    }
+    HeapWord* obj = top();
+    if (pointer_delta(end(), obj) >= size) {
+      if (try_allocate(obj, size)) {
+        reset_age();
+        adjust_alloc_metadata(req.type(), size);
+        return obj;
+      }
+    } else {
+      return nullptr;
+    }
+  }
+}
+
+HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size) {
+  assert(req.is_lab_alloc(), "Only lab alloc");
+  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
+  assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
+  size_t adjusted_size = req.size();
+  for (;;) {
+    if (!reserved_for_direct_allocation()) {
+      return nullptr;
+    }
+    HeapWord* obj = top();
+    size_t free_words = align_down(byte_size(obj, end()) >> LogHeapWordSize, MinObjAlignment);
+    if (adjusted_size > free_words) {
+      adjusted_size = free_words;
+    }
+    if (adjusted_size >= req.min_size()) {
+      if (try_allocate(obj, adjusted_size)) {
+        reset_age();
+        actual_size = adjusted_size;
+        adjust_alloc_metadata(req.type(), adjusted_size);
+        return obj;
+      }
+    } else {
+      log_trace(gc, free)("Failed to shrink TLAB or GCLAB request (%zu) in region %zu to %zu"
+                          " because min_size() is %zu", req.size(), index(), adjusted_size, req.min_size());
+      return nullptr;
+    }
+  }
+}
+
+bool ShenandoahHeapRegion::try_allocate(HeapWord* const obj, size_t const size) {
+  HeapWord* new_top = obj + size;
+  if (Atomic::cmpxchg(&_top, obj, new_top) == obj) {
+    assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
+    assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
+    return true;
+  }
+  return false;
+}
+
 inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t size) {
   switch (type) {
     case ShenandoahAllocRequest::_alloc_shared:
@@ -116,13 +197,13 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
       // Counted implicitly by tlab/gclab allocs
       break;
     case ShenandoahAllocRequest::_alloc_tlab:
-      _tlab_allocs += size;
+      Atomic::add(&_tlab_allocs, size);
       break;
     case ShenandoahAllocRequest::_alloc_gclab:
-      _gclab_allocs += size;
+      Atomic::add(&_gclab_allocs, size);
       break;
     case ShenandoahAllocRequest::_alloc_plab:
-      _plab_allocs += size;
+      Atomic::add(&_plab_allocs, size);
       break;
     default:
       ShouldNotReachHere();
@@ -219,7 +300,7 @@ inline bool ShenandoahHeapRegion::is_affiliated() const {
 }
 
 inline void ShenandoahHeapRegion::save_top_before_promote() {
-  _top_before_promoted = _top;
+  _top_before_promoted = top();
 }
 
 inline void ShenandoahHeapRegion::restore_top_before_promote() {

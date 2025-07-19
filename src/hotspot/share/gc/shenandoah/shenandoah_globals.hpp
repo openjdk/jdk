@@ -564,6 +564,21 @@
          "to prevent starvation of the old collector. Setting this to "     \
          "0 will allow back to back young collections to run during old "   \
          "collections.")                                                    \
+                                                                            \
+  product(uintx, ShenandoahDirectlyAllocatableRegionCount, 13, EXPERIMENTAL,\
+         "Number of regions Shenandoah will pre-allocate for "              \
+         "direct allocation with CAS, the values should less than "         \
+         "number of CPU cores. Ideally it should be a prime number.")       \
+         range(1, 128)                                                      \
+                                                                            \
+  product(uintx, ShenandoahDirectAllocationMaxProbes, 3, EXPERIMENTAL,      \
+         "Max number of region to probe for direct allocation without "     \
+         "stealing space from other directly allocatable regions.    ")     \
+         range(1, 128)                                                      \
+  product(bool, ShenandoahDirectAllocationStealingAllowed, true,            \
+         EXPERIMENTAL,                                                      \
+         "Max number of region to probe for direct allocation without "     \
+         "stealing space from other directly allocatable regions.    ")     \
   // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

@@ -250,23 +250,25 @@ private:
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
-  HeapWord* _top;
+  HeapWord* volatile _top;
 
-  size_t _tlab_allocs;
-  size_t _gclab_allocs;
-  size_t _plab_allocs;
+  size_t volatile _tlab_allocs;
+  size_t volatile _gclab_allocs;
+  size_t volatile _plab_allocs;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
   HeapWord* volatile _update_watermark;
 
-  uint _age;
-  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+  volatile uint _age;
+  CENSUS_NOISE(volatile uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
   bool _needs_bitmap_reset;
+
+  ShenandoahSharedFlag _direct_alloc_reserved; // Flag to indicate that whether the region is reserved for lock-free direct allocation
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -366,6 +368,15 @@ public:
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
+  inline HeapWord* allocate_lab(const ShenandoahAllocRequest &req, size_t &actual_size);
+
+  // Atomic allocation using CAS, return nullptr if full or no enough space for the req
+  inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req);
+
+  inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size);
+
+  inline bool try_allocate(HeapWord* const obj, size_t const size);
+
   inline void clear_live_data();
   void set_live_data(size_t s);
 
@@ -425,8 +436,12 @@ public:
   // Find humongous start region that this region belongs to
   ShenandoahHeapRegion* humongous_start_region() const;
 
-  HeapWord* top() const         { return _top;     }
-  void set_top(HeapWord* v)     { _top = v;        }
+  HeapWord* top() const {
+    return Atomic::load(&_top);
+  }
+  void set_top(HeapWord* v) {
+    Atomic::store(&_top, v);
+  }
 
   HeapWord* new_top() const     { return _new_top; }
   void set_new_top(HeapWord* v) { _new_top = v;    }
@@ -450,6 +465,7 @@ public:
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
   size_t get_plab_allocs() const;
+  bool has_allocs() const;
 
   inline HeapWord* get_update_watermark() const;
   inline void set_update_watermark(HeapWord* w);
@@ -461,23 +477,30 @@ public:
   void set_affiliation(ShenandoahAffiliation new_affiliation);
 
   // Region ageing and rejuvenation
-  uint age() const { return _age; }
-  CENSUS_NOISE(uint youth() const { return _youth; })
+  uint age() const { return Atomic::load(&_age); }
+  CENSUS_NOISE(uint youth() const { return Atomic::load(&_youth); })
 
   void increment_age() {
-    const uint max_age = markWord::max_age;
-    assert(_age <= max_age, "Error");
-    if (_age++ >= max_age) {
-      _age = max_age;   // clamp
+    const uint current_age = age();
+    assert(current_age <= markWord::max_age, "Error");
+    if (current_age < markWord::max_age) {
+      const uint old = Atomic::cmpxchg(&_age, current_age, current_age + 1);
+      assert(old == current_age || old == 0u, "Only fail when any mutator reset the age.");
     }
   }
 
   void reset_age() {
-    CENSUS_NOISE(_youth += _age;)
-    _age = 0;
+    uint current = age();
+    uint old;
+    while ((old = current) != 0u &&
+          (current = Atomic::cmpxchg(&_age, old, 0u)) != old &&
+           current != 0u) { }
+    if (current != 0u) {
+      CENSUS_NOISE(Atomic::add(&_youth, current, memory_order_relaxed);)
+    }
   }
 
-  CENSUS_NOISE(void clear_youth() { _youth = 0; })
+  CENSUS_NOISE(void clear_youth() { Atomic::store(&_youth,  0u); })
 
   inline bool need_bitmap_reset() const {
     return _needs_bitmap_reset;
@@ -489,6 +512,20 @@ public:
 
   inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
+  }
+
+  inline void reserve_for_direct_allocation() {
+    assert(_direct_alloc_reserved.is_unset(), "Must be");
+    _direct_alloc_reserved.set();
+  }
+
+  inline void release_from_direct_allocation() {
+    assert(_direct_alloc_reserved.is_set(), "Must be");
+    _direct_alloc_reserved.unset();
+  }
+
+  inline bool reserved_for_direct_allocation() const {
+    return _direct_alloc_reserved.is_set();
   }
 
 private:
