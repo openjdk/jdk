@@ -505,6 +505,88 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
 }
 
 
+template<typename IntegerType>
+static const IntegerType* compute_generic_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
+  typedef typename IntegerType::NativeType NativeType;
+  assert(!i2->is_con() || i2->get_con() != 0, "Can't handle zero constant divisor");
+
+  // Case A: divisor range spans zero (i2->_lo < 0 < i2->_hi)
+  // We split into two subproblems to avoid division by 0:
+  //   - negative part: [i2->_lo, −1]
+  //   - positive part: [1, i2->_hi]
+  // Then we union the results by taking the min of all lower‐bounds and
+  // the max of all upper‐bounds from the two halves.
+  if (i2->_lo < 0 && i2->_hi > 0) {
+    // Handle negative part of the divisor range
+    const IntegerType* neg_part = compute_generic_div_type(i1, IntegerType::make(i2->_lo, -1, widen), widen);
+    // Handle positive part of the divisor range
+    const IntegerType* pos_part = compute_generic_div_type(i1, IntegerType::make(1, i2->_hi, widen), widen);
+    // Merge results
+    NativeType new_lo = MIN2(neg_part->_lo, pos_part->_lo);
+    NativeType new_hi = MAX2(neg_part->_hi, pos_part->_hi);
+    assert(new_hi >= new_lo, "sanity");
+    return IntegerType::make(new_lo, new_hi, widen);
+  }
+
+  // Case B: divisor range does NOT span zero.
+  // Here i2 is entirely negative or entirely positive.
+  // Let d_min and d_max be the nonzero endpoints of i2.
+  // Then a/b is monotonic in a and in b (when b keeps the same sign).
+  // Therefore the extrema occur at the four “corners”:
+  //   (i1->_lo, i2->_hi), (i1->_lo, i2->_lo), (i1->_hi, i2->_lo), (i1->_hi, i2->_hi).
+  // We compute all four and take the min and max.
+  // A special case handles overflow when dividing the most‐negative value by −1.
+
+  NativeType new_lo = max_jint;
+  NativeType new_hi = min_jint;
+  // adjust i2 bounds to not include zero, as zero always throws
+  NativeType i2_lo = i2->_lo == 0 ? 1 : i2->_lo;
+  NativeType i2_hi = i2->_hi == 0 ? -1 : i2->_hi;
+  NativeType min_val = std::numeric_limits<NativeType>::min();
+  assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
+
+  // Special overflow case: min_val / (-1) == min_val
+  // We must include min_val in the output if i1->_lo == min_val and i2->_hi.
+  if (i1->_lo == min_val && i2_hi == -1) {
+    // special case: min_jint or min_jlong div -1 == min_val
+    new_lo = i1->_lo;
+    if (!i1->is_con()) {
+      // Also compute the “next” division result for a non‑constant range.
+      new_hi = MAX2(new_hi, i1->_lo + 1 / i2_hi);
+    }
+  } else {
+    // Normal corner: (i1->_lo, i2->_hi)
+    NativeType result = i1->_lo / i2_hi;
+    new_lo = MIN2(new_lo, result);
+    new_hi = MAX2(new_hi, result);
+  }
+
+  // If the divisor range is wider than a singleton, include (i1->_lo, i2->_lo).
+  // We cannot use is_con here, as a range of [-1, 0] will also result in i2_lo and i2_hi being -1
+  if (i2_lo != i2_hi) {
+    // special case not possible here, _lo mus
+    assert(i2_lo != -1, "Special case not possible here");
+    NativeType result = i1->_lo / i2_lo;
+    new_lo = MIN2(new_lo, result);
+    new_hi = MAX2(new_hi, result);
+  }
+
+  // If i1 is not a single constant, include the two corners with i1->_hi:
+  //   (i1->_hi, i2->_lo) and (i1->_hi, i2->_hi)
+  if (!i1->is_con()) {
+    // Special case not possible here, as i1->_hi has to be > min
+    assert(i2_hi > min_val, "Special case not possible here");
+    NativeType result1 = i1->_hi / i2_lo;
+    NativeType result2 = i1->_hi / i2_hi;
+    new_lo = MIN2(new_lo, result1);
+    new_lo = MIN2(new_lo, result2);
+    new_hi = MAX2(new_hi, result1);
+    new_hi = MAX2(new_hi, result2);
+  }
+  assert(new_hi >= new_lo, "sanity");
+  return IntegerType::make(new_lo, new_hi, widen);
+}
+
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If the divisor is 1, we are an identity on the dividend.
@@ -570,44 +652,15 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
   const TypeInt *i1 = t1->is_int();
   const TypeInt *i2 = t2->is_int();
   int widen = MAX2(i1->_widen, i2->_widen);
-
-  if( i2->is_con() && i2->get_con() != 0 ) {
-    int32_t d = i2->get_con(); // Divisor
-    jint lo, hi;
-    if( d >= 0 ) {
-      lo = i1->_lo/d;
-      hi = i1->_hi/d;
-    } else {
-      if( d == -1 && i1->_lo == min_jint ) {
-        // 'min_jint/-1' throws arithmetic exception during compilation
-        lo = min_jint;
-        // do not support holes, 'hi' must go to either min_jint or max_jint:
-        // [min_jint, -10]/[-1,-1] ==> [min_jint] UNION [10,max_jint]
-        hi = i1->_hi == min_jint ? min_jint : max_jint;
-      } else {
-        lo = i1->_hi/d;
-        hi = i1->_lo/d;
-      }
+  if (i2->is_con()) {
+    jint d = i2->get_con();    // Divisor
+    if (d == 0) {
+      // this division will always throw an exception
+      return Type::TOP;
     }
-    return TypeInt::make(lo, hi, widen);
   }
 
-  // If the dividend is a constant
-  if( i1->is_con() ) {
-    int32_t d = i1->get_con();
-    if( d < 0 ) {
-      if( d == min_jint ) {
-        //  (-min_jint) == min_jint == (min_jint / -1)
-        return TypeInt::make(min_jint, max_jint/2 + 1, widen);
-      } else {
-        return TypeInt::make(d, -d, widen);
-      }
-    }
-    return TypeInt::make(-d, d, widen);
-  }
-
-  // Otherwise we give up all hope
-  return TypeInt::INT;
+  return compute_generic_div_type<TypeInt>(i1, i2, widen);
 }
 
 
@@ -676,44 +729,15 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
   const TypeLong *i1 = t1->is_long();
   const TypeLong *i2 = t2->is_long();
   int widen = MAX2(i1->_widen, i2->_widen);
-
-  if( i2->is_con() && i2->get_con() != 0 ) {
+  if (i2->is_con()) {
     jlong d = i2->get_con();    // Divisor
-    jlong lo, hi;
-    if( d >= 0 ) {
-      lo = i1->_lo/d;
-      hi = i1->_hi/d;
-    } else {
-      if( d == CONST64(-1) && i1->_lo == min_jlong ) {
-        // 'min_jlong/-1' throws arithmetic exception during compilation
-        lo = min_jlong;
-        // do not support holes, 'hi' must go to either min_jlong or max_jlong:
-        // [min_jlong, -10]/[-1,-1] ==> [min_jlong] UNION [10,max_jlong]
-        hi = i1->_hi == min_jlong ? min_jlong : max_jlong;
-      } else {
-        lo = i1->_hi/d;
-        hi = i1->_lo/d;
-      }
+    if (d == 0) {
+      // this division will always throw an exception
+      return Type::TOP;
     }
-    return TypeLong::make(lo, hi, widen);
   }
 
-  // If the dividend is a constant
-  if( i1->is_con() ) {
-    jlong d = i1->get_con();
-    if( d < 0 ) {
-      if( d == min_jlong ) {
-        //  (-min_jlong) == min_jlong == (min_jlong / -1)
-        return TypeLong::make(min_jlong, max_jlong/2 + 1, widen);
-      } else {
-        return TypeLong::make(d, -d, widen);
-      }
-    }
-    return TypeLong::make(-d, d, widen);
-  }
-
-  // Otherwise we give up all hope
-  return TypeLong::LONG;
+  return compute_generic_div_type<TypeLong>(i1, i2, widen);
 }
 
 
