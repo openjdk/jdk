@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,7 +484,7 @@ final class CompilerToVM {
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
-     * {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry at {@code cpi} in
+     * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} entry at {@code cpi} in
      * {@code constant pool}.
      *
      * The return value encodes the details in an object array that is described by the pseudo Java
@@ -512,17 +512,17 @@ final class CompilerToVM {
 
     /**
      * Gets the constant pool index of a static argument of a {@code CONSTANT_Dynamic_info} or
-     * @{code CONSTANT_InvokeDynamic_info} entry. Used when the list of static arguments in the
+     * {@code CONSTANT_InvokeDynamic_info} entry. Used when the list of static arguments in the
      * {@link BootstrapMethodInvocation} is a {@code List<PrimitiveConstant>} of the form
      * {{@code arg_count}, {@code pool_index}}, meaning the arguments are not already resolved and that
      * the JDK has to lookup the arguments when they are needed. The {@code cpi} corresponds to
      * {@code pool_index} and the {@code index} has to be smaller than {@code arg_count}.
      *
      * The behavior of this method is undefined if {@code cpi} does not denote an entry representing
-     * a {@code CONSTANT_Dynamic_info} or a @{code CONSTANT_InvokeDynamic_info}, or if the index
+     * a {@code CONSTANT_Dynamic_info} or a {@code CONSTANT_InvokeDynamic_info}, or if the index
      * is out of bounds.
      *
-     * @param cpi the index of a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry
+     * @param cpi the index of a {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} entry
      * @param index the index of the static argument in the list of static arguments
      * @return the constant pool index associated with the static argument
      */
