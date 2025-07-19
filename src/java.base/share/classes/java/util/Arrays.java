@@ -4181,6 +4181,352 @@ public final class Arrays {
         return new ArrayList<>(a);
     }
 
+    // ----------------------- WRAPPER ARRAYS ----------------------------
+
+    /**
+     * Returns the index of the first element in the sorted array not less than the key using the given comparator.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>   the element type
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @param comp  the comparator to compare elements
+     * @return index of the first element not less than key
+     */
+    public static <T> int lowerBound(T[] arr, T key, Comparator<? super T> comp) {
+        int low = 0, high = arr.length - 1, idx = arr.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(arr[mid], key) >= 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted array not less than the key using natural order.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>   the element type (comparable)
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @return index of the first element not less than key
+     */
+    public static <T extends Comparable<? super T>> int lowerBound(T[] arr, T key) {
+        return lowerBound(arr, key, Comparator.naturalOrder());
+    }
+
+    /**
+     * Returns the index of the first element in the sorted array greater than the key using the given comparator.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>   the element type
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @param comp  the comparator to compare elements
+     * @return index of the first element greater than key
+     */
+    public static <T> int upperBound(T[] arr, T key, Comparator<? super T> comp) {
+        int low = 0, high = arr.length - 1, idx = arr.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(arr[mid], key) > 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted array greater than the key using natural order.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>   the element type (comparable)
+     * @param arr   the sorted array
+     * @param key   the search key
+     * @return index of the first element greater than key
+     */
+    public static <T extends Comparable<? super T>> int upperBound(T[] arr, T key) {
+        return upperBound(arr, key, Comparator.naturalOrder());
+    }
+
+    // ----------------------- PRIMITIVE ARRAYS ----------------------------
+
+    /**
+     * Returns the index of the first element in the sorted int array not less than key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element >= key
+     */
+    public static int lowerBound(int[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted int array greater than key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element > key
+     */
+    public static int upperBound(int[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted long array not less than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted long array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
+     */
+    public static int lowerBound(long[] array, long key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted long array strictly greater than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted long array
+     * @param key the target value
+     * @return index of the first element greater than the key
+     */
+    public static int upperBound(long[] array, long key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted int array not less than key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element >= key
+     */
+    public static int lowerBound(short[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted int array greater than key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array sorted int array
+     * @param key target value
+     * @return index of the first element > key
+     */
+    public static int upperBound(short[] array, int key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted double array not less than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted double array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
+     */
+    public static int lowerBound(double[] array, double key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted double array strictly greater than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted double array
+     * @param key the target value
+     * @return index of the first element greater than the key
+     */
+    public static int upperBound(double[] array, double key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted float array not less than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted float array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
+     */
+    public static int lowerBound(float[] array, float key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted float array strictly greater than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted float array
+     * @param key the target value
+     * @return index of the first element greater than the key
+     */
+    public static int upperBound(float[] array, float key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted char array not less than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted char array
+     * @param key the target value
+     * @return index of the first element greater than or equal to the key
+     */
+    public static int lowerBound(char[] array, char key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] >= key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
+    /**
+     * Returns the index of the first element in the sorted char array strictly greater than the given key.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param array the sorted char array
+     * @param key the target value
+     * @return index of the first element greater than the key
+     */
+    public static int upperBound(char[] array, char key) {
+        int low = 0, high = array.length - 1, idx = array.length;
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (array[mid] > key) {
+                idx = mid;
+                high = mid - 1;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return idx;
+    }
+
     /**
      * @serial include
      */
