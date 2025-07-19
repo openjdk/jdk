@@ -42,8 +42,6 @@ import sun.reflect.annotation.AnnotationSupport;
  */
 public final class Parameter implements AnnotatedElement {
 
-    private final String name;
-    private final int modifiers;
     private final Executable executable;
     private final int index;
 
@@ -55,17 +53,11 @@ public final class Parameter implements AnnotatedElement {
      * absent, however, then {@code Executable} uses this constructor
      * to synthesize them.
      *
-     * @param name The name of the parameter.
-     * @param modifiers The modifier flags for the parameter.
      * @param executable The executable which defines this parameter.
      * @param index The index of the parameter.
      */
-    Parameter(String name,
-              int modifiers,
-              Executable executable,
+    Parameter(Executable executable,
               int index) {
-        this.name = name;
-        this.modifiers = modifiers;
         this.executable = executable;
         this.index = index;
     }
@@ -104,7 +96,7 @@ public final class Parameter implements AnnotatedElement {
      * to the class file.
      */
     public boolean isNamePresent() {
-        return executable.hasRealParameterData() && name != null;
+        return executable.realParameterName(index) != null;
     }
 
     /**
@@ -128,7 +120,7 @@ public final class Parameter implements AnnotatedElement {
 
         sb.append(Modifier.toString(getModifiers()));
 
-        if(0 != modifiers)
+        if(0 != getModifiers())
             sb.append(' ');
 
         if(isVarArgs())
@@ -159,7 +151,7 @@ public final class Parameter implements AnnotatedElement {
      * programming language and JVM modeling in core reflection</a>
      */
     public int getModifiers() {
-        return modifiers;
+        return executable.parameterFlag(index);
     }
 
     /**
@@ -189,6 +181,7 @@ public final class Parameter implements AnnotatedElement {
      *         a name.
      */
     public String getName() {
+        var name = executable.realParameterName(index);
         // Note: empty strings as parameter names are now outlawed.
         // The .isEmpty() is for compatibility with current JVM
         // behavior.  It may be removed at some point.
@@ -196,11 +189,6 @@ public final class Parameter implements AnnotatedElement {
             return "arg" + index;
         else
             return name;
-    }
-
-    // Package-private accessor to the real name field.
-    String getRealName() {
-        return name;
     }
 
     /**

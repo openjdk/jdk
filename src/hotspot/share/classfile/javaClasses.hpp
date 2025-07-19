@@ -860,38 +860,6 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   friend class JavaClasses;
 };
 
-class java_lang_reflect_Parameter {
- private:
-  // Note that to reduce dependencies on the JDK we compute these
-  // offsets at run-time.
-  static int _name_offset;
-  static int _modifiers_offset;
-  static int _index_offset;
-  static int _executable_offset;
-
-  static void compute_offsets();
-
- public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  // Allocation
-  static Handle create(TRAPS);
-
-  // Accessors
-  static oop name(oop field);
-  static void set_name(oop field, oop value);
-
-  static int index(oop reflect);
-  static void set_index(oop reflect, int value);
-
-  static int modifiers(oop reflect);
-  static void set_modifiers(oop reflect, int value);
-
-  static oop executable(oop constructor);
-  static void set_executable(oop constructor, oop value);
-
-  friend class JavaClasses;
-};
 
 #define MODULE_INJECTED_FIELDS(macro)                            \
   macro(java_lang_Module, module_entry, intptr_signature, false)
