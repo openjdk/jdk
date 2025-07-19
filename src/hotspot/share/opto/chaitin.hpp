@@ -472,8 +472,6 @@ class PhaseChaitin : public PhaseRegAlloc {
   // instead.  Update high-pressure indices.  Create a new live range.
   void insert_proj( Block *b, uint i, Node *spill, uint maxlrg );
 
-  bool is_high_pressure( Block *b, LRG *lrg, uint insidx );
-
   uint _oldphi;                 // Node index which separates pre-allocation nodes
 
   Block **_blks;                // Array of blocks sorted by frequency for coalescing

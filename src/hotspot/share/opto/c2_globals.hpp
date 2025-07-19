@@ -848,6 +848,10 @@
           "Run DuplicateBackedge whenever possible ignoring benefit"        \
           "analysis")                                                       \
                                                                             \
+  product(bool, LoopAwareSpilling, true, DIAGNOSTIC,                        \
+          "Eagerly spill or reload live ranges at loop entry if it seems"   \
+          "beneficial")                                                     \
+                                                                            \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \
                                                                             \
