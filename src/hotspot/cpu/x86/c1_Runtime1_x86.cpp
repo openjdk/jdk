@@ -719,7 +719,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // verify callee-saved register
 #ifdef ASSERT
   guarantee(thread != rax, "change this code");
-  __ push(rax);
+  __ push_ppx(rax);
   { Label L;
     __ get_thread_slow(rax);
     __ cmpptr(thread, rax);
@@ -727,7 +727,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
     __ stop("StubAssembler::call_RT: rdi/r15 not callee saved?");
     __ bind(L);
   }
-  __ pop(rax);
+  __ pop_ppx(rax);
 #endif
   __ reset_last_Java_frame(true);
 
@@ -1070,10 +1070,10 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
         };
 
         __ set_info("slow_subtype_check", dont_gc_arguments);
-        __ push(rdi);
-        __ push(rsi);
-        __ push(rcx);
-        __ push(rax);
+        __ push_ppx(rdi);
+        __ push_ppx(rsi);
+        __ push_ppx(rcx);
+        __ push_ppx(rax);
 
         // This is called by pushing args and not with C abi
         __ movptr(rsi, Address(rsp, (klass_off) * VMRegImpl::stack_slot_size)); // subclass
@@ -1084,10 +1084,10 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         // fallthrough on success:
         __ movptr(Address(rsp, (result_off) * VMRegImpl::stack_slot_size), 1); // result
-        __ pop(rax);
-        __ pop(rcx);
-        __ pop(rsi);
-        __ pop(rdi);
+        __ pop_ppx(rax);
+        __ pop_ppx(rcx);
+        __ pop_ppx(rsi);
+        __ pop_ppx(rdi);
         __ ret(0);
 
         __ bind(miss);
