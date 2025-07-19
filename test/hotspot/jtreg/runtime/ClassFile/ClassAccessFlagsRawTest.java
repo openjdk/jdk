@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@
  * @bug 8291360
  * @summary Test getting a class's raw access flags using java.lang.Class API
  * @modules java.base/java.lang:open
+ * @library /test/lib
  * @compile classAccessFlagsRaw.jcod
  * @run main/othervm ClassAccessFlagsRawTest
  */
 
 import java.lang.reflect.*;
+import jdk.test.lib.Asserts;
 
 public class ClassAccessFlagsRawTest {
 
@@ -40,10 +42,9 @@ public class ClassAccessFlagsRawTest {
     public static void testIt(String className, int expectedResult) throws Exception {
         Class<?> testClass = Class.forName(className);
         int flags = (int)m.invoke(testClass);
-        if (flags != expectedResult) {
-            throw new RuntimeException(
-                "expected 0x" + Integer.toHexString(expectedResult) + ", got 0x" + Integer.toHexString(flags) + " for class " + className);
-        }
+        Asserts.assertTrue(flags == expectedResult,
+                           "expected 0x" + Integer.toHexString(expectedResult) +
+                           ", got 0x" + Integer.toHexString(flags) + " for class " + className);
     }
 
     public static void main(String argv[]) throws Throwable {
@@ -53,26 +54,21 @@ public class ClassAccessFlagsRawTest {
 
         testIt("SUPERset", 0x21);  // ACC_SUPER 0x20 + ACC_PUBLIC 0x1
         testIt("SUPERnotset", Modifier.PUBLIC);
+        testIt("SYNTHETICset", 0x0001); // ACC_SYNTHETIC 0x1000 + ACC_PUBLIC 0x1
 
         // test primitive array.  should return ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
         int flags = (int)m.invoke((new int[3]).getClass());
-        if (flags != (Modifier.ABSTRACT | Modifier.FINAL | Modifier.PUBLIC)) {
-            throw new RuntimeException(
-                "expected 0x411, got 0x" + Integer.toHexString(flags) + " for primitive array");
-        }
+        Asserts.assertTrue (flags == (Modifier.ABSTRACT | Modifier.FINAL | Modifier.PUBLIC),
+                            "expected 0x411, got 0x" + Integer.toHexString(flags) + " for primitive array");
 
         // test object array.  should return flags of component.
         flags = (int)m.invoke((new SUPERnotset[2]).getClass());
-        if (flags != Modifier.PUBLIC) {
-            throw new RuntimeException(
-                "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
-        }
+        Asserts.assertTrue (flags == Modifier.PUBLIC,
+                            "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
 
         // test multi-dimensional object array.  should return flags of component.
         flags = (int)m.invoke((new SUPERnotset[4][2]).getClass());
-        if (flags != Modifier.PUBLIC) {
-            throw new RuntimeException(
-                "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
-        }
+        Asserts.assertTrue (flags == Modifier.PUBLIC,
+                            "expected 0x1, got 0x" + Integer.toHexString(flags) + " for object array");
     }
 }
