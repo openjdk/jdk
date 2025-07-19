@@ -664,7 +664,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
         // unless we have a real implementation of it in the current class.
         if (!already_in_vtable_slots(slots, m)) {
           Method* impl = klass->lookup_method(m->name(), m->signature());
-          if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
+          if (impl == nullptr || impl->is_overpass() || impl->is_static() || impl->is_private()) {
             slots->append(new EmptyVtableSlot(m));
           }
         }
