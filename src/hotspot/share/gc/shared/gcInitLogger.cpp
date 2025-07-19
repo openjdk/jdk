@@ -62,7 +62,12 @@ void GCInitLogger::print_cpu() {
 }
 
 void GCInitLogger::print_memory() {
-  julong memory = os::physical_memory();
+  size_t phys_mem = 0;
+  if (!os::physical_memory(phys_mem))
+  {
+    log_debug_p(gc, init)("os::physical_memory() failed");
+  }
+  julong memory = static_cast<julong>(phys_mem);
   log_info_p(gc, init)("Memory: " JULONG_FORMAT "%s",
                        byte_size_in_proper_unit(memory), proper_unit_for_byte_size(memory));
 }
