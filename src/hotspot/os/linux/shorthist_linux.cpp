@@ -1,7 +1,6 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023 Red Hat Inc. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, IBM Corporation. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +34,13 @@
 
 void ShortHistoryData_pd::measure() {
   // Process memory info
-  os::Linux::meminfo_t mi;
-  os::Linux::query_process_memory_info(&mi);
-  _vsize = mi.vmsize;
-  _rss = mi.vmrss;
-  _swap = mi.vmswap;
+  os::Linux::process_info_t mi;
+  os::Linux::query_process_info(&mi);
+  _vmsize = mi.vmsize;
+  _vmrss = mi.vmrss;
+  _vmswap = mi.vmswap;
+  _threads = mi.threads;
+  _fdsize = mi.fdsize;
 
   // Glibc memory info
 #ifdef __GLIBC__
@@ -47,7 +48,7 @@ void ShortHistoryData_pd::measure() {
   os::Linux::glibc_mallinfo mai;
   os::Linux::get_mallinfo(&mai, &might_have_wrapped);
   might_have_wrapped = NOT_LP64(false)
-                       LP64_ONLY(might_have_wrapped && _vsize > (UINT_MAX / K));
+                       LP64_ONLY(might_have_wrapped && _vmsize > (UINT_MAX / K));
   if (might_have_wrapped) {
     _glibc_heap_allocated = _glibc_heap_retained = 0;
   } else {
@@ -58,10 +59,9 @@ void ShortHistoryData_pd::measure() {
   _glibc_heap_allocated = _glibc_heap_retained = 0; // muslc
 #endif
 }
-
-//               012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-#define HEADER1 "------------- process ------- ------ glibc ------ "
-#define HEADER2 "    vsize       rss      swap      live  retained "
+#define HEADER1 "|------------ process ------------------| |----- glibc -----| "
+#define HEADER2 "   vsize       rss      swap   thr    fd      live  retained  "
+//              .012345678.012345678.012345678.01234.67890.234567890.234567890.2345678901234567890
 
 void ShortHistoryData_pd::print_header_1(outputStream* st) {
   st->print_raw(HEADER1);
@@ -71,6 +71,6 @@ void ShortHistoryData_pd::print_header_2(outputStream* st) {
 }
 
 void ShortHistoryData_pd::print_on(outputStream* st) const {
-  st->print("%9zu %9zu %9zu ", _vsize, _rss, _swap);
+  st->print("%9zu %9zu %9zu %5d %5d ", _vmsize, _vmrss, _vmswap, _threads, _fdsize);
   st->print("%9zu %9zu ", _glibc_heap_allocated, _glibc_heap_retained);
 }
