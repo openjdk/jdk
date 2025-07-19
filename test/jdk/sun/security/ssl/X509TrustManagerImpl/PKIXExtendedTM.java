@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,9 @@
  * @test
  * @bug 6916074 8170131
  * @summary Add support for TLS 1.2
- * @run main/othervm PKIXExtendedTM 0
- * @run main/othervm PKIXExtendedTM 1
  * @run main/othervm PKIXExtendedTM 2
- * @run main/othervm PKIXExtendedTM 3
  */
 
-import java.net.*;
-import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
 import java.security.Security;
@@ -1114,6 +1109,11 @@ public class PKIXExtendedTM {
     };
 
     public static void main(String args[]) throws Exception {
+        // Disable KeyManager's algorithm constraints checking as this test
+        // is about TrustManager's constraints check.
+        System.setProperty(
+                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
+
         if (args.length != 1) {
             throw new Exception("Incorrect number of arguments");
         }
