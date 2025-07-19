@@ -25,6 +25,11 @@
 
 package java.util;
 
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 /**
  * Provides a reversed-ordered view of a SortedMap. Not serializable.
  *
@@ -103,6 +108,13 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
             public void clear() { base.keySet().clear(); }
             public boolean contains(Object o) { return base.keySet().contains(o); }
             public boolean remove(Object o) { return base.keySet().remove(o); }
+            // override default methods to quiet the java/util/Collections/Wrappers test
+            public void forEach(Consumer<? super K> action) { super.forEach(action); }
+            public boolean removeIf(Predicate<? super K> filter) { return super.removeIf(filter); }
+            public Stream<K> parallelStream() { return super.parallelStream(); }
+            public Spliterator<K> spliterator() { return super.spliterator(); }
+            public Stream<K> stream() { return super.stream(); }
+            public <T> T[] toArray(IntFunction<T[]> generator) { return super.toArray(generator); }
         };
     }
 
@@ -114,6 +126,13 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
             public void clear() { base.values().clear(); }
             public boolean contains(Object o) { return base.values().contains(o); }
             public boolean remove(Object o) { return base.values().remove(o); }
+            // override default methods to quiet the java/util/Collections/Wrappers test
+            public void forEach(Consumer<? super V> action) { super.forEach(action); }
+            public boolean removeIf(Predicate<? super V> filter) { return super.removeIf(filter); }
+            public Stream<V> parallelStream() { return super.parallelStream(); }
+            public Spliterator<V> spliterator() { return super.spliterator(); }
+            public Stream<V> stream() { return super.stream(); }
+            public <T> T[] toArray(IntFunction<T[]> generator) { return super.toArray(generator); }
         };
     }
 
@@ -125,6 +144,13 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
             public void clear() { base.entrySet().clear(); }
             public boolean contains(Object o) { return base.entrySet().contains(o); }
             public boolean remove(Object o) { return base.entrySet().remove(o); }
+            // override default methods to quiet the java/util/Collections/Wrappers test
+            public void forEach(Consumer<? super Entry<K,V>> action) { super.forEach(action); }
+            public boolean removeIf(Predicate<? super Entry<K,V>> filter) { return super.removeIf(filter); }
+            public Stream<Entry<K,V>> parallelStream() { return super.parallelStream(); }
+            public Spliterator<Entry<K,V>> spliterator() { return super.spliterator(); }
+            public Stream<Entry<K,V>> stream() { return super.stream(); }
+            public <T> T[] toArray(IntFunction<T[]> generator) { return super.toArray(generator); }
         };
     }
 
