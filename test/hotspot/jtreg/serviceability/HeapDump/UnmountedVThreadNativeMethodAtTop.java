@@ -27,7 +27,7 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
  */
 
 import java.lang.management.ManagementFactory;
