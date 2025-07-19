@@ -472,11 +472,6 @@ void VM_Version::c2_initialize() {
     }
   }
 
-  if (UseAESCTRIntrinsics) {
-    warning("AES/CTR intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
-
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
