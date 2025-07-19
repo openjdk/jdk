@@ -1,7 +1,6 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023 Red Hat Inc. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, IBM Corporation. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +24,13 @@
  */
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/orderAccess.hpp"
@@ -57,24 +59,43 @@ struct Data {
     size_t meta_nclass_used;
     size_t meta_class_used;
     size_t meta_gc_threshold;
+    size_t nmt_malloc;
+    size_t nmt_unsafe;
   } _d;
 
-  void measure() {
-    // Note: only measure things one can measure quickly and without locking
-    time(&_d.time);
-    _d.pd.measure();
+#define HEADER1_a "                         "
+#define HEADER2_a "  id                time "
+  //               0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+#define HEADER1_b "|--- java heap ---| |-------- metaspace --------| |----- nmt -------|"
+#define HEADER2_b "    comm      used    nclass     class     gcthr    malloc    unsafe "
+
+  void measure_heap() {
     _d.heap_committed = btokb(Universe::heap()->capacity());
-//    _d.heap_used = btokb(Universe::heap()->used());
-    _d.heap_used = 0;
+    const size_t used = UseG1GC ? ((G1CollectedHeap*)Universe::heap())->used_unlocked() :  // avoid locking
+                                  Universe::heap()->used();
+    _d.heap_used = btokb(used);
+  }
+
+  void measure_metaspace() {
     _d.meta_nclass_used = btokb(MetaspaceUtils::used_bytes(Metaspace::NonClassType));
     _d.meta_class_used = btokb(UseCompressedClassPointers ? MetaspaceUtils::used_bytes(Metaspace::ClassType) : 0);
     _d.meta_gc_threshold = btokb(MetaspaceGC::capacity_until_GC());
   }
-//                 012345678901234567890123456789012345678901234567890123456789
-#define HEADER1_a "                         "
-#define HEADER2_a "  id                time "
-#define HEADER1_b "---- java heap ---- ------- metaspace used ------ "
-#define HEADER2_b "     comm      used    nclass     class     gcthr "
+
+  void measure_nmt() {
+    if (MemTracker::enabled()) {
+      _d.nmt_malloc = btokb(MallocTracker::total_malloc());
+      _d.nmt_unsafe = btokb(MallocTracker::malloc_size(MemTag::mtOther));
+    }
+  }
+
+  void measure() {
+    time(&_d.time);
+    measure_heap();
+    measure_metaspace();
+    measure_nmt();
+    _d.pd.measure();
+  }
 
   static void print_header_1(outputStream* st) {
     st->print_raw(HEADER1_a);
