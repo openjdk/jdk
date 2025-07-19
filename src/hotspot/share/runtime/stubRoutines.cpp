@@ -156,9 +156,6 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   }
   CodeBuffer buffer(stubs_code);
   StubGenerator_generate(&buffer, blob_id);
-  // When new stubs added we need to make sure there is some space left
-  // to catch situation when we should increase size again.
-  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
 
   LogTarget(Info, stubs) lt;
   if (lt.is_enabled()) {
@@ -167,6 +164,11 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
                 buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
                 buffer.total_content_size(), buffer.insts_remaining());
   }
+
+  // When new stubs added we need to make sure there is some space left
+  // to catch situation when we should increase size again.
+  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+
   return stubs_code;
 }
 
