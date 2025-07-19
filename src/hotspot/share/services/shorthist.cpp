@@ -59,15 +59,16 @@ struct Data {
     size_t meta_nclass_used;
     size_t meta_class_used;
     size_t meta_gc_threshold;
-    size_t nmt_malloc;
-    size_t nmt_unsafe;
+    size_t nmt_malloc_total;
+    size_t nmt_malloc_gcdata;
+    size_t nmt_malloc_unsafe;
   } _d;
 
 #define HEADER1_a "                         "
 #define HEADER2_a "  id                time "
-  //               0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-#define HEADER1_b "|--- java heap ---| |-------- metaspace --------| |----- nmt -------|"
-#define HEADER2_b "    comm      used    nclass     class     gcthr    malloc    unsafe "
+#define HEADER1_b "|---- java heap ----||--------- metaspace ---------||----------- nmt -------------|"
+#define HEADER2_b "      comm      used     nclass     class     gcthr     malloc    gcdata    unsafe "
+  //               |.........|.........||.........|.........|.........||.........|.........|.........||
 
   void measure_heap() {
     _d.heap_committed = btokb(Universe::heap()->capacity());
@@ -84,8 +85,9 @@ struct Data {
 
   void measure_nmt() {
     if (MemTracker::enabled()) {
-      _d.nmt_malloc = btokb(MallocTracker::total_malloc());
-      _d.nmt_unsafe = btokb(MallocTracker::malloc_size(MemTag::mtOther));
+      _d.nmt_malloc_total = btokb(MallocTracker::total_malloc());
+      _d.nmt_malloc_gcdata = btokb(MallocTracker::malloc_size(MemTag::mtGC));
+      _d.nmt_malloc_unsafe = btokb(MallocTracker::malloc_size(MemTag::mtOther));
     }
   }
 
@@ -122,8 +124,9 @@ struct Data {
     }
     st->print("%s ", buf);
     _d.pd.print_on(st);
-    st->print("%9zu %9zu ", _d.heap_committed, _d.heap_used);
-    st->print("%9zu %9zu %9zu ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
+    st->print(" %9zu %9zu ", _d.heap_committed, _d.heap_used);
+    st->print(" %9zu %9zu %9zu ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
+    st->print(" %9zu %9zu %9zu ", _d.nmt_malloc_total, _d.nmt_malloc_gcdata, _d.nmt_malloc_unsafe);
     st->cr();
   }
 };

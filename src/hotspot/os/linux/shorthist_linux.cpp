@@ -51,17 +51,20 @@ void ShortHistoryData_pd::measure() {
                        LP64_ONLY(might_have_wrapped && _vmsize > (UINT_MAX / K));
   if (might_have_wrapped) {
     _glibc_heap_allocated = _glibc_heap_retained = 0;
+    _glibc_num_trims = 0;
   } else {
     _glibc_heap_allocated = btokb(mai.uordblks + mai.hblkhd);
     _glibc_heap_retained = btokb(mai.fordblks);
+    _glibc_num_trims = mai.num_trims;
   }
 #else
   _glibc_heap_allocated = _glibc_heap_retained = 0; // muslc
+  _glibc_num_trims = 0;
 #endif
 }
-#define HEADER1 "|------------ process ------------------| |----- glibc -----| "
-#define HEADER2 "   vsize       rss      swap   thr    fd      live  retained  "
-//              .012345678.012345678.012345678.01234.67890.234567890.234567890.2345678901234567890
+#define HEADER1 "|-------------- process ------------------||--------- glibc ---------|"
+#define HEADER2 "     vsize       rss      swap   thr    fd       live  retained  trim "
+//               |.........|.........|.........|.....|.....||.........|.........|.....|
 
 void ShortHistoryData_pd::print_header_1(outputStream* st) {
   st->print_raw(HEADER1);
@@ -71,6 +74,6 @@ void ShortHistoryData_pd::print_header_2(outputStream* st) {
 }
 
 void ShortHistoryData_pd::print_on(outputStream* st) const {
-  st->print("%9zu %9zu %9zu %5d %5d ", _vmsize, _vmrss, _vmswap, _threads, _fdsize);
-  st->print("%9zu %9zu ", _glibc_heap_allocated, _glibc_heap_retained);
+  st->print(" %9zu %9zu %9zu %5d %5d ", _vmsize, _vmrss, _vmswap, _threads, _fdsize);
+  st->print(" %9zu %9zu %5u ", _glibc_heap_allocated, _glibc_heap_retained, _glibc_num_trims);
 }

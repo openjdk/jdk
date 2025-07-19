@@ -36,6 +36,7 @@ class ShortHistoryData_pd {
   int _fdsize;
   size_t _glibc_heap_allocated;
   size_t _glibc_heap_retained;
+  int _glibc_num_trims;
 public:
   void measure();
   static void print_header_1(outputStream* st);
