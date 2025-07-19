@@ -37,67 +37,6 @@
 
 DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
-// Detector for class names we wish to handle specially.
-// It is either an exact string match or a string prefix match.
-class AOTClassInitializer::AllowedSpec {
-  const char* _class_name;
-  bool _is_prefix;
-  int _len;
-public:
-  AllowedSpec(const char* class_name, bool is_prefix = false)
-    : _class_name(class_name), _is_prefix(is_prefix)
-  {
-    _len = (class_name == nullptr) ? 0 : (int)strlen(class_name);
-  }
-  const char* class_name() { return _class_name; }
-
-  bool matches(Symbol* name, int len) {
-    assert(_class_name != nullptr, "caller resp.");
-    if (_is_prefix) {
-      return len >= _len && name->starts_with(_class_name);
-    } else {
-      return len == _len && name->equals(_class_name);
-    }
-  }
-};
-
-
-// Tell if ik has a name that matches one of the given specs.
-bool AOTClassInitializer::is_allowed(AllowedSpec* specs, InstanceKlass* ik) {
-  Symbol* name = ik->name();
-  int len = name->utf8_length();
-  for (AllowedSpec* s = specs; s->class_name() != nullptr; s++) {
-    if (s->matches(name, len)) {
-      // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
-      //   - all super classes must be included
-      //   - all super interfaces that have <clinit> must be included.
-      // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
-      // ik's <clinit>.
-      if (ik->java_super() != nullptr) {
-        DEBUG_ONLY(ResourceMark rm);
-        assert(AOTClassInitializer::can_archive_initialized_mirror(ik->java_super()),
-               "super class %s of %s must be aot-initialized", ik->java_super()->external_name(),
-               ik->external_name());
-      }
-
-      Array<InstanceKlass*>* interfaces = ik->local_interfaces();
-      int len = interfaces->length();
-      for (int i = 0; i < len; i++) {
-        InstanceKlass* intf = interfaces->at(i);
-        if (intf->class_initializer() != nullptr) {
-          assert(AOTClassInitializer::can_archive_initialized_mirror(intf),
-                 "super interface %s (which has <clinit>) of %s must be aot-initialized", intf->external_name(),
-                 ik->external_name());
-        }
-      }
-
-      return true;
-    }
-  }
-  return false;
-}
-
-
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
@@ -260,74 +199,19 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   // because of invokedynamic.  They are few enough for now to be
   // manually tracked.  There may be more in the future.
 
-  // IS_PREFIX means that we match all class names that start with a
-  // prefix.  Otherwise, it is an exact match, of just one class name.
-  const bool IS_PREFIX = true;
-
   {
-    static AllowedSpec specs[] = {
+    if (ik == vmClasses::Object_klass()) {
       // everybody's favorite super
-      {"java/lang/Object"},
-
-      {nullptr}
-    };
-    if (is_allowed(specs, ik)) {
       return true;
     }
   }
 
   if (CDSConfig::is_dumping_method_handles()) {
-    // This table was created with the help of CDSHeapVerifier.
+    // The minimal list of @AOTSafeClassInitializer was created with the help of CDSHeapVerifier.
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
     // at runtime, we need to make sure Invokers$Holder is also aot-inited.
-    //
-    // We hope we can reduce the size of this list over time, and move
-    // the responsibility for identifying such classes into the JDK
-    // code itself.  See tracking RFE JDK-8342481.
-    static AllowedSpec indy_specs[] = {
-      {"java/lang/constant/ConstantDescs"},
-      {"java/lang/constant/DynamicConstantDesc"},
-      {"java/lang/invoke/BoundMethodHandle"},
-      {"java/lang/invoke/BoundMethodHandle$Specializer"},
-      {"java/lang/invoke/BoundMethodHandle$Species_", IS_PREFIX},
-      {"java/lang/invoke/ClassSpecializer"},
-      {"java/lang/invoke/ClassSpecializer$", IS_PREFIX},
-      {"java/lang/invoke/DelegatingMethodHandle"},
-      {"java/lang/invoke/DelegatingMethodHandle$Holder"},     // UNSAFE.ensureClassInitialized()
-      {"java/lang/invoke/DirectMethodHandle"},
-      {"java/lang/invoke/DirectMethodHandle$Constructor"},
-      {"java/lang/invoke/DirectMethodHandle$Holder"},         // UNSAFE.ensureClassInitialized()
-      {"java/lang/invoke/Invokers"},
-      {"java/lang/invoke/Invokers$Holder"},                   // UNSAFE.ensureClassInitialized()
-      {"java/lang/invoke/LambdaForm"},
-      {"java/lang/invoke/LambdaForm$Holder"},                 // UNSAFE.ensureClassInitialized()
-      {"java/lang/invoke/LambdaForm$NamedFunction"},
-      {"java/lang/invoke/LambdaMetafactory"},
-      {"java/lang/invoke/MethodHandle"},
-      {"java/lang/invoke/MethodHandles"},
-      {"java/lang/invoke/SimpleMethodHandle"},
-      {"java/lang/invoke/StringConcatFactory"},
-      {"java/lang/invoke/VarHandleGuards"},
-      {"java/util/Collections"},
-      {"java/util/stream/Collectors"},
-      {"jdk/internal/constant/ConstantUtils"},
-      {"jdk/internal/constant/PrimitiveClassDescImpl"},
-      {"jdk/internal/constant/ReferenceClassDescImpl"},
-
-    // Can't include this, as it will pull in MethodHandleStatics which has many environment
-    // dependencies (on system properties, etc).
-    // MethodHandleStatics is an example of a class that must NOT get the aot-init treatment,
-    // because of its strong reliance on (a) final fields which are (b) environmentally determined.
-    //{"java/lang/invoke/InvokerBytecodeGenerator"},
-
-      {nullptr}
-    };
-    if (is_allowed(indy_specs, ik)) {
-      return true;
-    }
-
-    if (ik->name()->starts_with("java/lang/invoke/MethodHandleImpl")) {
+    if (ik->has_aot_safe_initializer()) {
       return true;
     }
   }
@@ -339,17 +223,6 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 #endif
 
   return false;
-}
-
-// TODO: currently we have a hard-coded list. We should turn this into
-// an annotation: @jdk.internal.vm.annotation.RuntimeSetupRequired
-// See JDK-8342481.
-bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
-  return ik == vmClasses::Class_klass() ||
-         ik == vmClasses::internal_Unsafe_klass() ||
-         ik == vmClasses::ConcurrentHashMap_klass() ||
-         ik == vmClasses::MethodHandleImpl_klass() ||
-         ik == vmClasses::Reference_klass();
 }
 
 void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {

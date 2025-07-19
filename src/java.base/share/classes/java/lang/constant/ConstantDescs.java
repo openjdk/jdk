@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 import java.lang.Enum.EnumDesc;
 import java.lang.invoke.CallSite;
@@ -56,6 +57,7 @@ import static java.lang.constant.DirectMethodHandleDesc.Kind.STATIC;
  *
  * @since 12
  */
+@AOTSafeClassInitializer
 public final class ConstantDescs {
     // No instances
     private ConstantDescs() { }
