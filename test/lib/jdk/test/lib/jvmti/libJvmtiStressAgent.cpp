@@ -49,8 +49,11 @@
 /* Global settings and some statistics counters */
 typedef struct {
 
-    /* If debugging functionality could be used. Set from agent args.*/
-  jlong is_debugger_enabled;
+  /* Verbose logging support */
+  jboolean is_verbose;
+
+  /* If debugging functionality could be used. Set from agent args.*/
+  jboolean is_debugger_enabled;
 
   /* Monitor and flags to synchronize agent completion.*/
   jrawMonitorID finished_lock;
@@ -130,12 +133,11 @@ typedef struct {
 GlobalData *gdata;
 
 static GlobalData*
-gdata_init(jboolean is_debugger_enabled) {
+gdata_init() {
   static GlobalData data;
   (void) memset(&data, 0, sizeof (GlobalData));
 
-  data.is_debugger_enabled = is_debugger_enabled;
-  data.log_file = fopen("JvmtiStressAgent.out", "w");
+  data.is_debugger_enabled = JNI_TRUE;
 
   data.agent_request_stop = JNI_FALSE;
   data.is_agent_finished = JNI_FALSE;
@@ -172,27 +174,28 @@ gdata_init(jboolean is_debugger_enabled) {
 void
 gdata_close() {
   free(gdata->events_excluded);
-  fclose(gdata->log_file);
+  if (gdata->is_verbose) {
+    fclose(gdata->log_file);
+  }
 }
-// uncomment to enable verbose logging
-// #define DEBUG_ENABLED
 
 // Internal buffer length for all messages
 #define MESSAGE_LIMIT 16384
 
-#define FAILURE_EXIT_CODE 74
 void
 debug(const char* format, ...) {
-#ifdef DEBUG_ENABLED
+  if (!gdata->is_verbose) {
+    return;
+  }
   char dest[MESSAGE_LIMIT];
   va_list argptr;
   va_start(argptr, format);
   vsnprintf(dest, MESSAGE_LIMIT, format, argptr);
   va_end(argptr);
+  // Enable if needed, tests might fail with unexpected output
   //printf("%s\n", dest);
   fprintf(gdata->log_file, "%s\n", dest);
   fflush(gdata->log_file);
-#endif
 }
 
 /* Some helper functions to start/stop jvmti stress agent thread. */
@@ -709,7 +712,6 @@ cbBreakpoint(jvmtiEnv *jvmti,
              jthread thread,
              jmethodID method,
              jlocation location) {
-  static long breakpoint_cnt = 0;
   register_event(&gdata->cbBreakpoint);
   debug("Event cbBreakpoint\n");
 }
@@ -938,7 +940,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  bool debugger_enabled = true;
+  gdata = gdata_init();
 
   if (options != nullptr) {
     char *opts = strdup(options);
@@ -947,20 +949,20 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     while (token != nullptr) {
       if (strncmp(token, "debugger=", 9) == 0) {
         if (strcmp(token + 9, "true") == 0)
-          debugger_enabled = true;
+          gdata->is_debugger_enabled = JNI_TRUE;
         else
-          debugger_enabled = false;
+          gdata->is_debugger_enabled = JNI_FALSE;
+      }
+      if (strncmp(token, "verbose", 7) == 0) {
+        gdata->is_verbose = JNI_TRUE;
+        gdata->log_file = fopen("JvmtiStressAgent.out", "w");
       }
       token = strtok(nullptr, ",");
     }
     free(opts);
   }
 
-  debug("Debugger enabled: %s\n", debugger_enabled ? "true" : "false");
-  gdata = gdata_init(debugger_enabled);
-
   get_capabilities(jvmti);
-
   gdata->finished_lock = create_raw_monitor(jvmti, "Finished lock");
   set_callbacks(jvmti, JNI_TRUE);
   // Enable all events until start jvmti stress agent.
