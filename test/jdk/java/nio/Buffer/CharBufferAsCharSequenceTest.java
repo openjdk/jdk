@@ -179,19 +179,19 @@ public class CharBufferAsCharSequenceTest {
         return args;
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testToString(CharSequence actual, char[] expected, int start, int stop, String description) {
         assertEquals(new String(expected, start, stop - start), actual.toString(), description);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testLength(CharSequence actual, char[] expected, int start, int stop, String description) {
         assertEquals(stop - start, actual.length(), description);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsRange(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
@@ -205,7 +205,7 @@ public class CharBufferAsCharSequenceTest {
         assertEquals(expected[start], actual.charAt(0), "first char after calling getChars: " + description);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsAll(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[stop - start];
@@ -218,55 +218,55 @@ public class CharBufferAsCharSequenceTest {
         assertEquals(expected[start], actual.charAt(0), "first char after calling getChars: " + description);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsNegativeSourceBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(-1, 4, val, 1));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsNegativeSourceEnd(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(0, -4, val, 1));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsSourceEndBeforeBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(3, 2, val, 1));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsNegativeDestBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 3, val, -1));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsDestBegOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length + 1));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsDestLengthOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length - 2));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testGetCharsNullDst(CharSequence actual, char[] expected, int start, int stop, String description) {
         assertThrows(NullPointerException.class, () -> actual.getChars(0, 1, null, 0));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testCharAt(CharSequence actual, char[] expected, int start, int stop, String description) {
         for (int i = 0, j = stop - start; i < j; ++i) {
@@ -274,19 +274,19 @@ public class CharBufferAsCharSequenceTest {
         }
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testCharAtNegativePos(CharSequence actual, char[] expected, int start, int stop, String description) {
         assertThrows(IndexOutOfBoundsException.class, () -> actual.charAt(-1));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testCharAtPosOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         assertThrows(IndexOutOfBoundsException.class, () -> actual.charAt(stop - start + 1));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testChars(CharSequence actual, char[] expected, int start, int stop, String description) {
         OfInt chars = actual.chars().iterator();
@@ -296,7 +296,7 @@ public class CharBufferAsCharSequenceTest {
         assertFalse(chars.hasNext(), "chars has more elements than expected " + description);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testCodePoints(CharSequence actual, char[] expected, int start, int stop, String description) {
         OfInt codePoints = actual.codePoints().iterator();
@@ -315,7 +315,7 @@ public class CharBufferAsCharSequenceTest {
         assertFalse(codePoints.hasNext(), "codePoints has more elements than expected " + description);
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
     void testSubSequence(CharSequence actual, char[] expected, int start, int stop, String description) {
         int maxTests = Math.min(7,  ((stop - start) >> 1) - 1);
