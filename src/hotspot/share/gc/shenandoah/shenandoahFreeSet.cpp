@@ -1226,11 +1226,10 @@ void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(Shenandoah
   }
   
   _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_in_region);
+  // decrease capacity adjusts available
   _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator, region_size_bytes);
-  _partitions.decrease_available(ShenandoahFreeSetPartitionId::Mutator, region_size_bytes);
   _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, 1);
 
-  _partitions.increase_available(ShenandoahFreeSetPartitionId::OldCollector, region_size_bytes);
   _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, region_size_bytes);
   _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, used_in_region);
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, 1);
