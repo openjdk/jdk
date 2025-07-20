@@ -50,6 +50,7 @@ import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
 import jdk.internal.vm.annotation.Stable;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
+import sun.util.cldr.CLDRLocaleProviderAdapter;
 import sun.util.spi.CalendarProvider;
 
 import static java.lang.System.*;
@@ -101,7 +102,7 @@ public abstract class LocaleProviderAdapter {
                 // lazily load adapters here
                 adapter = switch (this) {
                     case JRE -> new JRELocaleProviderAdapter();
-                    case CLDR -> new sun.util.cldr.CLDRLocaleProviderAdapter();
+                    case CLDR -> new CLDRLocaleProviderAdapter();
                     case SPI -> new SPILocaleProviderAdapter();
                     case HOST -> new HostLocaleProviderAdapter();
                     case FALLBACK -> new FallbackLocaleProviderAdapter();
