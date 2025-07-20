@@ -1981,7 +1981,7 @@ class MutableBigInteger {
                 r = new MutableBigInteger(rLong);
             }
         } else {
-            /* Since the following relation holds:
+            /* Since the following equality holds:
              * nthRoot(x, n) == nthRoot(x/2^s, n) * 2^(s/n), where s % n == 0,
              *
              * to get an upper bound of the root of x, it suffices to find an integer s
