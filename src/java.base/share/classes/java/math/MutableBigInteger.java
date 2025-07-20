@@ -164,7 +164,8 @@ class MutableBigInteger {
      *
      * Assume val is in the finite double range.
      */
-    static MutableBigInteger valueOf(double val, int pow) {
+
+    private static MutableBigInteger valueOf(double val, int pow) {
         // Translate the double into exponent and significand, according
         // to the formulae in JLS, Section 20.10.22.
         long valBits = Double.doubleToRawLongBits(val);
@@ -1937,8 +1938,9 @@ class MutableBigInteger {
      *
      * @implNote The implementation is based on the material in Richard P. Brent
      * and Paul Zimmermann, <a href="https://maths-people.anu.edu.au/~brent/pd/mca-cup-0.5.9.pdf">
-     * Modern Computer Arithmetic</a>, 27-28.
+     * Modern Computer Arithmetic</a>, p. 27-28.
      *
+     * @param n the root degree
      * @return the integer {@code n}th root of {@code this} and the remainder
      */
     MutableBigInteger[] nthRootRem(int n) {
@@ -1979,34 +1981,43 @@ class MutableBigInteger {
                 r = new MutableBigInteger(rLong);
             }
         } else {
+            /* Since the following relation holds:
+             * nthRoot(x, n) == nthRoot(x/2^s, n) * 2^(s/n), where s % n == 0,
+             * 
+             * to get an upper bound of the root of x, it suffices to find an integer s
+             * and a real r such that r >= nthRoot(x/2^s, n) and s % n == 0.
+             * The uppper bound will be r * 2^(s/n), indeed:
+             * r * 2^(s/n) >= nthRoot(x/2^s, n) * 2^(s/n) == nthRoot(x, n).
+             * To achieve this, we right shift the input of s bits into finite double range,
+             * rounding up the result if necessary.
+             *
+             * The value of the shift s is chosen in order to have the smallest number of
+             * trailing zeros in the double value of r after the significand (minimizing
+             * non-significant bits), and the shift is performed in order to lose
+             * the smallest number of bits in the significand if necessary (minimizing loss of precision).
+             */
             // Set up the initial estimate of the iteration.
             // Determine a right shift that is a multiple of n into finite double range.
-            long shift;
+            long shift = bitLength - Double.PRECISION;
+            int shiftExcess = (int) (shift % n);
             double rad;
-            // Try to shift as many bits as possible
-            // without losing precision in double's representation
-            if (bitLength > Double.PRECISION) {
-                shift = bitLength - Double.PRECISION;
-                int shiftExcess = (int) (shift % n);
 
-                if (bitLength - (shift - shiftExcess) <= Double.MAX_EXPONENT) {
-                    shift -= shiftExcess; // Adjust shift to a multiple of n
-                    // Shift the value into finite double range
-                    rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
-                } else { // this >> (shift - shiftExcess) could exceed finite double range, must lose precision
-                    // Shift the value into finite double range
-                    rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
-                    // Complete the shift to a multiple of n,
-                    // avoiding to lose more bits than necessary.
-                    if (shiftExcess != 0) {
-                        int shiftLack = n - shiftExcess;
-                        shift += shiftLack; // shift is long, no overflow
-                        rad /= Double.parseDouble("0x1p" + shiftLack);
-                    }
+            // Try to shift as many bits as possible
+            // without losing precision in double's representation.
+            if (bitLength - (shift - shiftExcess) <= Double.MAX_EXPONENT) {
+                shift -= shiftExcess; // Adjust shift to a multiple of n
+                // Shift the value into finite double range
+                rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
+            } else { // this >> (shift - shiftExcess) could exceed finite double range, may lose precision
+                // Shift the value into finite double range
+                rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
+                // Complete the shift to a multiple of n,
+                // avoiding to lose more bits than necessary.
+                if (shiftExcess != 0) {
+                    int shiftLack = n - shiftExcess;
+                    shift += shiftLack; // shift is long, no overflow
+                    rad /= Double.parseDouble("0x1p" + shiftLack);
                 }
-            } else {
-                shift = 0L;
-                rad = this.toBigInteger().doubleValue();
             }
 
             // Use the root of the shifted value as an estimate.
