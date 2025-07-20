@@ -70,7 +70,7 @@ public class MultiNSTSequence {
                 System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTSequence", "p"));
+                    "MultiNSTSequence", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             boolean pass = true;

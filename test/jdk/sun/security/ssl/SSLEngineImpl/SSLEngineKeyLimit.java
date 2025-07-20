@@ -119,8 +119,7 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
                     System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                    Utils.addTestJavaOpts("SSLEngineKeyLimit", "p", args[1],
-                            args[2]));
+                    "SSLEngineKeyLimit", "p", args[1], args[2]);
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {

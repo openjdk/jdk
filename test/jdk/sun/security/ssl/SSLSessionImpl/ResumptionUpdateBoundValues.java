@@ -188,7 +188,7 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
                     System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                    Utils.addTestJavaOpts("ResumptionUpdateBoundValues", "p"));
+                    "ResumptionUpdateBoundValues", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {

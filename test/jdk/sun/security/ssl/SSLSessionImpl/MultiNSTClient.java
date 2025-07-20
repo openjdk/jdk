@@ -78,7 +78,7 @@ public class MultiNSTClient {
                 System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTClient", "p"));
+                "MultiNSTClient", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             boolean pass = true;

@@ -117,7 +117,7 @@ public class MultiNSTParallel {
                 System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTParallel", "p"));
+                    "MultiNSTParallel", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {
