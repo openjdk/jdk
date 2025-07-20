@@ -25,6 +25,8 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.classfile.ClassFileVersion;
+import java.lang.reflect.ClassFileFormatVersion;
+import java.util.Optional;
 
 public final class ClassFileVersionImpl
         extends AbstractElement
@@ -44,6 +46,15 @@ public final class ClassFileVersionImpl
     @Override
     public int minorVersion() {
         return minorVersion;
+    }
+
+    @Override
+    public Optional<ClassFileFormatVersion> formatVersion() {
+        try {
+            return Optional.of(ClassFileFormatVersion.fromMajor(majorVersion));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
