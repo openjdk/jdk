@@ -659,7 +659,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
       for (int i = 0; i < super->default_methods()->length(); ++i) {
         Method* m = super->default_methods()->at(i);
         if (!already_in_vtable_slots(slots, m)) {
-          // m is method that we need to re-examine, unless we have a valid concrete
+          // m is a method that we need to re-examine, unless we have a valid concrete
           // implementation in the current class - see FindMethodsByErasedSig::visit.
           Method* impl = klass->lookup_method(m->name(), m->signature());
           if (impl == nullptr || impl->is_overpass() || impl->is_static() || impl->is_private()) {
