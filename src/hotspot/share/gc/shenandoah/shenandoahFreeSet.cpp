@@ -425,6 +425,7 @@ void ShenandoahRegionPartitions::increase_capacity(ShenandoahFreeSetPartitionId 
   shenandoah_assert_heaplocked();
   assert (which_partition < NumPartitions, "Partition must be valid");
   _capacity[int(which_partition)] += bytes;
+  _available[int(which_partition)] += bytes;
 #ifdef KELVIN_CAPACITY
   log_info(gc)("FreeSet<%s>::increase_capacity(%zu) yields: %zu", partition_name(which_partition),
                bytes, _capacity[int(which_partition)]);
@@ -436,6 +437,7 @@ void ShenandoahRegionPartitions::decrease_capacity(ShenandoahFreeSetPartitionId 
   assert (which_partition < NumPartitions, "Partition must be valid");
   assert(_capacity[int(which_partition)] >= bytes, "Cannot remove more capacity bytes than are present");
   _capacity[int(which_partition)] -= bytes;
+  _available[int(which_partition)] -= bytes;
 #ifdef KELVIN_CAPACITY
   log_info(gc)("FreeSet<%s>::decrease_capacity(%zu) yields: %zu", partition_name(which_partition),
                bytes, _capacity[int(which_partition)]);
@@ -2406,10 +2408,12 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
   _partitions.decrease_total_region_counts(which_collector, transferred_regions);
   _partitions.decrease_region_counts(which_collector, transferred_regions);
   _partitions.decrease_empty_region_counts(which_collector, transferred_regions);
+  _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
   _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
   _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
 
   recompute_total_used();
   _partitions.assert_bounds(true);
@@ -2978,22 +2982,21 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
   _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, regions_to_old_collector + regions_to_collector);
   _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator,
                                            empty_regions_to_old_collector + empty_regions_to_collector);
+  // decrease_capacity() also decreases available
   _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator,
                                 (regions_to_old_collector + regions_to_collector) * region_size_bytes);
-  _partitions.decrease_available(ShenandoahFreeSetPartitionId::Mutator,
-                                 (regions_to_old_collector + regions_to_collector) * region_size_bytes);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
   _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
   _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, empty_regions_to_collector);
+  // increase_capacity() also increases available
   _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Collector, regions_to_collector * region_size_bytes);
-  _partitions.increase_available(ShenandoahFreeSetPartitionId::Collector, regions_to_collector * region_size_bytes);
 
   _partitions.increase_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
   _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
   _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, empty_regions_to_old_collector);
+  // increase_capacity() also increases available
   _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector * region_size_bytes);
-  _partitions.increase_available(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector * region_size_bytes);
 
   if (used_to_collector > 0) {
     _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, used_to_collector);
