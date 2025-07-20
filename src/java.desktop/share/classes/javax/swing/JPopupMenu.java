@@ -941,10 +941,6 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     public void setInvoker(Component invoker) {
         Component oldInvoker = this.invoker;
         this.invoker = invoker;
-        if ((oldInvoker != this.invoker) && (ui != null)) {
-            ui.uninstallUI(this);
-            ui.installUI(this);
-        }
         PropertyChangeListener propListener = new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent e) {
                 String propertyName = e.getPropertyName();
@@ -960,6 +956,13 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
                 }
             }
         };
+        if ((oldInvoker != this.invoker) && (ui != null)) {
+            ui.uninstallUI(this);
+            if (oldInvoker != null) {
+                oldInvoker.removePropertyChangeListener(propListener);
+            }
+            ui.installUI(this);
+        }
         invoker.addPropertyChangeListener(propListener);
         invalidate();
     }

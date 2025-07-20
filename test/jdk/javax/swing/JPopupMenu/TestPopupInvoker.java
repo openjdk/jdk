@@ -21,6 +21,14 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 4938801
+ * @key headful
+ * @summary Verifies popup is removed when the component is removed
+ * @run main TestPopupInvoker
+ */
+
 import java.awt.Container;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
