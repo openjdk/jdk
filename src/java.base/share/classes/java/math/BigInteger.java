@@ -2751,9 +2751,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *   <li>if {@code x} &ge; 0, then {@code r} &ge; 0 is the largest integer such that
      *   {@code r}<sup>{@code n}</sup> &le; {@code x};
      *   <li>if {@code x} &lt; 0, then {@code r} &le; 0 is the smallest integer such that
-     *   {@code r}<sup>{@code n }</sup> &ge; {@code x}.
+     *   {@code r}<sup>{@code n}</sup> &ge; {@code x}.
      * </ul>
-     * It is equal to the value of {@code x.signum() * } &lfloor;{@code |nthRoot(x, n)|}&rfloor;,
+     * It is equal to the value of {@code x.signum()}&sdot; &lfloor;{@code |nthRoot(x, n)|}&rfloor;,
      * where {@code nthRoot(x, n)} denotes the real {@code n}th root of {@code x}
      * treated as a real.
      *
