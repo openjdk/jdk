@@ -231,7 +231,7 @@ public class Check {
             (sym.kind == MDL ?
                 LintWarnings.HasBeenDeprecatedModule(sym) :
                 LintWarnings.HasBeenDeprecated(sym, sym.location()));
-        log.mandatoryWarning(pos, warningKey);
+        log.warning(pos, warningKey);
     }
 
     /** Log a preview warning.
@@ -240,7 +240,7 @@ public class Check {
      */
     public void warnPreviewAPI(DiagnosticPosition pos, LintWarning warnKey) {
         if (!importSuppression)
-            log.mandatoryWarning(pos, warnKey);
+            log.warning(pos, warnKey);
     }
 
     /** Warn about unchecked operation.
@@ -248,7 +248,7 @@ public class Check {
      *  @param msg        A string describing the problem.
      */
     public void warnUnchecked(DiagnosticPosition pos, LintWarning warnKey) {
-        log.mandatoryWarning(pos, warnKey);
+        log.warning(pos, warnKey);
     }
 
     /** Report a failure to complete a class.
@@ -3713,7 +3713,7 @@ public class Check {
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
-            log.mandatoryWarning(pos, Warnings.SunProprietary(s));
+            log.warning(pos, Warnings.SunProprietary(s));
         }
     }
 
