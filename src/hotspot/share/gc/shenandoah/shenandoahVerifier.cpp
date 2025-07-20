@@ -368,15 +368,23 @@ public:
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
 private:
   size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
+#define KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+  const char* _nm;
+#endif
 public:
+#ifdef KELVIN_VERBOSE
+  ShenandoahCalculateRegionStatsClosure(const char *name) :
+      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0), _nm(name) {};
+#else
   ShenandoahCalculateRegionStatsClosure() :
      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0) {};
-
+#endif
   void heap_region_do(ShenandoahHeapRegion* r) override {
 #define KELVIN_STATS
 #ifdef KELVIN_STATS
-    log_info(gc)("ShenandoahCalculateRegionStatsClosure::heap_region_do(), %s region %zu has used: %zu, is_trash: %s",
-                 r->affiliation_name(), r->index(), r->used(), r->is_trash()? "yes": "no");
+    log_info(gc)("%s:ShenandoahCalculateRegionStatsClosure::heap_region_do(), %s r: %zu used: %zu, garbage: %zu, is_trash: %s",
+                 _nm, r->affiliation_name(), r->index(), r->used(), r->garbage(), r->is_trash()? "yes": "no");
 #endif
     _used += r->used();
     _garbage += r->garbage();
@@ -412,9 +420,15 @@ public:
 
 class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
  public:
-  ShenandoahCalculateRegionStatsClosure old;
-  ShenandoahCalculateRegionStatsClosure young;
-  ShenandoahCalculateRegionStatsClosure global;
+#ifdef KELVIN_VERBOSE
+  ShenandoahCalculateRegionStatsClosure _old = ShenandoahCalculateRegionStatsClosure("Old");
+  ShenandoahCalculateRegionStatsClosure _young = ShenandoahCalculateRegionStatsClosure("Young");
+  ShenandoahCalculateRegionStatsClosure _global = ShenandoahCalculateRegionStatsClosure("Global");
+#else
+  ShenandoahCalculateRegionStatsClosure _old;
+  ShenandoahCalculateRegionStatsClosure _young;
+  ShenandoahCalculateRegionStatsClosure _global;
+#endif
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
 #ifdef KELVIN_STATS
@@ -425,12 +439,12 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
       case FREE:
         return;
       case YOUNG_GENERATION:
-        young.heap_region_do(r);
-        global.heap_region_do(r);
+        _young.heap_region_do(r);
+        _global.heap_region_do(r);
         break;
       case OLD_GENERATION:
-        old.heap_region_do(r);
-        global.heap_region_do(r);
+        _old.heap_region_do(r);
+        _global.heap_region_do(r);
         break;
       default:
         ShouldNotReachHere();
@@ -487,15 +501,15 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
 };
 
 class ShenandoahVerifyHeapRegionClosure : public ShenandoahHeapRegionClosure {
-private:
+  private:
   ShenandoahHeap* _heap;
   const char* _phase;
   ShenandoahVerifier::VerifyRegions _regions;
-public:
+  public:
   ShenandoahVerifyHeapRegionClosure(const char* phase, ShenandoahVerifier::VerifyRegions regions) :
-    _heap(ShenandoahHeap::heap()),
-    _phase(phase),
-    _regions(regions) {};
+      _heap(ShenandoahHeap::heap()),
+      _phase(phase),
+      _regions(regions) {};
 
   void print_failure(ShenandoahHeapRegion* r, const char* label) {
     ResourceMark rm;
@@ -582,7 +596,7 @@ public:
 };
 
 class ShenandoahVerifierReachableTask : public WorkerTask {
-private:
+  private:
   const char* _label;
   ShenandoahVerifier::VerifyOptions _options;
   ShenandoahHeap* _heap;
@@ -590,18 +604,18 @@ private:
   MarkBitMap* _bitmap;
   volatile size_t _processed;
 
-public:
+  public:
   ShenandoahVerifierReachableTask(MarkBitMap* bitmap,
                                   ShenandoahLivenessData* ld,
                                   const char* label,
                                   ShenandoahVerifier::VerifyOptions options) :
-    WorkerTask("Shenandoah Verifier Reachable Objects"),
-    _label(label),
-    _options(options),
-    _heap(ShenandoahHeap::heap()),
-    _ld(ld),
-    _bitmap(bitmap),
-    _processed(0) {};
+      WorkerTask("Shenandoah Verifier Reachable Objects"),
+      _label(label),
+      _options(options),
+      _heap(ShenandoahHeap::heap()),
+      _ld(ld),
+      _bitmap(bitmap),
+      _processed(0) {};
 
   size_t processed() const {
     return _processed;
@@ -617,14 +631,14 @@ public:
     // extended parallelism would buy us out.
     if (((ShenandoahVerifyLevel == 2) && (worker_id == 0))
         || (ShenandoahVerifyLevel >= 3)) {
-        ShenandoahVerifyOopClosure cl(&stack, _bitmap, _ld,
-                                      ShenandoahMessageBuffer("%s, Roots", _label),
-                                      _options);
-        if (_heap->unload_classes()) {
-          ShenandoahRootVerifier::strong_roots_do(&cl);
-        } else {
-          ShenandoahRootVerifier::roots_do(&cl);
-        }
+      ShenandoahVerifyOopClosure cl(&stack, _bitmap, _ld,
+                                    ShenandoahMessageBuffer("%s, Roots", _label),
+                                    _options);
+      if (_heap->unload_classes()) {
+        ShenandoahRootVerifier::strong_roots_do(&cl);
+      } else {
+        ShenandoahRootVerifier::roots_do(&cl);
+      }
     }
 
     size_t processed = 0;
@@ -645,7 +659,7 @@ public:
 };
 
 class ShenandoahVerifyNoIncompleteSatbBuffers : public ThreadClosure {
-public:
+  public:
   void do_thread(Thread* thread) override {
     SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
     if (!queue.is_empty()) {
@@ -655,7 +669,7 @@ public:
 };
 
 class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
-private:
+  private:
   const char* _label;
   ShenandoahVerifier::VerifyOptions _options;
   ShenandoahHeap *_heap;
@@ -665,20 +679,20 @@ private:
   volatile size_t _processed;
   ShenandoahGeneration* _generation;
 
-public:
+  public:
   ShenandoahVerifierMarkedRegionTask(MarkBitMap* bitmap,
                                      ShenandoahLivenessData* ld,
                                      const char* label,
                                      ShenandoahVerifier::VerifyOptions options) :
-          WorkerTask("Shenandoah Verifier Marked Objects"),
-          _label(label),
-          _options(options),
-          _heap(ShenandoahHeap::heap()),
-          _bitmap(bitmap),
-          _ld(ld),
-          _claimed(0),
-          _processed(0),
-          _generation(nullptr) {
+      WorkerTask("Shenandoah Verifier Marked Objects"),
+      _label(label),
+      _options(options),
+      _heap(ShenandoahHeap::heap()),
+      _bitmap(bitmap),
+      _ld(ld),
+      _claimed(0),
+      _processed(0),
+      _generation(nullptr) {
     if (_heap->mode()->is_generational()) {
       _generation = _heap->gc_generation();
       assert(_generation != nullptr, "Expected active generation in this mode.");
@@ -788,11 +802,11 @@ public:
 };
 
 class VerifyThreadGCState : public ThreadClosure {
-private:
+  private:
   const char* const _label;
-         char const _expected;
+  char const _expected;
 
-public:
+  public:
   VerifyThreadGCState(const char* label, char expected) : _label(label), _expected(expected) {}
   void do_thread(Thread* t) override {
     char actual = ShenandoahThreadLocalData::gc_state(t);
@@ -888,7 +902,11 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
   {
     ShenandoahHeapLocker lock(_heap->lock());
 
+#ifdef KELVIN_VERBOSE
+    ShenandoahCalculateRegionStatsClosure cl = ShenandoahCalculateRegionStatsClosure("Global");
+#else
     ShenandoahCalculateRegionStatsClosure cl;
+#endif
     _heap->heap_region_iterate(&cl);
     size_t heap_used;
     if (_heap->mode()->is_generational() && (sizeness == _verify_size_adjusted_for_padding)) {
@@ -950,19 +968,19 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
     _heap->heap_region_iterate(&cl);
 
     if (LogTarget(Debug, gc)::is_enabled()) {
-      ShenandoahGenerationStatsClosure::log_usage(_heap->old_generation(),    cl.old);
-      ShenandoahGenerationStatsClosure::log_usage(_heap->young_generation(),  cl.young);
-      ShenandoahGenerationStatsClosure::log_usage(_heap->global_generation(), cl.global);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->old_generation(),    cl._old);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->young_generation(),  cl._young);
+      ShenandoahGenerationStatsClosure::log_usage(_heap->global_generation(), cl._global);
     }
     if (sizeness == _verify_size_adjusted_for_padding) {
-      ShenandoahGenerationStatsClosure::validate_usage(false, true, label, _heap->old_generation(), cl.old);
-      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->young_generation(), cl.young);
-      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->global_generation(), cl.global);
+      ShenandoahGenerationStatsClosure::validate_usage(false, true, label, _heap->old_generation(), cl._old);
+      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->young_generation(), cl._young);
+      ShenandoahGenerationStatsClosure::validate_usage(true, true, label, _heap->global_generation(), cl._global);
     } else if (sizeness == _verify_size_exact || sizeness == _verify_size_exact_including_trash) {
       bool adjust_trash = (sizeness == _verify_size_exact);
-      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->old_generation(), cl.old);
-      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->young_generation(), cl.young);
-      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->global_generation(), cl.global);
+      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->old_generation(), cl._old);
+      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->young_generation(), cl._young);
+      ShenandoahGenerationStatsClosure::validate_usage(false, adjust_trash, label, _heap->global_generation(), cl._global);
     }
     // else: sizeness must equal _verify_size_disable
   }
@@ -1443,7 +1461,7 @@ void ShenandoahVerifier::verify_before_rebuilding_free_set() {
   ShenandoahGenerationStatsClosure cl;
   _heap->heap_region_iterate(&cl);
 
-  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->old_generation(), cl.old);
-  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->young_generation(), cl.young);
-  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->global_generation(), cl.global);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->old_generation(), cl._old);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->young_generation(), cl._young);
+  ShenandoahGenerationStatsClosure::validate_usage(false, true, "Before free set rebuild", _heap->global_generation(), cl._global);
 }
