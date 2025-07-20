@@ -100,36 +100,16 @@ public abstract class LocaleProviderAdapter {
             if (adapter == null) {
                 // lazily load adapters here
                 adapter = switch (this) {
-                    case JRE -> createJREAdapter();
-                    case CLDR -> createCLDRAdapter();
-                    case SPI -> createSPIAdapter();
-                    case HOST -> createHOSTAdapter();
-                    case FALLBACK -> createFALLBACKAdapter();
+                    case JRE -> new JRELocaleProviderAdapter();
+                    case CLDR -> new sun.util.cldr.CLDRLocaleProviderAdapter();
+                    case SPI -> new SPILocaleProviderAdapter();
+                    case HOST -> new HostLocaleProviderAdapter();
+                    case FALLBACK -> new FallbackLocaleProviderAdapter();
                     default -> throw new ServiceConfigurationError("Locale provider adapter \"" +
                             this + "\"cannot be instantiated.");
                 };
             }
             return adapter;
-        }
-
-        private static LocaleProviderAdapter createJREAdapter() {
-            return new JRELocaleProviderAdapter();
-        }
-
-        private static LocaleProviderAdapter createCLDRAdapter() {
-            return new sun.util.cldr.CLDRLocaleProviderAdapter();
-        }
-
-        private static LocaleProviderAdapter createSPIAdapter() {
-            return new SPILocaleProviderAdapter();
-        }
-
-        private static LocaleProviderAdapter createHOSTAdapter() {
-            return new HostLocaleProviderAdapter();
-        }
-
-        private static LocaleProviderAdapter createFALLBACKAdapter() {
-            return new FallbackLocaleProviderAdapter();
         }
     }
 
