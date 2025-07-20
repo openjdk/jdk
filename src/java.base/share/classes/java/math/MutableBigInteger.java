@@ -1989,7 +1989,7 @@ class MutableBigInteger {
              * The uppper bound will be r * 2^(s/n), indeed:
              * r * 2^(s/n) >= nthRoot(x/2^s, n) * 2^(s/n) == nthRoot(x, n).
              * To achieve this, we right shift the input of s bits into finite double range,
-             * rounding up the result if necessary.
+             * rounding up the result.
              *
              * The value of the shift s is chosen in order to have the smallest number of
              * trailing zeros in the double value of r after the significand (minimizing
