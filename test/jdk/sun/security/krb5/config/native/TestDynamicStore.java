@@ -60,13 +60,13 @@ public class TestDynamicStore {
 
         // Show a popup to remind to run this test as sudo user
         // this will only trigger if sudo (root) user is not detected
-        if ("root".equals(System.getProperty("user.name"))) {
+        if (!"root".equals(System.getProperty("user.name"))) {
 
             JOptionPane.showMessageDialog(null, """
-                            This test MUST be run with SUDO user.\s
+                            This test MUST be run as ROOT.\s
                             Please close and RESTART the test.""");
 
-            Asserts.assertFalse(true, "Test must be run with SUDO");
+            Asserts.assertFalse(true, "This test must be run as ROOT");
         }
 
         System.loadLibrary("TestDynamicStore");
