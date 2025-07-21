@@ -183,7 +183,7 @@ class Compile {
         int exitCode;
         try {
             Process process = builder.start();
-            long timeout = COMPILE_TIMEOUT * (long)Math.pow(2, timeoutFactor-1);
+            long timeout = COMPILE_TIMEOUT * (long)timeoutFactor;
             boolean exited = process.waitFor(timeout, TimeUnit.SECONDS);
             if (!exited) {
                 process.destroyForcibly();
