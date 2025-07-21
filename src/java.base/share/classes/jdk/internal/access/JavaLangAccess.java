@@ -429,8 +429,6 @@ public interface JavaLangAccess {
      * @param len the total number of characters to be encoded
      * @return the total number of characters successfully encoded
      * @throws NullPointerException if any of the provided arrays is null
-     * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
-     *         {@linkplain jdk.internal.util.Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
     int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
 
