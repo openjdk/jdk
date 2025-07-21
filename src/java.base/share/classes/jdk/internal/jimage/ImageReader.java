@@ -25,7 +25,6 @@
 package jdk.internal.jimage;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -279,14 +278,14 @@ public final class ImageReader implements AutoCloseable {
         /// Returns a node in the JRT filesystem namespace, or null if no resource or
         /// directory of that name exists.
         ///
-        /// Node names are absolute, `/`-separated path strings, prefixed with
-        /// either "/modules" or "/packages".
-        ///
         /// This is the only public API by which anything outside this class can access
-        /// `Node` instances either directly, or by resolving a symbolic link.
+        /// `Node` instances either directly, or by resolving symbolic links.
         ///
         /// Note also that there is no reentrant calling back to this method from within
         /// the node handling code.
+        ///
+        /// @param name an absolute, `/`-separated path string, prefixed with either
+        ///     "/modules" or "/packages".
         synchronized Node findNode(String name) {
             Node node = nodes.get(name);
             if (node == null) {
@@ -531,7 +530,13 @@ public final class ImageReader implements AutoCloseable {
         private final String name;
         private final BasicFileAttributes fileAttrs;
 
-        // Only visible for use by ExplodedImage.
+        /**
+         * Creates an abstract {@code Node}, which is either a resource, directory
+         * or symbolic link.
+         *
+         * <p>This constructor is only non-private so it can be used by the
+         * {@code ExplodedImage} class, and must not be used otherwise.
+         */
         protected Node(String name, BasicFileAttributes fileAttrs) {
             this.name = Objects.requireNonNull(name);
             this.fileAttrs = Objects.requireNonNull(fileAttrs);
