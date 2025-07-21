@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 8238274
  * @summary Potential leak file descriptor for SCTP
  * @requires (os.family == "linux")
+ * @library /test/lib
+ * @build jtreg.SkippedException
  * @run main/othervm/timeout=250 CloseDescriptors
  */
 
@@ -52,9 +54,7 @@ public class CloseDescriptors {
 
     public static void main(String[] args) throws Exception {
         if (!Util.isSCTPSupported()) {
-            System.out.println("SCTP protocol is not supported");
-            System.out.println("Test cannot be run");
-            return;
+            throw new jtreg.SkippedException("SCTP protocol is not supported");
         }
 
         List<String> lsofDirs = List.of("/usr/bin", "/usr/sbin");
@@ -63,9 +63,7 @@ public class CloseDescriptors {
                             .filter(f -> Files.isExecutable(f))
                             .findFirst();
         if (!lsof.isPresent()) {
-            System.out.println("Cannot locate lsof in " + lsofDirs);
-            System.out.println("Test cannot be run");
-            return;
+            throw new jtreg.SkippedException("Cannot locate lsof in " + lsofDirs);
         }
 
         try (ServerSocket ss = new ServerSocket(0)) {

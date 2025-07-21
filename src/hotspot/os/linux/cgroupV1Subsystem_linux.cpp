@@ -248,10 +248,16 @@ jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
   }
 }
 
+jlong CgroupV1MemoryController::memory_throttle_limit_in_bytes() {
+  // Log this string at trace level so as to make tests happy.
+  log_trace(os, container)("Memory Throttle Limit is not supported.");
+  return OSCONTAINER_ERROR; // not supported
+}
+
 // Constructor
 CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
                       CgroupV1CpuController* cpu,
-                      CgroupV1Controller* cpuacct,
+                      CgroupV1CpuacctController* cpuacct,
                       CgroupV1Controller* pids,
                       CgroupV1MemoryController* memory) :
     _cpuset(cpuset),
@@ -414,6 +420,13 @@ int CgroupV1CpuController::cpu_shares() {
   if (shares_int == 1024) return -1;
 
   return shares_int;
+}
+
+jlong CgroupV1CpuacctController::cpu_usage_in_micros() {
+  julong cpu_usage;
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpuacct.usage", "CPU Usage", cpu_usage);
+  // Output is in nanoseconds, convert to microseconds.
+  return (jlong)cpu_usage / 1000;
 }
 
 /* pids_max

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,7 @@ import jdk.internal.classfile.impl.Util;
 
 import static jdk.internal.classfile.impl.verifier.VerifierImpl.*;
 
-/**
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.hpp">hotspot/share/classfile/verificationType.hpp</a>
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.cpp">hotspot/share/classfile/verificationType.cpp</a>
- */
+/// From `verificationType.cpp`.
 class VerificationType {
 
     private static final int BitsPerByte = 8;
@@ -332,7 +329,7 @@ class VerificationType {
                     return from.is_integer();
                 default:
                     if (is_reference() && from.is_reference()) {
-                        return is_reference_assignable_from(from, context);
+                        return is_reference_assignable_from(from, context, null);
                     } else {
                         return false;
                     }
@@ -379,18 +376,25 @@ class VerificationType {
         }
     }
 
-    boolean resolve_and_check_assignability(ClassHierarchyImpl assignResolver, String name, String from_name, boolean from_is_array, boolean from_is_object) {
+    boolean resolve_and_check_assignability(ClassHierarchyImpl assignResolver, String target_name, String from_name,
+                                            boolean from_is_array, boolean from_is_object, boolean[] target_is_interface) {
         //let's delegate assignability to SPI
-        var desc = Util.toClassDesc(name);
-        if (assignResolver.isInterface(desc)) {
-            return !from_is_array || "java/lang/Cloneable".equals(name) || "java/io/Serializable".equals(name);
+        var targetClass = Util.toClassDesc(target_name);
+        boolean isInterface = assignResolver.isInterface(targetClass);
+
+        if (target_is_interface != null) {
+            target_is_interface[0] = isInterface;
+        }
+
+        if (isInterface) {
+            return !from_is_array || "java/lang/Cloneable".equals(target_name) || "java/io/Serializable".equals(target_name);
         } else if (from_is_object) {
-            return assignResolver.isAssignableFrom(desc, Util.toClassDesc(from_name));
+            return assignResolver.isAssignableFrom(targetClass, Util.toClassDesc(from_name));
         }
         return false;
     }
 
-    boolean is_reference_assignable_from(VerificationType from, VerifierImpl context) {
+    boolean is_reference_assignable_from(VerificationType from, VerifierImpl context, boolean[] target_is_interface) {
         ClassHierarchyImpl clsTree = context.class_hierarchy();
         if (from.is_null()) {
             return true;
@@ -402,7 +406,7 @@ class VerificationType {
             if (VerifierImpl.java_lang_Object.equals(name())) {
                 return true;
             }
-            return resolve_and_check_assignability(clsTree, name(), from.name(), from.is_array(), from.is_object());
+            return resolve_and_check_assignability(clsTree, name(), from.name(), from.is_array(), from.is_object(), target_is_interface);
         } else if (is_array() && from.is_array()) {
             VerificationType comp_this = get_component(context);
             VerificationType comp_from = from.get_component(context);

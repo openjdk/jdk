@@ -24,6 +24,7 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
@@ -82,6 +83,7 @@ public:
     int count = 0;
     treap(tree).visit_in_order([&](TNode* x) {
       ++count;
+      return true;
     });
     return count;
   }
@@ -143,6 +145,7 @@ public:
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
                   (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
+      return true;
     });
     EXPECT_EQ(2, count_nodes(tree));
   }
@@ -168,6 +171,7 @@ public:
         found[i] = x->key();
       }
       i++;
+      return true;
     });
 
     ASSERT_EQ(4, i) << "0 - 50 - 75 - 100 nodes expected";
@@ -256,7 +260,6 @@ public:
       }
       tree.tree().upsert((VMATree::position)et.nodes[i], st);
     }
-    print_tree(et, line_no);
 }
 
   template <int N>
@@ -302,7 +305,6 @@ public:
         EXPECT_FALSE(r.end->val().in.has_committed_stack()) << for_this_node;
       }
     }
-    print_tree(et, line_no);
   }
 
   template<int N>
@@ -346,6 +348,16 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   EXPECT_EQ(2, count_nodes(tree));
 }
 
+TEST_VM_F(NMTVMATreeTest, DuplicateReserve) {
+  VMATree::RegionData rd{si[0], mtTest};
+  Tree tree;
+  tree.reserve_mapping(100, 100, rd);
+  tree.reserve_mapping(100, 100, rd);
+  EXPECT_EQ(2, count_nodes(tree));
+  VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(110);
+  EXPECT_EQ(100, (int)(r.end->key() - r.start->key()));
+}
+
 TEST_VM_F(NMTVMATreeTest, UseTagInplace) {
   Tree tree;
   VMATree::RegionData rd_Test_cs0(si[0], mtTest);
@@ -364,6 +376,7 @@ TEST_VM_F(NMTVMATreeTest, UseTagInplace) {
         EXPECT_EQ(VMATree::StateType::Reserved, node->val().out.type());
       }
     }
+    return true;
   });
 }
 
@@ -402,6 +415,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.reserved_regiondata().mem_tag, mtTest);
       }
+      return true;
     });
 
     EXPECT_EQ(2, count_nodes(tree));
@@ -441,6 +455,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
       if (x->key() == 100) {
         EXPECT_EQ(mtTest, x->val().in.reserved_regiondata().mem_tag);
       }
+      return true;
     });
   }
 
@@ -794,6 +809,18 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     EXPECT_EQ(16, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
     EXPECT_EQ(16, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   }
+}
+
+TEST_VM_F(NMTVMATreeTest, SummaryAccountingReserveAsUncommit) {
+  Tree tree;
+  Tree::RegionData rd(NCS::StackIndex(), mtTest);
+  VMATree::SummaryDiff diff1 = tree.reserve_mapping(1200, 100, rd);
+  VMATree::SummaryDiff diff2 = tree.commit_mapping(1210, 50, rd);
+  EXPECT_EQ(100, diff1.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff2.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  VMATree::SummaryDiff diff3 = tree.reserve_mapping(1220, 20, rd);
+  EXPECT_EQ(-20, diff3.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff3.tag[NMTUtil::tag_to_index(mtTest)].reserve);
 }
 
 // Exceedingly simple tracker for page-granular allocations

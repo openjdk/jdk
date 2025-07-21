@@ -33,6 +33,7 @@
 
 #ifndef _AIX
 #include "screencast_pipewire.h"
+#include "java_awt_event_KeyEvent.h"
 
 struct pw_buffer *(*fp_pw_stream_dequeue_buffer)(struct pw_stream *stream);
 const char * (*fp_pw_stream_state_as_string)(enum pw_stream_state state);
@@ -1197,6 +1198,24 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMou
     return result ? RESULT_OK : pw.pwFd;
 }
 
+static int getNumpadKey(jint jkey) {
+    switch (jkey) {
+        case java_awt_event_KeyEvent_VK_NUMPAD0: return XK_KP_Insert;
+        case java_awt_event_KeyEvent_VK_NUMPAD1: return XK_KP_End;
+        case java_awt_event_KeyEvent_VK_NUMPAD2: return XK_KP_Down;
+        case java_awt_event_KeyEvent_VK_NUMPAD3: return XK_KP_Page_Down;
+        case java_awt_event_KeyEvent_VK_NUMPAD4: return XK_KP_Left;
+        case java_awt_event_KeyEvent_VK_NUMPAD5: return XK_KP_Begin;
+        case java_awt_event_KeyEvent_VK_NUMPAD6: return XK_KP_Right;
+        case java_awt_event_KeyEvent_VK_NUMPAD7: return XK_KP_Home;
+        case java_awt_event_KeyEvent_VK_NUMPAD8: return XK_KP_Up;
+        case java_awt_event_KeyEvent_VK_NUMPAD9: return XK_KP_Prior;
+        case java_awt_event_KeyEvent_VK_DECIMAL:
+        case java_awt_event_KeyEvent_VK_SEPARATOR: return XK_KP_Delete;
+        default: return 0;
+    }
+}
+
 /*
  * Class:     sun_awt_screencast_ScreencastHelper
  * Method:    remoteDesktopKeyImpl
@@ -1205,9 +1224,12 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopMou
 JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_remoteDesktopKeyImpl
         (JNIEnv *env, jclass cls, jboolean isPress, jint jkey, jstring jtoken) {
 
-    AWT_LOCK();
-    int key = awt_getX11KeySym(jkey);
-    AWT_UNLOCK();
+    int key = getNumpadKey(jkey);
+    if (!key) {
+        AWT_LOCK();
+        key = awt_getX11KeySym(jkey);
+        AWT_UNLOCK();
+    }
 
     if (key == NoSymbol || (*env)->ExceptionCheck(env)) {
         return RESULT_ERROR;
