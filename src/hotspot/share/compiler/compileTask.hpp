@@ -99,7 +99,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // Compilation state for a blocking JVMCI compilation
   JVMCICompileState*   _blocking_jvmci_compile_state;
 #endif
-  int                  _waiting_count;  // See waiting_for_completion_count()
   int                  _comp_level;
   int                  _num_inlined_bytecodes;
   CompileTask*         _next, *_prev;
@@ -163,23 +162,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
     _blocking_jvmci_compile_state = state;
   }
 #endif
-
-  // See how many threads are waiting for this task. Must have lock to read this.
-  int waiting_for_completion_count() {
-    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
-    return _waiting_count;
-  }
-  // Indicates that a thread is waiting for this task to complete. Must have lock to use this.
-  void inc_waiting_for_completion() {
-    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
-    _waiting_count++;
-  }
-  // Indicates that a thread stopped waiting for this task to complete. Must have lock to use this.
-  void dec_waiting_for_completion() {
-    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
-    assert(_waiting_count > 0, "waiting count is not positive");
-    _waiting_count--;
-  }
 
   void         mark_complete()                   { _is_complete = true; }
   void         mark_success()                    { _is_success = true; }
