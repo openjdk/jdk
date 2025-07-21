@@ -52,6 +52,7 @@
 #include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -525,57 +526,30 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 }
 
 extern "C" {
-  // needs local assembler label '4:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
     // We should return 1 if SpinPause is implemented, and since there
     // will be always a sequence of instructions, SpinPause will always return 1.
-
-    assert(SpinWait::NONE  == 0, "SpinWait::Inst value 0 reserved to indicate no implementation");
-    assert(SpinWait::YIELD == 1, "SpinWait::Inst value 1 reserved for 'yield' instruction");
-    assert(SpinWait::ISB   == 2, "SpinWait::Inst value 2 reserved for 'isb' instruction");
-    assert(SpinWait::SB    == 4, "SpinWait::Inst value 4 reserved for 'sb' instruction");
-    assert(SpinWait::NOP   == 8, "SpinWait::Inst value 8 reserved for 'nop' instruction");
-
-    const uint64_t inst_id = VM_Version::spin_wait_desc().inst();
-    assert(inst_id == 0 || is_power_of_2(inst_id), "Values of SpinWait::Inst must be 0 or power of 2");
-    assert(inst_id != SpinWait::SB || VM_Version::supports_sb(), "current CPU does not support SB instruction");
-    assert(inst_id <= SpinWait::NOP, "Unsupported type of SpinWait::Inst: %llu", inst_id);
-
-    // The assembly code below is equivalent to the following:
-    //
-    // if (inst_id == 1) {
-    //   exec_yield_inst();
-    // } else if (inst_id == 2) {
-    //   exec_isb_inst();
-    // } else if (inst_id == 4) {
-    //   exec_sb_inst();
-    // } else if (inst_id == 8) {
-    //   exec_nop_inst();
-    // }
-    asm volatile(
-        "  tbz %[id], 0, 0f      \n" // The default instruction for SpinWait is YIELD.
-                                     // We check it first before going to switch.
-        "  yield                 \n"
-        "  b    4f               \n"
-        "0:                      \n"
-        "  tbnz %[id], 1, 1f     \n"
-        "  tbnz %[id], 2, 2f     \n"
-        "  tbnz %[id], 3, 3f     \n"
-        "  b    4f               \n"
-        "1:                      \n"
-        "  isb                   \n"
-        "  b    4f               \n"
-        "2:                      \n"
-        "  .inst 0xd50330ff      \n" // SB instruction, explicitly encoded not to rely on a compiler
-        "  b    4f               \n"
-        "3:                      \n"
-        "  nop                   \n"
-        "4:                      \n"
-        :
-        : [id]"r"(inst_id)
-        : "memory");
+    switch (VM_Version::spin_wait_desc().inst()) {
+    case SpinWait::YIELD:
+      asm volatile("yield" : : : "memory");
+      break;
+    case SpinWait::ISB:
+      asm volatile("isb" : : : "memory");
+      break;
+    case SpinWait::SB:
+      assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
+      asm volatile(".inst 0xd50330ff" : : : "memory");
+      break;
+    case SpinWait::NOP:
+      asm volatile("nop" : : : "memory");
+      break;
+    case SpinWait::NONE:
+      break;
+    default:
+      ShouldNotReachHere();
+    }
     return 1;
   }
 

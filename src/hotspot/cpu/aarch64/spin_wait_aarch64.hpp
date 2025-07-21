@@ -26,16 +26,12 @@
 
 class SpinWait {
 public:
-  // Non-zero values are chosen to have only one bit set.
-  // This simplifies testing values in assembly code.
-  // This limits us to 64 possible implementation.
-  // Value 1 is used for the default implementation.
   enum Inst {
-    NONE  = 0,
-    YIELD = (1 << 0),
-    ISB   = (1 << 1),
-    SB    = (1 << 2),
-    NOP   = (1 << 3)
+    NONE = -1,
+    NOP,
+    ISB,
+    YIELD,
+    SB
   };
 
 private:
