@@ -46,6 +46,9 @@ public interface JavaLangReflectAccess {
     /** Gets the shared array of exception types of an Executable. */
     public Class<?>[] getExecutableSharedExceptionTypes(Executable ex);
 
+    /** Gets the value of Method.defaultAnnotation */
+    public byte[]      getAnnotationDefaultBytes(Method arg);
+
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates
 
