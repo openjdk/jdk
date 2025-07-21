@@ -147,7 +147,7 @@ class StringCoding {
         Objects.requireNonNull(da, "da");
         if ((sp | dp | len) < 0 ||
                 // Halving the length of `sa` to obtain the number of characters:
-                len > (sa.length >> 1) - sp ||
+                len > (sa.length >>> 1) - sp ||
                 dp >= da.length) {
             // Not checking the `len < da.length - dp` invariant, since "as many
             // codepoints as possible" contract still holds with a `da` of
