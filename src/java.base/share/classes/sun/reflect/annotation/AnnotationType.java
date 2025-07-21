@@ -123,9 +123,12 @@ public class AnnotationType {
                 memberTypes.put(name, invocationHandlerReturnType(type));
                 members.put(name, method);
 
-                Object defaultValue = method.getDefaultValue();
-                if (defaultValue != null) {
-                    memberDefaults.put(name, defaultValue);
+                byte[] annotationDefault = SharedSecrets.getJavaLangReflectAccess().getAnnotationDefaultBytes(method);
+                if (annotationDefault != null) {
+                    Object defaultValue = AnnotationParser.parseAnnotationDefault(method, annotationDefault, false);
+                    if (defaultValue != null) {
+                        memberDefaults.put(name, defaultValue);
+                    }
                 }
             }
         }
@@ -140,6 +143,7 @@ public class AnnotationType {
                     jla.getRawClassAnnotations(annotationClass),
                     jla.getConstantPool(annotationClass),
                     annotationClass,
+                    true,
                     Retention.class, Inherited.class
                 );
             Retention ret = (Retention) metaAnnotations.get(Retention.class);
@@ -199,7 +203,10 @@ public class AnnotationType {
 
     /**
      * Returns the default values for this annotation type
-     * (Member name {@literal ->} default value mapping).
+     * (Member name {@literal ->} default value mapping). The values in this
+     * map might be {@linkplain ResolvableValue#isResolved unresolved}
+     * so should be passed through {@link ResolvableValue#resolved} in
+     * contexts where resolved values are required.
      */
     public Map<String, Object> memberDefaults() {
         return memberDefaults;

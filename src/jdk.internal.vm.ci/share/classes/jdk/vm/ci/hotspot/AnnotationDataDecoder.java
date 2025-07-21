@@ -23,9 +23,11 @@
 package jdk.vm.ci.hotspot;
 
 import java.util.Map;
+import java.util.List;
 
 import jdk.internal.vm.VMSupport.AnnotationDecoder;
 import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.EnumArrayData;
 import jdk.vm.ci.meta.EnumData;
 import jdk.vm.ci.meta.ErrorData;
 import jdk.vm.ci.meta.JavaType;
@@ -38,36 +40,37 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
  * and employs {@link AnnotationData} and {@link EnumData} to represent decoded annotations and enum
  * constants respectively.
  */
-final class AnnotationDataDecoder implements AnnotationDecoder<JavaType, AnnotationData, EnumData, ErrorData> {
+final class AnnotationDataDecoder implements AnnotationDecoder<ResolvedJavaType, AnnotationData, EnumData, EnumArrayData, ErrorData> {
 
-    static final AnnotationDataDecoder INSTANCE = new AnnotationDataDecoder();
+    private final HotSpotResolvedJavaType accessingClass;
 
-    @Override
-    public JavaType resolveType(String name) {
-        String internalName = MetaUtil.toInternalName(name);
-        return UnresolvedJavaType.create(internalName);
+    AnnotationDataDecoder(HotSpotResolvedJavaType accessingClass) {
+        this.accessingClass = accessingClass;
     }
 
     @Override
-    public AnnotationData newAnnotation(JavaType type, Map.Entry<String, Object>[] elements) {
+    public ResolvedJavaType resolveType(String name) {
+        String internalName = MetaUtil.toInternalName(name);
+        return UnresolvedJavaType.create(internalName).resolve(accessingClass);
+    }
+
+    @Override
+    public AnnotationData newAnnotation(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
         return new AnnotationData(type, elements);
     }
 
     @Override
-    public EnumData newEnumValue(JavaType enumType, String name) {
+    public EnumData newEnumValue(ResolvedJavaType enumType, String name) {
         return new EnumData(enumType, name);
+    }
+
+    @Override
+    public EnumArrayData newEnumValueArray(ResolvedJavaType enumType, List<String> names) {
+        return new EnumArrayData(enumType, names);
     }
 
     @Override
     public ErrorData newErrorValue(String description) {
         return new ErrorData(description);
-    }
-
-    static ResolvedJavaType[] asArray(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        ResolvedJavaType[] filter = new ResolvedJavaType[2 + types.length];
-        filter[0] = type1;
-        filter[1] = type2;
-        System.arraycopy(types, 0, filter, 2, types.length);
-        return filter;
     }
 }
