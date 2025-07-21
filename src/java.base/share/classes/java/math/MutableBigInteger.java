@@ -2008,7 +2008,7 @@ class MutableBigInteger {
             double approx = Math.nextUp(n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n)));
             int rootShift = (int) (shift / n);
             if (rootShift == 0) {
-                r = valueOf(Math.ceil(approx));
+                r = valueOf(approx);
             } else {
                 // Allocate sufficient space to store the final root
                 r = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
