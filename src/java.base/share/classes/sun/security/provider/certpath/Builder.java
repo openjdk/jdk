@@ -139,7 +139,7 @@ abstract class Builder {
      * cert's certificate policies extension in order for a cert to be selected.
      */
     Set<String> getMatchingPolicies() {
-        if (matchingPolicies != null) {
+        if (matchingPolicies == null) {
             Set<String> initialPolicies = buildParams.initialPolicies();
             if ((!initialPolicies.isEmpty()) &&
                 (!initialPolicies.contains(PolicyChecker.ANY_POLICY)) &&
