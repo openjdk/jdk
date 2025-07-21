@@ -52,6 +52,7 @@ public class UITesting {
     protected static final String REDRAW_PROMPT = "\n\r?" + PROMPT;
     protected static final String UP = "\033[A";
     protected static final String DOWN = "\033[B";
+    protected static final String CTRL_D = "\u0004";
     private final boolean laxLineEndings;
 
     public UITesting() {

@@ -62,13 +62,13 @@ class RelocCall: public NativeInstruction {
   // return target address of the reloc call
   address destination() const;
   // return stub address
-  address reloc_destination(address orig_address);
+  address reloc_destination();
 
   void verify();
   void print();
 
   // patch stub to target address of the reloc call
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool set_destination_mt_safe(address dest);
   // patch reloc call to stub address
   bool reloc_set_destination(address dest);
 
@@ -94,7 +94,7 @@ address RelocCall::destination() const {
   address destination = MacroAssembler::target_addr_for_insn(addr);
 
   CodeBlob* cb = CodeCache::find_blob(addr);
-  assert(cb && cb->is_nmethod(), "sanity");
+  assert(cb != nullptr && cb->is_nmethod(), "nmethod expected");
   nmethod *nm = (nmethod *)cb;
   assert(nm != nullptr, "Sanity");
   assert(nm->stub_contains(destination), "Sanity");
@@ -102,20 +102,22 @@ address RelocCall::destination() const {
   return stub_address_destination_at(destination);
 }
 
-address RelocCall::reloc_destination(address orig_address) {
+address NativeFarCall::reloc_destination() {
   address call_addr = instruction_address();
+  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
   address stub_addr = nullptr;
-  if (code != nullptr && code->is_nmethod()) {
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  if (code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
   }
 
   if (stub_addr != nullptr) {
     stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
   }
+
   return stub_addr;
 }
 
@@ -128,18 +130,18 @@ void RelocCall::print() {
   tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(instruction_address()));
 }
 
-bool RelocCall::set_destination_mt_safe(address dest, bool assert_lock) {
-  assert(RelocCall::is_at(instruction_address()), "unexpected code at call site");
-  assert(!assert_lock ||
-         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
-         CompiledICLocker::is_safe(instruction_address()),
+void NativeFarCall::print() {
+  assert(NativeFarCall::is_at(instruction_address()), "unexpected code at call site");
+  tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(addr_at(0)));
+}
+
+bool NativeFarCall::set_destination_mt_safe(address dest) {
+  assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
+  assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  address call_addr = instruction_address();
-  assert(RelocCall::is_at(call_addr), "unexpected code at call site");
-
-  address stub_addr = reloc_destination_without_check();
-
+  address stub_addr = stub_address();
   if (stub_addr != nullptr) {
     set_stub_address_destination_at(stub_addr, dest);
     return true;
@@ -156,10 +158,9 @@ bool RelocCall::reloc_set_destination(address dest) {
   assert(code != nullptr, "Could not find the containing code blob");
 
   address stub_addr = nullptr;
-  if (code != nullptr && code->is_nmethod()) {
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  if (code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
   }
-
   if (stub_addr != nullptr) {
     MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
   }
@@ -209,7 +210,7 @@ bool RelocCall::is_at(address addr) {
       (MacroAssembler::extract_rd(addr + instr_size)       == x6) &&
       (MacroAssembler::extract_rs1(addr + instr_size)      == x6) &&
       (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x6) &&
-      (MacroAssembler::extract_rd(addr + 2 * instr_size)  == x1)) {
+      (MacroAssembler::extract_rd(addr + 2 * instr_size)   == x1)) {
     return true;
   }
   return false;
@@ -238,8 +239,8 @@ address NativeCall::destination() const {
   return RelocCall::at(addr_at(0))->destination();
 }
 
-address NativeCall::reloc_destination(address orig_address) {
-  return RelocCall::at(addr_at(0))->reloc_destination(orig_address);
+address NativeCall::reloc_destination() {
+  return NativeFarCall::at(addr_at(0))->reloc_destination();
 }
 
 void NativeCall::set_destination(address dest) {
@@ -254,8 +255,8 @@ void NativeCall::print() {
   RelocCall::at(addr_at(0))->print();;
 }
 
-bool NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
-  return RelocCall::at(addr_at(0))->set_destination_mt_safe(dest, assert_lock);
+bool NativeCall::set_destination_mt_safe(address dest) {
+  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest);
 }
 
 bool NativeCall::reloc_set_destination(address dest) {
@@ -337,19 +338,6 @@ void NativeMovConstReg::set_data(intptr_t x) {
 void NativeMovConstReg::print() {
   tty->print_cr(PTR_FORMAT ": mov reg, " INTPTR_FORMAT,
                 p2i(instruction_address()), data());
-}
-
-//-------------------------------------------------------------------
-
-int NativeMovRegMem::offset() const  {
-  Unimplemented();
-  return 0;
-}
-
-void NativeMovRegMem::set_offset(int x) { Unimplemented(); }
-
-void NativeMovRegMem::verify() {
-  Unimplemented();
 }
 
 //--------------------------------------------------------------------------------

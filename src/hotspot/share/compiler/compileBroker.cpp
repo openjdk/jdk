@@ -367,32 +367,30 @@ void CompileQueue::add(CompileTask* task) {
  */
 void CompileQueue::delete_all() {
   MutexLocker mu(MethodCompileQueue_lock);
-  CompileTask* next = _first;
+  CompileTask* current = _first;
 
   // Iterate over all tasks in the compile queue
-  while (next != nullptr) {
-    CompileTask* current = next;
-    next = current->next();
-    bool found_waiter = false;
-    {
-      MutexLocker ct_lock(CompileTaskWait_lock);
-      assert(current->waiting_for_completion_count() <= 1, "more than one thread are waiting for task");
-      if (current->waiting_for_completion_count() > 0) {
-        // If another thread waits for this task, we must wake them up
-        // so they will stop waiting and free the task.
-        CompileTaskWait_lock->notify_all();
-        found_waiter = true;
-      }
-    }
-    if (!found_waiter) {
-      // If no one was waiting for this task, we need to delete it ourselves.
-      // In this case, the task is also certainly unlocked, because, again, there is no waiter.
-      // Otherwise, by convention, it's the waiters responsibility to delete the task.
+  while (current != nullptr) {
+    if (!current->is_blocking()) {
+      // Non-blocking task. No one is waiting for it, delete it now.
       delete current;
+    } else {
+      // Blocking task. By convention, it is the waiters responsibility
+      // to delete the task. We cannot delete it here, because we do not
+      // coordinate with waiters. We will notify the waiters later.
     }
+    current = current->next();
   }
   _first = nullptr;
   _last = nullptr;
+
+  // Wake up all blocking task waiters to deal with remaining blocking
+  // tasks. This is not a performance sensitive path, so we do this
+  // unconditionally to simplify coding/testing.
+  {
+    MonitorLocker ml(Thread::current(), CompileTaskWait_lock);
+    ml.notify_all();
+  }
 
   // Wake up all threads that block on the queue.
   MethodCompileQueue_lock->notify_all();
@@ -1720,23 +1718,26 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   } else
 #endif
   {
-    MonitorLocker ml(thread, CompileTaskWait_lock);
     free_task = true;
-    task->inc_waiting_for_completion();
+    // Wait until the task is complete or compilation is shut down.
+    MonitorLocker ml(thread, CompileTaskWait_lock);
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
       ml.wait();
     }
-    task->dec_waiting_for_completion();
+  }
+
+  // It is harmless to check this status without the lock, because
+  // completion is a stable property.
+  if (!task->is_complete() && is_compilation_disabled_forever()) {
+    // Task is not complete, and we are exiting for compilation shutdown.
+    // The task can still be executed by some compiler thread, therefore
+    // we cannot delete it. This will leave task allocated, which leaks it.
+    // At this (degraded) point, it is less risky to abandon the task,
+    // rather than attempting a more complicated deletion protocol.
+    free_task = false;
   }
 
   if (free_task) {
-    if (is_compilation_disabled_forever()) {
-      delete task;
-      return;
-    }
-
-    // It is harmless to check this status without the lock, because
-    // completion is a stable property (until the task object is deleted).
     assert(task->is_complete(), "Compilation should have completed");
 
     // By convention, the waiter is responsible for deleting a

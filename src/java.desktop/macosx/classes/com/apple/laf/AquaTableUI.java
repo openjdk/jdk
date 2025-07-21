@@ -38,7 +38,7 @@ import javax.swing.plaf.basic.BasicTableUI;
  *
  * All this does is look for a ThemeBorder and invalidate it when the focus changes
  */
-public class AquaTableUI extends BasicTableUI {
+public final class AquaTableUI extends BasicTableUI {
     public static ComponentUI createUI(final JComponent c) {
         return new AquaTableUI();
     }
@@ -46,6 +46,7 @@ public class AquaTableUI extends BasicTableUI {
     /**
      * Creates the focus listener to repaint the focus ring
      */
+    @Override
     protected FocusListener createFocusListener() {
         return new AquaTableUI.FocusHandler();
     }
@@ -53,6 +54,7 @@ public class AquaTableUI extends BasicTableUI {
     /**
      * Creates the mouse listener for the JTable.
      */
+    @Override
     protected MouseInputListener createMouseInputListener() {
         return new AquaTableUI.MouseInputHandler();
     }
@@ -62,12 +64,14 @@ public class AquaTableUI extends BasicTableUI {
      * This class should be treated as a &quot;protected&quot; inner class.
      * Instantiate it only within subclasses of BasicTableUI.
      */
-    public class FocusHandler extends BasicTableUI.FocusHandler {
+    public final class FocusHandler extends BasicTableUI.FocusHandler {
+        @Override
         public void focusGained(final FocusEvent e) {
             super.focusGained(e);
             AquaBorder.repaintBorder(getComponent());
         }
 
+        @Override
         public void focusLost(final FocusEvent e) {
             super.focusLost(e);
             AquaBorder.repaintBorder(getComponent());
@@ -81,12 +85,14 @@ public class AquaTableUI extends BasicTableUI {
             AquaFocusHandler.swapSelectionColors("Table", getComponent(), ev.getNewValue());
         }
     };
+    @Override
     protected void installListeners() {
         super.installListeners();
         table.addFocusListener(focusHandler);
         table.addPropertyChangeListener(focusHandler);
     }
 
+    @Override
     protected void uninstallListeners() {
         table.removePropertyChangeListener(focusHandler);
         table.removeFocusListener(focusHandler);
@@ -97,7 +103,7 @@ public class AquaTableUI extends BasicTableUI {
 
     // Replace the mouse event with one that returns the cmd-key state when asked
     // for the control-key state, which super assumes is what everyone does to discontiguously extend selections
-    public class MouseInputHandler extends BasicTableUI.MouseInputHandler {
+    public final class MouseInputHandler extends BasicTableUI.MouseInputHandler {
         /*public void mousePressed(final MouseEvent e) {
             super.mousePressed(new SelectionMouseEvent(e));
         }
