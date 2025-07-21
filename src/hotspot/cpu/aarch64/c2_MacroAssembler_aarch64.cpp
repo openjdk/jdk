@@ -2854,7 +2854,12 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
   }
 }
 
-// Implement selecting from two vectors using Neon instructions
+// Selects elements from two source vectors (src1, src2) based on index values in the index register
+// using Neon instructions and places it in the destination vector element corresponding to the
+// index vector element. Each index in the index register must be in the range - [0, 2 * NUM_ELEM),
+// where NUM_ELEM is the number of BasicType elements per vector.
+// If idx < NUM_ELEM --> selects src1[idx] (idx is an element of the index register)
+// Otherwise, selects src2[idx – NUM_ELEM]
 void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
                                                      FloatRegister src2, FloatRegister index,
                                                      FloatRegister tmp, unsigned vector_length_in_bytes) {
@@ -2863,6 +2868,7 @@ void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatReg
 
   if (vector_length_in_bytes == 16) {
     assert(UseSVE <= 1, "sve must be <= 1");
+    assert(src1->successor() == src2, "Source registers must be ordered");
     // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
     tbl(dst, size, src1, 2, index);
   } else { // vector length == 8
@@ -2876,7 +2882,12 @@ void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatReg
   }
 }
 
-// Implement selecting from two vectors using SVE/SVE2 instructions
+// Selects elements from two source vectors (src1, src2) based on index values in the index register
+// using SVE/SVE2 instructions and places it in the destination vector element corresponding to the
+// index vector element. Each index in the index register must be in the range - [0, 2 * NUM_ELEM),
+// where NUM_ELEM is the number of BasicType elements per vector.
+// If idx < NUM_ELEM --> selects src1[idx] (idx is an element of the index register)
+// Otherwise, selects src2[idx – NUM_ELEM]
 void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1,
                                                     FloatRegister src2, FloatRegister index,
                                                     FloatRegister tmp, SIMD_RegVariant T,
@@ -2884,12 +2895,21 @@ void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegi
   assert_different_registers(dst, src1, src2, index, tmp);
 
   if (vector_length_in_bytes == 8) {
+    // We need to fit both the source vectors (src1, src2) in a single vector register because the
+    // SVE "tbl" instruction is unpredicated and works on the entire vector which can lead to
+    // incorrect results if each source vector is only partially filled. We then use the SVE "tbl"
+    // instruction with one vector lookup
     assert(UseSVE >= 1, "sve must be >= 1");
     ins(tmp, D, src1, 0, 0);
     ins(tmp, D, src2, 1, 0);
     sve_tbl(dst, T, tmp, index);
   } else {  // UseSVE == 2 and vector_length_in_bytes > 8
+    // If the vector length is > 8, then use the SVE2 "tbl" instruction with the two vector table.
+    // The assertion - vector_length_in_bytes == MaxVectorSize ensures that this operation
+    // is not executed on machines where vector_length_in_bytes < MaxVectorSize
+    // with the only exception of 8B vector length.
     assert(UseSVE == 2 && vector_length_in_bytes == MaxVectorSize, "must be");
+    assert(src1->successor() == src2, "Source registers must be ordered");
     sve_tbl(dst, T, src1, src2, index);
   }
 }
@@ -2901,15 +2921,22 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
 
   assert_different_registers(dst, src1, src2, index, tmp);
 
+  // The cases that can reach this method are -
+  // - UseSVE = 0, vector_length_in_bytes = 8 or 16
+  // - UseSVE = 1, vector_length_in_bytes = 8 or 16
+  // - UseSVE = 2, vector_length_in_bytes >= 8
+  //
+  // SVE/SVE2 tbl instructions are generated when UseSVE = 1 with vector_length_in_bytes = 8
+  // and UseSVE = 2 with vector_length_in_bytes >= 8
+  //
+  // Neon instructions are generated when UseSVE = 0 with vector_length_in_bytes = 8 or 16 and
+  // UseSVE = 1 with vector_length_in_bytes = 16
+
   if ((UseSVE == 1 && vector_length_in_bytes == 8) || UseSVE == 2) {
     SIMD_RegVariant T = elemType_to_regVariant(bt);
     select_from_two_vectors_sve(dst, src1, src2, index, tmp, T, vector_length_in_bytes);
     return;
   }
-
-  // If control reaches here, then the Neon instructions would be executed and
-  // one of these conditions must satisfy -
-  // UseSVE == 0 || (UseSVE == 1 && length_in_bytes == 16)
 
   // The only BasicTypes that can reach here are T_SHORT, T_BYTE, T_INT and T_FLOAT
   assert(bt != T_DOUBLE && bt != T_LONG, "unsupported basic type");
