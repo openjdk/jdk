@@ -58,6 +58,8 @@ public:
     OrderAccess::release(); // Release modified oops
 
     NativeMovRegMem* mov = get_patchable_instruction_handle();
+    assert(align_up(mov->instruction_address(), sizeof(uint64_t)) ==
+           align_down(mov->instruction_address(), sizeof(uint64_t)), "instruction not aligned");
     uint64_t *instr = (uint64_t*)mov->instruction_address();
     assert(NativeMovRegMem::instruction_size == sizeof(*instr), "must be");
     union {
