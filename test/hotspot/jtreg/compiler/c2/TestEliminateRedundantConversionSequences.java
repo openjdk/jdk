@@ -29,20 +29,8 @@
  *          VerifyIterativeGVN checks that this optimization was applied
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=quiet
  *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
- *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110 compiler.c2.TestEliminateRedundantConversionSequences D2L
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=quiet
- *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
- *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110 compiler.c2.TestEliminateRedundantConversionSequences F2I
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=quiet
- *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
- *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110 compiler.c2.TestEliminateRedundantConversionSequences F2L
-  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileCommand=quiet
- *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
- *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110 compiler.c2.TestEliminateRedundantConversionSequences I2F
- * @run main compiler.c2.TestEliminateRedundantConversionSequences D2L
- * @run main compiler.c2.TestEliminateRedundantConversionSequences F2I
- * @run main compiler.c2.TestEliminateRedundantConversionSequences F2L
- * @run main compiler.c2.TestEliminateRedundantConversionSequences I2F
+ *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110 compiler.c2.TestEliminateRedundantConversionSequences
+ * @run main compiler.c2.TestEliminateRedundantConversionSequences
  *
  */
 
@@ -103,31 +91,17 @@ public class TestEliminateRedundantConversionSequences {
     }
 
     public static void main(String[] strArr) {
-        System.out.println(strArr[0]);
-        switch (strArr[0]) {
-            case "D2L":
-                for (int i = 0; i < 50_000; ++i) {
-                    testD2L(1);
-                }
-                break;
-            case "F2I":
-                for (int i = 0; i < 50_000; ++i) {
-                    testF2I(1);
-                }
-                break;
-            case "F2L":
-                for (int i = 0; i < 50_000; ++i) {
-                    testF2L(1);
-                }
-                break;
-            case "I2F":
-                for (int i = 0; i < 50_000; ++i) {
-                    testI2F(1);
-                }
-                break;
-            default:
-                assert(false);
-                break;
+        for (int i = 0; i < 50_000; ++i) {
+            testD2L(1);
+        }
+        for (int i = 0; i < 50_000; ++i) {
+            testF2I(1);
+        }
+        for (int i = 0; i < 50_000; ++i) {
+            testF2L(1);
+        }
+        for (int i = 0; i < 50_000; ++i) {
+            testI2F(1);
         }
     }
 }
