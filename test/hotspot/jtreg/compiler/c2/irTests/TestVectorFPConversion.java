@@ -37,12 +37,24 @@ public class TestVectorFPConversion {
     }
 
     @Test
-    @IR(phase = { CompilePhase.BEFORE_REMOVEUSELESS }, counts = {IRNode.MOV_D2L, ">=1"})
+    @IR(counts = {IRNode.VECTOR_REINTERPRET, ">=1"})
     public long[] loopDoubleToRawLongBits(double[] arr, long[] result) {
         for (int i = 0; i < arr.length; i++)
         {
             final double v = arr[i];
             final long bits = Double.doubleToRawLongBits(v);
+            result[i] = bits;
+        }
+        return result;
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_REINTERPRET, ">=1"})
+    public int[] loopFloatToRawIntBits(float[] arr, int[] result) {
+        for (int i = 0; i < arr.length; i++)
+        {
+            final float v = arr[i];
+            final int bits = Float.floatToRawIntBits(v);
             result[i] = bits;
         }
         return result;
@@ -74,13 +86,18 @@ public class TestVectorFPConversion {
 //        return result;
 //    }
 
-    @Run(test = {"loopDoubleToRawLongBits"
+    @Run(test = {
+        "loopDoubleToRawLongBits"
+        , "loopFloatToRawIntBits"
         //, "loopDoubleToLongBits", "loopLongBitsToDouble",
                  // "floatToRawIntBits", "floatToIntBits", "intBitsToFloat"
     })
     public void runTests() {
-        final long[] l1 = loopDoubleToRawLongBits(DOUBLES, new long[LENGTH]);
-        Asserts.assertNotNull(l1);
+        final long[] longs = loopDoubleToRawLongBits(DOUBLES, new long[LENGTH]);
+        Asserts.assertNotNull(longs);
+
+        final int[] ints = loopFloatToRawIntBits(FLOATS, new int[LENGTH]);
+        Asserts.assertNotNull(ints);
 
 //        final long[] l2 = loopDoubleToLongBits(DOUBLES);
 //        final double[] d1 = loopLongBitsToDouble(l1);
