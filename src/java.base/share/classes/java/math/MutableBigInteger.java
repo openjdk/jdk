@@ -160,39 +160,22 @@ class MutableBigInteger {
 
     /**
      * Returns a MutableBigInteger with a magnitude specified by
-     * the absolute value of {@code val * 2^pow}. Any fractional part is discarded.
+     * the absolute value of the double val. Any fractional part is discarded.
      *
      * Assume val is in the finite double range.
      */
-
-    private static MutableBigInteger valueOf(double val, int pow) {
+    private static MutableBigInteger valueOf(double val) {
+        val = Math.abs(val);
+        if (val < 0x1p63)
+            return new MutableBigInteger((long) val);
         // Translate the double into exponent and significand, according
         // to the formulae in JLS, Section 20.10.22.
         long valBits = Double.doubleToRawLongBits(val);
-        int exponent = (int) ((valBits >> 52) & 0x7ffL);
-        long significand = (exponent == 0
-                ? (valBits & ((1L << 52) - 1)) << 1
-                : (valBits & ((1L << 52) - 1)) | (1L << 52));
-        exponent -= 1075;
-        // At this point, |val| == significand * 2^exponent
-
-        long shiftL = (long) exponent + pow;
-        int shift = (int) shiftL;
-        if (shift != shiftL) {
-            if (shiftL > 0L)
-                throw new ArithmeticException("BigInteger Overflow");
-
-            return new MutableBigInteger();
-        }
-
-        MutableBigInteger result;
-        if (shift > 0) {
-            result = new MutableBigInteger(significand);
-            result.leftShift(shift);
-        } else {
-            shift = -shift;
-            result = new MutableBigInteger(shift < Long.SIZE ? significand >> shift : 0L);
-        }
+        int exponent = (int) ((valBits >> 52) & 0x7ffL) - 1075;
+        long significand = (valBits & ((1L << 52) - 1)) | (1L << 52);
+        // At this point, val == significand * 2^exponent, with exponent > 0
+        MutableBigInteger result = new MutableBigInteger(significand);
+        result.leftShift(exponent);
         return result;
     }
 
@@ -1943,7 +1926,7 @@ class MutableBigInteger {
      * @param n the root degree
      * @return the integer {@code n}th root of {@code this} and the remainder
      */
-    MutableBigInteger[] nthRootRem(int n) {
+    MutableBigInteger[] nthRootRem(final int n) {
         // Special cases.
         if (this.isZero() || this.isOne())
             return new MutableBigInteger[] { this, new MutableBigInteger() };
@@ -2022,28 +2005,35 @@ class MutableBigInteger {
 
             // Use the root of the shifted value as an estimate.
             rad = Math.nextUp(rad);
-            final double approx = Math.nextUp(n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n)));
-            if (shift == 0L) {
-                r = valueOf(approx, 0);
+            double approx = Math.nextUp(n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n)));
+            int rootShift = (int) (shift / n);
+            if (rootShift == 0) {
+                r = valueOf(approx);
             } else {
                 // Allocate sufficient space to store the final root
                 r = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
-                int approxExp = Math.getExponent(approx);
-                if (approxExp == Double.MIN_EXPONENT - 1) // Handle subnormals
-                    approxExp = Double.MIN_EXPONENT;
 
-                // Avoid to lose fraction bits
-                if (approxExp >= Double.PRECISION - 1) {
-                    r.copyValue(valueOf(approx, 0));
-                } else {
-                    int pow = Math.min((Double.PRECISION - 1) - approxExp, (int) (shift / n));
-                    shift -= (long) pow * n;
-                    r.copyValue(valueOf(approx, pow));
+                // Discard wrong bits from the initial estimate
+                int radExp = Math.getExponent(rad);
+                if (radExp == Double.MIN_EXPONENT - 1) // Handle subnormals
+                    radExp = Double.MIN_EXPONENT;
+
+                if (radExp >= Double.PRECISION - 1) { // Discard wrong integer bits
+                    int wrongBits = ((radExp + 1) - Double.PRECISION) / n;
+                    if ((long) rootShift + wrongBits > Integer.MAX_VALUE) // Avoid overflow
+                        wrongBits = Integer.MAX_VALUE - rootShift;
+
+                    rootShift += wrongBits;
+                    approx /= Double.parseDouble("0x1p" + wrongBits);
+                } else { // Avoid to discard correct fraction bits
+                    int correctBits = ((Double.PRECISION - 1) - radExp) / n;
+                    rootShift -= correctBits;
+                    approx *= Double.parseDouble("0x1p" + correctBits);
                 }
+                r.copyValue(valueOf(Math.ceil(approx)));
 
                 // Refine the estimate, avoiding to compute non-significant bits
                 final int trailingZeros = this.getLowestSetBit();
-                int rootShift = (int) (shift / n);
                 for (int rootBits = (int) r.bitLength(); rootShift >= rootBits; rootBits <<= 1) {
                     r.leftShift(rootBits);
                     rootShift -= rootBits;
