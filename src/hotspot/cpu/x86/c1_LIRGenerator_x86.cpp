@@ -1414,7 +1414,7 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
   }
 }
 
-void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
+bool LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
   if (address->type() == T_LONG) {
     address = new LIR_Address(address->base(),
@@ -1430,4 +1430,5 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
   } else {
     __ load(address, result, info);
   }
+  return true;
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -908,8 +909,18 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   reg2stack(temp, dest, dest->type());
 }
 
-
-void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
+// Specialised mem2reg function which is used for volatile loads since 8365147
+// Uses LDAR to ensure memory ordering.
+void LIR_Assembler::mem2reg_volatile(LIR_Opr src, LIR_Opr dest, BasicType type,
+                                     LIR_PatchCode patch_code, CodeEmitInfo* info) {
+  if (is_floating_point_type(type)) {
+    // Use LDAR instead of DMB+LD+DMB, except for floats/doubles (no LDAR equivalent).
+    if (!CompilerConfig::is_c1_only_no_jvmci()) {
+      __ membar(__ AnyAny);
+    }
+    mem2reg(src, dest, type, patch_code, info, false);
+    return;
+  }
   LIR_Address* addr = src->as_address_ptr();
   LIR_Address* from_addr = src->as_address_ptr();
 
@@ -921,7 +932,71 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     deoptimize_trap(info);
     return;
   }
+  if (info != nullptr) {
+    add_debug_info_for_null_check_here(info);
+  }
+  int null_check_here = code_offset();
 
+  __ lea(rscratch1, as_Address(from_addr));
+  switch (type) {
+    case T_BOOLEAN:
+      __ ldarb(dest->as_register(), rscratch1);
+      break;
+    case T_BYTE: // LDAR is unsigned so need to sign-extend for byte
+      __ ldarb(dest->as_register(), rscratch1);
+      __ sxtb(dest->as_register(), dest->as_register());
+      break;
+    case T_CHAR:
+      __ ldarh(dest->as_register(), rscratch1);
+      break;
+    case T_SHORT: // LDAR is unsigned so need to sign-extend for short
+      __ ldarh(dest->as_register(), rscratch1);
+      __ sxth(dest->as_register(), dest->as_register());
+      break;
+    case T_INT:
+      __ ldarw(dest->as_register(), rscratch1);
+      break;
+    case T_ADDRESS:
+      __ ldar(dest->as_register(), rscratch1);
+      break;
+    case T_LONG:
+      __ ldar(dest->as_register_lo(), rscratch1);
+      break;
+    case T_ARRAY:
+    case T_OBJECT:
+      if (UseCompressedOops) {
+        __ ldarw(dest->as_register(), rscratch1);
+      } else {
+        __ ldar(dest->as_register(), rscratch1);
+      }
+      break;
+    case T_METADATA:
+      // We get here to store a method pointer to the stack to pass to
+      // a dtrace runtime call. This can't work on 64 bit with
+      // compressed klass ptrs: T_METADATA can be a compressed klass
+      // ptr or a 64 bit method pointer.
+    default:
+      ShouldNotReachHere();
+  }
+
+  if (is_reference_type(type)) {
+    if (UseCompressedOops) {
+      __ decode_heap_oop(dest->as_register());
+    }
+    __ verify_oop(dest->as_register());
+  }
+}
+
+void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
+  LIR_Address* addr = src->as_address_ptr();
+  LIR_Address* from_addr = src->as_address_ptr();
+  if (addr->base()->type() == T_OBJECT) {
+    __ verify_oop(addr->base()->as_pointer_register());
+  }
+  if (patch_code != lir_patch_none) {
+    deoptimize_trap(info);
+    return;
+  }
   if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
@@ -2845,7 +2920,9 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 }
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  if (dest->is_address() || src->is_address()) {
+  if (src->is_address()) {
+    mem2reg_volatile(src, dest, type, lir_patch_none, info);
+  } else if (dest->is_address()) {
     move_op(src, dest, type, lir_patch_none, info, /*wide*/false);
   } else {
     ShouldNotReachHere();

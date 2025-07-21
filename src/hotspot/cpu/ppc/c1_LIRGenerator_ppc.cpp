@@ -1135,7 +1135,7 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 #endif
 }
 
-void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
+bool LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
 #ifdef _LP64
   __ load(address, result, info);
@@ -1143,6 +1143,7 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
   Unimplemented();
 //  __ volatile_load_mem_reg(address, result, info);
 #endif
+  return true;
 }
 
 
