@@ -171,6 +171,11 @@ class SharedRuntime: AllStatic {
     tty->print("[%ld] ", x);
   }
 
+  // TODO name does not make sense anymore
+  static void print_primitive(oop x) {
+    x->print();
+  }
+
   template <typename T, typename... Rest>
   static void debug_print_t(T arg, Rest... args) {
     print_primitive(arg);

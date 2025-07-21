@@ -841,6 +841,14 @@ struct TypeMap<jdouble> {
 };
 
 template <>
+struct TypeMap<oop> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = TypePtr::NOTNULL;
+  }
+  static uint arg_width() { return 1; }
+};
+
+template <>
 struct OptoRuntime::ArgWriter<> {
   static void put(const Type** fields, int* argp) {}
 };
