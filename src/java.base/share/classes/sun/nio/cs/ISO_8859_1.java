@@ -32,11 +32,9 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Objects;
-import java.util.function.BiFunction;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public class ISO_8859_1
@@ -155,19 +153,18 @@ public class ISO_8859_1
          * @param len the total number of characters to be encoded
          * @return the total number of characters successfully encoded
          * @throws NullPointerException if any of the provided arrays is null
-         * @throws ArrayIndexOutOfBoundsException if any of the provided sub-ranges are
-         *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
          */
         private static int encodeISOArray(char[] sa, int sp,
                                           byte[] da, int dp, int len) {
             Objects.requireNonNull(sa, "sa");
             Objects.requireNonNull(da, "da");
-            Preconditions.checkFromIndexSize(sp, len, sa.length, Preconditions.AIOOBE_FORMATTER);
-            // Not checking the `dp + len < da.length` invariant, since "as many
-            // codepoints as possible" contract still holds with a `da` of
-            // insufficient capacity, and the compiler intrinsic matches this
-            // behavior too.
-            Preconditions.checkIndex(dp, da.length, Preconditions.AIOOBE_FORMATTER);
+            if ((sp | dp | len) < 0 || len > sa.length - sp || dp >= da.length) {
+                // Not checking the `len < da.length - dp` invariant, since "as many
+                // codepoints as possible" contract still holds with a `da` of
+                // insufficient capacity, and the compiler intrinsic matches this
+                // behavior too.
+                return 0;
+            }
             return encodeISOArray0(sa, sp, da, dp, len);
         }
 
@@ -202,7 +199,7 @@ public class ISO_8859_1
             int slen = sl - sp;
             int len  = (dlen < slen) ? dlen : slen;
             try {
-                int ret = len <= 0 ? 0 : encodeISOArray(sa, sp, da, dp, len);
+                int ret = encodeISOArray(sa, sp, da, dp, len);
                 sp = sp + ret;
                 dp = dp + ret;
                 if (ret != len) {
