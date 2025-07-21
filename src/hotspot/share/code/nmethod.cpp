@@ -1607,17 +1607,11 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 }
 
 bool nmethod::is_relocatable() {
-#if INCLUDE_JVMCI
-  if (jvmci_nmethod_data() != nullptr && jvmci_nmethod_data()->has_mirror()) {
-    return false;
-  }
-#endif
-
-  if (is_marked_for_deoptimization()) {
+  if (!is_java_method()) {
     return false;
   }
 
-  if (is_unloading()) {
+  if (!is_in_use()) {
     return false;
   }
 
@@ -1625,11 +1619,17 @@ bool nmethod::is_relocatable() {
     return false;
   }
 
-  if (!is_java_method()) {
+  if (is_marked_for_deoptimization()) {
     return false;
   }
 
-  if (!is_in_use()) {
+#if INCLUDE_JVMCI
+  if (jvmci_nmethod_data() != nullptr && jvmci_nmethod_data()->has_mirror()) {
+    return false;
+  }
+#endif
+
+  if (is_unloading()) {
     return false;
   }
 
