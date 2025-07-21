@@ -49,7 +49,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/objectCountEventSenderTemplate.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -1472,7 +1471,7 @@ void G1ConcurrentMark::remark() {
     {
       GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
       G1ObjectCountIsAliveClosure is_alive(_g1h);
-      _gc_tracer_cm->report_object_count<ObjectCountAfterGCEventSender>(&is_alive, _g1h->workers());
+      _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
     }
   } else {
     // We overflowed.  Restart concurrent marking.

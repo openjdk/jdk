@@ -37,7 +37,6 @@
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/objectCountEventSenderTemplate.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -330,7 +329,7 @@ void G1FullCollector::phase1_mark_live_objects() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Report Object Count", scope()->timer());
-    scope()->tracer()->report_object_count<ObjectCountAfterGCEventSender>(&_is_alive, _heap->workers());
+    scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
   }
 #if TASKQUEUE_STATS
   oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");

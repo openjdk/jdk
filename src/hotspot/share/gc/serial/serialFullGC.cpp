@@ -49,7 +49,6 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
-#include "gc/shared/objectCountEventSenderTemplate.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -551,7 +550,7 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Report Object Count", gc_timer());
-    gc_tracer()->report_object_count<ObjectCountAfterGCEventSender>(&is_alive, nullptr);
+    gc_tracer()->report_object_count_after_gc(&is_alive, nullptr);
   }
 }
 

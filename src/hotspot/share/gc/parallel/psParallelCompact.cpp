@@ -53,7 +53,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/objectCountEventSenderTemplate.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
@@ -1374,7 +1373,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   {
     GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
-    _gc_tracer.report_object_count<ObjectCountAfterGCEventSender>(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
+    _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
   }
 #if TASKQUEUE_STATS
   ParCompactionManager::print_and_reset_taskqueue_stats();
