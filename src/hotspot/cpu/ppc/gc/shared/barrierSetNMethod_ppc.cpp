@@ -49,6 +49,7 @@ public:
 
   void release_set_guard_value(int value, int bit_mask) {
     assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+    value &= bit_mask;
     // Patching is not atomic.
     // Stale observations of the "armed" state is okay as invoking the barrier stub in that case has no
     // unwanted side effects. Disarming is thus a non-critical operation.
@@ -58,20 +59,22 @@ public:
 
     NativeMovRegMem* mov = get_patchable_instruction_handle();
     uint64_t *instr = (uint64_t*)mov->instruction_address();
-    assert(NativeMovRegMem::instruction_size >= sizeof(instr), "must be");
+    assert(NativeMovRegMem::instruction_size == sizeof(*instr), "must be");
     union {
       u_char buf[NativeMovRegMem::instruction_size];
       uint64_t u64;
     } new_mov_instr, old_mov_instr;
+    new_mov_instr.u64 = old_mov_instr.u64 = Atomic::load(instr);
     while (true) {
-      new_mov_instr.u64 = old_mov_instr.u64 = Atomic::load(instr);
-      int old_value = nativeMovRegMem_at(old_mov_instr.buf)->offset();
       // Only bits in the mask are changed
+      int old_value = nativeMovRegMem_at(old_mov_instr.buf)->offset();
       int new_value = value | (old_value & ~bit_mask);
+      if (new_value == old_value) break;
       nativeMovRegMem_at(new_mov_instr.buf)->set_offset(new_value, false /* no icache flush */);
       // Swap in the new value
       uint64_t v = Atomic::cmpxchg(instr, old_mov_instr.u64, new_mov_instr.u64, memory_order_release);
       if (v == old_mov_instr.u64) break;
+      old_mov_instr.u64 = v;
     }
     ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
   }
