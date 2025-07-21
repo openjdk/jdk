@@ -71,6 +71,8 @@ Java_StringPlatformChars_newString(JNIEnv *env, jclass unused, jbyteArray bytes)
     str[len] = '\0';
     (*env)->ReleasePrimitiveArrayCritical(env, bytes, (void*)jbytes, 0);
 
-    return JNU_NewStringPlatform(env, str);
+    jstring res = JNU_NewStringPlatform(env, str);
+    free(str);
+    return res;
 }
 
