@@ -532,23 +532,25 @@ extern "C" {
     // We should return 1 if SpinPause is implemented, and since there
     // will be always a sequence of instructions, SpinPause will always return 1.
     switch (VM_Version::spin_wait_desc().inst()) {
-    case SpinWait::YIELD:
-      asm volatile("yield" : : : "memory");
+    case SpinWait::NONE:
+      break;
+    case SpinWait::NOP:
+      asm volatile("nop" : : : "memory");
       break;
     case SpinWait::ISB:
       asm volatile("isb" : : : "memory");
+      break;
+    case SpinWait::YIELD:
+      asm volatile("yield" : : : "memory");
       break;
     case SpinWait::SB:
       assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
       asm volatile(".inst 0xd50330ff" : : : "memory");
       break;
-    case SpinWait::NOP:
-      asm volatile("nop" : : : "memory");
-      break;
-    case SpinWait::NONE:
-      break;
+#ifdef ASSERT
     default:
       ShouldNotReachHere();
+#endif
     }
     return 1;
   }
