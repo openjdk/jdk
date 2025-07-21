@@ -45,8 +45,8 @@ class ThreadsList;
 // operation. It is no longer necessary to hold the Threads_lock to safely
 // perform an operation on a target thread.
 //
-// There are several different ways to refer to java.lang.Thread objects
-// so we have a few ways to get a protected JavaThread*:
+// There two ways to refer to java.lang.Thread objects so we have two ways
+// to get a protected JavaThread*:
 //
 // JNI jobject example:
 //   jobject jthread = ...;
@@ -68,16 +68,6 @@ class ThreadsList;
 //     return err;
 //   }
 //   :  // do stuff with 'jt'...
-//
-// Java oop example
-//   oop thread_obj = ...;
-//   :
-//   JavaThread *jt = nullptr;
-//   ThreadsListHandle tlh;
-//   bool is_alive = tlh.cv_thread_oop_to_JavaThread(thread_oop, &jt);
-//   if (is_alive) {
-//     :  // do stuff with 'jt'...
-//   }
 //
 // A JavaThread* that is included in the ThreadsList that is held by
 // a ThreadsListHandle is protected as long as the ThreadsListHandle
@@ -323,7 +313,6 @@ public:
   inline Iterator end();
 
   bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread** jt_pp, oop* thread_oop_p);
-  bool cv_thread_oop_to_JavaThread(oop thread_oop, JavaThread** jt_pp);
 
   bool includes(JavaThread* p) {
     return list()->includes(p);
