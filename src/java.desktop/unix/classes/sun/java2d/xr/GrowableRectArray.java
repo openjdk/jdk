@@ -30,7 +30,7 @@ package sun.java2d.xr;
  *
  * @author Clemens Eisserer
  */
-public class GrowableRectArray extends GrowableIntArray {
+public final class GrowableRectArray extends GrowableIntArray {
 
     private static final int RECT_SIZE = 4;
 

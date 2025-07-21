@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2013, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,15 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
         return new AixFileStore(path);
     }
 
+    private static boolean supportsUserDefinedFileAttributeView(UnixPath file) {
+        try {
+            FileStore store = new AixFileStore(file);
+            return store.supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V getFileAttributeView(Path obj,
@@ -59,8 +68,10 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
                                                                 LinkOption... options)
     {
         if (type == UserDefinedFileAttributeView.class) {
-            return (V) new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                    Util.followLinks(options));
+            UnixPath file = UnixPath.toUnixPath(obj);
+            return supportsUserDefinedFileAttributeView(file) ?
+                (V) new AixUserDefinedFileAttributeView(file, Util.followLinks(options))
+                : null;
         }
         return super.getFileAttributeView(obj, type, options);
     }
@@ -71,8 +82,10 @@ class AixFileSystemProvider extends UnixFileSystemProvider {
                                                          LinkOption... options)
     {
         if (name.equals("user")) {
-            return new AixUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                    Util.followLinks(options));
+            UnixPath file = UnixPath.toUnixPath(obj);
+            return supportsUserDefinedFileAttributeView(file) ?
+                new AixUserDefinedFileAttributeView(file, Util.followLinks(options))
+                : null;
         }
         return super.getFileAttributeView(obj, name, options);
     }

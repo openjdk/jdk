@@ -44,7 +44,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -346,6 +345,13 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       aot_log_warning(aot)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
+  }
+
+  InstanceKlass* nest_host = k->nest_host_or_null();
+  if (nest_host != nullptr && nest_host != k && check_for_exclusion(nest_host, nullptr)) {
+    ResourceMark rm;
+    aot_log_warning(aot)("Skipping %s: nest_host class %s is excluded", k->name()->as_C_string(), nest_host->name()->as_C_string());
+    return true;
   }
 
   return false; // false == k should NOT be excluded

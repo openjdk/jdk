@@ -28,12 +28,13 @@
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/resizeableResourceHash.hpp"
@@ -283,6 +284,19 @@ private:
   static bool need_data() { return AOTRecordTraining;  } // Going to write
   static bool assembling_data() { return have_data() && CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes(); }
 
+  static bool is_klass_loaded(Klass* k) {
+    if (have_data()) {
+      // If we're running in AOT mode some classes may not be loaded yet
+      if (k->is_objArray_klass()) {
+        k = ObjArrayKlass::cast(k)->bottom_klass();
+      }
+      if (k->is_instance_klass()) {
+        return InstanceKlass::cast(k)->is_loaded();
+      }
+    }
+    return true;
+  }
+
   template<typename Function>
   static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }
 
@@ -417,7 +431,6 @@ class KlassTrainingData : public TrainingData {
 
   // cross-link to live klass, or null if not loaded or encountered yet
   InstanceKlass* _holder;
-  jobject _holder_mirror;   // extra link to prevent unloading by GC
 
   DepList<CompileTrainingData*> _comp_deps; // compiles that depend on me
 
@@ -440,7 +453,6 @@ class KlassTrainingData : public TrainingData {
     TrainingDataLocker::assert_locked();
      _comp_deps.remove_if_existing(ctd);
   }
-
  public:
   Symbol* name() const {
     precond(has_holder());

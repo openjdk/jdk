@@ -630,9 +630,6 @@ ZPartition::ZPartition(uint32_t numa_id, ZPageAllocator* page_allocator)
     _capacity(0),
     _claimed(0),
     _used(0),
-    _last_commit(0.0),
-    _last_uncommit(0.0),
-    _to_uncommit(0),
     _numa_id(numa_id) {}
 
 uint32_t ZPartition::numa_id() const {
@@ -650,9 +647,7 @@ size_t ZPartition::increase_capacity(size_t size) {
     // Update atomically since we have concurrent readers
     Atomic::add(&_capacity, increased);
 
-    _last_commit = os::elapsedTime();
-    _last_uncommit = 0;
-    _cache.reset_min();
+    _uncommitter.cancel_uncommit_cycle();
   }
 
   return increased;
@@ -785,101 +780,6 @@ bool ZPartition::claim_capacity_fast_medium(ZMemoryAllocation* allocation) {
 
   // Success
   return true;
-}
-
-size_t ZPartition::uncommit(uint64_t* timeout) {
-  ZArray<ZVirtualMemory> flushed_vmems;
-  size_t flushed = 0;
-
-  {
-    // We need to join the suspendible thread set while manipulating capacity
-    // and used, to make sure GC safepoints will have a consistent view.
-    SuspendibleThreadSetJoiner sts_joiner;
-    ZLocker<ZLock> locker(&_page_allocator->_lock);
-
-    const double now = os::elapsedTime();
-    const double time_since_last_commit = std::floor(now - _last_commit);
-    const double time_since_last_uncommit = std::floor(now - _last_uncommit);
-
-    if (time_since_last_commit < double(ZUncommitDelay)) {
-      // We have committed within the delay, stop uncommitting.
-      *timeout = uint64_t(double(ZUncommitDelay) - time_since_last_commit);
-      return 0;
-    }
-
-    // We flush out and uncommit chunks at a time (~0.8% of the max capacity,
-    // but at least one granule and at most 256M), in case demand for memory
-    // increases while we are uncommitting.
-    const size_t limit_upper_bound = MAX2(ZGranuleSize, align_down(256 * M / ZNUMA::count(), ZGranuleSize));
-    const size_t limit = MIN2(align_up(_current_max_capacity >> 7, ZGranuleSize), limit_upper_bound);
-
-    if (limit == 0) {
-      // This may occur if the current max capacity for this partition is 0
-
-      // Set timeout to ZUncommitDelay
-      *timeout = ZUncommitDelay;
-      return 0;
-    }
-
-    if (time_since_last_uncommit < double(ZUncommitDelay)) {
-      // We are in the uncommit phase
-      const size_t num_uncommits_left = _to_uncommit / limit;
-      const double time_left = double(ZUncommitDelay) - time_since_last_uncommit;
-      if (time_left < *timeout * num_uncommits_left) {
-        // Running out of time, speed up.
-        uint64_t new_timeout = uint64_t(std::floor(time_left / double(num_uncommits_left + 1)));
-        *timeout = new_timeout;
-      }
-    } else {
-      // We are about to start uncommitting
-      _to_uncommit = _cache.reset_min();
-      _last_uncommit = now;
-
-      const size_t split = _to_uncommit / limit + 1;
-      uint64_t new_timeout = ZUncommitDelay / split;
-      *timeout = new_timeout;
-    }
-
-    // Never uncommit below min capacity.
-    const size_t retain = MAX2(_used, _min_capacity);
-    const size_t release = _capacity - retain;
-    const size_t flush = MIN3(release, limit, _to_uncommit);
-
-    if (flush == 0) {
-      // Nothing to flush
-      return 0;
-    }
-
-    // Flush memory from the mapped cache to uncommit
-    flushed = _cache.remove_from_min(flush, &flushed_vmems);
-    if (flushed == 0) {
-      // Nothing flushed
-      return 0;
-    }
-
-    // Record flushed memory as claimed and how much we've flushed for this partition
-    Atomic::add(&_claimed, flushed);
-    _to_uncommit -= flushed;
-  }
-
-  // Unmap and uncommit flushed memory
-  for (const ZVirtualMemory vmem : flushed_vmems) {
-    unmap_virtual(vmem);
-    uncommit_physical(vmem);
-    free_physical(vmem);
-    free_virtual(vmem);
-  }
-
-  {
-    SuspendibleThreadSetJoiner sts_joiner;
-    ZLocker<ZLock> locker(&_page_allocator->_lock);
-
-    // Adjust claimed and capacity to reflect the uncommit
-    Atomic::sub(&_claimed, flushed);
-    decrease_capacity(flushed, false /* set_max_capacity */);
-  }
-
-  return flushed;
 }
 
 void ZPartition::sort_segments_physical(const ZVirtualMemory& vmem) {

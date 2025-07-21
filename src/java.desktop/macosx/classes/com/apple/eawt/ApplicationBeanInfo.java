@@ -31,7 +31,8 @@ import java.beans.SimpleBeanInfo;
 /**
  * This class is used by JavaBeans tools and should not be used directly by applications.
  */
-public class ApplicationBeanInfo extends SimpleBeanInfo {
+public final class ApplicationBeanInfo extends SimpleBeanInfo {
+    @Override
     public Image getIcon(final int iconKind) {
         return Toolkit.getDefaultToolkit().getImage("NSImage://NSGenericApplication");
     }

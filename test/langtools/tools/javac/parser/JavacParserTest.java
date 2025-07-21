@@ -2298,10 +2298,9 @@ public class JavacParserTest extends TestCase {
 
     @Test //JDK-8310326
     void testUnnamedClassPositions() throws IOException {
-        String code = """
-                      void main() {
-                      }
-                      """;
+        //             0         1         2
+        //             012345678901234567890
+        String code = "void main() { }";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<>();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
@@ -2313,7 +2312,7 @@ public class JavacParserTest extends TestCase {
             @Override
             public Void visitClass(ClassTree node, Void p) {
                 assertEquals("Wrong start position", 0, sp.getStartPosition(cut, node));
-                assertEquals("Wrong end position", -1, sp.getEndPosition(cut, node));
+                assertEquals("Wrong end position", 15, sp.getEndPosition(cut, node));
                 assertEquals("Wrong modifiers start position", -1, sp.getStartPosition(cut, node.getModifiers()));
                 assertEquals("Wrong modifiers end position", -1, sp.getEndPosition(cut, node.getModifiers()));
                 return super.visitClass(node, p);

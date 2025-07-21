@@ -771,8 +771,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
     SystemDictionary::restore_archived_method_handle_intrinsics();
+    AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
   }
 
   // Start string deduplication thread if requested.
@@ -847,13 +847,22 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JFR_ONLY(Jfr::on_create_vm_3();)
 
 #if INCLUDE_MANAGEMENT
-  Management::initialize(THREAD);
+  bool start_agent = true;
+#if INCLUDE_CDS
+  start_agent = !CDSConfig::is_dumping_final_static_archive();
+  if (!start_agent) {
+    log_info(aot)("Not starting management agent during creation of AOT cache.");
+  }
+#endif // INCLUDE_CDS
+  if (start_agent) {
+    Management::initialize(THREAD);
 
-  if (HAS_PENDING_EXCEPTION) {
-    // management agent fails to start possibly due to
-    // configuration problem and is responsible for printing
-    // stack trace if appropriate. Simply exit VM.
-    vm_exit(1);
+    if (HAS_PENDING_EXCEPTION) {
+      // management agent fails to start possibly due to
+      // configuration problem and is responsible for printing
+      // stack trace if appropriate. Simply exit VM.
+      vm_exit(1);
+    }
   }
 #endif // INCLUDE_MANAGEMENT
 

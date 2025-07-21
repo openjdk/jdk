@@ -73,7 +73,7 @@ import sun.lwawt.macosx.CPlatformWindow;
  *
  * @since 1.4
  */
-public class Application {
+public final class Application {
     private static native void nativeInitializeApplicationDelegate();
 
     static Application sApplication = null;

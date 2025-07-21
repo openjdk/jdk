@@ -297,10 +297,6 @@ public class WhiteBox {
   public native int g1ActiveMemoryNodeCount();
   public native int[] g1MemoryNodeIds();
 
-  // Parallel GC
-  public native long psVirtualSpaceAlignment();
-  public native long psHeapGenerationAlignment();
-
   /**
    * Enumerates old regions with liveness less than specified and produces some statistics
    * @param liveness percent of region's liveness (live_objects / total_region_size * 100).
@@ -325,6 +321,10 @@ public class WhiteBox {
   public native long NMTNewArena(long initSize);
   public native void NMTFreeArena(long arena);
   public native void NMTArenaMalloc(long arena, long size);
+
+  // Sanitizers
+  public native boolean isAsanEnabled();
+  public native boolean isUbsanEnabled();
 
   // Compiler
 

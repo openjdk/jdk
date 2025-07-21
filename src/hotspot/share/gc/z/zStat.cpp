@@ -30,6 +30,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
@@ -1499,9 +1500,7 @@ void ZStatRelocation::print_page_summary() {
     summary.relocate += stats.relocate();
   };
 
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
-
+  for (ZPageAge age : ZPageAgeRange()) {
     account_page_size(small_summary, _selector_stats.small(age));
     account_page_size(medium_summary, _selector_stats.medium(age));
     account_page_size(large_summary, _selector_stats.large(age));
@@ -1557,13 +1556,13 @@ void ZStatRelocation::print_age_table() {
            .center("Large")
            .end());
 
-  size_t live[ZPageAgeMax + 1] = {};
-  size_t total[ZPageAgeMax + 1] = {};
+  size_t live[ZPageAgeCount] = {};
+  size_t total[ZPageAgeCount] = {};
 
   uint oldest_none_empty_age = 0;
 
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
+    uint i = untype(age);
     auto summarize_pages = [&](const ZRelocationSetSelectorGroupStats& stats) {
       live[i] += stats.live();
       total[i] += stats.total();
@@ -1579,7 +1578,7 @@ void ZStatRelocation::print_age_table() {
   }
 
   for (uint i = 0; i <= oldest_none_empty_age; ++i) {
-    ZPageAge age = static_cast<ZPageAge>(i);
+    ZPageAge age = to_zpageage(i);
 
     FormatBuffer<> age_str("");
     if (age == ZPageAge::eden) {
@@ -1791,8 +1790,7 @@ void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stat
   ZLocker<ZLock> locker(&_stat_lock);
 
   size_t live = 0;
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
     live += stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
   }
   _at_mark_end.live = live;
