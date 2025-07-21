@@ -14,13 +14,17 @@ class Klass;
 template <typename Event>
 class ObjectCountEventSenderTemplate : public AllStatic {
   static bool _should_send_requestable_event;
+  static KlassInfoTable cit;
 
   template <typename T>
   static void send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp);
 
  public:
+  static bool check_table_exists();
+  
   static void enable_requestable_event();
   static void disable_requestable_event();
+  static bool record_object_instance(oop o);
 
   static void send(const KlassInfoEntry* entry, const Ticks& timestamp);
   static bool should_send_event();
@@ -40,6 +44,24 @@ bool ObjectCountEventSenderTemplate<Event>::should_send_event() {
 
 template <typename Event>
 bool ObjectCountEventSenderTemplate<Event>::_should_send_requestable_event = false;
+
+template <typename Event>
+KlassInfoTable ObjectCountEventSenderTemplate<Event>::cit(false);
+
+template <typename Event>
+bool ObjectCountEventSenderTemplate<Event>::check_table_exists() {
+  return !cit.allocation_failed();
+}
+
+template <typename Event>
+bool ObjectCountEventSenderTemplate<Event>::record_object_instance(oop o) {
+  if (!check_table_exists()) {
+    return false;
+  }
+  cit.record_instance(o);
+  return true;
+}
+
 
 template <typename Event>
 void ObjectCountEventSenderTemplate<Event>::enable_requestable_event() {
