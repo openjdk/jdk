@@ -23,6 +23,7 @@
 package jdk.vm.ci.meta;
 
 import java.lang.annotation.Annotation;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,7 +40,7 @@ import java.util.Set;
  */
 public final class AnnotationData {
 
-    private final JavaType type;
+    private final ResolvedJavaType type;
     private final Map<String, Object> elements;
 
     private static final Set<Class<?>> ELEMENT_TYPES = Set.of(
@@ -52,13 +53,15 @@ public final class AnnotationData {
                     Long.class,
                     Double.class,
                     String.class,
+                    ErrorData.class,
+                    EnumArrayData.class,
                     EnumData.class,
                     AnnotationData.class);
 
     /**
      * Creates an annotation.
      *
-     * @param type the annotation interface of this annotation, represented as a {@link JavaType}
+     * @param type the annotation interface of this annotation, represented as a {@link ResolvedJavaType}
      * @param elements the names and values of this annotation's element values. Each value's type
      *            must be one of the {@code AnnotationData} types described {@linkplain #get here}
      *            or it must be a {@link ErrorData} object whose {@code toString()} value describes
@@ -69,24 +72,36 @@ public final class AnnotationData {
      * @throws NullPointerException if any of the above parameters is null or any entry in
      *             {@code elements} is null
      */
-    public AnnotationData(JavaType type, Map.Entry<String, Object>[] elements) {
+    public AnnotationData(ResolvedJavaType type, Map.Entry<String, Object>[] elements) {
         this.type = Objects.requireNonNull(type);
         for (Map.Entry<String, Object> e : elements) {
-            Object value = e.getValue();
-            if (!(value instanceof ErrorData) &&
-                            !(value instanceof JavaType) &&
-                            !(value instanceof List) &&
-                            !ELEMENT_TYPES.contains(value.getClass())) {
-                throw new IllegalArgumentException("illegal type for element " + e.getKey() + ": " + value.getClass().getName());
-            }
+            checkEntry(e);
         }
         this.elements = Map.ofEntries(elements);
     }
 
+    private static void checkEntry(Map.Entry<String, Object> e) {
+        Object value = e.getValue();
+        Class<?> valueClass = value.getClass();
+        boolean illegalEnumType = false;
+        if (valueClass.isArray()) {
+            valueClass = valueClass.getComponentType();
+            if (valueClass == EnumData.class || valueClass == EnumArrayData.class) {
+                illegalEnumType = true;
+            }
+        }
+        if (illegalEnumType ||
+            (!ResolvedJavaType.class.isAssignableFrom(valueClass) &&
+             !(value instanceof List) &&
+             !ELEMENT_TYPES.contains(valueClass))) {
+            throw new IllegalArgumentException("illegal type for element " + e.getKey() + ": " + value.getClass().getName());
+        }
+    }
+
     /**
-     * @return the annotation interface of this annotation, represented as a {@link JavaType}
+     * @return the annotation interface of this annotation, represented as a {@link ResolvedJavaType}
      */
-    public JavaType getAnnotationType() {
+    public ResolvedJavaType getAnnotationType() {
         return type;
     }
 
@@ -108,10 +123,11 @@ public final class AnnotationData {
      * <tr><td>long</td>       <td>Long</td></tr>
      * <tr><td>double</td>     <td>Double</td></tr>
      * <tr><td>String</td>     <td>String</td></tr>
-     * <tr><td>Class</td>      <td>JavaType</td></tr>
+     * <tr><td>Class</td>      <td>ResolvedJavaType</td></tr>
      * <tr><td>Enum</td>       <td>EnumData</td></tr>
+     * <tr><td>Enum[]</td>     <td>EnumArrayData</td></tr>
      * <tr><td>Annotation</td> <td>AnnotationData</td></tr>
-     * <tr><td>[]</td><td>immutable List&lt;T&gt; where T is one of the above types</td></tr>
+     * <tr><td>[]</td><td>T[] where T is one of the above types except for EnumData or EnumArrayData</td></tr>
      * </tbody>
      * </table>
      *
@@ -138,7 +154,7 @@ public final class AnnotationData {
 
     @Override
     public String toString() {
-        return "@" + type.getName() + "(" + elements + ")";
+        return "@" + type.toClassName() + "(" + elements + ")";
     }
 
     @Override
