@@ -28,7 +28,7 @@
  * @summary Check that Ctrl-\ or Ctrl-Break (on Windows) causes HotSpot VM to print a full thread dump.
  * @library /vmTestbase
  *          /test/lib
- * @run driver/native TestBreakSignalThreadDump
+ * @run main/othervm/native TestBreakSignalThreadDump
  */
 
 /*
@@ -42,7 +42,7 @@
  * @requires !vm.asan
  * @library /vmTestbase
  *          /test/lib
- * @run driver/native TestBreakSignalThreadDump load_libjsig
+ * @run main/othervm/native TestBreakSignalThreadDump load_libjsig
  */
 
 import java.nio.file.Files;
