@@ -63,6 +63,7 @@ Java_StringPlatformChars_newString(JNIEnv *env, jclass unused, jbyteArray bytes)
     str = (char*)malloc(len + 1);
     jbytes = (*env)->GetPrimitiveArrayCritical(env, bytes, NULL);
     if (jbytes == NULL) {
+        free(str);
         return NULL;
     }
     for (i = 0; i < len; i++) {
