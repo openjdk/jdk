@@ -84,7 +84,6 @@ Monitor* CompileTaskWait_lock         = nullptr;
 Monitor* MethodCompileQueue_lock      = nullptr;
 Monitor* CompileThread_lock           = nullptr;
 Monitor* Compilation_lock             = nullptr;
-Monitor* CompileTaskAlloc_lock        = nullptr;
 Mutex*   CompileStatistics_lock       = nullptr;
 Mutex*   DirectivesStack_lock         = nullptr;
 Monitor* Terminator_lock              = nullptr;
@@ -346,7 +345,6 @@ void mutex_init() {
     MUTEX_DEFL(G1RareEvent_lock             , PaddedMutex  , Threads_lock, true);
   }
 
-  MUTEX_DEFL(CompileTaskAlloc_lock          , PaddedMonitor, MethodCompileQueue_lock);
   MUTEX_DEFL(CompileTaskWait_lock           , PaddedMonitor, MethodCompileQueue_lock);
 
 #if INCLUDE_PARALLELGC

@@ -2367,7 +2367,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     // Deoptimization count is used by the CompileBroker to reason about compilations
     // it requests so do not pollute the count for deoptimizations in non-default (i.e.
     // non-CompilerBroker) compilations.
-    if (nm->is_jvmci_hosted()) {
+    if (nm->jvmci_skip_profile_deopt()) {
       update_trap_state = false;
     }
 #endif

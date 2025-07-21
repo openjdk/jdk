@@ -316,19 +316,22 @@ public class Cipher {
 
     private static final String SHA512TRUNCATED = "SHA512/2";
 
+    // Parse the specified cipher transformation for algorithm and the
+    // optional mode and padding. If the transformation contains only
+    // algorithm, then only algorithm is returned. Otherwise, the
+    // transformation must contain all 3 and they must be non-empty.
     private static String[] tokenizeTransformation(String transformation)
             throws NoSuchAlgorithmException {
         if (transformation == null) {
             throw new NoSuchAlgorithmException("No transformation given");
         }
         /*
-         * array containing the components of a cipher transformation:
+         * Components of a cipher transformation:
          *
-         * index 0: algorithm component (e.g., AES)
-         * index 1: feedback component (e.g., CFB)
-         * index 2: padding component (e.g., PKCS5Padding)
+         * 1) algorithm component (e.g., AES)
+         * 2) feedback component (e.g., CFB) - optional
+         * 3) padding component (e.g., PKCS5Padding) - optional
          */
-        String[] parts = { "", "", "" };
 
         // check if the transformation contains algorithms with "/" in their
         // name which can cause the parsing logic to go wrong
@@ -337,27 +340,35 @@ public class Cipher {
         int startIdx = (sha512Idx == -1 ? 0 :
                 sha512Idx + SHA512TRUNCATED.length());
         int endIdx = transformation.indexOf('/', startIdx);
-        if (endIdx == -1) {
-            // algorithm
-            parts[0] = transformation.trim();
+
+        boolean algorithmOnly = (endIdx == -1);
+        String algo = (algorithmOnly ? transformation.trim() :
+                transformation.substring(0, endIdx).trim());
+        if (algo.isEmpty()) {
+            throw new NoSuchAlgorithmException("Invalid transformation: " +
+                                   "algorithm not specified-"
+                                   + transformation);
+        }
+        if (algorithmOnly) { // done
+            return new String[] { algo };
         } else {
-            // algorithm/mode/padding
-            parts[0] = transformation.substring(0, endIdx).trim();
+            // continue parsing mode and padding
             startIdx = endIdx+1;
             endIdx = transformation.indexOf('/', startIdx);
             if (endIdx == -1) {
                 throw new NoSuchAlgorithmException("Invalid transformation"
                             + " format:" + transformation);
             }
-            parts[1] = transformation.substring(startIdx, endIdx).trim();
-            parts[2] = transformation.substring(endIdx+1).trim();
-        }
-        if (parts[0].isEmpty()) {
-            throw new NoSuchAlgorithmException("Invalid transformation: " +
-                                   "algorithm not specified-"
+            String mode = transformation.substring(startIdx, endIdx).trim();
+            String padding = transformation.substring(endIdx+1).trim();
+            // ensure mode and padding are specified
+            if (mode.isEmpty() || padding.isEmpty()) {
+                throw new NoSuchAlgorithmException("Invalid transformation: " +
+                                   "missing mode and/or padding-"
                                    + transformation);
+            }
+            return new String[] { algo, mode, padding };
         }
-        return parts;
     }
 
     // Provider attribute name for supported chaining mode
@@ -453,28 +464,17 @@ public class Cipher {
             throws NoSuchAlgorithmException {
         String[] parts = tokenizeTransformation(transformation);
 
-        String alg = parts[0];
-        String mode = (parts[1].length() == 0 ? null : parts[1]);
-        String pad = (parts[2].length() == 0 ? null : parts[2]);
-
-        if ((mode == null) && (pad == null)) {
+        if (parts.length == 1) {
             // Algorithm only
-            Transform tr = new Transform(alg, "", null, null);
-            return Collections.singletonList(tr);
+            return List.of(new Transform(parts[0], "", null, null));
         } else {
-            // Algorithm w/ at least mode or padding or both
-            List<Transform> list = new ArrayList<>(4);
-            if ((mode != null) && (pad != null)) {
-                list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
-            }
-            if (mode != null) {
-                list.add(new Transform(alg, "/" + mode, null, pad));
-            }
-            if (pad != null) {
-                list.add(new Transform(alg, "//" + pad, mode, null));
-            }
-            list.add(new Transform(alg, "", mode, pad));
-            return list;
+            // Algorithm w/ both mode and padding
+            return List.of(
+                    new Transform(parts[0], "/" + parts[1] + "/" + parts[2],
+                    null, null),
+                    new Transform(parts[0], "/" + parts[1], null, parts[2]),
+                    new Transform(parts[0], "//" + parts[2], parts[1], null),
+                    new Transform(parts[0], "", parts[1], parts[2]));
         }
     }
 

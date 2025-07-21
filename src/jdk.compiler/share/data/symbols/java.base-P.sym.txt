@@ -484,19 +484,17 @@ method name withEncryption descriptor ([C)Ljava/security/PEMEncoder; flags 1
 class name java/security/PEMRecord
 header extends java/lang/Record implements java/security/DEREncodable record true flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;PEM_API;)
 recordcomponent name type descriptor Ljava/lang/String;
-recordcomponent name pem descriptor Ljava/lang/String;
+recordcomponent name content descriptor Ljava/lang/String;
 recordcomponent name leadingData descriptor [B
-innerclass innerClass java/util/Base64$Decoder outerClass java/util/Base64 innerClassName Decoder flags 9
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;[B)V flags 1 methodParameters 0:type,0:pem,0:leadingData
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;)V flags 1
-method name getEncoded descriptor ()[B flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
 method name hashCode descriptor ()I flags 11
 method name equals descriptor (Ljava/lang/Object;)Z flags 11
 method name type descriptor ()Ljava/lang/String; flags 1
-method name pem descriptor ()Ljava/lang/String; flags 1
 method name leadingData descriptor ()[B flags 1
+method name content descriptor ()Ljava/lang/String; flags 1
 
 class name java/security/SecurityPermission
 header extends java/security/BasicPermission flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="25")

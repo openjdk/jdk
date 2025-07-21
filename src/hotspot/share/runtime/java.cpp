@@ -471,9 +471,8 @@ void before_exit(JavaThread* thread, bool halt) {
 
   NativeHeapTrimmer::cleanup();
 
-  Universe::heap()->print_tracing_info();
-  // Stop concurrent GC threads
-  Universe::heap()->stop();
+  // Run before exit and then stop concurrent GC threads
+  Universe::heap()->before_exit();
 
   // Print GC/heap related information.
   Log(gc, exit) log;

@@ -47,7 +47,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
 
   // setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
 #ifdef _LP64
   CodeBuffer buffer(name, 2700, 512);
 #else
@@ -210,7 +210,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // setup code generation tools
   // Measured 8/7/03 at 256 in 32bit debug build
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 600, 512);
   if (buffer.blob() == nullptr) {
     return nullptr;

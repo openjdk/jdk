@@ -46,6 +46,8 @@ binary_memop="Binary-mem-op"
 binary_masked_memop="Binary-Masked-mem-op"
 saturating_binary="SaturatingBinary-op"
 saturating_binary_masked="SaturatingBinary-Masked-op"
+saturating_binary_assocative="SaturatingBinary-op-associative"
+saturating_binary_assocative_masked="SaturatingBinary-Masked-op-associative"
 binary_broadcast="Binary-Broadcast-op"
 binary_broadcast_masked="Binary-Broadcast-Masked-op"
 binary_broadcast_long="Binary-Broadcast-Long-op"
@@ -326,6 +328,12 @@ function gen_saturating_binary_op {
   gen_op_tmpl $saturating_binary_masked "$@"
 }
 
+function gen_saturating_binary_op_associative {
+  echo "Generating saturating binary associative op $1 ($2)..."
+  gen_op_tmpl $saturating_binary_assocative "$@"
+  gen_op_tmpl $saturating_binary_assocative_masked "$@"
+}
+
 function gen_binary_op_no_masked {
   echo "Generating binary op $1 ($2)..."
 #  gen_op_tmpl $binary_scalar "$@"
@@ -487,6 +495,7 @@ gen_saturating_binary_op "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWI
 gen_saturating_binary_op "SUSUB" "VectorMath.subSaturatingUnsigned(a, b)" "BITWISE"
 gen_binary_bcst_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
+gen_saturating_binary_op_associative "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWISE"
 
 # Reductions.
 gen_reduction_op "AND" "\&" "BITWISE" "-1"

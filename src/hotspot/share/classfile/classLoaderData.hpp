@@ -97,11 +97,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   };
 
   friend class ClassLoaderDataGraph;
-  template <bool keep_alive>
-  friend class ClassLoaderDataGraphIteratorBase;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
-  friend class ClassLoaderDataGraphKlassIteratorStatic;
-  friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class Klass;
   friend class MetaDataFactory;
   friend class Method;

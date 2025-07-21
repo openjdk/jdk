@@ -1113,7 +1113,7 @@ uint G1ConcurrentMark::completed_mark_cycles() const {
 }
 
 void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
-  _g1h->collector_state()->set_clearing_bitmap(false);
+  _g1h->collector_state()->set_clear_bitmap_in_progress(false);
 
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
 
@@ -1380,7 +1380,7 @@ void G1ConcurrentMark::remark() {
   }
 
   G1Policy* policy = _g1h->policy();
-  policy->record_concurrent_mark_remark_start();
+  policy->record_pause_start_time();
 
   double start = os::elapsedTime();
 
@@ -1450,8 +1450,13 @@ void G1ConcurrentMark::remark() {
     // GC pause.
     _g1h->increment_total_collections();
 
-    _g1h->resize_heap_if_necessary(size_t(0) /* allocation_word_size */);
-    _g1h->uncommit_regions_if_necessary();
+    // For Remark Pauses that may have been triggered by PeriodicGCs, we maintain
+    // resizing based on MinHeapFreeRatio or MaxHeapFreeRatio. If a PeriodicGC is
+    // triggered, it likely means there are very few regular GCs, making resizing
+    // based on gc heuristics less effective.
+    if (_g1h->last_gc_was_periodic()) {
+      _g1h->resize_heap_after_full_collection(0 /* allocation_word_size */);
+    }
 
     compute_new_sizes();
 
@@ -1511,7 +1516,7 @@ void G1ConcurrentMark::cleanup() {
   }
 
   G1Policy* policy = _g1h->policy();
-  policy->record_concurrent_mark_cleanup_start();
+  policy->record_pause_start_time();
 
   double start = os::elapsedTime();
 

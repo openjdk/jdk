@@ -66,7 +66,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
   auto heap = ShenandoahGenerationalHeap::heap();
 
-  size_t capacity = heap->young_generation()->max_capacity();
+  size_t capacity = heap->soft_max_capacity();
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
   size_t ignore_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahIgnoreGarbageThreshold / 100;
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();

@@ -26,17 +26,19 @@
 
 package java.lang;
 
+import java.lang.ref.Reference;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.lang.ref.Reference;
-import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.StructureViolationException;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
-import jdk.internal.vm.ScopedValueContainer;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A value that may be safely and efficiently shared to methods without using method
@@ -243,6 +245,9 @@ public final class ScopedValue<T> {
 
     @Override
     public int hashCode() { return hash; }
+
+    @Stable
+    static IntSupplier hashGenerator;
 
     /**
      * An immutable map from {@code ScopedValue} to values.
@@ -526,7 +531,8 @@ public final class ScopedValue<T> {
     }
 
     private ScopedValue() {
-        this.hash = generateKey();
+        IntSupplier nextHash = hashGenerator;
+        this.hash = nextHash != null ? nextHash.getAsInt() : generateKey();
     }
 
     /**
@@ -552,11 +558,11 @@ public final class ScopedValue<T> {
             // This code should perhaps be in class Cache. We do it
             // here because the generated code is small and fast and
             // we really want it to be inlined in the caller.
-            int n = (hash & Cache.SLOT_MASK) * 2;
+            int n = (hash & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
                 return (T)objects[n + 1];
             }
-            n = ((hash >>> Cache.INDEX_BITS) & Cache.SLOT_MASK) * 2;
+            n = ((hash >>> Cache.INDEX_BITS) & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
                 return (T)objects[n + 1];
             }
@@ -580,11 +586,11 @@ public final class ScopedValue<T> {
     public boolean isBound() {
         Object[] objects = scopedValueCache();
         if (objects != null) {
-            int n = (hash & Cache.SLOT_MASK) * 2;
+            int n = (hash & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
                 return true;
             }
-            n = ((hash >>> Cache.INDEX_BITS) & Cache.SLOT_MASK) * 2;
+            n = ((hash >>> Cache.INDEX_BITS) & Cache.Constants.SLOT_MASK) * 2;
             if (objects[n] == this) {
                 return true;
             }
@@ -688,17 +694,17 @@ public final class ScopedValue<T> {
 
     private static int nextKey = 0xf0f0_f0f0;
 
-    // A Marsaglia xor-shift generator used to generate hashes. This one has full period, so
-    // it generates 2**32 - 1 hashes before it repeats. We're going to use the lowest n bits
-    // and the next n bits as cache indexes, so we make sure that those indexes map
-    // to different slots in the cache.
+    // A Marsaglia xor-shift generator used to generate hashes. This one has
+    // full period, so it generates 2**32 - 1 hashes before it repeats. We're
+    // going to use the lowest n bits and the next n bits as cache indexes, so
+    // we make sure that those indexes map to different slots in the cache.
     private static synchronized int generateKey() {
         int x = nextKey;
         do {
             x ^= x >>> 12;
             x ^= x << 9;
             x ^= x >>> 23;
-        } while (Cache.primarySlot(x) == Cache.secondarySlot(x));
+        } while (((Cache.primaryIndex(x) ^ Cache.secondaryIndex(x)) & 1) == 0);
         return (nextKey = x);
     }
 
@@ -709,7 +715,7 @@ public final class ScopedValue<T> {
      * @return the bitmask
      */
     int bitmask() {
-        return (1 << Cache.primaryIndex(this)) | (1 << (Cache.secondaryIndex(this) + Cache.TABLE_SIZE));
+        return (1 << Cache.primaryIndex(hash)) | (1 << (Cache.secondaryIndex(hash) + Cache.TABLE_SIZE));
     }
 
     // Return true iff bitmask, considered as a set of bits, contains all
@@ -727,57 +733,100 @@ public final class ScopedValue<T> {
         static final int TABLE_MASK = TABLE_SIZE - 1;
         static final int PRIMARY_MASK = (1 << TABLE_SIZE) - 1;
 
-        // The number of elements in the cache array, and a bit mask used to
-        // select elements from it.
-        private static final int CACHE_TABLE_SIZE, SLOT_MASK;
-        // The largest cache we allow. Must be a power of 2 and greater than
-        // or equal to 2.
-        private static final int MAX_CACHE_SIZE = 16;
 
-        static {
-            final String propertyName = "java.lang.ScopedValue.cacheSize";
-            var sizeString = System.getProperty(propertyName, "16");
-            var cacheSize = Integer.valueOf(sizeString);
-            if (cacheSize < 2 || cacheSize > MAX_CACHE_SIZE) {
-                cacheSize = MAX_CACHE_SIZE;
-                System.err.println(propertyName + " is out of range: is " + sizeString);
+        // This class serves to defer initialization of some values until they
+        // are needed. In particular, we must not invoke System.getProperty
+        // early in the JDK boot process, because that leads to a circular class
+        // initialization dependency.
+        //
+        // In more detail:
+        //
+        //  The size of the cache depends on System.getProperty. Generating the
+        //  hash of an instance of ScopedValue depends on ThreadLocalRandom.
+        //
+        //  Invoking either of these early in the JDK boot process will cause
+        //  startup to fail with an unrecoverable circular dependency.
+        //
+        // To break these cycles we allow scoped values to be created (but not
+        // used) without invoking either System.getProperty or
+        // ThreadLocalRandom. To do this we defer querying System.getProperty
+        // until the first reference to CACHE_TABLE_SIZE, and we define a local
+        // hash generator which is used until CACHE_TABLE_SIZE is initialized.
+
+        private static class Constants {
+            // The number of elements in the cache array, and a bit mask used to
+            // select elements from it.
+            private static final int CACHE_TABLE_SIZE, SLOT_MASK;
+            // The largest cache we allow. Must be a power of 2 and greater than
+            // or equal to 2.
+            private static final int MAX_CACHE_SIZE = 16;
+
+            private static final JavaUtilConcurrentTLRAccess THREAD_LOCAL_RANDOM_ACCESS
+                = SharedSecrets.getJavaUtilConcurrentTLRAccess();
+
+            static {
+                final String propertyName = "java.lang.ScopedValue.cacheSize";
+                var sizeString = System.getProperty(propertyName, "16");
+                var cacheSize = Integer.valueOf(sizeString);
+                if (cacheSize < 2 || cacheSize > MAX_CACHE_SIZE) {
+                    cacheSize = MAX_CACHE_SIZE;
+                    System.err.println(propertyName + " is out of range: is " + sizeString);
+                }
+                if ((cacheSize & (cacheSize - 1)) != 0) {  // a power of 2
+                    cacheSize = MAX_CACHE_SIZE;
+                    System.err.println(propertyName + " must be an integer power of 2: is " + sizeString);
+                }
+                CACHE_TABLE_SIZE = cacheSize;
+                SLOT_MASK = cacheSize - 1;
+
+                // hashGenerator is set here (in class Constants rather than
+                // in global scope) in order not to initialize
+                // j.u.c.ThreadLocalRandom early in the JDK boot process.
+                // After this static initialization, new instances of
+                // ScopedValue will be initialized by a thread-local random
+                // generator.
+                hashGenerator = new IntSupplier() {
+                    @Override
+                    public int getAsInt() {
+                        int x;
+                        do {
+                            x = THREAD_LOCAL_RANDOM_ACCESS
+                                .nextSecondaryThreadLocalRandomSeed();
+                        } while (Cache.primarySlot(x) == Cache.secondarySlot(x));
+                        return x;
+                    }
+                };
             }
-            if ((cacheSize & (cacheSize - 1)) != 0) {  // a power of 2
-                cacheSize = MAX_CACHE_SIZE;
-                System.err.println(propertyName + " must be an integer power of 2: is " + sizeString);
-            }
-            CACHE_TABLE_SIZE = cacheSize;
-            SLOT_MASK = cacheSize - 1;
         }
 
-        static int primaryIndex(ScopedValue<?> key) {
-            return key.hash & TABLE_MASK;
+        static int primaryIndex(int hash) {
+            return hash & Cache.TABLE_MASK;
         }
 
-        static int secondaryIndex(ScopedValue<?> key) {
-            return (key.hash >> INDEX_BITS) & TABLE_MASK;
+        static int secondaryIndex(int hash) {
+            return (hash >> INDEX_BITS) & Cache.TABLE_MASK;
         }
 
         private static int primarySlot(ScopedValue<?> key) {
-            return key.hashCode() & SLOT_MASK;
+            return key.hashCode() & Constants.SLOT_MASK;
         }
 
         private static int secondarySlot(ScopedValue<?> key) {
-            return (key.hash >> INDEX_BITS) & SLOT_MASK;
+            return (key.hash >> INDEX_BITS) & Constants.SLOT_MASK;
         }
 
         static int primarySlot(int hash) {
-            return hash & SLOT_MASK;
+            return hash & Constants.SLOT_MASK;
         }
 
         static int secondarySlot(int hash) {
-            return (hash >> INDEX_BITS) & SLOT_MASK;
+            return (hash >> INDEX_BITS) & Constants.SLOT_MASK;
         }
 
         static void put(ScopedValue<?> key, Object value) {
             Object[] theCache = scopedValueCache();
             if (theCache == null) {
-                theCache = new Object[CACHE_TABLE_SIZE * 2];
+                theCache = new Object[Constants.CACHE_TABLE_SIZE * 2];
                 setScopedValueCache(theCache);
             }
             // Update the cache to replace one entry with the value we just looked up.
@@ -813,26 +862,23 @@ public final class ScopedValue<T> {
             objs[n * 2] = key;
         }
 
-        private static final JavaUtilConcurrentTLRAccess THREAD_LOCAL_RANDOM_ACCESS
-                = SharedSecrets.getJavaUtilConcurrentTLRAccess();
-
         // Return either true or false, at pseudo-random, with a bias towards true.
         // This chooses either the primary or secondary cache slot, but the
         // primary slot is approximately twice as likely to be chosen as the
         // secondary one.
         private static boolean chooseVictim() {
-            int r = THREAD_LOCAL_RANDOM_ACCESS.nextSecondaryThreadLocalRandomSeed();
+            int r = Constants.THREAD_LOCAL_RANDOM_ACCESS.nextSecondaryThreadLocalRandomSeed();
             return (r & 15) >= 5;
         }
 
         // Null a set of cache entries, indicated by the 1-bits given
         static void invalidate(int toClearBits) {
-            toClearBits = (toClearBits >>> TABLE_SIZE) | (toClearBits & PRIMARY_MASK);
+            toClearBits = ((toClearBits >>> Cache.TABLE_SIZE) | toClearBits) & PRIMARY_MASK;
             Object[] objects;
             if ((objects = scopedValueCache()) != null) {
                 for (int bits = toClearBits; bits != 0; ) {
                     int index = Integer.numberOfTrailingZeros(bits);
-                    setKeyAndObjectAt(objects, index & SLOT_MASK, null, null);
+                    setKeyAndObjectAt(objects, index & Constants.SLOT_MASK, null, null);
                     bits &= ~1 << index;
                 }
             }

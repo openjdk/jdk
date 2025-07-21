@@ -38,7 +38,6 @@
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
