@@ -101,7 +101,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-template <typename Event>
+template <class Event>
 void GCTracer::report_object_count(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
   assert(is_alive_cl != nullptr, "Must supply function to check liveness");
   if (Event::should_send_event()) {
@@ -112,6 +112,21 @@ void GCTracer::report_object_count(BoolObjectClosure* is_alive_cl, WorkerThreads
       HeapInspection hi;
       hi.populate_table(&cit, is_alive_cl, workers);
       ObjectCountEventSenderClosure<Event> event_sender(cit.size_of_instances_in_words(), Ticks::now());
+      cit.iterate(&event_sender);
+    }
+  }
+}
+
+void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
+  assert(is_alive_cl != nullptr, "Must supply function to check liveness");
+  if (ObjectCountAfterGCEventSender::should_send_event()) {
+    ResourceMark rm;
+
+    KlassInfoTable cit(false);
+    if (!cit.allocation_failed()) {
+      HeapInspection hi;
+      hi.populate_table(&cit, is_alive_cl, workers);
+      ObjectCountEventSenderClosure<ObjectCountAfterGCEventSender> event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }
