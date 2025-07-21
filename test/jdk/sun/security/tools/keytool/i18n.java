@@ -385,13 +385,8 @@ public class i18n {
         okButton.addActionListener(_ -> dialogWindow.setVisible(false));
 
         final JPanel okayBtnPanel = new JPanel(
-                new FlowLayout(FlowLayout.CENTER,
-                        4,
-                        0));
-        okayBtnPanel.setBorder(createEmptyBorder(4,
-                0,
-                0,
-                0));
+                new FlowLayout(FlowLayout.CENTER, 4, 0));
+        okayBtnPanel.setBorder(createEmptyBorder(4, 0, 0, 0));
         okayBtnPanel.add(okButton);
 
         final JPanel mainPanel = new JPanel(new BorderLayout());
