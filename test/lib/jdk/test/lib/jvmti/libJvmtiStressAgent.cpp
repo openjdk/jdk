@@ -133,11 +133,12 @@ typedef struct {
 GlobalData *gdata;
 
 static GlobalData*
-gdata_init() {
+gdata_init(jboolean is_debugger_enabled, jboolean is_verbose) {
   static GlobalData data;
   (void) memset(&data, 0, sizeof (GlobalData));
 
-  data.is_debugger_enabled = JNI_TRUE;
+  data.is_debugger_enabled = is_debugger_enabled;
+  data.is_verbose = is_verbose;
 
   data.agent_request_stop = JNI_FALSE;
   data.is_agent_finished = JNI_FALSE;
@@ -165,8 +166,10 @@ gdata_init() {
       JVMTI_EVENT_FIELD_MODIFICATION,
       JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
     };
-}
-
+  }
+  if (data.is_verbose) {
+    data.log_file = fopen("JvmtiStressAgent.out", "w");
+  }
 
   return &data;
 }
@@ -940,7 +943,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  gdata = gdata_init();
+  jboolean is_debugger_enabled = JNI_TRUE;
+  jboolean is_verbose = JNI_FALSE;
 
   if (options != nullptr) {
     char *opts = strdup(options);
@@ -948,25 +952,24 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
     while (token != nullptr) {
       if (strncmp(token, "debugger=", 9) == 0) {
-        if (strcmp(token + 9, "true") == 0)
-          gdata->is_debugger_enabled = JNI_TRUE;
-        else
-          gdata->is_debugger_enabled = JNI_FALSE;
+        if (strcmp(token + 9, "true") == 0) {
+          is_debugger_enabled = JNI_TRUE;
+        } else {
+          is_debugger_enabled = JNI_FALSE;
+        }
       }
       if (strncmp(token, "verbose", 7) == 0) {
-        gdata->is_verbose = JNI_TRUE;
-        gdata->log_file = fopen("JvmtiStressAgent.out", "w");
+        is_verbose = JNI_TRUE;
       }
       token = strtok(nullptr, ",");
     }
     free(opts);
   }
-
+  gdata = gdata_init(is_debugger_enabled, is_verbose);
   get_capabilities(jvmti);
   gdata->finished_lock = create_raw_monitor(jvmti, "Finished lock");
   set_callbacks(jvmti, JNI_TRUE);
   // Enable all events until start jvmti stress agent.
-  enable_common_events(jvmti);
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
     JVMTI_EVENT_VM_INIT, nullptr);
   check_jvmti_error(err, "SetEventNotificationMode");
