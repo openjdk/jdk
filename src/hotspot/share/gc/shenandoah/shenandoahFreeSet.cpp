@@ -173,6 +173,14 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
   make_all_regions_unavailable();
 }
 
+void ShenandoahFreeSet::increase_young_used(size_t bytes) {
+  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, bytes);
+}
+
+void ShenandoahFreeSet::decrease_young_used(size_t bytes) {
+  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, bytes);
+}
+
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
   return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
 }
@@ -1209,7 +1217,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   clear_internal();
 }
 
-void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region) {
+void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(ShenandoahHeapRegion* region, size_t pip_pad_bytes) {
   shenandoah_assert_heaplocked();
   size_t plab_min_size_in_bytes = ShenandoahGenerationalHeap::heap()->plab_min_size() * HeapWordSize;
   size_t region_size_bytes =  ShenandoahHeapRegion::region_size_bytes();
@@ -1225,7 +1233,7 @@ void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(Shenandoah
     used_in_region += available_in_region;
   }
   
-  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_in_region);
+  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_in_region + pip_pad_bytes);
   // decrease capacity adjusts available
   _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator, region_size_bytes);
   _partitions.decrease_total_region_counts(ShenandoahFreeSetPartitionId::Mutator, 1);

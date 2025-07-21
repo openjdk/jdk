@@ -225,6 +225,8 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
 
     HeapWord* update_watermark = region->get_update_watermark();
 
+    size_t pip_pad_bytes = (region->top() - region->get_top_before_promote()) * HeapWordSize;
+
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
     // is_collector_free range.
     region->restore_top_before_promote();
@@ -252,9 +254,9 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     region->set_affiliation(OLD_GENERATION);
 
     // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
-    _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
+    _heap->free_set()->add_promoted_in_place_region_to_old_collector(region, pip_pad_bytes);
 
-    young_gen->decrease_used(region_used);
+    young_gen->decrease_used(region_used + pip_pad_bytes);
     young_gen->decrement_affiliated_region_count();
 
     // transfer_to_old() increases capacity of old and decreases capacity of young

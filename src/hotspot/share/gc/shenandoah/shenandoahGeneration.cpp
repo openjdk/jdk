@@ -531,6 +531,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   assert_no_in_place_promotions();
 
   auto const heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahYoungGeneration* young_gen = heap->young_generation();
+  ShenandoahFreeSet* free_set = heap->free_set();
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
@@ -580,6 +582,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
             // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
             r->set_top(r->end());
             promote_in_place_pad += remnant_size * HeapWordSize;
+
+            free_set->increase_young_used(remnant_size);
+            young_gen->increase_used(remnant_size);
           } else {
             // Since the remnant is so small that it cannot be filled, we don't have to worry about any accidental
             // allocations occurring within this region before the region is promoted in place.
