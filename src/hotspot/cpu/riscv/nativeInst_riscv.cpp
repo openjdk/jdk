@@ -102,9 +102,9 @@ address RelocCall::destination() const {
   return stub_address_destination_at(destination);
 }
 
-address NativeFarCall::reloc_destination() {
+address RelocCall::reloc_destination() {
   address call_addr = instruction_address();
-  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
+  assert(RelocCall::is_at(call_addr), "unexpected code at call site");
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
@@ -130,18 +130,13 @@ void RelocCall::print() {
   tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(instruction_address()));
 }
 
-void NativeFarCall::print() {
-  assert(NativeFarCall::is_at(instruction_address()), "unexpected code at call site");
-  tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(addr_at(0)));
-}
-
-bool NativeFarCall::set_destination_mt_safe(address dest) {
-  assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
+bool RelocCall::set_destination_mt_safe(address dest) {
+  assert(RelocCall::is_at(instruction_address()), "unexpected code at call site");
   assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
-         CompiledICLocker::is_safe(addr_at(0)),
+         CompiledICLocker::is_safe(instruction_address()),
          "concurrent code patching");
 
-  address stub_addr = stub_address();
+  address stub_addr = reloc_destination_without_check();
   if (stub_addr != nullptr) {
     set_stub_address_destination_at(stub_addr, dest);
     return true;
@@ -240,7 +235,7 @@ address NativeCall::destination() const {
 }
 
 address NativeCall::reloc_destination() {
-  return NativeFarCall::at(addr_at(0))->reloc_destination();
+  return RelocCall::at(addr_at(0))->reloc_destination();
 }
 
 void NativeCall::set_destination(address dest) {
@@ -256,7 +251,7 @@ void NativeCall::print() {
 }
 
 bool NativeCall::set_destination_mt_safe(address dest) {
-  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest);
+  return RelocCall::at(addr_at(0))->set_destination_mt_safe(dest);
 }
 
 bool NativeCall::reloc_set_destination(address dest) {
