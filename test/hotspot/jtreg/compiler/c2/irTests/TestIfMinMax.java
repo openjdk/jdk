@@ -295,8 +295,12 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
-        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" },
+    @IR(applyIf = { "SuperWordReductions", "true" },
+        applyIfCPUFeature = { "avx512", "true" },
+        counts = { IRNode.MAX_REDUCTION_V, "> 0" })
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
+        applyIfCPUFeature = { "rvv", "true" },
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMaxLongReduction(long[] a, long[] b) {
@@ -330,8 +334,12 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
-        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" },
+    @IR(applyIf = { "SuperWordReductions", "true" },
+        applyIfCPUFeature = { "avx512", "true" },
+        counts = { IRNode.MIN_REDUCTION_V, "> 0" })
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
+        applyIfCPUFeature = { "rvv", "true" },
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
     public Object[] testMinLongReduction(long[] a, long[] b) {
