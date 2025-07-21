@@ -28,9 +28,6 @@ import java.nio.ByteBuffer;
 
 /**
  * QUIC packet number encoding/decoding routines.
- * <p>
- * These follow the sample code provided in the the QUIC Transport protocol
- * drafts.
  *
  * @spec https://www.rfc-editor.org/info/rfc9000
  *      RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport

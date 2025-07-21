@@ -72,7 +72,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
 
     private final Logger debug = Utils.getDebugLogger(this::name);
 
-    // See quic transport draft 34 section 14
+    // See RFC 9000 section 14
     static final int SMALLEST_MAXIMUM_DATAGRAM_SIZE = 1200;
     static final int INITIAL_SERVER_CONNECTION_ID_LENGTH = 17;
     static final int MAX_ENDPOINTS_LIMIT = 16;
