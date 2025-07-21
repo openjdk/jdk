@@ -75,10 +75,6 @@ public final class CStrike extends PhysicalStrike {
     CStrike(final CFont font, final FontStrikeDesc inDesc) {
         nativeFont = font;
         desc = inDesc;
-        nativeStrikePtr = initNativeStrikePtr();
-        glyphInfoCache = new GlyphInfoCache(font, desc, nativeStrikePtr);
-        glyphAdvanceCache = new GlyphAdvanceCache();
-        disposer = glyphInfoCache;
 
         // Normally the device transform should be the identity transform
         // for screen operations.  The device transform only becomes
@@ -93,6 +89,10 @@ public final class CStrike extends PhysicalStrike {
                 // so we won't worry about it.
             }
         }
+        nativeStrikePtr = initNativeStrikePtr(); // after setting up invDevTx
+        glyphInfoCache = new GlyphInfoCache(font, desc, nativeStrikePtr);
+        glyphAdvanceCache = new GlyphAdvanceCache();
+        disposer = glyphInfoCache;
     }
 
     public long getNativeStrikePtr() {
