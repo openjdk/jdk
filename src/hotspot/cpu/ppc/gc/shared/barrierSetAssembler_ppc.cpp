@@ -192,6 +192,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   // This is a compound instruction. Patching support is provided by NativeMovRegMem.
   // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
+  __ align(8); // align for atomic update
   __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
 
   // Low order half of 64 bit value is currently used.
