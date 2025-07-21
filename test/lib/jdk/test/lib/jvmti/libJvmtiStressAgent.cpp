@@ -215,11 +215,6 @@ struct GlobalData {
 GlobalData *gdata;
 
 
-void
-gdata_close() {
-
-}
-
 // Internal buffer length for all messages
 #define MESSAGE_LIMIT 16384
 
@@ -527,8 +522,11 @@ enable_common_events(jvmtiEnv *jvmti) {
 static void
 disable_all_events(jvmtiEnv *jvmti) {
   jvmtiError err = JVMTI_ERROR_NONE;
-  int event = JVMTI_MIN_EVENT_TYPE_VAL - 1;
-  while(event++ < JVMTI_MAX_EVENT_TYPE_VAL) {
+  for (int event = JVMTI_MIN_EVENT_TYPE_VAL; event < JVMTI_MAX_EVENT_TYPE_VAL; event++) {
+    // VM_DEATH is used to stop agent
+    if (event == JVMTI_EVENT_VM_DEATH) {
+      continue;
+    }
     err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, static_cast<jvmtiEvent>(event), nullptr);
     if (err == JVMTI_ERROR_WRONG_PHASE) {
       return;
@@ -1015,5 +1013,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 JNIEXPORT void JNICALL
 Agent_OnUnload(JavaVM *vm) {
+  if (!gdata->agent_request_stop) {
+    printf("Agent_OnUnload happened before requested stop.\n");
+  }
   delete gdata;
 }
