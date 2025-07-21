@@ -60,7 +60,7 @@ public:
     uint64_t *instr = (uint64_t*)mov->instruction_address();
     assert(NativeMovRegMem::instruction_size >= sizeof(instr), "must be");
     union {
-      char buf[NativeMovRegMem::instruction_size];
+      u_char buf[NativeMovRegMem::instruction_size];
       uint64_t u64;
     } new_mov_instr, old_mov_instr;
     while (true) {
