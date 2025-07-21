@@ -1434,27 +1434,6 @@ int jdk_internal_vm_ThreadSnapshot::_locks_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerTypeOrdinal_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerObject_offset;
 
-// wrapper to auto delete JvmtiVTMSTransitionDisabler
-class TransitionDisabler {
-  JvmtiVTMSTransitionDisabler* _transition_disabler;
- public:
-  TransitionDisabler(): _transition_disabler(nullptr) {}
-  ~TransitionDisabler() {
-    reset();
-  }
-  // Invoke this when you know you have a virtual thread.
-  void init(jobject jthread) {
-    _transition_disabler = new (mtInternal) JvmtiVTMSTransitionDisabler(jthread);
-  }
-  // Manually re-enable transitions.
-  void reset() {
-    if (_transition_disabler != nullptr) {
-      delete _transition_disabler;
-      _transition_disabler = nullptr;
-    }
-  }
-};
-
 oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
 
@@ -1462,22 +1441,46 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   HandleMark   hm(THREAD);
 
   JavaThread* java_thread = nullptr;
-  oop thread_oop = JNIHandles::resolve_non_null(jthread);
+  oop thread_oop;
+  bool has_javathread = tlh.cv_internal_thread_to_JavaThread(jthread, &java_thread, &thread_oop);
+  assert((has_javathread && thread_oop != nullptr) || !has_javathread, "Missing Thread oop");
   Handle thread_h(THREAD, thread_oop);
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());  // Deals with null
 
-  TransitionDisabler transition_disabler;
-
-  if (is_virtual) {
-    // We must disable mount/unmount transitions
-    transition_disabler.init(jthread);
-  }
-
-  bool has_javathread = tlh.cv_thread_oop_to_JavaThread(thread_oop, &java_thread);
-  assert((has_javathread && thread_oop != nullptr) || !has_javathread, "Missing Thread oop");
-
   if (!has_javathread && !is_virtual) {
     return nullptr; // thread terminated so not of interest
+  }
+
+  // wrapper to auto delete JvmtiVTMSTransitionDisabler
+  class TransitionDisabler {
+    JvmtiVTMSTransitionDisabler* _transition_disabler;
+  public:
+    TransitionDisabler(): _transition_disabler(nullptr) {}
+    ~TransitionDisabler() {
+      reset();
+    }
+    void init(jobject jthread) {
+      _transition_disabler = new (mtInternal) JvmtiVTMSTransitionDisabler(jthread);
+    }
+    void reset() {
+      if (_transition_disabler != nullptr) {
+        delete _transition_disabler;
+        _transition_disabler = nullptr;
+      }
+    }
+  } transition_disabler;
+
+  Handle carrier_thread;
+  if (is_virtual) {
+    // 1st need to disable mount/unmount transitions
+    transition_disabler.init(jthread);
+
+    carrier_thread = Handle(THREAD, java_lang_VirtualThread::carrier_thread(thread_h()));
+    if (carrier_thread != nullptr) {
+      java_thread = java_lang_Thread::thread(carrier_thread());
+    }
+  } else {
+    java_thread = java_lang_Thread::thread(thread_h());
   }
 
   // Handshake with target
@@ -1541,10 +1544,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   Handle snapshot = jdk_internal_vm_ThreadSnapshot::allocate(InstanceKlass::cast(snapshot_klass), CHECK_NULL);
   jdk_internal_vm_ThreadSnapshot::set_name(snapshot(), cl._thread_name.resolve());
   jdk_internal_vm_ThreadSnapshot::set_thread_status(snapshot(), (int)cl._thread_status);
-  if (is_virtual) {
-    Handle carrier_thread = Handle(THREAD, java_lang_VirtualThread::carrier_thread(thread_h()));
-    jdk_internal_vm_ThreadSnapshot::set_carrier_thread(snapshot(), carrier_thread());
-  }
+  jdk_internal_vm_ThreadSnapshot::set_carrier_thread(snapshot(), carrier_thread());
   jdk_internal_vm_ThreadSnapshot::set_stack_trace(snapshot(), trace());
   jdk_internal_vm_ThreadSnapshot::set_locks(snapshot(), locks());
   if (!cl._blocker.is_empty()) {
@@ -1554,3 +1554,4 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
 }
 
 #endif // INCLUDE_JVMTI
+
