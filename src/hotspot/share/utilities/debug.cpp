@@ -37,7 +37,6 @@
 #include "memory/universe.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ define_pd_global(size_t, CodeCacheExpansionSize,     32*K);
 // Ergonomics related flags
 define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
 #endif
-define_pd_global(uintx, CodeCacheMinBlockLength,     6);
+define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed

@@ -775,8 +775,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *         instances
      */
     public Class<?> getMirror(ResolvedJavaType type) {
-        if (type instanceof HotSpotResolvedJavaType && reflection instanceof HotSpotJDKReflection) {
-            return ((HotSpotJDKReflection) reflection).getMirror((HotSpotResolvedJavaType) type);
+        if (type instanceof HotSpotResolvedJavaType hType && reflection instanceof HotSpotJDKReflection) {
+            return ((HotSpotJDKReflection) reflection).getMirror(hType);
         }
         return null;
     }
@@ -790,8 +790,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *         instances to {@link Executable} instances
      */
     public Executable getMirror(ResolvedJavaMethod method) {
-        if (method instanceof HotSpotResolvedJavaMethodImpl && reflection instanceof HotSpotJDKReflection) {
-            return HotSpotJDKReflection.getMethod((HotSpotResolvedJavaMethodImpl) method);
+        if (!method.isClassInitializer() && method instanceof HotSpotResolvedJavaMethodImpl hMethod && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getMethod(hMethod);
         }
         return null;
     }
@@ -805,8 +805,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *         instances
      */
     public Field getMirror(ResolvedJavaField field) {
-        if (field instanceof HotSpotResolvedJavaFieldImpl && reflection instanceof HotSpotJDKReflection) {
-            return HotSpotJDKReflection.getField((HotSpotResolvedJavaFieldImpl) field);
+        if (!field.isInternal() && field instanceof HotSpotResolvedJavaFieldImpl hField && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getField(hField);
         }
         return null;
     }

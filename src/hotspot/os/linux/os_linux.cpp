@@ -1487,16 +1487,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  struct rusage usage;
-  int retval = getrusage(RUSAGE_THREAD, &usage);
-  if (retval == 0) {
-    return (double) (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) + (double) (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / (1000 * 1000);
-  } else {
-    // better than nothing, but not much
-    return elapsedTime();
-  }
-}
 
 void os::Linux::fast_thread_clock_init() {
   clockid_t clockid;
@@ -2487,9 +2477,18 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
+  jlong j = OSContainer::cpu_usage_in_micros();
+  st->print("cpu_usage_in_micros: ");
+  if (j >= 0) {
+    st->print_cr(JLONG_FORMAT, j);
+  } else {
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "no usage");
+  }
+
   OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_throttle_limit_in_bytes(), "memory_throttle_limit_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
   OSContainer::print_container_helper(st, OSContainer::rss_usage_in_bytes(), "rss_usage_in_bytes");
@@ -2497,7 +2496,7 @@ bool os::Linux::print_container_info(outputStream* st) {
 
   OSContainer::print_version_specific_info(st);
 
-  jlong j = OSContainer::pids_max();
+  j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);

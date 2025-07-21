@@ -32,7 +32,7 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-Deferred<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
+DeferredStatic<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
@@ -73,7 +73,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
-      return;
+      return true;
     }
 #ifdef ASSERT
     if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
@@ -96,6 +96,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       stream->cr();
     }
     prev = current;
+    return true;
   });
 #ifdef ASSERT
   if (broken_start != nullptr) {

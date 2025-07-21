@@ -577,7 +577,8 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+  void fix_sunk_stores_when_back_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop) const;
+  void handle_sunk_stores_when_finishing_construction(PhaseIterGVN* igvn);
 
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
@@ -593,6 +594,10 @@ public:
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
+  CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
+  CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
   void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
@@ -741,7 +746,7 @@ public:
   // Micro-benchmark spamming.  Remove empty loops.
   bool do_remove_empty_loop( PhaseIdealLoop *phase );
 
-  // Convert one iteration loop into normal code.
+  // Convert one-iteration loop into normal code.
   bool do_one_iteration_loop( PhaseIdealLoop *phase );
 
   // Return TRUE or FALSE if the loop should be peeled or not. Peel if we can
@@ -1312,7 +1317,8 @@ public:
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, const Node* head, const IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
-  IdealLoopTree* create_outer_strip_mined_loop(Node* init_control, IdealLoopTree* loop, float cl_prob, float le_fcnt,
+  IdealLoopTree* create_outer_strip_mined_loop(Node* init_control,
+                                               IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
 
   Node* exact_limit( IdealLoopTree *loop );

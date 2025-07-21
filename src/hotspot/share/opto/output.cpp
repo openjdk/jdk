@@ -36,8 +36,8 @@
 #include "memory/allocation.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
-#include "opto/c2compiler.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/locknode.hpp"
@@ -1074,8 +1074,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     assert( !method ||
             !method->is_synchronized() ||
             method->is_native() ||
-            num_mon > 0 ||
-            !GenerateSynchronizationCode,
+            num_mon > 0,
             "monitors must always exist for synchronized methods");
 
     // Build the growable array of ScopeValues for exp stack
@@ -3490,7 +3489,8 @@ void PhaseOutput::install_stub(const char* stub_name) {
       } else {
         assert(rs->is_runtime_stub(), "sanity check");
         C->set_stub_entry_point(rs->entry_point());
-        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, C->stub_id(), stub_name);
+        BlobId blob_id = StubInfo::blob(C->stub_id());
+        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, blob_id);
       }
     }
   }
