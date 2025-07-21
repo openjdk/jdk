@@ -1,8 +1,0 @@
---- ProcessLog ---
-cmd: bash -c ulimit -u 4096 && /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/9/runtime/Thread/ThreadCountLimit_id0.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/9/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar ThreadCountLimit dummy
-exitvalue: 0
-stderr: 
-stdout: [0.456s][warning][os,thread] Failed to start thread "Unknown thread" - pthread_create failed (EAGAIN) for attributes: stacksize: 1024k, guardsize: 4k, detached.
-[0.457s][warning][os,thread] Failed to start the native thread for java.lang.Thread "Thread-2065"
-INFO: reached this process thread count limit with 2065 threads created
-

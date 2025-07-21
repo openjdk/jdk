@@ -1,2 +1,0 @@
-[21Jul2025 17:49CST]  Starting test run
-[21Jul2025 17:50CST]  Completed test run: ok

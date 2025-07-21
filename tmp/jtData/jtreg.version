@@ -1,8 +1,0 @@
-jtreg 7.5.2-dev+0
-Installed in /hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar
-Running on platform version 26-internal from /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk.
-Built with Java(TM) 2 SDK, Version 11.0.25-testing+0-builds on June 01, 2025.
-JT Harness, version 6.0 ea b24 (June 01, 2025)
-Java Assembler Tools, version 7.0 ea b09 (June 01, 2025)
-TestNG: testng-7.3.0.jar, guice-5.1.0.jar, jcommander-1.82.jar
-JUnit: junit-platform-console-standalone-1.11.0.jar
