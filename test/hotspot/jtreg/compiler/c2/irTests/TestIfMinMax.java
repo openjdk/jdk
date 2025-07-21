@@ -295,7 +295,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIf = { "SuperWordReductions", "true" },
+    @IR(applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
         applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" },
         counts = { IRNode.MAX_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")
@@ -330,7 +330,7 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(applyIf = { "SuperWordReductions", "true" },
+    @IR(applyIfAnd = { "SuperWordReductions", "true", "MaxVectorSize", ">=32" },
         applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" },
         counts = { IRNode.MIN_REDUCTION_V, "> 0" })
     @Arguments(setup = "setupLongArrays")

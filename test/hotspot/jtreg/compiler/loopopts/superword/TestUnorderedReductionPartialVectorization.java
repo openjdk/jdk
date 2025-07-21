@@ -64,7 +64,13 @@ public class TestUnorderedReductionPartialVectorization {
     @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.OR_REDUCTION_V,                                                 "> 0",},
-        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.OR_REDUCTION_V,                                                 "> 0",},
+        applyIfAnd = {"UseCompactObjectHeaders", "false", "MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
     static long test1(int[] data, long sum) {

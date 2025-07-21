@@ -82,7 +82,7 @@ public class TestGeneralizedReductions {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"},
-        applyIf = {"SuperWordReductions", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnGlobalAccumulator(long[] array) {
@@ -95,7 +95,7 @@ public class TestGeneralizedReductions {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"},
-        applyIf = {"SuperWordReductions", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnPartiallyUnrolledLoop(long[] array) {
@@ -109,7 +109,7 @@ public class TestGeneralizedReductions {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"},
-        applyIf = {"SuperWordReductions", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnLargePartiallyUnrolledLoop(long[] array) {

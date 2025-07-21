@@ -178,6 +178,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=32" },
         counts = {IRNode.ADD_REDUCTION_V, ">0"})
     public long reductionWithNonReductionDifferentSizes() {
         long res = 0L;
