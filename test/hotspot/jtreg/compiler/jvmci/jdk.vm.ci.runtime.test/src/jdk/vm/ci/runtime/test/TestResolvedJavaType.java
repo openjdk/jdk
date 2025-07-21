@@ -94,6 +94,7 @@ import jdk.internal.vm.test.AnnotationTestInput;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Annotated;
 import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.EnumArrayData;
 import jdk.vm.ci.meta.EnumData;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.JavaConstant;
@@ -1261,7 +1262,7 @@ public class TestResolvedJavaType extends TypeUniverse {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             AnnotationData ad = type.getAnnotationData(overrideType);
             Assert.assertNull(String.valueOf(ad), ad);
-            List<AnnotationData> adArray = type.getAnnotationData(overrideType, overrideType);
+            List<AnnotationData> adArray = type.getSelectedAnnotationData(overrideType, overrideType);
             Assert.assertEquals(0, adArray.size());
         }
 
@@ -1325,8 +1326,7 @@ public class TestResolvedJavaType extends TypeUniverse {
             if (annotationTypes.length == 1) {
                 annotated.getAnnotationData(annotationTypes[0]);
             } else {
-                var tail = Arrays.copyOfRange(annotationTypes, 2, annotationTypes.length);
-                annotated.getAnnotationData(annotationTypes[0], annotationTypes[1], tail);
+                annotated.getSelectedAnnotationData(annotationTypes);
             }
             String s = Stream.of(annotationTypes).map(ResolvedJavaType::toJavaName).collect(Collectors.joining(", "));
             throw new AssertionError("Expected IllegalArgumentException for retrieving (" + s + " from " + annotated);
@@ -1352,9 +1352,9 @@ public class TestResolvedJavaType extends TypeUniverse {
 
         // Check that querying a missing annotation returns null or an empty list
         assertNull(annotated.getAnnotationData(suppressWarningsType));
-        List<AnnotationData> data = annotated.getAnnotationData(suppressWarningsType, suppressWarningsType);
+        List<AnnotationData> data = annotated.getSelectedAnnotationData(suppressWarningsType, suppressWarningsType);
         assertTrue(data.toString(), data.isEmpty());
-        data = annotated.getAnnotationData(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
+        data = annotated.getSelectedAnnotationData(suppressWarningsType, suppressWarningsType, suppressWarningsType, suppressWarningsType);
         assertTrue(data.toString(), data.isEmpty());
 
         testGetAnnotationData(annotatedElement, annotated, List.of(annotatedElement.getAnnotations()));
@@ -1371,22 +1371,18 @@ public class TestResolvedJavaType extends TypeUniverse {
             AnnotationData ad2 = annotated.getAnnotationData(annotationType);
             assertEquals(ad, ad2);
 
-            List<AnnotationData> annotationData = annotated.getAnnotationData(annotationType, suppressWarningsType, suppressWarningsType);
+            List<AnnotationData> annotationData = annotated.getSelectedAnnotationData(annotationType, suppressWarningsType, suppressWarningsType);
             assertEquals(1, annotationData.size());
         }
         if (annotations.size() < 2) {
             return;
         }
-        ResolvedJavaType type1 = metaAccess.lookupJavaType(annotations.get(0).annotationType());
-        ResolvedJavaType type2 = metaAccess.lookupJavaType(annotations.get(1).annotationType());
-        for (int i = 2; i < annotations.size(); i++) {
-
+        for (int i = 0; i < annotations.size(); i++) {
             ResolvedJavaType[] types = annotations.//
-                            subList(2, i + 1).//
                             stream().map(a -> metaAccess.lookupJavaType(a.annotationType())).//
                             toArray(ResolvedJavaType[]::new);
-            List<AnnotationData> annotationData = annotated.getAnnotationData(type1, type2, types);
-            assertEquals(2 + types.length, annotationData.size());
+            List<AnnotationData> annotationData = annotated.getSelectedAnnotationData(types);
+            assertEquals(types.length, annotationData.size());
 
             for (int j = 0; j < annotationData.size(); j++) {
                 Annotation a = annotations.get(j);
@@ -1434,17 +1430,29 @@ public class TestResolvedJavaType extends TypeUniverse {
     private static void assertAnnotationElementsEqual(Object aValue, Object adValue) {
         Class<?> valueType = aValue.getClass();
         if (valueType.isEnum()) {
-            assertEnumObjectsEquals(aValue, adValue);
+            String adEnumName = ((EnumData) adValue).name;
+            String aEnumName = ((Enum<?>) aValue).name();
+            assertEquals(adEnumName, aEnumName);
         } else if (aValue instanceof Class) {
             assertClassObjectsEquals(aValue, adValue);
         } else if (aValue instanceof Annotation) {
             assertAnnotationObjectsEquals(aValue, adValue);
         } else if (valueType.isArray()) {
-            List<?> adList = (List<?>) adValue;
             int length = Array.getLength(aValue);
-            assertEquals(length, adList.size());
-            for (int i = 0; i < length; i++) {
-                assertAnnotationElementsEqual(Array.get(aValue, i), adList.get(i));
+            if (valueType.getComponentType().isEnum()) {
+                EnumArrayData array = (EnumArrayData) adValue;
+                assertEquals(length, array.names.size());
+                for (int i = 0; i < length; i++) {
+                    String adEnumName = array.names.get(i);
+                    String aEnumName = ((Enum<?>) Array.get(aValue, i)).name();
+                    assertEquals(adEnumName, aEnumName);
+                }
+            } else {
+                List<?> adList = (List<?>) adValue;
+                assertEquals(length, adList.size());
+                for (int i = 0; i < length; i++) {
+                    assertAnnotationElementsEqual(Array.get(aValue, i), adList.get(i));
+                }
             }
         } else {
             assertEquals(aValue.getClass(), adValue.getClass());
@@ -1456,13 +1464,6 @@ public class TestResolvedJavaType extends TypeUniverse {
         String aName = ((Class<?>) aValue).getName();
         String adName = ((JavaType) adValue).toClassName();
         assertEquals(aName, adName);
-    }
-
-    private static void assertEnumObjectsEquals(Object aValue, Object adValue) {
-        EnumData adEnum = (EnumData) adValue;
-        String adEnumName = adEnum.getName();
-        String aEnumName = ((Enum<?>) aValue).name();
-        assertEquals(adEnumName, aEnumName);
     }
 
     private static void assertAnnotationObjectsEquals(Object aValue, Object adValue) {

@@ -1127,18 +1127,16 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+    public List<AnnotationData> getSelectedAnnotationData(ResolvedJavaType... types) {
         if (!mayHaveAnnotations(true)) {
-            checkIsAnnotation(type1);
-            checkIsAnnotation(type2);
             checkAreAnnotations(types);
             return List.of();
         }
-        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+        return getAnnotationData0(types);
     }
 
     private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedClassAnnotationData(this, filter);
-        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder(this));
     }
 }
