@@ -1351,9 +1351,9 @@ const int ObjectAlignmentInBytes = 8;
           "Number of receiver types to record in call/cast profile")        \
           range(0, 8)                                                       \
                                                                             \
-  develop(intx, BciProfileWidth,      2,                                    \
+  develop(intx, BciProfileWidth, 2,                                         \
           "Number of return bci's to record in ret profile")                \
-          range(0, 8000)                                                   \
+          range(0, AARCH64_ONLY(1000) NOT_AARCH64(5000))                    \
                                                                             \
                                                                             \
   product(intx, PerMethodRecompilationCutoff, 400,                          \
