@@ -1,0 +1,72 @@
+# Trace file started at 2025-07-21T17:49:27+0800
+# JT Harness version 6.0
+# class directory: /hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar
+# using java: /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk
+2025-07-21T17:49:27+0800 Starting tests.
+Test suite class: com.sun.javatest.regtest.config.RegressionTestSuite
+Test finder class: com.sun.javatest.regtest.config.RegressionTestFinder
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TooSmallStackSize.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/ThreadPriorities.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/Fibonacci.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/AsyncExceptionTest.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/CancellableThreadTest.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/AsyncExceptionOnMonitorEnter.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TestThreadDumpSMRInfo.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/InterruptAtExit.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/SetPriorityAtExit.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/IsInterruptedAtExit.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/StopAtExit.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/ThreadObjAccessAtExit.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TestBreakSignalThreadDump.java#default
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TestThreadStackSizes.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TestBreakSignalThreadDump.java#with_jsig
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TestThreadDumpClassInitMonitor.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/ThreadCountLimit.java#id0
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TestAlwaysPreTouchStacks.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/SuspendAtExit.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/SetNameAtExit.java
+2025-07-21T17:49:27+0800 Starting: runtime/Thread/TestThreadDumpMonitorContention.java
+2025-07-21T17:49:28+0800 Finished: (1 second) runtime/Thread/TestThreadStackSizes.java: Passed. Execution successful
+2025-07-21T17:49:29+0800 Finished: (1 second) runtime/Thread/CancellableThreadTest.java: Passed. Execution successful
+2025-07-21T17:49:29+0800 Finished: (2 seconds) runtime/Thread/TestThreadDumpSMRInfo.java: Passed. Execution successful
+2025-07-21T17:49:29+0800 Finished: (2 seconds) runtime/Thread/Fibonacci.java: Passed. Execution successful
+2025-07-21T17:49:29+0800 Finished: (2 seconds) runtime/Thread/TestAlwaysPreTouchStacks.java: Passed. Execution successful
+2025-07-21T17:49:29+0800 Finished: (2 seconds) runtime/Thread/TestThreadDumpClassInitMonitor.java: Passed. Execution successful
+2025-07-21T17:49:30+0800 Finished: (2 seconds) runtime/Thread/ThreadPriorities.java: Passed. Execution successful
+2025-07-21T17:49:30+0800 Finished: (3 seconds) runtime/Thread/ThreadCountLimit.java#id0: Passed. Execution successful
+2025-07-21T17:49:30+0800 Finished: (3 seconds) runtime/Thread/TooSmallStackSize.java: Passed. Execution successful
+2025-07-21T17:49:30+0800 Finished: (3 seconds) runtime/Thread/TestBreakSignalThreadDump.java#with_jsig: Passed. Execution successful
+2025-07-21T17:49:30+0800 Finished: (3 seconds) runtime/Thread/ThreadObjAccessAtExit.java: Passed. Execution successful
+2025-07-21T17:49:30+0800 Finished: (3 seconds) runtime/Thread/TestBreakSignalThreadDump.java#default: Passed. Execution successful
+2025-07-21T17:49:39+0800 Finished: (11 seconds) runtime/Thread/TestThreadDumpMonitorContention.java: Passed. Execution successful
+2025-07-21T17:49:58+0800 Finished: (31 seconds) runtime/Thread/SetNameAtExit.java: Passed. Execution successful
+2025-07-21T17:49:58+0800 Finished: (31 seconds) runtime/Thread/SetPriorityAtExit.java: Passed. Execution successful
+2025-07-21T17:49:58+0800 Finished: (31 seconds) runtime/Thread/IsInterruptedAtExit.java: Passed. Execution successful
+2025-07-21T17:49:58+0800 Finished: (31 seconds) runtime/Thread/InterruptAtExit.java: Passed. Execution successful
+2025-07-21T17:49:58+0800 Finished: (31 seconds) runtime/Thread/StopAtExit.java: Passed. Execution successful
+2025-07-21T17:50:28+0800 Finished: (1 minute 1 second) runtime/Thread/AsyncExceptionTest.java: Passed. Execution successful
+2025-07-21T17:50:29+0800 Finished: (1 minute 1 second) runtime/Thread/SuspendAtExit.java: Passed. Execution successful
+2025-07-21T17:50:30+0800 Finished: (1 minute 3 seconds) runtime/Thread/AsyncExceptionOnMonitorEnter.java: Passed. Execution successful
+Below are the 20 slowest tests: 
+1 minute 3 seconds: runtime/Thread/AsyncExceptionOnMonitorEnter.java
+1 minute 1 second: runtime/Thread/SuspendAtExit.java
+1 minute 1 second: runtime/Thread/AsyncExceptionTest.java
+31 seconds: runtime/Thread/StopAtExit.java
+31 seconds: runtime/Thread/InterruptAtExit.java
+31 seconds: runtime/Thread/IsInterruptedAtExit.java
+31 seconds: runtime/Thread/SetPriorityAtExit.java
+31 seconds: runtime/Thread/SetNameAtExit.java
+11 seconds: runtime/Thread/TestThreadDumpMonitorContention.java
+3 seconds: runtime/Thread/TestBreakSignalThreadDump.java#default
+3 seconds: runtime/Thread/ThreadObjAccessAtExit.java
+3 seconds: runtime/Thread/TestBreakSignalThreadDump.java#with_jsig
+3 seconds: runtime/Thread/TooSmallStackSize.java
+3 seconds: runtime/Thread/ThreadCountLimit.java#id0
+2 seconds: runtime/Thread/ThreadPriorities.java
+2 seconds: runtime/Thread/TestThreadDumpClassInitMonitor.java
+2 seconds: runtime/Thread/TestAlwaysPreTouchStacks.java
+2 seconds: runtime/Thread/Fibonacci.java
+2 seconds: runtime/Thread/TestThreadDumpSMRInfo.java
+1 second: runtime/Thread/CancellableThreadTest.java
+2025-07-21T17:50:30+0800 Doing post-run cleanup
+2025-07-21T17:50:30+0800 Completed: All tests passed

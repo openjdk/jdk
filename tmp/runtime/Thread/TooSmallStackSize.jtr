@@ -1,0 +1,355 @@
+#Test Results (version 2)
+#Mon Jul 21 17:49:30 CST 2025
+#-----testdescription-----
+$file=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TooSmallStackSize.java
+$root=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg
+keywords=bug8140520 driver
+library=/test/lib
+modules=java.base/jdk.internal.misc java.management
+run=USER_SPECIFIED driver TooSmallStackSize\n
+source=TooSmallStackSize.java
+title=Setting small CompilerThreadStackSize, ThreadStackSize, and VMThreadStackSize values should result in an error message that shows the minimum stack size value for each thread type.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TooSmallStackSize.java
+elapsed=2691 0\:00\:02.691
+end=Mon Jul 21 17\:49\:30 CST 2025
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=hygon
+javatestOS=Linux 5.15.0-25-generic (amd64)
+javatestVersion=6.0-ea+b24-2025-06-01-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 7.5.2 dev 0
+modules=java.base/jdk.internal.misc java.management
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile driver
+start=Mon Jul 21 17\:49\:27 CST 2025
+test=runtime/Thread/TooSmallStackSize.java
+testJDK=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:5.15.0-25-generic,family\:linux,simple_arch\:x64,simple_version\:5.15,processors\:256,maxMemory\:810876829696,maxSwap\:8589930496]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=5.15.0-25-generic
+totalTime=2693
+user.name=yansendao
+work=/hygonjdk/yansendao/git/jdk-ysd/tmp/runtime/Thread
+
+#section:script_messages
+----------messages:(7/437)----------
+JDK under test: /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk
+openjdk version "26-internal" 2026-03-17
+OpenJDK Runtime Environment (build 26-internal-d83346dc)
+OpenJDK 64-Bit Server VM (build 26-internal-d83346dc, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /hygonjdk/yansendao/git/jdk-ysd/test/lib
+   class directory: /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib
+
+#section:build
+----------messages:(7/224)----------
+command: build TooSmallStackSize
+reason: Named class compiled on demand
+started: Mon Jul 21 17:49:27 CST 2025
+Test directory:
+  compile: TooSmallStackSize
+finished: Mon Jul 21 17:49:29 CST 2025
+elapsed time (seconds): 1.617
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/425)----------
+command: compile /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TooSmallStackSize.java
+reason: .class file out of date or does not exist
+started: Mon Jul 21 17:49:27 CST 2025
+Additional options from @modules: --add-modules java.base,java.management --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+Mode: othervm
+Process id: 2831160
+finished: Mon Jul 21 17:49:29 CST 2025
+elapsed time (seconds): 1.608
+----------configuration:(9/519)----------
+javac compilation environment
+  add modules: java.base java.management   
+  add exports: java.base/jdk.internal.misc ALL-UNNAMED
+  source path: /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread 
+               /hygonjdk/yansendao/git/jdk-ysd/test/lib 
+  class path:  /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread 
+               /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d 
+               /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib 
+
+----------rerun:(31/2019)*----------
+cd /hygonjdk/yansendao/git/jdk-ysd/tmp/scratch/0 && \\
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/999/bus \\
+DISPLAY=:7 \\
+HOME=/hygonjdk/yansendao \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop \\
+XDG_RUNTIME_DIR=/run/user/999 \\
+XDG_SESSION_CLASS=user \\
+XDG_SESSION_ID=5681 \\
+XDG_SESSION_TYPE=tty \\
+    /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -J-Dcompile.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg \\
+        -J-Dtest.name=runtime/Thread/TooSmallStackSize.java \\
+        -J-Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TooSmallStackSize.java \\
+        -J-Dtest.main.class=TooSmallStackSize \\
+        -J-Dtest.src=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread \\
+        -J-Dtest.src.path=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/test/lib \\
+        -J-Dtest.classes=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d \\
+        -J-Dtest.class.path=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib \\
+        -J-Dtest.modules='java.base/jdk.internal.misc java.management' \\
+        @/hygonjdk/yansendao/git/jdk-ysd/tmp/runtime/Thread/TooSmallStackSize.d/compile.0.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/364)----------
+command: driver TooSmallStackSize
+reason: User specified action: run driver TooSmallStackSize 
+started: Mon Jul 21 17:49:29 CST 2025
+Mode: othervm
+Additional options from @modules: --add-modules java.base,java.management --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+Process id: 2849534
+finished: Mon Jul 21 17:49:30 CST 2025
+elapsed time (seconds): 0.999
+----------configuration:(4/111)----------
+Boot Layer
+  add modules: java.base java.management   
+  add exports: java.base/jdk.internal.misc ALL-UNNAMED
+
+----------System.out:(180/25226)----------
+*** Testing -XX:ThreadStackSize=16
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=16 -version ]
+[2025-07-21T09:49:29.666104149Z] Gathering output for process 2851646
+[2025-07-21T09:49:29.677301579Z] Waiting for completion for process 2851646
+[2025-07-21T09:49:29.677397959Z] Waiting for completion finished for process 2851646
+PASSED: got expected error message with -XX:ThreadStackSize=16
+*** Testing -XX:ThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=64 -version ]
+[2025-07-21T09:49:29.681377930Z] Gathering output for process 2852250
+[2025-07-21T09:49:29.682132910Z] Waiting for completion for process 2852250
+[2025-07-21T09:49:29.688788210Z] Waiting for completion finished for process 2852250
+PASSED: got expected error message with -XX:ThreadStackSize=64
+*** Testing -XX:ThreadStackSize=136
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=136 -version ]
+[2025-07-21T09:49:29.692059580Z] Gathering output for process 2852480
+[2025-07-21T09:49:29.693024350Z] Waiting for completion for process 2852480
+[2025-07-21T09:49:29.737045572Z] Waiting for completion finished for process 2852480
+PASSED: VM launched with -XX:ThreadStackSize=136
+*** Testing -XX:ThreadStackSize=513
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=513 -version ]
+[2025-07-21T09:49:29.739916762Z] Gathering output for process 2853371
+[2025-07-21T09:49:29.740526462Z] Waiting for completion for process 2853371
+[2025-07-21T09:49:29.786602265Z] Waiting for completion finished for process 2853371
+PASSED: VM launched with -XX:ThreadStackSize=513
+*** Testing -XX:ThreadStackSize=0
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=0 -version ]
+[2025-07-21T09:49:29.788512785Z] Gathering output for process 2854177
+[2025-07-21T09:49:29.789762215Z] Waiting for completion for process 2854177
+[2025-07-21T09:49:29.827100636Z] Waiting for completion finished for process 2854177
+PASSED: VM launched with -XX:ThreadStackSize=0
+*** Testing -XX:CompilerThreadStackSize=16
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=16 -version ]
+[2025-07-21T09:49:29.828784587Z] Gathering output for process 2854995
+[2025-07-21T09:49:29.829422277Z] Waiting for completion for process 2854995
+[2025-07-21T09:49:29.834882267Z] Waiting for completion finished for process 2854995
+PASSED: got expected error message with -XX:CompilerThreadStackSize=16
+*** Testing -XX:CompilerThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=64 -version ]
+[2025-07-21T09:49:29.836233767Z] Gathering output for process 2855127
+[2025-07-21T09:49:29.836655367Z] Waiting for completion for process 2855127
+[2025-07-21T09:49:29.842006527Z] Waiting for completion finished for process 2855127
+PASSED: got expected error message with -XX:CompilerThreadStackSize=64
+*** Testing -XX:CompilerThreadStackSize=144
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=144 -version ]
+[2025-07-21T09:49:29.843446977Z] Gathering output for process 2855292
+[2025-07-21T09:49:29.843962467Z] Waiting for completion for process 2855292
+[2025-07-21T09:49:29.890230759Z] Waiting for completion finished for process 2855292
+PASSED: VM launched with -XX:CompilerThreadStackSize=144
+*** Testing -XX:CompilerThreadStackSize=513
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=513 -version ]
+[2025-07-21T09:49:29.892107960Z] Gathering output for process 2856294
+[2025-07-21T09:49:29.892704880Z] Waiting for completion for process 2856294
+[2025-07-21T09:49:29.924316401Z] Waiting for completion finished for process 2856294
+PASSED: VM launched with -XX:CompilerThreadStackSize=513
+*** Testing -XX:CompilerThreadStackSize=0
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=0 -version ]
+[2025-07-21T09:49:29.926061601Z] Gathering output for process 2857011
+[2025-07-21T09:49:29.927171171Z] Waiting for completion for process 2857011
+[2025-07-21T09:49:29.963788273Z] Waiting for completion finished for process 2857011
+PASSED: VM launched with -XX:CompilerThreadStackSize=0
+*** Testing -XX:VMThreadStackSize=16
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=16 -version ]
+[2025-07-21T09:49:29.965584983Z] Gathering output for process 2857856
+[2025-07-21T09:49:29.966934673Z] Waiting for completion for process 2857856
+[2025-07-21T09:49:29.971277213Z] Waiting for completion finished for process 2857856
+PASSED: got expected error message with -XX:VMThreadStackSize=16
+*** Testing -XX:VMThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=64 -version ]
+[2025-07-21T09:49:29.972798703Z] Gathering output for process 2858002
+[2025-07-21T09:49:29.973260243Z] Waiting for completion for process 2858002
+[2025-07-21T09:49:30.006835195Z] Waiting for completion finished for process 2858002
+PASSED: got exit_code == 0 with -XX:VMThreadStackSize=64
+*** Testing -XX:VMThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=64 -version ]
+[2025-07-21T09:49:30.008715705Z] Gathering output for process 2858745
+[2025-07-21T09:49:30.009287245Z] Waiting for completion for process 2858745
+[2025-07-21T09:49:30.044665827Z] Waiting for completion finished for process 2858745
+PASSED: VM launched with -XX:VMThreadStackSize=64
+*** Testing -XX:VMThreadStackSize=513
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=513 -version ]
+[2025-07-21T09:49:30.046506637Z] Gathering output for process 2859583
+[2025-07-21T09:49:30.047053817Z] Waiting for completion for process 2859583
+[2025-07-21T09:49:30.079241418Z] Waiting for completion finished for process 2859583
+PASSED: VM launched with -XX:VMThreadStackSize=513
+*** Testing -XX:VMThreadStackSize=0
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=0 -version ]
+[2025-07-21T09:49:30.080977269Z] Gathering output for process 2860324
+[2025-07-21T09:49:30.081625019Z] Waiting for completion for process 2860324
+[2025-07-21T09:49:30.114613960Z] Waiting for completion finished for process 2860324
+PASSED: VM launched with -XX:VMThreadStackSize=0
+*** Testing -XX:ThreadStackSize=16
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=16 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.116329750Z] Gathering output for process 2861116
+[2025-07-21T09:49:30.116831430Z] Waiting for completion for process 2861116
+[2025-07-21T09:49:30.121905511Z] Waiting for completion finished for process 2861116
+PASSED: got expected error message with -XX:ThreadStackSize=16
+*** Testing -XX:ThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=64 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.123417511Z] Gathering output for process 2861279
+[2025-07-21T09:49:30.123997041Z] Waiting for completion for process 2861279
+[2025-07-21T09:49:30.129164541Z] Waiting for completion finished for process 2861279
+PASSED: got expected error message with -XX:ThreadStackSize=64
+*** Testing -XX:ThreadStackSize=176
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=176 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.131498641Z] Gathering output for process 2861411
+[2025-07-21T09:49:30.132671931Z] Waiting for completion for process 2861411
+[2025-07-21T09:49:30.167829363Z] Waiting for completion finished for process 2861411
+PASSED: VM launched with -XX:ThreadStackSize=176
+*** Testing -XX:ThreadStackSize=513
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=513 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.169165573Z] Gathering output for process 2862213
+[2025-07-21T09:49:30.169606463Z] Waiting for completion for process 2862213
+[2025-07-21T09:49:30.204779064Z] Waiting for completion finished for process 2862213
+PASSED: VM launched with -XX:ThreadStackSize=513
+*** Testing -XX:ThreadStackSize=0
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:ThreadStackSize=0 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.206485785Z] Gathering output for process 2863106
+[2025-07-21T09:49:30.207018845Z] Waiting for completion for process 2863106
+[2025-07-21T09:49:30.237838576Z] Waiting for completion finished for process 2863106
+PASSED: VM launched with -XX:ThreadStackSize=0
+*** Testing -XX:CompilerThreadStackSize=16
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=16 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.239571896Z] Gathering output for process 2864060
+[2025-07-21T09:49:30.240084396Z] Waiting for completion for process 2864060
+[2025-07-21T09:49:30.244980046Z] Waiting for completion finished for process 2864060
+PASSED: got expected error message with -XX:CompilerThreadStackSize=16
+*** Testing -XX:CompilerThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=64 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.246991496Z] Gathering output for process 2864190
+[2025-07-21T09:49:30.247704357Z] Waiting for completion for process 2864190
+[2025-07-21T09:49:30.252778227Z] Waiting for completion finished for process 2864190
+PASSED: got expected error message with -XX:CompilerThreadStackSize=64
+*** Testing -XX:CompilerThreadStackSize=184
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=184 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.254075707Z] Gathering output for process 2864377
+[2025-07-21T09:49:30.254395057Z] Waiting for completion for process 2864377
+[2025-07-21T09:49:30.293944019Z] Waiting for completion finished for process 2864377
+PASSED: VM launched with -XX:CompilerThreadStackSize=184
+*** Testing -XX:CompilerThreadStackSize=513
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=513 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.295887029Z] Gathering output for process 2865585
+[2025-07-21T09:49:30.296355459Z] Waiting for completion for process 2865585
+[2025-07-21T09:49:30.344018831Z] Waiting for completion finished for process 2865585
+PASSED: VM launched with -XX:CompilerThreadStackSize=513
+*** Testing -XX:CompilerThreadStackSize=0
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:CompilerThreadStackSize=0 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.345922581Z] Gathering output for process 2866713
+[2025-07-21T09:49:30.346464811Z] Waiting for completion for process 2866713
+[2025-07-21T09:49:30.381642963Z] Waiting for completion finished for process 2866713
+PASSED: VM launched with -XX:CompilerThreadStackSize=0
+*** Testing -XX:VMThreadStackSize=16
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=16 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.383249483Z] Gathering output for process 2867802
+[2025-07-21T09:49:30.383746863Z] Waiting for completion for process 2867802
+[2025-07-21T09:49:30.389323413Z] Waiting for completion finished for process 2867802
+PASSED: got expected error message with -XX:VMThreadStackSize=16
+*** Testing -XX:VMThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=64 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.390426623Z] Gathering output for process 2868017
+[2025-07-21T09:49:30.390780713Z] Waiting for completion for process 2868017
+[2025-07-21T09:49:30.421102135Z] Waiting for completion finished for process 2868017
+PASSED: got exit_code == 0 with -XX:VMThreadStackSize=64
+*** Testing -XX:VMThreadStackSize=64
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=64 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.422553175Z] Gathering output for process 2868969
+[2025-07-21T09:49:30.422853035Z] Waiting for completion for process 2868969
+[2025-07-21T09:49:30.454981266Z] Waiting for completion finished for process 2868969
+PASSED: VM launched with -XX:VMThreadStackSize=64
+*** Testing -XX:VMThreadStackSize=513
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=513 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.456056026Z] Gathering output for process 2869930
+[2025-07-21T09:49:30.456501886Z] Waiting for completion for process 2869930
+[2025-07-21T09:49:30.493415658Z] Waiting for completion finished for process 2869930
+PASSED: VM launched with -XX:VMThreadStackSize=513
+*** Testing -XX:VMThreadStackSize=0
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -XX:VMThreadStackSize=0 -XX:StackShadowPages=30 -version ]
+[2025-07-21T09:49:30.495265078Z] Gathering output for process 2870941
+[2025-07-21T09:49:30.495718388Z] Waiting for completion for process 2870941
+[2025-07-21T09:49:30.528265940Z] Waiting for completion finished for process 2870941
+PASSED: VM launched with -XX:VMThreadStackSize=0
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(35/2642)*----------
+cd /hygonjdk/yansendao/git/jdk-ysd/tmp/scratch/0 && \\
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/999/bus \\
+DISPLAY=:7 \\
+HOME=/hygonjdk/yansendao \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop \\
+XDG_RUNTIME_DIR=/run/user/999 \\
+XDG_SESSION_CLASS=user \\
+XDG_SESSION_ID=5681 \\
+XDG_SESSION_TYPE=tty \\
+CLASSPATH=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar \\
+    /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -Dcompile.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg \\
+        -Dtest.name=runtime/Thread/TooSmallStackSize.java \\
+        -Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TooSmallStackSize.java \\
+        -Dtest.main.class=TooSmallStackSize \\
+        -Dtest.src=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread \\
+        -Dtest.src.path=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/test/lib \\
+        -Dtest.classes=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d \\
+        -Dtest.class.path=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/runtime/Thread/TooSmallStackSize.d:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/6/test/lib \\
+        -Dtest.modules='java.base/jdk.internal.misc java.management' \\
+        --add-modules java.base,java.management \\
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \\
+        -Djava.library.path=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /hygonjdk/yansendao/git/jdk-ysd/tmp/runtime/Thread/TooSmallStackSize.d/driver.1.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

@@ -1,0 +1,11 @@
+--add-modules
+java.base
+--add-exports
+java.base/jdk.internal.misc=ALL-UNNAMED
+-d
+/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/12/runtime/Thread/Fibonacci.d
+-sourcepath
+/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/test/lib
+-classpath
+/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/12/runtime/Thread/Fibonacci.d:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/12/test/lib
+/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/Fibonacci.java

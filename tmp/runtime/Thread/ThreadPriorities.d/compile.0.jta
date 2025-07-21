@@ -1,0 +1,11 @@
+--add-modules
+java.base,java.management
+--add-exports
+java.base/jdk.internal.misc=ALL-UNNAMED
+-d
+/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/20/runtime/Thread/ThreadPriorities.d
+-sourcepath
+/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/test/lib
+-classpath
+/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/20/runtime/Thread/ThreadPriorities.d:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/20/test/lib
+/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/ThreadPriorities.java

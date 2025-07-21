@@ -1,0 +1,175 @@
+#Test Results (version 2)
+#Mon Jul 21 17:49:30 CST 2025
+#-----testdescription-----
+$file=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TestBreakSignalThreadDump.java
+$root=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg
+id=with_jsig
+keywords=bug8292695 native
+library=/vmTestbase /test/lib
+requires=((os.family \!\= "windows" & os.family \!\= "aix") & (\!jdk.static)) & (\!vm.asan)
+run=USER_SPECIFIED main/native TestBreakSignalThreadDump load_libjsig\n
+source=TestBreakSignalThreadDump.java
+title=Check that Ctrl-\\ causes HotSpot VM to print a full thread dump when signal chaining is used.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TestBreakSignalThreadDump.java\#with_jsig
+elapsed=2997 0\:00\:02.997
+end=Mon Jul 21 17\:49\:30 CST 2025
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=hygon
+javatestOS=Linux 5.15.0-25-generic (amd64)
+javatestVersion=6.0-ea+b24-2025-06-01-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 7.5.2 dev 0
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Mon Jul 21 17\:49\:27 CST 2025
+test=runtime/Thread/TestBreakSignalThreadDump.java\#with_jsig
+testJDK=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:5.15.0-25-generic,family\:linux,simple_arch\:x64,simple_version\:5.15,processors\:256,maxMemory\:810876829696,maxSwap\:8589930496]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=5.15.0-25-generic
+totalTime=2998
+user.name=yansendao
+work=/hygonjdk/yansendao/git/jdk-ysd/tmp/runtime/Thread
+
+#section:script_messages
+----------messages:(10/633)----------
+JDK under test: /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk
+openjdk version "26-internal" 2026-03-17
+OpenJDK Runtime Environment (build 26-internal-d83346dc)
+OpenJDK 64-Bit Server VM (build 26-internal-d83346dc, mixed mode, sharing)
+Library /vmTestbase; kind: packages
+   source directory: /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/vmTestbase
+   class directory: /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/vmTestbase
+Library /test/lib; kind: packages
+   source directory: /hygonjdk/yansendao/git/jdk-ysd/test/lib
+   class directory: /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/test/lib
+
+#section:build
+----------messages:(7/240)----------
+command: build TestBreakSignalThreadDump
+reason: Named class compiled on demand
+started: Mon Jul 21 17:49:27 CST 2025
+Test directory:
+  compile: TestBreakSignalThreadDump
+finished: Mon Jul 21 17:49:29 CST 2025
+elapsed time (seconds): 1.802
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/305)----------
+command: compile /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TestBreakSignalThreadDump.java
+reason: .class file out of date or does not exist
+started: Mon Jul 21 17:49:27 CST 2025
+Mode: othervm
+Process id: 2831317
+finished: Mon Jul 21 17:49:29 CST 2025
+elapsed time (seconds): 1.797
+----------configuration:(9/582)----------
+javac compilation environment
+  source path: /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread
+               /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/vmTestbase
+               /hygonjdk/yansendao/git/jdk-ysd/test/lib
+  class path:  /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread
+               /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d
+               /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/vmTestbase
+               /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/test/lib
+
+----------rerun:(32/2738)*----------
+cd /hygonjdk/yansendao/git/jdk-ysd/tmp/scratch/7 && \\
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/999/bus \\
+DISPLAY=:7 \\
+HOME=/hygonjdk/yansendao \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop \\
+XDG_RUNTIME_DIR=/run/user/999 \\
+XDG_SESSION_CLASS=user \\
+XDG_SESSION_ID=5681 \\
+XDG_SESSION_TYPE=tty \\
+    /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -J-Dcompile.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg \\
+        -J-Dtest.name=runtime/Thread/TestBreakSignalThreadDump.java#with_jsig \\
+        -J-Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TestBreakSignalThreadDump.java \\
+        -J-Dtest.main.class=TestBreakSignalThreadDump \\
+        -J-Dtest.src=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread \\
+        -J-Dtest.src.path=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/test/lib \\
+        -J-Dtest.classes=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d \\
+        -J-Dtest.class.path=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/test/lib \\
+        -d /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d \\
+        -sourcepath /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/test/lib \\
+        -classpath /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/test/lib /hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TestBreakSignalThreadDump.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/281)----------
+command: main TestBreakSignalThreadDump load_libjsig
+reason: User specified action: run main/native TestBreakSignalThreadDump load_libjsig 
+started: Mon Jul 21 17:49:29 CST 2025
+Mode: othervm
+Process id: 2853178
+finished: Mon Jul 21 17:49:30 CST 2025
+elapsed time (seconds): 1.122
+----------configuration:(0/0)----------
+----------System.out:(4/992)----------
+Command line: [/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java -cp /hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar -Djava.library.path=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native TestBreakSignalThreadDump$TestProcess ]
+[2025-07-21T09:49:29.816011616Z] Gathering output for process 2854330
+[2025-07-21T09:49:29.828743227Z] Waiting for completion for process 2854330
+[2025-07-21T09:49:30.837845145Z] Waiting for completion finished for process 2854330
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(33/2927)*----------
+cd /hygonjdk/yansendao/git/jdk-ysd/tmp/scratch/7 && \\
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/999/bus \\
+DISPLAY=:7 \\
+HOME=/hygonjdk/yansendao \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop \\
+XDG_RUNTIME_DIR=/run/user/999 \\
+XDG_SESSION_CLASS=user \\
+XDG_SESSION_ID=5681 \\
+XDG_SESSION_TYPE=tty \\
+LD_LIBRARY_PATH=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native \\
+CLASSPATH=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/test/lib:/hygonjdk/yansendao/git/jdk-ysd/test/lib:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/javatest.jar:/hygonjdk/yansendao/software/jdk/jtreg-7.5/lib/jtreg.jar \\
+    /hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -Dcompile.jdk=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg \\
+        -Dtest.name=runtime/Thread/TestBreakSignalThreadDump.java#with_jsig \\
+        -Dtest.verbose=Verbose[p=BRIEF,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread/TestBreakSignalThreadDump.java \\
+        -Dtest.main.class=TestBreakSignalThreadDump \\
+        -Dtest.src=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread \\
+        -Dtest.src.path=/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/runtime/Thread:/hygonjdk/yansendao/git/jdk-ysd/test/hotspot/jtreg/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/test/lib \\
+        -Dtest.classes=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d \\
+        -Dtest.class.path=/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/vmTestbase:/hygonjdk/yansendao/git/jdk-ysd/tmp/classes/5/test/lib \\
+        -Djava.library.path=/hygonjdk/yansendao/git/jdk-ysd/build/linux-x86_64-server-release/images/test/hotspot/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /hygonjdk/yansendao/git/jdk-ysd/tmp/runtime/Thread/TestBreakSignalThreadDump_with_jsig.d/main.0.jta load_libjsig
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

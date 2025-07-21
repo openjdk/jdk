@@ -1,0 +1,15 @@
+Entering call()
+Entering containerSupport()
+containerSupport(): platform check: isSupported = true
+checkContainerSupport(): entering
+checkContainerSupport(): which docker: child process stdout redirected to ./which-cmd-stdout--2025-07-21T09-49-27-623693771Z.log
+checkContainerSupport(): which docker: child process stderr redirected to ./which-cmd-stderr--2025-07-21T09-49-27-623693771Z.log
+checkContainerSupport(): exitValue = 0, pid = 2830700
+containerSupport(): returning isSupported = true
+Entering systemdSupport()
+checkSystemdSupport(): entering
+checkSystemdSupport(): which systemd-run: child process stdout redirected to ./which-cmd-stdout--2025-07-21T09-49-27-645911872Z.log
+checkSystemdSupport(): which systemd-run: child process stderr redirected to ./which-cmd-stderr--2025-07-21T09-49-27-645911872Z.log
+checkSystemdSupport(): exitValue = 0, pid = 2830702
+systemdSupport(): returning isSupported = true
+Leaving call()
