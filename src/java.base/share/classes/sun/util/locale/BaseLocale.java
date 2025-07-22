@@ -163,7 +163,8 @@ public final class BaseLocale {
             }
         }
 
-        // JDK uses deprecated ISO639.1 language codes for he, yi and id
+        // Normalize deprecated ISO 639-1 language codes for Hebrew, Yiddish,
+        // and Indonesian to their current standard forms.
         if (!language.isEmpty()) {
             language = convertOldISOCodes(language);
         }
