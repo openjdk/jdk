@@ -61,7 +61,7 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
         }
         f = new JFrame("Mixing : GlassPane Overlapping test");
         f.setLayout(new SpringLayout());
-        f.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        f.setSize(200, 200);
 
         propagateAWTControls(f);
 
