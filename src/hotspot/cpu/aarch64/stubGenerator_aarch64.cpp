@@ -11654,7 +11654,12 @@ class StubGenerator: public StubCodeGenerator {
 
   // Initialization
   void generate_preuniverse_stubs() {
-    // preuniverse stubs are not needed for aarch64
+    // Initialize runtime addresses needed by AOTCodeAddressTable.
+    // Note, they are not stubs and not located in CodeCache.
+    if (UseCRC32Intrinsics || UseCRC32CIntrinsics) {
+      // set table address before stub generation which use it
+      StubRoutines::_crc_table_addr = (address)StubRoutines::aarch64::_crc_table;
+    }
   }
 
   void generate_initial_stubs() {
@@ -11680,8 +11685,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      // set table address before stub generation which use it
-      StubRoutines::_crc_table_adr = (address)StubRoutines::aarch64::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
 

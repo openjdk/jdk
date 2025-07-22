@@ -4960,7 +4960,14 @@ void generate_lookup_secondary_supers_table_stub() {
 
   // Initialization
   void generate_preuniverse_stubs() {
-    // preuniverse stubs are not needed for ppc
+    // Initialize runtime addresses needed by AOTCodeAddressTable.
+    // Note, they are not stubs and not located in CodeCache.
+    if (UseCRC32Intrinsics) {
+      StubRoutines::_crc_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
+    }
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
+    }
   }
 
   void generate_initial_stubs() {
@@ -4982,13 +4989,11 @@ void generate_lookup_secondary_supers_table_stub() {
 
     // CRC32 Intrinsics.
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
       StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes(StubId::stubgen_updateBytesCRC32_id);
     }
 
     // CRC32C Intrinsics.
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(StubId::stubgen_updateBytesCRC32C_id);
     }
 

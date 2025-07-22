@@ -3284,7 +3284,14 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_preuniverse_stubs() {
-    // preuniverse stubs are not needed for s390
+    // Initialize runtime addresses needed by AOTCodeAddressTable.
+    // Note, they are not stubs and not located in CodeCache.
+    if (UseCRC32Intrinsics) {
+      StubRoutines::_crc_table_addr    = (address)StubRoutines::zarch::_crc_table;
+    }
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
+    }
   }
 
   void generate_initial_stubs() {
@@ -3308,12 +3315,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
       StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes();
     }
 
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes();
     }
 

@@ -4051,7 +4051,19 @@ void StubGenerator::create_control_words() {
 // Initialization
 void StubGenerator::generate_preuniverse_stubs() {
   // atomic calls
-  StubRoutines::_fence_entry                = generate_orderaccess_fence();
+  StubRoutines::_fence_entry = generate_orderaccess_fence();
+
+  // Initialize runtime addresses needed by AOTCodeAddressTable.
+  // Note, they are not stubs and not located in CodeCache.
+  if (UseCRC32Intrinsics) {
+    // set table address before stub generation which use it
+    StubRoutines::_crc_table_addr = (address)StubRoutines::x86::_crc_table;
+  }
+  if (UseCRC32CIntrinsics) {
+    bool supports_clmul = VM_Version::supports_clmul();
+    StubRoutines::x86::generate_CRC32C_table(supports_clmul);
+    StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
+  }
 }
 
 void StubGenerator::generate_initial_stubs() {
@@ -4095,15 +4107,11 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::x86::_double_sign_flip      = generate_fp_mask(StubId::stubgen_double_sign_flip_id, 0x8000000000000000);
 
   if (UseCRC32Intrinsics) {
-    // set table address before stub generation which use it
-    StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
   if (UseCRC32CIntrinsics) {
     bool supports_clmul = VM_Version::supports_clmul();
-    StubRoutines::x86::generate_CRC32C_table(supports_clmul);
-    StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
     StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
   }
 
