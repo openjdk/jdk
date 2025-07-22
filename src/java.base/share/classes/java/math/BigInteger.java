@@ -2753,9 +2753,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *   <li>if {@code x} &lt; 0, then {@code r} &le; 0 is the smallest integer such that
      *   {@code r}<sup>{@code n}</sup> &ge; {@code x}.
      * </ul>
-     * It is equal to the value of {@code x.signum()}&sdot; &lfloor;{@code |nthRoot(x, n)|}&rfloor;,
+     * If the root is defined, it is equal to the value of
+     * {@code x.signum()}&sdot; &lfloor;{@code |nthRoot(x, n)|}&rfloor;,
      * where {@code nthRoot(x, n)} denotes the real {@code n}th root of {@code x}
      * treated as a real.
+     * Otherwise, the method throws an {@code ArithmeticException}.
      *
      * <p>Note that the magnitude of the integer {@code n}th root will be less than
      * the magnitude of the real {@code n}th root if the latter is not representable
@@ -2763,11 +2765,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param n the root degree
      * @return the integer {@code n}th root of {@code this}
-     * @throws ArithmeticException if {@code n <= 0} (Non-positive degree integer roots
-     *                             are not defined.)
-     * @throws ArithmeticException if {@code n} is even and {@code this} is
-     *                             negative. (This would cause the operation to
-     *                             yield non-real roots.)
+     * @throws ArithmeticException if {@code n <= 0}.
+     * @throws ArithmeticException if {@code n} is even and {@code this} is negative.
      * @see #sqrt()
      * @since 26
      */
