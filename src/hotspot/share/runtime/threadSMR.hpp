@@ -75,11 +75,6 @@ class ThreadsList;
 // but that target JavaThread* will not be deleted until it is no
 // longer protected by a ThreadsListHandle.
 //
-// Note that for virtual threads, we obtain a reference to the carrier JavaThread
-// on which it is mounted (if any). It is up to the caller to prevent the virtual
-// thread from changing its mounted status, or else account for it when acting on
-// the carrier JavaThread.
-//
 // SMR Support for the Threads class.
 //
 class ThreadsSMRSupport : AllStatic {

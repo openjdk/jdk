@@ -789,9 +789,13 @@ ThreadsListHandle::~ThreadsListHandle() {
 
 // Convert an internal thread reference to a JavaThread found on the
 // associated ThreadsList. This ThreadsListHandle "protects" the
-// returned JavaThread *. If the jthread resolves to a virtual thread
-// then the JavaThread * for its current carrier thread (if any) is
-// returned via *jt_pp.
+// returned JavaThread *.
+//
+// If the jthread resolves to a virtual thread then the JavaThread *
+// for its current carrier thread (if any) is returned via *jt_pp.
+// It is up to the caller to prevent the virtual thread from changing
+// its mounted status, or else account for it when acting on the carrier
+// JavaThread.
 //
 // If thread_oop_p is not null, then the caller wants to use the oop
 // after this call so the oop is always returned. On success, *jt_pp is set
