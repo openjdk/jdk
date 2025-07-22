@@ -37,6 +37,16 @@ class ShortHistoryData_pd {
   size_t _glibc_heap_allocated;
   size_t _glibc_heap_retained;
   int _glibc_num_trims;
+
+  int num_open_files(bool& is_exact) const {
+    if (_fdsize > 0) {
+      is_exact = false;
+      return -_fdsize;
+    } else {
+      is_exact = true;
+      return _fdsize;
+    }
+  }
 public:
   void measure();
   static void print_header_1(outputStream* st);
