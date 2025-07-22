@@ -80,26 +80,26 @@ public class NMethod extends CodeBlob {
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("nmethod");
 
-    methodField                         = type.getAddressField("_method");
-    entryBCIField                       = type.getCIntegerField("_entry_bci");
-    osrLinkField                        = type.getAddressField("_osr_link");
-    immutableDataField                  = type.getAddressField("_immutable_data");
-    immutableDataSizeField              = type.getCIntegerField("_immutable_data_size");
-    exceptionOffsetField                = type.getCIntegerField("_exception_offset");
-    deoptHandlerOffsetField             = type.getCIntegerField("_deopt_handler_offset");
-    deoptMhHandlerOffsetField           = type.getCIntegerField("_deopt_mh_handler_offset");
-    origPCOffsetField                   = type.getCIntegerField("_orig_pc_offset");
-    stubOffsetField                     = type.getCIntegerField("_stub_offset");
-    scopesPCsOffsetField                = type.getCIntegerField("_scopes_pcs_offset");
-    scopesDataOffsetField               = type.getCIntegerField("_scopes_data_offset");
-    handlerTableOffsetField             = new CIntField(type.getCIntegerField("_handler_table_offset"), 0);
-    nulChkTableOffsetField              = new CIntField(type.getCIntegerField("_nul_chk_table_offset"), 0);
-    entryOffsetField                    = new CIntField(type.getCIntegerField("_entry_offset"), 0);
-    verifiedEntryOffsetField            = new CIntField(type.getCIntegerField("_verified_entry_offset"), 0);
-    osrEntryPointField                  = type.getAddressField("_osr_entry_point");
-    compLevelField                      = new CIntField(type.getCIntegerField("_comp_level"), 0);
-    pcDescSize                          = db.lookupType("PcDesc").getSize();
-    immutableDataReferencesCounterSize  = VM.getVM().getIntSize();
+    methodField                        = type.getAddressField("_method");
+    entryBCIField                      = type.getCIntegerField("_entry_bci");
+    osrLinkField                       = type.getAddressField("_osr_link");
+    immutableDataField                 = type.getAddressField("_immutable_data");
+    immutableDataSizeField             = type.getCIntegerField("_immutable_data_size");
+    exceptionOffsetField               = type.getCIntegerField("_exception_offset");
+    deoptHandlerOffsetField            = type.getCIntegerField("_deopt_handler_offset");
+    deoptMhHandlerOffsetField          = type.getCIntegerField("_deopt_mh_handler_offset");
+    origPCOffsetField                  = type.getCIntegerField("_orig_pc_offset");
+    stubOffsetField                    = type.getCIntegerField("_stub_offset");
+    scopesPCsOffsetField               = type.getCIntegerField("_scopes_pcs_offset");
+    scopesDataOffsetField              = type.getCIntegerField("_scopes_data_offset");
+    handlerTableOffsetField            = new CIntField(type.getCIntegerField("_handler_table_offset"), 0);
+    nulChkTableOffsetField             = new CIntField(type.getCIntegerField("_nul_chk_table_offset"), 0);
+    entryOffsetField                   = new CIntField(type.getCIntegerField("_entry_offset"), 0);
+    verifiedEntryOffsetField           = new CIntField(type.getCIntegerField("_verified_entry_offset"), 0);
+    osrEntryPointField                 = type.getAddressField("_osr_entry_point");
+    compLevelField                     = new CIntField(type.getCIntegerField("_comp_level"), 0);
+    pcDescSize                         = db.lookupType("PcDesc").getSize();
+    immutableDataReferencesCounterSize = VM.getVM().getIntSize();
   }
 
   public NMethod(Address addr) {
