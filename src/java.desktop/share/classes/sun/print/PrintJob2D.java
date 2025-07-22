@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class PrintJob2D extends PrintJob {
     }
 
 
-    // PrintJob2D API, not PrintJob 
+    // PrintJob2D API, not PrintJob
     public boolean printDialog() {
         return printJobDelegate.printDialog();
     }
@@ -108,7 +108,6 @@ public class PrintJob2D extends PrintJob {
      * Ends the print job and does any necessary cleanup.
      */
     public synchronized void end() {
-        //Thread.dumpStack();
         printJobDelegate.end();
     }
 
@@ -116,11 +115,10 @@ public class PrintJob2D extends PrintJob {
         private final PrintJobDelegate printJobDelegate;
 
         PrintJobDisposerRecord(PrintJobDelegate delegate) {
-            printJobDelegate = delegate; 
+            printJobDelegate = delegate;
         }
 
         public void dispose() {
-            //Thread.dumpStack();
             printJobDelegate.end();
         }
     }
