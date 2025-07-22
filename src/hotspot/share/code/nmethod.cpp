@@ -1154,14 +1154,14 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 
   int immutable_data_size =
       adjust_pcs_size(debug_info->pcs_size())
-    + align_up((int)dependencies->size_in_bytes()     , oopSize)
-    + align_up(handler_table->size_in_bytes()         , oopSize)
-    + align_up(nul_chk_table->size_in_bytes()         , oopSize)
+    + align_up((int)dependencies->size_in_bytes(), oopSize)
+    + align_up(handler_table->size_in_bytes()    , oopSize)
+    + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
-    + align_up(speculations_len                       , oopSize)
+    + align_up(speculations_len                  , oopSize)
 #endif
-    + align_up(debug_info->data_size()                , oopSize)
-    + align_up(ImmutableDataReferencesCounterSize     , oopSize);
+    + align_up(debug_info->data_size()           , oopSize)
+    + align_up(ImmutableDataReferencesCounterSize, oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
@@ -2448,11 +2448,14 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
+    int reference_count = get_immutable_data_references_counter();
+    assert(reference_count > 0, "immutable data has no references");
+
+    set_immutable_data_references_counter(reference_count - 1);
+
     // Free memory if this is the last nmethod referencing immutable data
-    if (get_immutable_data_references_counter() == 1) {
+    if (reference_count == 0) {
       os::free(_immutable_data);
-    } else {
-      set_immutable_data_references_counter(get_immutable_data_references_counter() - 1);
     }
 
     _immutable_data = blob_end(); // Valid not null address
