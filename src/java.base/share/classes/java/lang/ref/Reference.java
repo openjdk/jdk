@@ -25,12 +25,10 @@
 
 package java.lang.ref;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.ref.Cleaner;
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -199,11 +197,6 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
         }
 
         public void run() {
-            // pre-load and initialize Cleaner class so that we don't
-            // get into trouble later in the run loop if there's
-            // memory shortage while loading/initializing it lazily.
-            Unsafe.getUnsafe().ensureClassInitialized(Cleaner.class);
-
             while (true) {
                 processPendingReferences();
             }
@@ -253,18 +246,7 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
             Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
-
-            if (ref instanceof Cleaner) {
-                ((Cleaner)ref).clean();
-                // Notify any waiters that progress has been made.
-                // This improves latency for nio.Bits waiters, which
-                // are the only important ones.
-                synchronized (processPendingLock) {
-                    processPendingLock.notifyAll();
-                }
-            } else {
-                ref.enqueueFromPending();
-            }
+            ref.enqueueFromPending();
         }
         // Notify any waiters of completion of current round.
         synchronized (processPendingLock) {
