@@ -355,7 +355,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       assert(hi == (bt == T_INT ? max_jint : max_jlong), "");
       assert(lo == (bt == T_INT ? min_jint : min_jlong) || lo == 0, "");
 
-      if (src_type->hi_as_long() >= 0) {
+      if (src_type->lo_as_long() >= 0) {
         // Lemma 1: For strictly non-negative src, the result of the compression will never be
         // greater than src.
         // Proof: Since src is a non-negative value, its most significant bit is always 0.
