@@ -34,12 +34,12 @@
 #include <alloca.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include <string.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 // In stdlib.h on AIX malloc is defined as a macro causing
 // compiler errors when resolving them in different depths as it
 // happens in the log tags. This avoids the macro.
@@ -48,16 +48,14 @@
   #undef malloc
   extern void *malloc(size_t) asm("vec_malloc");
 #endif
-#include <wchar.h>
-
-#include <math.h>
-#include <time.h>
-#include <fcntl.h>
 #include <dlfcn.h>
-#include <pthread.h>
-
-#include <limits.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <math.h>
+#include <pthread.h>
+#include <time.h>
+#include <wchar.h>
 
 #if defined(LINUX) || defined(_ALLBSD_SOURCE) || defined(_AIX)
 #include <signal.h>

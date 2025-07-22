@@ -32,19 +32,19 @@
 // declarations and a few frequently used utility functions.
 
 # include <ctype.h>
-# include <string.h>
 # include <stdarg.h>
-# include <stdlib.h>
 # include <stdint.h>
+# include <stdlib.h>
+# include <string.h>
 # include <stddef.h>// for offsetof
 # include <sys/stat.h>
 # include <io.h>    // for stream.cpp
 # include <float.h> // for _isnan
 # include <stdio.h> // for va_list
-# include <time.h>
 # include <fcntl.h>
-# include <limits.h>
 # include <inttypes.h>
+# include <limits.h>
+# include <time.h>
 // Need this on windows to get the math constants (e.g., M_PI).
 #define _USE_MATH_DEFINES
 # include <math.h>
