@@ -1888,8 +1888,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
       }
     } else if (!GCCause::is_user_requested_gc(cause)) {
       assert(cause == GCCause::_g1_humongous_allocation ||
-             cause == GCCause::_g1_periodic_collection ||
-             cause == GCCause::_wb_breakpoint, "Unsupported cause %s", GCCause::to_string(cause));
+             cause == GCCause::_g1_periodic_collection, "Unsupported cause %s", GCCause::to_string(cause));
       // For an "automatic" (not user-requested) collection, we just need to
       // ensure that progress is made.
       //
