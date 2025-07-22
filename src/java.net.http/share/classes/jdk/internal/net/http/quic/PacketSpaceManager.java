@@ -159,7 +159,7 @@ public sealed class PacketSpaceManager implements PacketSpace
     // is when any packet whose number is greater than the request packet
     // is acknowledged.
     // Note: this is used to implement {@link #requestSendPing()} which is
-    //       used to implemeent out of bound ping requests triggered by the
+    //       used to implement out of band ping requests triggered by the
     //       application.
     private final ConcurrentLinkedQueue<PingRequest> pendingPingRequests =
             new ConcurrentLinkedQueue<>();

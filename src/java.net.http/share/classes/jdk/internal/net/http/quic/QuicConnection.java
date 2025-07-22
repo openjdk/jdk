@@ -217,7 +217,7 @@ public abstract class QuicConnection {
 
     /**
      * Requests to send a PING frame to the peer.
-     * An implementation may decide to support sending of out-of-bound ping
+     * An implementation may decide to support sending of out-of-band ping
      * frames (triggered by the application layer) only for a subset of the
      * {@linkplain jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace
      * packet number spaces}. It may complete with -1 if it doesn't want to request
