@@ -2020,9 +2020,6 @@ class MutableBigInteger {
 
                 if (radExp >= Double.PRECISION - 1) { // Discard wrong integer bits
                     int wrongBits = ((radExp + 1) - Double.PRECISION) / n;
-                    if ((long) rootShift + wrongBits > Integer.MAX_VALUE) // Avoid overflow
-                        wrongBits = Integer.MAX_VALUE - rootShift;
-
                     rootShift += wrongBits;
                     approx /= Double.parseDouble("0x1p" + wrongBits);
                 } else { // Avoid to discard correct fraction bits
