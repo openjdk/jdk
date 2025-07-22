@@ -32,6 +32,13 @@
 // all memory sizes in KB
 #define btokb(s) ( (s) / K)
 
+static int num_open_files(int upper_limit) {
+  // Below a certain limit, we iterate fd in proc and return the exact number.
+  // Beyond that, we just return the file descriptor array size.
+  constexpr int limit = 1024;
+  if ()
+}
+
 void ShortHistoryData_pd::measure() {
   // Process memory info
   os::Linux::process_info_t mi;
@@ -62,6 +69,7 @@ void ShortHistoryData_pd::measure() {
   _glibc_num_trims = 0;
 #endif
 }
+
 #define HEADER1 "|-------------- process ------------------||--------- glibc ---------|"
 #define HEADER2 "     vsize       rss      swap   thr    fd       live  retained  trim "
 //               |.........|.........|.........|.....|.....||.........|.........|.....|
