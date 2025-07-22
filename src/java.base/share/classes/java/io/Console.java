@@ -42,17 +42,17 @@ import sun.nio.cs.UTF_8;
  * underlying platform and also upon the manner in which the virtual
  * machine is invoked.  If the virtual machine is started from an
  * interactive command line without redirecting the standard input and
- * output streams then its console will exist and will typically be
+ * output streams, then its console will exist and will typically be
  * connected to the keyboard and display from which the virtual machine
  * was launched.  If the virtual machine is started automatically, for
- * example by a background job scheduler, then it may not have a
- * console. Regardless of how the virtual machine was created, it may not
- * have a console if either the standard input or output stream is
- * redirected.
+ * example by a background job scheduler, then it may not
+ * have a console. Regardless of how the virtual machine was created,
+ * it will not have a console if either the standard input or output
+ * stream is redirected.
  * <p>
  * If this virtual machine has a console then it is represented by a
  * unique instance of this class which can be obtained by invoking the
- * {@link java.lang.System#console()} method.  If no console device is
+ * {@link System#console()} method.  If no console device is
  * available then an invocation of that method will return {@code null}.
  * <p>
  * Read and write operations are synchronized to guarantee the atomic
@@ -537,18 +537,14 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     /**
      * {@return {@code true} if the {@code Console} instance is a terminal}
      * <p>
-     * This method returns {@code true} if the console device, associated with the current
-     * Java virtual machine, is a terminal, typically an interactive command line
-     * connected to a keyboard and display.
-     *
-     * @implNote The default implementation returns the value equivalent to calling
-     * {@code isatty(stdin/stdout)} on POSIX platforms, or whether standard in/out file
-     * descriptors are character devices or not on Windows.
+     * This method always returns {@code true}, since {@link System#console()}
+     * provides a {@code Console} instance only when both standard input and
+     * output are unredirected, that is, when running in an interactive terminal.
      *
      * @since 22
      */
     public boolean isTerminal() {
-        return istty;
+        return true;
     }
 
     private static UnsupportedOperationException newUnsupportedOperationException() {
