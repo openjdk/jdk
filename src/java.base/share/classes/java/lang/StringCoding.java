@@ -145,17 +145,15 @@ class StringCoding {
                               byte[] da, int dp, int len) {
         Objects.requireNonNull(sa, "sa");
         Objects.requireNonNull(da, "da");
+        int sl;
         if ((sp | dp | len) < 0 ||
                 // Halving the length of `sa` to obtain the number of characters:
-                len > (sa.length >>> 1) - sp ||
+                sp >= (sl = sa.length >>> 1) ||
                 dp >= da.length) {
-            // Not checking the `len < da.length - dp` invariant, since "as many
-            // codepoints as possible" contract still holds with a `da` of
-            // insufficient capacity, and the compiler intrinsic matches this
-            // behavior too.
             return 0;
         }
-        return encodeISOArray0(sa, sp, da, dp, Math.min(len, da.length - dp));
+        int minLen = Math.min(len, Math.min(sl - sp, da.length - dp));
+        return encodeISOArray0(sa, sp, da, dp, minLen);
     }
 
     @IntrinsicCandidate
@@ -188,14 +186,11 @@ class StringCoding {
                                 byte[] da, int dp, int len) {
         Objects.requireNonNull(sa, "sa");
         Objects.requireNonNull(da, "da");
-        if ((sp | dp | len) < 0 || len > sa.length - sp || dp >= da.length) {
-            // Not checking the `len < da.length - dp` invariant, since "as many
-            // codepoints as possible" contract still holds with a `da` of
-            // insufficient capacity, and the compiler intrinsic matches this
-            // behavior too.
+        if ((sp | dp | len) < 0 || sp >= sa.length || dp >= da.length) {
             return 0;
         }
-        return encodeAsciiArray0(sa, sp, da, dp, Math.min(len, da.length - dp));
+        int minLen = Math.min(len, Math.min(sa.length - sp, da.length - dp));
+        return encodeAsciiArray0(sa, sp, da, dp, minLen);
     }
 
     @IntrinsicCandidate
