@@ -68,4 +68,10 @@ public final class AltSvcFrame extends Http2Frame {
         return altSvcValue;
     }
 
+    @Override
+    public String toString() {
+        return super.toString()
+                + ", origin=" + this.origin
+                + ", alt-svc: " + altSvcValue;
+    }
 }

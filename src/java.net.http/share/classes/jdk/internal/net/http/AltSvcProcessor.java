@@ -160,14 +160,30 @@ final class AltSvcProcessor {
             }
             // parse origin from frame.getOrigin() string which is in ASCII
             // serialized form of an origin (defined in section 6.2 of RFC-6454)
+            final Origin parsedOrigin;
             try {
-                origin = Origin.fromASCIISerializedForm(frame.getOrigin());
+                parsedOrigin = Origin.fromASCIISerializedForm(frame.getOrigin());
             } catch (IllegalArgumentException iae) {
                 // invalid origin value, ignore the frame
                 debug.log("origin couldn't be parsed, ignoring invalid alt-svc frame" +
                         " on stream " + streamId + " of " + conn);
                 return;
             }
+            // currently we do not allow an alt service to be advertised for a different origin.
+            // if the origin advertised in the alt-svc frame doesn't match the origin of the
+            // connection, then we ignore it. the RFC allows us to do that:
+            // RFC-7838, section 4:
+            // An ALTSVC frame from a server to a client on stream 0 indicates that
+            // the conveyed alternative service is associated with the origin
+            // contained in the Origin field of the frame.  An association with an
+            // origin that the client does not consider authoritative for the
+            // current connection MUST be ignored.
+            if (!parsedOrigin.equals(conn.getOriginServer())) {
+                debug.log("ignoring alt-svc frame on stream 0 for origin: " + parsedOrigin
+                        + " received on connection of origin: " + conn.getOriginServer());
+                return;
+            }
+            origin = parsedOrigin;
         } else {
             // (section 4, RFC-7838) - for non-zero stream id, the alt-svc is for the origin of
             // the stream. Additionally, an ALTSVC frame on a stream other than stream 0 containing
