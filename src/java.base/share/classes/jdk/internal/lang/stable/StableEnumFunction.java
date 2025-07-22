@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
-import java.util.function.Supplier;
 
 /**
  * Optimized implementation of a stable Function with enums as keys.
@@ -68,9 +67,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         }
         final int index = value.ordinal() - firstOrdinal;
         // Since we did the member.test above, we know the index is in bounds
-        return delegates[index].orElseSet(new Supplier<R>() {
-            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, underlyingHolder);
-
+        return delegates[index].orElseSet(value, underlyingHolder);
     }
 
     @Override

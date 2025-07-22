@@ -28,8 +28,8 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
+import java.util.Objects;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
 
 /**
  * Implementation of a stable IntFunction.
@@ -54,8 +54,7 @@ public record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
         } catch (ArrayIndexOutOfBoundsException ioob) {
             throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }
-        return delegate.orElseSet(new Supplier<R>() {
-            @Override public R get() { return underlyingHolder.underlying().apply(index); }}, underlyingHolder);
+        return delegate.orElseSet(index, underlyingHolder);
     }
 
     @Override

@@ -3,13 +3,10 @@ package jdk.internal.lang.stable;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.util.Objects;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.joining;
-
 /**
- * This class is thread safe.
+ * This class is not thread safe. However, fields are only accessed within a block that
+ * is guarded by the same synchronization object. Still, it can be instantiated from
+ * any thread with no synchronization. Hence, the constructor must safely publish fields.
  *
  * @param <U> the underlying type
  */
@@ -17,15 +14,9 @@ public final class UnderlyingHolder<U> {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    private static final long COUNTER_OFFSET =
-            UNSAFE.objectFieldOffset(UnderlyingHolder.class, "counter");
-
-    // Used reflectively. This field can only transition at most once from being set to a
-    // non-null reference to being `null`. Once `null`, it is never read. This allows
-    // the field to be non-volatile, which is crucial for getting optimum performance.
+    // This field can only transition at most once from being set to a
+    // non-null reference to being `null`. Once `null`, it is never read.
     private U underlying;
-
-    // Used reflectively
     private int counter;
 
     public UnderlyingHolder(U underlying, int counter) {
@@ -42,11 +33,11 @@ public final class UnderlyingHolder<U> {
 
     // For testing only
     public int counter() {
-        return UNSAFE.getIntVolatile(this, COUNTER_OFFSET);
+        return counter;
     }
 
     public void countDown() {
-        if (UNSAFE.getAndAddInt(this, COUNTER_OFFSET, -1) == 1) {
+        if (--counter == 0) {
             // Do not reference the underlying function anymore so it can be collected.
             underlying = null;
         }

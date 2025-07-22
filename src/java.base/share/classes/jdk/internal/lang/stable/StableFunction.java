@@ -30,7 +30,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 // Note: It would be possible to just use `StableMap::get` with some additional logic
 // instead of this class but explicitly providing a class like this provides better
@@ -57,8 +56,7 @@ public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         if (stable == null) {
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
-        return stable.orElseSet(new Supplier<R>() {
-            @Override public R get() { return underlyingHolder.underlying().apply(value); }}, underlyingHolder);
+        return stable.orElseSet(value, underlyingHolder);
     }
 
     @Override

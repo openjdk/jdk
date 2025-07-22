@@ -32,6 +32,8 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
@@ -126,32 +128,53 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
+        // We are using the suppler as `input` here. A trick so that we do not have
+        // to create an UnderlyingHolder.
         return orElseSet(supplier, null);
     }
 
-    // `supplier` can be null if the `underlyingHolder` released it.
+
     @ForceInline
-    public T orElseSet(Supplier<? extends T> supplier,
-                       UnderlyingHolder<?> underlyingHolder) {
+    public T orElseSet(final int input,
+                       final UnderlyingHolder<?> underlyingHolder) {
         final Object t = wrappedContentsAcquire();
-        return (t == null) ? orElseSetSlowPath(supplier, underlyingHolder) : unwrap(t);
+        return (t == null) ? orElseSetSlowPath(input, underlyingHolder) : unwrap(t);
     }
 
+    @ForceInline
+    public T orElseSet(final Object input,
+                       final UnderlyingHolder<?> underlyingHolder) {
+        final Object t = wrappedContentsAcquire();
+        return (t == null) ? orElseSetSlowPath(input, underlyingHolder) : unwrap(t);
+    }
+
+    @SuppressWarnings("unchecked")
     @DontInline
-    private T orElseSetSlowPath(Supplier<? extends T> supplier,
-                                UnderlyingHolder<?> underlyingHolder) {
+    private T orElseSetSlowPath(final Object input,
+                                final UnderlyingHolder<?> underlyingHolder) {
         preventReentry();
         synchronized (this) {
             final Object t = contents;  // Plain semantics suffice here
             if (t == null) {
-                final T newValue = supplier.get();
-                // The mutex is not reentrant so we know newValue should be returned
-                wrapAndSet(newValue);
-                if (underlyingHolder != null) {
+                final T newValue;
+                if (underlyingHolder == null) {
+                    // If there is no underlyingHolder, the input must be a
+                    // `Supplier` because we were called from `.orElseSet(Supplier)`
+                    newValue = ((Supplier<T>) input).get();
+                } else {
+                    final Object u = underlyingHolder.underlying();
+                    newValue = switch (u) {
+                        case Supplier<?> sup     -> (T) sup.get();
+                        case IntFunction<?> iFun -> (T) iFun.apply((int) input);
+                        case Function<?, ?> fun  -> ((Function<Object, T>) fun).apply(input);
+                        default -> throw new InternalError("can not reach here");
+                    };
                     // Reduce the counter and if it reaches zero, clear the reference
                     // to the underlying holder.
                     underlyingHolder.countDown();
                 }
+                // The mutex is not reentrant so we know newValue should be returned
+                wrapAndSet(newValue);
                 return newValue;
             }
             return unwrap(t);
@@ -218,7 +241,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Unwraps null sentinel values into `null`
     @SuppressWarnings("unchecked")
     @ForceInline
-    private static <T> T unwrap(Object t) {
+    static <T> T unwrap(Object t) {
         return t != NULL_SENTINEL ? (T) t : null;
     }
 
