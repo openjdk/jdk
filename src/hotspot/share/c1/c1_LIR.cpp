@@ -352,7 +352,7 @@ LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_
   , _flags(flags) {
 #if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV64) || defined(PPC64)
   if (expected_type != nullptr &&
-      ((flags & ~(LIR_OpArrayCopy::unaligned | LIR_OpArrayCopy::overlapping)) == 0)) {
+      ((flags & ~LIR_OpArrayCopy::get_initial_copy_flags()) == 0)) {
     _stub = nullptr;
   } else {
     _stub = new ArrayCopyStub(this);
