@@ -689,8 +689,9 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
   shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx);
 }
 
-void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition, idx_t idx, size_t used_bytes) {
+size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition, idx_t idx, size_t used_bytes) {
 
+  size_t waste_bytes = 0;
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
   assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
   assert (partition < NumPartitions, "Cannot remove from free partitions if not already free");
@@ -699,6 +700,7 @@ void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitio
   if (used_bytes < _region_size_bytes) {
     // Count the alignment pad remnant of memory as used when we retire this region
     size_t fill_padding = _region_size_bytes - used_bytes;
+    waste_bytes = fill_padding;
     increase_used(partition, fill_padding);
 #ifdef ASSERT
     // Fill the unused memory so that verification will not be confused by inconsistent tallies of used
@@ -708,13 +710,21 @@ void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitio
       r->allocate_fill(fill_words);
     }
 #ifdef KELVIN_USED
-    log_info(gc)("Retiring generation %zu with padding: %zu", idx, fill_padding);
+    else {
+      log_info(gc)("KELVIN!!!!  Did not fill because padding: %zu is too small", waste_bytes);
+    }
+    log_info(gc)("Retiring region %zu with padding: %zu", idx, fill_padding);
 #endif
 #endif
   }
   _membership[int(partition)].clear_bit(idx);
   shrink_interval_if_boundary_modified(partition, idx);
   _region_counts[int(partition)]--;
+
+  // This region is fully used, whether or not top() equals end().  It
+  // is retired and no more memory will be allocated from within it.
+
+  return waste_bytes;
 }
 
 // The caller is responsible for increasing capacity and available and used in which_partition, and decreasing the
@@ -983,12 +993,18 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
     regions[i] = 0;
   }
 
+  size_t min_free_size = ShenandoahHeap::min_fill_size() * HeapWordSize;
   for (idx_t i = 0; i < _max; i++) {
     ShenandoahFreeSetPartitionId partition = membership(i);
+    size_t capacity = _free_set->alloc_capacity(i);
+    if (capacity < min_free_size) {
+      assert(capacity / HeapWordSize < ShenandoahHeap::min_fill_size(), "pad should be filled");
+      // this region has been retired already, count it as entirely consumed
+      capacity = 0;
+    }
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
       {
-        size_t capacity = _free_set->alloc_capacity(i);
         assert(!validate_totals || (capacity != _region_size_bytes), "Should not be retired if empty");
         ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(i);
         if (r->is_old()) {
@@ -1008,9 +1024,8 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
       case ShenandoahFreeSetPartitionId::Collector:
       case ShenandoahFreeSetPartitionId::OldCollector:
       {
-        size_t capacity = _free_set->alloc_capacity(i);
-        bool is_empty = (capacity == _region_size_bytes);
         assert(capacity > 0, "free regions must have allocation capacity");
+        bool is_empty = (capacity == _region_size_bytes);
         regions[int(partition)]++;
         used[int(partition)] += _region_size_bytes - capacity;
         capacities[int(partition)] += _region_size_bytes;
@@ -1675,17 +1690,16 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // then retire the region so that subsequent searches can find available memory more quickly.
 
     size_t idx = r->index();
-    size_t free_bytes = r->free();
-    if (free_bytes > 0) {
-      request_generation->increase_used(free_bytes);
-      if (_heap->mode()->is_generational()) {
-        _heap->global_generation()->increase_used(free_bytes);
-      }
-    }
     if ((result != nullptr) && in_new_region) {
       _partitions.one_region_is_no_longer_empty(orig_partition);
     }
-    _partitions.retire_from_partition(orig_partition, idx, r->used());
+    size_t waste_bytes = _partitions.retire_from_partition(orig_partition, idx, r->used());
+    if (waste_bytes > 0) {
+      request_generation->increase_used(waste_bytes);
+      if (_heap->mode()->is_generational()) {
+        _heap->global_generation()->increase_used(waste_bytes);
+      }
+    }
   } else if ((result != nullptr) && in_new_region) {
     _partitions.one_region_is_no_longer_empty(orig_partition);
   }
@@ -2147,10 +2161,15 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
   size_t total_mutator_regions = 0;
   size_t total_old_collector_regions = 0;
 
+#define KELVIN_MYSTERY
   bool is_generational = _heap->mode()->is_generational();
   size_t num_regions = _heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
+#ifdef KELVIN_MYSTERY
+    log_info(gc)("find_alloc_capacity() on region %zu, used is %zu", region->index(), region->used());
+#endif
+
     if (region->is_trash()) {
       // Trashed regions represent immediate garbage identified by final mark and regions that had been in the collection
       // partition but have not yet been "cleaned up" following update refs.  
@@ -2230,6 +2249,13 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
         }
       } else {
         // This region does not have enough free to be part of the free set.  Count all of its memory as used.
+#ifdef KELVIN_MYSTERY
+        if (region->used() != region_size_bytes) {
+          log_info(gc)("KELVIN!!!  find_alloc_capacity() for region %zu is consuming %zu bytes of waste",
+                       idx, region_size_bytes - region->used());
+        }
+#endif
+
         if (region->is_old()) {
           old_collector_used += region_size_bytes;
           total_old_collector_regions++;

@@ -370,6 +370,7 @@ public:
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
 private:
   size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
+  size_t _region_size_bytes, _min_free_size;
 #define KELVIN_VERBOSE
 #ifdef KELVIN_VERBOSE
   const char* _nm;
@@ -377,26 +378,42 @@ private:
 public:
 #ifdef KELVIN_VERBOSE
   ShenandoahCalculateRegionStatsClosure(const char *name) :
-      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0), _nm(name) {};
+      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0), _nm(name)
 #else
   ShenandoahCalculateRegionStatsClosure() :
-     _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0) {};
+     _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0)
 #endif
+  {
+    _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+    _min_free_size = ShenandoahHeap::min_fill_size() * HeapWordSize;
+  };
+
   void heap_region_do(ShenandoahHeapRegion* r) override {
 #define KELVIN_STATS
 #ifdef KELVIN_STATS
     log_info(gc)("%s:ShenandoahCalculateRegionStatsClosure::heap_region_do(), %s r: %zu used: %zu, garbage: %zu, is_trash: %s",
                  _nm, r->affiliation_name(), r->index(), r->used(), r->garbage(), r->is_trash()? "yes": "no");
 #endif
-    _used += r->used();
-    _garbage += r->garbage();
-    _committed += r->is_committed() ? ShenandoahHeapRegion::region_size_bytes() : 0;
+    size_t alloc_capacity = r->free();
+    if ((alloc_capacity > 0) && (alloc_capacity < _min_free_size)) {
+#ifdef KELVIN_STATS
+      log_info(gc)("KELVIN!!!!  overwriting alloc_capacity %zu with 0 because too small", alloc_capacity);
+#endif
+      // this region has been retired already, count it as entirely consumed
+      alloc_capacity = 0;
+    }
+    size_t bytes_used_in_region = _region_size_bytes - alloc_capacity;
+    size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes();
+
+    _used += bytes_used_in_region;
+    _garbage += bytes_garbage_in_region;
+    _committed += r->is_committed() ? _region_size_bytes : 0;
     if (r->is_humongous()) {
       _humongous_waste += r->free();
     }
     if (r->is_trash()) {
       _trashed_regions++;
-      _trashed_used += r->used();
+      _trashed_used += bytes_used_in_region;
     }
     _regions++;
 #ifdef KELVIN_STATS
