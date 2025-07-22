@@ -35,6 +35,7 @@
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
+#include "memory/heapInspection.hpp"
 
 class GCHeapSummary;
 class MetaspaceChunkFreeListSummary;
@@ -104,10 +105,9 @@ class GCTracer {
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
 
-  template <typename Event>
-  void report_object_count(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
+  void report_object_count(KlassInfoTable* cit) NOT_SERVICES_RETURN;
 
-  void report_object_count_after_gc(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
+  void report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) NOT_SERVICES_RETURN;
   void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
  protected:

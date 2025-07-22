@@ -47,6 +47,7 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "gc/shared/objectCountClosure.hpp"
 
 template <StringDedupMode STRING_DEDUP>
 void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
@@ -365,6 +366,9 @@ inline void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
     marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
   }
   if (marked) {
+    if (ObjectCountClosure::should_send_event<EventObjectCountAfterGC>()) {
+      ObjectCountClosure::record_object(obj);
+    }
     bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
     assert(pushed, "overflow queue should always succeed pushing");
   }
