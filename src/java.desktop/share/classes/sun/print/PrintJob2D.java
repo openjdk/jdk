@@ -51,6 +51,7 @@ public class PrintJob2D extends PrintJob {
     public PrintJob2D(Frame frame,  String doctitle,
                       final Properties props) {
         printJobDelegate = new PrintJobDelegate(frame, doctitle, props);
+        Disposer.addRecord(this, new PrintJobDisposerRecord(printJobDelegate));
     }
 
     public PrintJob2D(Frame frame,  String doctitle,
