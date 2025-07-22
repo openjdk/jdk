@@ -46,7 +46,8 @@ TEST_OTHER_VM(G1FreeRegionList, length) {
   // does not access it.
   const size_t szw = num_regions_in_test * G1HeapRegion::GrainWords;
   const size_t sz = szw * BytesPerWord;
-  char* addr = os::reserve_memory(sz, mtTest);
+  const size_t lpsz = os::large_page_size();
+  char* addr = os::reserve_memory_aligned(sz, lpsz, mtTest);
   MemRegion heap((HeapWord*)addr, szw);
 
   // Allocate a fake BOT because the G1HeapRegion constructor initializes
