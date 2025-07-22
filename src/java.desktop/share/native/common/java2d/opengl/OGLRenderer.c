@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,14 +341,14 @@ OGLRenderer_FillParallelogram(OGLContext *oglc,
                               jfloat dx21, jfloat dy21,
                               jfloat dx12, jfloat dy12)
 {
-    J2dTraceLn6(J2D_TRACE_INFO,
-                "OGLRenderer_FillParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLRenderer_FillParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12);
 
     RETURN_IF_NULL(oglc);
 
@@ -374,14 +374,14 @@ OGLRenderer_DrawParallelogram(OGLContext *oglc,
     jfloat ox11 = fx11 - (ldx21 + ldx12) / 2.0f;
     jfloat oy11 = fy11 - (ldy21 + ldy12) / 2.0f;
 
-    J2dTraceLn8(J2D_TRACE_INFO,
-                "OGLRenderer_DrawParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLRenderer_DrawParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
     RETURN_IF_NULL(oglc);
 
@@ -596,14 +596,14 @@ OGLRenderer_FillAAParallelogram(OGLContext *oglc, OGLSDOps *dstOps,
     // parameters for uv texture coordinates of parallelogram corners
     jfloat u11, v11, u12, v12, u21, v21, u22, v22;
 
-    J2dTraceLn6(J2D_TRACE_INFO,
-                "OGLRenderer_FillAAParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLRenderer_FillAAParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12);
 
     RETURN_IF_NULL(oglc);
     RETURN_IF_NULL(dstOps);
@@ -731,14 +731,14 @@ OGLRenderer_DrawAAParallelogram(OGLContext *oglc, OGLSDOps *dstOps,
     // parameters for "inner" parallelogram
     jfloat ifx11, ify11, idx21, idy21, idx12, idy12;
 
-    J2dTraceLn8(J2D_TRACE_INFO,
-                "OGLRenderer_DrawAAParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "OGLRenderer_DrawAAParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
     RETURN_IF_NULL(oglc);
     RETURN_IF_NULL(dstOps);

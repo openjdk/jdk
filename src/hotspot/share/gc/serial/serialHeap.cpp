@@ -188,8 +188,8 @@ jint SerialHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
-  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, GenAlignment);
-  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, GenAlignment);
+  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, SpaceAlignment);
+  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, SpaceAlignment);
 
   _rem_set = new CardTableRS(_reserved);
   _rem_set->initialize(young_rs.base(), old_rs.base());
@@ -339,7 +339,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
 
     VM_SerialCollectForAllocation op(size, is_tlab, gc_count_before);
     VMThread::execute(&op);
-    if (op.prologue_succeeded()) {
+    if (op.gc_succeeded()) {
       result = op.result();
 
       assert(result == nullptr || is_in_reserved(result),
@@ -764,11 +764,6 @@ HeapWord* SerialHeap::allocate_new_tlab(size_t min_size,
 
 void SerialHeap::prepare_for_verify() {
   ensure_parsability(false);        // no need to retire TLABs
-}
-
-bool SerialHeap::is_maximal_no_gc() const {
-  // We don't expand young-gen except at a GC.
-  return _old_gen->is_maximal_no_gc();
 }
 
 void SerialHeap::save_marks() {

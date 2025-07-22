@@ -59,6 +59,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmError.hpp"
 
@@ -182,6 +183,17 @@ public:
 
   ZVirtualMemory satisfied_from_cache_vmem() const {
     return _satisfied_from_cache_vmem;
+  }
+
+  void set_satisfied_from_cache_vmem_fast_medium(ZVirtualMemory vmem) {
+    precond(_satisfied_from_cache_vmem.is_null());
+    precond(_partial_vmems.is_empty());
+    precond(ZPageSizeMediumEnabled);
+    precond(vmem.size() >= ZPageSizeMediumMin);
+    precond(vmem.size() <= ZPageSizeMediumMax);
+    precond(is_power_of_2(vmem.size()));
+
+    _satisfied_from_cache_vmem = vmem;
   }
 
   void set_satisfied_from_cache_vmem(ZVirtualMemory vmem) {
@@ -394,7 +406,7 @@ class ZPageAllocation : public StackObj {
 
 private:
   const ZPageType            _type;
-  const size_t               _size;
+  const size_t               _requested_size;
   const ZAllocationFlags     _flags;
   const ZPageAge             _age;
   const Ticks                _start_timestamp;
@@ -410,7 +422,7 @@ private:
 public:
   ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age)
     : _type(type),
-      _size(size),
+      _requested_size(size),
       _flags(flags),
       _age(age),
       _start_timestamp(Ticks::now()),
@@ -434,7 +446,16 @@ public:
   }
 
   size_t size() const {
-    return _size;
+    if (_flags.fast_medium()) {
+      // A fast medium allocation may have allocated less than the _size field
+      const ZVirtualMemory vmem = _single_partition_allocation.allocation()->satisfied_from_cache_vmem();
+      if (!vmem.is_null()) {
+        // The allocation has been satisfied, return the satisfied size.
+        return vmem.size();
+      }
+    }
+
+    return _requested_size;
   }
 
   ZAllocationFlags flags() const {
@@ -534,7 +555,7 @@ public:
     event.commit(_start_timestamp,
                  end_timestamp,
                  (u8)_type,
-                 _size,
+                 size(),
                  st._total_harvested,
                  st._total_committed_capacity,
                  (unsigned)st._num_harvested_vmems,
@@ -609,9 +630,6 @@ ZPartition::ZPartition(uint32_t numa_id, ZPageAllocator* page_allocator)
     _capacity(0),
     _claimed(0),
     _used(0),
-    _last_commit(0.0),
-    _last_uncommit(0.0),
-    _to_uncommit(0),
     _numa_id(numa_id) {}
 
 uint32_t ZPartition::numa_id() const {
@@ -629,9 +647,7 @@ size_t ZPartition::increase_capacity(size_t size) {
     // Update atomically since we have concurrent readers
     Atomic::add(&_capacity, increased);
 
-    _last_commit = os::elapsedTime();
-    _last_uncommit = 0;
-    _cache.reset_min();
+    _uncommitter.cancel_uncommit_cycle();
   }
 
   return increased;
@@ -740,99 +756,30 @@ bool ZPartition::claim_capacity(ZMemoryAllocation* allocation) {
   return true;
 }
 
-size_t ZPartition::uncommit(uint64_t* timeout) {
-  ZArray<ZVirtualMemory> flushed_vmems;
-  size_t flushed = 0;
+bool ZPartition::claim_capacity_fast_medium(ZMemoryAllocation* allocation) {
+  precond(ZPageSizeMediumEnabled);
 
-  {
-    // We need to join the suspendible thread set while manipulating capacity
-    // and used, to make sure GC safepoints will have a consistent view.
-    SuspendibleThreadSetJoiner sts_joiner;
-    ZLocker<ZLock> locker(&_page_allocator->_lock);
+  // Try to allocate a medium page sized contiguous vmem
+  const size_t min_size = ZPageSizeMediumMin;
+  const size_t max_size = ZStressFastMediumPageAllocation ? min_size : ZPageSizeMediumMax;
+  ZVirtualMemory vmem = _cache.remove_contiguous_power_of_2(min_size, max_size);
 
-    const double now = os::elapsedTime();
-    const double time_since_last_commit = std::floor(now - _last_commit);
-    const double time_since_last_uncommit = std::floor(now - _last_uncommit);
-
-    if (time_since_last_commit < double(ZUncommitDelay)) {
-      // We have committed within the delay, stop uncommitting.
-      *timeout = uint64_t(double(ZUncommitDelay) - time_since_last_commit);
-      return 0;
-    }
-
-    // We flush out and uncommit chunks at a time (~0.8% of the max capacity,
-    // but at least one granule and at most 256M), in case demand for memory
-    // increases while we are uncommitting.
-    const size_t limit_upper_bound = MAX2(ZGranuleSize, align_down(256 * M / ZNUMA::count(), ZGranuleSize));
-    const size_t limit = MIN2(align_up(_current_max_capacity >> 7, ZGranuleSize), limit_upper_bound);
-
-    if (limit == 0) {
-      // This may occur if the current max capacity for this partition is 0
-
-      // Set timeout to ZUncommitDelay
-      *timeout = ZUncommitDelay;
-      return 0;
-    }
-
-    if (time_since_last_uncommit < double(ZUncommitDelay)) {
-      // We are in the uncommit phase
-      const size_t num_uncommits_left = _to_uncommit / limit;
-      const double time_left = double(ZUncommitDelay) - time_since_last_uncommit;
-      if (time_left < *timeout * num_uncommits_left) {
-        // Running out of time, speed up.
-        uint64_t new_timeout = uint64_t(std::floor(time_left / double(num_uncommits_left + 1)));
-        *timeout = new_timeout;
-      }
-    } else {
-      // We are about to start uncommitting
-      _to_uncommit = _cache.reset_min();
-      _last_uncommit = now;
-
-      const size_t split = _to_uncommit / limit + 1;
-      uint64_t new_timeout = ZUncommitDelay / split;
-      *timeout = new_timeout;
-    }
-
-    // Never uncommit below min capacity.
-    const size_t retain = MAX2(_used, _min_capacity);
-    const size_t release = _capacity - retain;
-    const size_t flush = MIN3(release, limit, _to_uncommit);
-
-    if (flush == 0) {
-      // Nothing to flush
-      return 0;
-    }
-
-    // Flush memory from the mapped cache to uncommit
-    flushed = _cache.remove_from_min(flush, &flushed_vmems);
-    if (flushed == 0) {
-      // Nothing flushed
-      return 0;
-    }
-
-    // Record flushed memory as claimed and how much we've flushed for this partition
-    Atomic::add(&_claimed, flushed);
-    _to_uncommit -= flushed;
+  if (vmem.is_null()) {
+    // Failed to find a contiguous vmem
+    return false;
   }
 
-  // Unmap and uncommit flushed memory
-  for (const ZVirtualMemory vmem : flushed_vmems) {
-    unmap_virtual(vmem);
-    uncommit_physical(vmem);
-    free_physical(vmem);
-    free_virtual(vmem);
-  }
+  // Found a satisfying vmem in the cache
+  allocation->set_satisfied_from_cache_vmem_fast_medium(vmem);
 
-  {
-    SuspendibleThreadSetJoiner sts_joiner;
-    ZLocker<ZLock> locker(&_page_allocator->_lock);
+  // Associate the allocation with this partition.
+  allocation->set_partition(this);
 
-    // Adjust claimed and capacity to reflect the uncommit
-    Atomic::sub(&_claimed, flushed);
-    decrease_capacity(flushed, false /* set_max_capacity */);
-  }
+  // Updated used statistics
+  increase_used(vmem.size());
 
-  return flushed;
+  // Success
+  return true;
 }
 
 void ZPartition::sort_segments_physical(const ZVirtualMemory& vmem) {
@@ -1278,8 +1225,12 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
   log_info_p(gc, init)("Initial Capacity: %zuM", initial_capacity / M);
   log_info_p(gc, init)("Max Capacity: %zuM", max_capacity / M);
   log_info_p(gc, init)("Soft Max Capacity: %zuM", soft_max_capacity / M);
-  if (ZPageSizeMedium > 0) {
-    log_info_p(gc, init)("Medium Page Size: %zuM", ZPageSizeMedium / M);
+  if (ZPageSizeMediumEnabled) {
+    if (ZPageSizeMediumMin == ZPageSizeMediumMax) {
+      log_info_p(gc, init)("Page Size Medium: %zuM", ZPageSizeMediumMax / M);
+    } else {
+      log_info_p(gc, init)("Page Size Medium: Range [%zuM, %zuM]", ZPageSizeMediumMin / M, ZPageSizeMediumMax / M);
+    }
   } else {
     log_info_p(gc, init)("Medium Page Size: N/A");
   }
@@ -1459,8 +1410,8 @@ ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags 
   if (!flags.gc_relocation() && is_init_completed()) {
     // Note that there are two allocation rate counters, which have
     // different purposes and are sampled at different frequencies.
-    ZStatInc(ZCounterMutatorAllocationRate, size);
-    ZStatMutatorAllocRate::sample_allocation(size);
+    ZStatInc(ZCounterMutatorAllocationRate, page->size());
+    ZStatMutatorAllocRate::sample_allocation(page->size());
   }
 
   const ZPageAllocationStats stats = allocation.stats();
@@ -1588,11 +1539,15 @@ bool ZPageAllocator::claim_capacity_or_stall(ZPageAllocation* allocation) {
 }
 
 bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
+  // Fast medium allocation
+  if (allocation->flags().fast_medium()) {
+    return claim_capacity_fast_medium(allocation);
+  }
+
+  // Round robin single-partition claiming
   const uint32_t start_numa_id = allocation->initiating_numa_id();
   const uint32_t start_partition = start_numa_id;
   const uint32_t num_partitions = _partitions.count();
-
-  // Round robin single-partition claiming
 
   for (uint32_t i = 0; i < num_partitions; ++i) {
     const uint32_t partition_id = (start_partition + i) % num_partitions;
@@ -1617,6 +1572,23 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
   claim_capacity_multi_partition(multi_partition_allocation, start_partition);
 
   return true;
+}
+
+bool ZPageAllocator::claim_capacity_fast_medium(ZPageAllocation* allocation) {
+  const uint32_t start_node = allocation->initiating_numa_id();
+  const uint32_t numa_nodes = ZNUMA::count();
+
+  for (uint32_t i = 0; i < numa_nodes; ++i) {
+    const uint32_t numa_id = (start_node + i) % numa_nodes;
+    ZPartition& partition = _partitions.get(numa_id);
+    ZSinglePartitionAllocation* single_partition_allocation = allocation->single_partition_allocation();
+
+    if (partition.claim_capacity_fast_medium(single_partition_allocation->allocation())) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool ZPageAllocator::claim_capacity_single_partition(ZSinglePartitionAllocation* single_partition_allocation, uint32_t partition_id) {
@@ -2076,6 +2048,8 @@ void ZPageAllocator::free_memory_alloc_failed(ZMemoryAllocation* allocation) {
 }
 
 ZPage* ZPageAllocator::create_page(ZPageAllocation* allocation, const ZVirtualMemory& vmem) {
+  assert(allocation->size() == vmem.size(), "Must be %zu == %zu", allocation->size(), vmem.size());
+
   // We don't track generation usage when claiming capacity, because this page
   // could have been allocated by a thread that satisfies a stalling allocation.
   // The stalled thread can wake up and potentially realize that the page alloc

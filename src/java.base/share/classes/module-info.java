@@ -270,9 +270,13 @@ module java.base {
         java.prefs,
         java.security.jgss,
         java.smartcardio,
+        java.naming,
+        java.rmi,
+        java.net.http,
         jdk.charsets,
         jdk.incubator.vector,
         jdk.internal.vm.ci,
+        jdk.httpserver,
         jdk.jlink,
         jdk.jpackage,
         jdk.net;
@@ -314,6 +318,7 @@ module java.base {
     exports sun.security.internal.spec to
         jdk.crypto.cryptoki;
     exports sun.security.jca to
+        java.security.sasl,
         java.smartcardio,
         jdk.crypto.cryptoki,
         jdk.naming.dns;
@@ -398,8 +403,7 @@ module java.base {
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;
     uses sun.util.locale.provider.LocaleDataMetaInfo;
-    uses sun.util.resources.LocaleData.CommonResourceBundleProvider;
-    uses sun.util.resources.LocaleData.SupplementaryResourceBundleProvider;
+    uses sun.util.resources.LocaleData.LocaleDataResourceBundleProvider;
 
     // Built-in service providers that are located via ServiceLoader
 

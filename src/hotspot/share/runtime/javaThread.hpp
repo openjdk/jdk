@@ -40,6 +40,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/suspendResumeManager.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadIdentifier.hpp"
@@ -52,7 +53,7 @@
 #include "utilities/ticks.hpp"
 #endif
 
-class AsyncExceptionHandshake;
+class AsyncExceptionHandshakeClosure;
 class DeoptResourceMark;
 class InternalOOMEMark;
 class JNIHandleBlock;
@@ -232,13 +233,13 @@ class JavaThread: public Thread {
 
   // Asynchronous exception support
  private:
-  friend class InstallAsyncExceptionHandshake;
-  friend class AsyncExceptionHandshake;
+  friend class InstallAsyncExceptionHandshakeClosure;
+  friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
   void handle_async_exception(oop java_throwable);
  public:
-  void install_async_exception(AsyncExceptionHandshake* aec = nullptr);
+  void install_async_exception(AsyncExceptionHandshakeClosure* aec = nullptr);
   bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
@@ -694,9 +695,13 @@ private:
 
   // Suspend/resume support for JavaThread
   // higher-level suspension/resume logic called by the public APIs
+private:
+  SuspendResumeManager _suspend_resume_manager;
+public:
   bool java_suspend(bool register_vthread_SR);
   bool java_resume(bool register_vthread_SR);
-  bool is_suspended()     { return _handshake.is_suspended(); }
+  bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
+  SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
 
   // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);
@@ -1159,7 +1164,7 @@ private:
   // Used by the interpreter in fullspeed mode for frame pop, method
   // entry, method exit and single stepping support. This field is
   // only set to non-zero at a safepoint or using a direct handshake
-  // (see EnterInterpOnlyModeClosure).
+  // (see EnterInterpOnlyModeHandshakeClosure).
   // It can be set to zero asynchronously to this threads execution (i.e., without
   // safepoint/handshake or a lock) so we have to be very careful.
   // Accesses by other threads are synchronized using JvmtiThreadState_lock though.

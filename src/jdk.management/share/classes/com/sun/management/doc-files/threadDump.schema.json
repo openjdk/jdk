@@ -1,0 +1,171 @@
+{
+  "type": "object",
+  "properties": {
+    "threadDump": {
+      "type": "object",
+      "properties": {
+        "processId": {
+          "type": "string",
+          "description": "The native process id of the Java virtual machine."
+        },
+        "time": {
+          "type": "string",
+          "description": "The time in ISO 8601 format when the thread dump was generated."
+        },
+        "runtimeVersion": {
+          "type": "string",
+          "description": "The runtime version, see java.lang.Runtime.Version"
+        },
+        "threadContainers": {
+          "type": "array",
+          "description": "The array of thread containers (thread groupings).",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "container": {
+                  "type": "string",
+                  "description": "The container name. The container name is unique."
+                },
+                "parent": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The parent container name or null for the root container."
+                },
+                "owner": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The thread identifier of the owner thread if owned."
+                },
+                "threads": {
+                  "type": "array",
+                  "description": "The array of threads in the thread container.",
+                  "items": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "tid": {
+                          "type": "string",
+                          "description": "The thread identifier."
+                        },
+                        "time": {
+                          "type": "string",
+                          "description": "The time in ISO 8601 format that the thread was sampled."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "The thread name."
+                        },
+                        "state": {
+                          "type": "string",
+                          "description": "The thread state (Thread::getState)."
+                        },
+                        "virtual" : {
+                          "type": "boolean",
+                          "description": "true for a virtual thread."
+                        },
+                        "parkBlocker": {
+                          "type": [
+                            "object"
+                          ],
+                          "properties": {
+                            "object": {
+                              "type": "string",
+                              "description": "The blocker object responsible for the thread parking."
+                            }
+                          },
+                          "required": [
+                            "object"
+                          ]
+                        },
+                        "blockedOn": {
+                          "type": "string",
+                          "description": "The object that the thread is blocked on waiting to enter/re-enter a synchronization block/method."
+                        },
+                        "waitingOn": {
+                          "type": "string",
+                          "description": "The object that the thread is waiting to be notified (Object.wait)."
+                        },
+                        "stack": {
+                          "type": "array",
+                          "description": "The thread stack. The first element is the top of the stack.",
+                          "items": [
+                            {
+                              "type": "string",
+                              "description": "A stack trace element (java.lang.StackTraceElement)."
+                            }
+                          ]
+                        },
+                        "monitorsOwned": {
+                          "type": "array",
+                          "description": "The objects for which monitors are owned by the thread.",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "depth": {
+                                "type": "integer",
+                                "description": "The stack depth at which the monitors are owned."
+                              },
+                              "locks": {
+                                "type": "array",
+                                "items": {
+                                  "type": [
+                                    "string",
+                                    null
+                                  ],
+                                  "description": "The object for which the monitor is owned by the thread, null if eliminated"
+                                }
+                              }
+                            },
+                            "required": [
+                              "depth",
+                              "locks"
+                            ]
+                          }
+                        },
+                        "carrier":  {
+                          "type": "string",
+                          "description": "The thread identifier of the carrier thread if mounted."
+                        }
+                      },
+                      "required": [
+                        "tid",
+                        "time",
+                        "name",
+                        "state",
+                        "stack"
+                      ]
+                    }
+                  ]
+                },
+                "threadCount": {
+                  "type": "string",
+                  "description": "The number of threads in the thread container."
+                }
+              },
+              "required": [
+                "container",
+                "parent",
+                "owner",
+                "threads"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "processId",
+        "time",
+        "runtimeVersion",
+        "threadContainers"
+      ]
+    }
+  },
+  "required": [
+    "threadDump"
+  ]
+}

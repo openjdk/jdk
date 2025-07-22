@@ -749,14 +749,17 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_weak_instanceklass_links();
-
-      // JVMTI RedefineClasses creates previous versions that are not in
-      // the class hierarchy, so process them here.
-      while ((ik = ik->previous_versions()) != nullptr) {
-        ik->clean_weak_instanceklass_links();
-      }
+      clean_weak_instanceklass_links(ik);
     }
+  }
+}
+
+void Klass::clean_weak_instanceklass_links(InstanceKlass* ik) {
+  ik->clean_weak_instanceklass_links();
+  // JVMTI RedefineClasses creates previous versions that are not in
+  // the class hierarchy, so process them here.
+  while ((ik = ik->previous_versions()) != nullptr) {
+    ik->clean_weak_instanceklass_links();
   }
 }
 
@@ -810,10 +813,18 @@ void Klass::remove_unshareable_info() {
   set_class_loader_data(nullptr);
   set_is_shared();
 
-  // FIXME: validation in Klass::hash_secondary_supers() may fail for shared klasses.
-  // Even though the bitmaps always match, the canonical order of elements in the table
-  // is not guaranteed to stay the same (see tie breaker during Robin Hood hashing in Klass::hash_insert).
-  //assert(compute_secondary_supers_bitmap(secondary_supers()) == _secondary_supers_bitmap, "broken table");
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // "Classic" static archives are required to have deterministic contents.
+    // The elements in _secondary_supers are addresses in the ArchiveBuilder
+    // output buffer, so they should have deterministic values. If we rehash
+    // _secondary_supers, its elements will appear in a deterministic order.
+    //
+    // Note that the bitmap is guaranteed to be deterministic, regardless of the
+    // actual addresses of the elements in _secondary_supers. So rehashing shouldn't
+    // change it.
+    uintx bitmap = hash_secondary_supers(secondary_supers(), true);
+    assert(bitmap == _secondary_supers_bitmap, "bitmap should not be changed due to rehashing");
+  }
 }
 
 void Klass::remove_java_mirror() {
@@ -888,7 +899,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     module_entry = ModuleEntryTable::javabase_moduleEntry();
   }
   // Obtain java.lang.Module, if available
-  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module() : (oop)nullptr));
+  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr));
 
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);

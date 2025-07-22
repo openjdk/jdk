@@ -30,9 +30,9 @@
 class JfrVframeStream : public vframeStreamCommon {
  private:
   bool _vthread;
-  const ContinuationEntry* _cont_entry;
-  void step_to_sender();
+
   void next_frame();
+  static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt);
  public:
   JfrVframeStream(JavaThread* jt, const frame& fr, bool in_continuation, bool stop_at_java_call_stub);
   void next_vframe();

@@ -26,6 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -101,6 +102,10 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
     return false;
+  }
+
+  if (RegeneratedClasses::is_regenerated_object(ik)) {
+    ik = RegeneratedClasses::get_original_object(ik);
   }
 
   if (!ik->is_initialized() && !ik->is_being_initialized()) {

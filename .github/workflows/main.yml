@@ -28,9 +28,7 @@ name: 'OpenJDK GHA Sanity Checks'
 on:
   push:
     branches-ignore:
-      - master
       - pr/*
-      - jdk*
   workflow_dispatch:
     inputs:
       platforms:
@@ -42,6 +40,9 @@ on:
         required: false
       make-arguments:
         description: 'Additional make arguments'
+        required: false
+      dry-run:
+        description: 'Dry run: skip actual builds and tests'
         required: false
 
 concurrency:
@@ -70,6 +71,7 @@ jobs:
       windows-x64: ${{ steps.include.outputs.windows-x64 }}
       windows-aarch64: ${{ steps.include.outputs.windows-aarch64 }}
       docs: ${{ steps.include.outputs.docs }}
+      dry-run: ${{ steps.include.outputs.dry-run }}
 
     steps:
       - name: 'Checkout the scripts'
@@ -143,6 +145,35 @@ jobs:
             echo 'false'
           }
 
+          function check_dry_run() {
+            if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+              # Take the user-specified one.
+              echo '${{ github.event.inputs.dry-run }}'
+              return
+            elif [[ $GITHUB_EVENT_NAME == push ]]; then
+              # Cut out the real branch name
+              BRANCH=${GITHUB_REF##*/}
+
+              # Dry run rebuilds the caches in current branch, so they can be reused
+              # for any child PR branches. Because of this, we want to trigger this
+              # workflow in master branch, so that actual PR branches can use the cache.
+              # This workflow would trigger every time contributors sync their master
+              # branches in their personal forks.
+              if [[ $BRANCH == "master" ]]; then
+                echo 'true'
+                return
+              fi
+
+              # ...same for stabilization branches
+              if [[ $BRANCH =~ "jdk(.*)" ]]; then
+                echo 'true'
+                return
+              fi
+            fi
+
+            echo 'false'
+          }
+
           echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
           echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
@@ -152,6 +183,7 @@ jobs:
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
           echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
           echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
+          echo "dry-run=$(check_dry_run)" >> $GITHUB_OUTPUT
 
   ###
   ### Build jobs
@@ -166,6 +198,7 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-x64 == 'true'
 
   build-linux-x64-hs-nopch:
@@ -180,6 +213,7 @@ jobs:
       extra-conf-options: '--disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-zero:
@@ -194,6 +228,7 @@ jobs:
       extra-conf-options: '--with-jvm-variants=zero --disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-minimal:
@@ -208,6 +243,7 @@ jobs:
       extra-conf-options: '--with-jvm-variants=minimal --disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-optimized:
@@ -223,6 +259,7 @@ jobs:
       extra-conf-options: '--with-debug-level=optimized --disable-precompiled-headers'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-static:
@@ -238,6 +275,7 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       static-suffix: "-static"
     if: needs.prepare.outputs.linux-x64 == 'true'
 
@@ -254,6 +292,7 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       # Upload static libs bundles separately to avoid interference with normal linux-x64 bundle.
       # This bundle is not used by testing jobs, but downstreams use it to check that
       # dependent projects, e.g. libgraal, builds fine.
@@ -268,6 +307,7 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-cross-compile == 'true'
 
   build-alpine-linux-x64:
@@ -278,6 +318,7 @@ jobs:
       platform: alpine-linux-x64
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.alpine-linux-x64 == 'true'
 
   build-macos-x64:
@@ -290,6 +331,7 @@ jobs:
       xcode-toolset-version: '14.3.1'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.macos-x64 == 'true'
 
   build-macos-aarch64:
@@ -302,6 +344,7 @@ jobs:
       xcode-toolset-version: '15.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.macos-aarch64 == 'true'
 
   build-windows-x64:
@@ -310,10 +353,11 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
-      msvc-toolset-version: '14.29'
+      msvc-toolset-version: '14.44'
       msvc-toolset-architecture: 'x86.x64'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.windows-x64 == 'true'
 
   build-windows-aarch64:
@@ -322,12 +366,13 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-aarch64
-      msvc-toolset-version: '14.29'
+      msvc-toolset-version: '14.44'
       msvc-toolset-architecture: 'arm64'
       make-target: 'hotspot'
       extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.windows-aarch64 == 'true'
 
   build-docs:
@@ -344,6 +389,7 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.docs == 'true'
 
   ###
@@ -353,17 +399,20 @@ jobs:
   test-linux-x64:
     name: linux-x64
     needs:
+      - prepare
       - build-linux-x64
     uses: ./.github/workflows/test.yml
     with:
       platform: linux-x64
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
 
   test-linux-x64-static:
     name: linux-x64-static
     needs:
+      - prepare
       - build-linux-x64
       - build-linux-x64-static
     uses: ./.github/workflows/test.yml
@@ -371,27 +420,32 @@ jobs:
       platform: linux-x64
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       static-suffix: "-static"
 
   test-macos-aarch64:
     name: macos-aarch64
     needs:
+      - prepare
       - build-macos-aarch64
     uses: ./.github/workflows/test.yml
     with:
       platform: macos-aarch64
       bootjdk-platform: macos-aarch64
       runs-on: macos-14
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       xcode-toolset-version: '15.4'
       debug-suffix: -debug
 
   test-windows-x64:
     name: windows-x64
     needs:
+      - prepare
       - build-windows-x64
     uses: ./.github/workflows/test.yml
     with:
       platform: windows-x64
       bootjdk-platform: windows-x64
-      runs-on: windows-2019
+      runs-on: windows-2025
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug

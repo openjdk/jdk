@@ -70,16 +70,15 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   void post_resize();
 
-  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment,
-                  const char* perf_data_name, int level);
+  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment);
   void initialize_virtual_space(ReservedSpace rs, size_t initial_size, size_t alignment);
-  void initialize_work(const char* perf_data_name, int level);
-  void initialize_performance_counters(const char* perf_data_name, int level);
+  void initialize_work();
+  void initialize_performance_counters();
 
  public:
   // Initialize the generation.
   PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
-           size_t max_size, const char* perf_data_name, int level);
+           size_t max_size);
 
   MemRegion reserved() const {
     return MemRegion((HeapWord*)(_virtual_space->low_boundary()),
@@ -109,10 +108,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Size info
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }
   size_t used_in_bytes() const            { return object_space()->used_in_bytes(); }
-
-  bool is_maximal_no_gc() const {
-    return virtual_space()->uncommitted_size() == 0;
-  }
 
   void complete_loaded_archive_space(MemRegion archive_space);
 

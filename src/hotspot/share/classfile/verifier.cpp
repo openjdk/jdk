@@ -2891,26 +2891,43 @@ void ClassVerifier::verify_invoke_instructions(
           "Illegal call to internal method");
       return;
     }
-  } else if (opcode == Bytecodes::_invokespecial
-             && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-             && !ref_class_type.equals(VerificationType::reference_type(
-                  current_class()->super()->name()))) {
-    bool subtype = false;
-    bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
-    subtype = ref_class_type.is_assignable_from(
-               current_type(), this, false, CHECK_VERIFY(this));
-    if (!subtype) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "current class isn't assignable to reference class.");
-       return;
-    } else if (have_imr_indirect) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "interface method reference is in an indirect superinterface.");
-      return;
-    }
+  }
+  // invokespecial, when not <init>, must be to a method in the current class, a direct superinterface,
+  // or any superclass (including Object).
+  else if (opcode == Bytecodes::_invokespecial
+           && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
 
+    // We know it is not current class, direct superinterface or immediate superclass. That means it
+    // could be:
+    // - a totally unrelated class or interface
+    // - an indirect superinterface
+    // - an indirect superclass (including Object)
+    // We use the assignability test to see if it is a superclass, or else an interface, and keep track
+    // of the latter. Note that subtype can be true if we are dealing with an interface that is not actually
+    // implemented as assignability treats all interfaces as Object.
+
+    bool is_interface = false; // This can only be set true if the assignability check will return true
+                               // and we loaded the class. For any other "true" returns (e.g. same class
+                               // or Object) we either can't get here (same class already excluded above)
+                               // or we know it is not an interface (i.e. Object).
+    bool subtype = ref_class_type.is_reference_assignable_from(current_type(), this, false,
+                                                               &is_interface, CHECK_VERIFY(this));
+    if (!subtype) {  // Totally unrelated class
+      verify_error(ErrorContext::bad_code(bci),
+                   "Bad invokespecial instruction: "
+                   "current class isn't assignable to reference class.");
+      return;
+    } else {
+      // Indirect superclass (including Object), indirect interface, or unrelated interface.
+      // Any interface use is an error.
+      if (is_interface) {
+        verify_error(ErrorContext::bad_code(bci),
+                     "Bad invokespecial instruction: "
+                     "interface method to invoke is not in a direct superinterface.");
+        return;
+      }
+    }
   }
 
   // Get the verification types for the method's arguments.
