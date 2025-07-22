@@ -60,13 +60,13 @@ class NativeFarCall: public NativeInstruction {
   address next_instruction_address() const  { return addr_at(return_address_offset); }
   address return_address() const            { return addr_at(return_address_offset); }
   address destination() const;
-  address reloc_destination(address orig_address);
+  address reloc_destination();
 
   void set_destination(address dest);
   void verify();
   void print();
 
-  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool set_destination_mt_safe(address dest);
   bool reloc_set_destination(address dest);
 
  private:
@@ -88,7 +88,7 @@ address NativeFarCall::destination() const {
   address destination = MacroAssembler::target_addr_for_insn(addr);
 
   CodeBlob* cb = CodeCache::find_blob(addr);
-  assert(cb && cb->is_nmethod(), "sanity");
+  assert(cb != nullptr && cb->is_nmethod(), "nmethod expected");
   nmethod *nm = (nmethod *)cb;
   assert(nm != nullptr, "Sanity");
   assert(nm->stub_contains(destination), "Sanity");
@@ -96,20 +96,22 @@ address NativeFarCall::destination() const {
   return stub_address_destination_at(destination);
 }
 
-address NativeFarCall::reloc_destination(address orig_address) {
+address NativeFarCall::reloc_destination() {
   address call_addr = instruction_address();
+  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
   address stub_addr = nullptr;
-  if (code != nullptr && code->is_nmethod()) {
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  if (code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
   }
 
   if (stub_addr != nullptr) {
     stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
   }
+
   return stub_addr;
 }
 
@@ -128,18 +130,13 @@ void NativeFarCall::print() {
   tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(addr_at(0)));
 }
 
-bool NativeFarCall::set_destination_mt_safe(address dest, bool assert_lock) {
+bool NativeFarCall::set_destination_mt_safe(address dest) {
   assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
-  assert(!assert_lock ||
-         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+  assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  address call_addr = addr_at(0);
-  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
-
   address stub_addr = stub_address();
-
   if (stub_addr != nullptr) {
     set_stub_address_destination_at(stub_addr, dest);
     return true;
@@ -156,10 +153,9 @@ bool NativeFarCall::reloc_set_destination(address dest) {
   assert(code != nullptr, "Could not find the containing code blob");
 
   address stub_addr = nullptr;
-  if (code != nullptr && code->is_nmethod()) {
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  if (code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
   }
-
   if (stub_addr != nullptr) {
     MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
   }
@@ -209,7 +205,7 @@ bool NativeFarCall::is_at(address addr) {
       (MacroAssembler::extract_rd(addr + instr_size)       == x6) &&
       (MacroAssembler::extract_rs1(addr + instr_size)      == x6) &&
       (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x6) &&
-      (MacroAssembler::extract_rd(addr + 2 * instr_size)  == x1)) {
+      (MacroAssembler::extract_rd(addr + 2 * instr_size)   == x1)) {
     return true;
   }
   return false;
@@ -238,8 +234,8 @@ address NativeCall::destination() const {
   return NativeFarCall::at(addr_at(0))->destination();
 }
 
-address NativeCall::reloc_destination(address orig_address) {
-  return NativeFarCall::at(addr_at(0))->reloc_destination(orig_address);
+address NativeCall::reloc_destination() {
+  return NativeFarCall::at(addr_at(0))->reloc_destination();
 }
 
 void NativeCall::set_destination(address dest) {
@@ -254,8 +250,8 @@ void NativeCall::print() {
   NativeFarCall::at(addr_at(0))->print();;
 }
 
-bool NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
-  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest, assert_lock);
+bool NativeCall::set_destination_mt_safe(address dest) {
+  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest);
 }
 
 bool NativeCall::reloc_set_destination(address dest) {
@@ -339,34 +335,9 @@ void NativeMovConstReg::print() {
                 p2i(instruction_address()), data());
 }
 
-//-------------------------------------------------------------------
-
-int NativeMovRegMem::offset() const  {
-  Unimplemented();
-  return 0;
-}
-
-void NativeMovRegMem::set_offset(int x) { Unimplemented(); }
-
-void NativeMovRegMem::verify() {
-  Unimplemented();
-}
-
 //--------------------------------------------------------------------------------
 
 void NativeJump::verify() { }
-
-
-void NativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
-  // Patching to not_entrant can happen while activations of the method are
-  // in use. The patching in that instance must happen only when certain
-  // alignment restrictions are true. These guarantees check those
-  // conditions.
-
-  // Must be 4 bytes aligned
-  MacroAssembler::assert_alignment(verified_entry);
-}
-
 
 address NativeJump::jump_destination() const {
   address dest = MacroAssembler::target_addr_for_insn(instruction_address());
@@ -420,12 +391,6 @@ bool NativeInstruction::is_safepoint_poll() {
   return MacroAssembler::is_lwu_to_zr(address(this));
 }
 
-// A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
-bool NativeInstruction::is_sigill_not_entrant() {
-  // jvmci
-  return uint_at(0) == 0xffffffff;
-}
-
 void NativeIllegalInstruction::insert(address code_pos) {
   assert_cond(code_pos != nullptr);
   Assembler::sd_instr(code_pos, 0xffffffff);   // all bits ones is permanently reserved as an illegal instruction
@@ -437,49 +402,10 @@ bool NativeInstruction::is_stop() {
 
 //-------------------------------------------------------------------
 
-// MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant)
-
-void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
-
-  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-
-  assert(nativeInstruction_at(verified_entry)->is_jump_or_nop() ||
-         nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
-         "riscv cannot replace non-jump with jump");
-
-  check_verified_entry_alignment(entry, verified_entry);
-
-  // Patch this nmethod atomically.
-  if (Assembler::reachable_from_branch_at(verified_entry, dest)) {
-    ptrdiff_t offset = dest - verified_entry;
-    guarantee(Assembler::is_simm21(offset) && ((offset % 2) == 0),
-              "offset is too large to be patched in one jal instruction."); // 1M
-
-    uint32_t insn = 0;
-    address pInsn = (address)&insn;
-    Assembler::patch(pInsn, 31, 31, (offset >> 20) & 0x1);
-    Assembler::patch(pInsn, 30, 21, (offset >> 1) & 0x3ff);
-    Assembler::patch(pInsn, 20, 20, (offset >> 11) & 0x1);
-    Assembler::patch(pInsn, 19, 12, (offset >> 12) & 0xff);
-    Assembler::patch(pInsn, 11, 7, 0); // zero, no link jump
-    Assembler::patch(pInsn, 6, 0, 0b1101111); // j, (jal x0 offset)
-    Assembler::sd_instr(verified_entry, insn);
-  } else {
-    // We use an illegal instruction for marking a method as
-    // not_entrant.
-    NativeIllegalInstruction::insert(verified_entry);
-  }
-
-  ICache::invalidate_range(verified_entry, instruction_size);
-}
-
-//-------------------------------------------------------------------
-
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
-  Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
+  Assembler::IncompressibleScope scope(&a); // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
   a.movptr(t1, entry, offset, t0); // lui, lui, slli, add

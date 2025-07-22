@@ -35,11 +35,10 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -47,8 +46,9 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahWorkGroup.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/vmThread.hpp"
@@ -415,10 +415,6 @@ void ShenandoahConcurrentGC::entry_reset() {
                                 msg);
     op_reset();
   }
-
-  if (heap->mode()->is_generational()) {
-    heap->old_generation()->card_scan()->mark_read_table_as_clean();
-  }
 }
 
 void ShenandoahConcurrentGC::entry_scan_remembered_set() {
@@ -643,6 +639,10 @@ void ShenandoahConcurrentGC::op_reset() {
     heap->global_generation()->prepare_gc();
   } else {
     _generation->prepare_gc();
+  }
+
+  if (heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_read_table_as_clean();
   }
 }
 
@@ -1145,22 +1145,22 @@ void ShenandoahConcurrentGC::op_update_refs() {
   ShenandoahHeap::heap()->update_heap_references(true /*concurrent*/);
 }
 
-class ShenandoahUpdateThreadClosure : public HandshakeClosure {
+class ShenandoahUpdateThreadHandshakeClosure : public HandshakeClosure {
 private:
   // This closure runs when thread is stopped for handshake, which means
   // we can use non-concurrent closure here, as long as it only updates
   // locations modified by the thread itself, i.e. stack locations.
   ShenandoahNonConcUpdateRefsClosure _cl;
 public:
-  ShenandoahUpdateThreadClosure();
+  ShenandoahUpdateThreadHandshakeClosure();
   void do_thread(Thread* thread);
 };
 
-ShenandoahUpdateThreadClosure::ShenandoahUpdateThreadClosure() :
+ShenandoahUpdateThreadHandshakeClosure::ShenandoahUpdateThreadHandshakeClosure() :
   HandshakeClosure("Shenandoah Update Thread Roots") {
 }
 
-void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
+void ShenandoahUpdateThreadHandshakeClosure::do_thread(Thread* thread) {
   if (thread->is_Java_thread()) {
     JavaThread* jt = JavaThread::cast(thread);
     ResourceMark rm;
@@ -1169,7 +1169,7 @@ void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
 }
 
 void ShenandoahConcurrentGC::op_update_thread_roots() {
-  ShenandoahUpdateThreadClosure cl;
+  ShenandoahUpdateThreadHandshakeClosure cl;
   Handshake::execute(&cl);
 }
 

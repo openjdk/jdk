@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -510,8 +510,9 @@ The following options are provided by the standard doclet.
 <span id="option-footer">`-footer` *html-code*</span>
 :   This option is no longer supported and reports a warning.
 
-<span id="option-group">`-group` *name* *p1*`,`*p2...*</span>
-:   Group the specified packages together in the Overview page.
+<span id="option-group">`-group` *name* *g1*`,`*g2...*</span>
+:   Group the specified packages, or modules when documenting modular code,
+    together in the Overview page.
     For historical reasons, `:` can be used as a separator anywhere in the
     argument instead of `,`.
 
@@ -866,6 +867,23 @@ The following options are provided by the standard doclet.
 :   Splits the index file into multiple files, alphabetically, one file per
     letter, plus a file for any index entries that start with non-alphabetical
     symbols.
+
+<span id="option-syntax-highlight">`--syntax-highlight`</span>
+:   Enables syntax highlighting for code fragments in `{@snippet}` tags and
+    `<pre><code>` elements. For snippets, the `lang` attribute is used to
+    determine the language of code fragments, which defaults to "java" for
+    inline snippets and is derived from the file extension for external
+    snippets. In HTML `<pre><code>` tags, the `class` attribute can be used
+    to specify the language of the contained code fragment as shown below:
+
+    ```
+    <pre><code class="language-java">...</code></pre>
+    ```
+
+    If neither of these attributes is available automatic language detection is
+    applied. To disable syntax highlighting for a code fragment set the language
+    to "text" using one of the mechanisms described above. The languages and
+    formats supported by this option are Java, Properties, JSON, HTML and XML.
 
 <span id="option-tag">`-tag` *name*:*locations*:*header*</span>
 :   Specifies a custom tag with a single argument. For the `javadoc` tool to

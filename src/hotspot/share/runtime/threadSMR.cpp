@@ -1168,9 +1168,10 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
     // The count is only interesting if we have a _threads_list_ptr.
     st->print(", _nested_threads_hazard_ptr_cnt=%u", thread->_nested_threads_hazard_ptr_cnt);
   }
-  if (SafepointSynchronize::is_at_safepoint() || Thread::current() == thread) {
-    // It is only safe to walk the list if we're at a safepoint or the
-    // calling thread is walking its own list.
+  if ((SafepointSynchronize::is_at_safepoint() && thread->is_Java_thread()) ||
+      Thread::current() == thread) {
+    // It is only safe to walk the list if we're at a safepoint and processing a JavaThread,
+    // or the calling thread is walking its own list.
     SafeThreadsListPtr* current = thread->_threads_list_ptr;
     if (current != nullptr) {
       // Skip the top nesting level as it is always printed above.

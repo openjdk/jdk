@@ -40,7 +40,7 @@ import sun.util.logging.PlatformLogger;
 /*
  * Provides a lightweight implementation of the EmbeddedFrame.
  */
-public class CPlatformEmbeddedFrame implements PlatformWindow {
+public final class CPlatformEmbeddedFrame implements PlatformWindow {
 
     private static final PlatformLogger focusLogger = PlatformLogger.getLogger(
             "sun.lwawt.macosx.focus.CPlatformEmbeddedFrame");

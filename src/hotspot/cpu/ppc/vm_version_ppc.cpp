@@ -64,16 +64,8 @@ void VM_Version::initialize() {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 10);
     } else if (VM_Version::has_darn()) {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 9);
-    } else if (VM_Version::has_lqarx()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
-    } else if (VM_Version::has_popcntw()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 7);
-    } else if (VM_Version::has_cmpb()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 6);
-    } else if (VM_Version::has_popcntb()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 5);
     } else {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 0);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
     }
   }
 
@@ -81,18 +73,14 @@ void VM_Version::initialize() {
   switch (PowerArchitecturePPC64) {
     case 10: if (!VM_Version::has_brw()    ) break;
     case  9: if (!VM_Version::has_darn()   ) break;
-    case  8: if (!VM_Version::has_lqarx()  ) break;
-    case  7: if (!VM_Version::has_popcntw()) break;
-    case  6: if (!VM_Version::has_cmpb()   ) break;
-    case  5: if (!VM_Version::has_popcntb()) break;
-    case  0: PowerArchitecturePPC64_ok = true; break;
+    case  8: PowerArchitecturePPC64_ok = true; break;
     default: break;
   }
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
             "%zu on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
-  if (PowerArchitecturePPC64 >= 8 && has_mfdscr()) {
+  if (VM_Version::has_mfdscr()) {
     config_dscr();
   }
 
@@ -109,27 +97,13 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
-  // Power7 and later.
-  if (PowerArchitecturePPC64 > 6) {
-    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      FLAG_SET_ERGO(UsePopCountInstruction, true);
-    }
-  }
-
-  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
-    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
-  }
-
-  if (PowerArchitecturePPC64 >= 8) {
+  if (PowerArchitecturePPC64 >= 9) {
+    // Performance is good since Power9.
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
-  } else {
-    if (SuperwordUseVSX) {
-      warning("SuperwordUseVSX specified, but needs at least Power8.");
-      FLAG_SET_DEFAULT(SuperwordUseVSX, false);
-    }
   }
+
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_ERGO(AlignVector, false);
@@ -198,28 +172,13 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-               (has_fsqrt()   ? " fsqrt"   : ""),
-               (has_isel()    ? " isel"    : ""),
-               (has_lxarxeh() ? " lxarxeh" : ""),
-               (has_cmpb()    ? " cmpb"    : ""),
-               (has_popcntb() ? " popcntb" : ""),
-               (has_popcntw() ? " popcntw" : ""),
-               (has_fcfids()  ? " fcfids"  : ""),
-               (has_vand()    ? " vand"    : ""),
-               (has_lqarx()   ? " lqarx"   : ""),
-               (has_vcipher() ? " aes"     : ""),
-               (has_vpmsumb() ? " vpmsumb" : ""),
+               "ppc64 sha aes%s%s%s",
                (has_mfdscr()  ? " mfdscr"  : ""),
-               (has_vsx()     ? " vsx"     : ""),
-               (has_ldbrx()   ? " ldbrx"   : ""),
-               (has_stdbrx()  ? " stdbrx"  : ""),
-               (has_vshasig() ? " sha"     : ""),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
   if (Verbose) {
     print_features();
   }
@@ -283,24 +242,12 @@ void VM_Version::initialize() {
   }
 
   // The AES intrinsic stubs require AES instruction support.
-  if (has_vcipher()) {
-    if (FLAG_IS_DEFAULT(UseAES)) {
-      UseAES = true;
-    }
-  } else if (UseAES) {
-    if (!FLAG_IS_DEFAULT(UseAES))
-      warning("AES instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAES, false);
+  if (FLAG_IS_DEFAULT(UseAES)) {
+    UseAES = true;
   }
 
-  if (UseAES && has_vcipher()) {
-    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      UseAESIntrinsics = true;
-    }
-  } else if (UseAESIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
-      warning("AES intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+    UseAESIntrinsics = true;
   }
 
   if (UseAESCTRIntrinsics) {
@@ -308,9 +255,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (UseGHASHIntrinsics) {
-    warning("GHASH intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+    UseGHASHIntrinsics = true;
   }
 
   if (FLAG_IS_DEFAULT(UseFMA)) {
@@ -322,14 +268,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (has_vshasig()) {
-    if (FLAG_IS_DEFAULT(UseSHA)) {
-      UseSHA = true;
-    }
-  } else if (UseSHA) {
-    if (!FLAG_IS_DEFAULT(UseSHA))
-      warning("SHA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseSHA, false);
+  if (FLAG_IS_DEFAULT(UseSHA)) {
+    UseSHA = true;
   }
 
   if (UseSHA1Intrinsics) {
@@ -337,7 +277,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA && has_vshasig()) {
+  if (UseSHA) {
     if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
     }
@@ -346,7 +286,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
-  if (UseSHA && has_vshasig()) {
+  if (UseSHA) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
@@ -364,12 +304,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (UseSecondarySupersTable && PowerArchitecturePPC64 < 7) {
-    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
-      warning("UseSecondarySupersTable requires Power7 or later.");
-    }
-    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
-  }
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
@@ -519,7 +453,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version: %s L1_data_cache_line_size=%d", features_string(), L1_data_cache_line_size());
+  tty->print_cr("Version: %s L1_data_cache_line_size=%d", cpu_info_string(), L1_data_cache_line_size());
 
   if (Verbose) {
     if (ContendedPaddingWidth > 0) {
@@ -555,29 +489,11 @@ void VM_Version::determine_features() {
   // Emit code.
   void (*test)(address addr, uint64_t offset)=(void(*)(address addr, uint64_t offset))(void *)a->function_entry();
   uint32_t *code = (uint32_t *)a->pc();
-  // Don't use R0 in ldarx.
   // Keep R3_ARG1 unmodified, it contains &field (see below).
   // Keep R4_ARG2 unmodified, it contains offset = 0 (see below).
-  a->fsqrt(F3, F4);                            // code[0]  -> fsqrt_m
-  a->fsqrts(F3, F4);                           // code[1]  -> fsqrts_m
-  a->isel(R7, R5, R6, 0);                      // code[2]  -> isel_m
-  a->ldarx_unchecked(R7, R3_ARG1, R4_ARG2, 1); // code[3]  -> lxarx_m
-  a->cmpb(R7, R5, R6);                         // code[4]  -> cmpb
-  a->popcntb(R7, R5);                          // code[5]  -> popcntb
-  a->popcntw(R7, R5);                          // code[6]  -> popcntw
-  a->fcfids(F3, F4);                           // code[7]  -> fcfids
-  a->vand(VR0, VR0, VR0);                      // code[8]  -> vand
-  // arg0 of lqarx must be an even register, (arg1 + arg2) must be a multiple of 16
-  a->lqarx_unchecked(R6, R3_ARG1, R4_ARG2, 1); // code[9]  -> lqarx_m
-  a->vcipher(VR0, VR1, VR2);                   // code[10] -> vcipher
-  a->vpmsumb(VR0, VR1, VR2);                   // code[11] -> vpmsumb
-  a->mfdscr(R0);                               // code[12] -> mfdscr
-  a->lxvd2x(VSR0, R3_ARG1);                    // code[13] -> vsx
-  a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[14] -> ldbrx
-  a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[15] -> stdbrx
-  a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[16] -> vshasig
-  a->darn(R7);                                 // code[17] -> darn
-  a->brw(R5, R6);                              // code[18] -> brw
+  a->mfdscr(R0);
+  a->darn(R7);
+  a->brw(R5, R6);
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -612,23 +528,7 @@ void VM_Version::determine_features() {
 
   // determine which instructions are legal.
   int feature_cntr = 0;
-  if (code[feature_cntr++]) features |= fsqrt_m;
-  if (code[feature_cntr++]) features |= fsqrts_m;
-  if (code[feature_cntr++]) features |= isel_m;
-  if (code[feature_cntr++]) features |= lxarxeh_m;
-  if (code[feature_cntr++]) features |= cmpb_m;
-  if (code[feature_cntr++]) features |= popcntb_m;
-  if (code[feature_cntr++]) features |= popcntw_m;
-  if (code[feature_cntr++]) features |= fcfids_m;
-  if (code[feature_cntr++]) features |= vand_m;
-  if (code[feature_cntr++]) features |= lqarx_m;
-  if (code[feature_cntr++]) features |= vcipher_m;
-  if (code[feature_cntr++]) features |= vpmsumb_m;
   if (code[feature_cntr++]) features |= mfdscr_m;
-  if (code[feature_cntr++]) features |= vsx_m;
-  if (code[feature_cntr++]) features |= ldbrx_m;
-  if (code[feature_cntr++]) features |= stdbrx_m;
-  if (code[feature_cntr++]) features |= vshasig_m;
   if (code[feature_cntr++]) features |= darn_m;
   if (code[feature_cntr++]) features |= brw_m;
 
@@ -726,6 +626,6 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", cpu_info_string());
   _initialized = true;
 }

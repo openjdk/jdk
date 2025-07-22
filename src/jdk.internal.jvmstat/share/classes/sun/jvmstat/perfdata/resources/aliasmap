@@ -541,8 +541,6 @@ alias sun.gc.tlab.refillWaste                     // 17
 // sun.os
 alias sun.os.hrt.frequency                        // 1.5.0 b39
 	hotspot.rt.hrt.frequency                  // 1.4.1
-alias sun.os.hrt.ticks                            // 1.5.0 b39
-	hotspot.rt.hrt.ticks                      // 1.4.1
 
 // sun.perfdata
 alias sun.perfdata.overflow                       // 1.5.0 b39

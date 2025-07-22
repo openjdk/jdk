@@ -191,7 +191,7 @@ public class IconTest {
             var verifier = createConsoleOutputVerifier(cmd.name(), config.get(
                     Launcher.Main), null);
             if (verifier != null) {
-                verifier.apply(result.getOutput().stream());
+                verifier.apply(result.getOutput());
             }
 
             if (config.containsKey(Launcher.Additional)) {
@@ -199,7 +199,7 @@ public class IconTest {
                         Launcher.Additional.launcherName, config.get(
                                 Launcher.Additional), config.get(Launcher.Main));
                 if (verifier != null) {
-                    verifier.apply(result.getOutput().stream());
+                    verifier.apply(result.getOutput());
                 }
             }
         };

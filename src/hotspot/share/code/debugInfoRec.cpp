@@ -140,7 +140,7 @@ DebugInformationRecorder::DebugInformationRecorder(OopRecorder* oop_recorder)
 
   add_new_pc_offset(PcDesc::lower_offset_limit);  // sentinel record
 
-  debug_only(_recording_state = rs_null);
+  DEBUG_ONLY(_recording_state = rs_null);
 }
 
 
@@ -159,7 +159,7 @@ void DebugInformationRecorder::add_safepoint(int pc_offset, OopMap* map) {
   add_new_pc_offset(pc_offset);
 
   assert(_recording_state == rs_null, "nesting of recording calls");
-  debug_only(_recording_state = rs_safepoint);
+  DEBUG_ONLY(_recording_state = rs_safepoint);
 }
 
 void DebugInformationRecorder::add_non_safepoint(int pc_offset) {
@@ -169,7 +169,7 @@ void DebugInformationRecorder::add_non_safepoint(int pc_offset) {
   add_new_pc_offset(pc_offset);
 
   assert(_recording_state == rs_null, "nesting of recording calls");
-  debug_only(_recording_state = rs_non_safepoint);
+  DEBUG_ONLY(_recording_state = rs_non_safepoint);
 }
 
 void DebugInformationRecorder::add_new_pc_offset(int pc_offset) {
@@ -360,7 +360,7 @@ void DebugInformationRecorder::dump_object_pool(GrowableArray<ScopeValue*>* obje
 void DebugInformationRecorder::end_scopes(int pc_offset, bool is_safepoint) {
   assert(_recording_state == (is_safepoint? rs_safepoint: rs_non_safepoint),
          "nesting of recording calls");
-  debug_only(_recording_state = rs_null);
+  DEBUG_ONLY(_recording_state = rs_null);
 
   // Try to compress away an equivalent non-safepoint predecessor.
   // (This only works because we have previously recognized redundant
@@ -413,13 +413,13 @@ DebugToken* DebugInformationRecorder::create_monitor_values(GrowableArray<Monito
 
 
 int DebugInformationRecorder::data_size() {
-  debug_only(mark_recorders_frozen());  // mark it "frozen" for asserts
+  DEBUG_ONLY(mark_recorders_frozen());  // mark it "frozen" for asserts
   return _stream->position();
 }
 
 
 int DebugInformationRecorder::pcs_size() {
-  debug_only(mark_recorders_frozen());  // mark it "frozen" for asserts
+  DEBUG_ONLY(mark_recorders_frozen());  // mark it "frozen" for asserts
   if (last_pc()->pc_offset() != PcDesc::upper_offset_limit)
     add_new_pc_offset(PcDesc::upper_offset_limit);
   return _pcs_length * sizeof(PcDesc);

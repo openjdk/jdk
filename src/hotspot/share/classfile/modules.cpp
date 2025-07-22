@@ -22,6 +22,7 @@
 *
 */
 
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -29,7 +30,6 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -466,13 +466,9 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     if (EnableVectorSupport && EnableVectorReboxing && FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing)) {
       FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, true);
     }
-    if (EnableVectorSupport && FLAG_IS_DEFAULT(UseVectorStubs)) {
-      FLAG_SET_DEFAULT(UseVectorStubs, true);
-    }
     log_info(compilation)("EnableVectorSupport=%s",            (EnableVectorSupport            ? "true" : "false"));
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
-    log_info(compilation)("UseVectorStubs=%s",                 (UseVectorStubs                 ? "true" : "false"));
   }
 #endif // COMPILER2_OR_JVMCI
 }
@@ -493,13 +489,13 @@ void Modules::check_archived_module_oop(oop orig_module_obj) {
     //     java.lang.Module::ALL_UNNAMED_MODULE
     //     java.lang.Module::EVERYONE_MODULE
     //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
-    log_info(cds, module)("Archived java.lang.Module oop " PTR_FORMAT " with no ModuleEntry*", p2i(orig_module_obj));
+    log_info(aot, module)("Archived java.lang.Module oop " PTR_FORMAT " with no ModuleEntry*", p2i(orig_module_obj));
     assert(java_lang_Module::name(orig_module_obj) == nullptr, "must be unnamed");
   } else {
     // This java.lang.Module oop has an ModuleEntry*. Check if the latter is archived.
-    if (log_is_enabled(Info, cds, module)) {
+    if (log_is_enabled(Info, aot, module)) {
       ResourceMark rm;
-      LogStream ls(Log(cds, module)::info());
+      LogStream ls(Log(aot, module)::info());
       ls.print("Archived java.lang.Module oop " PTR_FORMAT " for ", p2i(orig_module_obj));
       orig_module_ent->print(&ls);
     }
@@ -580,13 +576,15 @@ public:
 };
 
 Modules::ArchivedProperty Modules::_archived_props[] = {
-  // numbered
+  // non-numbered
   {"jdk.module.main", false},
 
-  // non-numbered
+  // numbered
   {"jdk.module.addexports", true},             // --add-exports
   {"jdk.module.addmods", true},                // --add-modules
   {"jdk.module.enable.native.access", true},   // --enable-native-access
+  {"jdk.module.addopens", true},               // --add-opens
+  {"jdk.module.addreads", true},               // --add-reads
 };
 
 constexpr size_t Modules::num_archived_props() {
@@ -601,29 +599,34 @@ Modules::ArchivedProperty& Modules::archived_prop(size_t i) {
 void Modules::ArchivedProperty::runtime_check() const {
   ResourceMark rm;
   const char* runtime_value = get_flattened_value();
-  log_info(cds)("archived module property %s: %s", _prop,
+  aot_log_info(aot)("archived module property %s: %s", _prop,
                 _archived_value != nullptr ? _archived_value : "(null)");
 
   bool disable = false;
   if (runtime_value == nullptr) {
     if (_archived_value != nullptr) {
-      log_info(cds)("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
+      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
       disable = true;
     }
   } else {
     if (_archived_value == nullptr) {
-      log_info(cds)("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
+      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
       disable = true;
     } else if (strcmp(runtime_value, _archived_value) != 0) {
-      log_info(cds)("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
+      MetaspaceShared::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
       disable = true;
     }
   }
 
   if (disable) {
-    log_info(cds)("Disabling optimized module handling");
+    MetaspaceShared::report_loading_error("Disabling optimized module handling");
     CDSConfig::stop_using_optimized_module_handling();
   }
+}
+
+
+static int compare_module_names(const char** p1, const char** p2) {
+  return strcmp(*p1, *p2);
 }
 
 // Caller needs ResourceMark
@@ -642,8 +645,7 @@ const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() 
     if (prop_value == nullptr) {
       break;
     }
-    char* p = resource_allocate_bytes(strlen(prop_value) + 1);
-    strcpy(p, prop_value);
+    char* p = ResourceArea::strdup(prop_value);
     while (*p == ',') p++; // skip leading commas
     while (*p) {
       char* next = strchr(p, ',');
@@ -667,7 +669,7 @@ const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() 
   // list[2] = "java.base"
   // list[3] = ""
   // list[4] = ""
-  list.sort(ClassLoaderExt::compare_module_names);
+  list.sort(compare_module_names);
 
   const char* prefix = "";
   stringStream st;
@@ -695,8 +697,8 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
     archived_prop(i).serialize(soc);
   }
   if (soc->reading()) {
-    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+    aot_log_info(aot)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    aot_log_info(aot)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
 }
 
@@ -775,7 +777,7 @@ void Modules::set_bootloader_unnamed_module(Handle module, TRAPS) {
   ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
   ModuleEntry* unnamed_module = boot_loader_data->unnamed_module();
   assert(unnamed_module != nullptr, "boot loader's unnamed ModuleEntry not defined");
-  unnamed_module->set_module(boot_loader_data->add_handle(module));
+  unnamed_module->set_module_handle(boot_loader_data->add_handle(module));
   // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module object.
   java_lang_Module::set_module_entry(module(), unnamed_module);
 }
@@ -956,8 +958,8 @@ oop Modules::get_named_module(Handle h_loader, const char* package_name) {
     get_package_entry_by_name(package_sym, h_loader);
   const ModuleEntry* const module_entry = (pkg_entry != nullptr ? pkg_entry->module() : nullptr);
 
-  if (module_entry != nullptr && module_entry->module() != nullptr && module_entry->is_named()) {
-    return module_entry->module();
+  if (module_entry != nullptr && module_entry->module_oop() != nullptr && module_entry->is_named()) {
+    return module_entry->module_oop();
   }
   return nullptr;
 }

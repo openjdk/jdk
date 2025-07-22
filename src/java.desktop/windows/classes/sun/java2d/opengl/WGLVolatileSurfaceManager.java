@@ -43,7 +43,7 @@ import static sun.java2d.pipe.hw.AccelSurface.*;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 
-public class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
+public final class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
 
     private final boolean accelerationEnabled;
 
@@ -62,6 +62,7 @@ public class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
                 && transparency != Transparency.BITMASK;
     }
 
+    @Override
     protected boolean isAccelerationEnabled() {
         return accelerationEnabled;
     }
@@ -70,6 +71,7 @@ public class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
      * Create a FBO-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig).
      */
+    @Override
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData;
         Component comp = vImg.getComponent();

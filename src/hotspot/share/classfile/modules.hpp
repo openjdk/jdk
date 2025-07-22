@@ -29,6 +29,7 @@
 #include "runtime/handles.hpp"
 
 class ModuleEntryTable;
+class SerializeClosure;
 class Symbol;
 
 class Modules : AllStatic {

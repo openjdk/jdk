@@ -46,7 +46,7 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
     if (CDSConfig::is_dumping_final_static_archive() && !k->is_loaded()) {
-      assert(k->is_shared_unregistered_class(), "must be");
+      assert(k->defined_by_other_loaders(), "must be");
       function(k, info);
     } else if (k->is_loader_alive()) {
       function(k, info);

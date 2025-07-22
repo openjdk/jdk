@@ -69,8 +69,8 @@ jint ParallelScavengeHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
   // Layout the reserved space for the generations.
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, GenAlignment);
-  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, SpaceAlignment);
+  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, SpaceAlignment);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
   PSCardTable* card_table = new PSCardTable(_reserved);
@@ -93,8 +93,7 @@ jint ParallelScavengeHeap::initialize() {
       old_rs,
       OldSize,
       MinOldSize,
-      MaxOldSize,
-      "old", 1);
+      MaxOldSize);
 
   assert(young_gen()->max_gen_size() == young_rs.size(),"Consistency check");
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
@@ -108,7 +107,7 @@ jint ParallelScavengeHeap::initialize() {
     new PSAdaptiveSizePolicy(eden_capacity,
                              initial_promo_size,
                              young_gen()->to_space()->capacity_in_bytes(),
-                             GenAlignment,
+                             SpaceAlignment,
                              max_gc_pause_sec,
                              GCTimeRatio
                              );
@@ -207,12 +206,6 @@ size_t ParallelScavengeHeap::used() const {
   size_t value = young_gen()->used_in_bytes() + old_gen()->used_in_bytes();
   return value;
 }
-
-bool ParallelScavengeHeap::is_maximal_no_gc() const {
-  // We don't expand young-gen except at a GC.
-  return old_gen()->is_maximal_no_gc();
-}
-
 
 size_t ParallelScavengeHeap::max_capacity() const {
   size_t estimated = reserved_region().byte_size();
@@ -328,7 +321,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       // Did the VM operation execute? If so, return the result directly.
       // This prevents us from looping until time out on requests that can
       // not be satisfied.
-      if (op.prologue_succeeded()) {
+      if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
 
         // Exit the loop if the gc time limit has been exceeded.
@@ -502,21 +495,8 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
     full_gc_count = total_full_collections();
   }
 
-  while (true) {
-    VM_ParallelGCCollect op(gc_count, full_gc_count, cause);
-    VMThread::execute(&op);
-
-    if (!GCCause::is_explicit_full_gc(cause)) {
-      return;
-    }
-
-    {
-      MutexLocker ml(Heap_lock);
-      if (full_gc_count != total_full_collections()) {
-        return;
-      }
-    }
-  }
+  VM_ParallelGCCollect op(gc_count, full_gc_count, cause);
+  VMThread::execute(&op);
 }
 
 bool ParallelScavengeHeap::must_clear_all_soft_refs() {
@@ -662,27 +642,23 @@ bool ParallelScavengeHeap::print_location(outputStream* st, void* addr) const {
   return BlockLocationPrinter<ParallelScavengeHeap>::print_location(st, addr);
 }
 
-void ParallelScavengeHeap::print_on(outputStream* st) const {
+void ParallelScavengeHeap::print_heap_on(outputStream* st) const {
   if (young_gen() != nullptr) {
     young_gen()->print_on(st);
   }
   if (old_gen() != nullptr) {
     old_gen()->print_on(st);
   }
-  MetaspaceUtils::print_on(st);
 }
 
-void ParallelScavengeHeap::print_on_error(outputStream* st) const {
-  print_on(st);
-  st->cr();
-
+void ParallelScavengeHeap::print_gc_on(outputStream* st) const {
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs != nullptr) {
     bs->print_on(st);
   }
-
   st->cr();
-  PSParallelCompact::print_on_error(st);
+
+  PSParallelCompact::print_on(st);
 }
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {

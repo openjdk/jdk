@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.UTF16;
-import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
 
@@ -1332,10 +1331,6 @@ final class StringUTF16 {
         return new String(Arrays.copyOfRange(val, index << 1, last << 1), UTF16);
     }
 
-    public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index << 1, end << 1, (byte)0);
-    }
-
     static class CharsSpliterator implements Spliterator.OfInt {
         private final byte[] array;
         private int index;        // current index, modified on advance/split
@@ -1533,27 +1528,23 @@ final class StringUTF16 {
         return true;
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
         int end = i + 4;
         checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        assert(i == end);
-        return end;
+        putChar(value, i, c1);
+        putChar(value, i + 1, c2);
+        putChar(value, i + 2, c3);
+        putChar(value, i + 3, c4);
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
         int end = i + 5;
         checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        putChar(value, i++, c5);
-        assert(i == end);
-        return end;
+        putChar(value, i, c1);
+        putChar(value, i + 1, c2);
+        putChar(value, i + 2, c3);
+        putChar(value, i + 3, c4);
+        putChar(value, i + 4, c5);
     }
 
     public static char charAt(byte[] value, int index) {

@@ -61,16 +61,17 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(hdr, obj);
-    lbu(hdr, Address(hdr, Klass::misc_flags_offset()));
-    test_bit(temp, hdr, exact_log2(KlassFlags::_misc_is_value_based_class));
-    bnez(temp, slow_case, true /* is_far */);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(disp_hdr, obj, hdr, temp, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(hdr, obj);
+      lbu(hdr, Address(hdr, Klass::misc_flags_offset()));
+      test_bit(temp, hdr, exact_log2(KlassFlags::_misc_is_value_based_class));
+      bnez(temp, slow_case, /* is_far */ true);
+    }
+
     Label done;
     // Load object header
     ld(hdr, Address(obj, hdr_offset));
@@ -280,7 +281,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == x10, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
@@ -320,7 +321,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == x10, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(StubId::c1_dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
@@ -348,7 +349,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // first instruction with a jump. For this action to be legal we
   // must ensure that this first instruction is a J, JAL or NOP.
   // Make it a NOP.
-  IncompressibleRegion ir(this);  // keep the nop as 4 bytes for patching.
+  IncompressibleScope scope(this); // keep the nop as 4 bytes for patching.
   assert_alignment(pc());
   nop();  // 4 bytes
 }

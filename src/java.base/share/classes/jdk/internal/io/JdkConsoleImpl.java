@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,40 +69,6 @@ public final class JdkConsoleImpl implements JdkConsole {
         pw.print(obj);
         pw.flush(); // automatic flushing does not cover print
         return this;
-    }
-
-    @Override
-    public String readln(String prompt) {
-        String line = null;
-        synchronized (writeLock) {
-            synchronized(readLock) {
-                pw.print(prompt);
-                pw.flush(); // automatic flushing does not cover print
-                try {
-                    char[] ca = readline(false);
-                    if (ca != null)
-                        line = new String(ca);
-                } catch (IOException x) {
-                    throw new IOError(x);
-                }
-            }
-        }
-        return line;
-    }
-
-    @Override
-    public String readln() {
-        String line = null;
-        synchronized(readLock) {
-            try {
-                char[] ca = readline(false);
-                if (ca != null)
-                    line = new String(ca);
-            } catch (IOException x) {
-                throw new IOError(x);
-            }
-        }
-        return line;
     }
 
     @Override
@@ -225,10 +191,11 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     @Override
     public Charset charset() {
-        return charset;
+        return outCharset;
     }
 
-    private final Charset charset;
+    private final Charset inCharset;
+    private final Charset outCharset;
     private final Object readLock;
     private final Object writeLock;
     // Must not block while holding this. It is used in the shutdown hook.
@@ -398,16 +365,18 @@ public final class JdkConsoleImpl implements JdkConsole {
         }
     }
 
-    public JdkConsoleImpl(Charset charset) {
-        Objects.requireNonNull(charset);
-        this.charset = charset;
+    public JdkConsoleImpl(Charset inCharset, Charset outCharset) {
+        Objects.requireNonNull(inCharset);
+        Objects.requireNonNull(outCharset);
+        this.inCharset = inCharset;
+        this.outCharset = outCharset;
         readLock = new Object();
         writeLock = new Object();
         restoreEchoLock = new Object();
         out = StreamEncoder.forOutputStreamWriter(
                 new FileOutputStream(FileDescriptor.out),
                 writeLock,
-                charset);
+                outCharset);
         pw = new PrintWriter(out, true) {
             public void close() {
             }
@@ -416,7 +385,7 @@ public final class JdkConsoleImpl implements JdkConsole {
         reader = new LineReader(StreamDecoder.forInputStreamReader(
                 new FileInputStream(FileDescriptor.in),
                 readLock,
-                charset));
+                inCharset));
         rcb = new char[1024];
     }
 }

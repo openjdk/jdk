@@ -26,8 +26,8 @@
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/copy.hpp"
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_oop(oop* src, oop* dst, size_t length))
@@ -47,6 +47,10 @@ JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre(oopDesc * orig, JavaThread
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
   ShenandoahBarrierSet::satb_mark_queue_set().enqueue_known_active(queue, orig);
 JRT_END
+
+void ShenandoahRuntime::write_barrier_pre(oopDesc* orig) {
+  write_ref_field_pre(orig, JavaThread::current());
+}
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_strong(oopDesc* src, oop* load_addr))
   return ShenandoahBarrierSet::barrier_set()->load_reference_barrier_mutator(src, load_addr);

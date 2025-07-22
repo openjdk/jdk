@@ -32,6 +32,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -115,6 +116,7 @@ OopStorage*   StringTable::_oop_storage;
 
 static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
+DEBUG_ONLY(static bool _disable_interning_during_cds_dump = false);
 
 volatile bool _alt_hash = false;
 
@@ -346,6 +348,10 @@ bool StringTable::has_work() {
   return Atomic::load_acquire(&_has_work);
 }
 
+size_t StringTable::items_count_acquire() {
+  return Atomic::load_acquire(&_items_count);
+}
+
 void StringTable::trigger_concurrent_work() {
   // Avoid churn on ServiceThread
   if (!has_work()) {
@@ -504,6 +510,9 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
 }
 
 oop StringTable::intern(const StringWrapper& name, TRAPS) {
+  assert(!Atomic::load_acquire(&_disable_interning_during_cds_dump),
+         "All threads that may intern strings should have been stopped before CDS starts copying the interned string table");
+
   // shared table always uses java_lang_String::hash_code
   unsigned int hash = hash_wrapped_string(name);
   oop found_string = lookup_shared(name, hash);
@@ -793,7 +802,7 @@ void StringTable::verify() {
 }
 
 // Verification and comp
-class VerifyCompStrings : StackObj {
+class StringTable::VerifyCompStrings : StackObj {
   static unsigned string_hash(oop const& str) {
     return java_lang_String::hash_code_noupdate(str);
   }
@@ -805,7 +814,7 @@ class VerifyCompStrings : StackObj {
                               string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1, 0 /* do not resize */), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(items_count_acquire() / 8) + 1, 0 /* do not resize */), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == nullptr) {
@@ -939,27 +948,40 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
   return _shared_table.lookup(wrapped_name, java_lang_String::hash_code(name, len), 0);
 }
 
-// This is called BEFORE we enter the CDS safepoint. We can allocate heap objects.
-// This should be called when we know no more strings will be added (which will be easy
-// to guarantee because CDS runs with a single Java thread. See JDK-8253495.)
+// This is called BEFORE we enter the CDS safepoint. We can still allocate Java object arrays to
+// be used by the shared strings table.
 void StringTable::allocate_shared_strings_array(TRAPS) {
   if (!CDSConfig::is_dumping_heap()) {
     return;
   }
-  if (_items_count > (size_t)max_jint) {
-    fatal("Too many strings to be archived: %zu", _items_count);
+
+  CompileBroker::wait_for_no_active_tasks();
+
+  precond(CDSConfig::allow_only_single_java_thread());
+
+  // At this point, no more strings will be added:
+  // - There's only a single Java thread (this thread). It no longer executes Java bytecodes
+  //   so JIT compilation will eventually stop.
+  // - CompileBroker has no more active tasks, so all JIT requests have been processed.
+
+  // This flag will be cleared after intern table dumping has completed, so we can run the
+  // compiler again (for future AOT method compilation, etc).
+  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, true));
+
+  if (items_count_acquire() > (size_t)max_jint) {
+    fatal("Too many strings to be archived: %zu", items_count_acquire());
   }
 
-  int total = (int)_items_count;
+  int total = (int)items_count_acquire();
   size_t single_array_size = objArrayOopDesc::object_size(total);
 
-  log_info(cds)("allocated string table for %d strings", total);
+  log_info(aot)("allocated string table for %d strings", total);
 
   if (!ArchiveHeapWriter::is_too_large_to_archive(single_array_size)) {
     // The entire table can fit in a single array
     objArrayOop array = oopFactory::new_objArray(vmClasses::Object_klass(), total, CHECK);
     _shared_strings_array = OopHandle(Universe::vm_global(), array);
-    log_info(cds)("string table array (single level) length = %d", total);
+    log_info(aot)("string table array (single level) length = %d", total);
   } else {
     // Split the table in two levels of arrays.
     int primary_array_length = (total + _secondary_array_max_length - 1) / _secondary_array_max_length;
@@ -970,7 +992,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // This can only happen if you have an extremely large number of classes that
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
-      log_error(cds)("Too many strings to be archived: %zu", _items_count);
+      log_error(aot)("Too many strings to be archived: %zu", items_count_acquire());
       MetaspaceShared::unrecoverable_writing_error();
     }
 
@@ -978,7 +1000,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
     objArrayHandle primaryHandle(THREAD, primary);
     _shared_strings_array = OopHandle(Universe::vm_global(), primary);
 
-    log_info(cds)("string table array (primary) length = %d", primary_array_length);
+    log_info(aot)("string table array (primary) length = %d", primary_array_length);
     for (int i = 0; i < primary_array_length; i++) {
       int len;
       if (total > _secondary_array_max_length) {
@@ -991,7 +1013,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       objArrayOop secondary = oopFactory::new_objArray(vmClasses::Object_klass(), len, CHECK);
       primaryHandle()->obj_at_put(i, secondary);
 
-      log_info(cds)("string table array (secondary)[%d] length = %d", i, len);
+      log_info(aot)("string table array (secondary)[%d] length = %d", i, len);
       assert(!ArchiveHeapWriter::is_too_large_to_archive(secondary), "sanity");
     }
 
@@ -1026,49 +1048,64 @@ void StringTable::verify_secondary_array_index_bits() {
 // For each shared string:
 // [1] Store it into _shared_strings_array. Encode its position as a 32-bit index.
 // [2] Store the index and hashcode into _shared_table.
-oop StringTable::init_shared_strings_array(const DumpedInternedStrings* dumped_interned_strings) {
+oop StringTable::init_shared_strings_array() {
   assert(CDSConfig::is_dumping_heap(), "must be");
   objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
 
   verify_secondary_array_index_bits();
 
   int index = 0;
-  auto copy_into_array = [&] (oop string, bool value_ignored) {
-    if (!_is_two_dimensional_shared_strings_array) {
-      assert(index < array->length(), "no strings should have been added");
-      array->obj_at_put(index, string);
-    } else {
-      int primary_index = index >> _secondary_array_index_bits;
-      int secondary_index = index & _secondary_array_index_mask;
+  auto copy_into_array = [&] (WeakHandle* val) {
+    oop string = val->peek();
+    if (string != nullptr && !ArchiveHeapWriter::is_string_too_large_to_archive(string)) {
+      // If string is too large, don't put it into the string table.
+      // - If there are no other refernences to it, it won't be stored into the archive,
+      //   so we are all good.
+      // - If there's a referece to it, we will report an error inside HeapShared.cpp and
+      //   dumping will fail.
+      HeapShared::add_to_dumped_interned_strings(string);
+      if (!_is_two_dimensional_shared_strings_array) {
+        assert(index < array->length(), "no strings should have been added");
+        array->obj_at_put(index, string);
+      } else {
+        int primary_index = index >> _secondary_array_index_bits;
+        int secondary_index = index & _secondary_array_index_mask;
 
-      assert(primary_index < array->length(), "no strings should have been added");
-      objArrayOop secondary = (objArrayOop)array->obj_at(primary_index);
+        assert(primary_index < array->length(), "no strings should have been added");
+        objArrayOop secondary = (objArrayOop)array->obj_at(primary_index);
 
-      assert(secondary != nullptr && secondary->is_objArray(), "must be");
-      assert(secondary_index < secondary->length(), "no strings should have been added");
-      secondary->obj_at_put(secondary_index, string);
+        assert(secondary != nullptr && secondary->is_objArray(), "must be");
+        assert(secondary_index < secondary->length(), "no strings should have been added");
+        secondary->obj_at_put(secondary_index, string);
+      }
+      index ++;
     }
-
-    index ++;
+    return true;
   };
-  dumped_interned_strings->iterate_all(copy_into_array);
 
+  _local_table->do_safepoint_scan(copy_into_array);
+  log_info(aot)("Archived %d interned strings", index);
   return array;
-}
+};
 
-void StringTable::write_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
+void StringTable::write_shared_table() {
   _shared_table.reset();
-  CompactHashtableWriter writer((int)_items_count, ArchiveBuilder::string_stats());
+  CompactHashtableWriter writer((int)items_count_acquire(), ArchiveBuilder::string_stats());
 
   int index = 0;
-  auto copy_into_shared_table = [&] (oop string, bool value_ignored) {
-    unsigned int hash = java_lang_String::hash_code(string);
-    writer.add(hash, index);
-    index ++;
+  auto copy_into_shared_table = [&] (WeakHandle* val) {
+    oop string = val->peek();
+    if (string != nullptr && !ArchiveHeapWriter::is_string_too_large_to_archive(string)) {
+      unsigned int hash = java_lang_String::hash_code(string);
+      writer.add(hash, index);
+      index ++;
+    }
+    return true;
   };
-  dumped_interned_strings->iterate_all(copy_into_shared_table);
-
+  _local_table->do_safepoint_scan(copy_into_shared_table);
   writer.dump(&_shared_table, "string");
+
+  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, false));
 }
 
 void StringTable::set_shared_strings_array_index(int root_index) {

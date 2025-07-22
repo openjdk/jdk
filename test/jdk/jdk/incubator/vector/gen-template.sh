@@ -42,8 +42,12 @@ ternary_double_broadcast_masked="Ternary-Double-Broadcast-Masked-op"
 ternary_scalar="Ternary-Scalar-op"
 binary="Binary-op"
 binary_masked="Binary-Masked-op"
+binary_memop="Binary-mem-op"
+binary_masked_memop="Binary-Masked-mem-op"
 saturating_binary="SaturatingBinary-op"
 saturating_binary_masked="SaturatingBinary-Masked-op"
+saturating_binary_assocative="SaturatingBinary-op-associative"
+saturating_binary_assocative_masked="SaturatingBinary-Masked-op-associative"
 binary_broadcast="Binary-Broadcast-op"
 binary_broadcast_masked="Binary-Broadcast-Masked-op"
 binary_broadcast_long="Binary-Broadcast-Long-op"
@@ -255,6 +259,12 @@ function gen_binary_alu_op {
   gen_op_tmpl $binary_masked "$@"
 }
 
+function gen_binary_alu_mem_op {
+  echo "Generating binary op $1 ($2)..."
+  gen_op_tmpl $binary_memop "$@"
+  gen_op_tmpl $binary_masked_memop "$@"
+}
+
 function gen_binary_alu_bcst_op {
   echo "Generating binary broadcast op $1 ($2)..."
   gen_op_tmpl $binary_broadcast "$@"
@@ -316,6 +326,12 @@ function gen_saturating_binary_op {
   echo "Generating binary op $1 ($2)..."
   gen_op_tmpl $saturating_binary "$@"
   gen_op_tmpl $saturating_binary_masked "$@"
+}
+
+function gen_saturating_binary_op_associative {
+  echo "Generating saturating binary associative op $1 ($2)..."
+  gen_op_tmpl $saturating_binary_assocative "$@"
+  gen_op_tmpl $saturating_binary_assocative_masked "$@"
 }
 
 function gen_binary_op_no_masked {
@@ -464,6 +480,10 @@ gen_shift_cst_op  "ASHR" "(a >> CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
+# Binary operation with one memory operand
+gen_binary_alu_mem_op "MIN+min+withMask", "Math.min(a, b)"
+gen_binary_alu_mem_op "MAX+max+withMask", "Math.max(a, b)"
+
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_op_no_masked "MAX+max" "Math.max(a, b)"
@@ -475,6 +495,7 @@ gen_saturating_binary_op "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWI
 gen_saturating_binary_op "SUSUB" "VectorMath.subSaturatingUnsigned(a, b)" "BITWISE"
 gen_binary_bcst_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
+gen_saturating_binary_op_associative "SUADD" "VectorMath.addSaturatingUnsigned(a, b)" "BITWISE"
 
 # Reductions.
 gen_reduction_op "AND" "\&" "BITWISE" "-1"

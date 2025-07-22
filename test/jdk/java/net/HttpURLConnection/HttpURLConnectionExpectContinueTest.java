@@ -429,7 +429,7 @@ public class HttpURLConnectionExpectContinueTest {
                 .port(control.serverSocket.getLocalPort())
                 .toURL();
 
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
         connection.setDoOutput(true);
         connection.setReadTimeout(5000);
         connection.setUseCaches(false);

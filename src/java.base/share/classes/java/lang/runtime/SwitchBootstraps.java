@@ -27,6 +27,8 @@ package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -48,6 +50,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
 
+import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -103,6 +106,13 @@ public final class SwitchBootstraps {
     private static final MethodType MT_TYPE_SWITCH = MethodType.methodType(int.class,
             Object.class,
             int.class);
+    private static final List<StackMapFrameInfo.VerificationTypeInfo> TYPE_SWITCH_LOCALS = List.of(
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_Object), StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER
+    );
+    private static final List<StackMapFrameInfo.VerificationTypeInfo> TYPE_SWITCH_EXTRA_LOCALS = List.of(
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_Object), StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER,
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_BiPredicate), StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_List)
+    );
 
     private static class StaticHolders {
         private static final MethodHandle MAPPED_ENUM_SWITCH;
@@ -482,8 +492,11 @@ public final class SwitchBootstraps {
         int ENUM_CACHE          = 2;
         int EXTRA_CLASS_LABELS  = 3;
 
+        var locals = enumDescs == null && extraClassLabels == null ? TYPE_SWITCH_LOCALS : TYPE_SWITCH_EXTRA_LOCALS;
+
         return cb -> {
             // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
+            var stackMapFrames = new ArrayList<StackMapFrameInfo>(labelConstants.length * 2);
             cb.iload(RESTART_IDX)
               .loadConstant(labelConstants.length + 1)
               .invokestatic(CD_Objects, "checkIndex", CHECK_INDEX_DESCRIPTOR)
@@ -494,9 +507,12 @@ public final class SwitchBootstraps {
               .iconst_m1()
               .ireturn()
               .labelBinding(nonNullLabel);
+            stackMapFrames.add(StackMapFrameInfo.of(nonNullLabel, locals, List.of()));
             if (labelConstants.length == 0) {
                 cb.loadConstant(0)
-                  .ireturn();
+                  .ireturn()
+                  .with(StackMapTableAttribute.of(stackMapFrames));
+                DirectCodeBuilder.withMaxs(cb, 2, locals.size()); // checkIndex uses 2
                 return;
             }
             cb.iload(RESTART_IDX);
@@ -509,6 +525,7 @@ public final class SwitchBootstraps {
             for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
                 Object currentLabel = labelConstants[idx];
                 Label target = cb.newLabel();
+                stackMapFrames.add(StackMapFrameInfo.of(target, locals, List.of()));
                 Label next;
                 if (lastLabel == null) {
                     next = dflt;
@@ -529,7 +546,11 @@ public final class SwitchBootstraps {
                 Object caseLabel = caseLabels[idx];
                 cb.labelBinding(caseTargets[idx]);
                 if (caseLabel instanceof Class<?> classLabel) {
-                    if (unconditionalExactnessCheck(selectorType, classLabel)) {
+                    if (isNotValidPair(selectorType, caseLabel)){
+                        cb.goto_(next);
+                        continue;
+                    }
+                    else if (unconditionalExactnessCheck(selectorType, classLabel)) {
                         //nothing - unconditionally use this case
                     } else if (classLabel.isPrimitive()) {
                         if (!selectorType.isPrimitive() && !Wrapper.isWrapperNumericOrBooleanType(selectorType)) {
@@ -541,7 +562,7 @@ public final class SwitchBootstraps {
                         } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
                             // Integer i = ... or int i = ...
                             // o instanceof float
-                            Label notNumber = cb.newLabel();
+                            Label notNumber = cb.newLabel(); // this label may end up unbound
                             cb.aload(SELECTOR_OBJ)
                               .instanceOf(CD_Number);
                             if (selectorType == long.class || selectorType == float.class || selectorType == double.class ||
@@ -570,8 +591,9 @@ public final class SwitchBootstraps {
                                         "intValue",
                                         MethodTypeDesc.of(CD_int))
                                   .goto_(compare)
-                                  .labelBinding(notNumber)
-                                  .aload(SELECTOR_OBJ)
+                                  .labelBinding(notNumber);
+                                stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                                cb.aload(SELECTOR_OBJ)
                                   .instanceOf(CD_Character)
                                   .ifeq(next)
                                   .aload(SELECTOR_OBJ)
@@ -580,6 +602,7 @@ public final class SwitchBootstraps {
                                         "charValue",
                                         MethodTypeDesc.of(CD_char))
                                   .labelBinding(compare);
+                                stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                             }
 
                             TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
@@ -648,8 +671,9 @@ public final class SwitchBootstraps {
                             "intValue",
                             MethodTypeDesc.of(CD_int))
                       .goto_(compare)
-                      .labelBinding(notNumber)
-                      .aload(SELECTOR_OBJ)
+                      .labelBinding(notNumber);
+                    stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                    cb.aload(SELECTOR_OBJ)
                       .instanceOf(CD_Character)
                       .ifeq(next)
                       .aload(SELECTOR_OBJ)
@@ -657,9 +681,9 @@ public final class SwitchBootstraps {
                       .invokevirtual(CD_Character,
                             "charValue",
                             MethodTypeDesc.of(CD_char))
-                      .labelBinding(compare)
-
-                      .loadConstant(integerLabel)
+                      .labelBinding(compare);
+                    stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
+                    cb.loadConstant(integerLabel)
                       .if_icmpne(next);
                 } else if ((caseLabel instanceof Long ||
                         caseLabel instanceof Float ||
@@ -688,10 +712,18 @@ public final class SwitchBootstraps {
                 cb.loadConstant(idx)
                   .ireturn();
             }
+            stackMapFrames.add(StackMapFrameInfo.of(dflt, locals, List.of()));
             cb.labelBinding(dflt)
               .loadConstant(labelConstants.length)
-              .ireturn();
+              .ireturn()
+              .with(StackMapTableAttribute.of(stackMapFrames));
+            DirectCodeBuilder.withMaxs(cb, 3, locals.size()); // enum labels use 3 stack, others use 2
         };
+    }
+
+    private static boolean isNotValidPair(Class<?> selectorType, Object caseLabel) {
+        return (selectorType == boolean.class && caseLabel != boolean.class && caseLabel != Boolean.class) ||
+               (selectorType != boolean.class && selectorType.isPrimitive() && (caseLabel == boolean.class || caseLabel == Boolean.class));
     }
 
     /*
@@ -702,7 +734,7 @@ public final class SwitchBootstraps {
         List<EnumDesc<?>> enumDescs = addExtraInfo ? new ArrayList<>() : null;
         List<Class<?>> extraClassLabels = addExtraInfo ? new ArrayList<>() : null;
 
-        byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(typeSwitchClassName(caller.lookupClass())),
+        byte[] classBytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(ConstantUtils.binaryNameToDesc(typeSwitchClassName(caller.lookupClass())),
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",
@@ -746,11 +778,11 @@ public final class SwitchBootstraps {
             return true;
         }
         else if (selectorType.equals(targetType) ||
-                ((selectorType.equals(byte.class) && !targetType.equals(char.class)) ||
-                 (selectorType.equals(short.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))) ||
-                 (selectorType.equals(char.class)  && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))  ||
-                 (selectorType.equals(int.class)   && (targetType.equals(double.class) || targetType.equals(long.class))) ||
-                 (selectorType.equals(float.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))))) return true;
+                (targetType.isPrimitive() && selectorType.isPrimitive() &&
+                    (selectorWrapper.isStrictSubRangeOf(targetWrapper) &&
+                            !((selectorType.equals(byte.class) && targetType.equals(char.class)) ||
+                              (selectorType.equals(int.class)  && targetType.equals(float.class)) ||
+                              (selectorType.equals(long.class) && (targetType.equals(double.class) || targetType.equals(float.class))))))) return true;
         return false;
     }
 

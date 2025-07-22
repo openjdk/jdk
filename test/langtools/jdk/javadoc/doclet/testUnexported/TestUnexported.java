@@ -27,6 +27,8 @@
  * @summary Hide superclasses from conditionally exported packages
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @build javadoc.tester.* toolbox.ToolBox
  * @run main TestUnexported
  */

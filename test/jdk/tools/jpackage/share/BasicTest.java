@@ -114,8 +114,8 @@ public final class BasicTest {
 
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
 
-        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output.stream());
-        TKit.assertTextStream("jpackage.app-path=").apply(output.stream());
+        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output);
+        TKit.assertTextStream("jpackage.app-path=").apply(output);
     }
 
     @Test
@@ -169,9 +169,9 @@ public final class BasicTest {
         };
 
         TKit.trace("Check parameters in help text");
-        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)),
+        TKit.assertNotEquals(0, countStrings.apply(List.of(expectedPrefix)).longValue(),
                 "Check help text contains platform specific parameters");
-        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes),
+        TKit.assertEquals(0, countStrings.apply(unexpectedPrefixes).longValue(),
                 "Check help text doesn't contain unexpected parameters");
     }
 
@@ -221,12 +221,12 @@ public final class BasicTest {
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("regular output")
                     .predicate(String::contains).negate()
-                    .apply(nonVerboseOutput.stream());
+                    .apply(nonVerboseOutput);
         });
 
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("verbose output")
-                    .apply(verboseOutput[0].stream());
+                    .apply(verboseOutput[0]);
         });
     }
 
@@ -237,20 +237,21 @@ public final class BasicTest {
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
                 .useToolProvider(false)
+                .discardStdout(true)
                 .removeArgumentWithValue("--main-class");
 
         if (verbose) {
             cmd.addArgument("--verbose");
         }
 
-        final var textVerifier = Stream.of(
+        cmd.validateOutput(Stream.of(
                 List.of("error.no-main-class-with-main-jar", "hello.jar"),
                 List.of("error.no-main-class-with-main-jar.advice", "hello.jar")
         ).map(args -> {
             return JPackageStringBundle.MAIN.cannedFormattedString(args.getFirst(), args.subList(1, args.size()).toArray());
-        }).map(CannedFormattedString::getValue).map(TKit::assertTextStream).reduce(TKit.TextStreamVerifier::andThen).orElseThrow();
+        }).toArray(CannedFormattedString[]::new));
 
-        textVerifier.apply(cmd.saveConsoleOutput(true).execute(1).getOutput().stream().filter(Predicate.not(JPackageCommand::withTimestamp)));
+        cmd.execute(1);
     }
 
     @Test

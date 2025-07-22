@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.TokenReplace;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
@@ -644,6 +645,44 @@ public final class ErrorTest {
         return toTestArgs(testCases.stream());
     }
 
+    @Test(ifOS = MACOS)
+    @Parameter({"MAC_PKG", "--mac-signing-key-user-name", "false"})
+    @Parameter({"MAC_DMG", "--mac-signing-key-user-name", "false"})
+    @Parameter({"IMAGE", "--mac-signing-key-user-name", "false"})
+    @Parameter({"MAC_PKG", "--mac-app-image-sign-identity", "true"})
+    @Parameter({"MAC_DMG", "--mac-app-image-sign-identity", "true"})
+    @Parameter({"IMAGE", "--mac-app-image-sign-identity", "true"})
+    @Parameter({"MAC_PKG", "--mac-installer-sign-identity", "true"})
+    public static void testMacSigningIdentityValidation(PackageType type, String option, boolean passThroughOption) {
+
+        final var signingId = "foo";
+
+        final List<CannedFormattedString> errorMessages = new ArrayList<>();
+        errorMessages.add(JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.cert.not.found", "Developer ID Application: " + signingId, ""));
+        errorMessages.addAll(Stream.of(
+                "error.explicit-sign-no-cert",
+                "error.explicit-sign-no-cert.advice"
+        ).map(JPackageStringBundle.MAIN::cannedFormattedString).toList());
+
+        final var cmd = JPackageCommand.helloAppImage()
+                .ignoreDefaultVerbose(true)
+                .addArguments("--mac-sign")
+                .addArguments(option, signingId)
+                .setPackageType(type);
+
+        if (passThroughOption) {
+            errorMessages.stream()
+                    .map(CannedFormattedString::getValue)
+                    .map(TKit::assertTextStream)
+                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateOutput);
+        } else {
+            cmd.validateOutput(errorMessages.toArray(CannedFormattedString[]::new));
+        }
+
+        cmd.execute(1);
+    }
+
     private static void duplicate(TestSpec.Builder builder, Consumer<TestSpec> accumulator, Consumer<TestSpec.Builder> mutator) {
         accumulator.accept(builder.create());
         mutator.accept(builder);
@@ -732,7 +771,7 @@ public final class ErrorTest {
         // It will affect jpackage error messages if the command line is malformed.
         cmd.ignoreDefaultVerbose(true);
 
-        // Ignore external runtime as it will interfer
+        // Ignore external runtime as it will interfere
         // with jpackage arguments in this test.
         cmd.ignoreDefaultRuntime(true);
 

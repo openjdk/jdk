@@ -113,7 +113,7 @@ public class InstallDirTest {
         .run();
     }
 
-    record DmgTestSpec(Path installDir, boolean installDirIgnored, boolean runtimeInstaller) {
+    record DmgTestSpec(Path installDir, boolean runtimeInstaller) {
 
         DmgTestSpec {
             Objects.requireNonNull(installDir);
@@ -125,15 +125,8 @@ public class InstallDirTest {
 
         static final class Builder {
 
-            Builder ignoredInstallDir(String v) {
-                installDir = Path.of(v);
-                installDirIgnored = true;
-                return this;
-            }
-
             Builder acceptedInstallDir(String v) {
                 installDir = Path.of(v);
-                installDirIgnored = false;
                 return this;
             }
 
@@ -143,11 +136,10 @@ public class InstallDirTest {
             }
 
             DmgTestSpec create() {
-                return new DmgTestSpec(installDir, installDirIgnored, runtimeInstaller);
+                return new DmgTestSpec(installDir, runtimeInstaller);
             }
 
             private Path installDir;
-            private boolean installDirIgnored;
             private boolean runtimeInstaller;
         }
 
@@ -155,9 +147,6 @@ public class InstallDirTest {
         public String toString() {
             final var sb = new StringBuilder();
             sb.append(installDir);
-            if (installDirIgnored) {
-                sb.append(", ignore");
-            }
             if (runtimeInstaller) {
                 sb.append(", runtime");
             }
@@ -176,26 +165,7 @@ public class InstallDirTest {
 
             test.addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
                 cmd.addArguments("--install-dir", installDir);
-                cmd.validateOutput(createInstallDirWarningVerifier());
             }).run(Action.CREATE_AND_UNPACK);
-        }
-
-        private TextStreamVerifier createInstallDirWarningVerifier() {
-            final var verifier = TKit.assertTextStream(
-                    JPackageStringBundle.MAIN.cannedFormattedString("message.install-dir-ignored", defaultDmgInstallDir()).getValue());
-            if (installDirIgnored) {
-                return verifier;
-            } else {
-                return verifier.negate();
-            }
-        }
-
-        private String defaultDmgInstallDir() {
-            if (runtimeInstaller) {
-                return "/Library/Java/JavaVirtualMachines";
-            } else {
-                return "/Applications";
-            }
         }
     }
 
@@ -207,19 +177,19 @@ public class InstallDirTest {
 
     public static List<Object[]> testDmg() {
         return Stream.of(
-                DmgTestSpec.build().ignoredInstallDir("/foo"),
-                DmgTestSpec.build().ignoredInstallDir("/foo/bar"),
-                DmgTestSpec.build().ignoredInstallDir("/foo").runtimeInstaller(),
-                DmgTestSpec.build().ignoredInstallDir("/foo/bar").runtimeInstaller(),
+                DmgTestSpec.build().acceptedInstallDir("/foo"),
+                DmgTestSpec.build().acceptedInstallDir("/foo/bar"),
+                DmgTestSpec.build().acceptedInstallDir("/foo").runtimeInstaller(),
+                DmgTestSpec.build().acceptedInstallDir("/foo/bar").runtimeInstaller(),
 
-                DmgTestSpec.build().ignoredInstallDir("/Library/Java/JavaVirtualMachines"),
-                DmgTestSpec.build().ignoredInstallDir("/Applications").runtimeInstaller(),
+                DmgTestSpec.build().acceptedInstallDir("/Library/Java/JavaVirtualMachines"),
+                DmgTestSpec.build().acceptedInstallDir("/Applications").runtimeInstaller(),
 
                 DmgTestSpec.build().acceptedInstallDir("/Applications"),
-                DmgTestSpec.build().ignoredInstallDir("/Applications/foo/bar/buz"),
+                DmgTestSpec.build().acceptedInstallDir("/Applications/foo/bar/buz"),
 
                 DmgTestSpec.build().runtimeInstaller().acceptedInstallDir("/Library/Java/JavaVirtualMachines"),
-                DmgTestSpec.build().runtimeInstaller().ignoredInstallDir("/Library/Java/JavaVirtualMachines/foo/bar/buz")
+                DmgTestSpec.build().runtimeInstaller().acceptedInstallDir("/Library/Java/JavaVirtualMachines/foo/bar/buz")
         ).map(DmgTestSpec.Builder::create).map(testSpec -> {
             return new Object[] { testSpec };
         }).toList();

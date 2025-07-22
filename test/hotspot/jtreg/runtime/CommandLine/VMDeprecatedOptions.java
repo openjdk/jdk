@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,26 +58,11 @@ public class VMDeprecatedOptions {
             // { <flag name> , <expected default value> }
             // deprecated non-alias flags:
             {"AllowRedefinitionToAddDeleteMethods", "true"},
-            {"LockingMode", "1"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
-        if (Platform.is64bit()) {
-          deprecated.addAll(
-            Arrays.asList(new String[][] {
-              {"UseCompressedClassPointers", "false"},
-            })
-          );
-        }
-        if (Platform.isLinux()) {
-          deprecated.addAll(
-            Arrays.asList(new String[][] {
-              {"UseOprofile", "false"}
-            })
-          );
-        }
         if (Platform.isX86() || Platform.isX64()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {

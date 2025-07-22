@@ -40,9 +40,9 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 #include "utilities/events.hpp"
 
@@ -53,21 +53,6 @@ public:
     ShenandoahGenerationalInitLogger logger;
     logger.print_all();
   }
-
-  void print_heap() override {
-    ShenandoahInitLogger::print_heap();
-
-    ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-
-    ShenandoahYoungGeneration* young = heap->young_generation();
-    log_info(gc, init)("Young Generation Soft Size: " EXACTFMT, EXACTFMTARGS(young->soft_max_capacity()));
-    log_info(gc, init)("Young Generation Max: " EXACTFMT, EXACTFMTARGS(young->max_capacity()));
-
-    ShenandoahOldGeneration* old = heap->old_generation();
-    log_info(gc, init)("Old Generation Soft Size: " EXACTFMT, EXACTFMTARGS(old->soft_max_capacity()));
-    log_info(gc, init)("Old Generation Max: " EXACTFMT, EXACTFMTARGS(old->max_capacity()));
-  }
-
 protected:
   void print_gc_specific() override {
     ShenandoahInitLogger::print_gc_specific();
@@ -141,8 +126,8 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   size_t initial_capacity_old = max_capacity() - max_capacity_young;
   size_t max_capacity_old = max_capacity() - initial_capacity_young;
 
-  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young, initial_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old, initial_capacity_old);
+  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young);
+  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old);
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
 }
@@ -181,6 +166,29 @@ void ShenandoahGenerationalHeap::gc_threads_do(ThreadClosure* tcl) const {
 void ShenandoahGenerationalHeap::stop() {
   ShenandoahHeap::stop();
   regulator_thread()->stop();
+}
+
+bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
+  if (is_idle()) {
+    return false;
+  }
+
+  if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
+    // We are marking young, this object is in young, and it is below the TAMS
+    return true;
+  }
+
+  if (is_in_old(obj)) {
+    // Card marking barriers are required for objects in the old generation
+    return true;
+  }
+
+  if (has_forwarded_objects()) {
+    // Object may have pointers that need to be updated
+    return true;
+  }
+
+  return false;
 }
 
 void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {

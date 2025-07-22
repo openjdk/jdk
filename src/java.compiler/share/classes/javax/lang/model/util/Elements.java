@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -777,6 +777,12 @@ public interface Elements {
      *                           elementForObjecttoString,
      *                           elements.getTypeElement("I"));
      * }
+     *
+     * @apiNote This method examines the method's name, signature, subclass relationship, and accessibility
+     * in determining whether one method overrides another, as specified in JLS {@jls 8.4.8.1}.
+     * In addition, an implementation may have stricter checks including method modifiers, return types and
+     * exception types as described in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3}.
+     * Note that such additional compile-time checks are not guaranteed and may vary between implementations.
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden

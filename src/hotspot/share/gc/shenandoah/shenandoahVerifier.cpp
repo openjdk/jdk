@@ -27,11 +27,11 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -244,18 +244,20 @@ private:
     }
 
     // Do additional checks for special objects: their fields can hold metadata as well.
-    // We want to check class loading/unloading did not corrupt them.
+    // We want to check class loading/unloading did not corrupt them. We can only reasonably
+    // trust the forwarded objects, as the from-space object can have the klasses effectively
+    // dead.
 
     if (obj_klass == vmClasses::Class_klass()) {
-      Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+      const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             klass == nullptr || Metaspace::contains(klass),
-            "Instance class mirror should point to Metaspace");
+            "Mirrored instance class should point to Metaspace");
 
-      Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+      const Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             array_klass == nullptr || Metaspace::contains(array_klass),
-            "Array class mirror should point to Metaspace");
+            "Mirrored array class should point to Metaspace");
     }
 
     // ------------ obj and fwd are safe at this point --------------

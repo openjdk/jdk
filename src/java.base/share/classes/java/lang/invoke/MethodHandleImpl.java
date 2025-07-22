@@ -36,7 +36,6 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
@@ -983,7 +982,7 @@ abstract class MethodHandleImpl {
         return makePairwiseConvert(getFunction(NF_throwException).resolvedHandle(), type, false, true);
     }
 
-    static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
+    static <T extends Throwable> Void throwException(T t) throws T { throw t; }
 
     static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
     static MethodHandle fakeMethodHandleInvoke(MemberName method) {
@@ -1526,6 +1525,11 @@ abstract class MethodHandleImpl {
     }
 
     static {
+        runtimeSetup();
+    }
+
+    // Also called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
             public Class<?> getDeclaringClass(Object rmname) {
