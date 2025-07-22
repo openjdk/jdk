@@ -1664,12 +1664,12 @@ size_t ObjectSynchronizer::deflate_monitor_list(ObjectMonitorDeflationSafepointe
   return deflated_count;
 }
 
-class HandshakeForDeflation : public HandshakeClosure {
+class DeflationHandshakeClosure : public HandshakeClosure {
  public:
-  HandshakeForDeflation() : HandshakeClosure("HandshakeForDeflation") {}
+  DeflationHandshakeClosure() : HandshakeClosure("DeflationHandshakeClosure") {}
 
   void do_thread(Thread* thread) {
-    log_trace(monitorinflation)("HandshakeForDeflation::do_thread: thread="
+    log_trace(monitorinflation)("DeflationHandshakeClosure::do_thread: thread="
                                 INTPTR_FORMAT, p2i(thread));
     if (thread->is_Java_thread()) {
       // Clear OM cache
@@ -1834,8 +1834,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // A JavaThread needs to handshake in order to safely free the
     // ObjectMonitors that were deflated in this cycle.
-    HandshakeForDeflation hfd_hc;
-    Handshake::execute(&hfd_hc);
+    DeflationHandshakeClosure dhc;
+    Handshake::execute(&dhc);
     // Also, we sync and desync GC threads around the handshake, so that they can
     // safely read the mark-word and look-through to the object-monitor, without
     // being afraid that the object-monitor is going away.

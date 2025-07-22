@@ -188,8 +188,8 @@ jint SerialHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
-  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, GenAlignment);
-  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, GenAlignment);
+  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, SpaceAlignment);
+  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, SpaceAlignment);
 
   _rem_set = new CardTableRS(_reserved);
   _rem_set->initialize(young_rs.base(), old_rs.base());

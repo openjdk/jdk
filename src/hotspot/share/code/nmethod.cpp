@@ -28,7 +28,6 @@
 #include "code/dependencies.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.inline.hpp"
-#include "code/relocInfo.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationLog.hpp"
@@ -692,13 +691,6 @@ address nmethod::oops_reloc_begin() const {
   }
 
   address low_boundary = verified_entry_point();
-  if (!is_in_use()) {
-    low_boundary += NativeJump::instruction_size;
-    // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
-    // This means that the low_boundary is going to be a little too high.
-    // This shouldn't matter, since oops of non-entrant methods are never used.
-    // In fact, why are we bothering to look at oops in a non-entrant method??
-  }
   return low_boundary;
 }
 
@@ -1653,10 +1645,6 @@ void nmethod::maybe_print_nmethod(const DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
-  // Enter a critical section to prevent a race with deopts that patch code and updates the relocation info.
-  // Unfortunately, we have to lock the NMethodState_lock before the tty lock due to the deadlock rules and
-  // cannot lock in a more finely grained manner.
-  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != nullptr) {
     xtty->begin_head("print_nmethod");
@@ -1947,6 +1935,11 @@ bool nmethod::is_maybe_on_stack() {
 void nmethod::inc_decompile_count() {
   if (!is_compiled_by_c2() && !is_compiled_by_jvmci()) return;
   // Could be gated by ProfileTraps, but do not bother...
+#if INCLUDE_JVMCI
+  if (jvmci_skip_profile_deopt()) {
+    return;
+  }
+#endif
   Method* m = method();
   if (m == nullptr)  return;
   MethodData* mdo = m->method_data();
@@ -1975,14 +1968,12 @@ void nmethod::invalidate_osr_method() {
   }
 }
 
-void nmethod::log_state_change(const char* reason) const {
-  assert(reason != nullptr, "Must provide a reason");
-
+void nmethod::log_state_change(InvalidationReason invalidation_reason) const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
       xtty->begin_elem("make_not_entrant thread='%zu' reason='%s'",
-                       os::current_thread_id(), reason);
+                       os::current_thread_id(), invalidation_reason_to_string(invalidation_reason));
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
@@ -1991,7 +1982,7 @@ void nmethod::log_state_change(const char* reason) const {
 
   ResourceMark rm;
   stringStream ss(NEW_RESOURCE_ARRAY(char, 256), 256);
-  ss.print("made not entrant: %s", reason);
+  ss.print("made not entrant: %s", invalidation_reason_to_string(invalidation_reason));
 
   CompileTask::print_ul(this, ss.freeze());
   if (PrintCompilation) {
@@ -2006,9 +1997,7 @@ void nmethod::unlink_from_method() {
 }
 
 // Invalidate code
-bool nmethod::make_not_entrant(const char* reason) {
-  assert(reason != nullptr, "Must provide a reason");
-
+bool nmethod::make_not_entrant(InvalidationReason invalidation_reason) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
@@ -2044,19 +2033,7 @@ bool nmethod::make_not_entrant(const char* reason) {
     } else {
       // The caller can be calling the method statically or through an inline
       // cache call.
-      NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
-                                       SharedRuntime::get_handle_wrong_method_stub());
-
-      // Update the relocation info for the patched entry.
-      // First, get the old relocation info...
-      RelocIterator iter(this, verified_entry_point(), verified_entry_point() + 8);
-      if (iter.next() && iter.addr() == verified_entry_point()) {
-        Relocation* old_reloc = iter.reloc();
-        // ...then reset the iterator to update it.
-        RelocIterator iter(this, verified_entry_point(), verified_entry_point() + 8);
-        relocInfo::change_reloc_info_for_address(&iter, verified_entry_point(), old_reloc->type(),
-                                                 relocInfo::relocType::runtime_call_type);
-      }
+      BarrierSet::barrier_set()->barrier_set_nmethod()->make_not_entrant(this);
     }
 
     if (update_recompile_counts()) {
@@ -2077,7 +2054,7 @@ bool nmethod::make_not_entrant(const char* reason) {
     assert(success, "Transition can't fail");
 
     // Log the transition once
-    log_state_change(reason);
+    log_state_change(invalidation_reason);
 
     // Remove nmethod from method.
     unlink_from_method();
@@ -2088,7 +2065,7 @@ bool nmethod::make_not_entrant(const char* reason) {
   // Invalidate can't occur while holding the NMethodState_lock
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this);
+    nmethod_data->invalidate_nmethod_mirror(this, invalidation_reason);
   }
 #endif
 
@@ -2126,7 +2103,9 @@ void nmethod::unlink() {
   // Clear the link between this nmethod and a HotSpotNmethod mirror
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this);
+    nmethod_data->invalidate_nmethod_mirror(this, is_cold() ?
+            nmethod::InvalidationReason::UNLOADING_COLD :
+            nmethod::InvalidationReason::UNLOADING);
   }
 #endif
 
@@ -2182,6 +2161,7 @@ void nmethod::purge(bool unregister_nmethod) {
   }
   CodeCache::unregister_old_nmethod(this);
 
+  JVMCI_ONLY( _metadata_size = 0; )
   CodeBlob::purge();
 }
 
@@ -2466,7 +2446,7 @@ void nmethod::do_unloading(bool unloading_occurred) {
   }
 }
 
-void nmethod::oops_do(OopClosure* f, bool allow_dead) {
+void nmethod::oops_do(OopClosure* f) {
   // Prevent extra code cache walk for platforms that don't have immediate oops.
   if (relocInfo::mustIterateImmediateOopsInCode()) {
     RelocIterator iter(this, oops_reloc_begin());
@@ -2945,9 +2925,6 @@ class VerifyMetadataClosure: public MetadataClosure {
 void nmethod::verify() {
   if (is_not_entrant())
     return;
-
-  // Make sure all the entry points are correctly aligned for patching.
-  NativeJump::check_verified_entry_alignment(entry_point(), verified_entry_point());
 
   // assert(oopDesc::is_oop(method()), "must be valid");
 
@@ -3492,6 +3469,9 @@ void nmethod::decode2(outputStream* ost) const {
   if (use_compressed_format && ! compressed_with_comments) {
     const_cast<nmethod*>(this)->print_constant_pool(st);
 
+    st->bol();
+    st->cr();
+    st->print_cr("Loading hsdis library failed, undisassembled code is shown in MachCode section");
     //---<  Open the output (Marker for post-mortem disassembler)  >---
     st->print_cr("[MachCode]");
     const char* header = nullptr;
@@ -3526,6 +3506,9 @@ void nmethod::decode2(outputStream* ost) const {
   if (compressed_with_comments) {
     const_cast<nmethod*>(this)->print_constant_pool(st);
 
+    st->bol();
+    st->cr();
+    st->print_cr("Loading hsdis library failed, undisassembled code is shown in MachCode section");
     //---<  Open the output (Marker for post-mortem disassembler)  >---
     st->print_cr("[MachCode]");
     while ((p < end) && (p != nullptr)) {
@@ -4078,5 +4061,9 @@ const char* nmethod::jvmci_name() {
     return jvmci_nmethod_data()->name();
   }
   return nullptr;
+}
+
+bool nmethod::jvmci_skip_profile_deopt() const {
+  return jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->profile_deopt();
 }
 #endif

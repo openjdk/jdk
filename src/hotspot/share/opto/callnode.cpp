@@ -22,8 +22,9 @@
  *
  */
 
-#include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
+#include "code/vmreg.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -43,7 +44,6 @@
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "code/vmreg.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1451,14 +1451,8 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
   assert(JVMState::logMonitorEdges == exact_log2(MonitorEdges), "correct MonitorEdges");
   assert(req() == jvms()->endoff(), "correct sizing");
   int nextmon = jvms()->scloff();
-  if (GenerateSynchronizationCode) {
-    ins_req(nextmon,   lock->box_node());
-    ins_req(nextmon+1, lock->obj_node());
-  } else {
-    Node* top = Compile::current()->top();
-    ins_req(nextmon, top);
-    ins_req(nextmon, top);
-  }
+  ins_req(nextmon,   lock->box_node());
+  ins_req(nextmon+1, lock->obj_node());
   jvms()->set_scloff(nextmon + MonitorEdges);
   jvms()->set_endoff(req());
 }

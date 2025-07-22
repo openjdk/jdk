@@ -208,7 +208,7 @@ void ClassLoaderDataShared::clear_archived_oops() {
 oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.restore(null_class_loader_data(), false, true);
-  return _archived_javabase_moduleEntry->module();
+  return _archived_javabase_moduleEntry->module_oop();
 }
 
 void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoaderData* loader_data) {

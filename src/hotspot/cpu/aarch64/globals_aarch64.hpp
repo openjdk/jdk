@@ -38,7 +38,7 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls 
 
 define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
-define_pd_global(uintx, CodeCacheSegmentSize,    64);
+define_pd_global(size_t, CodeCacheSegmentSize,   64);
 define_pd_global(intx, CodeEntryAlignment,       64);
 define_pd_global(intx, OptoLoopAlignment,        16);
 
@@ -117,7 +117,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(ccstr, OnSpinWaitInst, "yield", DIAGNOSTIC,                   \
           "The instruction to use to implement "                        \
           "java.lang.Thread.onSpinWait()."                              \
-          "Options: none, nop, isb, yield.")                            \
+          "Options: none, nop, isb, yield, sb.")                        \
   product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
           "The number of OnSpinWaitInst instructions to generate."      \
           "It cannot be used with OnSpinWaitInst=none.")                \

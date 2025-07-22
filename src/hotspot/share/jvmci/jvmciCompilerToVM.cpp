@@ -27,6 +27,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -1206,7 +1207,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
         assert(JVMCIENV->isa_HotSpotNmethod(installed_code_handle), "wrong type");
         // Clear the link to an old nmethod first
         JVMCIObject nmethod_mirror = installed_code_handle;
-        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, JVMCI_CHECK_0);
+        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, nmethod::InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE, JVMCI_CHECK_0);
       } else {
         assert(JVMCIENV->isa_InstalledCode(installed_code_handle), "wrong type");
       }
@@ -1215,6 +1216,14 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
     }
   }
   return result;
+C2V_END
+
+C2V_VMENTRY_0(jobject, getInvalidationReasonDescription, (JNIEnv *env, jobject, jint invalidation_reason))
+  HandleMark hm(THREAD);
+  JNIHandleMark jni_hm(thread);
+  nmethod::InvalidationReason reason = static_cast<nmethod::InvalidationReason>(invalidation_reason);
+  JVMCIObject desc = JVMCIENV->create_string(nmethod::invalidation_reason_to_string(reason), JVMCI_CHECK_NULL);
+  return JVMCIENV->get_jobject(desc);
 C2V_END
 
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv* env, jobject))
@@ -1382,7 +1391,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   nmethod* code = method->code();
   if (code != nullptr) {
-    code->make_not_entrant("JVMCI reprofile");
+    code->make_not_entrant(nmethod::InvalidationReason::JVMCI_REPROFILE);
   }
 
   MethodData* method_data = method->method_data();
@@ -1395,9 +1404,14 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 C2V_END
 
 
-C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize))
+C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize, jint invalidation_reason))
+  int first = static_cast<int>(nmethod::InvalidationReason::C1_CODEPATCH);
+  int last = static_cast<int>(nmethod::InvalidationReason::INVALIDATION_REASONS_COUNT);
+  if (invalidation_reason < first || invalidation_reason >= last) {
+    JVMCI_THROW_MSG(IllegalArgumentException, err_msg("Invalid invalidation_reason: %d", invalidation_reason));
+  }
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, JVMCI_CHECK);
+  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, static_cast<nmethod::InvalidationReason>(invalidation_reason), JVMCI_CHECK);
 C2V_END
 
 C2V_VMENTRY_NULL(jlongArray, collectCounters, (JNIEnv* env, jobject))
@@ -1822,7 +1836,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    fst.current()->cb()->as_nmethod()->make_not_entrant("JVMCI materialize virtual objects");
+    fst.current()->cb()->as_nmethod()->make_not_entrant(nmethod::InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT);
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
@@ -2263,7 +2277,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredFieldsInfo, (JNIEnv* env, jobject, ARG
   InstanceKlass* iklass = InstanceKlass::cast(klass);
   int java_fields, injected_fields;
   GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(iklass->fieldinfo_stream(), &java_fields, &injected_fields);
-  JVMCIObjectArray array = JVMCIENV->new_FieldInfo_array(fields->length(), JVMCIENV);
+  JVMCIObjectArray array = JVMCIENV->new_FieldInfo_array(fields->length(), JVMCI_CHECK_NULL);
   for (int i = 0; i < fields->length(); i++) {
     JVMCIObject field_info = JVMCIENV->new_FieldInfo(fields->adr_at(i), JVMCI_CHECK_NULL);
     JVMCIENV->put_object_at(array, i, field_info);
@@ -2876,11 +2890,12 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       JVMCIObject methodObject = thisEnv->get_HotSpotNmethod_method(obj);
       methodHandle mh(THREAD, thisEnv->asMethod(methodObject));
       jboolean isDefault = thisEnv->get_HotSpotNmethod_isDefault(obj);
+      jboolean profileDeopt = thisEnv->get_HotSpotNmethod_profileDeopt(obj);
       jlong compileIdSnapshot = thisEnv->get_HotSpotNmethod_compileIdSnapshot(obj);
       JVMCIObject name_string = thisEnv->get_InstalledCode_name(obj);
       const char* cstring = name_string.is_null() ? nullptr : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
-      result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
+      result = PEER_JVMCIENV->new_HotSpotNmethod(mh, cstring, isDefault, profileDeopt, compileIdSnapshot, JVMCI_CHECK_0);
       JVMCINMethodHandle nmethod_handle(THREAD);
       nmethod* nm = JVMCIENV->get_nmethod(obj, nmethod_handle);
       if (result.is_null()) {
@@ -2969,13 +2984,21 @@ C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, ARGUMEN
   return JNIHandles::make_local(THREAD, executable);
 C2V_END
 
+// Checks that `index` denotes a non-injected field in `klass`
 static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
   if (!klass->is_instance_klass()) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
         err_msg("Expected non-primitive type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  if (index < 0 || index > iklass->total_fields_count()) {
+  if (index < 0 || index >= iklass->java_fields_count()) {
+    if (index >= 0 && index < iklass->total_fields_count()) {
+      fieldDescriptor fd(iklass, index);
+      if (fd.is_injected()) {
+        JVMCI_THROW_MSG_NULL(IllegalArgumentException,
+            err_msg("Cannot get Field for injected %s.%s", klass->external_name(), fd.name()->as_C_string()));
+      }
+    }
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
         err_msg("Field index %d out of bounds for %s", index, klass->external_name()));
   }
@@ -2985,7 +3008,7 @@ static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
 C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index))
   requireInHotSpot("asReflectionField", JVMCI_CHECK_NULL);
   Klass* klass = UNPACK_PAIR(Klass, klass);
-  InstanceKlass* iklass = check_field(klass, index, JVMCIENV);
+  InstanceKlass* iklass = check_field(klass, index, JVMCI_CHECK_NULL);
   fieldDescriptor fd(iklass, index);
   oop reflected = Reflection::new_field(&fd, CHECK_NULL);
   return JNIHandles::make_local(THREAD, reflected);
@@ -2993,7 +3016,7 @@ C2V_END
 
 static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationArray* annotations_array, bool for_class,
                                               jint filter_length, jlong filter_klass_pointers,
-                                              JavaThread* THREAD, JVMCIEnv* JVMCIENV) {
+                                              JavaThread* THREAD, JVMCI_TRAPS) {
   // Get a ConstantPool object for annotation parsing
   Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
   reflect_ConstantPool::set_cp(jcp(), holder->constants());
@@ -3071,7 +3094,7 @@ C2V_END
 C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
   CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
-  InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCIENV);
+  InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCI_CHECK_NULL);
   fieldDescriptor fd(holder, index);
   return get_encoded_annotation_data(holder, fd.annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
@@ -3351,6 +3374,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode0",                                 CC "(JJZ" HS_COMPILED_CODE "[" OBJECT INSTALLED_CODE "J[B)I",                         FN_PTR(installCode0)},
+  {CC "getInvalidationReasonDescription",             CC "(I)" STRING,                                                                      FN_PTR(getInvalidationReasonDescription)},
   {CC "getInstallCodeFlags",                          CC "()I",                                                                             FN_PTR(getInstallCodeFlags)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},
   {CC "disassembleCodeBlob",                          CC "(" INSTALLED_CODE ")" STRING,                                                     FN_PTR(disassembleCodeBlob)},
@@ -3359,7 +3383,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getLocalVariableTableStart",                   CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getLocalVariableTableStart)},
   {CC "getLocalVariableTableLength",                  CC "(" HS_METHOD2 ")I",                                                               FN_PTR(getLocalVariableTableLength)},
   {CC "reprofile",                                    CC "(" HS_METHOD2 ")V",                                                               FN_PTR(reprofile)},
-  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "Z)V",                                                              FN_PTR(invalidateHotSpotNmethod)},
+  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "ZI)V",                                                             FN_PTR(invalidateHotSpotNmethod)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
   {CC "getCountersSize",                              CC "()I",                                                                             FN_PTR(getCountersSize)},
   {CC "setCountersSize",                              CC "(I)Z",                                                                            FN_PTR(setCountersSize)},
