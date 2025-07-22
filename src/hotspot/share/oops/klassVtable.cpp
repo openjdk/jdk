@@ -40,8 +40,8 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/flags/flagSetting.hpp"
-#include "runtime/java.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/copy.hpp"
 
@@ -1180,38 +1180,42 @@ void klassItable::check_constraints(GrowableArray<Method*>* supers, TRAPS) {
     Method* interface_method = supers->at(i); // method overridden
 
     if (target != nullptr && interface_method != nullptr) {
-      InstanceKlass* method_holder = target->method_holder();
-      InstanceKlass* interf = interface_method->method_holder();
-      HandleMark hm(THREAD);
-      Handle method_holder_loader(THREAD, method_holder->class_loader());
-      Handle interface_loader(THREAD, interf->class_loader());
+      // Do not check loader constraints for overpass methods because overpass
+      // methods are created by the jvm to throw exceptions.
+      if (!target->is_overpass()) {
+        InstanceKlass* method_holder = target->method_holder();
+        InstanceKlass* interf = interface_method->method_holder();
+        HandleMark hm(THREAD);
+        Handle method_holder_loader(THREAD, method_holder->class_loader());
+        Handle interface_loader(THREAD, interf->class_loader());
 
-      if (method_holder_loader() != interface_loader()) {
-        ResourceMark rm(THREAD);
-        Symbol* failed_type_symbol =
-          SystemDictionary::check_signature_loaders(target->signature(),
-                                                    _klass,
-                                                    method_holder_loader,
-                                                    interface_loader,
-                                                    true);
-        if (failed_type_symbol != nullptr) {
-          stringStream ss;
-          ss.print("loader constraint violation in interface itable"
-                   " initialization for class %s: when selecting method '",
-                   _klass->external_name());
-          interface_method->print_external_name(&ss),
-          ss.print("' the class loader %s for super interface %s, and the class"
-                   " loader %s of the selected method's %s, %s have"
-                   " different Class objects for the type %s used in the signature (%s; %s)",
-                   interf->class_loader_data()->loader_name_and_id(),
-                   interf->external_name(),
-                   method_holder->class_loader_data()->loader_name_and_id(),
-                   method_holder->external_kind(),
-                   method_holder->external_name(),
-                   failed_type_symbol->as_klass_external_name(),
-                   interf->class_in_module_of_loader(false, true),
-                   method_holder->class_in_module_of_loader(false, true));
-          THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+        if (method_holder_loader() != interface_loader()) {
+          ResourceMark rm(THREAD);
+          Symbol* failed_type_symbol =
+            SystemDictionary::check_signature_loaders(target->signature(),
+                                                      _klass,
+                                                      method_holder_loader,
+                                                      interface_loader,
+                                                      true);
+          if (failed_type_symbol != nullptr) {
+            stringStream ss;
+            ss.print("loader constraint violation in interface itable"
+                     " initialization for class %s: when selecting method '",
+                     _klass->external_name());
+            interface_method->print_external_name(&ss),
+              ss.print("' the class loader %s for super interface %s, and the class"
+                       " loader %s of the selected method's %s, %s have"
+                       " different Class objects for the type %s used in the signature (%s; %s)",
+                       interf->class_loader_data()->loader_name_and_id(),
+                       interf->external_name(),
+                       method_holder->class_loader_data()->loader_name_and_id(),
+                       method_holder->external_kind(),
+                       method_holder->external_name(),
+                       failed_type_symbol->as_klass_external_name(),
+                       interf->class_in_module_of_loader(false, true),
+                       method_holder->class_in_module_of_loader(false, true));
+            THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
+          }
         }
       }
     }
@@ -1333,11 +1337,9 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(),
                                                                Klass::PrivateLookupMode::skip);
     }
-    if (target == nullptr || !target->is_public() || target->is_abstract() || target->is_overpass()) {
-      assert(target == nullptr || !target->is_overpass() || target->is_public(),
-             "Non-public overpass method!");
+    if (target == nullptr || !target->is_public() || target->is_abstract()) {
       // Entry does not resolve. Leave it empty for AbstractMethodError or other error.
-      if (!(target == nullptr) && !target->is_public()) {
+      if (target != nullptr && !target->is_public()) {
         // Stuff an IllegalAccessError throwing method in there instead.
         itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
             initialize(_klass, Universe::throw_illegal_access_error());

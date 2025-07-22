@@ -1134,9 +1134,9 @@ public class File
         if (ss == null) return null;
         int n = ss.length;
         File[] fs = new File[n];
-        for (int i = 0; i < n; i++) {
-            fs[i] = new File(ss[i], this);
-        }
+        boolean isEmpty = path.isEmpty();
+        for (int i = 0; i < n; i++)
+            fs[i] = isEmpty ? new File(ss[i]) : new File(ss[i], this);
         return fs;
     }
 
@@ -1169,9 +1169,10 @@ public class File
         String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
+        boolean isEmpty = path.isEmpty();
         for (String s : ss)
             if ((filter == null) || filter.accept(this, s))
-                files.add(new File(s, this));
+                files.add(isEmpty ? new File(s) : new File(s, this));
         return files.toArray(new File[files.size()]);
     }
 
@@ -1202,8 +1203,9 @@ public class File
         String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
+        boolean isEmpty = path.isEmpty();
         for (String s : ss) {
-            File f = new File(s, this);
+            File f = isEmpty ? new File(s) : new File(s, this);
             if ((filter == null) || filter.accept(f))
                 files.add(f);
         }
