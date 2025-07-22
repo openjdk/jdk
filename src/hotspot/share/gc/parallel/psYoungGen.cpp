@@ -810,7 +810,7 @@ void PSYoungGen::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all(_virtual_space->committed_size());
+    _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }
 

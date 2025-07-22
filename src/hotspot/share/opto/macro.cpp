@@ -93,14 +93,8 @@ void PhaseMacroExpand::migrate_outs(Node *old, Node *target) {
   assert(old->outcnt() == 0, "all uses must be deleted");
 }
 
-Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path) {
-  Node* cmp;
-  if (mask != 0) {
-    Node* and_node = transform_later(new AndXNode(word, MakeConX(mask)));
-    cmp = transform_later(new CmpXNode(and_node, MakeConX(bits)));
-  } else {
-    cmp = word;
-  }
+Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word) {
+  Node* cmp = word;
   Node* bol = transform_later(new BoolNode(cmp, BoolTest::ne));
   IfNode* iff = new IfNode( ctrl, bol, PROB_MIN, COUNT_UNKNOWN );
   transform_later(iff);
@@ -111,13 +105,8 @@ Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* 
   // Fast path not-taken, i.e. slow path
   Node *slow_taken = transform_later(new IfTrueNode(iff));
 
-  if (return_fast_path) {
-    region->init_req(edge, slow_taken); // Capture slow-control
-    return fast_taken;
-  } else {
     region->init_req(edge, fast_taken); // Capture fast-control
     return slow_taken;
-  }
 }
 
 //--------------------copy_predefined_input_for_runtime_call--------------------
@@ -2220,7 +2209,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
   // Optimize test; set region slot 2
-  slow_path = opt_bits_test(ctrl, region, 2, flock, 0, 0);
+  slow_path = opt_bits_test(ctrl, region, 2, flock);
   mem_phi->init_req(2, mem);
 
   // Make slow path call
@@ -2281,7 +2270,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   FastUnlockNode *funlock = new FastUnlockNode( ctrl, obj, box );
   funlock = transform_later( funlock )->as_FastUnlock();
   // Optimize test; set region slot 2
-  Node *slow_path = opt_bits_test(ctrl, region, 2, funlock, 0, 0);
+  Node *slow_path = opt_bits_test(ctrl, region, 2, funlock);
   Node *thread = transform_later(new ThreadLocalNode());
 
   CallNode *call = make_slow_call((CallNode *) unlock, OptoRuntime::complete_monitor_exit_Type(),
@@ -2365,6 +2354,10 @@ void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
+
+  if (StressMacroElimination) {
+    C->shuffle_macro_nodes();
+  }
   NOT_PRODUCT(int membar_before = count_MemBar(C);)
 
   // Before elimination may re-mark (change to Nested or NonEscObj)
@@ -2404,6 +2397,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
+      if (success) {
+        C->print_method(PHASE_AFTER_MACRO_ELIMINATION_STEP, 5, n);
+      }
     }
   }
   // Next, attempt to eliminate allocations
@@ -2452,6 +2448,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
+      if (success) {
+        C->print_method(PHASE_AFTER_MACRO_ELIMINATION_STEP, 5, n);
+      }
     }
   }
 #ifndef PRODUCT
@@ -2462,19 +2461,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 #endif
 }
 
-//------------------------------expand_macro_nodes----------------------
-//  Returns true if a failure occurred.
-bool PhaseMacroExpand::expand_macro_nodes() {
-  refine_strip_mined_loop_macro_nodes();
-  // Do not allow new macro nodes once we started to expand
-  C->reset_allow_macro_nodes();
-  if (StressMacroExpansion) {
-    C->shuffle_macro_nodes();
+void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
+  if (C->macro_count() == 0) {
+    return;
   }
-  // Last attempt to eliminate macro nodes.
-  eliminate_macro_nodes();
-  if (C->failing())  return true;
-
+  refine_strip_mined_loop_macro_nodes();
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;
   while (progress) {
@@ -2536,9 +2527,17 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
       progress = progress || success;
       if (success) {
-        C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
+        C->print_method(PHASE_AFTER_MACRO_ELIMINATION_STEP, 5, n);
       }
     }
+  }
+}
+
+//------------------------------expand_macro_nodes----------------------
+//  Returns true if a failure occurred.
+bool PhaseMacroExpand::expand_macro_nodes() {
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
   }
 
   // Clean up the graph so we're less likely to hit the maximum node

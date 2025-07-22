@@ -229,9 +229,9 @@ public:
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
-    MarkingNMethodClosure roots_in_nmethods(&roots_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
 
-    thread->oops_do(&roots_closure, &roots_in_nmethods);
+    // No need to visit nmethods, because they are handled by ScavengableNMethods.
+    thread->oops_do(&roots_closure, nullptr);
 
     // Do the real work
     pm->drain_stacks(false);
@@ -294,7 +294,7 @@ public:
     }
 
     PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
+    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
 
     // Scavenge OopStorages
     {
@@ -410,12 +410,11 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     {
       GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
-      reference_processor()->set_active_mt_degree(active_workers);
       ReferenceProcessorStats stats;
       ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
 
       ParallelScavengeRefProcProxyTask task(reference_processor()->max_num_queues());
-      stats = reference_processor()->process_discovered_references(task, pt);
+      stats = reference_processor()->process_discovered_references(task, &ParallelScavengeHeap::heap()->workers(), pt);
 
       _gc_tracer.report_gc_reference_stats(stats);
       pt.print_all_references();

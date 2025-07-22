@@ -22,14 +22,14 @@
  *
  */
 
-#include "opto/intrinsicnode.hpp"
 #include "opto/addnode.hpp"
-#include "opto/mulnode.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
-#include "utilities/population_count.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/population_count.hpp"
 
 //=============================================================================
 // Do not match memory edge.

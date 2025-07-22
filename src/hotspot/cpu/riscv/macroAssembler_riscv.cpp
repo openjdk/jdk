@@ -5342,42 +5342,6 @@ void MacroAssembler::add2_with_carry(Register final_dest_hi, Register dest_hi, R
 }
 
 /**
- * Multiply 32 bit by 32 bit first loop.
- */
-void MacroAssembler::multiply_32_x_32_loop(Register x, Register xstart, Register x_xstart,
-                                           Register y, Register y_idx, Register z,
-                                           Register carry, Register product,
-                                           Register idx, Register kdx) {
-  // jlong carry, x[], y[], z[];
-  // for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx--, kdx--) {
-  //     long product = y[idx] * x[xstart] + carry;
-  //     z[kdx] = (int)product;
-  //     carry = product >>> 32;
-  // }
-  // z[xstart] = (int)carry;
-
-  Label L_first_loop, L_first_loop_exit;
-  blez(idx, L_first_loop_exit);
-
-  shadd(t0, xstart, x, t0, LogBytesPerInt);
-  lwu(x_xstart, Address(t0, 0));
-
-  bind(L_first_loop);
-  subiw(idx, idx, 1);
-  shadd(t0, idx, y, t0, LogBytesPerInt);
-  lwu(y_idx, Address(t0, 0));
-  mul(product, x_xstart, y_idx);
-  add(product, product, carry);
-  srli(carry, product, 32);
-  subiw(kdx, kdx, 1);
-  shadd(t0, kdx, z, t0, LogBytesPerInt);
-  sw(product, Address(t0, 0));
-  bgtz(idx, L_first_loop);
-
-  bind(L_first_loop_exit);
-}
-
-/**
  * Multiply 64 bit by 64 bit first loop.
  */
 void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
@@ -5593,77 +5557,16 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register carry = tmp5;
   const Register product = xlen;
   const Register x_xstart = tmp0;
+  const Register jdx = tmp1;
 
   mv(idx, ylen);         // idx = ylen;
   addw(kdx, xlen, ylen); // kdx = xlen+ylen;
   mv(carry, zr);         // carry = 0;
 
-  Label L_multiply_64_x_64_loop, L_done;
-
+  Label L_done;
   subiw(xstart, xlen, 1);
   bltz(xstart, L_done);
 
-  const Register jdx = tmp1;
-
-  if (AvoidUnalignedAccesses) {
-    int base_offset = arrayOopDesc::base_offset_in_bytes(T_INT);
-    assert((base_offset % (UseCompactObjectHeaders ? 4 :
-                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-
-    if ((base_offset % 8) == 0) {
-      // multiply_64_x_64_loop emits 8-byte load/store to access two elements
-      // at a time from int arrays x and y. When base_offset is 8 bytes, these
-      // accesses are naturally aligned if both xlen and ylen are even numbers.
-      orr(t0, xlen, ylen);
-      test_bit(t0, t0, 0);
-      beqz(t0, L_multiply_64_x_64_loop);
-    }
-
-    Label L_second_loop_unaligned, L_third_loop, L_third_loop_exit;
-
-    multiply_32_x_32_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
-    shadd(t0, xstart, z, t0, LogBytesPerInt);
-    sw(carry, Address(t0, 0));
-
-    bind(L_second_loop_unaligned);
-    mv(carry, zr);
-    mv(jdx, ylen);
-    subiw(xstart, xstart, 1);
-    bltz(xstart, L_done);
-
-    subi(sp, sp, 2 * wordSize);
-    sd(z, Address(sp, 0));
-    sd(zr, Address(sp, wordSize));
-    shadd(t0, xstart, z, t0, LogBytesPerInt);
-    addi(z, t0, 4);
-    shadd(t0, xstart, x, t0, LogBytesPerInt);
-    lwu(product, Address(t0, 0));
-
-    blez(jdx, L_third_loop_exit);
-
-    bind(L_third_loop);
-    subiw(jdx, jdx, 1);
-    shadd(t0, jdx, y, t0, LogBytesPerInt);
-    lwu(t0, Address(t0, 0));
-    mul(t1, t0, product);
-    add(t0, t1, carry);
-    shadd(tmp6, jdx, z, t1, LogBytesPerInt);
-    lwu(t1, Address(tmp6, 0));
-    add(t0, t0, t1);
-    sw(t0, Address(tmp6, 0));
-    srli(carry, t0, 32);
-    bgtz(jdx, L_third_loop);
-
-    bind(L_third_loop_exit);
-    ld(z, Address(sp, 0));
-    addi(sp, sp, 2 * wordSize);
-    shadd(t0, xstart, z, t0, LogBytesPerInt);
-    sw(carry, Address(t0, 0));
-
-    j(L_second_loop_unaligned);
-  }
-
-  bind(L_multiply_64_x_64_loop);
   multiply_64_x_64_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
 
   Label L_second_loop_aligned;

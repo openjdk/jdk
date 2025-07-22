@@ -33,9 +33,9 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -636,7 +636,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _ilt(nullptr),
       _stub_function(nullptr),
       _stub_name(nullptr),
-      _stub_id(-1),
+      _stub_id(StubId::NO_STUBID),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -736,8 +736,9 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout ||
-      StressLoopPeeling) {
+      StressIncrementalInlining || StressMacroExpansion ||
+      StressMacroElimination || StressUnstableIfTraps ||
+      StressBailout || StressLoopPeeling) {
     initialize_stress_seed(directive);
   }
 
@@ -783,19 +784,9 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       StartNode* s = new StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
       verify_start(s);
-      if (method()->intrinsic_id() == vmIntrinsics::_Reference_get) {
-        // With java.lang.ref.reference.get() we must go through the
-        // intrinsic - even when get() is the root
-        // method of the compile - so that, if necessary, the value in
-        // the referent field of the reference object gets recorded by
-        // the pre-barrier code.
-        cg = find_intrinsic(method(), false);
-      }
-      if (cg == nullptr) {
-        float past_uses = method()->interpreter_invocation_count();
-        float expected_uses = past_uses;
-        cg = CallGenerator::for_inline(method(), expected_uses);
-      }
+      float past_uses = method()->interpreter_invocation_count();
+      float expected_uses = past_uses;
+      cg = CallGenerator::for_inline(method(), expected_uses);
     }
     if (failing())  return;
     if (cg == nullptr) {
@@ -907,7 +898,7 @@ Compile::Compile(ciEnv* ci_env,
                  TypeFunc_generator generator,
                  address stub_function,
                  const char* stub_name,
-                 int stub_id,
+                 StubId stub_id,
                  int is_fancy_jump,
                  bool pass_tls,
                  bool return_pc,
@@ -973,7 +964,8 @@ Compile::Compile(ciEnv* ci_env,
 
   // try to reuse an existing stub
   {
-    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, _stub_id, stub_name);
+    BlobId blob_id = StubInfo::blob(_stub_id);
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, blob_id);
     if (blob != nullptr) {
       RuntimeStub* rs = blob->as_runtime_stub();
       _stub_entry_point = rs->entry_point();
@@ -2431,6 +2423,7 @@ void Compile::Optimize() {
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
         if (failing()) return;
+        print_method(PHASE_AFTER_MACRO_ELIMINATION, 2);
 
         igvn.set_delay_transform(false);
         igvn.optimize();
@@ -2530,6 +2523,18 @@ void Compile::Optimize() {
     TracePhase tp(_t_macroExpand);
     print_method(PHASE_BEFORE_MACRO_EXPANSION, 3);
     PhaseMacroExpand  mex(igvn);
+    // Do not allow new macro nodes once we start to eliminate and expand
+    C->reset_allow_macro_nodes();
+    // Last attempt to eliminate macro nodes before expand
+    mex.eliminate_macro_nodes();
+    if (failing()) {
+      return;
+    }
+    mex.eliminate_opaque_looplimit_macro_nodes();
+    if (failing()) {
+      return;
+    }
+    print_method(PHASE_AFTER_MACRO_ELIMINATION, 2);
     if (mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
       return;

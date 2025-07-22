@@ -6803,6 +6803,7 @@ void MacroAssembler::verify_cross_modify_fence_not_required() {
 #endif
 
 void MacroAssembler::spin_wait() {
+  block_comment("spin_wait {");
   for (int i = 0; i < VM_Version::spin_wait_desc().inst_count(); ++i) {
     switch (VM_Version::spin_wait_desc().inst()) {
       case SpinWait::NOP:
@@ -6814,10 +6815,14 @@ void MacroAssembler::spin_wait() {
       case SpinWait::YIELD:
         yield();
         break;
+      case SpinWait::SB:
+        sb();
+        break;
       default:
         ShouldNotReachHere();
     }
   }
+  block_comment("}");
 }
 
 // Stack frame creation/removal
