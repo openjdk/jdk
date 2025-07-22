@@ -53,9 +53,7 @@ public class UseOldISOCodesTest {
 
         public static void main(String[] args) {
             // Ensure java.locale.useOldISOCodes should have no effect
-            System.setProperty("java.locale.useOldISOCodes", "false");
-            Locale locale = Locale.of(newCode);
-            assertNotEquals(obsoleteCode, locale.getLanguage(),
+            assertNotEquals(obsoleteCode, Locale.of(newCode).getLanguage(),
                     "newCode 'he' was mapped to 'iw' with useOldISOCodes=true");
         }
     }
