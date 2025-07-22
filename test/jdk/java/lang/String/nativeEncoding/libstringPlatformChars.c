@@ -64,6 +64,7 @@ Java_StringPlatformChars_newString(JNIEnv *env, jclass unused, jbyteArray bytes)
     }
     str = (char*)malloc(len + 1);
     if (str == NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, bytes, (void*)jbytes, 0);
         return NULL;
     }
     for (i = 0; i < len; i++) {
