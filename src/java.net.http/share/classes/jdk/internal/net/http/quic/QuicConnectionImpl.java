@@ -3119,11 +3119,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Retrieves cryptographic messages from TLS engine, packs them
-     * in crypto frames and sends over the network.
-     * This method may send several packets if a message
-     * doesn't fit in one. It doesn't wait for acknowledgement
-     * before sending the next packet.
+     * Retrieves cryptographic messages from TLS engine, enqueues them for sending
+     * and starts the transmitter.
      */
     protected void continueHandshake() {
         handshakeScheduler.runOrSchedule();
