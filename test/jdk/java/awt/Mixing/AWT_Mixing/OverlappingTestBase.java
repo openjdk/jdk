@@ -80,8 +80,8 @@ import test.java.awt.regtesthelpers.Util;
  * @author Sergey Grinev
  */
 public abstract class OverlappingTestBase {
-    protected static final int FRAME_WIDTH = 300;
-    protected static final int FRAME_HEIGHT = 200;
+    protected final int FRAME_WIDTH = 300;
+    protected final int FRAME_HEIGHT = 200;
     // working variables
     private static volatile boolean wasHWClicked = false;
     private static volatile boolean passed = true;
