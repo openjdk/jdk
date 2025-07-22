@@ -34,7 +34,6 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
-#include "gc/shared/objectCountEventSenderTemplate.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"

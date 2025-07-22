@@ -108,17 +108,6 @@ void GCTracer::report_object_count(KlassInfoTable* cit) {
   ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now());
   cit->iterate(&event_sender);
   ObjectCountClosure::reset_table();
-  // if (Event::should_send_event()) {
-  //   ResourceMark rm;
-
-  //   KlassInfoTable cit(false);
-  //   if (!cit.allocation_failed()) {
-  //     HeapInspection hi;
-  //     hi.populate_table(&cit, is_alive_cl, workers);
-  //     ObjectCountEventSenderClosure<Event> event_sender(cit.size_of_instances_in_words(), Ticks::now());
-  //     cit.iterate(&event_sender);
-  //   }
-  // }
 }
 
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {
@@ -210,8 +199,3 @@ void ParallelOldTracer::report_dense_prefix(void* dense_prefix) {
 void OldGCTracer::report_concurrent_mode_failure() {
   send_concurrent_mode_failure_event();
 }
-
-// #if INCLUDE_SERVICES
-// template void GCTracer::report_object_count<ObjectCountEventSender>(KlassInfoTable*);
-// template void GCTracer::report_object_count<ObjectCountAfterGCEventSender>(KlassInfoTable*);
-// #endif // INCLUDE_SERVICES
