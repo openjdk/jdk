@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @summary Stress test that reaches the process limit for thread count, or time limit.
  * @requires os.family != "aix"
  * @key stress
+ * @key cgroups
+ * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @run main/othervm -Xmx1g ThreadCountLimit
  */
@@ -45,6 +48,10 @@ import java.util.ArrayList;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Utils;
+import jdk.test.lib.containers.docker.Common;
+import jdk.test.lib.containers.docker.DockerRunOptions;
+import jdk.test.lib.containers.docker.DockerTestUtils;
 
 public class ThreadCountLimit {
 
@@ -75,12 +82,29 @@ public class ThreadCountLimit {
         // which leads to various other failure modes. Run this test with a limit on how many
         // threads the process is allowed to create, so we hit that limit first.
 
-        final String ULIMIT_CMD = "ulimit -u 4096";
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(ThreadCountLimit.class.getName());
-        String javaCmd = ProcessTools.getCommandLine(pb);
         // Relaunch the test with args.length > 0, and the ulimit set
-        ProcessTools.executeCommand("bash", "-c", ULIMIT_CMD + " && " + javaCmd + " dummy")
-                    .shouldHaveExitValue(0);
+        if (!DockerTestUtils.canTestDocker()) {
+            return;
+        }
+
+        String imageName = Common.imageName("threadCountLimit");
+        imageName.replace("#", "-");
+        System.out.println("Building Docker image: " + imageName);
+        DockerTestUtils.buildJdkContainerImage(imageName);
+        
+        try {
+          Common.logNewTestCase("Test ThreadCountLimit");
+          DockerRunOptions opts =
+                  new DockerRunOptions(imageName, "/jdk/bin/java", ThreadCountLimit.class.getName());
+          opts.addDockerOpts("--pids-limit", "4096");
+          opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+          opts.addJavaOpts("-cp", "/test-classes/");
+          opts.addClassOptions("dummy");
+          OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
+          out.shouldHaveExitValue(0);
+        } finally {
+            DockerTestUtils.removeDockerImage(imageName);
+        }
       } else {
         // Not Linux so run directly.
         test();
