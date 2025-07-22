@@ -371,7 +371,7 @@ class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure
 private:
   size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
   size_t _region_size_bytes, _min_free_size;
-#define KELVIN_VERBOSE
+#undef KELVIN_VERBOSE
 #ifdef KELVIN_VERBOSE
   const char* _nm;
 #endif
@@ -389,7 +389,7 @@ public:
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-#define KELVIN_STATS
+#undef KELVIN_STATS
 #ifdef KELVIN_STATS
     log_info(gc)("%s:ShenandoahCalculateRegionStatsClosure::heap_region_do(), %s r: %zu used: %zu, garbage: %zu, is_trash: %s",
                  _nm, r->affiliation_name(), r->index(), r->used(), r->garbage(), r->is_trash()? "yes": "no");
@@ -487,7 +487,7 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
       generation_used += pad;
     }
 
-#define KELVIN_EXTRA_NOISE
+#undef KELVIN_EXTRA_NOISE
 #ifdef KELVIN_EXTRA_NOISE
     log_info(gc)("%s: generation (%s) used size must be consistent: generation-used: %zu, regions-used from stats: %zu, stats.used_after_recycle: %zu, adjust_for_trash: %s",
                  label, generation->name(), generation_used, stats.used(), stats.used_after_recycle(), adjust_for_trash? "yes": "no");

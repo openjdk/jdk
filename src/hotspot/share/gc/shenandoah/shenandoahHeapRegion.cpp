@@ -299,7 +299,7 @@ void ShenandoahHeapRegion::make_cset() {
 }
 
 void ShenandoahHeapRegion::make_trash() {
-#define KELVIN_TRASH
+#undef KELVIN_TRASH
 #ifdef KELVIN_TRASH
   log_info(gc)("make_trash() on region %zu", index());
 #endif
@@ -913,7 +913,7 @@ void ShenandoahHeapRegion::decrement_humongous_waste() const {
   if (waste_bytes > 0) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahGeneration* generation = heap->generation_for(affiliation());
-#define KELVIN_HUMONGOUS_HEAP_REGION
+#undef KELVIN_HUMONGOUS_HEAP_REGION
 #ifdef KELVIN_HUMONGOUS_HEAP_REGION
     log_info(gc)("Decrementing humongous waste by %zu in ShenHeapRegion", waste_bytes);
 #endif

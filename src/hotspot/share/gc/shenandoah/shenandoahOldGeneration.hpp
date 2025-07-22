@@ -136,7 +136,7 @@ public:
 
   // See description in field declaration
   void set_region_balance(ssize_t balance) {
-#define KELVIN_BALANCIO
+#undef KELVIN_BALANCIO
 #ifdef KELVIN_BALANCIO
     log_info(gc)("OldGen::set_region_balance(%zd)", balance);
 #endif

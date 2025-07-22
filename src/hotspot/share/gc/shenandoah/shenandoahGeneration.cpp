@@ -868,7 +868,7 @@ size_t ShenandoahGeneration::increment_affiliated_region_count() {
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
   size_t result = Atomic::add(&_affiliated_region_count, (size_t) 1);
-#define KELVIN_AFFILIATED
+#undef KELVIN_AFFILIATED
 #ifdef KELVIN_AFFILIATED
   log_info(gc)("%s: increment_affiliated_region_count() by 1: %zu", name(), result);
 #endif
@@ -934,7 +934,7 @@ void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes,
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
   Atomic::add(&_used, bytes);
-#define KELVIN_MONITOR_USED
+#undef KELVIN_MONITOR_USED
 #ifdef KELVIN_MONITOR_USED
   log_info(gc)("Generation %s increase_used(%zu) to %zu", shenandoah_generation_name(_type), bytes, _used);
 #endif

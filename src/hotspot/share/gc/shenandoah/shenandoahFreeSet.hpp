@@ -31,7 +31,7 @@
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 
-#define KELVIN_HUMONGOUS_WASTE
+#undef KELVIN_HUMONGOUS_WASTE
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -439,7 +439,7 @@ private:
     size_t region_size_bytes = _partitions.region_size_bytes();
     _total_young_used = (_partitions.used_by(ShenandoahFreeSetPartitionId::Mutator) +
                          _partitions.used_by(ShenandoahFreeSetPartitionId::Collector));
-#define KELVIN_USED
+#undef KELVIN_USED
 #ifdef KELVIN_USED
     log_info(gc)(" recompute_total_young_used(): %zu from total regions M: %zu, C: %zu, allocatable regions M: %zu, C: %zu, "
                  "M used: %zu, C used: %zu", _total_young_used,
@@ -492,7 +492,7 @@ private:
     _old_affiliated_regions = (_partitions.get_total_region_counts(ShenandoahFreeSetPartitionId::OldCollector) - 
                                  _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
     _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
-#define KELVIN_AFFILIATED
+#undef KELVIN_AFFILIATED
 #ifdef KELVIN_AFFILIATED
     log_info(gc)("recompute_affiliated(young: %zu, old: %zu, global: %zu)",
                  _young_affiliated_regions, _old_affiliated_regions, _global_affiliated_regions);

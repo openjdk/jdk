@@ -50,7 +50,7 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   }
 }
 
-#define KELVIN_USED
+#undef KELVIN_USED
 
 class ShenandoahLeftRightIterator {
 private:
@@ -252,7 +252,7 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
 #ifdef KELVIN_USED
   log_info(gc)("make_all_regions_unavailable() setting _used[] to 0 for all partitions");
 #endif
-#define KELVIN_REGION_COUNTS
+#undef KELVIN_REGION_COUNTS
 #ifdef KELVIN_REGION_COUNTS
   log_info(gc)("Setting Mutator and Collector total_region_counts to zero, OldCollector is %zu",
                _total_region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)]);
@@ -303,7 +303,7 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
 
   _total_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
   _empty_region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
-#define KELVIN_CAPACITY
+#undef KELVIN_CAPACITY
 #ifdef KELVIN_CAPACITY
   log_info(gc)("establish_mutator_intervals() sets Mutator capacity: %zu", _capacity[int(ShenandoahFreeSetPartitionId::Mutator)]);
   log_info(gc)("establish_mutator_intervals() sets Collector capacity: %zu", _capacity[int(ShenandoahFreeSetPartitionId::Collector)]);
@@ -422,7 +422,7 @@ void ShenandoahRegionPartitions::set_capacity_of(ShenandoahFreeSetPartitionId wh
   assert (which_partition < NumPartitions, "selected free set must be valid");
   _capacity[int(which_partition)] = value;
   _available[int(which_partition)] = value - _used[int(which_partition)];
-#define KELVIN_CAPACITY
+#undef KELVIN_CAPACITY
 #ifdef KELVIN_CAPACITY
   log_info(gc)("set_capacity of %s to %zu", partition_name(which_partition), _capacity[int(which_partition)]);
 #endif
@@ -461,7 +461,7 @@ void ShenandoahRegionPartitions::increase_available(ShenandoahFreeSetPartitionId
   shenandoah_assert_heaplocked();
   assert (which_partition < NumPartitions, "Partition must be valid");
   _available[int(which_partition)] += bytes;
-#define KELVIN_AVAILABLE
+#undef KELVIN_AVAILABLE
 #ifdef KELVIN_AVAILABLE
   log_info(gc)("FreeSet<%s>::increase_available(%zu) yields: %zu", partition_name(which_partition),
                bytes, _available[int(which_partition)]);
@@ -543,7 +543,7 @@ void ShenandoahRegionPartitions::one_region_is_no_longer_empty(ShenandoahFreeSet
 void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
   ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx) {
   assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
-#define KELVIN_INTERVALS
+#undef KELVIN_INTERVALS
 #ifdef KELVIN_INTERVALS
   log_info(gc)("shrink_interval_if_range_modifies_either_boundary(%s, %zd, %zd)", partition_name(partition), low_idx, high_idx);
 #endif
@@ -1853,11 +1853,13 @@ private:
   void get_lock_and_flush_buffer(size_t region_count, size_t overflow_region_used, size_t overflow_region_index) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahHeapLocker locker(heap->lock());
-#define KELVIN_RECYCLE
+#undef KELVIN_RECYCLE
 #ifdef KELVIN_RECYCLE
     Thread* t = Thread::current();
     size_t p2i = (size_t) t;
+#endif
     size_t recycled_regions = Atomic::load(&_recycled_region_count);
+#ifdef KELVIN_RECYCLE
     log_info(gc)("%zx: got lock, will flush buffer with %zu entries plus (used: %zu, index: %zu)",
                  p2i, recycled_regions, overflow_region_used, overflow_region_index);
 #endif
@@ -2161,7 +2163,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
   size_t total_mutator_regions = 0;
   size_t total_old_collector_regions = 0;
 
-#define KELVIN_MYSTERY
+#undef KELVIN_MYSTERY
   bool is_generational = _heap->mode()->is_generational();
   size_t num_regions = _heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
@@ -2577,7 +2579,7 @@ void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, si
                                                    size_t affiliated_young_regions, size_t affiliated_old_regions,
                                                    size_t young_used_bytes, size_t old_used_bytes) {
   assert(young_region_count + old_region_count == ShenandoahHeap::heap()->num_regions(), "Sanity");
-#define KELVIN_RESERVE
+#undef KELVIN_RESERVE
 #ifdef KELVIN_RESERVE
   log_info(gc)("establish_generation_sizes(young_region_count: %zu, old_region_count: %zu, ",
                young_region_count, old_region_count);
@@ -2622,7 +2624,7 @@ void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, si
 void ShenandoahFreeSet::reestablish_generation_sizes(size_t young_region_count, size_t old_region_count) {
 
   assert(young_region_count + old_region_count == ShenandoahHeap::heap()->num_regions(), "Sanity");
-#define KELVIN_RESERVE
+#undef KELVIN_RESERVE
 #ifdef KELVIN_RESERVE
   log_info(gc)("reestablish_generation_sizes(young_region_count: %zu, old_region_count: %zu, ",
                young_region_count, old_region_count);
@@ -2810,7 +2812,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
   size_t old_collector_available = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);;
   size_t collector_available = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
 
-#define KELVIN_RESERVE
+#undef KELVIN_RESERVE
 #ifdef KELVIN_RESERVE
   log_info(gc)("reserve_regions() seeks to_reserve: %zu and to_reserve_old: %zu", to_reserve, to_reserve_old);
 #endif
@@ -3222,7 +3224,7 @@ void ShenandoahFreeSet::log_status() {
           }
           total_used += used_in_region;
           total_free += free;
-#define KELVIN_DEBUG
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
           log_info(gc)("%sMutator region %zu has free: %zu, used: %zu, total_free: %zu, total_used: %zu",
                        r->is_trash()? "Trashed ": "", r->index(), free, used_in_region, total_free, total_used);

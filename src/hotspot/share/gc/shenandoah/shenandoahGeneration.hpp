@@ -200,7 +200,7 @@ private:
   void set_used(size_t affiliated_region_count, size_t byte_count) {
     Atomic::store(&_used, byte_count);
     Atomic::store(&_affiliated_region_count, affiliated_region_count);
-#ifdef KELVIN_SCAFFOLDING
+#ifdef KELVIN_DEBUG
     log_info(gc)("%s:set_used(regions: %zu, bytes: %zu)", shenandoah_generation_name(_type), affiliated_region_count, byte_count);
 #endif
   }
@@ -300,8 +300,7 @@ private:
       result = _free_set->humongous_waste_in_mutator() + _free_set->humongous_waste_in_old();
       break;
     }
-#define KELVIN_MONITOR_HUMONGOUS
-#ifdef KELVIN_MONITOR_HUMONGOUS
+#ifdef KELVIN_SCAFFOLDING
     if (result != _humongous_waste) {
       log_info(gc)("Generation %s expects consistency between humongous waste in free set (%zu) and in generation (%zu)",
                    shenandoah_generation_name(_type), result, _humongous_waste);
