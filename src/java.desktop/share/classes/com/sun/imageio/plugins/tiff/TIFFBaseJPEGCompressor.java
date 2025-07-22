@@ -447,14 +447,14 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
 
     private static class ImageWriterDisposerRecord implements DisposerRecord {
         private final ImageWriter writer;
-            
+
         public ImageWriterDisposerRecord(ImageWriter writer) {
             this.writer = writer;
-        }   
-            
+        }
+
         @Override
         public void dispose() {
             writer.dispose();
-        }   
+        }
     }
 }
