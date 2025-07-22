@@ -116,10 +116,6 @@ import sun.security.util.KnownOIDs;
  * <p> An {@link IllegalStateException} will be thrown when calling {@code update}
  * or {@code doFinal} methods if a reset did not occur. A call to {@code init} will
  * re-initialize the {@code Cipher} object with new parameters.
- *
- *  @see javax.crypto.Cipher
- *  @see javax.crypto.spec.GCMParameterSpec
- *
  * <p>
  * Every implementation of the Java platform is required to support
  * the following standard {@code Cipher} object transformations with
