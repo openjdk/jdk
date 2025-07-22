@@ -155,7 +155,7 @@ class StringCoding {
             // behavior too.
             return 0;
         }
-        return encodeISOArray0(sa, sp, da, dp, len);
+        return encodeISOArray0(sa, sp, da, dp, Math.min(len, da.length - dp));
     }
 
     @IntrinsicCandidate
@@ -195,7 +195,7 @@ class StringCoding {
             // behavior too.
             return 0;
         }
-        return encodeAsciiArray0(sa, sp, da, dp, len);
+        return encodeAsciiArray0(sa, sp, da, dp, Math.min(len, da.length - dp));
     }
 
     @IntrinsicCandidate

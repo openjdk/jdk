@@ -165,7 +165,7 @@ public class ISO_8859_1
                 // behavior too.
                 return 0;
             }
-            return encodeISOArray0(sa, sp, da, dp, len);
+            return encodeISOArray0(sa, sp, da, dp, Math.min(len, da.length - dp));
         }
 
         @IntrinsicCandidate
