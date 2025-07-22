@@ -575,6 +575,8 @@ bool VectorNode::is_move_opcode(int opc) {
   switch (opc) {
     case Op_MoveF2I:
     case Op_MoveD2L:
+    case Op_MoveL2D:
+    case Op_MoveI2F:
       return true;
     default:
       return false;
@@ -1826,7 +1828,10 @@ Node* VectorReinterpretNode::Identity(PhaseGVN *phase) {
 }
 
 bool VectorReinterpretNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
-  if ((src_type == T_FLOAT && dst_type == T_INT) || (src_type == T_DOUBLE && dst_type == T_LONG)) {
+  if ((src_type == T_FLOAT && dst_type == T_INT) ||
+      (src_type == T_DOUBLE && dst_type == T_LONG) ||
+      (src_type == T_LONG && dst_type == T_DOUBLE) ||
+      (src_type == T_INT && dst_type == T_FLOAT)) {
     int vopc = Op_VectorReinterpret;
     return Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
   }

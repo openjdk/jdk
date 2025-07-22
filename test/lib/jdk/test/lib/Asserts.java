@@ -30,6 +30,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Objects;
+import java.util.stream.DoubleStream;
+import java.util.stream.LongStream;
 
 /**
  * Asserts that can be used for verifying assumptions in tests.
@@ -250,6 +252,30 @@ public class Asserts {
     }
 
     /**
+     * Asserts that {@code actual} has the same content as {@code expected}.
+     *
+     * @param expected The expected value
+     * @param actual The actual value
+     * @throws RuntimeException if the assertion is not true.
+     * @see #assertEqualsDoubleArray(double[], double[], String)
+     */
+    public static void assertEqualsDoubleArray(double[] expected, double[] actual) {
+        assertEqualsDoubleArray(expected, actual, null);
+    }
+
+    /**
+     * Asserts that {@code actual} has the same content as {@code expected}.
+     *
+     * @param expected The expected value
+     * @param actual The actual value
+     * @throws RuntimeException if the assertion is not true.
+     * @see #assertEqualsFloatArray(float[], float[], String)
+     */
+    public static void assertEqualsFloatArray(float[] expected, float[] actual) {
+        assertEqualsFloatArray(expected, actual, null);
+    }
+
+    /**
      * Asserts that {@code actual} does not have the same content as {@code unexpected}.
      *
      * @param unexpected The unexpected value
@@ -290,6 +316,40 @@ public class Asserts {
         if (Arrays.equals(unexpected, actual)) {
             msg = Objects.toString(msg, "assertNotEqualsByteArray")
                     + ": expected not equals but was " + HexFormat.of().formatHex(actual);
+            fail(msg);
+        }
+    }
+
+    /**
+     * Asserts that {@code actual} is the same double array as {@code expected}.
+     *
+     * @param expected The expected value
+     * @param actual The actual value
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
+     */
+    public static void assertEqualsDoubleArray(double[] expected, double[] actual, String msg) {
+        if (!Arrays.equals(expected, actual)) {
+            msg = Objects.toString(msg, "assertEqualsDoubleArray")
+                + ": expected " + Arrays.toString(expected)
+                + " but was " + Arrays.toString(actual);
+            fail(msg);
+        }
+    }
+
+    /**
+     * Asserts that {@code actual} is the same float array as {@code expected}.
+     *
+     * @param expected The expected value
+     * @param actual The actual value
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
+     */
+    public static void assertEqualsFloatArray(float[] expected, float[] actual, String msg) {
+        if (!Arrays.equals(expected, actual)) {
+            msg = Objects.toString(msg, "assertEqualsFloatArray")
+                + ": expected " + Arrays.toString(expected)
+                + " but was " + Arrays.toString(actual);
             fail(msg);
         }
     }

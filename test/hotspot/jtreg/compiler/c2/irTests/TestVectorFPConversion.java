@@ -1,7 +1,6 @@
 package compiler.c2.irTests;
 
 import compiler.lib.generators.Generators;
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
@@ -36,92 +35,102 @@ public class TestVectorFPConversion {
         TestFramework.run();
     }
 
+    // Does not vectorize because of NaN flow control.
+    @Test
+    @IR(counts = {IRNode.MOV_D2L, ">=1"})
+    public void loopDoubleToLongBits(double[] arr, long[] result) {
+        for (int i = 0; i < arr.length; i++)
+        {
+            final double v = arr[i];
+            final long bits = Double.doubleToLongBits(v);
+            result[i] = bits;
+        }
+    }
+
     @Test
     @IR(counts = {IRNode.VECTOR_REINTERPRET, ">=1"})
-    public long[] loopDoubleToRawLongBits(double[] arr, long[] result) {
+    public void loopDoubleToRawLongBits(double[] arr, long[] result) {
         for (int i = 0; i < arr.length; i++)
         {
             final double v = arr[i];
             final long bits = Double.doubleToRawLongBits(v);
             result[i] = bits;
         }
-        return result;
     }
 
     @Test
     @IR(counts = {IRNode.VECTOR_REINTERPRET, ">=1"})
-    public int[] loopFloatToRawIntBits(float[] arr, int[] result) {
+    public void loopLongBitsToDouble(long[] arr, double[] result) {
+        for (int i = 0; i < arr.length; i++)
+        {
+            final long bits = arr[i];
+            final double v = Double.longBitsToDouble(bits);
+            result[i] = v;
+        }
+    }
+
+    // Does not vectorize because of NaN flow control.
+    @Test
+    @IR(counts = {IRNode.MOV_F2I, ">=1"})
+    public void loopFloatToIntBits(float[] arr, int[] result) {
+        for (int i = 0; i < arr.length; i++)
+        {
+            final float v = arr[i];
+            final int bits = Float.floatToIntBits(v);
+            result[i] = bits;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_REINTERPRET, ">=1"})
+    public void loopFloatToRawIntBits(float[] arr, int[] result) {
         for (int i = 0; i < arr.length; i++)
         {
             final float v = arr[i];
             final int bits = Float.floatToRawIntBits(v);
             result[i] = bits;
         }
-        return result;
     }
 
-//    @Test
-//    @IR(counts = {IRNode.MOV_D2L, ">=1"})
-//    public long[] loopDoubleToLongBits(double[] arr) {
-//        final long[] result = new long[arr.length];
-//        for (int i = 0; i < result.length; i++)
-//        {
-//            final double v = arr[i];
-//            final long bits = Double.doubleToLongBits(v);
-//            result[i] = bits;
-//        }
-//        return result;
-//    }
-//
-//    @Test
-//    @IR(counts = {IRNode.MOV_L2D, ">=1"})
-//    public double[] loopLongBitsToDouble(long[] arr) {
-//        final double[] result = new double[arr.length];
-//        for (int i = 0; i < result.length; i++)
-//        {
-//            final long v = arr[i];
-//            final double bits = Double.longBitsToDouble(v);
-//            result[i] = bits;
-//        }
-//        return result;
-//    }
+    @Test
+    @IR(counts = {IRNode.VECTOR_REINTERPRET, ">=1"})
+    public void loopIntToFloatBits(int[] arr, float[] result) {
+        for (int i = 0; i < arr.length; i++)
+        {
+            final int bits = arr[i];
+            final float v = Float.intBitsToFloat(bits);
+            result[i] = v;
+        }
+    }
 
     @Run(test = {
-        "loopDoubleToRawLongBits"
-        , "loopFloatToRawIntBits"
-        //, "loopDoubleToLongBits", "loopLongBitsToDouble",
-                 // "floatToRawIntBits", "floatToIntBits", "intBitsToFloat"
+        "loopDoubleToLongBits", "loopDoubleToRawLongBits",
+        "loopFloatToIntBits", "loopFloatToRawIntBits",
+        "loopIntToFloatBits", "loopLongBitsToDouble"
     })
     public void runTests() {
-        final long[] longs = loopDoubleToRawLongBits(DOUBLES, new long[LENGTH]);
-        Asserts.assertNotNull(longs);
+        final long[] l1 = new long[LENGTH];
+        final long[] l2 = new long[LENGTH];
+        final double[] d1 = new double[LENGTH];
+        final double[] d2 = new double[LENGTH];
 
-        final int[] ints = loopFloatToRawIntBits(FLOATS, new int[LENGTH]);
-        Asserts.assertNotNull(ints);
+        loopDoubleToRawLongBits(DOUBLES, l1);
+        loopDoubleToLongBits(DOUBLES, l2);
+        loopLongBitsToDouble(l1, d1);
+        loopLongBitsToDouble(l2, d2);
+        Asserts.assertEqualsDoubleArray(DOUBLES, d1);
+        Asserts.assertEqualsDoubleArray(DOUBLES, d2);
 
-//        final long[] l2 = loopDoubleToLongBits(DOUBLES);
-//        final double[] d1 = loopLongBitsToDouble(l1);
-//        final double[] d2 = loopLongBitsToDouble(l2);
-//        Asserts.assertEqualsDoubleArray(DOUBLES, d1);
-//        Asserts.assertEqualsDoubleArray(DOUBLES, d2);
+        final int[] i1 = new int[LENGTH];
+        final int[] i2 = new int[LENGTH];
+        final float[] f1 = new float[LENGTH];
+        final float[] f2 = new float[LENGTH];
 
-//        for (int i = 0; i < DOUBLES.length; i++) {
-//            double d = DOUBLES[i];
-//            long l1 = doubleToRawLongBits(d);
-//            long l2 = doubleToLongBits(d);
-//            double d1 = longBitsToDouble(l1);
-//            double d2 = longBitsToDouble(l2);
-//            Asserts.assertEquals(d, d1);
-//            Asserts.assertEquals(d, d2);
-//        }
-//        for (int i = 0; i < FLOATS.length; i++) {
-//            float f = FLOATS[i];
-//            int i1 = floatToRawIntBits(f);
-//            int i2 = floatToIntBits(f);
-//            float f1 = intBitsToFloat(i1);
-//            float f2 = intBitsToFloat(i2);
-//            Asserts.assertEquals(f, f1);
-//            Asserts.assertEquals(f, f2);
-//        }
+        loopFloatToRawIntBits(FLOATS, i1);
+        loopFloatToIntBits(FLOATS, i2);
+        loopIntToFloatBits(i1, f1);
+        loopIntToFloatBits(i2, f2);
+        Asserts.assertEqualsFloatArray(FLOATS, f1);
+        Asserts.assertEqualsFloatArray(FLOATS, f2);
     }
 }

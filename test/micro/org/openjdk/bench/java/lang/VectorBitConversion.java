@@ -31,11 +31,17 @@ public class VectorBitConversion {
 
     private double[] doubles;
     private float[] floats;
+    private int[] ints;
+    private long[] longs;
+    private double[] resultDoubles;
+    private float[] resultFloats;
     private int[] resultInts;
     private long[] resultLongs;
 
     @Setup
     public void init() {
+        resultDoubles = new double[size];
+        resultFloats = new float[size];
         resultInts = new int[size];
         resultLongs = new long[size];
 
@@ -47,16 +53,14 @@ public class VectorBitConversion {
         for (int i = 0; i < size; i++) {
             floats[i] = r.nextFloat();
         }
-    }
-
-    @Benchmark
-    public long[] doubleToRawLongBits() {
-        for (int i = 0; i < doubles.length; i++) {
-            final double aDouble = doubles[i];
-            final long bits = Double.doubleToRawLongBits(aDouble);
-            resultLongs[i] = bits;
+        ints = new int[size];
+        for (int i = 0; i < size; i++) {
+            ints[i] = r.nextInt();
         }
-        return resultLongs;
+        longs = new long[size];
+        for (int i = 0; i < size; i++) {
+            longs[i] = r.nextLong();
+        }
     }
 
     @Benchmark
@@ -70,13 +74,13 @@ public class VectorBitConversion {
     }
 
     @Benchmark
-    public int[] floatToRawIntBits() {
-        for (int i = 0; i < floats.length; i++) {
-            final float aFloat = floats[i];
-            final int bits = Float.floatToRawIntBits(aFloat);
-            resultInts[i] = bits;
+    public long[] doubleToRawLongBits() {
+        for (int i = 0; i < doubles.length; i++) {
+            final double v = doubles[i];
+            final long bits = Double.doubleToRawLongBits(v);
+            resultLongs[i] = bits;
         }
-        return resultInts;
+        return resultLongs;
     }
 
     @Benchmark
@@ -87,5 +91,35 @@ public class VectorBitConversion {
             resultInts[i] = bits;
         }
         return resultInts;
+    }
+
+    @Benchmark
+    public int[] floatToRawIntBits() {
+        for (int i = 0; i < floats.length; i++) {
+            final float aFloat = floats[i];
+            final int bits = Float.floatToRawIntBits(aFloat);
+            resultInts[i] = bits;
+        }
+        return resultInts;
+    }
+
+    @Benchmark
+    public float[] intBitsToFloat() {
+        for (int i = 0; i < ints.length; i++) {
+            final int bits = ints[i];
+            final float v = Float.intBitsToFloat(bits);
+            resultFloats[i] = v;
+        }
+        return resultFloats;
+    }
+
+    @Benchmark
+    public double[] longBitsToDouble() {
+        for (int i = 0; i < longs.length; i++) {
+            final long bits = longs[i];
+            final double v = Double.longBitsToDouble(bits);
+            resultDoubles[i] = v;
+        }
+        return resultDoubles;
     }
 }
