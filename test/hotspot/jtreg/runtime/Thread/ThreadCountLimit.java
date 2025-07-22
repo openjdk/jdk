@@ -91,7 +91,7 @@ public class ThreadCountLimit {
         imageName.replace("#", "-");
         System.out.println("Building Docker image: " + imageName);
         DockerTestUtils.buildJdkContainerImage(imageName);
-        
+
         try {
           Common.logNewTestCase("Test ThreadCountLimit");
           DockerRunOptions opts =
