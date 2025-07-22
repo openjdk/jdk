@@ -172,9 +172,6 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
       result = expand(word_size*HeapWordSize);
     }
   }
-  if (GCExpandToAllocateDelayMillis > 0) {
-    os::naked_sleep(GCExpandToAllocateDelayMillis);
-  }
   return result;
 }
 

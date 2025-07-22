@@ -1210,7 +1210,7 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
   }
 }
 
-JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jlong compileId, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jboolean profileDeopt, jlong compileId, JVMCI_TRAPS) {
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
 
   JVMCIObject methodObject = get_jvmci_method(method, JVMCI_CHECK_(JVMCIObject()));
@@ -1230,11 +1230,12 @@ JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char*
     jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(methodObject)));
     jargs.push_oop(nameStr);
     jargs.push_int(isDefault);
+    jargs.push_int(profileDeopt);
     jargs.push_long(compileId);
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result, ik,
                             vmSymbols::object_initializer_name(),
-                            vmSymbols::method_string_bool_long_signature(),
+                            vmSymbols::method_string_bool_bool_long_signature(),
                             &jargs, CHECK_(JVMCIObject()));
     return wrap(obj_h());
   } else {
