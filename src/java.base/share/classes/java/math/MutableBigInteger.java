@@ -1965,7 +1965,7 @@ class MutableBigInteger {
             }
         } else {
             /* Since the following equality holds:
-             * nthRoot(x, n) == nthRoot(x/2^s, n) * 2^(s/n), where s % n == 0,
+             * nthRoot(x, n) == nthRoot(x/2^s, n) * 2^(s/n),
              *
              * to get an upper bound of the root of x, it suffices to find an integer s
              * and a real r such that r >= nthRoot(x/2^s, n) and s % n == 0.
@@ -2026,7 +2026,7 @@ class MutableBigInteger {
                     rootShift += wrongBits;
                     approx /= Double.parseDouble("0x1p" + wrongBits);
                 } else { // Avoid to discard correct fraction bits
-                    int correctBits = ((Double.PRECISION - 1) - radExp) / n;
+                    int correctBits = ((Double.PRECISION - 1) - radExp - 1) / n + 1;
                     rootShift -= correctBits;
                     approx *= Double.parseDouble("0x1p" + correctBits);
                 }
