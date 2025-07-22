@@ -30,17 +30,11 @@
  */
 
 import java.awt.Container;
-import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.BorderLayout;
 import javax.swing.JPopupMenu;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -50,53 +44,16 @@ public class TestPopupInvoker {
     static JPopupMenu jpm;
     static JFrame frame;
     static JLabel label;
+    static Container pane;
     static volatile Point pt;
     static volatile Rectangle size;
-
-    public static class MyThread implements Runnable {
-        static Container box;
-        static Component invo;
-
-        public MyThread(Container cont, Component comp) {
-            this.invo = comp;
-            this.box = cont;
-        }
-
-        public void run() {
-            System.out.println("Starting 3 second countdown...");
-            try{
-                Thread.currentThread().sleep(3000);
-            } catch (Exception e) {}
-            System.out.println("Removing popup invoker from the container.");
-            box.remove(invo);
-            box.repaint();
-            if (jpm.isVisible()) {
-                throw new RuntimeException("poup is visible after component is removed");
-            }
-        }
-    }
+    static volatile boolean isVisible;
 
     private static void createUI() {
         frame = new JFrame("My frame");
-        final Container pane = frame.getContentPane();
+        pane = frame.getContentPane();
         pane.setLayout(new BorderLayout());
-        label = new JLabel("Click here to invoke popup");
-        label.addMouseListener(new MouseAdapter() {
-            public void mouseReleased(MouseEvent e) {
-                if (jpm == null) {
-                    jpm = new JPopupMenu("Popup");
-                    jpm.add("One");
-                    jpm.add("Two");
-                    jpm.add("Three");
-                }
-                jpm.show(label, 0, 0);
-            }
-
-            public void mousePressed(MouseEvent e) {
-                Thread thr = new Thread(new MyThread(pane, label));
-                thr.start();
-            }
-        });
+        label = new JLabel("Popup Invoker");
         pane.add(label, BorderLayout.CENTER);
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -110,14 +67,24 @@ public class TestPopupInvoker {
             robot.waitForIdle();
             robot.delay(1000);
             SwingUtilities.invokeAndWait(() -> {
+                jpm = new JPopupMenu("Popup");
+                jpm.add("One");
+                jpm.add("Two");
+                jpm.add("Three");
+                jpm.show(label, 0, 0);
                 pt = label.getLocationOnScreen();
                 size = label.getBounds();
             });
-            robot.mouseMove(pt.x + size.width / 2, pt.y + size.height / 2);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            robot.delay(1000);
+            robot.delay(2000);
+            SwingUtilities.invokeAndWait(() -> {
+                pane.remove(label);
+                pane.repaint();
+                isVisible = jpm.isVisible();
+            });
+            if (isVisible) {
+                throw new RuntimeException("poup is visible after component is removed");
+            }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
