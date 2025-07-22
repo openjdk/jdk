@@ -1664,7 +1664,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   ShenandoahFreeSetPartitionId orig_partition;
   ShenandoahGeneration* request_generation = nullptr;
   if (req.is_mutator_alloc()) {
-    request_generation = _heap->young_generation();
+    request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
     orig_partition = ShenandoahFreeSetPartitionId::Mutator;
   } else if (req.type() == ShenandoahAllocRequest::_alloc_gclab) {
     request_generation = _heap->young_generation();
