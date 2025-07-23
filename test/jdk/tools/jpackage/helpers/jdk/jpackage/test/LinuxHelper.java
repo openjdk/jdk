@@ -340,7 +340,7 @@ public final class LinuxHelper {
                             vitalPackage, prerequisites, packageName));
         } else {
             TKit.trace(String.format(
-                    "Not cheking %s required packages of [%s] package",
+                    "Not checking %s required packages of [%s] package",
                     prerequisites, packageName));
         }
     }
