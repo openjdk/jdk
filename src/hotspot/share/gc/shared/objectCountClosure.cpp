@@ -10,31 +10,31 @@ class KlassInfoEntry;
 class Klass;
 
 
-KlassInfoTable ObjectCountClosure::cit(false);
+static KlassInfoTable _static_table(false);
+KlassInfoTable* ObjectCountClosure::cit = &_static_table;
 
 void ObjectCountClosure::reset_table() {
     if (!check_table_exists()) {
         return;
     }
-    cit.clear_entries();
-  }
-
+    cit->clear_entries();
+}
 
 bool ObjectCountClosure::check_table_exists() {
-    return !cit.allocation_failed();
+    return cit != nullptr && !cit->allocation_failed();
 }
 
 bool ObjectCountClosure::record_object(oop o) {
     if (!check_table_exists()) {
         return false;
     }
-    cit.record_instance(o);
-    return true;
+    return cit->record_instance(o);
 }
 
 KlassInfoTable* ObjectCountClosure::get_table() {
-    return check_table_exists() ? &cit : nullptr;
+    return check_table_exists() ? cit : nullptr;
 }
+
 
 
 #if INCLUDE_SERVICES
