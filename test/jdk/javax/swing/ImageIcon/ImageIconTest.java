@@ -53,7 +53,7 @@ public class ImageIconTest {
             fos.write(invalidData);
         }
         File file = new File(System.getProperty("test.src", "."), imgName);
-        
+
         for (ArgType a : ArgType.values()) {
             for (final boolean invalid : new boolean[]{false, true}) {
                 System.out.println("Testing for ArgType " + a + " for nullcase " + invalid);
@@ -67,7 +67,7 @@ public class ImageIconTest {
                                new ImageIcon((String)null);
                            } else {
                                new ImageIcon(file.getName(), "gif");
-                           } 
+                           }
                            passed = true; // no exception expected for this case
                            break;
                        case URL :
