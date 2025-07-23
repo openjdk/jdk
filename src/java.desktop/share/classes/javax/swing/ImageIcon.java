@@ -65,7 +65,7 @@ import sun.awt.AppContext;
  * but does not reference valid accessible image data,
  * no exceptions will be thrown but the image will be 'effectively' null,
  * as it will have no dimensions and never be drawn, and
- * getImageLoadStatus() will report ERRORED.
+ * getImageLoadStatus() will report {@see java.awt.MediaTracker#ERRORED}.
  *
  * <p>
  * For further information and examples of using image icons, see
@@ -212,7 +212,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Creates an ImageIcon from the image.
-     * Passing {@code null} Image will result in {@code NullPointerException}.
+     * Passing a {@code null} Image will result in {@code NullPointerException}.
      * @param image the image
      * @param description a brief textual description of the image
      */
@@ -225,7 +225,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * Creates an ImageIcon from an image object.
      * If the image has a "comment" property that is a string,
      * then the string is used as the description of this icon.
-     * Passing {@code null} Image will result in {@code NullPointerException}.
+     * Passing a {@code null} Image will result in {@code NullPointerException}.
      * @param image the image
      * @see #getDescription
      * @see java.awt.Image#getProperty
@@ -378,18 +378,11 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Sets the image displayed by this icon.
-     * Setting a {@code null} image means
-     * any existing icon will be removed
-     * and no icon will be rendered.
+     * Passing a {@code null} Image will result in {@code NullPointerException}.
      * @param image the image
      */
     public void setImage(Image image) {
         this.image = image;
-        if (image == null) {
-            width = -1;
-            height = -1;
-            return;
-        }
         loadImage(image);
     }
 
