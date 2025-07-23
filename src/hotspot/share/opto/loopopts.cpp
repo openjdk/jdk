@@ -46,7 +46,7 @@
 //=============================================================================
 //------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
-Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
+Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, uint policy) {
   if ((n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) ||
       (n->Opcode() == Op_ConvL2I && n->bottom_type() != TypeInt::INT)) {
     // ConvI2L/ConvL2I may have type information on it which is unsafe to push up
@@ -1250,7 +1250,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // policy before it is considered profitable.  Policy is usually 0,
   // so 1 win is considered profitable.  Big merges will require big
   // cloning, so get a larger policy.
-  int policy = n_blk->req() >> 2;
+  uint policy = n_blk->req() >> 2;
 
   // If the loop is a candidate for range check elimination,
   // delay splitting through it's phi until a later loop optimization
@@ -1493,7 +1493,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // When is split-if profitable?  Every 'win' on means some control flow
     // goes dead, so it's almost always a win.
-    int policy = 0;
+    uint policy = 0;
     // Split compare 'n' through the merge point if it is profitable
     Node *phi = split_thru_phi( n, n_ctrl, policy);
     if (!phi) {
@@ -1505,7 +1505,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     _igvn.replace_node(n, phi);
 
     // Now split the bool up thru the phi
-    Node *bolphi = split_thru_phi(bol, n_ctrl, -1);
+    Node *bolphi = split_thru_phi(bol, n_ctrl, 0);
     guarantee(bolphi != nullptr, "null boolean phi node");
 
     _igvn.replace_node(bol, bolphi);
@@ -1517,7 +1517,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Conditional-move?  Must split up now
     if (!iff->is_If()) {
-      Node *cmovphi = split_thru_phi(iff, n_ctrl, -1);
+      Node *cmovphi = split_thru_phi(iff, n_ctrl, 0);
       _igvn.replace_node(iff, cmovphi);
       return;
     }

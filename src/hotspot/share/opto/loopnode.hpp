@@ -1628,7 +1628,7 @@ public:
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
   // Split Node 'n' through merge point if there is enough win.
-  Node *split_thru_phi( Node *n, Node *region, int policy );
+  Node *split_thru_phi(Node *n, Node *region, uint policy);
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
   void do_split_if(Node *iff, RegionNode** new_false_region = nullptr, RegionNode** new_true_region = nullptr);
