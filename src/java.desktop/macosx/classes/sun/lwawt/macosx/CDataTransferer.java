@@ -45,7 +45,7 @@ import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class CDataTransferer extends DataTransferer {
+public final class CDataTransferer extends DataTransferer {
     private static final Map<String, Long> predefinedClipboardNameMap;
     private static final Map<Long, String> predefinedClipboardFormatMap;
 
