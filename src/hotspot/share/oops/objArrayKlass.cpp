@@ -55,7 +55,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_klass(ClassLoaderData* loader_data, int n
 
 Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klass* element_klass) {
   ResourceMark rm(current);
-  char *name_str = element_klass->name()->as_C_string();
+  char* name_str = element_klass->name()->as_C_string();
   int len = element_klass->name()->utf8_length();
   char *new_str = NEW_RESOURCE_ARRAY_IN_THREAD(current, char, len + 4);
   int idx = 0;
