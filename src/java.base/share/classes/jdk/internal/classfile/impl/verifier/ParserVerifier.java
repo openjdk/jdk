@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,11 @@ import jdk.internal.classfile.impl.Util;
 import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 
-/**
- * ParserVerifier performs selected checks of the class file format according to
- * {@jvms 4.8 Format Checking}
- *
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/classFileParser.cpp">hotspot/share/classfile/classFileParser.cpp</a>
- */
+/// ParserVerifier performs selected checks of the class file format according to
+/// {@jvms 4.8 Format Checking}.
+///
+/// From `classFileParser.cpp`.
+///
 public record ParserVerifier(ClassModel classModel) {
 
     List<VerifyError> verify() {

@@ -199,10 +199,11 @@
           range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
-          "Enable parallel reference processing whenever possible")         \
+          "(Deprecated) Enable parallel reference processing "              \
+          "whenever possible")                                              \
                                                                             \
   product(bool, ParallelRefProcBalancingEnabled, true,                      \
-          "Enable balancing of reference processing queues")                \
+          "(Deprecated) Enable balancing of reference processing queues")   \
                                                                             \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
                "Ergonomically start one thread for this amount of "         \
@@ -600,9 +601,6 @@
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
           range(1, UINT_MAX)                                                \
-                                                                            \
-  develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
-          "Delay between expansion and allocation (in milliseconds)")       \
                                                                             \
   product(uint, GCDrainStackTargetSize, 64,                                 \
           "Number of entries we will try to leave on the stack "            \

@@ -172,9 +172,6 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
       result = expand(word_size*HeapWordSize);
     }
   }
-  if (GCExpandToAllocateDelayMillis > 0) {
-    os::naked_sleep(GCExpandToAllocateDelayMillis);
-  }
   return result;
 }
 
@@ -234,7 +231,7 @@ bool PSOldGen::expand_by(size_t bytes) {
     post_resize();
     if (UsePerfData) {
       _space_counters->update_capacity();
-      _gen_counters->update_all(_virtual_space->committed_size());
+      _gen_counters->update_capacity(_virtual_space->committed_size());
     }
   }
 
@@ -366,7 +363,7 @@ void PSOldGen::print_on(outputStream* st) const {
 void PSOldGen::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all(_virtual_space->committed_size());
+    _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }
 

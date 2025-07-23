@@ -71,7 +71,6 @@ protected:
   volatile size_t _used;
   volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
-  size_t _soft_max_capacity;
 
   ShenandoahHeuristics* _heuristics;
 
@@ -105,8 +104,7 @@ private:
  public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers,
-                       size_t max_capacity,
-                       size_t soft_max_capacity);
+                       size_t max_capacity);
   ~ShenandoahGeneration();
 
   bool is_young() const  { return _type == YOUNG; }
@@ -126,7 +124,6 @@ private:
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
-  size_t soft_max_capacity() const override { return _soft_max_capacity; }
   size_t max_capacity() const override      { return _max_capacity; }
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;

@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "opto/vtransform.hpp"
 #include "opto/superword.hpp"
+#include "opto/vtransform.hpp"
 
 #ifndef SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
 #define SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP

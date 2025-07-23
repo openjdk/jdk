@@ -1036,15 +1036,15 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
     // If java.base was already defined then patch this particular class with java.base.
     if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
-      assert(javabase_entry != nullptr && javabase_entry->module() != nullptr,
+      assert(javabase_entry != nullptr && javabase_entry->module_oop() != nullptr,
              "Setting class module field, " JAVA_BASE_NAME " should be defined");
-      Handle javabase_handle(current, javabase_entry->module());
+      Handle javabase_handle(current, javabase_entry->module_oop());
       set_module(mirror(), javabase_handle());
     }
   } else {
     assert(Universe::is_module_initialized() ||
            (ModuleEntryTable::javabase_defined() &&
-            (module() == ModuleEntryTable::javabase_moduleEntry()->module())),
+            (module() == ModuleEntryTable::javabase_moduleEntry()->module_oop())),
            "Incorrect java.lang.Module specification while creating mirror");
     set_module(mirror(), module());
   }
@@ -1899,7 +1899,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     return nullptr;
   }
 
-  class GetStackTraceClosure : public HandshakeClosure {
+  class GetStackTraceHandshakeClosure : public HandshakeClosure {
   public:
     const Handle _java_thread;
     int _depth;
@@ -1907,11 +1907,11 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
 
-    GetStackTraceClosure(Handle java_thread) :
-        HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
+    GetStackTraceHandshakeClosure(Handle java_thread) :
+        HandshakeClosure("GetStackTraceHandshakeClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
         _methods(nullptr), _bcis(nullptr) {
     }
-    ~GetStackTraceClosure() {
+    ~GetStackTraceHandshakeClosure() {
       delete _methods;
       delete _bcis;
     }
@@ -1977,13 +1977,13 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   // Handshake with target
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  GetStackTraceClosure gstc(Handle(THREAD, java_thread));
+  GetStackTraceHandshakeClosure gsthc(Handle(THREAD, java_thread));
   do {
-   Handshake::execute(&gstc, &tlh, thread);
-  } while (gstc.read_reset_retry());
+   Handshake::execute(&gsthc, &tlh, thread);
+  } while (gsthc.read_reset_retry());
 
   // Stop if no stack trace is found.
-  if (gstc._depth == 0) {
+  if (gsthc._depth == 0) {
     return nullptr;
   }
 
@@ -1993,12 +1993,12 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   if (k->should_be_initialized()) {
     k->initialize(CHECK_NULL);
   }
-  objArrayHandle trace = oopFactory::new_objArray_handle(k, gstc._depth, CHECK_NULL);
+  objArrayHandle trace = oopFactory::new_objArray_handle(k, gsthc._depth, CHECK_NULL);
 
-  for (int i = 0; i < gstc._depth; i++) {
-    methodHandle method(THREAD, gstc._methods->at(i));
+  for (int i = 0; i < gsthc._depth; i++) {
+    methodHandle method(THREAD, gsthc._methods->at(i));
     oop element = java_lang_StackTraceElement::create(method,
-                                                      gstc._bcis->at(i),
+                                                      gsthc._bcis->at(i),
                                                       CHECK_NULL);
     trace->obj_at_put(i, element);
   }
