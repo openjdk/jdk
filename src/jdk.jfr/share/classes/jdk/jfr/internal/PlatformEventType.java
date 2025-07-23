@@ -107,9 +107,9 @@ public final class PlatformEventType extends Type {
             return switch (getName()) {
                 case Type.EVENT_NAME_PREFIX + "SocketRead",
                      Type.EVENT_NAME_PREFIX + "SocketWrite",
-                     Type.EVENT_NAME_PREFIX + "FileRead",
                      Type.EVENT_NAME_PREFIX + "FileWrite" -> 6;
-                case Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
+                case Type.EVENT_NAME_PREFIX + "FileRead",
+                     Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
                 default -> 3;
             };
         }

@@ -479,8 +479,8 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ prologue("g1_pre_barrier", false);
   // arg0 : previous value of memory
 
-  __ push(rax);
-  __ push(rdx);
+  __ push_ppx(rax);
+  __ push_ppx(rdx);
 
   const Register pre_val = rax;
   const Register thread = r15_thread;
@@ -528,8 +528,8 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   __ bind(done);
 
-  __ pop(rdx);
-  __ pop(rax);
+  __ pop_ppx(rdx);
+  __ pop_ppx(rax);
 
   __ epilogue();
 }

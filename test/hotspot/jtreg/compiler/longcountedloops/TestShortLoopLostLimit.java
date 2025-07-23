@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
+/**
  * @test
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahPacing -Xmx128m TestPacing
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahPacing -Xmx128m TestPacing
+ * @bug 8342692
+ * @summary C2: long counted loop/long range checks: don't create loop-nest for short running loops
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestShortLoopLostLimit
+ * @run main/othervm TestShortLoopLostLimit
  */
 
-public class TestPacing {
-    static final long TARGET_MB = Long.getLong("target", 1000); // 1 Gb allocation
+public class TestShortLoopLostLimit {
+    private static volatile int volatileField;
 
-    static volatile Object sink;
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test1(0, 100);
+            test2(0, 100);
+        }
+    }
 
-    public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 16;
-        for (long c = 0; c < count; c++) {
-            sink = new Object();
+    private static void test1(int a, long b) {
+        for (long i = 0; i < a + b; i += 2) {
+            volatileField = 42;
+        }
+    }
+
+    private static void test2(int a, long b) {
+        for (long i = a + b; i > 0; i -= 2) {
+            volatileField = 42;
         }
     }
 }
