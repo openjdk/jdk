@@ -130,9 +130,6 @@ public abstract class GlassPaneOverlappingTestBase extends SimpleOverlappingTest
                         testedComponent.setBounds(0, 0,
                                 testedComponent.getPreferredSize().width,
                                 testedComponent.getPreferredSize().height + 20);
-                        ancestorLoc = f.getLocationOnScreen();
-                        System.out.println(
-                                "frame focusable? " + f.isFocusable());
                         boolean focus = f.requestFocusInWindow();
                         if (!focus) {
                             Component focusOwner =
