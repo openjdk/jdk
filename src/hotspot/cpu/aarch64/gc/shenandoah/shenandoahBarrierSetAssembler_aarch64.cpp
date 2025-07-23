@@ -23,6 +23,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -292,7 +293,12 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom)));
+    if (AOTCodeCache::is_on_for_dump()) {
+      // AOT needs relocation for this stub to save adapters.
+      __ lea(lr, RuntimeAddress(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom)));
+    } else {
+      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom));
+    }
   }
   __ blr(lr);
   __ mov(rscratch1, r0);
