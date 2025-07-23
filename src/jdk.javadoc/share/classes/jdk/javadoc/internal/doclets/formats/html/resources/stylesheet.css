@@ -30,7 +30,7 @@
     --code-line-height: 1.6;
     /* Navigation bar and content area dimensions */
     --top-nav-height: 44px;
-    --sub-nav-height: 35px;
+    --sub-nav-height: 36px;
     --nav-height: calc(var(--top-nav-height) + var(--sub-nav-height));
     --max-content-width: 1500px;
     --content-margin: 0 auto;
@@ -407,9 +407,12 @@ button#navbar-toggle-button {
     display:none;
 }
 button#theme-button {
-    width: 33px;
-    height: 33px;
+    position: relative;
+    top: -9.5px;
+    width: 32px;
+    height: 32px;
     padding: 6px;
+    margin-left: -6px;
     background-color: transparent;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -441,19 +444,15 @@ body.theme-dark button#theme-button img.theme-dark {
 }
 div#theme-panel {
     display: none;
-    position: absolute;
-    top: var(--sub-nav-height);
-    right: 76px;
+    position: fixed;
     z-index: 8;
     background-color: var(--toc-background-color);
     color: var(--body-text-color);
     padding: 4px;
     white-space: nowrap;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
-    border-top-left-radius: 0;
+    border-radius: 4px;
     box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-
 }
 div#theme-panel div:first-child {
     font-weight: bold;
@@ -486,12 +485,15 @@ div.sub-nav {
     background-color:var(--subnav-background-color);
     width:100%;
     font-size:var(--nav-font-size);
+    min-height: var(--sub-nav-height);
 }
 ol.sub-nav-list {
     flex: 1 1 90%;
     line-height: 1.7;
+    overflow: auto;
     padding-left:6px;
     margin: 4px 0;
+    min-height: 28px;
 }
 ol.sub-nav-list::-webkit-scrollbar {
     display: none;
@@ -528,7 +530,8 @@ ol.sub-nav-list a.current-selection {
 }
 .sub-nav .nav-list-search {
     flex: 1 1 10%;
-    margin: 0 15px 0 5px;
+    margin: 4.5px 15px auto 5px;
+    padding: 1px 0;
     position:relative;
     white-space: nowrap;
 }
@@ -1744,9 +1747,6 @@ table.striped > tbody > tr > th {
 @media screen and (max-width: 1200px) {
     input#search-input {
         width: 22.5vw;
-    }
-    div#theme-panel {
-        right: 10px;
     }
 }
 @media screen and (max-width: 1000px) {

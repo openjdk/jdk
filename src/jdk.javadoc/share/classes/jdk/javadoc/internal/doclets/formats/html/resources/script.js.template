@@ -328,11 +328,7 @@ document.addEventListener("readystatechange", (e) => {
 });
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
-    // Make sure current element is visible in breadcrumb navigation on small displays
     const subnav = document.querySelector("ol.sub-nav-list");
-    if (subnav && subnav.lastElementChild) {
-        subnav.lastElementChild.scrollIntoView({ behavior: "instant", inline: "start", block: "nearest" });
-    }
     const keymap = new Map();
     const searchInput = document.getElementById("search-input")
                    || document.getElementById("page-search-input");
@@ -356,7 +352,16 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var themePanelVisible = false;
     themeButton.addEventListener("click", e => {
         if (!themePanelVisible) {
+            let {x, y} = themeButton.getBoundingClientRect();
             themePanel.style.display = "block";
+            if (window.innerHeight - 85 < y) {
+                themePanel.style.top = "";
+                themePanel.style.bottom = "4px";
+            } else {
+                themePanel.style.top = y + (expanded ? 0 : 36) + "px";
+                themePanel.style.bottom = "";
+            }
+            themePanel.style.left = x + (expanded ? 36 : 0) + "px";
             themeButton.setAttribute("aria-expanded", "true");
             themePanelVisible = true;
             e.stopPropagation();
@@ -425,6 +430,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var windowWidth;
     var bodyHeight;
     function collapse() {
+        closeThemePanel();
         if (expanded) {
             mainnav.removeAttribute("style");
             if (tocMenu) {
@@ -439,6 +445,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
     }
     function expand() {
+        closeThemePanel();
         expanded = true;
         mainnav.style.display = "block";
         mainnav.style.removeProperty("height");

@@ -8,7 +8,7 @@
 -->
 
 <svg version="1.1" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <g fill="none" stroke="#404040" stroke-linecap="round">
+    <g fill="none" stroke="#fff" stroke-linecap="round">
         <circle cx="49.932" cy="50.193" r="24.947" stroke-width="7.6"/>
         <path d="m50.882 5.5255v10.822" stroke-width="7.533"/>
         <path d="m24.315 74.134-7.6524 7.6524" stroke-width="7.533"/>
