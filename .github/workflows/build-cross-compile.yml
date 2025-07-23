@@ -89,7 +89,7 @@ jobs:
             gnu-arch: riscv64
             debian-arch: riscv64
             debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bookworm
+            debian-version: sid
             tolerate-sysroot-errors: true
 
     steps:
