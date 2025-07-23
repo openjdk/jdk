@@ -30,6 +30,7 @@ import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.NATIVE;
 import static jdk.jpackage.test.PackageType.WINDOWS;
+import static jdk.jpackage.test.PackageType.WIN_MSI;
 
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
@@ -745,6 +746,8 @@ public final class PackageTest extends RunnablePackageTest {
             if (expectedJPackageExitCode == 0) {
                 if (isOfType(cmd, LINUX)) {
                     LinuxHelper.verifyPackageBundleEssential(cmd);
+                } else if (isOfType(cmd, WIN_MSI)) {
+                    WinShortcutVerifier.verifyBundleShortcuts(cmd);
                 }
             }
             bundleVerifiers.forEach(v -> v.accept(cmd, result));
@@ -766,12 +769,7 @@ public final class PackageTest extends RunnablePackageTest {
 
             if (!cmd.isRuntime()) {
                 if (isOfType(cmd, WINDOWS) && !cmd.isPackageUnpacked("Not verifying desktop integration")) {
-                    // Check main launcher
-                    WindowsHelper.verifyDesktopIntegration(cmd, null);
-                    // Check additional launchers
-                    cmd.addLauncherNames().forEach(name -> {
-                        WindowsHelper.verifyDesktopIntegration(cmd, name);
-                    });
+                    WindowsHelper.verifyDeployedDesktopIntegration(cmd, true);
                 }
             }
 
@@ -848,12 +846,7 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(cmd.appLauncherPath(), false);
 
                 if (isOfType(cmd, WINDOWS)) {
-                    // Check main launcher
-                    WindowsHelper.verifyDesktopIntegration(cmd, null);
-                    // Check additional launchers
-                    cmd.addLauncherNames().forEach(name -> {
-                        WindowsHelper.verifyDesktopIntegration(cmd, name);
-                    });
+                    WindowsHelper.verifyDeployedDesktopIntegration(cmd, false);
                 }
             }
 

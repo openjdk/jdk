@@ -26,9 +26,14 @@ import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -63,7 +68,7 @@ public class WindowsHelper {
         return PROGRAM_FILES;
     }
 
-    private static Path getInstallationSubDirectory(JPackageCommand cmd) {
+    static Path getInstallationSubDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WINDOWS);
         return Path.of(cmd.getArgumentValue("--install-dir", cmd::name));
     }
@@ -263,19 +268,24 @@ public class WindowsHelper {
         }
     }
 
-    static void verifyDesktopIntegration(JPackageCommand cmd,
-            String launcherName) {
-        new DesktopIntegrationVerifier(cmd, launcherName);
+    static void verifyDeployedDesktopIntegration(JPackageCommand cmd, boolean installed) {
+        WinShortcutVerifier.verifyDeployedShortcuts(cmd, installed);
+        // Check the main launcher
+        new DesktopIntegrationVerifier(cmd, installed, null);
+        // Check additional launchers
+        cmd.addLauncherNames().forEach(name -> {
+            new DesktopIntegrationVerifier(cmd, installed, name);
+        });
     }
 
     public static String getMsiProperty(JPackageCommand cmd, String propertyName) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
-        return Executor.of("cscript.exe", "//Nologo")
-        .addArgument(TKit.TEST_SRC_ROOT.resolve("resources/query-msi-property.js"))
-        .addArgument(cmd.outputBundle())
-        .addArgument(propertyName)
-        .dumpOutput()
-        .executeAndGetOutput().stream().collect(Collectors.joining("\n"));
+        return MsiDatabaseCache.INSTANCE.findProperty(cmd.outputBundle(), propertyName).orElseThrow();
+    }
+
+    static Collection<MsiDatabase.Shortcut> getMsiShortcuts(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        return MsiDatabaseCache.INSTANCE.listShortcuts(cmd.outputBundle());
     }
 
     public static String getExecutableDesciption(Path pathToExeFile) {
@@ -386,7 +396,7 @@ public class WindowsHelper {
         }
     }
 
-    private static boolean isUserLocalInstall(JPackageCommand cmd) {
+    static boolean isUserLocalInstall(JPackageCommand cmd) {
         return cmd.hasArgument("--win-per-user-install");
     }
 
@@ -396,14 +406,14 @@ public class WindowsHelper {
 
     private static class DesktopIntegrationVerifier {
 
-        DesktopIntegrationVerifier(JPackageCommand cmd, String launcherName) {
+        DesktopIntegrationVerifier(JPackageCommand cmd, boolean installed, String launcherName) {
             cmd.verifyIsOfType(PackageType.WINDOWS);
 
             name = Optional.ofNullable(launcherName).orElseGet(cmd::name);
 
             isUserLocalInstall = isUserLocalInstall(cmd);
 
-            appInstalled = cmd.appLauncherPath(launcherName).toFile().exists();
+            this.appInstalled = installed;
 
             desktopShortcutPath = Path.of(name + ".lnk");
 
@@ -611,7 +621,12 @@ public class WindowsHelper {
         CommonDesktop,
 
         Programs,
-        CommonPrograms;
+        CommonPrograms,
+
+        ProgramFiles,
+
+        LocalApplicationData,
+        ;
 
         Path getPath() {
             final var str = Executor.of("powershell", "-NoLogo", "-NoProfile",
@@ -636,33 +651,84 @@ public class WindowsHelper {
         }
     }
 
-    private enum SpecialFolder {
-        COMMON_START_MENU_PROGRAMS(SYSTEM_SHELL_FOLDERS_REGKEY, "Common Programs", SpecialFolderDotNet.CommonPrograms),
-        USER_START_MENU_PROGRAMS(USER_SHELL_FOLDERS_REGKEY, "Programs", SpecialFolderDotNet.Programs),
+    enum SpecialFolder {
+        COMMON_START_MENU_PROGRAMS(
+                SYSTEM_SHELL_FOLDERS_REGKEY,
+                "Common Programs",
+                "ProgramMenuFolder",
+                SpecialFolderDotNet.CommonPrograms),
+        USER_START_MENU_PROGRAMS(
+                USER_SHELL_FOLDERS_REGKEY,
+                "Programs",
+                "ProgramMenuFolder",
+                SpecialFolderDotNet.Programs),
 
-        COMMON_DESKTOP(SYSTEM_SHELL_FOLDERS_REGKEY, "Common Desktop", SpecialFolderDotNet.CommonDesktop),
-        USER_DESKTOP(USER_SHELL_FOLDERS_REGKEY, "Desktop", SpecialFolderDotNet.Desktop);
+        COMMON_DESKTOP(
+                SYSTEM_SHELL_FOLDERS_REGKEY,
+                "Common Desktop",
+                "DesktopFolder",
+                SpecialFolderDotNet.CommonDesktop),
+        USER_DESKTOP(
+                USER_SHELL_FOLDERS_REGKEY,
+                "Desktop",
+                "DesktopFolder",
+                SpecialFolderDotNet.Desktop),
 
-        SpecialFolder(String keyPath, String valueName) {
-            reg = new RegValuePath(keyPath, valueName);
+        PROGRAM_FILES("ProgramFiles64Folder", SpecialFolderDotNet.ProgramFiles),
+
+        LOCAL_APPLICATION_DATA("LocalAppDataFolder", SpecialFolderDotNet.LocalApplicationData),
+        ;
+
+        SpecialFolder(String keyPath, String valueName, String msiPropertyName) {
+            reg = Optional.of(new RegValuePath(keyPath, valueName));
             alt = Optional.empty();
+            this.msiPropertyName = Objects.requireNonNull(msiPropertyName);
         }
 
-        SpecialFolder(String keyPath, String valueName, SpecialFolderDotNet alt) {
-            reg = new RegValuePath(keyPath, valueName);
+        SpecialFolder(String keyPath, String valueName, String msiPropertyName, SpecialFolderDotNet alt) {
+            reg = Optional.of(new RegValuePath(keyPath, valueName));
             this.alt = Optional.of(alt);
+            this.msiPropertyName = Objects.requireNonNull(msiPropertyName);
+        }
+
+        SpecialFolder(String msiPropertyName, SpecialFolderDotNet alt) {
+            reg = Optional.empty();
+            this.alt = Optional.of(alt);
+            this.msiPropertyName = Objects.requireNonNull(msiPropertyName);
+        }
+
+        static Optional<SpecialFolder> findMsiProperty(String pathComponent, boolean allUsers) {
+            Objects.requireNonNull(pathComponent);
+            String regPath;
+            if (allUsers) {
+                regPath = SYSTEM_SHELL_FOLDERS_REGKEY;
+            } else {
+                regPath = USER_SHELL_FOLDERS_REGKEY;
+            }
+            return Stream.of(values())
+                    .filter(v -> v.msiPropertyName.equals(pathComponent))
+                    .filter(v -> {
+                        return v.reg.map(r -> r.keyPath().equals(regPath)).orElse(true);
+                    })
+                    .findFirst();
+        }
+
+        String getMsiPropertyName() {
+            return msiPropertyName;
         }
 
         Path getPath() {
-            return CACHE.computeIfAbsent(this, k -> reg.findValue().map(Path::of).orElseGet(() -> {
+            return CACHE.computeIfAbsent(this, k -> reg.flatMap(RegValuePath::findValue).map(Path::of).orElseGet(() -> {
                 return alt.map(SpecialFolderDotNet::getPath).orElseThrow(() -> {
                     return new NoSuchElementException(String.format("Failed to find path to %s folder", name()));
                 });
             }));
         }
 
-        private final RegValuePath reg;
+        private final Optional<RegValuePath> reg;
         private final Optional<SpecialFolderDotNet> alt;
+        // One of "System Folder Properties" from https://learn.microsoft.com/en-us/windows/win32/msi/property-reference
+        private final String msiPropertyName;
 
         private static final Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
     }
@@ -692,6 +758,63 @@ public class WindowsHelper {
 
         private static final ShortPathUtils INSTANCE = new ShortPathUtils();
     }
+
+
+    private static final class MsiDatabaseCache {
+
+        Optional<String> findProperty(Path msiPath, String propertyName) {
+            return ensureTables(msiPath, MsiDatabase.Table.FIND_PROPERTY_REQUIRED_TABLES).findProperty(propertyName);
+        }
+
+        Collection<MsiDatabase.Shortcut> listShortcuts(Path msiPath) {
+            return ensureTables(msiPath, MsiDatabase.Table.LIST_SHORTCUTS_REQUIRED_TABLES).listShortcuts();
+        }
+
+        MsiDatabase ensureTables(Path msiPath, Set<MsiDatabase.Table> tableNames) {
+            Objects.requireNonNull(msiPath);
+            try {
+                synchronized (items) {
+                    var value = Optional.ofNullable(items.get(msiPath)).map(SoftReference::get).orElse(null);
+                    if (value != null) {
+                        var lastModifiedTime = Files.getLastModifiedTime(msiPath).toInstant();
+                        if (lastModifiedTime.isAfter(value.timestamp())) {
+                            value = null;
+                        } else {
+                            tableNames = Comm.compare(value.db().tableNames(), tableNames).unique2();
+                        }
+                    }
+
+                    if (!tableNames.isEmpty()) {
+                        var idtOutputDir = TKit.createTempDirectory("msi-db");
+                        var db = MsiDatabase.load(msiPath, idtOutputDir, tableNames);
+                        if (value != null) {
+                            value = new MsiDatabaseWithTimestamp(db.append(value.db()), value.timestamp());
+                        } else {
+                            value = new MsiDatabaseWithTimestamp(db, Files.getLastModifiedTime(msiPath).toInstant());
+                        }
+                        items.put(msiPath, new SoftReference<>(value));
+                    }
+
+                    return value.db();
+                }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        private record MsiDatabaseWithTimestamp(MsiDatabase db, Instant timestamp) {
+
+            MsiDatabaseWithTimestamp {
+                Objects.requireNonNull(db);
+                Objects.requireNonNull(timestamp);
+            }
+        }
+
+        private final Map<Path, SoftReference<MsiDatabaseWithTimestamp>> items = new HashMap<>();
+
+        static final MsiDatabaseCache INSTANCE = new MsiDatabaseCache();
+    }
+
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "bin\\server\\jvm.dll"));
