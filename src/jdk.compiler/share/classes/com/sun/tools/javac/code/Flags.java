@@ -366,7 +366,7 @@ public class Flags {
      * Flag to indicate the given ModuleSymbol is an automatic module.
      */
     @Use({FlagTarget.TYPE}) //ModuleSymbols only
-    public static final long AUTOMATIC_MODULE = 1L<<52;
+    public static final long AUTOMATIC_MODULE = 1L<<57;
 
     /**
      * Flag to indicate the given PackageSymbol contains any non-.java and non-.class resources.
@@ -384,7 +384,7 @@ public class Flags {
      * Flag to indicate the given ModuleSymbol is a system module.
      */
     @Use({FlagTarget.TYPE}) //ModuleSymbols only
-    public static final long SYSTEM_MODULE = 1L<<53;
+    public static final long SYSTEM_MODULE = 1L<<59;
 
     /**
      * Flag to indicate the given ClassSymbol is a value based.
