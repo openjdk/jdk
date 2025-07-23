@@ -240,7 +240,6 @@ public:
     if ((_num_stored % ratio_long_short) == 0) {
       _long_term_buffer.store(data);
     }
-    _num_stored++;
   }
 
   void print_on(outputStream* st) const {
