@@ -129,15 +129,15 @@ public class Robot {
     /**
      * Default step-delay in milliseconds for mouse {@link #glide(int, int, int, int) glide}.
      */
-    public static final int DEFAULT_STEP_DELAY = 20;
+    public final int DEFAULT_STEP_DELAY = 20;
 
     /**
      * Default pixel step-length for mouse {@link #glide(int, int, int, int) glide}.
      */
-    public static final int DEFAULT_STEP_LENGTH = 2;
+    public final int DEFAULT_STEP_LENGTH = 2;
 
-    private static int stepDelay = DEFAULT_STEP_DELAY;
-    private static int stepLength = DEFAULT_STEP_LENGTH;
+    private int stepDelay = DEFAULT_STEP_DELAY;
+    private int stepLength = DEFAULT_STEP_LENGTH;
 
     /**
      * Constructs a Robot object in the coordinate system of the primary screen.
@@ -945,7 +945,7 @@ public class Robot {
         if (stepLength <= 0) {
             throw new IllegalArgumentException("Step-length must be greater than zero");
         }
-        Robot.stepLength = stepLength;
+        this.stepLength = stepLength;
     }
 
     /**
@@ -974,7 +974,7 @@ public class Robot {
         if (stepDelay < 0 || stepDelay > 60000) {
             throw new IllegalArgumentException("Step delay must be between 0 and 60,000");
         }
-        Robot.stepDelay = stepDelay;
+        this.stepDelay = stepDelay;
     }
 
     /**
