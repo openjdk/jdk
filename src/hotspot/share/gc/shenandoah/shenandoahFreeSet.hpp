@@ -203,6 +203,8 @@ public:
   // is now considered fully used, since the region is presumably used to represent a humongous object.
   void retire_range_from_partition(ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx);
 
+  void unretire_to_partition(ShenandoahHeapRegion* region, ShenandoahFreeSetPartitionId which_partition);
+
   // Place region idx into free set which_partition.  Requires that idx is currently NotFree.
   void make_free(idx_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);
 
@@ -294,11 +296,40 @@ public:
   inline size_t get_available(ShenandoahFreeSetPartitionId which_partition);
 
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+    shenandoah_assert_heaplocked();
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    assert (_used[int(which_partition)] >= bytes,
+            "Must not use (%zu) less than zero after decrease by %zu",
+            _used[int(which_partition)], bytes);
+    
+    _used[int(which_partition)] -= bytes;
+    _available[int(which_partition)] += bytes;
+#define KELVIN_USED_PARTITION
+#ifdef KELVIN_USED_PARTITION
+    extern const char* partition_name(ShenandoahFreeSetPartitionId t);
+    log_info(gc)("ShenRegionPartitions %s decrease_used(%zu) to %zu, available grows to %zu",
+                 partition_name(which_partition), bytes, _used[int(which_partition)], _available[int(which_partition)]);
+#endif
+  }
+
   inline size_t get_used(ShenandoahFreeSetPartitionId which_partition);
 
   inline void increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  inline void decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+    shenandoah_assert_heaplocked();
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    assert(_humongous_waste[int(which_partition)] >= bytes, "Cannot decrease waste beyond what is there");
+
+    _humongous_waste[int(which_partition)] -= bytes;
+#undef KELVIN_HUMONGOUS_WASTE
+#ifdef KELVIN_HUMONGOUS_WASTE
+    extern const char* partition_name(ShenandoahFreeSetPartitionId t);
+    log_info(gc)("FreeSet<%s>::decrease_humongous_waste(%zu) yields: %zu", partition_name(which_partition),
+                 bytes, _humongous_waste[int(which_partition)]);
+#endif
+  }
+
   inline size_t get_humongous_waste(ShenandoahFreeSetPartitionId which_partition);
 
   inline void set_bias_from_left_to_right(ShenandoahFreeSetPartitionId which_partition, bool value) {
@@ -439,7 +470,7 @@ private:
     size_t region_size_bytes = _partitions.region_size_bytes();
     _total_young_used = (_partitions.used_by(ShenandoahFreeSetPartitionId::Mutator) +
                          _partitions.used_by(ShenandoahFreeSetPartitionId::Collector));
-#undef KELVIN_USED
+#define KELVIN_USED
 #ifdef KELVIN_USED
     log_info(gc)(" recompute_total_young_used(): %zu from total regions M: %zu, C: %zu, allocatable regions M: %zu, C: %zu, "
                  "M used: %zu, C used: %zu", _total_young_used,
@@ -696,6 +727,8 @@ public:
 
   inline size_t humongous_waste_in_mutator()  const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator); }
   inline size_t humongous_waste_in_old() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::OldCollector); }
+
+  void decrease_humongous_waste_for_regular_bypass(ShenandoahHeapRegion* r, size_t waste);
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 

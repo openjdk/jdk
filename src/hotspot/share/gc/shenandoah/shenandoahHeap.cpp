@@ -739,8 +739,8 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
     // padding and actual size both count towards allocation counter
     generation->increase_allocated(actual_bytes + wasted_bytes);
 
-    // only actual size counts toward usage for mutator allocations
-    increase_used(generation, actual_bytes);
+    // Used within generation is actual bytes + alignment padding (wasted bytes)
+    increase_used(generation, actual_bytes + wasted_bytes);
 
     // notify pacer of both actual size and waste
     notify_mutator_alloc_words(req.actual_size(), req.waste());
@@ -760,8 +760,10 @@ void ShenandoahHeap::increase_humongous_waste(ShenandoahGeneration* generation, 
 
 void ShenandoahHeap::decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
   generation->decrease_humongous_waste(bytes);
+  generation->decrease_used(bytes);
   if (!generation->is_global()) {
     global_generation()->decrease_humongous_waste(bytes);
+    global_generation()->decrease_used(bytes);
   }
 }
 

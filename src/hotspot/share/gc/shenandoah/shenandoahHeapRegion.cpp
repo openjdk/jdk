@@ -162,6 +162,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
         // regular regions. The 'waste' in the last region is no longer wasted at this point,
         // so we must stop treating it as such.
         decrement_humongous_waste();
+
       }
       set_state(_regular);
       return;
@@ -907,7 +908,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
   heap->set_affiliation(this, new_affiliation);
 }
 
-void ShenandoahHeapRegion::decrement_humongous_waste() const {
+void ShenandoahHeapRegion::decrement_humongous_waste() {
   assert(is_humongous(), "Should only use this for humongous regions");
   size_t waste_bytes = free();
   if (waste_bytes > 0) {
@@ -918,5 +919,6 @@ void ShenandoahHeapRegion::decrement_humongous_waste() const {
     log_info(gc)("Decrementing humongous waste by %zu in ShenHeapRegion", waste_bytes);
 #endif
     heap->decrease_humongous_waste(generation, waste_bytes);
+    heap->free_set()->decrease_humongous_waste_for_regular_bypass(this, waste_bytes);
   }
 }
