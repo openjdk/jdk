@@ -9,6 +9,7 @@
 class KlassInfoEntry;
 class Klass;
 
+
 KlassInfoTable ObjectCountClosure::cit(false);
 
 void ObjectCountClosure::reset_table() {
@@ -35,6 +36,8 @@ KlassInfoTable* ObjectCountClosure::get_table() {
     return check_table_exists() ? &cit : nullptr;
 }
 
+
+#if INCLUDE_SERVICES
 template <class Event>
 bool ObjectCountClosure::should_send_event() {
     return ObjectCountEventSender::should_send_event<Event>();
@@ -42,4 +45,4 @@ bool ObjectCountClosure::should_send_event() {
 
 template bool ObjectCountClosure::should_send_event<EventObjectCount>();
 template bool ObjectCountClosure::should_send_event<EventObjectCountAfterGC>();
-
+#endif // INCLUDE_SERVICES
