@@ -57,7 +57,7 @@ Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klas
   ResourceMark rm(current);
   char* name_str = element_klass->name()->as_C_string();
   int len = element_klass->name()->utf8_length();
-  char *new_str = NEW_RESOURCE_ARRAY_IN_THREAD(current, char, len + 4);
+  char* new_str = NEW_RESOURCE_ARRAY_IN_THREAD(current, char, len + 4);
   int idx = 0;
   new_str[idx++] = JVM_SIGNATURE_ARRAY;
   if (element_klass->is_instance_klass()) { // it could be an array or simple type
