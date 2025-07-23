@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,32 @@
  * questions.
  */
 
-/**
- * Defines the API for the JavaScript Object.
- *
- * @moduleGraph
- * @since 9
- * @deprecated The jdk.jsobject module will be delivered with JavaFX.
- */
-@Deprecated(since = "24", forRemoval = true)
-module jdk.jsobject {
-    exports netscape.javascript;
+#include "spin_wait_aarch64.hpp"
+#include "utilities/debug.hpp"
+
+#include <string.h>
+
+bool SpinWait::supports(const char *name) {
+  return name != nullptr &&
+         (strcmp(name, "nop")   == 0 ||
+          strcmp(name, "isb")   == 0 ||
+          strcmp(name, "yield") == 0 ||
+          strcmp(name, "sb")    == 0 ||
+          strcmp(name, "none")  == 0);
+}
+
+SpinWait::Inst SpinWait::from_name(const char* name) {
+  assert(supports(name), "checked by OnSpinWaitInstNameConstraintFunc");
+
+  if (strcmp(name, "nop") == 0) {
+    return SpinWait::NOP;
+  } else if (strcmp(name, "isb") == 0) {
+    return SpinWait::ISB;
+  } else if (strcmp(name, "yield") == 0) {
+    return SpinWait::YIELD;
+  } else if (strcmp(name, "sb") == 0) {
+    return SpinWait::SB;
+  }
+
+  return SpinWait::NONE;
 }

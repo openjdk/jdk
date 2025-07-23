@@ -827,19 +827,15 @@ private:
       assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      bool region_progress = false;
       if (r->is_active() && !r->is_cset()) {
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-          region_progress = true;
         } else if (r->is_old()) {
           if (gc_generation->is_global()) {
 
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-            region_progress = true;
           }
           // Otherwise, this is an old region in a young or mixed cycle.  Process it during a second phase, below.
-          // Don't bother to report pacing progress in this case.
         } else {
           // Because updating of references runs concurrently, it is possible that a FREE inactive region transitions
           // to a non-free active region while this loop is executing.  Whenever this happens, the changing of a region's
@@ -855,10 +851,6 @@ private:
                  "%s Region %zu is_active but not recognized as YOUNG or OLD so must be newly transitioned from FREE",
                  r->affiliation_name(), r->index());
         }
-      }
-
-      if (region_progress && ShenandoahPacing) {
-        _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
       }
 
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
@@ -915,10 +907,6 @@ private:
           size_t clusters = assignment._chunk_size / cluster_size;
           assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
           scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
-        }
-
-        if (ShenandoahPacing) {
-          _heap->pacer()->report_update_refs(pointer_delta(end_of_range, start_of_range));
         }
       }
     }
