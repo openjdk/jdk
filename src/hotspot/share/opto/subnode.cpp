@@ -694,6 +694,11 @@ const Type *CmpINode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC_LE;
   else if( r0->_lo == r1->_hi ) // Range is never low?
     return TypeInt::CC_GE;
+
+  const Type* joined = r0->join(r1);
+  if (joined == Type::TOP) {
+    return TypeInt::CC_NE;
+  }
   return TypeInt::CC;           // else use worst case results
 }
 
