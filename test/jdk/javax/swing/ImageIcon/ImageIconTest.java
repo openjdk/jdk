@@ -42,10 +42,6 @@ public class ImageIconTest {
 
     public static void main(String[] args) throws Exception {
 
-        String s = null;
-        byte[] b = null;
-        Image i = null;
-        URL u = null;
         String imgName = "invalid.gif";
         byte[] invalidData = new byte[100];
         new Random().nextBytes(invalidData);
@@ -75,7 +71,7 @@ public class ImageIconTest {
                                new ImageIcon((URL)null);
                            } else {
                                expected = false;
-                               new ImageIcon("file://invalid.gif", "gif");
+                               new ImageIcon("file://" + imgName, "gif");
                                passed = true; // no exception expected for this case
                            }
                            break;
