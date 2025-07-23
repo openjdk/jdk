@@ -254,7 +254,7 @@ public final class Security {
                                 "(e.g. HTTP served file)");
                     }
                     // Inside loadFromPath, we have performed symlinks
-                    // resolution on currentFile under the rationale that
+                    // resolution on currentPath under the rationale that
                     // the original file writer is the one who decided
                     // where the relative includes should resolve.
                     path = currentPath.resolveSibling(path);
