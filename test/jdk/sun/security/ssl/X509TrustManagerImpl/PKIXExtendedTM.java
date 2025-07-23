@@ -1111,8 +1111,7 @@ public class PKIXExtendedTM {
     public static void main(String args[]) throws Exception {
         // Disable KeyManager's algorithm constraints checking as this test
         // is about TrustManager's constraints check.
-        System.setProperty(
-                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
+        System.setProperty("jdk.tls.SunX509KeyManager.certChecking", "false");
 
         if (args.length != 1) {
             throw new Exception("Incorrect number of arguments");

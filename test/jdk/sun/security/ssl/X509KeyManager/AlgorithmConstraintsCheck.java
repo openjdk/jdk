@@ -77,8 +77,7 @@ public class AlgorithmConstraintsCheck {
         String kmAlg = args[1];
         String certSignatureAlg = args[2];
 
-        System.setProperty(
-                "jdk.tls.SunX509keymanager.certSelectionChecking", enabled);
+        System.setProperty("jdk.tls.SunX509KeyManager.certChecking", enabled);
         SecurityUtils.addToDisabledTlsAlgs(certSignatureAlg);
 
         X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(

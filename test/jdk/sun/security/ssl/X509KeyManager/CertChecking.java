@@ -121,8 +121,7 @@ public class CertChecking {
         String enabled = args[0];
         String kmAlg = args[1];
 
-        System.setProperty(
-                "jdk.tls.SunX509keymanager.certSelectionChecking", enabled);
+        System.setProperty("jdk.tls.SunX509KeyManager.certChecking", enabled);
 
         // --- Usage and expired test cases --
 

@@ -106,8 +106,7 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         String enabled = args[0];
         String kmAlg = args[1];
 
-        System.setProperty(
-                "jdk.tls.SunX509keymanager.certSelectionChecking", enabled);
+        System.setProperty("jdk.tls.SunX509KeyManager.certChecking", enabled);
 
         if ("false".equals(enabled) && kmAlg.equals("SunX509")) {
             new PeerConstraintsCheck(kmAlg).run();

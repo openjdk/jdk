@@ -52,7 +52,7 @@ public class PrintSSL {
         // so we can make keytool print certificate with weak
         // MD5withRSA signature algorithm.
         System.setProperty(
-                "jdk.tls.SunX509keymanager.certSelectionChecking", "false");
+                "jdk.tls.SunX509KeyManager.certChecking", "false");
 
         Files.deleteIfExists(Paths.get("keystore"));
 
