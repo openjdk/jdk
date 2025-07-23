@@ -585,10 +585,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *    time. If tasks do not not engage in unbounded loops based on
      *    the actions of other workers with unknown dependencies loop,
      *    this form of proagation can be limited to one signal per
-     *    activation (phase change). We distinguish the cases by
-     *    further signalling only if the task is an InterruptibleTask
-     *    (see below), which are the only supported forms of task that
-     *    may do so.
+     *    activation (phase change). 
      *
      * * Because we don't know about usage patterns (or most commonly,
      *    mixtures), we use both approaches, which present even more
@@ -1979,7 +1976,7 @@ public class ForkJoinPool extends AbstractExecutorService
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
-            int fifo = w.config & FIFO, nsteals = 0, propagated = -1;
+            int fifo = w.config & FIFO, nsteals = 0, propagated = 0;
             for (;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
@@ -2010,28 +2007,22 @@ public class ForkJoinPool extends AbstractExecutorService
                                 }
                             }
                             else {
-                                int nb = q.base = b + 1, signalled, nk;
+                                int nb = q.base = b + 1, nk;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile
                                 rescan = true;
-                                if ((signalled = propagated - j) != 0 &&
-                                    U.getReferenceAcquire(
-                                        a, slotOffset(nk = nb & m)) != null) {
-                                    propagated = j;
+                                if (propagated != phase && a[nk = nb & m] != null) {
+                                    propagated = phase;
                                     signalWork(a, nk);
                                 }
                                 w.topLevelExec(t, fifo);
-                                if ((b = q.base) != nb && signalled != 0)
-                                    break scan;           // reduce interference
+                                b = q.base;
                             }
                         }
                     }
                 }
-                if (!rescan) {
-                    if (((phase = deactivate(w, phase)) & IDLE) != 0)
-                        break;
-                    propagated = -1;                     // re-enable
-                }
+                if (!rescan && ((phase = deactivate(w, phase)) & IDLE) != 0)
+                    break;
             }
         }
     }
@@ -2604,12 +2595,10 @@ public class ForkJoinPool extends AbstractExecutorService
                 reuse = 0;
             }
             if (reuse == 0 || !q.tryLockPhase()) {   // move index
-                if (reuse == 0) {
-                    if (probes >= n >> 1)
-                        reuse = r;                   // stop prefering free slot
-                }
-                else if (q != null)
-                    reuse = 0;                       // probe on collision
+                if (q != null && probes == 0)
+                    reuse = 0;                       // initial collision
+                else if (reuse == 0 && probes >= 4)  // probably nearly full
+                    reuse = 1;                       // stop prefering free slot
                 r = ThreadLocalRandom.advanceProbe(r);
             }
             else if (rejectOnShutdown && (runState & SHUTDOWN) != 0L) {
