@@ -369,6 +369,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         // value, while for Case c. the result will lie within [0, src]
         //
         hi = src_type->hi_as_long();
+        lo = 0L;
       }
 
       if (result_bit_width < mask_bit_width) {
