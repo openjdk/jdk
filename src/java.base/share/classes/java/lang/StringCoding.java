@@ -137,7 +137,7 @@ class StringCoding {
      * @param sp the index of the <em>character (not byte!)</em> from the source array to start reading from
      * @param da the target byte array
      * @param dp the index of the target array to start writing to
-     * @param len the total number of <em>characters (not bytes!)</em> to be encoded
+     * @param len the maximum number of <em>characters (not bytes!)</em> to be encoded
      * @return the total number of <em>characters (not bytes!)</em> successfully encoded
      * @throws NullPointerException if any of the provided arrays is null
      */
@@ -178,7 +178,7 @@ class StringCoding {
      * @param sp the index of the source array to start reading from
      * @param da the target byte array
      * @param dp the index of the target array to start writing to
-     * @param len the total number of characters to be encoded
+     * @param len the maximum number of characters to be encoded
      * @return the total number of characters successfully encoded
      * @throws NullPointerException if any of the provided arrays is null
      */

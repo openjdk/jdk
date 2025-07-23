@@ -150,7 +150,7 @@ public class ISO_8859_1
          * @param sp the index of the source array to start reading from
          * @param da the target byte array
          * @param dp the index of the target array to start writing to
-         * @param len the total number of characters to be encoded
+         * @param len the maximum number of characters to be encoded
          * @return the total number of characters successfully encoded
          * @throws NullPointerException if any of the provided arrays is null
          */
