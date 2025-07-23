@@ -92,7 +92,6 @@ import javax.lang.model.type.TypeMirror;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
@@ -141,6 +140,7 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
@@ -152,7 +152,6 @@ import static jdk.jshell.TreeDissector.printType;
 import static java.util.stream.Collectors.joining;
 
 import javax.lang.model.type.IntersectionType;
-import javax.tools.DiagnosticListener;
 
 /**
  * The concrete implementation of SourceCodeAnalysis.
