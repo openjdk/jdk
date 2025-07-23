@@ -29,31 +29,25 @@
 import java.io.InputStream;
 import java.io.IOException;
 import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ChannelInputStreamTest {
-    private static final InputStream CLOSE = new InputStream() {
-        @Override
-        public int read() throws IOException {
-            return 27;
-        }
-    };
-
     public static void main(String[] args) throws IOException {
-        var close = new ConcurrentLinkedQueue<InputStream>();
+        var close = new ConcurrentLinkedQueue<Object>();
         Thread closeThread = Thread.ofPlatform().start(() -> {
             do {
-                InputStream in;
-                if ((in = close.poll()) != null)
-                    if (in == CLOSE) {
-                        break;
-                    } else {
+                Object obj;
+                if ((obj = close.poll()) != null)
+                    if (obj instanceof InputStream in) {
                         try {
                             in.close();
                         } catch (IOException ignored) {
                         }
+                    } else {
+                        break;
                     }
             } while (true);
         });
@@ -70,19 +64,19 @@ public class ChannelInputStreamTest {
                     continue;
                 }
                 close.offer(in);
-                int available;
+                int available = 0;
                 try {
                     available = in.available();
+                } catch (AsynchronousCloseException ace) {
+                    System.out.println("AsynchronousCloseException caught");
+                    close.offer(new Object());
+                    break;
+                } catch (ClosedChannelException ignored) {
                 } catch (Throwable t) {
-                    if (AsynchronousCloseException.class.isInstance(t)) {
-                        System.out.println("AsynchronousCloseException");
-                        close.offer(CLOSE);
-                        break;
-                    }
-                    continue;
+                    throw new RuntimeException("Unexpected error", t);
                 }
                 if (available < 0) {
-                    close.offer(CLOSE);
+                    close.offer(new Object());
                     throw new RuntimeException("FAILED: available < 0");
                 }
             } while (true);
