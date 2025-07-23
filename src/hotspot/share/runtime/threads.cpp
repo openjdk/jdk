@@ -829,9 +829,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     NativeHeapTrimmer::initialize();
   }
 
-  if (ShortHistory::enabled()) {
-    ShortHistory::initialize();
-  }
+  ShortHistory::initialize();
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution

@@ -53,6 +53,7 @@ class ClassLoaderDataGraph : public AllStatic {
 
   static volatile size_t  _num_instance_classes;
   static volatile size_t  _num_array_classes;
+  static volatile size_t  _num_class_loaders;
 
   static ClassLoaderData* add_to_graph(Handle class_loader, bool has_class_mirror_holder);
 
@@ -112,6 +113,7 @@ class ClassLoaderDataGraph : public AllStatic {
   // instance and array class counters
   static inline size_t num_instance_classes();
   static inline size_t num_array_classes();
+  static inline size_t num_class_loaders();
   static inline void inc_instance_classes(size_t count);
   static inline void dec_instance_classes(size_t count);
   static inline void inc_array_classes(size_t count);

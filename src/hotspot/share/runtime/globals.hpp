@@ -2001,11 +2001,12 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
                                                                             \
-  product(uint, ShortHistoryInterval, 0, DIAGNOSTIC,                        \
-          "Interval, in ms, at which metrics will be "                      \
-          "measured and stored into short history. A value of 0 "           \
-          "(default) disables short history.")                              \
-          range(0, UINT_MAX)                                                \
+  product(bool, UseHistory, trueInDebug, DIAGNOSTIC,                        \
+          "Enable diagnostic history.")                                     \
+                                                                            \
+  product(int, HistoryInterval, 10000, DIAGNOSTIC,                          \
+          "Interval, in ms, at which history will be measured")             \
+          range(1000, 60000)                                                \
 
 // end of RUNTIME_FLAGS
 
