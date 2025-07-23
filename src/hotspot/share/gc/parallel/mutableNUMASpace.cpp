@@ -412,8 +412,8 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
     size_t chunk_byte_size = 0;
     if (i < lgrp_spaces()->length() - 1) {
-      if (!UseAdaptiveNUMAChunkSizing                                ||
-          (UseAdaptiveNUMAChunkSizing && NUMAChunkResizeWeight == 0) ||
+      if (!UseAdaptiveNUMAChunkSizing ||
+           NUMAChunkResizeWeight == 0 ||
            samples_count() < AdaptiveSizePolicyReadyThreshold) {
         // No adaptation. Divide the space equally.
         chunk_byte_size = default_chunk_size();

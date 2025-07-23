@@ -129,7 +129,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
     if (do_oops) {
       modules->restore_archived_oops(loader_data, _modules);
       if (_unnamed_module != nullptr) {
-        oop module_oop = _unnamed_module->module();
+        oop module_oop = _unnamed_module->module_oop();
         assert(module_oop != nullptr, "must be already set");
         assert(_unnamed_module == java_lang_Module::module_entry(module_oop), "must be already set");
         assert(loader_data->class_loader() == java_lang_Module::loader(module_oop), "must be set in dump time");
@@ -266,7 +266,7 @@ void ClassLoaderDataShared::restore_archived_entries_for_null_class_loader_data(
 oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.restore(null_class_loader_data(), false, true);
-  return _archived_javabase_moduleEntry->module();
+  return _archived_javabase_moduleEntry->module_oop();
 }
 
 void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoaderData* loader_data) {

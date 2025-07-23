@@ -602,9 +602,6 @@
           "space parameters)")                                              \
           range(1, UINT_MAX)                                                \
                                                                             \
-  develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
-          "Delay between expansion and allocation (in milliseconds)")       \
-                                                                            \
   product(uint, GCDrainStackTargetSize, 64,                                 \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \

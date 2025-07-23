@@ -1880,7 +1880,7 @@ const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
         // (1b) "(x & m) <u m + 1" and "(m & x) <u m + 1", cmp2 = m + 1
         Node* rhs_m = cmp2->in(1);
         const TypeInt* rhs_m_type = phase->type(rhs_m)->isa_int();
-        if (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1) {
+        if (rhs_m_type != nullptr && (rhs_m_type->_lo > -1 || rhs_m_type->_hi < -1)) {
           // Exclude any case where m == -1 is possible.
           m = rhs_m;
         }
@@ -1898,12 +1898,16 @@ const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
+  const Type* input_type = phase->type(in(1));
+  if (input_type == Type::TOP) {
+    return Type::TOP;
+  }
   const Type* t = Value_cmpu_and_mask(phase);
   if (t != nullptr) {
     return t;
   }
 
-  return _test.cc2logical( phase->type( in(1) ) );
+  return _test.cc2logical(input_type);
 }
 
 #ifndef PRODUCT
@@ -2018,10 +2022,12 @@ const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
 
 static const Type* reverse_bytes(int opcode, const Type* con) {
   switch (opcode) {
-    case Op_ReverseBytesS:  return TypeInt::make(byteswap(checked_cast<jshort>(con->is_int()->get_con())));
-    case Op_ReverseBytesUS: return TypeInt::make(byteswap(checked_cast<jchar>(con->is_int()->get_con())));
-    case Op_ReverseBytesI:  return TypeInt::make(byteswap(checked_cast<jint>(con->is_int()->get_con())));
-    case Op_ReverseBytesL:  return TypeLong::make(byteswap(checked_cast<jlong>(con->is_long()->get_con())));
+    // It is valid in bytecode to load any int and pass it to a method that expects a smaller type (i.e., short, char).
+    // Let's cast the value to match the Java behavior.
+    case Op_ReverseBytesS:  return TypeInt::make(byteswap(static_cast<jshort>(con->is_int()->get_con())));
+    case Op_ReverseBytesUS: return TypeInt::make(byteswap(static_cast<jchar>(con->is_int()->get_con())));
+    case Op_ReverseBytesI:  return TypeInt::make(byteswap(con->is_int()->get_con()));
+    case Op_ReverseBytesL:  return TypeLong::make(byteswap(con->is_long()->get_con()));
     default: ShouldNotReachHere();
   }
 }

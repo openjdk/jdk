@@ -657,7 +657,7 @@ static double __ieee754_pow(double x, double y) {
   z  = one-(r-z);
   j  = high(z);
   j += (n<<20);
-  if((j>>20)<=0) z = scalbnA(z,n);       /* subnormal output */
+  if((j>>20)<=0) z = scalbn(z,n);       /* subnormal output */
   else set_high(&z, high(z) + (n<<20));
   return s*z;
 }

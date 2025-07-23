@@ -76,7 +76,21 @@ public class AllocationMergesTests {
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        framework.addScenarios(scenario0, scenario1, scenario2).start();
+        Scenario scenario3 = new Scenario(3, "-XX:+UnlockDiagnosticVMOptions",
+                                             "-XX:+ReduceAllocationMerges",
+                                             "-XX:+TraceReduceAllocationMerges",
+                                             "-XX:+DeoptimizeALot",
+                                             "-XX:+UseCompressedOops",
+                                             "-XX:+UseCompressedClassPointers",
+                                             "-XX:-OptimizePtrCompare",
+                                             "-XX:+VerifyReduceAllocationMerges",
+                                             "-XX:CompileCommand=inline,*::charAt*",
+                                             "-XX:CompileCommand=inline,*PicturePositions::*",
+                                             "-XX:CompileCommand=inline,*Point::*",
+                                             "-XX:CompileCommand=inline,*Nested::*",
+                                             "-XX:CompileCommand=exclude,*::dummy*");
+
+        framework.addScenarios(scenario0, scenario1, scenario2, scenario3).start();
     }
 
     // ------------------ No Scalar Replacement Should Happen in The Tests Below ------------------- //

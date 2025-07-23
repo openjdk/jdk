@@ -1124,7 +1124,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
 // jdk.internal.vm.ThreadSnapshot support
 #if INCLUDE_JVMTI
 
-class GetThreadSnapshotClosure: public HandshakeClosure {
+class GetThreadSnapshotHandshakeClosure: public HandshakeClosure {
 private:
   static OopStorage* oop_storage() {
     assert(_thread_service_storage != nullptr, "sanity");
@@ -1180,14 +1180,14 @@ public:
   GrowableArray<OwnedLock>* _locks;
   Blocker _blocker;
 
-  GetThreadSnapshotClosure(Handle thread_h, JavaThread* java_thread):
-    HandshakeClosure("GetThreadSnapshotClosure"),
+  GetThreadSnapshotHandshakeClosure(Handle thread_h, JavaThread* java_thread):
+    HandshakeClosure("GetThreadSnapshotHandshakeClosure"),
     _thread_h(thread_h), _java_thread(java_thread),
     _frame_count(0), _methods(nullptr), _bcis(nullptr),
     _thread_status(), _thread_name(nullptr),
     _locks(nullptr), _blocker() {
   }
-  virtual ~GetThreadSnapshotClosure() {
+  virtual ~GetThreadSnapshotHandshakeClosure() {
     delete _methods;
     delete _bcis;
     _thread_name.release(oop_storage());
@@ -1484,7 +1484,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   }
 
   // Handshake with target
-  GetThreadSnapshotClosure cl(thread_h, java_thread);
+  GetThreadSnapshotHandshakeClosure cl(thread_h, java_thread);
   if (java_thread == nullptr) {
     // unmounted vthread, execute on the current thread
     cl.do_thread(nullptr);
@@ -1516,7 +1516,7 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   if (cl._locks != nullptr && cl._locks->length() > 0) {
     locks = oopFactory::new_objArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
     for (int n = 0; n < cl._locks->length(); n++) {
-      GetThreadSnapshotClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
+      GetThreadSnapshotHandshakeClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
 
       Handle lock = jdk_internal_vm_ThreadLock::create(lock_klass,
         lock_info->_frame_depth, lock_info->_type, lock_info->_obj, CHECK_NULL);

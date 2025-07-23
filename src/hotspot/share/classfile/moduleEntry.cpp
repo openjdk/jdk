@@ -51,7 +51,7 @@
 
 ModuleEntry* ModuleEntryTable::_javabase_module = nullptr;
 
-oop ModuleEntry::module() const { return _module.resolve(); }
+oop ModuleEntry::module_oop() const { return _module_handle.resolve(); }
 
 void ModuleEntry::set_location(Symbol* location) {
   // _location symbol's refcounts are managed by ModuleEntry,
@@ -286,7 +286,7 @@ ModuleEntry::ModuleEntry(Handle module_handle,
   }
 
   if (!module_handle.is_null()) {
-    _module = loader_data->add_handle(module_handle);
+    _module_handle = loader_data->add_handle(module_handle);
   }
 
   set_version(version);
@@ -425,7 +425,7 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
-  archived_entry->_archived_module_index = HeapShared::append_root(module());
+  archived_entry->_archived_module_index = HeapShared::append_root(module_oop());
   if (_archive_modules_entries == nullptr) {
     _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
   }
@@ -442,7 +442,7 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
 
   // Clear handles and restore at run time. Handles cannot be archived.
   OopHandle null_handle;
-  archived_entry->_module = null_handle;
+  archived_entry->_module_handle = null_handle;
 
   // For verify_archived_module_entries()
   DEBUG_ONLY(_num_inited_module_entries++);
@@ -550,7 +550,7 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_archive(), "runtime only");
   Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
-  set_module(loader_data->add_handle(module_handle));
+  set_module_handle(loader_data->add_handle(module_handle));
 
   // This was cleared to zero during dump time -- we didn't save the value
   // because it may be affected by archive relocation.
@@ -686,7 +686,7 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
   jb_module->set_location(location);
   // Once java.base's ModuleEntry _module field is set with the known
   // java.lang.Module, java.base is considered "defined" to the VM.
-  jb_module->set_module(boot_loader_data->add_handle(module_handle));
+  jb_module->set_module_handle(boot_loader_data->add_handle(module_handle));
 
   // Store pointer to the ModuleEntry for java.base in the java.lang.Module object.
   java_lang_Module::set_module_entry(module_handle(), jb_module);
@@ -724,7 +724,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
       // We allow -XX:ArchiveHeapTestClass to archive additional classes
       // into the CDS heap, but these must be in the unnamed module.
       ModuleEntry* unnamed_module = ClassLoaderData::the_null_class_loader_data()->unnamed_module();
-      Handle unnamed_module_handle(current, unnamed_module->module());
+      Handle unnamed_module_handle(current, unnamed_module->module_oop());
       java_lang_Class::fixup_module_field(k, unnamed_module_handle);
     } else
 #endif
@@ -769,7 +769,7 @@ void ModuleEntry::print(outputStream* st) const {
   st->print_cr("entry " PTR_FORMAT " name %s module " PTR_FORMAT " loader %s version %s location %s strict %s",
                p2i(this),
                name_as_C_string(),
-               p2i(module()),
+               p2i(module_oop()),
                loader_data()->loader_name_and_id(),
                version() != nullptr ? version()->as_C_string() : "nullptr",
                location() != nullptr ? location()->as_C_string() : "nullptr",
