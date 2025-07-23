@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- * @test
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahPacing -Xmx128m TestPacing
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahPacing -Xmx128m TestPacing
- */
+#include "spin_wait_aarch64.hpp"
+#include "utilities/debug.hpp"
 
-public class TestPacing {
-    static final long TARGET_MB = Long.getLong("target", 1000); // 1 Gb allocation
+#include <string.h>
 
-    static volatile Object sink;
+bool SpinWait::supports(const char *name) {
+  return name != nullptr &&
+         (strcmp(name, "nop")   == 0 ||
+          strcmp(name, "isb")   == 0 ||
+          strcmp(name, "yield") == 0 ||
+          strcmp(name, "sb")    == 0 ||
+          strcmp(name, "none")  == 0);
+}
 
-    public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 16;
-        for (long c = 0; c < count; c++) {
-            sink = new Object();
-        }
-    }
+SpinWait::Inst SpinWait::from_name(const char* name) {
+  assert(supports(name), "checked by OnSpinWaitInstNameConstraintFunc");
+
+  if (strcmp(name, "nop") == 0) {
+    return SpinWait::NOP;
+  } else if (strcmp(name, "isb") == 0) {
+    return SpinWait::ISB;
+  } else if (strcmp(name, "yield") == 0) {
+    return SpinWait::YIELD;
+  } else if (strcmp(name, "sb") == 0) {
+    return SpinWait::SB;
+  }
+
+  return SpinWait::NONE;
 }
