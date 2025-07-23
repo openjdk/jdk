@@ -1945,8 +1945,7 @@ class MutableBigInteger {
             final long x = this.toLong();
             // Use fp arithmetic to get an upper bound of the root
             final double rad = Math.nextUp(x >= 0 ? x : x + 0x1p64);
-            final double approx = n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n));
-            long rLong = (long) Math.ceil(Math.nextUp(approx));
+            long rLong = (long) Math.ceil(nthRootUpper(rad, n));
 
             if (BigInteger.bitLengthForLong(rLong) * (n - 1) <= Long.SIZE) {
                 // Refine the estimate.
@@ -2005,7 +2004,7 @@ class MutableBigInteger {
 
             // Use the root of the shifted value as an estimate.
             rad = Math.nextUp(rad);
-            double approx = Math.nextUp(n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n)));
+            double approx = nthRootUpper(rad, n);
             int rootShift = (int) (shift / n);
             if (rootShift == 0) {
                 r = valueOf(approx);
@@ -2060,6 +2059,12 @@ class MutableBigInteger {
 
             newtonRecurrenceNthRoot(this, r, n, rToN1);
         } while (true);
+    }
+
+    private static double nthRootUpper(double x, int n) {
+        return Math.nextUp(n == 3
+                ? Math.cbrt(x)
+                : Math.exp(Math.nextUp(Math.nextUp(Math.log(x)) / n)));
     }
 
     /**
