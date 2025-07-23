@@ -25,7 +25,6 @@
 #ifndef SHARE_OPTO_RUNTIME_HPP
 #define SHARE_OPTO_RUNTIME_HPP
 
-#include "c1/c1_ValueType.hpp"
 #include "code/codeBlob.hpp"
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
