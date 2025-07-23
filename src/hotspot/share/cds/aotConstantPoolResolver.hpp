@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,17 +80,10 @@ class AOTConstantPoolResolver :  AllStatic {
   static bool check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
 
 public:
-  static void initialize();
-  static void dispose();
-
   static void preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
   static void preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
   static void preresolve_indy_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
-
-
-  // Resolve all constant pool entries that are safe to be stored in the
-  // CDS archive.
-  static void dumptime_resolve_constants(InstanceKlass* ik, TRAPS);
+  static void preresolve_string_cp_entries(InstanceKlass* ik, TRAPS);
 
   static bool is_resolution_deterministic(ConstantPool* cp, int cp_index);
 };

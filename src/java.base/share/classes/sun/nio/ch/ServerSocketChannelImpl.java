@@ -132,7 +132,7 @@ class ServerSocketChannelImpl
         if (family == UNIX) {
             this.fd = UnixDomainSockets.socket();
         } else {
-            this.fd = Net.serverSocket(family, true);
+            this.fd = Net.serverSocket(family);
         }
         this.fdVal = IOUtil.fdVal(fd);
     }

@@ -28,16 +28,16 @@
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shared/oopStorage.inline.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/threads.hpp"
@@ -46,13 +46,19 @@
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
-  _gc_state(_heap->gc_state()) {
+  _saved_gc_state(_heap->gc_state()),
+  _saved_gc_state_changed(_heap->_gc_state_changed) {
+  // Clear state to deactivate barriers. Indicate that state has changed
+  // so that verifier threads will use this value, rather than thread local
+  // values (which we are _not_ changing here).
   _heap->_gc_state.clear();
+  _heap->_gc_state_changed = true;
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
-  _heap->_gc_state.set(_gc_state);
-  assert(_heap->gc_state() == _gc_state, "Should be restored");
+  _heap->_gc_state.set(_saved_gc_state);
+  _heap->_gc_state_changed = _saved_gc_state_changed;
+  assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
 }
 
 void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops) {

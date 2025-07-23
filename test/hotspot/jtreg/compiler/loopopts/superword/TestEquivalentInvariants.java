@@ -383,7 +383,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testArrayBB(byte[] a, byte[] b) {
         for (int i = 0; i < a.length; i++) {
             b[i+0] = (byte)(a[i] + 1);
@@ -396,7 +396,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Same int invariant summands, but added in a different order.
     static Object[] testArrayBBInvar3(byte[] a, byte[] b, int invar1, int invar2, int invar3) {
         int i1 = invar1 + invar2 + invar3;
@@ -412,7 +412,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Just a simple pattern, without any (explicit) invariant.
     static Object[] testMemorySegmentB(MemorySegment m) {
         for (int i = 0; i < (int)m.byteSize(); i++) {
@@ -426,7 +426,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Does not vectorize: RangeChecks are not eliminated.
     // Filed RFE: JDK-8327209
     static Object[] testMemorySegmentBInvarI(MemorySegment m, int invar, int size) {
@@ -442,7 +442,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Has different invariants, before sorting:
     //
     //   3125 AddL = ((CastLL(Param 11) + ConvI2L(1460  Phi)) + 530  LoadL)
@@ -460,7 +460,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Does not vectorize: RangeChecks are not eliminated.
     // Filed RFE: JDK-8327209
     static Object[] testMemorySegmentBInvarIAdr(MemorySegment m, int invar, int size) {
@@ -477,7 +477,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Since we add "i + invar", the invariant is already equivalent without sorting.
     static Object[] testMemorySegmentBInvarLAdr(MemorySegment m, long invar, int size) {
         for (int i = 0; i < size; i++) {
@@ -493,7 +493,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarI3a(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3 + invar1); // equivalent
@@ -510,7 +510,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarI3b(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3 + invar1); // equivalent
@@ -541,7 +541,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarI3d(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3) + (long)(invar1);
@@ -559,7 +559,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarI3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 + invar2 - invar3);
         long i2 = (long)(invar2 - invar3 + invar1); // equivalent
@@ -575,7 +575,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarI3f(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(invar1 - (invar2 - invar3));
         long i2 = (long)(-invar2 + invar3 + invar1); // equivalent
@@ -591,7 +591,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarL3g(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = invar1 - (invar2 - invar3);
         long i2 = -invar2 + invar3 + invar1; // equivalent
@@ -607,7 +607,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarL3h(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 - invar2 - invar3;
         long i2 = -invar2 - invar3 - invar1; // equivalent
@@ -623,7 +623,7 @@ public class TestEquivalentInvariants {
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentBInvarL3k(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
         long i2 = invar2 + invar3 - invar1; // equivalent
@@ -640,7 +640,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentIInvarL3a(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = invar1 + invar2 + invar3;
         long i2 = invar2 + invar3 + invar1; // equivalent
@@ -657,7 +657,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentIInvarL3b(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 - invar2 - invar3;
         long i2 = -invar2 - invar3 - invar1; // equivalent
@@ -674,7 +674,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentIInvarL3c(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
         long i2 = invar2 + invar3 - invar1; // equivalent
@@ -690,12 +690,12 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentIInvarL3d(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
@@ -714,12 +714,12 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentIInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
@@ -738,7 +738,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // But here the "offsetPlain" is folded away
     static Object[] testMemorySegmentIInvarL3d3(MemorySegment m, int size) {
         for (int i = 0; i < size; i+=2) {
@@ -755,12 +755,12 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentIInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
@@ -779,7 +779,7 @@ public class TestEquivalentInvariants {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Should never vectorize, since i1 and i2 are not guaranteed to be adjacent
     // invar2 + invar3 could overflow, and the address be valid with and without overflow.
     // So both addresses are valid, and not adjacent.
@@ -801,7 +801,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentIInvarL3g(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
         long i2 = invar2 + invar3 - invar1; // equivalent
@@ -819,7 +819,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentLInvarL3a(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = invar1 + invar2 + invar3;
         long i2 = invar2 + invar3 + invar1; // equivalent
@@ -836,7 +836,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentLInvarL3b(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 - invar2 - invar3;
         long i2 = -invar2 - invar3 - invar1; // equivalent
@@ -853,7 +853,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentLInvarL3c(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
         long i2 = invar2 + invar3 - invar1; // equivalent
@@ -869,12 +869,12 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentLInvarL3d(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
@@ -893,12 +893,12 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentLInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
@@ -917,7 +917,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // But here the "offsetPlain" is folded away
     static Object[] testMemorySegmentLInvarL3d3(MemorySegment m, int size) {
         for (int i = 0; i < size; i+=2) {
@@ -934,12 +934,12 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentLInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
@@ -959,7 +959,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static Object[] testMemorySegmentLInvarL3f(MemorySegment m, long invar1, long invar2, long invar3, int size) {
         long i1 = -invar1 + invar2 + invar3;
         long i2 = invar2 + invar3 - invar1; // equivalent

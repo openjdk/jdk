@@ -212,7 +212,7 @@ int LIR_Assembler::emit_exception_handler() {
   // check that there is really an exception
   __ verify_not_null_oop(Rexception_obj);
 
-  __ call(Runtime1::entry_for(C1StubId::handle_exception_from_callee_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(StubId::c1_handle_exception_from_callee_id), relocInfo::runtime_call_type);
   __ should_not_reach_here();
 
   assert(code_offset() - offset <= exception_handler_size(), "overflow");
@@ -252,7 +252,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // remove the activation and dispatch to the unwind handler
   __ remove_frame(initial_frame_size_in_bytes()); // restores FP and LR
-  __ jump(Runtime1::entry_for(C1StubId::unwind_exception_id), relocInfo::runtime_call_type, Rtemp);
+  __ jump(Runtime1::entry_for(StubId::c1_unwind_exception_id), relocInfo::runtime_call_type, Rtemp);
 
   // Emit the slow path assembly
   if (stub != nullptr) {
@@ -454,7 +454,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   }
 }
 
-void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(src->is_register(), "should not call otherwise");
   assert(dest->is_stack(), "should not call otherwise");
 
@@ -493,7 +493,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
 
 void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info,
-                            bool pop_fpu_stack, bool wide) {
+                            bool wide) {
   LIR_Address* to_addr = dest->as_address_ptr();
   Register base_reg = to_addr->base()->as_pointer_register();
   const bool needs_patching = (patch_code != lir_patch_none);
@@ -1136,7 +1136,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ b(*failure_target, ne);
       // slow case
       assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-      __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
+      __ call(Runtime1::entry_for(StubId::c1_slow_subtype_check_id), relocInfo::runtime_call_type);
       __ cbz(R0, *failure_target);
       if (op->should_profile()) {
         Register mdo  = klass_RInfo, recv = k_RInfo, tmp1 = Rtemp;
@@ -1210,7 +1210,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
           __ cmp(Rtemp, k_RInfo, ne);
           __ b(*success_target, eq);
           assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-          __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
+          __ call(Runtime1::entry_for(StubId::c1_slow_subtype_check_id), relocInfo::runtime_call_type);
           __ cbz(R0, *failure_target);
         }
       } else {
@@ -1227,7 +1227,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ b(*failure_target, ne);
         // slow case
         assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-        __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
+        __ call(Runtime1::entry_for(StubId::c1_slow_subtype_check_id), relocInfo::runtime_call_type);
         __ cbz(R0, *failure_target);
       }
 
@@ -1303,7 +1303,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
           }
           __ b(*success_target, eq);
           assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-          __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
+          __ call(Runtime1::entry_for(StubId::c1_slow_subtype_check_id), relocInfo::runtime_call_type);
           if (!op->should_profile()) {
             move_regs(R0, res);
           } else {
@@ -1334,7 +1334,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ b(*failure_target, ne);
         // slow case
         assert(klass_RInfo == R0 && k_RInfo == R1, "runtime call setup");
-        __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type);
+        __ call(Runtime1::entry_for(StubId::c1_slow_subtype_check_id), relocInfo::runtime_call_type);
         if (!op->should_profile()) {
           move_regs(R0, res);
         }
@@ -1512,7 +1512,7 @@ static int reg_size(LIR_Opr op) {
 }
 #endif
 
-void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info, bool pop_fpu_stack) {
+void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info) {
   assert(info == nullptr, "unused on this code path");
   assert(dest->is_register(), "wrong items state");
 
@@ -1981,9 +1981,9 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   assert(exceptionPC->as_register()  == Rexception_pc, "must match");
   info->add_register_oop(exceptionOop);
 
-  C1StubId handle_id = compilation()->has_fpu_code() ?
-                               C1StubId::handle_exception_id :
-                               C1StubId::handle_exception_nofpu_id;
+  StubId handle_id = compilation()->has_fpu_code() ?
+                               StubId::c1_handle_exception_id :
+                               StubId::c1_handle_exception_nofpu_id;
   Label return_address;
   __ adr(Rexception_pc, return_address);
   __ call(Runtime1::entry_for(handle_id), relocInfo::runtime_call_type);
@@ -2260,7 +2260,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ mov(altFP_7_11, R1);
       __ mov(R0, tmp);
       __ mov(R1, tmp2);
-      __ call(Runtime1::entry_for(C1StubId::slow_subtype_check_id), relocInfo::runtime_call_type); // does not blow any registers except R0, LR and Rtemp
+      __ call(Runtime1::entry_for(StubId::c1_slow_subtype_check_id), relocInfo::runtime_call_type); // does not blow any registers except R0, LR and Rtemp
       __ cmp_32(R0, 0);
       __ mov(R0, R6);
       __ mov(R1, altFP_7_11);

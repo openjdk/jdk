@@ -237,6 +237,10 @@ private:
   // Amount of dead data in the region.
   size_t _garbage_bytes;
 
+  // Approximate number of references to this regions at the end of concurrent
+  // marking. We we do not mark through all objects, so this is an estimate.
+  size_t _incoming_refs;
+
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
@@ -312,6 +316,7 @@ public:
   }
 
   static size_t max_region_size();
+  static size_t max_ergonomics_size();
   static size_t min_region_size_in_words();
 
   // It sets up the heap region size (GrainBytes / GrainWords), as well as
@@ -339,6 +344,8 @@ public:
     return capacity() - known_live_bytes;
   }
 
+  size_t incoming_refs() { return _incoming_refs; }
+
   inline bool is_collection_set_candidate() const;
 
   // Retrieve parsable bottom; since it may be modified concurrently, outside a
@@ -351,9 +358,9 @@ public:
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
 
-  // Notify the region that concurrent marking has finished. Passes TAMS and the number of
-  // bytes marked between bottom and TAMS.
-  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes);
+  // Notify the region that concurrent marking has finished. Passes TAMS, the number of
+  // bytes marked between bottom and TAMS, and the estimate for incoming references.
+  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs);
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -123,8 +123,8 @@
   </Event>
 
   <Event name="JavaMonitorDeflate" category="Java Application" label="Java Monitor Deflated">
-    <Field type="Class" name="monitorClass" label="Monitor Class" />
-    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of the object deflated. If null or N/A, the object has been garbage collected." />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" description="Address of the object deflated. If null or N/A, the object has been garbage collected."/>
   </Event>
 
   <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
@@ -453,10 +453,10 @@
     <Field type="ulong" contentType="bytes" name="regionEndWaste" label="Region End Wasted" description="Total memory wasted at the end of regions due to refill" />
     <Field type="uint" name="regionsRefilled" label="Region Refills" description="Number of regions refilled" />
     <Field type="ulong" name="numPlabsFilled" label="PLAB Fills" description="Number of PLABs filled" />
-    <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (direct)" description="Total memory allocated using direct allocation outside of PLABs" />
-    <Field type="ulong" name="numDirectAllocated" label="Direct allocations" description="Number of direct allocations" />
-    <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (failure)" description="Total memory occupied by objects in regions where evacuation failed" />
-    <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (failure)" description="Total memory left unused in regions where evacuation failed" />
+    <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (Direct)" description="Total memory allocated using direct allocation outside of PLABs" />
+    <Field type="ulong" name="numDirectAllocated" label="Direct Allocations" description="Number of direct allocations" />
+    <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (Failure)" description="Total memory occupied by objects in regions where evacuation failed" />
+    <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (Failure)" description="Total memory left unused in regions where evacuation failed" />
   </Type>
 
   <Event name="G1EvacuationYoungStatistics" category="Java Virtual Machine, GC, Detailed" label="G1 Evacuation Statistics for Young" startTime="false"
@@ -523,7 +523,7 @@
   <Event name="PromotionFailed" category="Java Virtual Machine, GC, Detailed" label="Promotion Failed" startTime="false" description="Promotion of an object failed">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="CopyFailed" struct="true" name="promotionFailed" label="Promotion Failed Data" />
-    <Field type="Thread" name="thread" label="Running thread" />
+    <Field type="Thread" name="thread" label="Running Thread" />
   </Event>
 
   <Event name="EvacuationFailed" category="Java Virtual Machine, GC, Detailed" label="Evacuation Failed" startTime="false" description="Evacuation of an object failed">
@@ -708,6 +708,11 @@
 
   <Event name="SafepointEnd" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint End" description="Safepointing end" thread="true">
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
+  </Event>
+
+  <Event name="SafepointLatency" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Latency"
+    description="The delay for a thread to reach its next safepoint poll instruction after receiving an asynchronous sampling interrupt" thread="true" stackTrace="true" throttle="true">
+    <Field type="VMThreadState" name="threadState" label="VM Thread State" />
   </Event>
 
   <Event name="ExecuteVMOperation" category="Java Virtual Machine, Runtime" label="VM Operation" description="Execution of a VM Operation" thread="true">
@@ -943,18 +948,36 @@
     <Field type="long" contentType="bytes" name="freeSize" label="Free Size" description="Free swap space" />
   </Event>
 
-  <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Method Profiling Sample" description="Snapshot of a threads state"
+  <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Java Execution Sample"
+         description="Snapshot of a thread executing Java code. Threads that are not executing Java code, including those waiting or executing native code, are not included."
     period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="ThreadState" name="state" label="Thread State" />
   </Event>
 
-  <Event name="NativeMethodSample" category="Java Virtual Machine, Profiling" label="Method Profiling Sample Native" description="Snapshot of a threads state when in native"
+  <Event name="NativeMethodSample" category="Java Virtual Machine, Profiling" label="Native Sample"
+         description="Snapshot of a thread in native code, executing or waiting. Threads that are executing Java code are not included."
     period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="ThreadState" name="state" label="Thread State" />
+  </Event>
+
+  <Event name="CPUTimeSample" category="Java Virtual Machine, Profiling" label="CPU Time Sample"
+    description="Snapshot of a threads state from the CPU time sampler, both threads executing native and Java code are included. The throttle setting can be either an upper bound for the event emission rate, e.g. 100/s, or the cpu-time period, e.g. 10ms, with s, ms, us and ns supported as time units."
+    throttle="true" thread="false" experimental="true" startTime="false">
+    <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
+    <Field type="Thread" name="eventThread" label="Thread" />
+    <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
+    <Field type="Tickspan" name="samplingPeriod" label="CPU Time Sampling Period"/>
+    <Field type="boolean" name="biased" label="Biased" description="The sample is safepoint-biased" />
+  </Event>
+
+  <Event name="CPUTimeSamplesLost" category="Java Virtual Machine, Profiling" label="CPU Time Samples Lost" description="Records that the CPU time sampler lost samples"
+    thread="false" stackTrace="false" startTime="false" experimental="true">
+    <Field type="int" name="lostSamples" label="Lost Samples" />
+    <Field type="Thread" name="eventThread" label="Thread" />
   </Event>
 
   <Event name="ThreadDump" category="Java Virtual Machine, Runtime" label="Thread Dump" period="everyChunk">
@@ -1007,7 +1030,7 @@
     <Field type="ulong" contentType="bytes" name="nmethodsSize" label="Compilation Resulting Size" />
     <Field type="ulong" contentType="bytes" name="nmethodCodeSize" label="Compilation Resulting Code Size" />
     <Field type="long" contentType="millis" name="peakTimeSpent" label="Peak Time" />
-    <Field type="long" contentType="millis" name="totalTimeSpent" label="Total time" />
+    <Field type="long" contentType="millis" name="totalTimeSpent" label="Total Time" />
   </Event>
 
   <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
@@ -1030,10 +1053,10 @@
   <Event name="CodeCacheConfiguration" category="Java Virtual Machine, Code Cache" label="Code Cache Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="ulong" contentType="bytes" name="initialSize" label="Initial Size" />
     <Field type="ulong" contentType="bytes" name="reservedSize" label="Reserved Size" />
-    <Field type="ulong" contentType="bytes" name="nonNMethodSize" label="Non-nmethod Size" />
+    <Field type="ulong" contentType="bytes" name="nonNMethodSize" label="Non-Nmethod Size" />
     <Field type="ulong" contentType="bytes" name="profiledSize" label="Profiled Size" />
-    <Field type="ulong" contentType="bytes" name="nonProfiledSize" label="Non-profiled Size" />
-    <Field type="ulong" contentType="bytes" name="expansionSize" label="Expansion size" />
+    <Field type="ulong" contentType="bytes" name="nonProfiledSize" label="Non-Profiled Size" />
+    <Field type="ulong" contentType="bytes" name="expansionSize" label="Expansion Size" />
     <Field type="ulong" contentType="bytes" name="minBlockLength" label="Minimum Block Length" />
     <Field type="ulong" contentType="address" name="startAddress" label="Start Address" />
     <Field type="ulong" contentType="address" name="reservedTopAddress" label="Reserved Top" />
@@ -1155,12 +1178,14 @@
   </Event>
 
   <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true">
-     <Field type="ZPageTypeType" name="type" label="Type" />
-     <Field type="ulong" contentType="bytes" name="size" label="Size" />
-     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed" />
-     <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
-     <Field type="uint" name="segments" label="Segments" />
-     <Field type="boolean" name="nonBlocking" label="Non-blocking" />
+    <Field type="ZPageTypeType" name="type" label="Type" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size" />
+    <Field type="ulong" contentType="bytes" name="harvested" label="Harvested" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
+    <Field type="uint" name="harvestedRanges" label="Harvested Ranges" description="Number of harvested memory ranges" />
+    <Field type="boolean" name="multiPartition" label="Multi-Partition" />
+    <Field type="boolean" name="successful" label="Successful" />
+    <Field type="boolean" name="nonBlocking" label="Non-Blocking" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
@@ -1196,10 +1221,6 @@
 
   <Event name="ZUncommit" category="Java Virtual Machine, GC, Detailed" label="ZGC Uncommit" description="Uncommitting of memory" thread="true">
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
-  </Event>
-
-  <Event name="ZUnmap" category="Java Virtual Machine, GC, Detailed" label="ZGC Unmap" description="Unmapping of memory" thread="true">
-    <Field type="ulong" contentType="bytes" name="unmapped" label="Unmapped" />
   </Event>
 
   <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"
@@ -1289,12 +1310,28 @@
     <Field type="boolean" name="forRemoval" label="For Removal" />
   </Event>
 
+  <Event name="MethodTrace" category="Java Application" label="Method Trace" thread="true" stackTrace="true" startTime="true">
+    <Field type="Method" name="method" label="Method" />
+  </Event>
+
+  <Event name="MethodTiming" category="Java Application" label="Method Timing" thread="false" stackTrace="false" startTime="false" period="everyChunk">
+    <Field type="Method" name="method" label="Method" />
+    <Field type="long" name="invocations" label="Invocations" description="The number of times the method was invoked" />
+    <Field type="Tickspan" name="minimum" label="Minimum" description="An approximation of the minimum wall-clock time it took for the method to execute" />
+    <Field type="Tickspan" name="average" label="Average" description="An approximation of the average wall-clock time it took for the method to execute" />
+    <Field type="Tickspan" name="maximum" label="Maximum" description="An approximation of the maximum wall-clock time it took for the method to execute" />
+  </Event>
+
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
     <Field type="string" name="reason" label="Reason" />
   </Type>
 
   <Type name="DeoptimizationAction" label="Deoptimization Action">
     <Field type="string" name="action" label="Action" />
+  </Type>
+
+  <Type name="VMThreadState" label="JVM Thread State">
+    <Field type="string" name="state" label="State" />
   </Type>
 
   <Type name="Bytecode" label="Bytecode Instruction">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,14 @@
  * @requires vm.flagless
  * @library /test/lib
  * @compile GetAvailableProcessors.java
- * @run testng TestAvailableProcessors
+ * @run testng/othervm/native TestAvailableProcessors
  */
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -172,12 +168,8 @@ public class TestAvailableProcessors {
 
     @Test
     private static void testProcessorAvailability() throws IOException {
-        // Launch GetProcessorInfo.exe to gather processor counts
-        Path nativeGetProcessorInfo = Paths.get(Utils.TEST_NATIVE_PATH)
-            .resolve("GetProcessorInfo.exe")
-            .toAbsolutePath();
-
-        var processBuilder = new ProcessBuilder(nativeGetProcessorInfo.toString());
+        // Launch "<nativepath>/GetProcessorInfo.exe" to gather processor counts
+        var processBuilder = new ProcessBuilder("GetProcessorInfo.exe");
         var outputAnalyzer= new OutputAnalyzer(processBuilder.start());
         outputAnalyzer.shouldHaveExitValue(0);
         outputAnalyzer.shouldContain(totalProcessorCountMessage);

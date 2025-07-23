@@ -31,10 +31,10 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -400,9 +400,6 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
       int  field_off = field->offset_in_bytes();
       if (field_off == field_offset)
         return field;
-      if (field_off > field_offset)
-        break;
-      // could do binary search or check bins, but probably not worth it
     }
     return nullptr;
   }
@@ -430,11 +427,6 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
-
-static int sort_field_by_offset(ciField** a, ciField** b) {
-  return (*a)->offset_in_bytes() - (*b)->offset_in_bytes();
-  // (no worries about 32-bit overflow...)
-}
 
 // ------------------------------------------------------------------
 // ciInstanceKlass::compute_nonstatic_fields
@@ -476,9 +468,6 @@ int ciInstanceKlass::compute_nonstatic_fields() {
 
   int flen = fields->length();
 
-  // Now sort them by offset, ascending.
-  // (In principle, they could mix with superclass fields.)
-  fields->sort(sort_field_by_offset);
   _nonstatic_fields = fields;
   return flen;
 }
@@ -558,6 +547,11 @@ bool ciInstanceKlass::compute_has_trusted_loader() {
     return true; // bootstrap class loader
   }
   return java_lang_ClassLoader::is_trusted_loader(loader_oop);
+}
+
+bool ciInstanceKlass::has_class_initializer() {
+  VM_ENTRY_MARK;
+  return get_instanceKlass()->class_initializer() != nullptr;
 }
 
 // ------------------------------------------------------------------

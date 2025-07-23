@@ -1117,7 +1117,7 @@ _unwind___jsvml_log1pf16_ha_z0_B1_B9:
 
         ALIGN 004H
 _unwind___jsvml_log1pf16_ha_z0_B11_B15:
-        DD      3472641
+        DD      2948353
         DD      9131261
         DD      8942834
         DD      9004264
@@ -1138,10 +1138,6 @@ _unwind___jsvml_log1pf16_ha_z0_B11_B15:
         DD      3573831
         DD      3831868
         DD      4089905
-        DD      8682278
-        DD      8743709
-        DD      8805140
-        DD      8866571
         DD      10867712
         DD      10944768
 

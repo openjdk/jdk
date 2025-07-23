@@ -116,5 +116,5 @@ void VM_ShenandoahFinalUpdateRefs::doit() {
 void VM_ShenandoahFinalRoots::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Roots", SvcGCMarker::CONCURRENT);
   set_active_generation();
-  _gc->entry_final_roots();
+  _gc->entry_verify_final_roots();
 }

@@ -67,8 +67,6 @@ ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we can't include our own SRC path
   # as includes, instead the system headers should be used.
   LIBLCMS_HEADERS_FROM_SRC := false
-  # FIXME: Keep old behavior and reset LCMS_CFLAGS. This is likely a bug.
-  LCMS_CFLAGS :=
 endif
 
 ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)
@@ -89,7 +87,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         libawt/java2d \
         java.base:libjvm, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation type-limits \
+    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation \
         unused-variable, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
     JDK_LIBS := libawt java.base:libjava, \

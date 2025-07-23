@@ -24,12 +24,9 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.internal.util.OperatingSystem;
-
+import jdk.jpackage.internal.model.ConfigException;
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
-import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleReference;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -38,9 +35,7 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.jar.Attributes;
@@ -76,7 +71,7 @@ final class LauncherData {
 
     String moduleName() {
         verifyIsModular(true);
-        return moduleInfo.name;
+        return moduleInfo.name();
     }
 
     List<Path> modulePath() {
@@ -95,7 +90,7 @@ final class LauncherData {
 
     String getAppVersion() {
         if (isModular()) {
-            return moduleInfo.version;
+            return moduleInfo.version().orElse(null);
         }
 
         return null;
@@ -141,19 +136,18 @@ final class LauncherData {
         launcherData.modulePath = getModulePath(params);
 
         // Try to find module in the specified module path list.
-        ModuleReference moduleRef = JLinkBundlerHelper.createModuleFinder(
+        ModuleReference moduleRef = JLinkRuntimeBuilder.createModuleFinder(
                 launcherData.modulePath).find(moduleName).orElse(null);
 
         if (moduleRef != null) {
-            launcherData.moduleInfo = ModuleInfo.fromModuleDescriptor(
-                    moduleRef.descriptor());
+            launcherData.moduleInfo = ModuleInfo.fromModuleReference(moduleRef);
         } else if (params.containsKey(PREDEFINED_RUNTIME_IMAGE.getID())) {
             // Failed to find module in the specified module path list and
             // there is external runtime given to jpackage.
             // Lookup module in this runtime.
             Path cookedRuntime = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
             launcherData.moduleInfo = ModuleInfo.fromCookedRuntime(moduleName,
-                    cookedRuntime);
+                    cookedRuntime).orElse(null);
         }
 
         if (launcherData.moduleInfo == null) {
@@ -162,7 +156,7 @@ final class LauncherData {
         }
 
         if (launcherData.qualifiedClassName == null) {
-            launcherData.qualifiedClassName = launcherData.moduleInfo.mainClass;
+            launcherData.qualifiedClassName = launcherData.moduleInfo.mainClass().orElse(null);
             if (launcherData.qualifiedClassName == null) {
                 throw new ConfigException(I18N.getString("ERR_NoMainClass"), null);
             }
@@ -178,11 +172,6 @@ final class LauncherData {
         launcherData.qualifiedClassName = getMainClass(params);
 
         launcherData.mainJarName = getMainJarName(params);
-        if (launcherData.mainJarName == null && launcherData.qualifiedClassName
-                == null) {
-            throw new ConfigException(I18N.getString("error.no-main-jar-parameter"),
-                    null);
-        }
 
         Path mainJarDir = StandardBundlerParam.SOURCE_DIR.fetchFrom(params);
 
@@ -315,76 +304,4 @@ final class LauncherData {
     private List<Path> classPath;
     private List<Path> modulePath;
     private ModuleInfo moduleInfo;
-
-    private static final class ModuleInfo {
-        String name;
-        String version;
-        String mainClass;
-
-        static ModuleInfo fromModuleDescriptor(ModuleDescriptor md) {
-            ModuleInfo result = new ModuleInfo();
-            result.name = md.name();
-            result.mainClass = md.mainClass().orElse(null);
-
-            ModuleDescriptor.Version ver = md.version().orElse(null);
-            if (ver != null) {
-                result.version = ver.toString();
-            } else {
-                result.version = md.rawVersion().orElse(null);
-            }
-
-            return result;
-        }
-
-        static ModuleInfo fromCookedRuntime(String moduleName,
-                Path cookedRuntime) {
-            Objects.requireNonNull(moduleName);
-
-            // We can't extract info about version and main class of a module
-            // linked in external runtime without running ModuleFinder in that
-            // runtime. But this is too much work as the runtime might have been
-            // coocked without native launchers. So just make sure the module
-            // is linked in the runtime by simply analysing the data
-            // of `release` file.
-
-            final Path releaseFile;
-            if (!OperatingSystem.isMacOS()) {
-                releaseFile = cookedRuntime.resolve("release");
-            } else {
-                // On Mac `cookedRuntime` can be runtime root or runtime home.
-                Path runtimeHome = cookedRuntime.resolve("Contents/Home");
-                if (!Files.isDirectory(runtimeHome)) {
-                    runtimeHome = cookedRuntime;
-                }
-                releaseFile = runtimeHome.resolve("release");
-            }
-
-            try (Reader reader = Files.newBufferedReader(releaseFile)) {
-                Properties props = new Properties();
-                props.load(reader);
-                String moduleList = props.getProperty("MODULES");
-                if (moduleList == null) {
-                    return null;
-                }
-
-                if ((moduleList.startsWith("\"") && moduleList.endsWith("\""))
-                        || (moduleList.startsWith("\'") && moduleList.endsWith(
-                        "\'"))) {
-                    moduleList = moduleList.substring(1, moduleList.length() - 1);
-                }
-
-                if (!List.of(moduleList.split("\\s+")).contains(moduleName)) {
-                    return null;
-                }
-            } catch (IOException|IllegalArgumentException ex) {
-                Log.verbose(ex);
-                return null;
-            }
-
-            ModuleInfo result = new ModuleInfo();
-            result.name = moduleName;
-
-            return result;
-        }
-    }
 }

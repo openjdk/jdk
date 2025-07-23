@@ -23,10 +23,10 @@
  *
  */
 
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -94,6 +93,8 @@ public:
 class ShenandoahPurgeSATBTask : public WorkerTask {
 private:
   ShenandoahObjToScanQueueSet* _mark_queues;
+  // Keep track of the number of oops that are not transferred to mark queues.
+  // This is volatile because workers update it, but the vm thread reads it.
   volatile size_t             _trashed_oops;
 
 public:
@@ -119,6 +120,35 @@ public:
     ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
     ShenandoahProcessOldSATB processor(mark_queue);
     while (satb_queues.apply_closure_to_completed_buffer(&processor)) {}
+
+    Atomic::add(&_trashed_oops, processor.trashed_oops());
+  }
+};
+
+class ShenandoahTransferOldSATBTask : public WorkerTask {
+  ShenandoahSATBMarkQueueSet&  _satb_queues;
+  ShenandoahObjToScanQueueSet* _mark_queues;
+  // Keep track of the number of oops that are not transferred to mark queues.
+  // This is volatile because workers update it, but the control thread reads it.
+  volatile size_t              _trashed_oops;
+
+public:
+  explicit ShenandoahTransferOldSATBTask(ShenandoahSATBMarkQueueSet& satb_queues, ShenandoahObjToScanQueueSet* mark_queues) :
+    WorkerTask("Transfer SATB"),
+    _satb_queues(satb_queues),
+    _mark_queues(mark_queues),
+    _trashed_oops(0) {}
+
+  ~ShenandoahTransferOldSATBTask() {
+    if (_trashed_oops > 0) {
+      log_debug(gc)("Purged %zu oops from old generation SATB buffers", _trashed_oops);
+    }
+  }
+
+  void work(uint worker_id) override {
+    ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
+    ShenandoahProcessOldSATB processor(mark_queue);
+    while (_satb_queues.apply_closure_to_completed_buffer(&processor)) {}
 
     Atomic::add(&_trashed_oops, processor.trashed_oops());
   }
@@ -166,8 +196,8 @@ public:
   }
 };
 
-ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity)
-  : ShenandoahGeneration(OLD, max_queues, max_capacity, soft_max_capacity),
+ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_capacity)
+  : ShenandoahGeneration(OLD, max_queues, max_capacity),
     _coalesce_and_fill_region_array(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC)),
     _old_heuristics(nullptr),
     _region_balance(0),
@@ -423,14 +453,25 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   }
 }
 
-void ShenandoahOldGeneration::transfer_pointers_from_satb() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  shenandoah_assert_safepoint();
+void ShenandoahOldGeneration::concurrent_transfer_pointers_from_satb() const {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
   log_debug(gc)("Transfer SATB buffers");
-  uint nworkers = heap->workers()->active_workers();
-  StrongRootsScope scope(nworkers);
 
+  // Step 1. All threads need to 'complete' partially filled, thread local SATB buffers. This
+  // is accomplished in ShenandoahConcurrentGC::complete_abbreviated_cycle using a Handshake
+  // operation.
+  // Step 2. Use worker threads to transfer oops from old, active regions in the completed
+  // SATB buffers to old generation mark queues.
+  ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
+  ShenandoahTransferOldSATBTask transfer_task(satb_queues, task_queues());
+  heap->workers()->run_task(&transfer_task);
+}
+
+void ShenandoahOldGeneration::transfer_pointers_from_satb() const {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
+  log_debug(gc)("Transfer SATB buffers");
   ShenandoahPurgeSATBTask purge_satb_task(task_queues());
   heap->workers()->run_task(&purge_satb_task);
 }

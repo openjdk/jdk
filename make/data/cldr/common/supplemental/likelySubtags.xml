@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2024 Unicode, Inc.
+Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -36,7 +36,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ann" to="ann_Latn_NG"/>		<!--Obolo‧?‧?	➡ Obolo‧Latin‧Nigeria-->
 		<likelySubtag from="aoz" to="aoz_Latn_ID"/>		<!--Uab Meto‧?‧?	➡ Uab Meto‧Latin‧Indonesia-->
 		<likelySubtag from="apc" to="apc_Arab_SY"/>		<!--Levantine Arabic‧?‧?	➡ Levantine Arabic‧Arabic‧Syria-->
-		<likelySubtag from="apd" to="apd_Arab_TG"/>		<!--Sudanese Arabic‧?‧?	➡ Sudanese Arabic‧Arabic‧Togo-->
+		<likelySubtag from="apd" to="apd_Arab_SD"/>		<!--Sudanese Arabic‧?‧?	➡ Sudanese Arabic‧Arabic‧Sudan-->
 		<likelySubtag from="ar" to="ar_Arab_EG"/>		<!--Arabic‧?‧?	➡ Arabic‧Arabic‧Egypt-->
 		<likelySubtag from="arc" to="arc_Armi_IR"/>		<!--Aramaic‧?‧?	➡ Aramaic‧Imperial Aramaic‧Iran-->
 		<likelySubtag from="arc_Hatr" to="arc_Hatr_IQ"/>		<!--Aramaic‧Hatran‧?	➡ Aramaic‧Hatran‧Iraq-->
@@ -128,6 +128,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="cad" to="cad_Latn_US"/>		<!--Caddo‧?‧?	➡ Caddo‧Latin‧United States-->
 		<likelySubtag from="cch" to="cch_Latn_NG"/>		<!--Atsam‧?‧?	➡ Atsam‧Latin‧Nigeria-->
 		<likelySubtag from="ccp" to="ccp_Cakm_BD"/>		<!--Chakma‧?‧?	➡ Chakma‧Chakma‧Bangladesh-->
+		<likelySubtag from="ccr" to="ccr_Latn_SV"/>		<!--Cacaopera‧?‧?	➡ Cacaopera‧Latin‧El Salvador-->
 		<likelySubtag from="ce" to="ce_Cyrl_RU"/>		<!--Chechen‧?‧?	➡ Chechen‧Cyrillic‧Russia-->
 		<likelySubtag from="ceb" to="ceb_Latn_PH"/>		<!--Cebuano‧?‧?	➡ Cebuano‧Latin‧Philippines-->
 		<likelySubtag from="cgg" to="cgg_Latn_UG"/>		<!--Chiga‧?‧?	➡ Chiga‧Latin‧Uganda-->
@@ -182,6 +183,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="dyu" to="dyu_Latn_BF"/>		<!--Dyula‧?‧?	➡ Dyula‧Latin‧Burkina Faso-->
 		<likelySubtag from="dz" to="dz_Tibt_BT"/>		<!--Dzongkha‧?‧?	➡ Dzongkha‧Tibetan‧Bhutan-->
 		<likelySubtag from="ebu" to="ebu_Latn_KE"/>		<!--Embu‧?‧?	➡ Embu‧Latin‧Kenya-->
+		<likelySubtag from="ecy" to="ecy_Cprt_CY"/>		<!--Eteocypriot‧?‧?	➡ Eteocypriot‧Cypriot‧Cyprus-->
 		<likelySubtag from="ee" to="ee_Latn_GH"/>		<!--Ewe‧?‧?	➡ Ewe‧Latin‧Ghana-->
 		<likelySubtag from="efi" to="efi_Latn_NG"/>		<!--Efik‧?‧?	➡ Efik‧Latin‧Nigeria-->
 		<likelySubtag from="egl" to="egl_Latn_IT"/>		<!--Emilian‧?‧?	➡ Emilian‧Latin‧Italy-->
@@ -240,13 +242,13 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="gju" to="gju_Arab_PK"/>		<!--Gujari‧?‧?	➡ Gujari‧Arabic‧Pakistan-->
 		<likelySubtag from="gl" to="gl_Latn_ES"/>		<!--Galician‧?‧?	➡ Galician‧Latin‧Spain-->
 		<likelySubtag from="glk" to="glk_Arab_IR"/>		<!--Gilaki‧?‧?	➡ Gilaki‧Arabic‧Iran-->
+		<likelySubtag from="gmy" to="gmy_Linb_GR"/>		<!--Mycenaean Greek‧?‧?	➡ Mycenaean Greek‧Linear B‧Greece-->
 		<likelySubtag from="gn" to="gn_Latn_PY"/>		<!--Guarani‧?‧?	➡ Guarani‧Latin‧Paraguay-->
 		<likelySubtag from="gon" to="gon_Deva_IN"/>		<!--Gondi‧?‧?	➡ Gondi‧Devanagari‧India-->
 		<likelySubtag from="gor" to="gor_Latn_ID"/>		<!--Gorontalo‧?‧?	➡ Gorontalo‧Latin‧Indonesia-->
 		<likelySubtag from="gos" to="gos_Latn_NL"/>		<!--Gronings‧?‧?	➡ Gronings‧Latin‧Netherlands-->
 		<likelySubtag from="got" to="got_Goth_UA"/>		<!--Gothic‧?‧?	➡ Gothic‧Gothic‧Ukraine-->
-		<likelySubtag from="grc" to="grc_Cprt_CY"/>		<!--Ancient Greek‧?‧?	➡ Ancient Greek‧Cypriot‧Cyprus-->
-		<likelySubtag from="grc_Linb" to="grc_Linb_GR"/>		<!--Ancient Greek‧Linear B‧?	➡ Ancient Greek‧Linear B‧Greece-->
+		<likelySubtag from="grc" to="grc_Grek_GR"/>		<!--Ancient Greek‧?‧?	➡ Ancient Greek‧Greek‧Greece-->
 		<likelySubtag from="grt" to="grt_Beng_IN"/>		<!--Garo‧?‧?	➡ Garo‧Bangla‧India-->
 		<likelySubtag from="gsw" to="gsw_Latn_CH"/>		<!--Swiss German‧?‧?	➡ Swiss German‧Latin‧Switzerland-->
 		<likelySubtag from="gu" to="gu_Gujr_IN"/>		<!--Gujarati‧?‧?	➡ Gujarati‧Gujarati‧India-->
@@ -261,6 +263,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ha_CM" to="ha_Arab_CM"/>		<!--Hausa‧?‧Cameroon	➡ Hausa‧Arabic‧Cameroon-->
 		<likelySubtag from="ha_SD" to="ha_Arab_SD"/>		<!--Hausa‧?‧Sudan	➡ Hausa‧Arabic‧Sudan-->
 		<likelySubtag from="hak" to="hak_Hans_CN"/>		<!--Hakka Chinese‧?‧?	➡ Hakka Chinese‧Simplified‧China-->
+		<likelySubtag from="hak_TW" to="hak_Hant_TW"/>		<!--Hakka Chinese‧?‧Taiwan	➡ Hakka Chinese‧Traditional‧Taiwan-->
+		<likelySubtag from="hak_Hant" to="hak_Hant_TW"/>		<!--Hakka Chinese‧Traditional‧?	➡ Hakka Chinese‧Traditional‧Taiwan-->
 		<likelySubtag from="haw" to="haw_Latn_US"/>		<!--Hawaiian‧?‧?	➡ Hawaiian‧Latin‧United States-->
 		<likelySubtag from="haz" to="haz_Arab_AF"/>		<!--Hazaragi‧?‧?	➡ Hazaragi‧Arabic‧Afghanistan-->
 		<likelySubtag from="he" to="he_Hebr_IL"/>		<!--Hebrew‧?‧?	➡ Hebrew‧Hebrew‧Israel-->
@@ -321,7 +325,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="kaj" to="kaj_Latn_NG"/>		<!--Jju‧?‧?	➡ Jju‧Latin‧Nigeria-->
 		<likelySubtag from="kam" to="kam_Latn_KE"/>		<!--Kamba‧?‧?	➡ Kamba‧Latin‧Kenya-->
 		<likelySubtag from="kao" to="kao_Latn_ML"/>		<!--Xaasongaxango‧?‧?	➡ Xaasongaxango‧Latin‧Mali-->
-		<likelySubtag from="kaw" to="kaw_Kawi_ID"/>		<!--Kawi‧?‧?	➡ Kawi‧Kawi‧Indonesia-->
+		<likelySubtag from="kaw" to="kaw_Bali_ID"/>		<!--Kawi‧?‧?	➡ Kawi‧Balinese‧Indonesia-->
 		<likelySubtag from="kbd" to="kbd_Cyrl_RU"/>		<!--Kabardian‧?‧?	➡ Kabardian‧Cyrillic‧Russia-->
 		<likelySubtag from="kby" to="kby_Arab_NE"/>		<!--Manga Kanuri‧?‧?	➡ Manga Kanuri‧Arabic‧Niger-->
 		<likelySubtag from="kcg" to="kcg_Latn_NG"/>		<!--Tyap‧?‧?	➡ Tyap‧Latin‧Nigeria-->
@@ -366,6 +370,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="kok" to="kok_Deva_IN"/>		<!--Konkani‧?‧?	➡ Konkani‧Devanagari‧India-->
 		<likelySubtag from="kos" to="kos_Latn_FM"/>		<!--Kosraean‧?‧?	➡ Kosraean‧Latin‧Micronesia-->
 		<likelySubtag from="kpe" to="kpe_Latn_LR"/>		<!--Kpelle‧?‧?	➡ Kpelle‧Latin‧Liberia-->
+		<likelySubtag from="kqn" to="kqn_Latn_ZM"/>		<!--Kaonde‧?‧?	➡ Kaonde‧Latin‧Zambia-->
 		<likelySubtag from="krc" to="krc_Cyrl_RU"/>		<!--Karachay-Balkar‧?‧?	➡ Karachay-Balkar‧Cyrillic‧Russia-->
 		<likelySubtag from="kri" to="kri_Latn_SL"/>		<!--Krio‧?‧?	➡ Krio‧Latin‧Sierra Leone-->
 		<likelySubtag from="krj" to="krj_Latn_PH"/>		<!--Kinaray-a‧?‧?	➡ Kinaray-a‧Latin‧Philippines-->
@@ -403,6 +408,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="lbe" to="lbe_Cyrl_RU"/>		<!--Lak‧?‧?	➡ Lak‧Cyrillic‧Russia-->
 		<likelySubtag from="lbw" to="lbw_Latn_ID"/>		<!--Tolaki‧?‧?	➡ Tolaki‧Latin‧Indonesia-->
 		<likelySubtag from="lcp" to="lcp_Thai_CN"/>		<!--Western Lawa‧?‧?	➡ Western Lawa‧Thai‧China-->
+		<likelySubtag from="leb" to="leb_Latn_ZM"/>		<!--Lala-Bisa‧?‧?	➡ Lala-Bisa‧Latin‧Zambia-->
+		<likelySubtag from="len" to="len_Latn_SV"/>		<!--Lenca‧?‧?	➡ Lenca‧Latin‧El Salvador-->
 		<likelySubtag from="lep" to="lep_Lepc_IN"/>		<!--Lepcha‧?‧?	➡ Lepcha‧Lepcha‧India-->
 		<likelySubtag from="lez" to="lez_Cyrl_RU"/>		<!--Lezghian‧?‧?	➡ Lezghian‧Cyrillic‧Russia-->
 		<likelySubtag from="lg" to="lg_Latn_UG"/>		<!--Ganda‧?‧?	➡ Ganda‧Latin‧Uganda-->
@@ -427,6 +434,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ltg" to="ltg_Latn_LV"/>		<!--Latgalian‧?‧?	➡ Latgalian‧Latin‧Latvia-->
 		<likelySubtag from="lu" to="lu_Latn_CD"/>		<!--Luba-Katanga‧?‧?	➡ Luba-Katanga‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="lua" to="lua_Latn_CD"/>		<!--Luba-Lulua‧?‧?	➡ Luba-Lulua‧Latin‧Congo - Kinshasa-->
+		<likelySubtag from="lue" to="lue_Latn_ZM"/>		<!--Luvale‧?‧?	➡ Luvale‧Latin‧Zambia-->
+		<likelySubtag from="lun" to="lun_Latn_ZM"/>		<!--Lunda‧?‧?	➡ Lunda‧Latin‧Zambia-->
 		<likelySubtag from="luo" to="luo_Latn_KE"/>		<!--Luo‧?‧?	➡ Luo‧Latin‧Kenya-->
 		<likelySubtag from="luy" to="luy_Latn_KE"/>		<!--Luyia‧?‧?	➡ Luyia‧Latin‧Kenya-->
 		<likelySubtag from="luz" to="luz_Arab_IR"/>		<!--Southern Luri‧?‧?	➡ Southern Luri‧Arabic‧Iran-->
@@ -434,13 +443,14 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="lwl" to="lwl_Thai_TH"/>		<!--Eastern Lawa‧?‧?	➡ Eastern Lawa‧Thai‧Thailand-->
 		<likelySubtag from="lzh" to="lzh_Hans_CN"/>		<!--Literary Chinese‧?‧?	➡ Literary Chinese‧Simplified‧China-->
 		<likelySubtag from="lzz" to="lzz_Latn_TR"/>		<!--Laz‧?‧?	➡ Laz‧Latin‧Türkiye-->
+		<likelySubtag from="lzz_GE" to="lzz_Geor_GE"/>		<!--Laz‧?‧Georgia	➡ Laz‧Georgian‧Georgia-->
+		<likelySubtag from="lzz_Geor" to="lzz_Geor_GE"/>		<!--Laz‧Georgian‧?	➡ Laz‧Georgian‧Georgia-->
 		<likelySubtag from="mad" to="mad_Latn_ID"/>		<!--Madurese‧?‧?	➡ Madurese‧Latin‧Indonesia-->
 		<likelySubtag from="maf" to="maf_Latn_CM"/>		<!--Mafa‧?‧?	➡ Mafa‧Latin‧Cameroon-->
 		<likelySubtag from="mag" to="mag_Deva_IN"/>		<!--Magahi‧?‧?	➡ Magahi‧Devanagari‧India-->
 		<likelySubtag from="mai" to="mai_Deva_IN"/>		<!--Maithili‧?‧?	➡ Maithili‧Devanagari‧India-->
 		<likelySubtag from="mak" to="mak_Latn_ID"/>		<!--Makasar‧?‧?	➡ Makasar‧Latin‧Indonesia-->
 		<likelySubtag from="man" to="man_Latn_GM"/>		<!--Mandingo‧?‧?	➡ Mandingo‧Latin‧Gambia-->
-		<likelySubtag from="man_GN" to="man_Nkoo_GN"/>		<!--Mandingo‧?‧Guinea	➡ Mandingo‧N’Ko‧Guinea-->
 		<likelySubtag from="man_Nkoo" to="man_Nkoo_GN"/>		<!--Mandingo‧N’Ko‧?	➡ Mandingo‧N’Ko‧Guinea-->
 		<likelySubtag from="mas" to="mas_Latn_KE"/>		<!--Masai‧?‧?	➡ Masai‧Latin‧Kenya-->
 		<likelySubtag from="maz" to="maz_Latn_MX"/>		<!--Central Mazahua‧?‧?	➡ Central Mazahua‧Latin‧Mexico-->
@@ -498,6 +508,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mzn" to="mzn_Arab_IR"/>		<!--Mazanderani‧?‧?	➡ Mazanderani‧Arabic‧Iran-->
 		<likelySubtag from="na" to="na_Latn_NR"/>		<!--Nauru‧?‧?	➡ Nauru‧Latin‧Nauru-->
 		<likelySubtag from="nan" to="nan_Hans_CN"/>		<!--Min Nan Chinese‧?‧?	➡ Min Nan Chinese‧Simplified‧China-->
+		<likelySubtag from="nan_TW" to="nan_Hant_TW"/>		<!--Min Nan Chinese‧?‧Taiwan	➡ Min Nan Chinese‧Traditional‧Taiwan-->
+		<likelySubtag from="nan_Hant" to="nan_Hant_TW"/>		<!--Min Nan Chinese‧Traditional‧?	➡ Min Nan Chinese‧Traditional‧Taiwan-->
 		<likelySubtag from="nap" to="nap_Latn_IT"/>		<!--Neapolitan‧?‧?	➡ Neapolitan‧Latin‧Italy-->
 		<likelySubtag from="naq" to="naq_Latn_NA"/>		<!--Nama‧?‧?	➡ Nama‧Latin‧Namibia-->
 		<likelySubtag from="nb" to="nb_Latn_NO"/>		<!--Norwegian Bokmål‧?‧?	➡ Norwegian Bokmål‧Latin‧Norway-->
@@ -525,6 +537,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="non" to="non_Runr_SE"/>		<!--Old Norse‧?‧?	➡ Old Norse‧Runic‧Sweden-->
 		<likelySubtag from="nqo" to="nqo_Nkoo_GN"/>		<!--N’Ko‧?‧?	➡ N’Ko‧N’Ko‧Guinea-->
 		<likelySubtag from="nr" to="nr_Latn_ZA"/>		<!--South Ndebele‧?‧?	➡ South Ndebele‧Latin‧South Africa-->
+		<likelySubtag from="nse" to="nse_Latn_ZM"/>		<!--Nsenga‧?‧?	➡ Nsenga‧Latin‧Zambia-->
 		<likelySubtag from="nsk" to="nsk_Cans_CA"/>		<!--Naskapi‧?‧?	➡ Naskapi‧Unified Canadian Aboriginal Syllabics‧Canada-->
 		<likelySubtag from="nso" to="nso_Latn_ZA"/>		<!--Northern Sotho‧?‧?	➡ Northern Sotho‧Latin‧South Africa-->
 		<likelySubtag from="nst" to="nst_Tnsa_IN"/>		<!--Tase Naga‧?‧?	➡ Tase Naga‧Tangsa‧India-->
@@ -538,6 +551,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="oc" to="oc_Latn_FR"/>		<!--Occitan‧?‧?	➡ Occitan‧Latin‧France-->
 		<likelySubtag from="oj" to="oj_Cans_CA"/>		<!--Ojibwa‧?‧?	➡ Ojibwa‧Unified Canadian Aboriginal Syllabics‧Canada-->
 		<likelySubtag from="ojs" to="ojs_Cans_CA"/>		<!--Oji-Cree‧?‧?	➡ Oji-Cree‧Unified Canadian Aboriginal Syllabics‧Canada-->
+		<likelySubtag from="ojw" to="ojw_Latn_CA"/>		<!--Western Ojibwa‧?‧?	➡ Western Ojibwa‧Latin‧Canada-->
 		<likelySubtag from="oka" to="oka_Latn_CA"/>		<!--Okanagan‧?‧?	➡ Okanagan‧Latin‧Canada-->
 		<likelySubtag from="om" to="om_Latn_ET"/>		<!--Oromo‧?‧?	➡ Oromo‧Latin‧Ethiopia-->
 		<likelySubtag from="or" to="or_Orya_IN"/>		<!--Odia‧?‧?	➡ Odia‧Odia‧India-->
@@ -567,7 +581,12 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="pl" to="pl_Latn_PL"/>		<!--Polish‧?‧?	➡ Polish‧Latin‧Poland-->
 		<likelySubtag from="pms" to="pms_Latn_IT"/>		<!--Piedmontese‧?‧?	➡ Piedmontese‧Latin‧Italy-->
 		<likelySubtag from="pnt" to="pnt_Grek_GR"/>		<!--Pontic‧?‧?	➡ Pontic‧Greek‧Greece-->
+		<likelySubtag from="pnt_RU" to="pnt_Cyrl_RU"/>		<!--Pontic‧?‧Russia	➡ Pontic‧Cyrillic‧Russia-->
+		<likelySubtag from="pnt_TR" to="pnt_Latn_TR"/>		<!--Pontic‧?‧Türkiye	➡ Pontic‧Latin‧Türkiye-->
+		<likelySubtag from="pnt_Cyrl" to="pnt_Cyrl_RU"/>		<!--Pontic‧Cyrillic‧?	➡ Pontic‧Cyrillic‧Russia-->
+		<likelySubtag from="pnt_Latn" to="pnt_Latn_TR"/>		<!--Pontic‧Latin‧?	➡ Pontic‧Latin‧Türkiye-->
 		<likelySubtag from="pon" to="pon_Latn_FM"/>		<!--Pohnpeian‧?‧?	➡ Pohnpeian‧Latin‧Micronesia-->
+		<likelySubtag from="ppl" to="ppl_Latn_SV"/>		<!--Pipil‧?‧?	➡ Pipil‧Latin‧El Salvador-->
 		<likelySubtag from="pqm" to="pqm_Latn_CA"/>		<!--Maliseet-Passamaquoddy‧?‧?	➡ Maliseet-Passamaquoddy‧Latin‧Canada-->
 		<likelySubtag from="pra" to="pra_Khar_PK"/>		<!--Prakrit languages‧?‧?	➡ Prakrit languages‧Kharoshthi‧Pakistan-->
 		<likelySubtag from="prd" to="prd_Arab_IR"/>		<!--Parsi-Dari‧?‧?	➡ Parsi-Dari‧Arabic‧Iran-->
@@ -630,7 +649,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="sei" to="sei_Latn_MX"/>		<!--Seri‧?‧?	➡ Seri‧Latin‧Mexico-->
 		<likelySubtag from="ses" to="ses_Latn_ML"/>		<!--Koyraboro Senni‧?‧?	➡ Koyraboro Senni‧Latin‧Mali-->
 		<likelySubtag from="sg" to="sg_Latn_CF"/>		<!--Sango‧?‧?	➡ Sango‧Latin‧Central African Republic-->
-		<likelySubtag from="sga" to="sga_Ogam_IE"/>		<!--Old Irish‧?‧?	➡ Old Irish‧Ogham‧Ireland-->
+		<likelySubtag from="sga" to="sga_Latn_IE"/>		<!--Old Irish‧?‧?	➡ Old Irish‧Latin‧Ireland-->
 		<likelySubtag from="sgs" to="sgs_Latn_LT"/>		<!--Samogitian‧?‧?	➡ Samogitian‧Latin‧Lithuania-->
 		<likelySubtag from="shi" to="shi_Tfng_MA"/>		<!--Tachelhit‧?‧?	➡ Tachelhit‧Tifinagh‧Morocco-->
 		<likelySubtag from="shn" to="shn_Mymr_MM"/>		<!--Shan‧?‧?	➡ Shan‧Myanmar‧Myanmar (Burma)-->
@@ -657,7 +676,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="sr" to="sr_Cyrl_RS"/>		<!--Serbian‧?‧?	➡ Serbian‧Cyrillic‧Serbia-->
 		<likelySubtag from="sr_ME" to="sr_Latn_ME"/>		<!--Serbian‧?‧Montenegro	➡ Serbian‧Latin‧Montenegro-->
 		<likelySubtag from="sr_RO" to="sr_Latn_RO"/>		<!--Serbian‧?‧Romania	➡ Serbian‧Latin‧Romania-->
-		<likelySubtag from="sr_RU" to="sr_Latn_RU"/>		<!--Serbian‧?‧Russia	➡ Serbian‧Latin‧Russia-->
 		<likelySubtag from="sr_TR" to="sr_Latn_TR"/>		<!--Serbian‧?‧Türkiye	➡ Serbian‧Latin‧Türkiye-->
 		<likelySubtag from="srb" to="srb_Sora_IN"/>		<!--Sora‧?‧?	➡ Sora‧Sora Sompeng‧India-->
 		<likelySubtag from="srn" to="srn_Latn_SR"/>		<!--Sranan Tongo‧?‧?	➡ Sranan Tongo‧Latin‧Suriname-->
@@ -712,6 +730,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="tnr" to="tnr_Latn_SN"/>		<!--Ménik‧?‧?	➡ Ménik‧Latin‧Senegal-->
 		<likelySubtag from="to" to="to_Latn_TO"/>		<!--Tongan‧?‧?	➡ Tongan‧Latin‧Tonga-->
 		<likelySubtag from="tog" to="tog_Latn_MW"/>		<!--Nyasa Tonga‧?‧?	➡ Nyasa Tonga‧Latin‧Malawi-->
+		<likelySubtag from="toi" to="toi_Latn_ZM"/>		<!--Tonga (Zambia)‧?‧?	➡ Tonga (Zambia)‧Latin‧Zambia-->
 		<likelySubtag from="tok" to="tok_Latn_001"/>		<!--Toki Pona‧?‧?	➡ Toki Pona‧Latin‧world-->
 		<likelySubtag from="tpi" to="tpi_Latn_PG"/>		<!--Tok Pisin‧?‧?	➡ Tok Pisin‧Latin‧Papua New Guinea-->
 		<likelySubtag from="tr" to="tr_Latn_TR"/>		<!--Turkish‧?‧?	➡ Turkish‧Latin‧Türkiye-->
@@ -831,7 +850,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="zh_Hant" to="zh_Hant_TW"/>		<!--Chinese‧Traditional‧?	➡ Chinese‧Traditional‧Taiwan-->
 		<likelySubtag from="zhx" to="zhx_Nshu_CN"/>		<!--Chinese (family)‧?‧?	➡ Chinese (family)‧Nüshu‧China-->
 		<likelySubtag from="zkt" to="zkt_Kits_CN"/>		<!--Kitan‧?‧?	➡ Kitan‧Khitan small script‧China-->
-		<likelySubtag from="zlm" to="zlm_Latn_TG"/>		<!--Malay (individual language)‧?‧?	➡ Malay (individual language)‧Latin‧Togo-->
+		<likelySubtag from="zlm" to="zlm_Latn_MY"/>		<!--Malay (individual language)‧?‧?	➡ Malay (individual language)‧Latin‧Malaysia-->
 		<likelySubtag from="zmi" to="zmi_Latn_MY"/>		<!--Negeri Sembilan Malay‧?‧?	➡ Negeri Sembilan Malay‧Latin‧Malaysia-->
 		<likelySubtag from="zu" to="zu_Latn_ZA"/>		<!--Zulu‧?‧?	➡ Zulu‧Latin‧South Africa-->
 		<likelySubtag from="zza" to="zza_Latn_TR"/>		<!--Zaza‧?‧?	➡ Zaza‧Latin‧Türkiye-->
@@ -864,10 +883,11 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_BQ" to="pap_Latn_BQ"/>		<!--?‧?‧Caribbean Netherlands	➡ Papiamento‧Latin‧Caribbean Netherlands-->
 		<likelySubtag from="und_BR" to="pt_Latn_BR"/>		<!--?‧?‧Brazil	➡ Portuguese‧Latin‧Brazil-->
 		<likelySubtag from="und_BT" to="dz_Tibt_BT"/>		<!--?‧?‧Bhutan	➡ Dzongkha‧Tibetan‧Bhutan-->
+		<likelySubtag from="und_BV" to="no_Latn_BV"/>		<!--?‧?‧Bouvet Island	➡ Norwegian‧Latin‧Bouvet Island-->
 		<likelySubtag from="und_BY" to="be_Cyrl_BY"/>		<!--?‧?‧Belarus	➡ Belarusian‧Cyrillic‧Belarus-->
 		<likelySubtag from="und_CC" to="ms_Arab_CC"/>		<!--?‧?‧Cocos (Keeling) Islands	➡ Malay‧Arabic‧Cocos (Keeling) Islands-->
-		<likelySubtag from="und_CD" to="sw_Latn_CD"/>		<!--?‧?‧Congo - Kinshasa	➡ Swahili‧Latin‧Congo - Kinshasa-->
-		<likelySubtag from="und_CF" to="fr_Latn_CF"/>		<!--?‧?‧Central African Republic	➡ French‧Latin‧Central African Republic-->
+		<likelySubtag from="und_CD" to="fr_Latn_CD"/>		<!--?‧?‧Congo - Kinshasa	➡ French‧Latin‧Congo - Kinshasa-->
+		<likelySubtag from="und_CF" to="sg_Latn_CF"/>		<!--?‧?‧Central African Republic	➡ Sango‧Latin‧Central African Republic-->
 		<likelySubtag from="und_CG" to="fr_Latn_CG"/>		<!--?‧?‧Congo - Brazzaville	➡ French‧Latin‧Congo - Brazzaville-->
 		<likelySubtag from="und_CH" to="de_Latn_CH"/>		<!--?‧?‧Switzerland	➡ German‧Latin‧Switzerland-->
 		<likelySubtag from="und_CI" to="fr_Latn_CI"/>		<!--?‧?‧Côte d’Ivoire	➡ French‧Latin‧Côte d’Ivoire-->
@@ -882,7 +902,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_CY" to="el_Grek_CY"/>		<!--?‧?‧Cyprus	➡ Greek‧Greek‧Cyprus-->
 		<likelySubtag from="und_CZ" to="cs_Latn_CZ"/>		<!--?‧?‧Czechia	➡ Czech‧Latin‧Czechia-->
 		<likelySubtag from="und_DE" to="de_Latn_DE"/>		<!--?‧?‧Germany	➡ German‧Latin‧Germany-->
-		<likelySubtag from="und_DJ" to="aa_Latn_DJ"/>		<!--?‧?‧Djibouti	➡ Afar‧Latin‧Djibouti-->
+		<likelySubtag from="und_DJ" to="fr_Latn_DJ"/>		<!--?‧?‧Djibouti	➡ French‧Latin‧Djibouti-->
 		<likelySubtag from="und_DK" to="da_Latn_DK"/>		<!--?‧?‧Denmark	➡ Danish‧Latin‧Denmark-->
 		<likelySubtag from="und_DO" to="es_Latn_DO"/>		<!--?‧?‧Dominican Republic	➡ Spanish‧Latin‧Dominican Republic-->
 		<likelySubtag from="und_DZ" to="ar_Arab_DZ"/>		<!--?‧?‧Algeria	➡ Arabic‧Arabic‧Algeria-->
@@ -954,7 +974,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_MQ" to="fr_Latn_MQ"/>		<!--?‧?‧Martinique	➡ French‧Latin‧Martinique-->
 		<likelySubtag from="und_MR" to="ar_Arab_MR"/>		<!--?‧?‧Mauritania	➡ Arabic‧Arabic‧Mauritania-->
 		<likelySubtag from="und_MT" to="mt_Latn_MT"/>		<!--?‧?‧Malta	➡ Maltese‧Latin‧Malta-->
-		<likelySubtag from="und_MU" to="mfe_Latn_MU"/>		<!--?‧?‧Mauritius	➡ Morisyen‧Latin‧Mauritius-->
+		<likelySubtag from="und_MU" to="fr_Latn_MU"/>		<!--?‧?‧Mauritius	➡ French‧Latin‧Mauritius-->
 		<likelySubtag from="und_MV" to="dv_Thaa_MV"/>		<!--?‧?‧Maldives	➡ Divehi‧Thaana‧Maldives-->
 		<likelySubtag from="und_MX" to="es_Latn_MX"/>		<!--?‧?‧Mexico	➡ Spanish‧Latin‧Mexico-->
 		<likelySubtag from="und_MY" to="ms_Latn_MY"/>		<!--?‧?‧Malaysia	➡ Malay‧Latin‧Malaysia-->
@@ -993,16 +1013,15 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_SI" to="sl_Latn_SI"/>		<!--?‧?‧Slovenia	➡ Slovenian‧Latin‧Slovenia-->
 		<likelySubtag from="und_SJ" to="nb_Latn_SJ"/>		<!--?‧?‧Svalbard & Jan Mayen	➡ Norwegian Bokmål‧Latin‧Svalbard & Jan Mayen-->
 		<likelySubtag from="und_SK" to="sk_Latn_SK"/>		<!--?‧?‧Slovakia	➡ Slovak‧Latin‧Slovakia-->
-		<likelySubtag from="und_SL" to="kri_Latn_SL"/>		<!--?‧?‧Sierra Leone	➡ Krio‧Latin‧Sierra Leone-->
 		<likelySubtag from="und_SM" to="it_Latn_SM"/>		<!--?‧?‧San Marino	➡ Italian‧Latin‧San Marino-->
-		<likelySubtag from="und_SN" to="fr_Latn_SN"/>		<!--?‧?‧Senegal	➡ French‧Latin‧Senegal-->
+		<likelySubtag from="und_SN" to="wo_Latn_SN"/>		<!--?‧?‧Senegal	➡ Wolof‧Latin‧Senegal-->
 		<likelySubtag from="und_SO" to="so_Latn_SO"/>		<!--?‧?‧Somalia	➡ Somali‧Latin‧Somalia-->
 		<likelySubtag from="und_SR" to="nl_Latn_SR"/>		<!--?‧?‧Suriname	➡ Dutch‧Latin‧Suriname-->
 		<likelySubtag from="und_SS" to="ar_Arab_SS"/>		<!--?‧?‧South Sudan	➡ Arabic‧Arabic‧South Sudan-->
 		<likelySubtag from="und_ST" to="pt_Latn_ST"/>		<!--?‧?‧São Tomé & Príncipe	➡ Portuguese‧Latin‧São Tomé & Príncipe-->
 		<likelySubtag from="und_SV" to="es_Latn_SV"/>		<!--?‧?‧El Salvador	➡ Spanish‧Latin‧El Salvador-->
 		<likelySubtag from="und_SY" to="ar_Arab_SY"/>		<!--?‧?‧Syria	➡ Arabic‧Arabic‧Syria-->
-		<likelySubtag from="und_TD" to="fr_Latn_TD"/>		<!--?‧?‧Chad	➡ French‧Latin‧Chad-->
+		<likelySubtag from="und_TD" to="ar_Arab_TD"/>		<!--?‧?‧Chad	➡ Arabic‧Arabic‧Chad-->
 		<likelySubtag from="und_TF" to="fr_Latn_TF"/>		<!--?‧?‧French Southern Territories	➡ French‧Latin‧French Southern Territories-->
 		<likelySubtag from="und_TG" to="fr_Latn_TG"/>		<!--?‧?‧Togo	➡ French‧Latin‧Togo-->
 		<likelySubtag from="und_TH" to="th_Thai_TH"/>		<!--?‧?‧Thailand	➡ Thai‧Thai‧Thailand-->
@@ -1029,13 +1048,13 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_XK" to="sq_Latn_XK"/>		<!--?‧?‧Kosovo	➡ Albanian‧Latin‧Kosovo-->
 		<likelySubtag from="und_YE" to="ar_Arab_YE"/>		<!--?‧?‧Yemen	➡ Arabic‧Arabic‧Yemen-->
 		<likelySubtag from="und_YT" to="fr_Latn_YT"/>		<!--?‧?‧Mayotte	➡ French‧Latin‧Mayotte-->
-		<likelySubtag from="und_ZM" to="bem_Latn_ZM"/>		<!--?‧?‧Zambia	➡ Bemba‧Latin‧Zambia-->
 		<likelySubtag from="und_ZW" to="sn_Latn_ZW"/>		<!--?‧?‧Zimbabwe	➡ Shona‧Latin‧Zimbabwe-->
 		<likelySubtag from="und_Adlm" to="ff_Adlm_GN"/>		<!--?‧Adlam‧?	➡ Fula‧Adlam‧Guinea-->
 		<likelySubtag from="und_Aghb" to="xag_Aghb_AZ"/>		<!--?‧Caucasian Albanian‧?	➡ Aghwan‧Caucasian Albanian‧Azerbaijan-->
 		<likelySubtag from="und_Ahom" to="aho_Ahom_IN"/>		<!--?‧Ahom‧?	➡ Ahom‧Ahom‧India-->
 		<likelySubtag from="und_Arab" to="ar_Arab_EG"/>		<!--?‧Arabic‧?	➡ Arabic‧Arabic‧Egypt-->
 		<likelySubtag from="und_Arab_AF" to="fa_Arab_AF"/>		<!--?‧Arabic‧Afghanistan	➡ Persian‧Arabic‧Afghanistan-->
+		<likelySubtag from="und_Arab_AZ" to="az_Arab_AZ"/>		<!--?‧Arabic‧Azerbaijan	➡ Azerbaijani‧Arabic‧Azerbaijan-->
 		<likelySubtag from="und_Arab_BN" to="ms_Arab_BN"/>		<!--?‧Arabic‧Brunei	➡ Malay‧Arabic‧Brunei-->
 		<likelySubtag from="und_Arab_CC" to="ms_Arab_CC"/>		<!--?‧Arabic‧Cocos (Keeling) Islands	➡ Malay‧Arabic‧Cocos (Keeling) Islands-->
 		<likelySubtag from="und_Arab_CN" to="ug_Arab_CN"/>		<!--?‧Arabic‧China	➡ Uyghur‧Arabic‧China-->
@@ -1049,7 +1068,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Arab_MU" to="ur_Arab_MU"/>		<!--?‧Arabic‧Mauritius	➡ Urdu‧Arabic‧Mauritius-->
 		<likelySubtag from="und_Arab_NG" to="ha_Arab_NG"/>		<!--?‧Arabic‧Nigeria	➡ Hausa‧Arabic‧Nigeria-->
 		<likelySubtag from="und_Arab_PK" to="ur_Arab_PK"/>		<!--?‧Arabic‧Pakistan	➡ Urdu‧Arabic‧Pakistan-->
-		<likelySubtag from="und_Arab_TG" to="apd_Arab_TG"/>		<!--?‧Arabic‧Togo	➡ Sudanese Arabic‧Arabic‧Togo-->
 		<likelySubtag from="und_Arab_TH" to="mfa_Arab_TH"/>		<!--?‧Arabic‧Thailand	➡ Pattani Malay‧Arabic‧Thailand-->
 		<likelySubtag from="und_Arab_TJ" to="fa_Arab_TJ"/>		<!--?‧Arabic‧Tajikistan	➡ Persian‧Arabic‧Tajikistan-->
 		<likelySubtag from="und_Arab_TR" to="apc_Arab_TR"/>		<!--?‧Arabic‧Türkiye	➡ Levantine Arabic‧Arabic‧Türkiye-->
@@ -1076,7 +1094,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Chrs" to="xco_Chrs_UZ"/>		<!--?‧Chorasmian‧?	➡ Chorasmian‧Chorasmian‧Uzbekistan-->
 		<likelySubtag from="und_Copt" to="cop_Copt_EG"/>		<!--?‧Coptic‧?	➡ Coptic‧Coptic‧Egypt-->
 		<likelySubtag from="und_Cpmn" to="und_Cpmn_CY"/>		<!--?‧Cypro-Minoan‧?	➡ ?‧Cypro-Minoan‧Cyprus-->
-		<likelySubtag from="und_Cprt" to="grc_Cprt_CY"/>		<!--?‧Cypriot‧?	➡ Ancient Greek‧Cypriot‧Cyprus-->
+		<likelySubtag from="und_Cprt" to="ecy_Cprt_CY"/>		<!--?‧Cypriot‧?	➡ Eteocypriot‧Cypriot‧Cyprus-->
 		<likelySubtag from="und_Cyrl" to="ru_Cyrl_RU"/>		<!--?‧Cyrillic‧?	➡ Russian‧Cyrillic‧Russia-->
 		<likelySubtag from="und_Cyrl_AF" to="kaa_Cyrl_AF"/>		<!--?‧Cyrillic‧Afghanistan	➡ Kara-Kalpak‧Cyrillic‧Afghanistan-->
 		<likelySubtag from="und_Cyrl_AL" to="mk_Cyrl_AL"/>		<!--?‧Cyrillic‧Albania	➡ Macedonian‧Cyrillic‧Albania-->
@@ -1189,7 +1207,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Latn_MA" to="fr_Latn_MA"/>		<!--?‧Latin‧Morocco	➡ French‧Latin‧Morocco-->
 		<likelySubtag from="und_Latn_MK" to="sq_Latn_MK"/>		<!--?‧Latin‧North Macedonia	➡ Albanian‧Latin‧North Macedonia-->
 		<likelySubtag from="und_Latn_MM" to="kac_Latn_MM"/>		<!--?‧Latin‧Myanmar (Burma)	➡ Kachin‧Latin‧Myanmar (Burma)-->
-		<likelySubtag from="und_Latn_MO" to="pt_Latn_MO"/>		<!--?‧Latin‧Macao SAR China	➡ Portuguese‧Latin‧Macao SAR China-->
+		<likelySubtag from="und_Latn_MO" to="en_Latn_MO"/>		<!--?‧Latin‧Macao SAR China	➡ English‧Latin‧Macao SAR China-->
 		<likelySubtag from="und_Latn_MR" to="fr_Latn_MR"/>		<!--?‧Latin‧Mauritania	➡ French‧Latin‧Mauritania-->
 		<likelySubtag from="und_Latn_MV" to="en_Latn_MV"/>		<!--?‧Latin‧Maldives	➡ English‧Latin‧Maldives-->
 		<likelySubtag from="und_Latn_NP" to="en_Latn_NP"/>		<!--?‧Latin‧Nepal	➡ English‧Latin‧Nepal-->
@@ -1197,7 +1215,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Latn_RU" to="krl_Latn_RU"/>		<!--?‧Latin‧Russia	➡ Karelian‧Latin‧Russia-->
 		<likelySubtag from="und_Latn_SD" to="en_Latn_SD"/>		<!--?‧Latin‧Sudan	➡ English‧Latin‧Sudan-->
 		<likelySubtag from="und_Latn_SS" to="en_Latn_SS"/>		<!--?‧Latin‧South Sudan	➡ English‧Latin‧South Sudan-->
-		<likelySubtag from="und_Latn_SY" to="fr_Latn_SY"/>		<!--?‧Latin‧Syria	➡ French‧Latin‧Syria-->
+		<likelySubtag from="und_Latn_SY" to="ku_Latn_SY"/>		<!--?‧Latin‧Syria	➡ Kurdish‧Latin‧Syria-->
+		<likelySubtag from="und_Latn_TD" to="fr_Latn_TD"/>		<!--?‧Latin‧Chad	➡ French‧Latin‧Chad-->
 		<likelySubtag from="und_Latn_TH" to="en_Latn_TH"/>		<!--?‧Latin‧Thailand	➡ English‧Latin‧Thailand-->
 		<likelySubtag from="und_Latn_TN" to="fr_Latn_TN"/>		<!--?‧Latin‧Tunisia	➡ French‧Latin‧Tunisia-->
 		<likelySubtag from="und_Latn_TW" to="trv_Latn_TW"/>		<!--?‧Latin‧Taiwan	➡ Taroko‧Latin‧Taiwan-->
@@ -1206,7 +1225,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Lepc" to="lep_Lepc_IN"/>		<!--?‧Lepcha‧?	➡ Lepcha‧Lepcha‧India-->
 		<likelySubtag from="und_Limb" to="lif_Limb_IN"/>		<!--?‧Limbu‧?	➡ Limbu‧Limbu‧India-->
 		<likelySubtag from="und_Lina" to="lab_Lina_GR"/>		<!--?‧Linear A‧?	➡ Linear A‧Linear A‧Greece-->
-		<likelySubtag from="und_Linb" to="grc_Linb_GR"/>		<!--?‧Linear B‧?	➡ Ancient Greek‧Linear B‧Greece-->
+		<likelySubtag from="und_Linb" to="gmy_Linb_GR"/>		<!--?‧Linear B‧?	➡ Mycenaean Greek‧Linear B‧Greece-->
 		<likelySubtag from="und_Lisu" to="lis_Lisu_CN"/>		<!--?‧Fraser‧?	➡ Lisu‧Fraser‧China-->
 		<likelySubtag from="und_Lyci" to="xlc_Lyci_TR"/>		<!--?‧Lycian‧?	➡ Lycian‧Lycian‧Türkiye-->
 		<likelySubtag from="und_Lydi" to="xld_Lydi_TR"/>		<!--?‧Lydian‧?	➡ Lydian‧Lydian‧Türkiye-->
@@ -2325,7 +2344,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ccl" to="ccl_Latn_TZ" origin="sil1"/>		<!--Cutchi-Swahili‧?‧?	➡ Cutchi-Swahili‧Latin‧Tanzania-->
 		<likelySubtag from="ccm" to="ccm_Latn_MY" origin="sil1"/>		<!--Malaccan Creole Malay‧?‧?	➡ Malaccan Creole Malay‧Latin‧Malaysia-->
 		<likelySubtag from="cco" to="cco_Latn_MX" origin="sil1"/>		<!--Comaltepec Chinantec‧?‧?	➡ Comaltepec Chinantec‧Latin‧Mexico-->
-		<likelySubtag from="ccr" to="ccr_Latn_SV" origin="sil1"/>		<!--Cacaopera‧?‧?	➡ Cacaopera‧Latin‧El Salvador-->
 		<likelySubtag from="cde" to="cde_Telu_IN" origin="sil1"/>		<!--Chenchu‧?‧?	➡ Chenchu‧Telugu‧India-->
 		<likelySubtag from="cdf" to="cdf_Latn_IN" origin="sil1"/>		<!--Chiru‧?‧?	➡ Chiru‧Latin‧India-->
 		<likelySubtag from="cdh" to="cdh_Deva_IN" origin="sil1"/>		<!--Chambeali‧?‧?	➡ Chambeali‧Devanagari‧India-->
@@ -2799,7 +2817,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ebo" to="ebo_Latn_CG" origin="sil1"/>		<!--Teke-Ebo‧?‧?	➡ Teke-Ebo‧Latin‧Congo - Brazzaville-->
 		<likelySubtag from="ebr" to="ebr_Latn_CI" origin="sil1"/>		<!--Ebrié‧?‧?	➡ Ebrié‧Latin‧Côte d’Ivoire-->
 		<likelySubtag from="ecr" to="ecr_Grek_GR" origin="sil1"/>		<!--Eteocretan‧?‧?	➡ Eteocretan‧Greek‧Greece-->
-		<likelySubtag from="ecy" to="ecy_Cprt_CY" origin="sil1"/>		<!--Eteocypriot‧?‧?	➡ Eteocypriot‧Cypriot‧Cyprus-->
 		<likelySubtag from="efa" to="efa_Latn_NG" origin="sil1"/>		<!--Efai‧?‧?	➡ Efai‧Latin‧Nigeria-->
 		<likelySubtag from="efe" to="efe_Latn_CD" origin="sil1"/>		<!--Efe‧?‧?	➡ Efe‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="ega" to="ega_Latn_CI" origin="sil1"/>		<!--Ega‧?‧?	➡ Ega‧Latin‧Côte d’Ivoire-->
@@ -3099,7 +3116,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="gmu" to="gmu_Latn_PG" origin="sil1"/>		<!--Gumalu‧?‧?	➡ Gumalu‧Latin‧Papua New Guinea-->
 		<likelySubtag from="gmv" to="gmv_Ethi_ET" origin="sil1"/>		<!--Gamo‧?‧?	➡ Gamo‧Ethiopic‧Ethiopia-->
 		<likelySubtag from="gmx" to="gmx_Latn_TZ" origin="sil1"/>		<!--Magoma‧?‧?	➡ Magoma‧Latin‧Tanzania-->
-		<likelySubtag from="gmy" to="gmy_Linb_GR" origin="sil1"/>		<!--Mycenaean Greek‧?‧?	➡ Mycenaean Greek‧Linear B‧Greece-->
 		<likelySubtag from="gmz" to="gmz_Latn_NG" origin="sil1"/>		<!--Mgbolizhia‧?‧?	➡ Mgbolizhia‧Latin‧Nigeria-->
 		<likelySubtag from="gna" to="gna_Latn_BF" origin="sil1"/>		<!--Kaansa‧?‧?	➡ Kaansa‧Latin‧Burkina Faso-->
 		<likelySubtag from="gnb" to="gnb_Latn_IN" origin="sil1"/>		<!--Gangte‧?‧?	➡ Gangte‧Latin‧India-->
@@ -3970,7 +3986,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="kqk" to="kqk_Latn_BJ" origin="sil1"/>		<!--Kotafon Gbe‧?‧?	➡ Kotafon Gbe‧Latin‧Benin-->
 		<likelySubtag from="kql" to="kql_Latn_PG" origin="sil1"/>		<!--Kyenele‧?‧?	➡ Kyenele‧Latin‧Papua New Guinea-->
 		<likelySubtag from="kqm" to="kqm_Latn_CI" origin="sil1"/>		<!--Khisa‧?‧?	➡ Khisa‧Latin‧Côte d’Ivoire-->
-		<likelySubtag from="kqn" to="kqn_Latn_ZM" origin="sil1"/>		<!--Kaonde‧?‧?	➡ Kaonde‧Latin‧Zambia-->
 		<likelySubtag from="kqo" to="kqo_Latn_LR" origin="sil1"/>		<!--Eastern Krahn‧?‧?	➡ Eastern Krahn‧Latin‧Liberia-->
 		<likelySubtag from="kqp" to="kqp_Latn_TD" origin="sil1"/>		<!--Kimré‧?‧?	➡ Kimré‧Latin‧Chad-->
 		<likelySubtag from="kqq" to="kqq_Latn_BR" origin="sil1"/>		<!--Krenak‧?‧?	➡ Krenak‧Latin‧Brazil-->
@@ -4232,7 +4247,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ldp" to="ldp_Latn_NG" origin="sil1"/>		<!--Tso‧?‧?	➡ Tso‧Latin‧Nigeria-->
 		<likelySubtag from="ldq" to="ldq_Latn_NG" origin="sil1"/>		<!--Lufu‧?‧?	➡ Lufu‧Latin‧Nigeria-->
 		<likelySubtag from="lea" to="lea_Latn_CD" origin="sil1"/>		<!--Lega-Shabunda‧?‧?	➡ Lega-Shabunda‧Latin‧Congo - Kinshasa-->
-		<likelySubtag from="leb" to="leb_Latn_ZM" origin="sil1"/>		<!--Lala-Bisa‧?‧?	➡ Lala-Bisa‧Latin‧Zambia-->
 		<likelySubtag from="lec" to="lec_Latn_BO" origin="sil1"/>		<!--Leco‧?‧?	➡ Leco‧Latin‧Bolivia-->
 		<likelySubtag from="led" to="led_Latn_CD" origin="sil1"/>		<!--Lendu‧?‧?	➡ Lendu‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="lee" to="lee_Latn_BF" origin="sil1"/>		<!--Lyélé‧?‧?	➡ Lyélé‧Latin‧Burkina Faso-->
@@ -4243,7 +4257,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="lek" to="lek_Latn_PG" origin="sil1"/>		<!--Leipon‧?‧?	➡ Leipon‧Latin‧Papua New Guinea-->
 		<likelySubtag from="lel" to="lel_Latn_CD" origin="sil1"/>		<!--Lele (Democratic Republic of Congo)‧?‧?	➡ Lele (Democratic Republic of Congo)‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="lem" to="lem_Latn_CM" origin="sil1"/>		<!--Nomaande‧?‧?	➡ Nomaande‧Latin‧Cameroon-->
-		<likelySubtag from="len" to="len_Latn_HN" origin="sil1"/>		<!--Lenca‧?‧?	➡ Lenca‧Latin‧Honduras-->
 		<likelySubtag from="leo" to="leo_Latn_CM" origin="sil1"/>		<!--Leti (Cameroon)‧?‧?	➡ Leti (Cameroon)‧Latin‧Cameroon-->
 		<likelySubtag from="leq" to="leq_Latn_PG" origin="sil1"/>		<!--Lembena‧?‧?	➡ Lembena‧Latin‧Papua New Guinea-->
 		<likelySubtag from="ler" to="ler_Latn_PG" origin="sil1"/>		<!--Lenkau‧?‧?	➡ Lenkau‧Latin‧Papua New Guinea-->
@@ -4422,14 +4435,12 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ltu" to="ltu_Latn_ID" origin="sil1"/>		<!--Latu‧?‧?	➡ Latu‧Latin‧Indonesia-->
 		<likelySubtag from="luc" to="luc_Latn_UG" origin="sil1"/>		<!--Aringa‧?‧?	➡ Aringa‧Latin‧Uganda-->
 		<likelySubtag from="lud" to="lud_Latn_RU" origin="sil1"/>		<!--Ludian‧?‧?	➡ Ludian‧Latin‧Russia-->
-		<likelySubtag from="lue" to="lue_Latn_ZM" origin="sil1"/>		<!--Luvale‧?‧?	➡ Luvale‧Latin‧Zambia-->
 		<likelySubtag from="luf" to="luf_Latn_PG" origin="sil1"/>		<!--Laua‧?‧?	➡ Laua‧Latin‧Papua New Guinea-->
 		<likelySubtag from="lui" to="lui_Latn_US" origin="sil1"/>		<!--Luiseno‧?‧?	➡ Luiseno‧Latin‧United States-->
 		<likelySubtag from="luj" to="luj_Latn_CD" origin="sil1"/>		<!--Luna‧?‧?	➡ Luna‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="luk" to="luk_Tibt_BT" origin="sil1"/>		<!--Lunanakha‧?‧?	➡ Lunanakha‧Tibetan‧Bhutan-->
 		<likelySubtag from="lul" to="lul_Latn_SS" origin="sil1"/>		<!--Olu'bo‧?‧?	➡ Olu'bo‧Latin‧South Sudan-->
 		<likelySubtag from="lum" to="lum_Latn_AO" origin="sil1"/>		<!--Luimbi‧?‧?	➡ Luimbi‧Latin‧Angola-->
-		<likelySubtag from="lun" to="lun_Latn_ZM" origin="sil1"/>		<!--Lunda‧?‧?	➡ Lunda‧Latin‧Zambia-->
 		<likelySubtag from="lup" to="lup_Latn_GA" origin="sil1"/>		<!--Lumbu‧?‧?	➡ Lumbu‧Latin‧Gabon-->
 		<likelySubtag from="luq" to="luq_Latn_CU" origin="sil1"/>		<!--Lucumi‧?‧?	➡ Lucumi‧Latin‧Cuba-->
 		<likelySubtag from="lur" to="lur_Latn_ID" origin="sil1"/>		<!--Laura‧?‧?	➡ Laura‧Latin‧Indonesia-->
@@ -5322,7 +5333,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="nsb" to="nsb_Latn_ZA" origin="sil1"/>		<!--Lower Nossob‧?‧?	➡ Lower Nossob‧Latin‧South Africa-->
 		<likelySubtag from="nsc" to="nsc_Latn_NG" origin="sil1"/>		<!--Nshi‧?‧?	➡ Nshi‧Latin‧Nigeria-->
 		<likelySubtag from="nsd" to="nsd_Yiii_CN" origin="sil1"/>		<!--Southern Nisu‧?‧?	➡ Southern Nisu‧Yi‧China-->
-		<likelySubtag from="nse" to="nse_Latn_ZM" origin="sil1"/>		<!--Nsenga‧?‧?	➡ Nsenga‧Latin‧Zambia-->
 		<likelySubtag from="nsf" to="nsf_Yiii_CN" origin="sil1"/>		<!--Northwestern Nisu‧?‧?	➡ Northwestern Nisu‧Yi‧China-->
 		<likelySubtag from="nsg" to="nsg_Latn_TZ" origin="sil1"/>		<!--Ngasa‧?‧?	➡ Ngasa‧Latin‧Tanzania-->
 		<likelySubtag from="nsh" to="nsh_Latn_CM" origin="sil1"/>		<!--Ngoshie‧?‧?	➡ Ngoshie‧Latin‧Cameroon-->
@@ -5461,7 +5471,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ojb" to="ojb_Latn_CA" origin="sil1"/>		<!--Northwestern Ojibwa‧?‧?	➡ Northwestern Ojibwa‧Latin‧Canada-->
 		<likelySubtag from="ojc" to="ojc_Latn_CA" origin="sil1"/>		<!--Central Ojibwa‧?‧?	➡ Central Ojibwa‧Latin‧Canada-->
 		<likelySubtag from="ojv" to="ojv_Latn_SB" origin="sil1"/>		<!--Ontong Java‧?‧?	➡ Ontong Java‧Latin‧Solomon Islands-->
-		<likelySubtag from="ojw" to="ojw_Latn_CA" origin="sil1"/>		<!--Western Ojibwa‧?‧?	➡ Western Ojibwa‧Latin‧Canada-->
 		<likelySubtag from="okb" to="okb_Latn_NG" origin="sil1"/>		<!--Okobo‧?‧?	➡ Okobo‧Latin‧Nigeria-->
 		<likelySubtag from="okc" to="okc_Latn_CD" origin="sil1"/>		<!--Kobo‧?‧?	➡ Kobo‧Latin‧Congo - Kinshasa-->
 		<likelySubtag from="okd" to="okd_Latn_NG" origin="sil1"/>		<!--Okodia‧?‧?	➡ Okodia‧Latin‧Nigeria-->
@@ -5766,7 +5775,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="ppe" to="ppe_Latn_PG" origin="sil1"/>		<!--Papi‧?‧?	➡ Papi‧Latin‧Papua New Guinea-->
 		<likelySubtag from="ppi" to="ppi_Latn_MX" origin="sil1"/>		<!--Paipai‧?‧?	➡ Paipai‧Latin‧Mexico-->
 		<likelySubtag from="ppk" to="ppk_Latn_ID" origin="sil1"/>		<!--Uma‧?‧?	➡ Uma‧Latin‧Indonesia-->
-		<likelySubtag from="ppl" to="ppl_Latn_SV" origin="sil1"/>		<!--Pipil‧?‧?	➡ Pipil‧Latin‧El Salvador-->
 		<likelySubtag from="ppm" to="ppm_Latn_ID" origin="sil1"/>		<!--Papuma‧?‧?	➡ Papuma‧Latin‧Indonesia-->
 		<likelySubtag from="ppn" to="ppn_Latn_PG" origin="sil1"/>		<!--Papapana‧?‧?	➡ Papapana‧Latin‧Papua New Guinea-->
 		<likelySubtag from="ppo" to="ppo_Latn_PG" origin="sil1"/>		<!--Folopa‧?‧?	➡ Folopa‧Latin‧Papua New Guinea-->
@@ -6653,7 +6661,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="tod" to="tod_Latn_GN" origin="sil1"/>		<!--Toma‧?‧?	➡ Toma‧Latin‧Guinea-->
 		<likelySubtag from="tof" to="tof_Latn_PG" origin="sil1"/>		<!--Gizrra‧?‧?	➡ Gizrra‧Latin‧Papua New Guinea-->
 		<likelySubtag from="toh" to="toh_Latn_MZ" origin="sil1"/>		<!--Gitonga‧?‧?	➡ Gitonga‧Latin‧Mozambique-->
-		<likelySubtag from="toi" to="toi_Latn_ZM" origin="sil1"/>		<!--Tonga (Zambia)‧?‧?	➡ Tonga (Zambia)‧Latin‧Zambia-->
 		<likelySubtag from="toj" to="toj_Latn_MX" origin="sil1"/>		<!--Tojolabal‧?‧?	➡ Tojolabal‧Latin‧Mexico-->
 		<likelySubtag from="tol" to="tol_Latn_US" origin="sil1"/>		<!--Tolowa‧?‧?	➡ Tolowa‧Latin‧United States-->
 		<likelySubtag from="tom" to="tom_Latn_ID" origin="sil1"/>		<!--Tombulu‧?‧?	➡ Tombulu‧Latin‧Indonesia-->

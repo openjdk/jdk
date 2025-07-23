@@ -27,10 +27,10 @@
     --nav-font-size: 13.4px;
     /* Line height for continuous text blocks */
     --block-line-height: 1.5;
-    --code-line-height: 1.55;
+    --code-line-height: 1.6;
     /* Text colors for body and block elements */
-    --body-text-color: #282828;
-    --block-text-color: #282828;
+    --body-text-color: #181818;
+    --block-text-color: #181818;
     /* Background colors for various elements */
     --body-background-color: #ffffff;
     --section-background-color: var(--body-background-color);
@@ -63,10 +63,10 @@
     --toc-highlight-color: var(--subnav-background-color);
     --toc-hover-color: #e9ecf0;
     /* Snippet and pre colors */
-    --snippet-background-color: #f0f0f2;
+    --snippet-background-color: #f2f2f4;
     --snippet-text-color: var(--block-text-color);
     --snippet-highlight-color: #f7c590;
-    --pre-background-color: #f3f3f5;
+    --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
@@ -79,9 +79,10 @@
     --search-input-placeholder-color: #909090;
     /* Highlight color for active search tag target */
     --search-tag-highlight-color: #ffff66;
-    /* Adjustments for icon and active background colors of copy-to-clipboard buttons */
-    --copy-icon-brightness: 100%;
-    --copy-button-background-color-active: rgba(168, 168, 176, 0.3);
+    /* Copy button colors and filters */
+    --button-border-color: #b0b8c8;
+    --button-active-filter: brightness(96%);
+    --button-focus-filter: brightness(104%);
     /* Colors for invalid tag notifications */
     --invalid-tag-background-color: #ffe6e6;
     --invalid-tag-text-color: #000000;
@@ -132,7 +133,7 @@ pre {
     line-height: var(--code-line-height);
     background-color: var(--pre-background-color);
     color: var(--pre-text-color);
-    padding: 8px;
+    padding: 10px;
     overflow-x:auto;
 }
 h1 {
@@ -166,9 +167,6 @@ tt {
 code {
     font-family:var(--code-font-family);
     font-size:var(--code-font-size);
-    background-color: var(--code-background-color);
-    padding: 1px 2px;
-    border-radius: 3px;
 }
 button {
     font-family: var(--body-font-family);
@@ -536,6 +534,9 @@ nav.toc a {
 nav.toc ol.toc-list ol.toc-list a {
     padding-left: 24px;
 }
+nav.toc ol.toc-list ol.toc-list ol.toc-list a {
+    padding-left: 40px;
+}
 nav.toc a:hover {
     background-color: var(--toc-hover-color);
 }
@@ -560,9 +561,6 @@ li.circle {
 ul.horizontal li {
     display:inline;
     font-size:0.9em;
-}
-div.inheritance {
-    font-size: 0.99em;
 }
 div.inheritance div.inheritance {
     margin-left:2em;
@@ -608,6 +606,7 @@ ul.tag-list li:not(:last-child):after,
 ul.tag-list-long li:not(:last-child):after
 {
     content: ", ";
+    white-space: pre-wrap;
 }
 ul.preview-feature-list {
     list-style: none;
@@ -657,14 +656,14 @@ ul.preview-feature-list input {
 .class-use-page .caption span,
 .package-use-page .caption span,
 .constants-summary-page .caption span,
-.inherited-list.expanded h3 {
+.inherited-list h3 {
     background-color: var(--subnav-background-color);
     color: var(--block-text-color);
 }
 .caption a:link,
 .caption a:visited,
-.inherited-list.expanded h3 a:link,
-.inherited-list.expanded h3 a:visited {
+.inherited-list h3 a:link,
+.inherited-list h3 a:visited {
     color:var(--subnav-link-color);
 }
 div.table-tabs {
@@ -845,12 +844,6 @@ div.block {
 [style*=font-size] code {
     font-size: inherit;
 }
-:is(pre, table, sup, sub) code,
-section[id$=-description] > dl.notes code,
-div.summary-table code {
-    background-color: inherit;
-    padding: initial;
-}
 .doc-file-page main {
     font-family: var(--block-font-family);
     font-size: var(--block-font-size);
@@ -911,8 +904,6 @@ sup.restricted-mark > a:link {
 }
 .deprecation-block code, .preview-block code, .restricted-block code {
     font-size: 0.97em;
-    background-color: inherit;
-    padding: 0;
 }
 div.block div.deprecation-comment {
     font-style:normal;
@@ -1053,7 +1044,7 @@ input[type="text"] {
 }
 input#page-search-input {
     width: calc(180px + 10vw);
-    margin: 0;
+    margin: 10px 0;
 }
 input#search-input {
     width: 270px;
@@ -1101,7 +1092,7 @@ input:focus::placeholder {
     color: transparent;
 }
 select#search-modules {
-    margin: 0 10px 0 2px;
+    margin: 0 10px 10px 2px;
     font-size: var(--nav-font-size);
     padding: 3px 5px;
     border-radius: 4px;
@@ -1329,49 +1320,48 @@ a.anchor-link > img {
  * Styles for copy-to-clipboard buttons
  */
 button.copy {
-    opacity: 60%;
-    border: none;
+    font-size: var(--nav-font-size);
+    line-height: 1.2;
+    padding:0.3em;
+    background-color: transparent;
+    border: 1px solid transparent;
     border-radius: 3px;
     position: relative;
-    background:none;
-    transition: opacity 0.3s;
+    opacity: 80%;
+    transition: all 0.1s ease;
     cursor: pointer;
-}
-:hover > button.copy {
-    opacity: 70%;
 }
 button.copy:hover,
 button.copy:active,
-button.copy:focus-visible,
+button.copy:focus,
 button.copy.visible {
     opacity: 100%;
+    background-color: inherit;
+    border-color: var(--button-border-color);
+    filter: var(--button-focus-filter);
+}
+button.copy:active {
+    filter: var(--button-active-filter);
 }
 button.copy img {
     position: relative;
-    background: none;
-    filter: brightness(var(--copy-icon-brightness));
-}
-button.copy:active {
-    background-color: var(--copy-button-background-color-active);
 }
 button.copy span {
     color: var(--body-text-color);
     position: relative;
+    padding: 0.2em;
     top: -0.1em;
-    transition: all 0.1s;
-    font-size: 0.76rem;
-    line-height: 1.2;
+    transition: opacity 0.1s ease;
     opacity: 0;
 }
 button.copy:hover span,
-button.copy:focus-visible span,
+button.copy:focus span,
 button.copy.visible span {
     opacity: 100%;
 }
 /* search page copy button */
 button#page-search-copy {
     margin-left: 0.4em;
-    padding:0.3em;
     top:0.13em;
 }
 button#page-search-copy img {
@@ -1381,35 +1371,22 @@ button#page-search-copy img {
     top: 0.15em;
 }
 button#page-search-copy span {
-    color: var(--body-text-color);
-    line-height: 1.2;
-    padding: 0.2em;
     top: -0.18em;
-}
-div.page-search-info:hover button#page-search-copy span {
-    opacity: 100%;
 }
 /* snippet copy button */
 button.snippet-copy {
     position: absolute;
-    top: 6px;
-    right: 6px;
-    height: 1.7em;
-    padding: 2px;
+    top: 4px;
+    right: 1px;
+    height: 32px;
 }
 button.snippet-copy img {
     width: 18px;
     height: 18px;
-    padding: 0.05em 0;
+    padding: 2px 0;
 }
 button.snippet-copy span {
-    line-height: 1.2;
-    padding: 0.2em;
-    position: relative;
-    top: -0.5em;
-}
-div.snippet-container button.snippet-copy:hover span {
-    opacity: 100%;
+    top: -7px;
 }
 /*
  * Styles for user-provided tables.
@@ -1663,19 +1640,12 @@ table.striped > tbody > tr > th {
 pre.snippet {
     background-color: var(--snippet-background-color);
     color: var(--snippet-text-color);
-    padding: 10px;
+    padding: 12px;
 }
 div.snippet-container {
     position: relative;
-}
-@media screen and (max-width: 800px) {
-    pre.snippet {
-        padding-top: 26px;
-    }
-    button.snippet-copy {
-        top: 4px;
-        right: 4px;
-    }
+    padding-right: 30px;
+    background-color: var(--snippet-background-color);
 }
 pre.snippet .italic {
     font-style: italic;

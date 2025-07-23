@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -466,24 +466,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<metazone type="Africa_Eastern">
-				<long>
-					<standard>Eastern Africa Time</standard>
-				</long>
-			</metazone>
-			<metazone type="Arabian">
-				<long>
-					<generic>Arabia Time</generic>
-					<standard>Arabia Standard Time</standard>
-					<daylight>Arabia Daylight Time</daylight>
-				</long>
-			</metazone>
 			<metazone type="Australia_Central">
-				<long>
-					<generic>Australian Central Time</generic>
-					<standard>Australian Central Standard Time</standard>
-					<daylight>Australian Central Daylight Time</daylight>
-				</long>
 				<short>
 					<generic>ACT</generic>
 					<standard>ACST</standard>
@@ -498,11 +481,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</short>
 			</metazone>
 			<metazone type="Australia_Eastern">
-				<long>
-					<generic>Australian Eastern Time</generic>
-					<standard>Australian Eastern Standard Time</standard>
-					<daylight>Australian Eastern Daylight Time</daylight>
-				</long>
 				<short>
 					<generic>AET</generic>
 					<standard>AEST</standard>
@@ -510,11 +488,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</short>
 			</metazone>
 			<metazone type="Australia_Western">
-				<long>
-					<generic>Australian Western Time</generic>
-					<standard>Australian Western Standard Time</standard>
-					<daylight>Australian Western Daylight Time</daylight>
-				</long>
 				<short>
 					<generic>AWT</generic>
 					<standard>AWST</standard>
@@ -528,18 +501,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>China Summer Time</daylight>
 				</long>
 			</metazone>
-			<metazone type="Cook">
-				<long>
-					<generic>Cook Island Time</generic>
-					<standard>Cook Island Standard Time</standard>
-					<daylight>Cook Island Summer Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Gulf">
-				<short>
-					<standard>Gulf ST</standard>
-				</short>
-			</metazone>
 			<metazone type="Japan">
 				<long>
 					<generic>Japan Time</generic>
@@ -549,7 +510,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Korea">
 				<long>
-					<generic>Korea Time</generic>
+					<generic>Korean Time</generic>
 					<standard>Korean Standard Time</standard>
 					<daylight>Korean Summer Time</daylight>
 				</long>
@@ -561,13 +522,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>LHDT</daylight>
 				</short>
 			</metazone>
-			<metazone type="Moscow">
-				<long>
-					<generic>Moscow Time</generic>
-					<standard>Moscow Standard Time</standard>
-					<daylight>Moscow Daylight Time</daylight>
-				</long>
-			</metazone>
 			<metazone type="New_Zealand">
 				<short>
 					<generic>NZT</generic>
@@ -577,15 +531,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samoa Time</generic>
-					<standard>Samoa Standard Time</standard>
+					<generic>American Samoa Time</generic>
+					<standard>American Samoa Standard Time</standard>
 					<daylight>Samoa Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>Taipei Time</generic>
-					<standard>Taipei Standard Time</standard>
+					<generic>Taiwan Time</generic>
+					<standard>Taiwan Standard Time</standard>
 					<daylight>Taipei Summer Time</daylight>
 				</long>
 			</metazone>

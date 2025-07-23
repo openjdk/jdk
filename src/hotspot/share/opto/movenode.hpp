@@ -48,6 +48,7 @@ class CMoveNode : public TypeNode {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   static CMoveNode* make(Node* bol, Node* left, Node* right, const Type* t);
+  static bool supported(const Type* t);
   // Helper function to spot cmove graph shapes
   static Node* is_cmove_id(PhaseTransform* phase, Node* cmp, Node* t, Node* f, BoolNode* b);
   static Node* Ideal_minmax(PhaseGVN* phase, CMoveNode* cmov);

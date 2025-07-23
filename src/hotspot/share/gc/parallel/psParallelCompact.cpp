@@ -210,8 +210,8 @@ void SplitInfo::verify_clear()
 #endif  // #ifdef ASSERT
 
 
-void PSParallelCompact::print_on_error(outputStream* st) {
-  _mark_bitmap.print_on_error(st);
+void PSParallelCompact::print_on(outputStream* st) {
+  _mark_bitmap.print_on(st);
 }
 
 ParallelCompactData::ParallelCompactData() :
@@ -246,7 +246,8 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
 
   ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
                                              rs_align,
-                                             page_sz);
+                                             page_sz,
+                                             mtGC);
 
   if (!rs.is_reserved()) {
     // Failed to reserve memory.
@@ -256,7 +257,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
 
@@ -663,7 +664,7 @@ void PSParallelCompact::pre_compact()
 
   CodeCache::on_gc_marking_cycle_start();
 
-  heap->print_heap_before_gc();
+  heap->print_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
   // Fill in TLABs
@@ -730,16 +731,6 @@ void PSParallelCompact::post_compact()
   } else {
     ct->dirty_MemRegion(old_mr);
   }
-
-  {
-    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-    GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", gc_timer());
-    ClassLoaderDataGraph::purge(true /* at_safepoint */);
-    DEBUG_ONLY(MetaspaceUtils::verify();)
-  }
-
-  // Need to clear claim bits for the next mark.
-  ClassLoaderDataGraph::clear_claimed_marks();
 
   heap->prune_scavengable_nmethods();
 
@@ -1043,10 +1034,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
 
     ref_processor()->start_discovery(clear_all_soft_refs);
 
-    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                              false /* unregister_nmethods_during_purge */,
-                              false /* lock_nmethod_free_separately */);
-
     marking_phase(&_gc_tracer);
 
     summary_phase();
@@ -1166,7 +1153,7 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
     Universe::verify("After GC");
   }
 
-  heap->print_heap_after_gc();
+  heap->print_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
@@ -1309,9 +1296,8 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     ReferenceProcessorStats stats;
     ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->max_num_queues());
 
-    ref_processor()->set_active_mt_degree(active_gc_threads);
     ParallelCompactRefProcProxyTask task(ref_processor()->max_num_queues());
-    stats = ref_processor()->process_discovered_references(task, pt);
+    stats = ref_processor()->process_discovered_references(task, &ParallelScavengeHeap::heap()->workers(), pt);
 
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();
@@ -1337,7 +1323,9 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
 
-    ClassUnloadingContext* ctx = ClassUnloadingContext::context();
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
+                              false /* lock_nmethod_free_separately */);
 
     bool unloading_occurred;
     {
@@ -1353,7 +1341,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     {
       GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
       // Release unloaded nmethod's memory.
-      ctx->purge_nmethods();
+      ctx.purge_nmethods();
     }
     {
       GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", &_gc_timer);
@@ -1361,7 +1349,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_nmethods();
+      ctx.free_nmethods();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
@@ -1369,6 +1357,15 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     // Clean JVMCI metadata handles.
     JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
+    {
+      // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+      GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", gc_timer());
+      ClassLoaderDataGraph::purge(true /* at_safepoint */);
+      DEBUG_ONLY(MetaspaceUtils::verify();)
+    }
+
+    // Need to clear claim bits for the next mark.
+    ClassLoaderDataGraph::clear_claimed_marks();
   }
 
   {
@@ -1629,7 +1626,7 @@ void PSParallelCompact::forward_to_new_addr() {
   } task(nworkers);
 
   ParallelScavengeHeap::heap()->workers().run_task(&task);
-  debug_only(verify_forward();)
+  DEBUG_ONLY(verify_forward();)
 }
 
 #ifdef ASSERT

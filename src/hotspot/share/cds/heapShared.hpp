@@ -164,8 +164,8 @@ private:
 
   static void count_allocation(size_t size);
   static void print_stats();
-  static void debug_trace();
 public:
+  static void debug_trace();
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
@@ -357,7 +357,7 @@ private:
     int level()    const { return _level; }
   };
 
-  class ReferentPusher;
+  class OopFieldPusher;
   using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
 
   static PendingOop _object_being_archived;

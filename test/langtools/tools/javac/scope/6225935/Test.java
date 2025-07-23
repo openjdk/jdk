@@ -25,7 +25,7 @@
  * @test
  * @bug     6381787
  * @summary Failing Japanese Calendar regression tests
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile Test.java Bar.java Baz.java
  */
 

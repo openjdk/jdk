@@ -25,10 +25,10 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
-#include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
-#include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/matcher.hpp"
 #include "opto/mempointer.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
@@ -648,6 +648,7 @@ public:
     const DependencyNode* _dependency_node;
 
     Node* _current;
+    bool _is_current_memory_edge;
 
     // Iterate in node->in(i)
     int _next_pred;
@@ -664,6 +665,10 @@ public:
     Node* current() const {
       assert(!done(), "not done yet");
       return _current;
+    }
+    bool is_current_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_memory_edge;
     }
   };
 };

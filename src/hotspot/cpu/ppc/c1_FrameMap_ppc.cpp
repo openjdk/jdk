@@ -189,7 +189,7 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 
 FloatRegister FrameMap::nr2floatreg (int rnr) {
   assert(_init_done, "tables not initialized");
-  debug_only(fpu_range_check(rnr);)
+  DEBUG_ONLY(fpu_range_check(rnr);)
   return _fpu_regs[rnr];
 }
 

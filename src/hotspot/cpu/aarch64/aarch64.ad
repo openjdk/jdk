@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1765,10 +1765,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // n.b. frame size includes space for return pc and rfp
   const int framesize = C->output()->frame_size_in_bytes();
 
-  // insert a nop at the start of the prolog so we can patch in a
-  // branch if we need to invalidate the method later
-  __ nop();
-
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
 
@@ -1888,7 +1884,7 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -2296,6 +2292,26 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_FmaHF:
+      // UseFMA flag also needs to be checked along with FEAT_FP16
+      if (!UseFMA || !is_feat_fp16_supported()) {
+        return false;
+      }
+      break;
+    case Op_AddHF:
+    case Op_SubHF:
+    case Op_MulHF:
+    case Op_DivHF:
+    case Op_MinHF:
+    case Op_MaxHF:
+    case Op_SqrtHF:
+      // Half-precision floating point scalar operations require FEAT_FP16
+      // to be available. FEAT_FP16 is enabled if both "fphp" and "asimdhp"
+      // features are supported.
+      if (!is_feat_fp16_supported()) {
+        return false;
+      }
+      break;
   }
 
   return true; // Per default match rules are supported.
@@ -2306,11 +2322,11 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 }
 
 bool Matcher::supports_vector_calling_convention(void) {
-  return EnableVectorSupport && UseVectorStubs;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   int lo = V0_num;
   int hi = V0_H_num;
   if (ideal_reg == Op_VecX || ideal_reg == Op_VecA) {
@@ -2346,17 +2362,34 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  int max_size = max_vector_size(bt);
-  // Limit the min vector size to 8 bytes.
-  int size = 8 / type2aelembytes(bt);
-  if (bt == T_BYTE) {
-    // To support vector api shuffle/rearrange.
-    size = 4;
-  } else if (bt == T_BOOLEAN) {
-    // To support vector api load/store mask.
-    size = 2;
+  // Usually, the shortest vector length supported by AArch64 ISA and
+  // Vector API species is 64 bits. However, we allow 32-bit or 16-bit
+  // vectors in a few special cases.
+  int size;
+  switch(bt) {
+    case T_BOOLEAN:
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
+      size = 2;
+      break;
+    case T_BYTE:
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
+      size = 4;
+      break;
+    case T_SHORT:
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
+      size = 2;
+      break;
+    default:
+      // Limit the min vector length to 64-bit.
+      size = 8 / type2aelembytes(bt);
+      // The number of elements in a vector should be at least 2.
+      size = MAX2(size, 2);
   }
-  if (size < 2) size = 2;
+
+  int max_size = max_vector_size(bt);
   return MIN2(size, max_size);
 }
 
@@ -3434,10 +3467,6 @@ encode %{
     __ mov(dst_reg, (uint64_t)1);
   %}
 
-  enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
-    __ load_byte_map_base($dst$$Register);
-  %}
-
   enc_class aarch64_enc_mov_n(iRegN dst, immN src) %{
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
@@ -3900,6 +3929,10 @@ ins_attrib ins_alignment(4);    // Required alignment attribute (must
                                 // start) requires.  If > 1, a
                                 // compute_padding() function must be
                                 // provided for the instruction
+
+// Whether this node is expanded during code emission into a sequence of
+// instructions and the first instruction can perform an implicit null check.
+ins_attrib ins_is_late_expanded_null_check_candidate(false);
 
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct parsing
@@ -4534,20 +4567,6 @@ operand immP_1()
   interface(CONST_INTER);
 %}
 
-// Card Table Byte Map Base
-operand immByteMapBase()
-%{
-  // Get base of card map
-  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
-            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
-            (CardTable::CardValue*)n->get_ptr() == ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Float and Double operands
 // Double Immediate
 operand immD()
@@ -4594,6 +4613,15 @@ operand immF0()
   predicate(jint_cast(n->getf()) == 0);
   match(ConF);
 
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Half Float (FP16) Immediate
+operand immH()
+%{
+  match(ConH);
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -6825,20 +6853,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   ins_pipe(ialu_imm);
 %}
 
-// Load Byte Map Base Constant
-
-instruct loadByteMapBase(iRegPNoSp dst, immByteMapBase con)
-%{
-  match(Set dst con);
-
-  ins_cost(INSN_COST);
-  format %{ "adr  $dst, $con\t# Byte Map Base" %}
-
-  ins_encode(aarch64_enc_mov_byte_map_base(dst, con));
-
-  ins_pipe(ialu_imm);
-%}
-
 // Load Narrow Pointer Constant
 
 instruct loadConN(iRegNNoSp dst, immN con)
@@ -6940,6 +6954,21 @@ instruct loadConD(vRegD dst, immD con) %{
   %}
 
   ins_pipe(fp_load_constant_d);
+%}
+
+// Load Half Float Constant
+// The "ldr" instruction loads a 32-bit word from the constant pool into a
+// 32-bit register but only the bottom half will be populated and the top
+// 16 bits are zero.
+instruct loadConH(vRegF dst, immH con) %{
+  match(Set dst con);
+  format %{
+    "ldrs $dst, [$constantaddress]\t# load from constant table: half float=$con\n\t"
+  %}
+  ins_encode %{
+    __ ldrs(as_FloatRegister($dst$$reg), $constantaddress($con));
+  %}
+  ins_pipe(fp_load_constant_s);
 %}
 
 // Store Instructions
@@ -7717,14 +7746,12 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
 
-  format %{ "movw   $src, $src\n\t"
-            "mov    $tmp, $src\t# vector (1D)\n\t"
+  format %{ "fmovs  $tmp, $src\t# vector (1S)\n\t"
             "cnt    $tmp, $tmp\t# vector (8B)\n\t"
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
-    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
+    __ fmovs($tmp$$FloatRegister, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
@@ -8144,6 +8171,7 @@ instruct castPP(iRegPNoSp dst)
 
 instruct castII(iRegI dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastII dst));
 
   size(0);
@@ -8153,12 +8181,49 @@ instruct castII(iRegI dst)
   ins_pipe(pipe_class_empty);
 %}
 
+instruct castII_checked(iRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastII dst));
+  effect(KILL cr);
+
+  format %{ "# castII_checked of $dst" %}
+  ins_encode %{
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register, rscratch1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct castLL(iRegL dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastLL dst));
 
   size(0);
   format %{ "# castLL of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castLL_checked(iRegL dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastLL dst));
+  effect(KILL cr);
+
+  format %{ "# castLL_checked of $dst" %}
+  ins_encode %{
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, rscratch1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct castHH(vRegF dst)
+%{
+  match(Set dst (CastHH dst));
+  size(0);
+  format %{ "# castHH of $dst" %}
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(pipe_class_empty);
@@ -13606,6 +13671,17 @@ instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
 // ============================================================================
 // Floating Point Arithmetic Instructions
 
+instruct addHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (AddHF src1 src2));
+  format %{ "faddh $dst, $src1, $src2" %}
+  ins_encode %{
+    __ faddh($dst$$FloatRegister,
+             $src1$$FloatRegister,
+             $src2$$FloatRegister);
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
 instruct addF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
   match(Set dst (AddF src1 src2));
 
@@ -13634,6 +13710,17 @@ instruct addD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   %}
 
   ins_pipe(fp_dop_reg_reg_d);
+%}
+
+instruct subHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (SubHF src1 src2));
+  format %{ "fsubh $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fsubh($dst$$FloatRegister,
+             $src1$$FloatRegister,
+             $src2$$FloatRegister);
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
 %}
 
 instruct subF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
@@ -13666,6 +13753,17 @@ instruct subD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   ins_pipe(fp_dop_reg_reg_d);
 %}
 
+instruct mulHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MulHF src1 src2));
+  format %{ "fmulh $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmulh($dst$$FloatRegister,
+             $src1$$FloatRegister,
+             $src2$$FloatRegister);
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
 instruct mulF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
   match(Set dst (MulF src1 src2));
 
@@ -13694,6 +13792,20 @@ instruct mulD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   %}
 
   ins_pipe(fp_dop_reg_reg_d);
+%}
+
+// src1 * src2 + src3 (half-precision float)
+instruct maddHF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
+  match(Set dst (FmaHF src3 (Binary src1 src2)));
+  format %{ "fmaddh $dst, $src1, $src2, $src3" %}
+  ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
+    __ fmaddh($dst$$FloatRegister,
+              $src1$$FloatRegister,
+              $src2$$FloatRegister,
+              $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // src1 * src2 + src3
@@ -13837,6 +13949,29 @@ instruct mnsubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3, immD0 zer
   ins_pipe(pipe_class_default);
 %}
 
+// Math.max(HH)H (half-precision float)
+instruct maxHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MaxHF src1 src2));
+  format %{ "fmaxh $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmaxh($dst$$FloatRegister,
+             $src1$$FloatRegister,
+             $src2$$FloatRegister);
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+// Math.min(HH)H (half-precision float)
+instruct minHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MinHF src1 src2));
+  format %{ "fminh $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fminh($dst$$FloatRegister,
+             $src1$$FloatRegister,
+             $src2$$FloatRegister);
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
 
 // Math.max(FF)F
 instruct maxF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
@@ -13894,6 +14029,16 @@ instruct minD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   ins_pipe(fp_dop_reg_reg_d);
 %}
 
+instruct divHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (DivHF src1  src2));
+  format %{ "fdivh $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fdivh($dst$$FloatRegister,
+             $src1$$FloatRegister,
+             $src2$$FloatRegister);
+  %}
+  ins_pipe(fp_div_s);
+%}
 
 instruct divF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
   match(Set dst (DivF src1  src2));
@@ -14065,6 +14210,16 @@ instruct sqrtF_reg(vRegF dst, vRegF src) %{
   %}
 
   ins_pipe(fp_div_d);
+%}
+
+instruct sqrtHF_reg(vRegF dst, vRegF src) %{
+  match(Set dst (SqrtHF src));
+  format %{ "fsqrth $dst, $src" %}
+  ins_encode %{
+    __ fsqrth($dst$$FloatRegister,
+              $src$$FloatRegister);
+  %}
+  ins_pipe(fp_div_s);
 %}
 
 // Math.rint, floor, ceil
@@ -16297,7 +16452,8 @@ instruct ShouldNotReachHere() %{
 
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
 
@@ -17111,6 +17267,64 @@ instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
     __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
     __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
     __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+//----------------------------- Reinterpret ----------------------------------
+// Reinterpret a half-precision float value in a floating point register to a general purpose register
+instruct reinterpretHF2S(iRegINoSp dst, vRegF src) %{
+  match(Set dst (ReinterpretHF2S src));
+  format %{ "reinterpretHF2S $dst, $src" %}
+  ins_encode %{
+    __ smov($dst$$Register, $src$$FloatRegister, __ H, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Reinterpret a half-precision float value in a general purpose register to a floating point register
+instruct reinterpretS2HF(vRegF dst, iRegINoSp src) %{
+  match(Set dst (ReinterpretS2HF src));
+  format %{ "reinterpretS2HF $dst, $src" %}
+  ins_encode %{
+    __ mov($dst$$FloatRegister, __ H, 0, $src$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Without this optimization, ReinterpretS2HF (ConvF2HF src) would result in the following
+// instructions (the first two are for ConvF2HF and the last instruction is for ReinterpretS2HF) -
+// fcvt $tmp1_fpr, $src_fpr    // Convert float to half-precision float
+// mov  $tmp2_gpr, $tmp1_fpr   // Move half-precision float in FPR to a GPR
+// mov  $dst_fpr,  $tmp2_gpr   // Move the result from a GPR to an FPR
+// The move from FPR to GPR in ConvF2HF and the move from GPR to FPR in ReinterpretS2HF
+// can be omitted in this pattern, resulting in -
+// fcvt $dst, $src  // Convert float to half-precision float
+instruct convF2HFAndS2HF(vRegF dst, vRegF src)
+%{
+  match(Set dst (ReinterpretS2HF (ConvF2HF src)));
+  format %{ "convF2HFAndS2HF $dst, $src" %}
+  ins_encode %{
+    __ fcvtsh($dst$$FloatRegister, $src$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Without this optimization, ConvHF2F (ReinterpretHF2S src) would result in the following
+// instructions (the first one is for ReinterpretHF2S and the last two are for ConvHF2F) -
+// mov  $tmp1_gpr, $src_fpr  // Move the half-precision float from an FPR to a GPR
+// mov  $tmp2_fpr, $tmp1_gpr // Move the same value from GPR to an FPR
+// fcvt $dst_fpr,  $tmp2_fpr // Convert the half-precision float to 32-bit float
+// The move from FPR to GPR in ReinterpretHF2S and the move from GPR to FPR in ConvHF2F
+// can be omitted as the input (src) is already in an FPR required for the fcvths instruction
+// resulting in -
+// fcvt $dst, $src  // Convert half-precision float to a 32-bit float
+instruct convHF2SAndHF2F(vRegF dst, vRegF src)
+%{
+  match(Set dst (ConvHF2F (ReinterpretHF2S src)));
+  format %{ "convHF2SAndHF2F $dst, $src" %}
+  ins_encode %{
+    __ fcvths($dst$$FloatRegister, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}

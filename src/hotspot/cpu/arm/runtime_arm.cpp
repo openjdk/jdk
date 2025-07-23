@@ -42,18 +42,21 @@
 //------------------------------generate_uncommon_trap_blob--------------------
 // Ought to generate an ideal graph & compile, but here's some ASM
 // instead.
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // allocate space for the code
   ResourceMark rm;
 
   // setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
 #ifdef _LP64
   CodeBuffer buffer(name, 2700, 512);
 #else
   // Measured 8/7/03 at 660 in 32bit debug build
   CodeBuffer buffer(name, 2000, 512);
 #endif
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   // bypassed when code generation useless
   MacroAssembler* masm               = new MacroAssembler(&buffer);
   const Register Rublock = R6;
@@ -174,7 +177,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   __ pop(RegisterSet(FP) | RegisterSet(PC));
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, 2 /* LR+FP */);
+  return UncommonTrapBlob::create(&buffer, nullptr, 2 /* LR+FP */);
 }
 
 //------------------------------ generate_exception_blob ---------------------------
@@ -201,14 +204,17 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //
 // Note: the exception pc MUST be at a call (precise debug information)
 //
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // allocate space for code
   ResourceMark rm;
 
   // setup code generation tools
   // Measured 8/7/03 at 256 in 32bit debug build
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 600, 512);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm     = new MacroAssembler(&buffer);
 
   int framesize_in_words = 2; // FP + LR
@@ -283,7 +289,7 @@ void OptoRuntime::generate_exception_blob() {
   // make sure all code is generated
   masm->flush();
 
-  _exception_blob = ExceptionBlob::create(&buffer, oop_maps, framesize_in_words);
+  return ExceptionBlob::create(&buffer, oop_maps, framesize_in_words);
 }
 
 #endif // COMPILER2

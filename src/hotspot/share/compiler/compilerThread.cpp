@@ -23,8 +23,8 @@
  */
 
 #include "compiler/compileBroker.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "runtime/javaThread.inline.hpp"
 
 // Create a CompilerThread

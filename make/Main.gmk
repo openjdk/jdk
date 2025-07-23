@@ -42,6 +42,12 @@ include MakeFileStart.gmk
 include $(TOPDIR)/make/MainSupport.gmk
 
 include FindTests.gmk
+
+ifeq ($(UPDATE_MODULE_DEPS), true)
+  # Update module-deps.gmk if requested. This is read in Modules.gmk.
+  GENERATE_MODULE_DEPS_FILE := true
+endif
+
 include Modules.gmk
 
 # Are we requested to ignore dependencies?
@@ -411,12 +417,14 @@ $(eval $(call SetupTarget, create-source-revision-tracker, \
 ))
 
 BOOTCYCLE_TARGET := product-images
+BOOTCYCLE_SPEC := $(dir $(SPEC))bootcycle-spec.gmk
+
 bootcycle-images:
         ifneq ($(COMPILE_TYPE), cross)
 	  $(call LogWarn, Boot cycle build step 2: Building a new JDK image using previously built image)
 	  $(call MakeDir, $(OUTPUTDIR)/bootcycle-build)
 	  +$(MAKE) $(MAKE_ARGS) -f $(TOPDIR)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
-	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
+	      LOG_PREFIX="[bootcycle] " JOBS= SPEC=$(BOOTCYCLE_SPEC) main
         else
 	  $(call LogWarn, Boot cycle build disabled when cross compiling)
         endif
@@ -875,6 +883,12 @@ $(eval $(call SetupTarget, static-libs-graal-bundles, \
     DEPS := static-libs-graal-image, \
 ))
 
+$(eval $(call SetupTarget, static-jdk-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-jdk-bundles, \
+    DEPS := static-jdk-image, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-bundles, \
       MAKEFILE := Bundles, \
@@ -1000,7 +1014,7 @@ else
   else ifeq ($(EXTERNAL_BUILDJDK), false)
     # When not cross compiling, the BUILD_JDK is the interim jdk image, and
     # the javac launcher is needed.
-    jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.compiler-gendata: jdk.compiler-launchers java.base-launchers
     jdk.javadoc-gendata: jdk.compiler-launchers
   endif
 
@@ -1321,10 +1335,7 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images test-image all-docs-images
-ifeq ($(call isTargetOs, linux macosx windows), true)
-  all-images: static-jdk-image
-endif
+all-images: product-images static-jdk-image test-image all-docs-images
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 #include <spa/debug/types.h>
 
 void storeRestoreToken(const gchar* oldToken, const gchar* newToken);
+
+void print_gvariant_content(gchar *caption, GVariant *response);
 
 struct ScreenProps {
     guint32 id;

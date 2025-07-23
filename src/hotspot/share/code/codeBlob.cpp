@@ -78,9 +78,12 @@ const BufferBlob::Vptr               BufferBlob::_vpntr;
 const RuntimeStub::Vptr              RuntimeStub::_vpntr;
 const SingletonBlob::Vptr            SingletonBlob::_vpntr;
 const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vpntr;
+#ifdef COMPILER2
+const ExceptionBlob::Vptr            ExceptionBlob::_vpntr;
+#endif // COMPILER2
 const UpcallStub::Vptr               UpcallStub::_vpntr;
 
-const CodeBlob::Vptr* CodeBlob::vptr() const {
+const CodeBlob::Vptr* CodeBlob::vptr(CodeBlobKind kind) {
   constexpr const CodeBlob::Vptr* array[(size_t)CodeBlobKind::Number_Of_Kinds] = {
       nullptr/* None */,
       &nmethod::_vpntr,
@@ -98,7 +101,11 @@ const CodeBlob::Vptr* CodeBlob::vptr() const {
       &UpcallStub::_vpntr
   };
 
-  return array[(size_t)_kind];
+  return array[(size_t)kind];
+}
+
+const CodeBlob::Vptr* CodeBlob::vptr() const {
+  return vptr(_kind);
 }
 
 unsigned int CodeBlob::align_code_offset(int offset) {
@@ -121,7 +128,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
-  _mutable_data(nullptr),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -151,6 +158,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
+  } else {
+    // We need unique and valid not null address
+    assert(_mutable_data == blob_end(), "sanity");
   }
 
   set_oop_maps(oop_maps);
@@ -160,13 +170,14 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
-  _mutable_data(nullptr),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset),
   _data_offset(size),
   _frame_size(0),
+  _mutable_data_size(0),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
   _frame_complete_offset(CodeOffsets::frame_never_safe),
@@ -175,12 +186,32 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
+  assert(_mutable_data == blob_end(), "sanity");
+}
+
+void CodeBlob::restore_mutable_data(address reloc_data) {
+  // Relocation data is now stored as part of the mutable data area; allocate it before copy relocations
+  if (_mutable_data_size > 0) {
+    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
+    }
+  } else {
+    _mutable_data = blob_end(); // default value
+  }
+  if (_relocation_size > 0) {
+    assert(_mutable_data_size > 0, "relocation is part of mutable data section");
+    memcpy((address)relocation_begin(), reloc_data, relocation_size());
+  }
 }
 
 void CodeBlob::purge() {
-  if (_mutable_data != nullptr) {
+  assert(_mutable_data != nullptr, "should never be null");
+  if (_mutable_data != blob_end()) {
     os::free(_mutable_data);
-    _mutable_data = nullptr;
+    _mutable_data = blob_end(); // Valid not null address
+    _mutable_data_size = 0;
+    _relocation_size = 0;
   }
   if (_oop_maps != nullptr) {
     delete _oop_maps;
@@ -208,6 +239,81 @@ const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_addre
 void CodeBlob::print_code_on(outputStream* st) {
   ResourceMark m;
   Disassembler::decode(this, st);
+}
+
+void CodeBlob::prepare_for_archiving_impl() {
+  set_name(nullptr);
+  _oop_maps = nullptr;
+  _mutable_data = nullptr;
+#ifndef PRODUCT
+  asm_remarks().clear();
+  dbg_strings().clear();
+#endif /* PRODUCT */
+}
+
+void CodeBlob::prepare_for_archiving() {
+  vptr(_kind)->prepare_for_archiving(this);
+}
+
+void CodeBlob::archive_blob(CodeBlob* blob, address archive_buffer) {
+  blob->copy_to(archive_buffer);
+  CodeBlob* archived_blob = (CodeBlob*)archive_buffer;
+  archived_blob->prepare_for_archiving();
+}
+
+void CodeBlob::post_restore_impl() {
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+}
+
+void CodeBlob::post_restore() {
+  vptr(_kind)->post_restore(this);
+}
+
+CodeBlob* CodeBlob::restore(address code_cache_buffer,
+                            const char* name,
+                            address archived_reloc_data,
+                            ImmutableOopMapSet* archived_oop_maps)
+{
+  copy_to(code_cache_buffer);
+  CodeBlob* code_blob = (CodeBlob*)code_cache_buffer;
+  code_blob->set_name(name);
+  code_blob->restore_mutable_data(archived_reloc_data);
+  code_blob->set_oop_maps(archived_oop_maps);
+  return code_blob;
+}
+
+CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
+                           const char* name,
+                           address archived_reloc_data,
+                           ImmutableOopMapSet* archived_oop_maps
+                          )
+{
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  CodeCache::gc_on_allocation();
+
+  CodeBlob* blob = nullptr;
+  unsigned int size = archived_blob->size();
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    address code_cache_buffer = (address)CodeCache::allocate(size, CodeBlobType::NonNMethod);
+    if (code_cache_buffer != nullptr) {
+      blob = archived_blob->restore(code_cache_buffer,
+                                    name,
+                                    archived_reloc_data,
+                                    archived_oop_maps);
+      assert(blob != nullptr, "sanity check");
+
+      // Flush the code block
+      ICache::invalidate_range(blob->code_begin(), blob->code_size());
+      CodeCache::commit(blob); // Count adapters
+    }
+  }
+  if (blob != nullptr) {
+    blob->post_restore();
+  }
+  return blob;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -485,9 +591,9 @@ void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
 }
 
 // operator new shared by all singletons:
-void* SingletonBlob::operator new(size_t s, unsigned size) throw() {
+void* SingletonBlob::operator new(size_t s, unsigned size, bool alloc_fail_is_fatal) throw() {
   void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
-  if (!p) fatal("Initial size of CodeCache is too small");
+  if (alloc_fail_is_fatal && !p) fatal("Initial size of CodeCache is too small");
   return p;
 }
 
@@ -569,7 +675,7 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "UncommonTrapBlob");
@@ -601,7 +707,7 @@ ExceptionBlob* ExceptionBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "ExceptionBlob");
@@ -715,7 +821,7 @@ void CodeBlob::print_value_on(outputStream* st) const {
 }
 
 void CodeBlob::print_on_impl(outputStream* st) const {
-  st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
+  st->print_cr("[CodeBlob kind:%d (" INTPTR_FORMAT ")]", (int)_kind, p2i(this));
   st->print_cr("Framesize: %d", _frame_size);
 }
 

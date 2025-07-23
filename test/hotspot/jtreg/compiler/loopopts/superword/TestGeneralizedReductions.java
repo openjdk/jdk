@@ -85,6 +85,10 @@ public class TestGeneralizedReductions {
         applyIf = {"SuperWordReductions", "true"},
         applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnGlobalAccumulator(long[] array) {
         acc = 0;
         for (int i = 0; i < array.length; i++) {
@@ -97,6 +101,10 @@ public class TestGeneralizedReductions {
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIf = {"SuperWordReductions", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnPartiallyUnrolledLoop(long[] array) {
         int sum = 0;
@@ -111,6 +119,10 @@ public class TestGeneralizedReductions {
     @IR(applyIfCPUFeature = {"avx2", "true"},
         applyIf = {"SuperWordReductions", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
     private static long testReductionOnLargePartiallyUnrolledLoop(long[] array) {
         int sum = 0;
@@ -133,7 +145,7 @@ public class TestGeneralizedReductions {
     // If this limitation is overcome in the future, the test case should be
     // turned into a positive one.
     @Test
-    @IR(applyIfCPUFeature = {"avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"},
         applyIf = {"SuperWordReductions", "true"},
         applyIfPlatform = {"64-bit", "true"},
         failOn = {IRNode.ADD_REDUCTION_VI})
@@ -147,13 +159,13 @@ public class TestGeneralizedReductions {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"avx2", "true"},
         applyIfAnd = {"SuperWordReductions", "true","UsePopCountInstruction", "true"},
         applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
                   IRNode.POPCOUNT_VL, ">= 1"})
     @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"zvbb", "true"},
+        applyIfCPUFeatureOr = {"zvbb", "true"},
         applyIfAnd = {"SuperWordReductions", "true","UsePopCountInstruction", "true"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1",
                   IRNode.POPCOUNT_VL, ">= 1"})

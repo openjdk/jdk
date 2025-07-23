@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,7 @@
 
 #include "c1/c1_IR.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
+#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -32,7 +34,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
 #ifdef ASSERT
 #define __ gen->lir(__FILE__, __LINE__)->
@@ -271,32 +272,46 @@ public:
   }
 };
 
-void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
+bool ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1ShenandoahPreBarrierCodeGenClosure pre_code_gen_cl;
-  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
+  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
                                                               "shenandoah_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
+  if (_pre_barrier_c1_runtime_code_blob == nullptr) {
+    return false;
+  }
   if (ShenandoahLoadRefBarrier) {
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_strong_code_gen_cl(ON_STRONG_OOP_REF);
-    _load_reference_barrier_strong_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
-                                                                  "shenandoah_load_reference_barrier_strong_slow",
-                                                                  false, &lrb_strong_code_gen_cl);
+    _load_reference_barrier_strong_rt_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
+                                                                          "shenandoah_load_reference_barrier_strong_slow",
+                                                                          false, &lrb_strong_code_gen_cl);
+    if (_load_reference_barrier_strong_rt_code_blob == nullptr) {
+      return false;
+    }
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_strong_native_code_gen_cl(ON_STRONG_OOP_REF | IN_NATIVE);
-    _load_reference_barrier_strong_native_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
-                                                                          "shenandoah_load_reference_barrier_strong_native_slow",
-                                                                          false, &lrb_strong_native_code_gen_cl);
+    _load_reference_barrier_strong_native_rt_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
+                                                                                 "shenandoah_load_reference_barrier_strong_native_slow",
+                                                                                 false, &lrb_strong_native_code_gen_cl);
+    if (_load_reference_barrier_strong_native_rt_code_blob == nullptr) {
+      return false;
+    }
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_weak_code_gen_cl(ON_WEAK_OOP_REF);
-    _load_reference_barrier_weak_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
-                                                                          "shenandoah_load_reference_barrier_weak_slow",
-                                                                          false, &lrb_weak_code_gen_cl);
+    _load_reference_barrier_weak_rt_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
+                                                                        "shenandoah_load_reference_barrier_weak_slow",
+                                                                        false, &lrb_weak_code_gen_cl);
+    if (_load_reference_barrier_weak_rt_code_blob == nullptr) {
+      return false;
+    }
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_phantom_code_gen_cl(ON_PHANTOM_OOP_REF | IN_NATIVE);
-    _load_reference_barrier_phantom_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
+    _load_reference_barrier_phantom_rt_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
                                                                            "shenandoah_load_reference_barrier_phantom_slow",
                                                                            false, &lrb_phantom_code_gen_cl);
+    return (_load_reference_barrier_phantom_rt_code_blob != nullptr);
   }
+  return true;
 }
 
 void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {

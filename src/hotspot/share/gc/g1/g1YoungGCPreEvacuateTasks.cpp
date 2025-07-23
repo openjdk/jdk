@@ -25,9 +25,9 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
-#include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
+#include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -59,7 +59,7 @@ class G1PreEvacuateCollectionSetBatchTask::JavaThreadRetireTLABAndFlushLogs : pu
       BarrierSet::barrier_set()->make_parsable((JavaThread*)thread);
       // Retire TLABs.
       if (UseTLAB) {
-        thread->tlab().retire(&_tlab_stats);
+        thread->retire_tlab(&_tlab_stats);
       }
       // Concatenate logs.
       G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();

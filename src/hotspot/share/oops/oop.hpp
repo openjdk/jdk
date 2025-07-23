@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "oops/compressedKlass.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/objLayout.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
 #include <type_traits>
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
@@ -43,11 +44,6 @@
 // (see oopHierarchy for complete oop class hierarchy)
 //
 // no virtual functions allowed
-
-// Forward declarations.
-class OopClosure;
-class PSPromotionManager;
-class ParCompactionManager;
 
 class oopDesc {
   friend class VMStructs;

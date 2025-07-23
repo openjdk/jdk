@@ -1,0 +1,41 @@
+// This filter replaces the extra-label line with liveness information such as
+// uses, defs, and live-out sets, if available.
+
+function formatLiveRange(lrg) {
+  flrg = "L";
+  flrg += lrg.trim();
+  return flrg;
+}
+
+function liveRangeSet(integerList) {
+  return "{" + (integerList.split(",").map(function(lrg) {return formatLiveRange(lrg);})).join(", ") + "}";
+}
+
+// Replace extra label with liveness info.
+function addLivenessInfo(lrg, idx, liveout, uses, joins, kills) {
+  if (lrg == null || liveout == null) {
+    return "";
+  }
+  elements = [];
+  if (Number(lrg) > 0) {
+    elements.push("def: " + formatLiveRange(lrg));
+  }
+  if (uses != null) {
+    elements.push("use: " + liveRangeSet(uses));
+  }
+  if (joins != null) {
+    elements.push("join: " + liveRangeSet(joins));
+  }
+  if (kills != null) {
+    elements.push("kill: " + liveRangeSet(kills));
+  }
+  if (liveout.length > 0) {
+    elements.push("liveout: " + liveRangeSet(liveout));
+  }
+  return elements.join(", ");
+}
+
+editProperty(or([hasProperty("liveout"), hasProperty("uses"), hasProperty("joins"), hasProperty("kills")]),
+             ["lrg", "idx", "liveout", "uses", "joins", "kills"],
+             "extra_label",
+             function(propertyValues) {return addLivenessInfo(propertyValues[0], propertyValues[1], propertyValues[2], propertyValues[3], propertyValues[4], propertyValues[5]);});

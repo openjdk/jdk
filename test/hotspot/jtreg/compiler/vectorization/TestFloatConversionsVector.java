@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,10 @@ public class TestFloatConversionsVector {
         TestFramework framework = new TestFramework(TestFloatConversionsVector.class);
         framework.addFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
         switch (args[0]) {
-            case "nCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "nCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
-            case "yCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "yCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "nCOH_nAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "nCOH_yAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "yCOH_nAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "yCOH_yAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();
@@ -84,10 +84,13 @@ public class TestFloatConversionsVector {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_2, "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeature = {"asimd", "true"})
     public void test_float_float16_short_vector(short[] sout, float[] finp) {
-        for (int i = 0; i < finp.length; i+= 4) {
-            sout[i+0] = Float.floatToFloat16(finp[i+0]);
-            sout[i+1] = Float.floatToFloat16(finp[i+1]);
+        for (int i = 0; i < finp.length; i += 4) {
+            sout[i] = Float.floatToFloat16(finp[i]);
+            sout[i + 1] = Float.floatToFloat16(finp[i + 1]);
         }
     }
 
@@ -124,8 +127,9 @@ public class TestFloatConversionsVector {
         }
 
         // Verifying the result
-        for (int i = 0; i < ARRLEN; i++) {
+        for (int i = 0; i < ARRLEN; i += 4) {
             Asserts.assertEquals(Float.floatToFloat16(finp[i]), sout[i]);
+            Asserts.assertEquals(Float.floatToFloat16(finp[i + 1]), sout[i + 1]);
         }
     }
 
@@ -152,7 +156,19 @@ public class TestFloatConversionsVector {
         }
     }
 
-    @Run(test = {"test_float16_float", "test_float16_float_strided"}, mode = RunMode.STANDALONE)
+    @Test
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_2, "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeature = {"asimd", "true"})
+    public void test_float16_float_short_vector(float[] fout, short[] sinp) {
+        for (int i = 0; i < sinp.length; i += 4) {
+            fout[i] = Float.float16ToFloat(sinp[i]);
+            fout[i + 1] = Float.float16ToFloat(sinp[i + 1]);
+        }
+    }
+
+    @Run(test = {"test_float16_float", "test_float16_float_strided",
+                 "test_float16_float_short_vector"}, mode = RunMode.STANDALONE)
     public void kernel_test_float16_float() {
         sinp = new short[ARRLEN];
         fout = new float[ARRLEN];
@@ -177,6 +193,16 @@ public class TestFloatConversionsVector {
         // Verifying the result
         for (int i = 0; i < ARRLEN/2; i++) {
             Asserts.assertEquals(Float.float16ToFloat(sinp[i*2]), fout[i*2]);
+        }
+
+        for (int i = 0; i < ITERS; i++) {
+            test_float16_float_short_vector(fout, sinp);
+        }
+
+        // Verifying the result
+        for (int i = 0; i < ARRLEN; i += 4) {
+            Asserts.assertEquals(Float.float16ToFloat(sinp[i]), fout[i]);
+            Asserts.assertEquals(Float.float16ToFloat(sinp[i + 1]), fout[i + 1]);
         }
     }
 }

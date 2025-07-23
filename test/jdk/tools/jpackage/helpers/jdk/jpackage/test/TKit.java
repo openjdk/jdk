@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.Closeable;
 import java.io.FileOutputStream;
@@ -34,6 +35,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
@@ -43,6 +45,7 @@ import java.nio.file.WatchService;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -124,7 +127,19 @@ public final class TKit {
         }
     }
 
+    enum RunTestMode {
+        FAIL_FAST;
+
+        static final Set<RunTestMode> DEFAULTS = Set.of();
+    }
+
     static void runTests(List<TestInstance> tests) {
+        runTests(tests, RunTestMode.DEFAULTS);
+    }
+
+    static void runTests(List<TestInstance> tests, Set<RunTestMode> modes) {
+        Objects.requireNonNull(tests);
+        Objects.requireNonNull(modes);
         if (currentTest != null) {
             throw new IllegalStateException(
                     "Unexpected nested or concurrent Test.run() call");
@@ -134,7 +149,11 @@ public final class TKit {
             tests.stream().forEach(test -> {
                 currentTest = test;
                 try {
-                    ignoreExceptions(test).run();
+                    if (modes.contains(RunTestMode.FAIL_FAST)) {
+                        ThrowingRunnable.toRunnable(test::run).run();
+                    } else {
+                        ignoreExceptions(test).run();
+                    }
                 } finally {
                     currentTest = null;
                     if (extraLogStream != null) {
@@ -143,6 +162,35 @@ public final class TKit {
                 }
             });
         });
+    }
+
+    static <T> T runAdhocTest(ThrowingSupplier<T> action) {
+        final List<T> box = new ArrayList<>();
+        runAdhocTest(() -> {
+            box.add(action.get());
+        });
+        return box.getFirst();
+    }
+
+    static void runAdhocTest(ThrowingRunnable action) {
+        Objects.requireNonNull(action);
+
+        final Path workDir = toSupplier(() -> Files.createTempDirectory("jdk.jpackage-test")).get();
+
+        final TestInstance test;
+        if (action instanceof TestInstance ti) {
+            test = new TestInstance(ti, workDir);
+        } else {
+            test = new TestInstance(() -> {
+                try {
+                    action.run();
+                } finally {
+                    TKit.deleteDirectoryRecursive(workDir);
+                }
+            }, workDir);
+        }
+
+        runTests(List.of(test), Set.of(RunTestMode.FAIL_FAST));
     }
 
     static Runnable ignoreExceptions(ThrowingRunnable action) {
@@ -291,8 +339,8 @@ public final class TKit {
         }
     }
 
-    private static Path createUniquePath(String defaultName) {
-        return createUniquePath(defaultName, workDir());
+    static Path createUniquePath(Path pathTemplate) {
+        return createUniquePath(pathTemplate.getFileName().toString(), pathTemplate.getParent());
     }
 
     private static Path createUniquePath(String defaultName, Path basedir) {
@@ -518,11 +566,14 @@ public final class TKit {
     }
 
     public static RuntimeException throwSkippedException(String reason) {
-        trace("Skip the test: " + reason);
-        RuntimeException ex = ThrowingSupplier.toSupplier(
-                () -> (RuntimeException) Class.forName("jtreg.SkippedException").getConstructor(
-                        String.class).newInstance(reason)).get();
+        RuntimeException ex = ThrowingSupplier.toSupplier(() -> {
+            return JtregSkippedExceptionClass.INSTANCE.getConstructor(String.class).newInstance(reason);
+        }).get();
+        return throwSkippedException(ex);
+    }
 
+    public static RuntimeException throwSkippedException(RuntimeException ex) {
+        trace("Skip the test: " + ex.getMessage());
         currentTest.notifySkipped(ex);
         throw ex;
     }
@@ -652,7 +703,7 @@ public final class TKit {
     }
 
 
-    public static void assertEquals(String expected, String actual, String msg) {
+    public static void assertEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -664,7 +715,7 @@ public final class TKit {
         traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
     }
 
-    public static void assertNotEquals(String expected, String actual, String msg) {
+    public static void assertNotEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -756,9 +807,9 @@ public final class TKit {
                 try (var files = Files.list(path)) {
                     boolean actualIsEmpty = files.findFirst().isEmpty();
                     if (isEmptyCheck.get()) {
-                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
+                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is an empty directory", path));
                     } else {
-                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is an empty directory", path));
+                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
                     }
                 }
             }).run();
@@ -799,18 +850,22 @@ public final class TKit {
     }
 
     public static DirectoryContentVerifier assertDirectoryContent(Path dir) {
-        return new DirectoryContentVerifier(dir);
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.list(dir)) {
+                return files.map(Path::getFileName).collect(toSet());
+            }
+        }).get());
+    }
+
+    public static DirectoryContentVerifier assertDirectoryContentRecursive(Path dir) {
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.walk(dir).skip(1)) {
+                return files.map(dir::relativize).collect(toSet());
+            }
+        }).get());
     }
 
     public static final class DirectoryContentVerifier {
-        public DirectoryContentVerifier(Path baseDir) {
-            this(baseDir, ThrowingSupplier.toSupplier(() -> {
-                try (var files = Files.list(baseDir)) {
-                    return files.map(Path::getFileName).collect(toSet());
-                }
-            }).get());
-        }
-
         public void match(Path ... expected) {
             DirectoryContentVerifier.this.match(Set.of(expected));
         }
@@ -965,8 +1020,17 @@ public final class TKit {
 
     public static final class TextStreamVerifier {
         TextStreamVerifier(String value) {
-            this.value = value;
+            this.value = Objects.requireNonNull(value);
             predicate(String::contains);
+        }
+
+        TextStreamVerifier(TextStreamVerifier other) {
+            predicate = other.predicate;
+            label = other.label;
+            negate = other.negate;
+            createException = other.createException;
+            anotherVerifier = other.anotherVerifier;
+            value = other.value;
         }
 
         public TextStreamVerifier label(String v) {
@@ -975,7 +1039,7 @@ public final class TKit {
         }
 
         public TextStreamVerifier predicate(BiPredicate<String, String> v) {
-            predicate = v;
+            predicate = Objects.requireNonNull(v);
             return this;
         }
 
@@ -984,17 +1048,8 @@ public final class TKit {
             return this;
         }
 
-        public TextStreamVerifier andThen(Consumer<? super Stream<String>> anotherVerifier) {
-            this.anotherVerifier = anotherVerifier;
-            return this;
-        }
-
-        public TextStreamVerifier andThen(TextStreamVerifier anotherVerifier) {
-            this.anotherVerifier = anotherVerifier::apply;
-            return this;
-        }
-
         public TextStreamVerifier orElseThrow(RuntimeException v) {
+            Objects.requireNonNull(v);
             return orElseThrow(() -> v);
         }
 
@@ -1003,22 +1058,22 @@ public final class TKit {
             return this;
         }
 
-        public void apply(Stream<String> lines) {
-            final String matchedStr;
-
-            lines = lines.dropWhile(line -> !predicate.test(line, value));
-            if (anotherVerifier == null) {
-                matchedStr = lines.findFirst().orElse(null);
-            } else {
-                var tail = lines.toList();
-                if (tail.isEmpty()) {
-                    matchedStr = null;
-                } else {
-                    matchedStr = tail.get(0);
+        private String findMatch(Iterator<String> lineIt) {
+            while (lineIt.hasNext()) {
+                final var line = lineIt.next();
+                if (predicate.test(line, value)) {
+                    return line;
                 }
-                lines = tail.stream().skip(1);
             }
+            return null;
+        }
 
+        public void apply(List<String> lines) {
+            apply(lines.iterator());
+        }
+
+        public void apply(Iterator<String> lineIt) {
+            final String matchedStr = findMatch(lineIt);
             final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
@@ -1045,15 +1100,67 @@ public final class TKit {
             }
 
             if (anotherVerifier != null) {
-                anotherVerifier.accept(lines);
+                anotherVerifier.accept(lineIt);
             }
+        }
+
+        public static TextStreamVerifier.Group group() {
+            return new TextStreamVerifier.Group();
+        }
+
+        public static final class Group {
+            public Group add(TextStreamVerifier verifier) {
+                if (verifier.anotherVerifier != null) {
+                    throw new IllegalArgumentException();
+                }
+                verifiers.add(verifier);
+                return this;
+            }
+
+            public Group add(Group other) {
+                verifiers.addAll(other.verifiers);
+                return this;
+            }
+
+            public boolean isEmpty() {
+                return verifiers.isEmpty();
+            }
+
+            public Optional<Consumer<Iterator<String>>> tryCreate() {
+                if (isEmpty()) {
+                    return Optional.empty();
+                } else {
+                    return Optional.of(create());
+                }
+            }
+
+            public Consumer<Iterator<String>> create() {
+                if (verifiers.isEmpty()) {
+                    throw new IllegalStateException();
+                }
+
+                if (verifiers.size() == 1) {
+                    return verifiers.getFirst()::apply;
+                }
+
+                final var head = new TextStreamVerifier(verifiers.getFirst());
+                var prev = head;
+                for (var verifier : verifiers.subList(1, verifiers.size())) {
+                    verifier = new TextStreamVerifier(verifier);
+                    prev.anotherVerifier = verifier::apply;
+                    prev = verifier;
+                }
+                return head::apply;
+            }
+
+            private final List<TextStreamVerifier> verifiers = new ArrayList<>();
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
-        private Consumer<? super Stream<String>> anotherVerifier;
+        private Consumer<? super Iterator<String>> anotherVerifier;
         private final String value;
     }
 
@@ -1068,6 +1175,47 @@ public final class TKit {
 
         return ThrowingSupplier.toSupplier(() -> new PrintStream(
                 new FileOutputStream(LOG_FILE.toFile(), true))).get();
+    }
+
+    public record PathSnapshot(List<String> contentHashes) {
+        public PathSnapshot {
+            contentHashes.forEach(Objects::requireNonNull);
+        }
+
+        public PathSnapshot(Path path) {
+            this(hashRecursive(path));
+        }
+
+        public static void assertEquals(PathSnapshot a, PathSnapshot b, String msg) {
+            assertStringListEquals(a.contentHashes(), b.contentHashes(), msg);
+        }
+
+        private static List<String> hashRecursive(Path path) {
+            try {
+                try (final var walk = Files.walk(path)) {
+                    return walk.sorted().map(p -> {
+                        final String hash;
+                        if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
+                            hash = "";
+                        } else {
+                            hash = hashFile(p);
+                        }
+                        return String.format("%s#%s", path.relativize(p), hash);
+                    }).toList();
+                }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        private static String hashFile(Path path) {
+            try {
+                final var time = Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS);
+                return time.toString();
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
     }
 
     private static TestInstance currentTest;
@@ -1136,5 +1284,31 @@ public final class TKit {
             VERBOSE_JPACKAGE = isNonOf.test(Set.of("jpackage", "jp"));
             VERBOSE_TEST_SETUP = isNonOf.test(Set.of("init", "i"));
         }
+    }
+
+    private static final class JtregSkippedExceptionClass extends ClassLoader {
+        @SuppressWarnings("unchecked")
+        JtregSkippedExceptionClass() {
+            super(TKit.class.getClassLoader());
+
+            final byte[] bytes = Base64.getDecoder().decode(
+                    // Base64-encoded "jtreg/SkippedException.class" file
+                    // emitted by jdk8's javac from "$OPEN_JDK/test/lib/jtreg/SkippedException.java"
+                    "yv66vgAAADQAFQoABAARCgAEABIHABMHABQBABBzZXJpYWxWZXJzaW9uVUlEAQABSgEADUNvbnN0"
+                    + "YW50VmFsdWUFErH6BHk+kr0BAAY8aW5pdD4BACooTGphdmEvbGFuZy9TdHJpbmc7TGphdmEvbGFu"
+                    + "Zy9UaHJvd2FibGU7KVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAVKExqYXZhL2xhbmcvU3Ry"
+                    + "aW5nOylWAQAKU291cmNlRmlsZQEAFVNraXBwZWRFeGNlcHRpb24uamF2YQwACgALDAAKAA4BABZq"
+                    + "dHJlZy9Ta2lwcGVkRXhjZXB0aW9uAQAaamF2YS9sYW5nL1J1bnRpbWVFeGNlcHRpb24AMQADAAQA"
+                    + "AAABABoABQAGAAEABwAAAAIACAACAAEACgALAAEADAAAACMAAwADAAAAByorLLcAAbEAAAABAA0A"
+                    + "AAAKAAIAAAAiAAYAIwABAAoADgABAAwAAAAiAAIAAgAAAAYqK7cAArEAAAABAA0AAAAKAAIAAAAm"
+                    + "AAUAJwABAA8AAAACABA");
+
+            clazz = (Class<RuntimeException>)defineClass("jtreg.SkippedException", bytes, 0, bytes.length);
+        }
+
+        private final Class<RuntimeException> clazz;
+
+        static final Class<RuntimeException> INSTANCE = new JtregSkippedExceptionClass().clazz;
+
     }
 }

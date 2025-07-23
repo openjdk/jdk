@@ -22,8 +22,8 @@
  *
  */
 
-#include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcPolicyCounters.hpp"
 #include "memory/resourceArea.hpp"
 
 GCPolicyCounters::GCPolicyCounters(const char* name, int collectors,

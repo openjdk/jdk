@@ -46,10 +46,8 @@ STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
 #undef DEFINE_ARCH_ENTRY
 
 address StubRoutines::x86::_k256_adr = nullptr;
-#ifdef _LP64
 address StubRoutines::x86::_k256_W_adr = nullptr;
 address StubRoutines::x86::_k512_W_addr = nullptr;
-#endif
 
 const uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {
@@ -146,7 +144,6 @@ const juint StubRoutines::x86::_crc_table[] =
     0x2d02ef8dUL
 };
 
-#ifdef _LP64
 const juint StubRoutines::x86::_crc_table_avx512[] =
 {
     0xe95c1271UL, 0x00000000UL, 0xce3371cbUL, 0x00000000UL,
@@ -193,7 +190,6 @@ const juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
     0x83828100UL, 0x87868584UL, 0x8b8a8988UL, 0x8f8e8d8cUL,
     0x03020100UL, 0x07060504UL, 0x0b0a0908UL, 0x000e0d0cUL
 };
-#endif // _LP64
 
 const jint StubRoutines::x86::_arrays_hashcode_powers_of_31[] =
 {
@@ -356,7 +352,6 @@ ATTRIBUTE_ALIGNED(64) const juint StubRoutines::x86::_k256[] =
     0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL
 };
 
-#ifdef _LP64
 // used in MacroAssembler::sha256_AVX2
 // dynamically built from _k256
 ATTRIBUTE_ALIGNED(64) juint StubRoutines::x86::_k256_W[2*sizeof(StubRoutines::x86::_k256)];
@@ -405,4 +400,3 @@ ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
     0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL,
 };
-#endif

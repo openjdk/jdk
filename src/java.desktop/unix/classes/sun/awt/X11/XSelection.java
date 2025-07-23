@@ -714,7 +714,8 @@ final class XSelection {
         }
     }
 
-    private static class SelectionEventHandler implements XEventDispatcher {
+    private static final class SelectionEventHandler implements XEventDispatcher {
+        @Override
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
             case XConstants.SelectionNotify: {
@@ -769,7 +770,7 @@ final class XSelection {
         }
     }
 
-    private static class IncrementalDataProvider implements XEventDispatcher {
+    private static final class IncrementalDataProvider implements XEventDispatcher {
         private final long requestor;
         private final long property;
         private final long target;
@@ -808,6 +809,7 @@ final class XSelection {
             XToolkit.addEventDispatcher(requestor, this);
         }
 
+        @Override
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
             case XConstants.PropertyNotify:
@@ -855,7 +857,8 @@ final class XSelection {
         }
     }
 
-    private static class IncrementalTransferHandler implements XEventDispatcher {
+    private static final class IncrementalTransferHandler implements XEventDispatcher {
+        @Override
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
             case XConstants.PropertyNotify:

@@ -24,6 +24,7 @@
 
 #include "cds/archiveBuilder.hpp"
 #include "cds/regeneratedClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
@@ -34,7 +35,8 @@
 #include "utilities/resourceHash.hpp"
 
 using RegeneratedObjTable = ResourceHashtable<address, address, 15889, AnyObj::C_HEAP, mtClassShared>;
-static RegeneratedObjTable* _renegerated_objs = nullptr; // InstanceKlass* and Method*
+static RegeneratedObjTable* _regenerated_objs = nullptr; // InstanceKlass* and Method*  orig_obj  -> regen_obj
+static RegeneratedObjTable* _original_objs = nullptr;    // InstanceKlass* and Method*  regen_obj -> orig_obj
 static GrowableArrayCHeap<OopHandle, mtClassShared>* _regenerated_mirrors = nullptr;
 
 // The regenerated Klass is not added to any class loader, so we need
@@ -46,40 +48,71 @@ void RegeneratedClasses::add_class(InstanceKlass* orig_klass, InstanceKlass* reg
   }
   _regenerated_mirrors->append(OopHandle(Universe::vm_global(), regen_klass->java_mirror()));
 
-  if (_renegerated_objs == nullptr) {
-    _renegerated_objs = new (mtClass)RegeneratedObjTable();
+  if (_regenerated_objs == nullptr) {
+    _regenerated_objs = new (mtClass)RegeneratedObjTable();
+  }
+  if (_original_objs == nullptr) {
+    _original_objs = new (mtClass)RegeneratedObjTable();
   }
 
-  _renegerated_objs->put((address)orig_klass, (address)regen_klass);
+  _regenerated_objs->put((address)orig_klass, (address)regen_klass);
+  _original_objs->put((address)regen_klass, (address)orig_klass);
   Array<Method*>* methods = orig_klass->methods();
   for (int i = 0; i < methods->length(); i++) {
     Method* orig_m = methods->at(i);
     Method* regen_m = regen_klass->find_method(orig_m->name(), orig_m->signature());
     if (regen_m == nullptr) {
       ResourceMark rm;
-      log_warning(cds)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
-                       p2i(orig_m), orig_m->external_name());
+      if (orig_m->name() != vmSymbols::object_initializer_name()) {
+        // JLI Holder classes are never instantiated, they don't need to have constructors.
+        // Not printing the warning if the method is a constructor.
+        log_warning(aot)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
+                         p2i(orig_m), orig_m->external_name());
+      }
     } else {
-      _renegerated_objs->put((address)orig_m, (address)regen_m);
+      _regenerated_objs->put((address)orig_m, (address)regen_m);
+      _original_objs->put((address)regen_m, (address)orig_m);
     }
   }
 }
 
 bool RegeneratedClasses::has_been_regenerated(address orig_obj) {
-  if (_renegerated_objs == nullptr) {
+  if (_regenerated_objs == nullptr) {
     return false;
   } else {
-    return _renegerated_objs->get(orig_obj) != nullptr;
+    return _regenerated_objs->get(orig_obj) != nullptr;
   }
+}
+
+address RegeneratedClasses::get_regenerated_object(address orig_obj) {
+  assert(_regenerated_objs != nullptr, "must be");
+  address* p =_regenerated_objs->get(orig_obj);
+  assert(p != nullptr, "must be");
+  return *p;
+}
+
+bool RegeneratedClasses::is_regenerated_object(address regen_obj) {
+  if (_original_objs == nullptr) {
+    return false;
+  } else {
+    return _original_objs->get(regen_obj) != nullptr;
+  }
+}
+
+address RegeneratedClasses::get_original_object(address regen_obj) {
+  assert(_original_objs != nullptr, "must be");
+  address* p =_original_objs->get(regen_obj);
+  assert(p != nullptr, "must be");
+  return *p;
 }
 
 void RegeneratedClasses::record_regenerated_objects() {
   assert_locked_or_safepoint(DumpTimeTable_lock);
-  if (_renegerated_objs != nullptr) {
+  if (_regenerated_objs != nullptr) {
     auto doit = [&] (address orig_obj, address regen_obj) {
       ArchiveBuilder::current()->record_regenerated_object(orig_obj, regen_obj);
     };
-    _renegerated_objs->iterate_all(doit);
+    _regenerated_objs->iterate_all(doit);
   }
 }
 
@@ -92,7 +125,7 @@ void RegeneratedClasses::cleanup() {
     delete _regenerated_mirrors;
     _regenerated_mirrors = nullptr;
   }
-  if (_renegerated_objs != nullptr) {
-    delete _renegerated_objs;
+  if (_regenerated_objs != nullptr) {
+    delete _regenerated_objs;
   }
 }

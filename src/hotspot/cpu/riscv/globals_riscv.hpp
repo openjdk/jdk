@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,7 +38,7 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls 
 
 define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
-define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
+define_pd_global(size_t, CodeCacheSegmentSize,   64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 define_pd_global(intx, CodeEntryAlignment,       64);
 define_pd_global(intx, OptoLoopAlignment,        16);
 
@@ -90,8 +90,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Size in bytes of a CPU cache line")                                   \
           range(wordSize, max_jint)                                              \
   product(bool, TraceTraps, false, "Trace all traps the signal handler")         \
-  /* For now we're going to be safe and add the I/O bits to userspace fences. */ \
-  product(bool, UseConservativeFence, true,                                      \
+  product(bool, UseConservativeFence, false,                                     \
           "Extend i for r and o for w in the pred/succ flags of fence")          \
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
@@ -108,6 +107,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZfh, false, DIAGNOSTIC, "Use Zfh instructions")               \
   product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \
+  product(bool, UseZabha, false, EXPERIMENTAL, "Use UseZabha instructions")      \
   product(bool, UseZcb, false, EXPERIMENTAL, "Use Zcb instructions")             \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \

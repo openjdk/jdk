@@ -30,6 +30,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/stubDeclarations.hpp"
+#include "runtime/stubInfo.hpp"
 
 class StubAssembler;
 
@@ -42,18 +43,9 @@ class StubAssemblerCodeGenClosure: public Closure {
   virtual OopMapSet* generate_code(StubAssembler* sasm) = 0;
 };
 
-// define C1StubId enum tags: unwind_exception_id etc
-
-#define C1_STUB_ID_ENUM_DECLARE(name) STUB_ID_NAME(name),
-enum class C1StubId :int {
-  NO_STUBID = -1,
-  C1_STUBS_DO(C1_STUB_ID_ENUM_DECLARE)
-  NUM_STUBIDS
-};
-#undef C1_STUB_ID_ENUM_DECLARE
-
 class Runtime1: public AllStatic {
   friend class ArrayCopyStub;
+  friend class AOTCodeAddressTable;
 
 public:
   // statistics
@@ -79,17 +71,16 @@ public:
 #endif
 
  private:
-  static CodeBlob* _blobs[(int)C1StubId::NUM_STUBIDS];
-  static const char* _blob_names[];
+  static CodeBlob* _blobs[(int)StubInfo::C1_STUB_COUNT];
 
   // stub generation
  public:
-  static CodeBlob*  generate_blob(BufferBlob* buffer_blob, C1StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
-  static void       generate_blob_for(BufferBlob* blob, C1StubId id);
-  static OopMapSet* generate_code_for(C1StubId id, StubAssembler* sasm);
+  static CodeBlob*  generate_blob(BufferBlob* buffer_blob, StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
+  static bool       generate_blob_for(BufferBlob* blob, StubId id);
+  static OopMapSet* generate_code_for(StubId id, StubAssembler* sasm);
  private:
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
-  static OopMapSet* generate_handle_exception(C1StubId id, StubAssembler* sasm);
+  static OopMapSet* generate_handle_exception(StubId id, StubAssembler* sasm);
   static void       generate_unwind_exception(StubAssembler *sasm);
   static OopMapSet* generate_patching(StubAssembler* sasm, address target);
 
@@ -104,7 +95,7 @@ public:
 
   static address counter_overflow(JavaThread* current, int bci, Method* method);
 
-  static void unimplemented_entry(JavaThread* current, C1StubId id);
+  static void unimplemented_entry(JavaThread* current, StubId id);
 
   static address exception_handler_for_pc(JavaThread* current);
 
@@ -126,20 +117,20 @@ public:
   static int move_mirror_patching(JavaThread* current);
   static int move_appendix_patching(JavaThread* current);
 
-  static void patch_code(JavaThread* current, C1StubId stub_id);
+  static void patch_code(JavaThread* current, StubId stub_id);
 
  public:
   // initialization
-  static void initialize(BufferBlob* blob);
+  static bool initialize(BufferBlob* blob);
   static void initialize_pd();
 
   // return offset in words
   static uint runtime_blob_current_thread_offset(frame f);
 
   // stubs
-  static CodeBlob* blob_for (C1StubId id);
-  static address   entry_for(C1StubId id)          { return blob_for(id)->code_begin(); }
-  static const char* name_for (C1StubId id);
+  static CodeBlob* blob_for (StubId id);
+  static address   entry_for(StubId id)          { return blob_for(id)->code_begin(); }
+  static const char* name_for (StubId id);
   static const char* name_for_address(address entry);
 
   // platform might add runtime names.

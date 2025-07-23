@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 
 // Organization of the interpreter(s). There exists two different interpreters in hotpot
 // an assembly language version (aka template interpreter) and a high level language version
-// (aka c++ interpreter). Th division of labor is as follows:
+// (aka c++ interpreter). The division of labor is as follows:
 
 // Template Interpreter          Zero Interpreter       Functionality
 //
@@ -73,6 +73,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
     java_lang_math_tanh,                                        // implementation of java.lang.Math.tanh  (x)
+    java_lang_math_cbrt,                                        // implementation of java.lang.Math.cbrt  (x)
     java_lang_math_abs,                                         // implementation of java.lang.Math.abs   (x)
     java_lang_math_sqrt,                                        // implementation of java.lang.Math.sqrt  (x)
     java_lang_math_sqrt_strict,                                 // implementation of java.lang.StrictMath.sqrt(x)
@@ -82,18 +83,14 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_exp,                                         // implementation of java.lang.Math.exp   (x)
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
-    java_lang_ref_reference_get,                                // implementation of java.lang.ref.Reference.get()
+    java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
     java_util_zip_CRC32C_updateBytes,                           // implementation of java.util.zip.CRC32C.updateBytes(crc, b[], off, end)
     java_util_zip_CRC32C_updateDirectByteBuffer,                // implementation of java.util.zip.CRC32C.updateDirectByteBuffer(crc, address, off, end)
-    java_lang_Float_intBitsToFloat,                             // implementation of java.lang.Float.intBitsToFloat()
-    java_lang_Float_floatToRawIntBits,                          // implementation of java.lang.Float.floatToRawIntBits()
     java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
     java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
-    java_lang_Double_longBitsToDouble,                          // implementation of java.lang.Double.longBitsToDouble()
-    java_lang_Double_doubleToRawLongBits,                       // implementation of java.lang.Double.doubleToRawLongBits()
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,
     invalid = -1
@@ -156,6 +153,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dcos  : // fall thru
       case vmIntrinsics::_dtan  : // fall thru
       case vmIntrinsics::_dtanh : // fall thru
+      case vmIntrinsics::_dcbrt : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
       case vmIntrinsics::_dsqrt_strict : // fall thru

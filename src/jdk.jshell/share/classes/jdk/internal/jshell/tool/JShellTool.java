@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ import static java.util.stream.Collectors.joining;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
 import static java.util.stream.Collectors.toMap;
+import javax.lang.model.SourceVersion;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_DEP;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_EVNT;
@@ -642,7 +643,10 @@ public class JShellTool implements MessageHandler {
             } else {
                 String packedStartup = prefs.get(STARTUP_KEY);
                 boolean preview = previewEnabled(options);
-                initialStartup = Startup.unpack(packedStartup, preview, new InitMessageHandler());
+                String sourceLevel = detectSourceLevel(options.valuesOf(argC)
+                                                              .toArray(String[]::new));
+                initialStartup = Startup.unpack(packedStartup, sourceLevel,
+                                                preview, new InitMessageHandler());
             }
             if (options.has(argExecution)) {
                 executionControlSpec = options.valueOf(argExecution);
@@ -1312,6 +1316,9 @@ public class JShellTool implements MessageHandler {
                 continue;
             }
             if (line == null) {
+                if (!src.isEmpty()) {
+                    errormsg("jshell.err.incomplete.input", src);
+                }
                 //EOF
                 if (input.interactiveOutput()) {
                     // End after user ctrl-D
@@ -2308,7 +2315,8 @@ public class JShellTool implements MessageHandler {
             }
         } else if (defaultOption) {
             boolean preview = options.hasOption(OptionKind.ENABLE_PREVIEW);
-            startup = Startup.defaultStartup(preview, this);
+            String sourceLevel = detectSourceLevel(options.compilerOptions());
+            startup = Startup.defaultStartup(sourceLevel, preview, this);
         } else if (noneOption) {
             startup = Startup.noStartup();
         }
@@ -2326,7 +2334,8 @@ public class JShellTool implements MessageHandler {
         String retained = prefs.get(STARTUP_KEY);
         if (retained != null) {
             boolean preview = options.hasOption(OptionKind.ENABLE_PREVIEW);
-            Startup retainedStart = Startup.unpack(retained, preview, this);
+            String sourceLevel = detectSourceLevel(options.compilerOptions());
+            Startup retainedStart = Startup.unpack(retained, sourceLevel, preview, this);
             boolean currentDifferent = !startup.equals(retainedStart);
             sb.append(retainedStart.show(true));
             if (currentDifferent) {
@@ -2341,6 +2350,19 @@ public class JShellTool implements MessageHandler {
             sb.append(startup.showDetail());
         }
         hard(escape(sb));
+    }
+
+    private String detectSourceLevel(String[] compilerOptions) {
+        for (int i = 0; i < compilerOptions.length; i++) {
+            switch (compilerOptions[i]) {
+                case "-source", "--source", "--release":
+                    if (i + 1 < compilerOptions.length) {
+                        return compilerOptions[i + 1];
+                    }
+            }
+        }
+
+        return Integer.toString(SourceVersion.latest().runtimeVersion().feature());
     }
 
     private void showIndent() {
@@ -4099,7 +4121,11 @@ public class JShellTool implements MessageHandler {
                     public int read(char[] cbuf, int off, int len) throws IOException {
                         if (len == 0) return 0;
                         try {
-                            cbuf[off] = input.readUserInputChar();
+                            int r = input.readUserInputChar();
+                            if (r == (-1)) {
+                                return -1;
+                            }
+                            cbuf[off] = (char) r;
                             return 1;
                         } catch (UserInterruptException ex) {
                             return -1;
@@ -4120,15 +4146,6 @@ public class JShellTool implements MessageHandler {
                 return input.readUserLine(prompt);
             } catch (UserInterruptException ex) {
                 return null;
-            } catch (IOException ex) {
-                throw new IOError(ex);
-            }
-        }
-
-        @Override
-        public String readLine() throws IOError {
-            try {
-                return input.readUserLine();
             } catch (IOException ex) {
                 throw new IOError(ex);
             }

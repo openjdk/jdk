@@ -107,7 +107,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
   andr(tmp2, cnt, unroll_factor - 1);
   adr(tmp1, BR_BASE);
-  sub(tmp1, tmp1, tmp2, ext::sxtw, 3);
+  // For Cortex-A53 offset is 4 because 2 nops are generated.
+  sub(tmp1, tmp1, tmp2, ext::sxtw, VM_Version::supports_a53mac() ? 4 : 3);
   movw(tmp2, 0x1f);
   br(tmp1);
 
@@ -115,6 +116,11 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   for (size_t i = 0; i < unroll_factor; ++i) {
     load(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
     maddw(result, result, tmp2, tmp1);
+    // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+    // Generate 2nd nop to have 4 instructions per iteration.
+    if (VM_Version::supports_a53mac()) {
+      nop();
+    }
   }
   bind(BR_BASE);
   subsw(cnt, cnt, unroll_factor);
@@ -360,7 +366,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
@@ -1772,19 +1778,21 @@ void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister
 void C2_MacroAssembler::neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
                                            FloatRegister src, BasicType src_bt, bool is_unsigned) {
   if (src_bt == T_BYTE) {
-    if (dst_bt == T_SHORT) {
-      // 4B/8B to 4S/8S
-      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
-    } else {
-      // 4B to 4I
-      assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
-      _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+    // 4B to 4S/4I, 8B to 8S
+    assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_SHORT || dst_bt == T_INT, "unsupported");
+    _xshll(is_unsigned, dst, T8H, src, T8B, 0);
+    if (dst_bt == T_INT) {
       _xshll(is_unsigned, dst, T4S, dst, T4H, 0);
     }
   } else if (src_bt == T_SHORT) {
-    // 4S to 4I
-    assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+    // 2S to 2I/2L, 4S to 4I
+    assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_INT || dst_bt == T_LONG, "unsupported");
     _xshll(is_unsigned, dst, T4S, src, T4H, 0);
+    if (dst_bt == T_LONG) {
+      _xshll(is_unsigned, dst, T2D, dst, T2S, 0);
+    }
   } else if (src_bt == T_INT) {
     // 2I to 2L
     assert(dst_vlen_in_bytes == 16 && dst_bt == T_LONG, "unsupported");
@@ -1804,18 +1812,21 @@ void C2_MacroAssembler::neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
     assert(dst_bt == T_BYTE, "unsupported");
     xtn(dst, T8B, src, T8H);
   } else if (src_bt == T_INT) {
-    // 4I to 4B/4S
-    assert(src_vlen_in_bytes == 16, "unsupported");
+    // 2I to 2S, 4I to 4B/4S
+    assert(src_vlen_in_bytes == 8 || src_vlen_in_bytes == 16, "unsupported");
     assert(dst_bt == T_BYTE || dst_bt == T_SHORT, "unsupported");
     xtn(dst, T4H, src, T4S);
     if (dst_bt == T_BYTE) {
       xtn(dst, T8B, dst, T8H);
     }
   } else if (src_bt == T_LONG) {
-    // 2L to 2I
+    // 2L to 2S/2I
     assert(src_vlen_in_bytes == 16, "unsupported");
-    assert(dst_bt == T_INT, "unsupported");
+    assert(dst_bt == T_INT || dst_bt == T_SHORT, "unsupported");
     xtn(dst, T2S, src, T2D);
+    if (dst_bt == T_SHORT) {
+      xtn(dst, T4H, dst, T4S);
+    }
   } else {
     ShouldNotReachHere();
   }
@@ -2545,6 +2556,64 @@ void C2_MacroAssembler::neon_reverse_bytes(FloatRegister dst, FloatRegister src,
   }
 }
 
+// VectorRearrange implementation for short/int/float/long/double types with NEON
+// instructions. For VectorRearrange short/int/float, we use NEON tbl instruction.
+// But since it supports bytes table only, we need to lookup 2/4 bytes as a group.
+// For VectorRearrange long/double, we compare the shuffle input with iota indices,
+// and use bsl to implement the operation.
+void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
+                                           FloatRegister shuffle, FloatRegister tmp,
+                                           BasicType bt, bool isQ) {
+  assert_different_registers(dst, src, shuffle, tmp);
+  SIMD_Arrangement size1 = isQ ? T16B : T8B;
+  SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
+
+  // Here is an example that rearranges a NEON vector with 4 ints:
+  // Rearrange V1 int[a0, a1, a2, a3] to V2 int[a2, a3, a0, a1]
+  //   1. We assume the shuffle input is Vi int[2, 3, 0, 1].
+  //   2. Multiply Vi int[2, 3, 0, 1] with constant int vector
+  //      [0x04040404, 0x04040404, 0x04040404, 0x04040404], and get
+  //      tbl base Vm int[0x08080808, 0x0c0c0c0c, 0x00000000, 0x04040404].
+  //   3. Add Vm with constant int[0x03020100, 0x03020100, 0x03020100, 0x03020100],
+  //      and get tbl index Vm int[0x0b0a0908, 0x0f0e0d0c, 0x03020100, 0x07060504]
+  //   4. Use Vm as index register, and use V1 as table register.
+  //      Then get V2 as the result by tbl NEON instructions.
+  switch (bt) {
+    case T_SHORT:
+      mov(tmp, size1, 0x02);
+      mulv(dst, size2, shuffle, tmp);
+      mov(tmp, size2, 0x0100);
+      addv(dst, size1, dst, tmp);
+      tbl(dst, size1, src, 1, dst);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      mov(tmp, size1, 0x04);
+      mulv(dst, size2, shuffle, tmp);
+      mov(tmp, size2, 0x03020100);
+      addv(dst, size1, dst, tmp);
+      tbl(dst, size1, src, 1, dst);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      // Load the iota indices for Long type. The indices are ordered by
+      // type B/S/I/L/F/D, and the offset between two types is 16; Hence
+      // the offset for L is 48.
+      lea(rscratch1,
+          ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + 48));
+      ldrq(tmp, rscratch1);
+      // Check whether the input "shuffle" is the same with iota indices.
+      // Return "src" if true, otherwise swap the two elements of "src".
+      cm(EQ, dst, size2, shuffle, tmp);
+      ext(tmp, size1, src, src, 8);
+      bsl(dst, size1, src, tmp);
+      break;
+    default:
+      assert(false, "unsupported element type");
+      ShouldNotReachHere();
+  }
+}
+
 // Extract a scalar element from an sve vector at position 'idx'.
 // The input elements in src are expected to be of integral type.
 void C2_MacroAssembler::sve_extract_integral(Register dst, BasicType bt, FloatRegister src,
@@ -2684,4 +2753,108 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
     }
   }
   return MacroAssembler::in_scratch_emit_size();
+}
+
+static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+  fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeInt::INT) {
+    return;
+  }
+  BLOCK_COMMENT("verify_int_in_range {");
+  Label L_success, L_failure;
+
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+
+  if (lo != min_jint && hi != max_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jint) {
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  movw(c_rarg2, lo);
+  movw(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_int_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_int_in_range");
+}
+
+static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+  fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeLong::LONG) {
+    return;
+  }
+  BLOCK_COMMENT("verify_long_in_range {");
+  Label L_success, L_failure;
+
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+
+  if (lo != min_jlong && hi != max_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jlong) {
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  mov(c_rarg2, lo);
+  mov(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_long_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_long_in_range");
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rfp.
+    add(rtmp, sp, framesize - 2 * wordSize);
+    Label L_success;
+    cmp(rfp, rtmp);
+    br(Assembler::EQ, L_success);
+    stop("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    add(rfp, sp, framesize - 2 * wordSize);
+  }
 }

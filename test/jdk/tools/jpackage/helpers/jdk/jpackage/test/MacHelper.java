@@ -31,26 +31,22 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.RetryExecutor;
+import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 public final class MacHelper {
 
@@ -128,25 +124,51 @@ public final class MacHelper {
         }
     }
 
-    public static PListWrapper readPListFromAppImage(Path appImage) {
+    public static PListReader readPListFromAppImage(Path appImage) {
         return readPList(appImage.resolve("Contents/Info.plist"));
     }
 
-    public static PListWrapper readPList(Path path) {
+    public static PListReader readPList(Path path) {
         TKit.assertReadableFileExists(path);
         return ThrowingSupplier.toSupplier(() -> readPList(Files.readAllLines(
                 path))).get();
     }
 
-    public static PListWrapper readPList(List<String> lines) {
+    public static PListReader readPList(List<String> lines) {
         return readPList(lines.stream());
     }
 
-    public static PListWrapper readPList(Stream<String> lines) {
-        return ThrowingSupplier.toSupplier(() -> new PListWrapper(lines
+    public static PListReader readPList(Stream<String> lines) {
+        return ThrowingSupplier.toSupplier(() -> new PListReader(lines
                 // Skip leading lines before xml declaration
                 .dropWhile(Pattern.compile("\\s?<\\?xml\\b.+\\?>").asPredicate().negate())
-                .collect(Collectors.joining()))).get();
+                .collect(Collectors.joining()).getBytes(StandardCharsets.UTF_8))).get();
+    }
+
+    public static boolean signPredefinedAppImage(JPackageCommand cmd) {
+        Objects.requireNonNull(cmd);
+        if (!TKit.isOSX()) {
+            throw new UnsupportedOperationException();
+        }
+        return cmd.hasArgument("--mac-sign") && cmd.hasArgument("--app-image");
+    }
+
+    public static boolean appImageSigned(JPackageCommand cmd) {
+        Objects.requireNonNull(cmd);
+        if (!TKit.isOSX()) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
+            // The external app image is signed, so the app image is signed too.
+            return true;
+        }
+
+        if (!cmd.hasArgument("--mac-sign")) {
+            return false;
+        }
+
+        return (cmd.hasArgument("--mac-signing-key-user-name") || cmd.hasArgument("--mac-app-image-sign-identity"));
     }
 
     static PackageHandlers createDmgPackageHandlers() {
@@ -156,7 +178,7 @@ public final class MacHelper {
     private static int installDmg(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("sudo", "cp", "-r")
+            Executor.of("sudo", "cp", "-R")
                     .addArgument(dmgImage)
                     .addArgument(getInstallationDirectory(cmd).getParent())
                     .execute(0);
@@ -183,7 +205,7 @@ public final class MacHelper {
         }
 
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("cp", "-r")
+            Executor.of("cp", "-R")
             .addArgument(dmgImage)
             .addArgument(unpackDir)
             .execute();
@@ -234,7 +256,7 @@ public final class MacHelper {
             }).forEach(ThrowingConsumer.toConsumer(pkgDir -> {
                 // Installation root of the package is stored in
                 // /pkg-info@install-location attribute in $pkgDir/PackageInfo xml file
-                var doc = createDocumentBuilder().parse(
+                var doc = XmlUtils.initDocumentBuilder().parse(
                         new ByteArrayInputStream(Files.readAllBytes(
                                 pkgDir.resolve("PackageInfo"))));
                 var xPath = XPathFactory.newInstance().newXPath();
@@ -312,7 +334,7 @@ public final class MacHelper {
             installLocation = cmd.getArgumentValue("--install-dir", () -> defaultInstallLocation, Path::of);
         }
 
-        return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? "" : ".app"));
+        return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? ".jdk" : ".app"));
     }
 
     static Path getUninstallCommand(JPackageCommand cmd) {
@@ -343,67 +365,8 @@ public final class MacHelper {
         });
     }
 
-    public static final class PListWrapper {
-        public String queryValue(String keyName) {
-            XPath xPath = XPathFactory.newInstance().newXPath();
-            // Query for the value of <string> element preceding <key> element
-            // with value equal to `keyName`
-            String query = String.format(
-                    "//string[preceding-sibling::key = \"%s\"][1]", keyName);
-            return ThrowingSupplier.toSupplier(() -> (String) xPath.evaluate(
-                    query, doc, XPathConstants.STRING)).get();
-        }
-
-        public Boolean queryBoolValue(String keyName) {
-            XPath xPath = XPathFactory.newInstance().newXPath();
-            // Query boolean element preceding <key> element
-            // with value equal to `keyName`
-            String query = String.format(
-                    "name(//*[preceding-sibling::key = \"%s\"])", keyName);
-            String value = ThrowingSupplier.toSupplier(() -> (String) xPath.evaluate(
-                    query, doc, XPathConstants.STRING)).get();
-            return Boolean.valueOf(value);
-        }
-
-        public List<String> queryArrayValue(String keyName) {
-            XPath xPath = XPathFactory.newInstance().newXPath();
-            // Query string array preceding <key> element with value equal to `keyName`
-            String query = String.format(
-                    "//array[preceding-sibling::key = \"%s\"]", keyName);
-            NodeList list = ThrowingSupplier.toSupplier(() -> (NodeList) xPath.evaluate(
-                    query, doc, XPathConstants.NODESET)).get();
-            if (list.getLength() != 1) {
-                throw new RuntimeException(
-                        String.format("Unable to find <array> element for key = \"%s\"]",
-                                keyName));
-            }
-
-            NodeList childList = list.item(0).getChildNodes();
-            List<String> values = new ArrayList<>(childList.getLength());
-            for (int i = 0; i < childList.getLength(); i++) {
-                if (childList.item(i).getNodeName().equals("string")) {
-                    values.add(childList.item(i).getTextContent());
-                }
-            }
-            return values;
-        }
-
-        private PListWrapper(String xml) throws ParserConfigurationException,
-                SAXException, IOException {
-            doc = createDocumentBuilder().parse(new ByteArrayInputStream(
-                    xml.getBytes(StandardCharsets.UTF_8)));
-        }
-
-        private final org.w3c.dom.Document doc;
-    }
-
-    private static DocumentBuilder createDocumentBuilder() throws
-                ParserConfigurationException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
-        dbf.setFeature(
-                "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                false);
-        return dbf.newDocumentBuilder();
+    public static boolean isXcodeDevToolsInstalled() {
+        return Inner.XCODE_DEV_TOOLS_INSTALLED;
     }
 
     private static String getServicePListFileName(String packageName,
@@ -432,22 +395,32 @@ public final class MacHelper {
         }
     }
 
+    private static final class Inner {
+        private static final boolean XCODE_DEV_TOOLS_INSTALLED =
+                Executor.of("/usr/bin/xcrun", "--help").executeWithoutExitCodeCheck().getExitCode() == 0;
+    }
+
+    private static Set<Path> createBundleContents(String... customItems) {
+        return Stream.concat(Stream.of(customItems), Stream.of(
+                "MacOS",
+                "Info.plist",
+                "_CodeSignature"
+        )).map(Path::of).collect(toSet());
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "Contents/Home/lib/server/libjvm.dylib"));
 
     private static final Method getServicePListFileName = initGetServicePListFileName();
 
-    private static final Set<Path> APP_BUNDLE_CONTENTS = Stream.of(
-            "Info.plist",
-            "MacOS",
+    private static final Set<Path> APP_BUNDLE_CONTENTS = createBundleContents(
             "app",
             "runtime",
             "Resources",
-            "PkgInfo",
-            "_CodeSignature"
-    ).map(Path::of).collect(toSet());
+            "PkgInfo"
+    );
 
-    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = Stream.of(
+    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = createBundleContents(
             "Home"
-    ).map(Path::of).collect(toSet());
+    );
 }

@@ -92,7 +92,6 @@ public class ImportModule extends TestRunner {
 
         {//with --release:
             new JavacTask(tb)
-                .options("--enable-preview", "--release", SOURCE_VERSION)
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.SUCCESS)
@@ -101,7 +100,6 @@ public class ImportModule extends TestRunner {
             var out = new JavaTask(tb)
                     .classpath(classes.toString())
                     .className("test.Test")
-                    .vmOptions("--enable-preview")
                     .run()
                     .writeAll()
                     .getOutputLines(Task.OutputKind.STDOUT);
@@ -117,7 +115,6 @@ public class ImportModule extends TestRunner {
 
         {//with --source:
             new JavacTask(tb)
-                .options("--enable-preview", "--source", SOURCE_VERSION)
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.SUCCESS)
@@ -126,7 +123,6 @@ public class ImportModule extends TestRunner {
             var out = new JavaTask(tb)
                     .classpath(classes.toString())
                     .className("test.Test")
-                    .vmOptions("--enable-preview")
                     .run()
                     .writeAll()
                     .getOutputLines(Task.OutputKind.STDOUT);
@@ -161,7 +157,7 @@ public class ImportModule extends TestRunner {
 
         actualErrors =
                 new JavacTask(tb)
-                    .options("--release", "21", "-XDrawDiagnostics")
+                    .options("--release", "24", "-XDrawDiagnostics")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(Task.Expect.FAIL)
@@ -169,34 +165,22 @@ public class ImportModule extends TestRunner {
                     .getOutputLines(Task.OutputKind.DIRECT);
 
         expectedErrors = List.of(
-                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
+                "Test.java:2:8: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.module.imports), 24, 25",
                 "1 error"
         );
 
         if (!Objects.equals(expectedErrors, actualErrors)) {
             throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
-                                      ", actual: " + out);
+                                      ", actual: " + actualErrors);
 
         }
-        actualErrors =
-                new JavacTask(tb)
-                    .options("-XDrawDiagnostics")
-                    .outdir(classes)
-                    .files(tb.findJavaFiles(src))
-                    .run(Task.Expect.FAIL)
-                    .writeAll()
-                    .getOutputLines(Task.OutputKind.DIRECT);
 
-        expectedErrors = List.of(
-                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
-                "1 error"
-        );
-
-        if (!Objects.equals(expectedErrors, actualErrors)) {
-            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
-                                      ", actual: " + out);
-
-        }
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics")
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run()
+            .writeAll();
     }
 
     @Test
@@ -220,8 +204,7 @@ public class ImportModule extends TestRunner {
         List<String> expectedErrors;
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION,
-                     "-XDrawDiagnostics")
+            .options("-XDrawDiagnostics")
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.SUCCESS)
@@ -240,7 +223,6 @@ public class ImportModule extends TestRunner {
                           """);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run()
@@ -258,7 +240,6 @@ public class ImportModule extends TestRunner {
                           """);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run()
@@ -274,7 +255,6 @@ public class ImportModule extends TestRunner {
                           """);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run()
@@ -292,8 +272,7 @@ public class ImportModule extends TestRunner {
 
         actualErrors =
                 new JavacTask(tb)
-                    .options("--enable-preview", "--release", SOURCE_VERSION,
-                             "-XDrawDiagnostics")
+                    .options("-XDrawDiagnostics")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(Task.Expect.FAIL)
@@ -302,8 +281,6 @@ public class ImportModule extends TestRunner {
 
         expectedErrors = List.of(
                 "Test.java:5:5: compiler.err.ref.ambiguous: Date, kindname.class, java.sql.Date, java.sql, kindname.class, java.util.Date, java.util",
-                "- compiler.note.preview.filename: Test.java, DEFAULT",
-                "- compiler.note.preview.recompile",
                 "1 error"
         );
 
@@ -325,7 +302,6 @@ public class ImportModule extends TestRunner {
                           """);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run()
@@ -387,8 +363,7 @@ public class ImportModule extends TestRunner {
 
         actualErrors =
                 new JavacTask(tb)
-                    .options("--enable-preview", "--release", SOURCE_VERSION,
-                             "-p", libClasses.toString(),
+                    .options("-p", libClasses.toString(),
                              "--add-modules", "lib",
                              "-XDrawDiagnostics")
                     .outdir(classes)
@@ -399,8 +374,6 @@ public class ImportModule extends TestRunner {
 
         expectedErrors = List.of(
                 "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "- compiler.note.preview.filename: Test.java, DEFAULT",
-                "- compiler.note.preview.recompile",
                 "1 error"
         );
 
@@ -412,8 +385,7 @@ public class ImportModule extends TestRunner {
 
         actualErrors =
                 new JavacTask(tb)
-                    .options("--enable-preview", "--release", SOURCE_VERSION,
-                             "-p", libClasses.toString(),
+                    .options("-p", libClasses.toString(),
                              "-XDdev",
                              "-XDrawDiagnostics")
                     .outdir(classes)
@@ -425,8 +397,6 @@ public class ImportModule extends TestRunner {
         expectedErrors = List.of(
                 "Test.java:2:1: compiler.err.import.module.does.not.read.unnamed: lib",
                 "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "- compiler.note.preview.filename: Test.java, DEFAULT",
-                "- compiler.note.preview.recompile",
                 "2 errors"
         );
 
@@ -444,8 +414,7 @@ public class ImportModule extends TestRunner {
 
         actualErrors =
                 new JavacTask(tb)
-                    .options("--enable-preview", "--release", SOURCE_VERSION,
-                             "-p", libClasses.toString(),
+                    .options("-p", libClasses.toString(),
                              "-XDdev",
                              "-XDrawDiagnostics")
                     .outdir(classes)
@@ -457,8 +426,6 @@ public class ImportModule extends TestRunner {
         expectedErrors = List.of(
                 "Test.java:2:1: compiler.err.import.module.does.not.read: test.module, lib",
                 "Test.java:6:9: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "- compiler.note.preview.filename: Test.java, DEFAULT",
-                "- compiler.note.preview.recompile",
                 "2 errors"
         );
 
@@ -539,8 +506,7 @@ public class ImportModule extends TestRunner {
         Files.createDirectories(libClasses);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION,
-                     "--module-source-path", libSrc.toString(),
+            .options("--module-source-path", libSrc.toString(),
                      "-XDrawDiagnostics")
             .outdir(libClasses)
             .files(tb.findJavaFiles(libSrc))
@@ -591,8 +557,7 @@ public class ImportModule extends TestRunner {
 
         actualErrors =
                 new JavacTask(tb)
-                    .options("--enable-preview", "--release", SOURCE_VERSION,
-                             "--module-path", libClasses.toString(),
+                    .options("--module-path", libClasses.toString(),
                              "-XDrawDiagnostics")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
@@ -611,8 +576,6 @@ public class ImportModule extends TestRunner {
                 "Test2.java:7:5: compiler.err.cant.resolve.location: kindname.class, Impl1, , , (compiler.misc.location: kindname.class, test.Test2, null)",
                 "Test2.java:10:5: compiler.err.cant.resolve.location: kindname.class, Api6, , , (compiler.misc.location: kindname.class, test.Test2, null)",
                 "Test2.java:11:5: compiler.err.cant.resolve.location: kindname.class, Impl2, , , (compiler.misc.location: kindname.class, test.Test2, null)",
-                "- compiler.note.preview.plural: DEFAULT",
-                "- compiler.note.preview.recompile",
                 "10 errors"
         );
 
@@ -640,7 +603,6 @@ public class ImportModule extends TestRunner {
         List<String> kinds = new ArrayList<>();
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .callback(task -> {
                 task.addTaskListener(new TaskListener() {
@@ -699,7 +661,6 @@ public class ImportModule extends TestRunner {
         List<String> kinds = new ArrayList<>();
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.SUCCESS)
@@ -721,7 +682,7 @@ public class ImportModule extends TestRunner {
         Files.createDirectories(classes);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .options("--enable-preview", "--release", SOURCE_VERSION) //for implicitly declared classes
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.SUCCESS)
@@ -761,8 +722,7 @@ public class ImportModule extends TestRunner {
         Files.createDirectories(classes);
 
         List<String> actualErrors = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                        "--enable-preview", "--release", SOURCE_VERSION)
+                .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -772,8 +732,6 @@ public class ImportModule extends TestRunner {
         List<String> expectedErrors = List.of(
                 "module-info.java:3:18: compiler.warn.module.not.found: M1",
                 "module-info.java:6:9: compiler.err.cant.resolve: kindname.class, A, , ",
-                "- compiler.note.preview.filename: module-info.java, DEFAULT",
-                "- compiler.note.preview.recompile",
                 "1 error",
                 "1 warning"
         );
@@ -816,7 +774,7 @@ public class ImportModule extends TestRunner {
                 "- compiler.warn.option.obsolete.source: 8",
                 "- compiler.warn.option.obsolete.target: 8",
                 "- compiler.warn.option.obsolete.suppression",
-                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
+                "Test.java:2:8: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.module.imports), 8, 25",
                 "Test.java:2:1: compiler.err.import.module.not.found: java.base",
                 "Test.java:4:5: compiler.err.cant.resolve.location: kindname.class, List, , , (compiler.misc.location: kindname.class, test.Test, null)",
                 "3 errors",
@@ -825,7 +783,7 @@ public class ImportModule extends TestRunner {
 
         if (!Objects.equals(expectedErrors, actualErrors)) {
             throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
-                                      ", actual: " + out);
+                                      ", actual: " + actualErrors);
 
         }
     }
@@ -878,7 +836,6 @@ public class ImportModule extends TestRunner {
 
         List<String> actualErrors = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "--enable-preview", "--release", SOURCE_VERSION,
                          "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
@@ -888,8 +845,6 @@ public class ImportModule extends TestRunner {
 
         List<String> expectedErrors = List.of(
                 "Test.java:5:5: compiler.err.ref.ambiguous: A, kindname.class, mb.p1.A, mb.p1, kindname.class, ma.p1.A, ma.p1",
-                "- compiler.note.preview.filename: Test.java, DEFAULT",
-                "- compiler.note.preview.recompile",
                 "1 error"
         );
 
@@ -914,7 +869,6 @@ public class ImportModule extends TestRunner {
 
         new JavacTask(tb)
                 .options("-XDrawDiagnostics",
-                         "--enable-preview", "--release", SOURCE_VERSION,
                          "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
@@ -1001,7 +955,8 @@ public class ImportModule extends TestRunner {
         Files.createDirectories(maClasses);
 
         List<String> actualErrors = new JavacTask(tb)
-                .options("-XDrawDiagnostics")
+                .options("-XDrawDiagnostics",
+                         "--release", "24")
                 .outdir(maClasses)
                 .files(tb.findJavaFiles(ma))
                 .run(Task.Expect.FAIL)
@@ -1009,7 +964,7 @@ public class ImportModule extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expectedErrors = List.of(
-                "module-info.java:2:4: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.java.base.transitive)",
+                "module-info.java:2:4: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.java.base.transitive), 24, 25",
                 "1 error"
         );
 
@@ -1034,8 +989,7 @@ public class ImportModule extends TestRunner {
         }
 
         new JavacTask(tb)
-            .options("-XDrawDiagnostics",
-                     "--enable-preview", "--release", SOURCE_VERSION)
+            .options("-XDrawDiagnostics")
             .outdir(maClasses)
             .files(tb.findJavaFiles(ma))
             .run()
@@ -1043,7 +997,7 @@ public class ImportModule extends TestRunner {
 
         Path maModuleInfo2 = maClasses.resolve("module-info.class");
 
-        if (ClassFile.of().parse(maModuleInfo2).minorVersion() != ClassFile.PREVIEW_MINOR_VERSION) {
+        if (ClassFile.of().parse(maModuleInfo2).minorVersion() != 0) {
             throw new AssertionError("wrong minor version");
         }
     }

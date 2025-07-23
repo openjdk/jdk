@@ -439,11 +439,18 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
+//------------------------------InvolutionNode----------------------------------
+// Represents a self-inverse operation, i.e., op(op(x)) = x for any x
+class InvolutionNode : public Node {
+public:
+  InvolutionNode(Node* in) : Node(nullptr, in) {}
+  virtual Node* Identity(PhaseGVN* phase);
+};
 
 //------------------------------NegNode----------------------------------------
-class NegNode : public Node {
+class NegNode : public InvolutionNode {
 public:
-  NegNode(Node* in1) : Node(nullptr, in1) {
+  NegNode(Node* in1) : InvolutionNode(in1) {
     init_class_id(Class_Neg);
   }
 };
@@ -554,11 +561,19 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+
+class ReverseBytesNode : public InvolutionNode {
+public:
+  ReverseBytesNode(Node* in) : InvolutionNode(in) {}
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
 //-------------------------------ReverseBytesINode--------------------------------
 // reverse bytes of an integer
-class ReverseBytesINode : public Node {
+class ReverseBytesINode : public ReverseBytesNode {
 public:
-  ReverseBytesINode(Node* in) : Node(nullptr, in) {}
+  ReverseBytesINode(Node* in) : ReverseBytesNode(in) {
+  }
+
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -566,9 +581,9 @@ public:
 
 //-------------------------------ReverseBytesLNode--------------------------------
 // reverse bytes of a long
-class ReverseBytesLNode : public Node {
+class ReverseBytesLNode : public ReverseBytesNode {
 public:
-  ReverseBytesLNode(Node* in) : Node(nullptr, in) {}
+  ReverseBytesLNode(Node* in) : ReverseBytesNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
@@ -576,9 +591,9 @@ public:
 
 //-------------------------------ReverseBytesUSNode--------------------------------
 // reverse bytes of an unsigned short / char
-class ReverseBytesUSNode : public Node {
+class ReverseBytesUSNode : public ReverseBytesNode {
 public:
-  ReverseBytesUSNode(Node* in1) : Node(nullptr, in1) {}
+  ReverseBytesUSNode(Node* in1) : ReverseBytesNode(in1) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::CHAR; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -586,9 +601,9 @@ public:
 
 //-------------------------------ReverseBytesSNode--------------------------------
 // reverse bytes of a short
-class ReverseBytesSNode : public Node {
+class ReverseBytesSNode : public ReverseBytesNode {
 public:
-  ReverseBytesSNode(Node* in) : Node(nullptr, in) {}
+  ReverseBytesSNode(Node* in) : ReverseBytesNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -596,25 +611,23 @@ public:
 
 //-------------------------------ReverseINode--------------------------------
 // reverse bits of an int
-class ReverseINode : public Node {
+class ReverseINode : public InvolutionNode {
 public:
-  ReverseINode(Node* in) : Node(nullptr, in) {}
+  ReverseINode(Node* in) : InvolutionNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseLNode--------------------------------
 // reverse bits of a long
-class ReverseLNode : public Node {
+class ReverseLNode : public InvolutionNode {
 public:
-  ReverseLNode(Node* in) : Node(nullptr, in) {}
+  ReverseLNode(Node* in) : InvolutionNode(in) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 

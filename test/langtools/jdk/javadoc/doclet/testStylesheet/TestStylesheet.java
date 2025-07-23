@@ -144,13 +144,13 @@ public class TestStylesheet extends JavadocTester {
                     <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css">""",
                 """
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
-                     an <a id="named_anchor1">anchor_with_id</a>.</div>""");
+                    an <a id="named_anchor1">anchor_with_id</a>.</div>""");
 
         checkOutput("pkg/package-summary.html", true,
                 """
                     <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
-                     an <a id="named_anchor1">anchor_with_id</a>.</div>
+                    an <a id="named_anchor1">anchor_with_id</a>.</div>
                     </div>""");
 
         checkOutput("index.html", true,

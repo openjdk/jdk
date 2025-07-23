@@ -637,6 +637,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   Register sp_before_i2c_extension = Z_bcp;
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
   __ z_lg(sp_before_i2c_extension, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  __ z_slag(sp_before_i2c_extension, sp_before_i2c_extension, Interpreter::logStackElementSize);
+  __ z_agr(sp_before_i2c_extension, Z_fp);
   __ resize_frame_absolute(sp_before_i2c_extension, Z_locals/*tmp*/, true/*load_fp*/);
 
   // TODO(ZASM): necessary??
@@ -1134,7 +1136,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_agr(Z_locals, Z_esp);
   // z_ijava_state->locals - i*BytesPerWord points to i-th Java local (i starts at 0)
   // z_ijava_state->locals = Z_esp + parameter_count bytes
-  __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
+
+  __ z_sgrk(Z_R0, Z_locals, fp); // Z_R0 = Z_locals - fp();
+  __ z_srlg(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  // Store relativized Z_locals, see frame::interpreter_frame_locals().
+  __ z_stg(Z_R0, _z_ijava_state_neg(locals), fp);
 
   // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);
@@ -1168,9 +1174,14 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // z_ijava_state->monitors = fp - frame::z_ijava_state_size - Interpreter::stackElementSize;
   // z_ijava_state->esp = Z_esp = z_ijava_state->monitors;
   __ add2reg(Z_esp, -frame::z_ijava_state_size, fp);
-  __ z_stg(Z_esp, _z_ijava_state_neg(monitors), fp);
+
+  __ z_sgrk(Z_R0, Z_esp, fp);
+  __ z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  __ z_stg(Z_R0, _z_ijava_state_neg(monitors), fp);
+
   __ add2reg(Z_esp, -Interpreter::stackElementSize);
-  __ z_stg(Z_esp, _z_ijava_state_neg(esp), fp);
+
+  __ save_esp(fp);
 
   // z_ijava_state->cpoolCache = Z_R1_scratch (see load above);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(cpoolCache), fp);
@@ -1206,7 +1217,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // Various method entries
 
-// Math function, frame manager must set up an interpreter state, etc.
+// Math function, template interpreter must set up an interpreter state, etc.
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
@@ -1229,6 +1240,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
+    case Interpreter::java_lang_math_cbrt : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : /* runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt); not available */ break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
@@ -1627,7 +1639,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ add2reg(Rfirst_monitor, -(frame::z_ijava_state_size + (int)sizeof(BasicObjectLock)), Z_fp);
 #ifdef ASSERT
     NearLabel ok;
-    __ z_lg(Z_R1, _z_ijava_state_neg(monitors), Z_fp);
+    __ get_monitors(Z_R1);
     __ compareU64_and_branch(Rfirst_monitor, Z_R1, Assembler::bcondEqual, ok);
     reentry = __ stop_chain_static(reentry, "native_entry:unlock: inconsistent z_ijava_state.monitors");
     __ bind(ok);
@@ -2020,10 +2032,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 }
 
 // Not supported
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
@@ -2232,7 +2240,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ remove_activation(vtos, noreg/*ret.pc already loaded*/, false/*throw exc*/, true/*install exc*/, false/*notify jvmti*/);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
 
-  __ get_vm_result(Z_ARG1);     // Restore exception.
+  __ get_vm_result_oop(Z_ARG1);     // Restore exception.
   __ verify_oop(Z_ARG1);
   __ z_lgr(Z_ARG2, return_pc);  // Restore return address.
 

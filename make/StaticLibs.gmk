@@ -31,6 +31,7 @@ include CopyFiles.gmk
 include DebugInfoUtils.gmk
 include Modules.gmk
 include modules/LauncherCommon.gmk
+include Execute.gmk
 
 ################################################################################
 #
@@ -68,6 +69,10 @@ else ifeq ($(call isTargetOs, windows), true)
   BROKEN_STATIC_LIBS += sspi_bridge
   # dt_shmem define jdwpTransport_OnLoad which conflict with dt_socket
   BROKEN_STATIC_LIBS += dt_shmem
+else ifeq ($(call isTargetOs, aix), true)
+  # libsplashscreen has a name conflict with libawt in the function
+  # BitmapToYXBandedRectangles, so we exclude it for now.
+  BROKEN_STATIC_LIBS += splashscreen
 endif
 
 $(foreach module, $(STATIC_LIB_MODULES), \
@@ -99,6 +104,18 @@ else ifeq ($(call isTargetOs, linux), true)
   STATIC_LIBS := -Wl,--export-dynamic -Wl,--whole-archive $(STATIC_LIB_FILES) -Wl,--no-whole-archive
 else ifeq ($(call isTargetOs, windows), true)
   STATIC_LIBS := $(addprefix -wholearchive:, $(STATIC_LIB_FILES))
+else ifeq ($(call isTargetOs, aix), true)
+  # on AIX we have to generate export files for all static libs, because we have no whole-archive linker flag
+  $(foreach lib, $(STATIC_LIB_FILES), \
+    $(eval $(call SetupExecute, generate_export_list_$(notdir $(lib)), \
+      INFO := Generating export list for $(notdir $(lib)), \
+      DEPS :=  $(lib), \
+      OUTPUT_FILE := $(lib).exp, \
+      COMMAND := ( $(AR) $(ARFLAGS) -w $(lib) | $(GREP) -v '^\.' | $(AWK) '{print $$1}' | $(SORT) -u > $(lib).exp ), \
+    )) \
+    $(eval STATIC_LIB_EXPORT_FILES += $(lib).exp) \
+  )
+  STATIC_LIBS := -Wl,-bexpfull $(STATIC_LIB_FILES) $(addprefix -Wl$(COMMA)-bE:, $(STATIC_LIB_EXPORT_FILES))
 else
   $(error Unsupported platform)
 endif
@@ -118,6 +135,9 @@ $(eval $(call SetupBuildLauncher, java, \
 ))
 
 $(java): $(STATIC_LIB_FILES)
+ifeq ($(call isTargetOs, aix), true)
+  $(java): $(STATIC_LIB_EXPORT_FILES)
+endif
 
 TARGETS += $(java)
 

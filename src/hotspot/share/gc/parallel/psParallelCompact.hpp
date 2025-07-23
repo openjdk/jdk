@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -846,7 +846,7 @@ public:
   // Return the SpaceId for the given address.
   static SpaceId space_id(HeapWord* addr);
 
-  static void print_on_error(outputStream* st);
+  static void print_on(outputStream* st);
 
 #ifdef  ASSERT
   // Sanity check the new location of a word in the heap.

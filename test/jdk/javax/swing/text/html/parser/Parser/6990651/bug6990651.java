@@ -23,7 +23,7 @@
 
 /* @test
    @bug 6990651
-   @summary Regression: NPE when refreshing applet since 6u22-b01
+   @summary Regression: NPE when refreshing embedded window since 6u22-b01
    @author Pavel Porvatov
    @modules java.desktop/sun.awt
 */

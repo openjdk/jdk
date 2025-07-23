@@ -31,8 +31,8 @@
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
-#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "runtime/atomic.hpp"
@@ -76,7 +76,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   GCPolicyCounters* _policy_counters;
 
-  double _full_collection_start_sec;
+  double _cur_pause_start_sec;
 
   // Desired young gen length without taking actually available free regions into
   // account.
@@ -132,6 +132,10 @@ public:
 
   void record_card_rs_length(size_t card_rs_length) {
     _card_rs_length = card_rs_length;
+  }
+
+  double cur_pause_start_sec() const {
+    return _cur_pause_start_sec;
   }
 
   double predict_base_time_ms(size_t pending_cards) const;
@@ -196,11 +200,6 @@ private:
   // Lazily initialized
   mutable G1GCPhaseTimes* _phase_times;
 
-  // This set of variables tracks the collector efficiency, in order to
-  // determine whether we should initiate a new marking.
-  double _mark_remark_start_sec;
-  double _mark_cleanup_start_sec;
-
   // Updates the internal young gen maximum and target and desired lengths.
   // If no parameters are passed, predict pending cards, card set remset length and
   // code root remset length using the prediction model.
@@ -242,6 +241,10 @@ private:
 public:
   size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
+
+  // GC efficiency for collecting the region based on the time estimate for
+  // merging and scanning incoming references.
+  double predict_gc_efficiency(G1HeapRegion* hr);
 
   // The minimum number of retained regions we will add to the CSet during a young GC.
   uint min_retained_old_cset_length() const;
@@ -302,6 +305,7 @@ public:
   bool about_to_start_mixed_phase() const;
 
   // Record the start and end of the actual collection part of the evacuation pause.
+  void record_pause_start_time();
   void record_young_collection_start();
   void record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure);
 
@@ -312,12 +316,9 @@ public:
   // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end();
 
-  // Record start and end of remark.
-  void record_concurrent_mark_remark_start();
   void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
-  void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
   bool next_gc_should_be_mixed() const;

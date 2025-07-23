@@ -25,21 +25,22 @@
 #ifndef SHARE_NMT_MEMTRACKER_HPP
 #define SHARE_NMT_MEMTRACKER_HPP
 
+#include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
+#include "nmt/memBaseline.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
                     NativeCallStack(1) : FAKE_CALLSTACK)
-
-class MemBaseline;
 
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
@@ -126,12 +127,12 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MemTag mem_tag = mtNone) {
+    MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
 
@@ -139,7 +140,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      VirtualMemoryTracker::remove_released_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_released_region((address)addr, size);
     }
   }
 
@@ -147,18 +148,18 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_uncommitted_region((address)addr, size);
     }
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MemTag mem_tag = mtNone) {
+    const NativeCallStack& stack, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, mem_tag);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -168,7 +169,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -216,16 +217,20 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
+      VirtualMemoryTracker::Instance::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
 
-  static inline void record_virtual_memory_tag(void* addr, MemTag mem_tag) {
+  static inline void record_virtual_memory_tag(const ReservedSpace& rs, MemTag mem_tag) {
+    record_virtual_memory_tag(rs.base(), rs.size(), mem_tag);
+  }
+
+  static inline void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::set_reserved_region_tag((address)addr, mem_tag);
+      VirtualMemoryTracker::Instance::set_reserved_region_tag((address)addr, size, mem_tag);
     }
   }
 
@@ -261,7 +266,7 @@ class MemTracker : AllStatic {
 
   // Stored baseline
   static inline MemBaseline& get_baseline() {
-    return _baseline;
+    return *_baseline;
   }
 
   static void tuning_statistics(outputStream* out);
@@ -314,7 +319,7 @@ class MemTracker : AllStatic {
   // Tracking level
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
-  static MemBaseline      _baseline;
+  static DeferredStatic<MemBaseline> _baseline;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

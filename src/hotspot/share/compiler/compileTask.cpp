@@ -23,10 +23,10 @@
  */
 
 #include "compiler/compilationPolicy.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compileTask.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -36,66 +36,15 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 
-CompileTask*  CompileTask::_task_free_list = nullptr;
+int CompileTask::_active_tasks = 0;
 
-/**
- * Allocate a CompileTask, from the free list if possible.
- */
-CompileTask* CompileTask::allocate() {
-  MutexLocker locker(CompileTaskAlloc_lock);
-  CompileTask* task = nullptr;
-
-  if (_task_free_list != nullptr) {
-    task = _task_free_list;
-    _task_free_list = task->next();
-    task->set_next(nullptr);
-  } else {
-    task = new CompileTask();
-    task->set_next(nullptr);
-    task->set_is_free(true);
-  }
-  assert(task->is_free(), "Task must be free.");
-  task->set_is_free(false);
-  return task;
-}
-
-/**
-* Add a task to the free list.
-*/
-void CompileTask::free(CompileTask* task) {
-  MutexLocker locker(CompileTaskAlloc_lock);
-  if (!task->is_free()) {
-    assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
-        (task->_hot_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
-      JNIHandles::destroy_weak_global(task->_method_holder);
-      JNIHandles::destroy_weak_global(task->_hot_method_holder);
-    } else {
-      JNIHandles::destroy_global(task->_method_holder);
-      JNIHandles::destroy_global(task->_hot_method_holder);
-    }
-    if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
-      os::free((void*) task->_failure_reason);
-    }
-    task->_failure_reason = nullptr;
-    task->_failure_reason_on_C_heap = false;
-
-    task->set_is_free(true);
-    task->set_next(_task_free_list);
-    _task_free_list = task;
-  }
-}
-
-void CompileTask::initialize(int compile_id,
-                             const methodHandle& method,
-                             int osr_bci,
-                             int comp_level,
-                             const methodHandle& hot_method,
-                             int hot_count,
-                             CompileTask::CompileReason compile_reason,
-                             bool is_blocking) {
-  assert(!_lock->is_locked(), "bad locking");
-
+CompileTask::CompileTask(int compile_id,
+                         const methodHandle& method,
+                         int osr_bci,
+                         int comp_level,
+                         int hot_count,
+                         CompileReason compile_reason,
+                         bool is_blocking) {
   Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
@@ -107,13 +56,9 @@ void CompileTask::initialize(int compile_id,
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
 
-  _waiting_count = 0;
-
   _is_complete = false;
   _is_success = false;
 
-  _hot_method = nullptr;
-  _hot_method_holder = nullptr;
   _hot_count = hot_count;
   _time_queued = os::elapsed_counter();
   _time_started = 0;
@@ -125,21 +70,37 @@ void CompileTask::initialize(int compile_id,
   _nm_total_size = 0;
   _failure_reason = nullptr;
   _failure_reason_on_C_heap = false;
+  _training_data = nullptr;
   _arena_bytes = 0;
 
-  if (LogCompilation) {
-    if (hot_method.not_null()) {
-      if (hot_method == method) {
-        _hot_method = _method;
-      } else {
-        _hot_method = hot_method();
-        // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_weak_global(Handle(thread, hot_method->method_holder()->klass_holder()));
-      }
-    }
+  _next = nullptr;
+
+  Atomic::add(&_active_tasks, 1, memory_order_relaxed);
+}
+
+CompileTask::~CompileTask() {
+  if (_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder)) {
+    JNIHandles::destroy_weak_global(_method_holder);
+  } else {
+    JNIHandles::destroy_global(_method_holder);
+  }
+  if (_failure_reason_on_C_heap && _failure_reason != nullptr) {
+    os::free((void*) _failure_reason);
+    _failure_reason = nullptr;
+    _failure_reason_on_C_heap = false;
   }
 
-  _next = nullptr;
+  if (Atomic::sub(&_active_tasks, 1, memory_order_relaxed) == 0) {
+    MonitorLocker wait_ml(CompileTaskWait_lock);
+    wait_ml.notify_all();
+  }
+}
+
+void CompileTask::wait_for_no_active_tasks() {
+  MonitorLocker locker(CompileTaskWait_lock);
+  while (Atomic::load(&_active_tasks) > 0) {
+    locker.wait();
+  }
 }
 
 /**
@@ -159,11 +120,7 @@ CompileTask* CompileTask::select_for_compilation() {
   assert(_method->method_holder()->is_loader_alive(), "should be alive");
   Handle method_holder(thread, _method->method_holder()->klass_holder());
   JNIHandles::destroy_weak_global(_method_holder);
-  JNIHandles::destroy_weak_global(_hot_method_holder);
   _method_holder = JNIHandles::make_global(method_holder);
-  if (_hot_method != nullptr) {
-    _hot_method_holder = JNIHandles::make_global(Handle(thread, _hot_method->method_holder()->klass_holder()));
-  }
   return this;
 }
 
@@ -173,9 +130,6 @@ void CompileTask::mark_on_stack() {
   }
   // Mark these methods as something redefine classes cannot remove.
   _method->set_on_stack(true);
-  if (_hot_method != nullptr) {
-    _hot_method->set_on_stack(true);
-  }
 }
 
 bool CompileTask::is_unloaded() const {
@@ -188,9 +142,6 @@ void CompileTask::metadata_do(MetadataClosure* f) {
     return;
   }
   f->do_metadata(method());
-  if (hot_method() != nullptr && hot_method() != method()) {
-    f->do_metadata(hot_method());
-  }
 }
 
 // ------------------------------------------------------------------
@@ -329,9 +280,6 @@ void CompileTask::log_task_queued() {
   assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
   xtty->print(" comment='%s'", reason_name(_compile_reason));
 
-  if (_hot_method != nullptr && _hot_method != _method) {
-    xtty->method(_hot_method);
-  }
   if (_hot_count != 0) {
     xtty->print(" hot_count='%d'", _hot_count);
   }
@@ -471,7 +419,7 @@ void CompileTask::print_inlining_inner_message(outputStream* st, InliningResult 
 }
 
 void CompileTask::print_ul(const char* msg){
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print(&ls, msg, /* short form */ true, /* cr */ true);
@@ -479,7 +427,7 @@ void CompileTask::print_ul(const char* msg){
 }
 
 void CompileTask::print_ul(const nmethod* nm, const char* msg) {
-  LogTarget(Debug, jit, compilation) lt;
+  LogTarget(Info, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     print_impl(&ls, nm->method(), nm->compile_id(),

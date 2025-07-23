@@ -29,18 +29,14 @@
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
-#include "oops/resolvedFieldEntry.hpp"
-#include "oops/resolvedIndyEntry.hpp"
-#include "oops/resolvedMethodEntry.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 
 // Prints the current bytecode and its attributes using bytecode-specific information.
@@ -85,10 +81,11 @@ class BytecodePrinter {
   void      bytecode_epilog(int bci, outputStream* st);
 
  public:
-  BytecodePrinter(int flags = 0) {
-    _is_wide = false;
-    _code = Bytecodes::_illegal;
-    _flags = flags;
+  BytecodePrinter(int flags = 0) : _is_wide(false), _code(Bytecodes::_illegal), _flags(flags) {}
+
+#ifndef PRODUCT
+  BytecodePrinter(Method* prev_method) : BytecodePrinter(0) {
+    _current_method = prev_method;
   }
 
   // This method is called while executing the raw bytecodes, so none of
@@ -96,6 +93,10 @@ class BytecodePrinter {
   void trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
     ResourceMark rm;
     bool method_changed = _current_method != method();
+    _current_method = method();
+    _is_linked = method->method_holder()->is_linked();
+    assert(_is_linked, "this function must be called on methods that are already executing");
+
     if (method_changed) {
       // Note 1: This code will not work as expected with true MT/MP.
       //         Need an explicit lock or a different solution.
@@ -107,9 +108,6 @@ class BytecodePrinter {
       st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       method->print_name(st);
       st->cr();
-      _current_method = method();
-      _is_linked = method->method_holder()->is_linked();
-      assert(_is_linked, "this function must be called on methods that are already executing");
     }
     Bytecodes::Code code;
     if (is_wide()) {
@@ -142,14 +140,13 @@ class BytecodePrinter {
     _is_wide = (code == Bytecodes::_wide);
     _code = Bytecodes::_illegal;
 
-#ifndef PRODUCT
     if (TraceBytecodesStopAt != 0 && BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
       TraceBytecodes = false;
     }
-#endif
   }
+#endif
 
-  // Used for Method*::print_codes().  The input bcp comes from
+  // Used for Method::print_codes().  The input bcp comes from
   // BytecodeStream, which will skip wide bytecodes.
   void trace(const methodHandle& method, address bcp, outputStream* st) {
     _current_method = method();
@@ -178,21 +175,22 @@ class BytecodePrinter {
   }
 };
 
-// We need a global instance to keep track of the states when the bytecodes
-// are executed. Access by multiple threads are controlled by ttyLocker.
-static BytecodePrinter _interpreter_printer;
+#ifndef PRODUCT
+// We need a global instance to keep track of the method being printed so we can report that
+// the method has changed. If this method is redefined and removed, that's ok because the method passed
+// in won't match, and this will print the method passed in again. Racing threads changing this global
+// will result in reprinting the method passed in again.
+static Method* _method_currently_being_printed = nullptr;
 
 void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
-    ttyLocker ttyl;  // 5065316: keep the following output coherent
-    // The ttyLocker also prevents races between two threads
-    // trying to use the single instance of BytecodePrinter.
-    //
-    // There used to be a leaf mutex here, but the ttyLocker will
-    // work just as well, as long as the printing operations never block.
-    _interpreter_printer.trace(method, bcp, tos, tos2, st);
+    BytecodePrinter printer(Atomic::load_acquire(&_method_currently_being_printed));
+    printer.trace(method, bcp, tos, tos2, st);
+    // Save method currently being printed to detect when method printing changes.
+    Atomic::release_store(&_method_currently_being_printed, method());
   }
 }
+#endif
 
 void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
   BytecodePrinter method_printer(flags);

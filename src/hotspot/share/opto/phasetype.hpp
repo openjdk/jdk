@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,15 @@
   flags(EXPAND_VBOX,                    "Expand VectorBox") \
   flags(ELIMINATE_VBOX_ALLOC,           "Eliminate VectorBoxAllocate") \
   flags(ITER_GVN_BEFORE_EA,             "Iter GVN before EA") \
-  flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after vector box elimination") \
-  flags(BEFORE_BEAUTIFY_LOOPS,          "Before beautify loops") \
-  flags(AFTER_BEAUTIFY_LOOPS,           "After beautify loops") \
-  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
-  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
+  flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after Vector Box Elimination") \
+  flags(BEFORE_LOOP_OPTS,               "Before Loop Optimizations") \
+  flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
+  flags(AFTER_EA,                       "After Escape Analysis") \
+  flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
+  flags(BEFORE_BEAUTIFY_LOOPS,          "Before Beautify Loops") \
+  flags(AFTER_BEAUTIFY_LOOPS,           "After Beautify Loops") \
+  flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
+  flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(BEFORE_SPLIT_IF,                "Before Split-If") \
   flags(AFTER_SPLIT_IF,                 "After Split-If") \
   flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
@@ -68,49 +72,58 @@
   flags(AFTER_LOOP_MULTIVERSIONING,     "After Loop Multiversioning") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
+  flags(ITER_GVN_AFTER_ELIMINATION,     "Iter GVN after Eliminating Allocations and Locks") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, Before Apply") \
-  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, After Apply Memop Reordering") \
-  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, After Adjusting Pre-Loop Limit") \
-  flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, After Adding Speculative Runtime Checks") \
-  flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, After Apply") \
-  flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
-  flags(AFTER_CLOOPS,                   "After CountedLoop") \
-  flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
-  flags(AFTER_EA,                       "After Escape Analysis") \
-  flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
-  flags(ITER_GVN_AFTER_ELIMINATION,     "Iter GVN after eliminating allocations and locks") \
+  flags(BEFORE_POST_LOOP,               "Before Post Loop") \
+  flags(AFTER_POST_LOOP,                "After Post Loop") \
+  flags(BEFORE_REMOVE_EMPTY_LOOP,       "Before Remove Empty Loop") \
+  flags(AFTER_REMOVE_EMPTY_LOOP,        "After Remove Empty Loop") \
+  flags(BEFORE_ONE_ITERATION_LOOP,      "Before Replace One-Iteration Loop") \
+  flags(AFTER_ONE_ITERATION_LOOP,       "After Replace One-Iteration Loop") \
+  flags(BEFORE_DUPLICATE_LOOP_BACKEDGE, "Before Duplicate Loop Backedge") \
+  flags(AFTER_DUPLICATE_LOOP_BACKEDGE,  "After Duplicate Loop Backedge") \
+  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
+  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
   flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
   flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
   flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
+  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, before Apply") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, after Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, after Adjusting Pre-loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, after Adding Speculative Runtime Checks") \
+  flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, after Apply") \
   flags(BEFORE_CCP1,                    "Before PhaseCCP 1") \
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
+  flags(AFTER_LOOP_OPTS,                "After Loop Optimizations") \
   flags(AFTER_MERGE_STORES,             "After Merge Stores") \
+  flags(AFTER_MACRO_ELIMINATION_STEP,   "After Macro Elimination Step") \
+  flags(AFTER_MACRO_ELIMINATION,        "After Macro Elimination") \
   flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
   flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
   flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
-  flags(BARRIER_EXPANSION,              "Barrier expand") \
-  flags(OPTIMIZE_FINISHED,              "Optimize finished") \
-  flags(BEFORE_MATCHING,                "Before matching") \
-  flags(MATCHING,                       "After matching") \
-  flags(GLOBAL_CODE_MOTION,             "Global code motion") \
-  flags(INITIAL_LIVENESS,               "Initial liveness") \
-  flags(AGGRESSIVE_COALESCING,          "Aggressive coalescing") \
-  flags(INITIAL_SPILLING,               "Initial spilling") \
-  flags(CONSERVATIVE_COALESCING,        "Conservative coalescing") \
-  flags(ITERATIVE_SPILLING,             "Iterative spilling") \
-  flags(AFTER_ITERATIVE_SPILLING,       "After iterative spilling") \
-  flags(POST_ALLOCATION_COPY_REMOVAL,   "Post-allocation copy removal") \
-  flags(MERGE_MULTI_DEFS,               "Merge multiple definitions") \
-  flags(FIX_UP_SPILLS,                  "Fix up spills") \
+  flags(BARRIER_EXPANSION,              "Barrier Expand") \
+  flags(OPTIMIZE_FINISHED,              "Optimize Finished") \
+  flags(BEFORE_MATCHING,                "Before Matching") \
+  flags(MATCHING,                       "After Matching") \
+  flags(GLOBAL_CODE_MOTION,             "Global Code Motion") \
+  flags(INITIAL_LIVENESS,               "Initial Liveness") \
+  flags(LIVE_RANGE_STRETCHING,          "Live Range Stretching") \
+  flags(AGGRESSIVE_COALESCING,          "Aggressive Coalescing") \
+  flags(INITIAL_SPILLING,               "Initial Spilling") \
+  flags(CONSERVATIVE_COALESCING,        "Conservative Coalescing") \
+  flags(ITERATIVE_SPILLING,             "Iterative Spilling") \
+  flags(AFTER_ITERATIVE_SPILLING,       "After Iterative Spilling") \
+  flags(POST_ALLOCATION_COPY_REMOVAL,   "Post-allocation Copy Removal") \
+  flags(MERGE_MULTI_DEFS,               "Merge Multiple Definitions") \
+  flags(FIX_UP_SPILLS,                  "Fix up Spills") \
   flags(REGISTER_ALLOCATION,            "Register Allocation") \
   flags(BLOCK_ORDERING,                 "Block Ordering") \
   flags(PEEPHOLE,                       "Peephole") \
-  flags(POSTALLOC_EXPAND,               "Post-Allocation Expand") \
-  flags(MACH_ANALYSIS,                  "After mach analysis") \
+  flags(POSTALLOC_EXPAND,               "Post-allocation Expand") \
+  flags(MACH_ANALYSIS,                  "After Mach Analysis") \
   flags(FINAL_CODE,                     "Final Code") \
   flags(END,                            "End") \
   flags(FAILURE,                        "Failure") \

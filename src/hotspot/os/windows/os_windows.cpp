@@ -60,10 +60,8 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -76,6 +74,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
@@ -110,9 +109,6 @@
 #include <mmsystem.h>
 #include <winsock2.h>
 #include <versionhelpers.h>
-
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(-1)
 
 // For DLL loading/load error detection
 // Values of PE COFF
@@ -760,8 +756,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
   HANDLE thread_handle;
-  int limit = 3;
-  do {
+  int trials_remaining = 4;
+  DWORD next_delay_ms = 1;
+  while (true) {
     thread_handle =
       (HANDLE)_beginthreadex(nullptr,
                              (unsigned)stack_size,
@@ -769,7 +766,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                              thread,
                              initflag,
                              &thread_id);
-  } while (thread_handle == nullptr && errno == EAGAIN && limit-- > 0);
+
+    if (thread_handle != nullptr) {
+      break;
+    }
+
+    if (errno != EAGAIN) {
+      break;
+    }
+
+    if (--trials_remaining <= 0) {
+      break;
+    }
+
+    log_debug(os, thread)("Failed to start native thread (%s), retrying after %dms.", os::errno_name(errno), next_delay_ms);
+    Sleep(next_delay_ms);
+    next_delay_ms *= 2;
+  }
 
   ResourceMark rm;
   char buf[64];
@@ -1181,19 +1194,36 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
-double os::elapsedVTime() {
-  FILETIME created;
-  FILETIME exited;
+double os::elapsed_process_cpu_time() {
+  FILETIME create;
+  FILETIME exit;
   FILETIME kernel;
   FILETIME user;
-  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
-    // the resolution of windows_to_java_time() should be sufficient (ms)
-    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
-  } else {
-    return elapsedTime();
+
+  if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
+    return -1;
   }
+
+  SYSTEMTIME user_total;
+  if (FileTimeToSystemTime(&user, &user_total) == 0) {
+    return -1;
+  }
+
+  SYSTEMTIME kernel_total;
+  if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
+    return -1;
+  }
+
+  double user_seconds =
+      double(user_total.wHour) * 3600.0 + double(user_total.wMinute) * 60.0 +
+      double(user_total.wSecond) + double(user_total.wMilliseconds) / 1000.0;
+
+  double kernel_seconds = double(kernel_total.wHour) * 3600.0 +
+                          double(kernel_total.wMinute) * 60.0 +
+                          double(kernel_total.wSecond) +
+                          double(kernel_total.wMilliseconds) / 1000.0;
+
+  return user_seconds + kernel_seconds;
 }
 
 jlong os::javaTimeMillis() {
@@ -1224,16 +1254,16 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   if (freq < NANOSECS_PER_SEC) {
     // the performance counter is 64 bits and we will
     // be multiplying it -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   } else if (freq > NANOSECS_PER_SEC) {
     // use the max value the counter can reach to
     // determine the max value which could be returned
-    julong max_counter = (julong)ALL_64_BITS;
+    julong max_counter = (julong)all_bits_jlong;
     info_ptr->max_value = (jlong)(max_counter / (freq / NANOSECS_PER_SEC));
   } else {
     // the performance counter is 64 bits and we will
     // be using it directly -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   }
 
   // using a counter, so no skipping
@@ -1699,6 +1729,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s was successful", name);
     return result;
   }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
+
   DWORD errcode = GetLastError();
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
@@ -2206,26 +2242,16 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   buf[0] = '\0';
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like jvm.dll is installed there (append a fake suffix
-    // hotspot/jvm.dll).
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0 &&
         strlen(java_home_var) < (size_t)buflen) {
-      strncpy(buf, java_home_var, buflen);
-
-      // determine if this is a legacy image or modules image
-      // modules image doesn't have "jre" subdirectory
-      size_t len = strlen(buf);
-      char* jrebin_p = buf + len;
-      jio_snprintf(jrebin_p, buflen-len, "\\jre\\bin\\");
-      if (0 != _access(buf, 0)) {
-        jio_snprintf(jrebin_p, buflen-len, "\\bin\\");
-      }
-      len = strlen(buf);
-      jio_snprintf(buf + len, buflen-len, "hotspot\\jvm.dll");
+      stringStream ss(buf, buflen);
+      ss.print("%s\\bin\\%s\\jvm%s",
+               java_home_var, Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+      assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+             "buf has been truncated");
     }
   }
 
@@ -2241,6 +2267,8 @@ void os::jvm_path(char *buf, jint buflen) {
 // from src/windows/hpi/src/system_md.c
 
 size_t os::lasterror(char* buf, size_t len) {
+  assert(buf != nullptr && len > 0, "invalid buffer passed");
+
   DWORD errval;
 
   if ((errval = GetLastError()) != 0) {
@@ -2600,6 +2628,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PreserveLastError ple;
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
   DWORD exception_code = exception_record->ExceptionCode;
@@ -2619,14 +2648,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
-#endif
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -2747,19 +2774,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
-
-#ifdef _M_ARM64
-    if (in_java &&
-        (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
-          exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant");
-        }
-        return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
-      }
-    }
-#endif
 
     if (in_java) {
       switch (exception_code) {
@@ -3028,7 +3042,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtNone);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3089,7 +3103,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC);
+                                                  bytes_to_release, CALLER_PC, mtNone);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -3107,9 +3121,9 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC, mtNone);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, mtNone);
   }
 
   // made it this far, success
@@ -3249,7 +3263,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag = mtNone) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3263,7 +3277,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
-                                         os::reserve_memory(extra_size, false, mem_tag);
+                                         os::reserve_memory(extra_size, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3280,7 +3294,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
     aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, false, mem_tag);
+                                     os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
   }
 
   assert(aligned_base != nullptr,
@@ -3289,9 +3303,9 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+  return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
@@ -3409,8 +3423,8 @@ static char* find_aligned_address(size_t size, size_t alignment) {
 }
 
 static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
-  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=%zu%s",
-                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" EXACTFMT,
+                      EXACTFMTARGS(alignment));
 
   // Will try to find a suitable address at most 20 times. The reason we need to try
   // multiple times is that between finding the aligned address and trying to commit
@@ -4367,9 +4381,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
+    permit_forbidden_function::exit(exit_code);
   } else { // EPT_PROCESS_DIE
-    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
+    permit_forbidden_function::_exit(exit_code);
   }
 
   // Should not reach here
@@ -4621,6 +4635,63 @@ static void set_path_prefix(char* buf, LPCWSTR* prefix, int* prefix_off, bool* n
   }
 }
 
+// This method checks if a wide path is actually a symbolic link
+static bool is_symbolic_link(const wchar_t* wide_path) {
+  WIN32_FIND_DATAW fd;
+  HANDLE f = ::FindFirstFileW(wide_path, &fd);
+  if (f != INVALID_HANDLE_VALUE) {
+    const bool result = fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
+    if (::FindClose(f) == 0) {
+      errno = ::GetLastError();
+      log_debug(os)("is_symbolic_link() failed to FindClose: GetLastError->%ld.", errno);
+    }
+    return result;
+  } else {
+    errno = ::GetLastError();
+    log_debug(os)("is_symbolic_link() failed to FindFirstFileW: GetLastError->%ld.", errno);
+    return false;
+  }
+}
+
+// This method dereferences a symbolic link
+static WCHAR* get_path_to_target(const wchar_t* wide_path) {
+  HANDLE hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (hFile == INVALID_HANDLE_VALUE) {
+    errno = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CreateFileW: GetLastError->%ld.", errno);
+    return nullptr;
+  }
+
+  // Returned value includes the terminating null character.
+  const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
+                                                              FILE_NAME_NORMALIZED);
+  if (target_path_size == 0) {
+    errno = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%ld.", errno);
+    return nullptr;
+  }
+
+  WCHAR* path_to_target = NEW_C_HEAP_ARRAY(WCHAR, target_path_size, mtInternal);
+
+  // The returned size is the length excluding the terminating null character.
+  const size_t res = ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size),
+                                                 FILE_NAME_NORMALIZED);
+  if (res != target_path_size - 1) {
+    errno = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%ld.", errno);
+    return nullptr;
+  }
+
+  if (::CloseHandle(hFile) == 0) {
+    errno = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%ld.", errno);
+    return nullptr;
+  }
+
+  return path_to_target;
+}
+
 // Returns the given path as an absolute wide path in unc format. The returned path is null
 // on error (with err being set accordingly) and should be freed via os::free() otherwise.
 // additional_space is the size of space, in wchar_t, the function will additionally add to
@@ -4689,14 +4760,34 @@ int os::stat(const char *path, struct stat *sbuf) {
     return -1;
   }
 
-  WIN32_FILE_ATTRIBUTE_DATA file_data;;
-  BOOL bret = ::GetFileAttributesExW(wide_path, GetFileExInfoStandard, &file_data);
-  os::free(wide_path);
+  const bool is_symlink = is_symbolic_link(wide_path);
+  WCHAR* path_to_target = nullptr;
 
+  if (is_symlink) {
+    path_to_target = get_path_to_target(wide_path);
+    if (path_to_target == nullptr) {
+      // it is a symbolic link, but we failed to resolve it,
+      // errno has been set in the call to get_path_to_target(),
+      // no need to overwrite it
+      os::free(wide_path);
+      return -1;
+    }
+  }
+
+  WIN32_FILE_ATTRIBUTE_DATA file_data;;
+  BOOL bret = ::GetFileAttributesExW(is_symlink ? path_to_target : wide_path, GetFileExInfoStandard, &file_data);
+
+  // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
     errno = ::GetLastError();
+    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%ld.", errno);
+    os::free(wide_path);
+    os::free(path_to_target);
     return -1;
   }
+
+  os::free(wide_path);
+  os::free(path_to_target);
 
   file_attribute_data_to_stat(sbuf, file_data);
   return 0;
@@ -4821,14 +4912,14 @@ jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned
@@ -4882,12 +4973,30 @@ int os::open(const char *path, int oflag, int mode) {
     errno = err;
     return -1;
   }
-  int fd = ::_wopen(wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
-  os::free(wide_path);
 
+  const bool is_symlink = is_symbolic_link(wide_path);
+  WCHAR* path_to_target = nullptr;
+
+  if (is_symlink) {
+    path_to_target = get_path_to_target(wide_path);
+    if (path_to_target == nullptr) {
+      // it is a symbolic link, but we failed to resolve it,
+      // errno has been set in the call to get_path_to_target(),
+      // no need to overwrite it
+      os::free(wide_path);
+      return -1;
+    }
+  }
+
+  int fd = ::_wopen(is_symlink ? path_to_target : wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
+
+  // if opening files failed, GetLastError should be called immediately after that
   if (fd == -1) {
     errno = ::GetLastError();
+    log_debug(os)("os::open() failed to _wopen: GetLastError->%ld.", errno);
   }
+  os::free(wide_path);
+  os::free(path_to_target);
 
   return fd;
 }
@@ -5140,7 +5249,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  char* p = permit_forbidden_function::_fullpath(nullptr, filename, 0);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -5148,7 +5257,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
 }
@@ -5196,7 +5305,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     }
 
     // Record virtual memory allocation
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC, mtNone);
 
     DWORD bytes_read;
     OVERLAPPED overlapped;
@@ -5740,61 +5849,34 @@ ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-// returns true if thread could be suspended,
-// false otherwise
-static bool do_suspend(HANDLE* h) {
-  if (h != nullptr) {
-    if (SuspendThread(*h) != ~0) {
-      return true;
-    }
-  }
-  return false;
-}
+// WINDOWS CONTEXT Flags for THREAD_SAMPLING
+#if defined(AMD64) || defined(_M_ARM64)
+  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
+#endif
 
-// resume the thread
-// calling resume on an active thread is a no-op
-static void do_resume(HANDLE* h) {
-  if (h != nullptr) {
-    ResumeThread(*h);
-  }
-}
-
-// retrieve a suspend/resume context capable handle
-// from the tid. Caller validates handle return value.
-void get_thread_handle_for_extended_context(HANDLE* h,
-                                            DWORD tid) {
-  if (h != nullptr) {
-    *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
-  }
+// Retrieve a suspend/resume context capable handle for the tid.
+// Caller validates handle return value.
+static inline HANDLE get_thread_handle_for_extended_context(DWORD tid) {
+  return OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
 }
 
 // Thread sampling implementation
 //
 void SuspendedThreadTask::internal_do_task() {
-  CONTEXT    ctxt;
-  HANDLE     h = nullptr;
-
-  // get context capable handle for thread
-  get_thread_handle_for_extended_context(&h, _thread->osthread()->thread_id());
-
-  // sanity
-  if (h == nullptr || h == INVALID_HANDLE_VALUE) {
+  const HANDLE h = get_thread_handle_for_extended_context(_thread->osthread()->thread_id());
+  if (h == nullptr) {
     return;
   }
-
-  // suspend the thread
-  if (do_suspend(&h)) {
-    ctxt.ContextFlags = (CONTEXT_FULL | CONTEXT_FLOATING_POINT);
-    // get thread context
-    GetThreadContext(h, &ctxt);
-    SuspendedThreadTaskContext context(_thread, &ctxt);
-    // pass context to Thread Sampling impl
-    do_task(context);
-    // resume thread
-    do_resume(&h);
+  CONTEXT ctxt;
+  ctxt.ContextFlags = sampling_context_flags;
+  if (SuspendThread(h) != OS_ERR) {
+    if (GetThreadContext(h, &ctxt)) {
+      const SuspendedThreadTaskContext context(_thread, &ctxt);
+      // Pass context to Thread Sampling implementation.
+      do_task(context);
+    }
+    ResumeThread(h);
   }
-
-  // close handle
   CloseHandle(h);
 }
 

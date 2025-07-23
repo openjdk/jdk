@@ -27,6 +27,7 @@
 
 #include "opto/cfgnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/predicates_enums.hpp"
 
 class IdealLoopTree;
 class InitializedAssertionPredicate;
@@ -72,6 +73,14 @@ class TemplateAssertionPredicate;
  *                           counted loop to avoid these overflow problems.
  *                           The predicate does not replace an actual check inside the loop. This predicate can only
  *                           be added once above the Loop Limit Check Parse Predicate for a loop.
+ *     - Short:              This predicate is created when a long counted loop is transformed into an int counted
+ *       Running Long        loop. In general, that transformation requires an outer loop to guarantee that the new
+ *       Loop                loop nest iterates over the entire range of the loop before transformation. However, if the
+ *       Predicate           loop is speculated to run for a small enough number of iterations, the outer loop is not
+ *                           needed. This predicate is added to catch mis-speculation in this case. It also applies to
+ *                           int counted loops with long range checks for which a loop nest also needs to be created
+ *                           in the general case (so the transformation of long range checks to int range checks is
+ *                           legal).
  * - Assertion Predicate: An always true predicate which will never fail (its range is already covered by an earlier
  *                        Hoisted Check Predicate or the main-loop entry guard) but is required in order to fold away a
  *                        dead sub loop in which some data could be proven to be dead (by the type system) and replaced
@@ -200,16 +209,6 @@ class TemplateAssertionPredicate;
  * Main Loop Head
  */
 
-// Assertion Predicates are either emitted to check the initial value of a range check in the first iteration or the last
-// value of a range check in the last iteration of a loop.
-enum class AssertionPredicateType {
-  None, // Not an Assertion Predicate
-  InitValue,
-  LastValue,
-  // Used for the Initialized Assertion Predicate emitted during Range Check Elimination for the final IV value.
-  FinalIv
-};
-
 // Interface to represent a C2 predicate. A predicate is always represented by two CFG nodes:
 // - An If node (head)
 // - An IfProj node representing the success projection of the If node (tail).
@@ -273,9 +272,10 @@ class AssertionPredicates : public StackObj {
 // - An Initialized Assertion Predicate.
 class AssertionPredicate : public StackObj {
   static bool has_assertion_predicate_opaque(const Node* predicate_proj);
-  static bool has_halt(const Node* success_proj);
+
  public:
   static bool is_predicate(const Node* maybe_success_proj);
+  static bool has_halt(const IfTrueNode* success_proj);
 };
 
 // Utility class representing a Regular Predicate which is either a Runtime Predicate or an Assertion Predicate.
@@ -296,8 +296,6 @@ class ParsePredicate : public Predicate {
   }
 
   static ParsePredicateNode* init_parse_predicate(const Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
-  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_false_path_loop,
-                                                       const ParsePredicateSuccessProj* success_proj);)
 
  public:
   ParsePredicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason)
@@ -311,10 +309,11 @@ class ParsePredicate : public Predicate {
     return _entry;
   }
 
-  // This Parse Predicate is valid if the node passed to the constructor is a projection of a ParsePredicateNode and the
-  // deopt_reason of the uncommon trap of the ParsePredicateNode matches the passed deopt_reason to the constructor.
+  // This Parse Predicate is valid if the node passed to the constructor is a projection of a ParsePredicateNode, the
+  // deopt_reason of the uncommon trap of the ParsePredicateNode matches the passed deopt_reason to the constructor and
+  // the ParsePredicateNode is not marked useless.
   bool is_valid() const {
-    return _parse_predicate_node != nullptr;
+    return _parse_predicate_node != nullptr && !_parse_predicate_node->is_useless();
   }
 
   ParsePredicateNode* head() const override {
@@ -327,14 +326,10 @@ class ParsePredicate : public Predicate {
     return _success_proj;
   }
 
-  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_false_path_loop,
-                                          PhaseIdealLoop* phase) const;
+  ParsePredicate clone_to_loop(Node* new_control, bool rewire_uncommon_proj_phi_inputs, PhaseIdealLoop* phase) const;
+  NOT_PRODUCT(void trace_cloned_parse_predicate(bool is_false_path_loop) const;)
 
-  // Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
-  void kill(const PhaseIterGVN& igvn) const {
-    _parse_predicate_node->mark_useless();
-    igvn._worklist.push(_parse_predicate_node);
-  }
+  void kill(PhaseIterGVN& igvn) const;
 };
 
 // Class to represent a Runtime Predicate which always has an associated UCT on the failing path.
@@ -407,14 +402,21 @@ class TemplateAssertionPredicate : public Predicate {
     return opaque_node()->is_useless();
   }
 
-  TemplateAssertionPredicate clone(Node* new_control, PhaseIdealLoop* phase) const;
+  TemplateAssertionPredicate clone(Node* new_control, CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   TemplateAssertionPredicate clone_and_replace_opaque_input(Node* new_control, Node* new_opaque_input,
-                                                            PhaseIdealLoop* phase) const;
+                                                            CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
   void kill(PhaseIterGVN& igvn) const;
+
+  // Should only be called during Loop Unrolling when we only update the OpaqueLoopStride input but don't require a full
+  // clone of the Template Assertion Expression.
+  void update_associated_loop_node(CountedLoopNode* loop_node) const {
+    opaque_node()->update_loop_node(loop_node);
+  }
+
   static bool is_predicate(const Node* maybe_success_proj);
 
 #ifdef ASSERT
@@ -432,6 +434,8 @@ class TemplateAssertionPredicate : public Predicate {
 class InitializedAssertionPredicate : public Predicate {
   IfTrueNode* const _success_proj;
   IfNode* const _if_node;
+
+  DEBUG_ONLY(static bool has_halt(const IfTrueNode* success_proj);)
 
  public:
   explicit InitializedAssertionPredicate(IfTrueNode* success_proj)
@@ -487,23 +491,25 @@ class TransformStrategyForOpaqueLoopNodes : public StackObj {
 // A Template Assertion Predicate represents the OpaqueTemplateAssertionPredicateNode for the initial value or the last
 // value of a Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
 class TemplateAssertionExpression : public StackObj {
-  OpaqueTemplateAssertionPredicateNode* _opaque_node;
-
+  OpaqueTemplateAssertionPredicateNode* const _opaque_node;
+  PhaseIdealLoop* const _phase;
  public:
-  explicit TemplateAssertionExpression(OpaqueTemplateAssertionPredicateNode* opaque_node) : _opaque_node(opaque_node) {}
+  TemplateAssertionExpression(OpaqueTemplateAssertionPredicateNode* opaque_node, PhaseIdealLoop* phase)
+      : _opaque_node(opaque_node),
+        _phase(phase) {}
+  NONCOPYABLE(TemplateAssertionExpression);
 
  private:
   OpaqueTemplateAssertionPredicateNode* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
-                                              Node* new_control, PhaseIdealLoop* phase) const;
+                                              Node* new_control, CountedLoopNode* new_loop_node) const;
 
  public:
-  OpaqueTemplateAssertionPredicateNode* clone(Node* new_control, PhaseIdealLoop* phase) const;
+  OpaqueTemplateAssertionPredicateNode* clone(Node* new_control, CountedLoopNode* new_loop_node) const;
   OpaqueTemplateAssertionPredicateNode* clone_and_replace_init(Node* new_control, Node* new_init,
-                                                               PhaseIdealLoop* phase) const;
+                                                               CountedLoopNode* new_loop_node) const;
   OpaqueTemplateAssertionPredicateNode* clone_and_replace_init_and_stride(Node* new_control, Node* new_init,
-                                                                          Node* new_stride, PhaseIdealLoop* phase) const;
-  void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
-  OpaqueInitializedAssertionPredicateNode* clone_and_fold_opaque_loop_nodes(Node* new_control, PhaseIdealLoop* phase) const;
+                                                                          Node* new_stride) const;
+  OpaqueInitializedAssertionPredicateNode* clone_and_fold_opaque_loop_nodes(Node* new_control) const;
 };
 
 // Class to represent a node being part of a Template Assertion Expression. Note that this is not an IR node.
@@ -786,7 +792,8 @@ class PredicateIterator : public StackObj {
       PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
       current_node = loop_predicate_iterator.for_each(predicate_visitor);
     }
-    return current_node;
+    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_long_loop);
+    return short_running_loop_predicate_iterator.for_each(predicate_visitor);
   }
 };
 
@@ -953,6 +960,7 @@ class Predicates : public StackObj {
   const PredicateBlock _auto_vectorization_check_block;
   const PredicateBlock _profiled_loop_predicate_block;
   const PredicateBlock _loop_predicate_block;
+  const PredicateBlock _short_running_long_loop_predicate_block;
   Node* const _entry;
 
  public:
@@ -965,7 +973,9 @@ class Predicates : public StackObj {
                                        Deoptimization::Reason_profile_predicate),
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
-        _entry(_loop_predicate_block.entry()) {}
+        _short_running_long_loop_predicate_block(_loop_predicate_block.entry(),
+                                            Deoptimization::Reason_short_running_long_loop),
+        _entry(_short_running_long_loop_predicate_block.entry()) {}
   NONCOPYABLE(Predicates);
 
   // Returns the control input the first predicate if there are any predicates. If there are no predicates, the same
@@ -988,6 +998,10 @@ class Predicates : public StackObj {
 
   const PredicateBlock* loop_limit_check_predicate_block() const {
     return &_loop_limit_check_predicate_block;
+  }
+
+  const PredicateBlock* short_running_long_loop_predicate_block() const {
+    return &_short_running_long_loop_predicate_block;
   }
 
   bool has_any() const {
@@ -1082,33 +1096,45 @@ class NodeInClonedLoopBody : public NodeInLoopBody {
   }
 };
 
+// This class checks whether a node is in the loop body passed to the constructor.
+class NodeInSingleLoopBody : public NodeInLoopBody {
+  PhaseIdealLoop* const _phase;
+  IdealLoopTree* const _ilt;
+
+public:
+  NodeInSingleLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
+  }
+  NONCOPYABLE(NodeInSingleLoopBody);
+
+  bool check_node_in_loop_body(Node* node) const override;
+};
+
 // Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
 // loop. This visitor can be used in combination with a PredicateIterator.
 class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   Node* const _init;
   Node* const _stride;
+  CountedLoopNode* const _target_loop_head;
   Node* const _old_target_loop_entry;
   Node* _current_predicate_chain_head;
   PhaseIdealLoop* const _phase;
-  bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
-  const bool _clone_template;
+  const bool _kill_old_template;
 
   TemplateAssertionPredicate
   clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
 
   InitializedAssertionPredicate initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
-                                                         Node* new_control) const;
+                                                         IfTrueNode* cloned_template_predicate_tail) const;
   void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
   CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body, bool clone_template);
+                                   const NodeInLoopBody& node_in_loop_body, bool kill_old_template);
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
-  void visit(const ParsePredicate& parse_predicate) override;
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
@@ -1148,6 +1174,8 @@ public:
 //            |                                |                                                        |
 //    source loop head                      target loop head                                       target loop head
 class ClonePredicateToTargetLoop : public StackObj {
+  LoopNode* const _target_loop_head;
+  LoopNode* const _target_outer_loop_head;
   Node* const _old_target_loop_entry; // Used as control for each newly cloned predicate.
   TargetLoopPredicateChain _target_loop_predicate_chain;
   const NodeInLoopBody& _node_in_loop_body;
@@ -1157,20 +1185,14 @@ public:
   ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
 
   // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
-  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_false_path_loop) {
-    ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry,
-                                                                                     is_false_path_loop, _phase);
+  ParsePredicate clone_parse_predicate(const ParsePredicate& parse_predicate, bool rewire_uncommon_proj_phi_inputs) {
+    ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_loop(_old_target_loop_entry,
+                                                                          rewire_uncommon_proj_phi_inputs, _phase);
     _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate);
+    return cloned_parse_predicate;
   }
 
-  // Clones the provided Template Assertion Predicate to the head of the current predicate chain at the target loop.
-  void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate) {
-    TemplateAssertionPredicate cloned_template_assertion_predicate =
-        template_assertion_predicate.clone(_old_target_loop_entry, _phase);
-    template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_assertion_predicate.tail(),
-                                                               _node_in_loop_body, _phase);
-    _target_loop_predicate_chain.insert_predicate(cloned_template_assertion_predicate);
-  }
+  void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate);
 };
 
 // Visitor to clone Parse and Template Assertion Predicates from a loop to its unswitched true and false path loop.
@@ -1182,7 +1204,7 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_false_path_loop;
 
   PhaseIdealLoop* const _phase;
-  bool _has_hoisted_check_parse_predicates;
+  const bool _is_counted_loop;
 
  public:
   CloneUnswitchedLoopPredicatesVisitor(LoopNode* true_path_loop_head,
@@ -1195,6 +1217,9 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   using PredicateVisitor::visit;
 
   void visit(const ParsePredicate& parse_predicate) override;
+
+  void clone_parse_predicate(const ParsePredicate &parse_predicate,
+                             bool is_false_path_loop);
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
@@ -1218,6 +1243,7 @@ class OpaqueTemplateAssertionPredicateCollector : public PredicateVisitor {
 // from the updated templates. The old Initialized Assertion Predicates are killed.
 class UpdateStrideForAssertionPredicates : public PredicateVisitor {
   Node* const _new_stride;
+  CountedLoopNode* const _loop_node;
   PhaseIdealLoop* const _phase;
 
   void replace_opaque_stride_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
@@ -1227,8 +1253,9 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
   void connect_initialized_assertion_predicate(Node* new_control_out, const InitializedAssertionPredicate& initialized_assertion_predicate) const;
 
  public:
-  UpdateStrideForAssertionPredicates(Node* const new_stride, PhaseIdealLoop* phase)
+  UpdateStrideForAssertionPredicates(Node* const new_stride, CountedLoopNode* loop_node, PhaseIdealLoop* phase)
       : _new_stride(new_stride),
+        _loop_node(loop_node),
         _phase(phase) {}
   NONCOPYABLE(UpdateStrideForAssertionPredicates);
 
@@ -1237,4 +1264,41 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
   void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override;
 };
+
+// Eliminate all useless Parse and Template Assertion Predicates. They become useless when they can no longer be found
+// from a loop head. We mark these useless to clean them up later during IGVN. A Predicate that is marked useless will
+// no longer be visited by a PredicateVisitor.
+class EliminateUselessPredicates : public StackObj {
+  Compile* const C;
+  const GrowableArray<ParsePredicateNode*>& _parse_predicates;
+  const GrowableArray<OpaqueTemplateAssertionPredicateNode*>& _template_assertion_predicate_opaques;
+  PhaseIterGVN& _igvn;
+  IdealLoopTree* const _ltree_root;
+
+  void mark_all_predicates_maybe_useful() const;
+  template <class PredicateList>
+  static void mark_predicates_on_list_maybe_useful(const PredicateList& predicate_list);
+
+  void mark_loop_associated_predicates_useful() const;
+  static void mark_useful_predicates_for_loop(IdealLoopTree* loop);
+
+  void mark_maybe_useful_predicates_useless() const;
+  template <class PredicateList>
+  void mark_maybe_useful_predicates_on_list_useless(const PredicateList& predicate_list) const;
+
+#ifdef ASSERT
+  void verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const;
+  Unique_Node_List collect_loop_nodes_of_useless_template_assertion_predicates() const;
+  void verify_associated_loop_nodes_are_dead(const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const;
+#endif // ASSERT
+ public:
+  EliminateUselessPredicates(PhaseIterGVN& igvn, IdealLoopTree* ltree_root)
+      : C(igvn.C), _parse_predicates(igvn.C->parse_predicates()),
+        _template_assertion_predicate_opaques(igvn.C->template_assertion_predicate_opaques()),
+        _igvn(igvn),
+        _ltree_root(ltree_root) {}
+
+  void eliminate() const;
+};
+
 #endif // SHARE_OPTO_PREDICATES_HPP

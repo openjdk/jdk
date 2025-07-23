@@ -8,6 +8,24 @@ HotSpot code, making it easier to read and maintain.  Failure to
 follow these guidelines may lead to discussion during code reviews, if
 not outright rejection of a change.
 
+### Changing this Document
+
+Proposed changes should be discussed on the
+[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
+list.  Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.
+
+Substantive changes are approved by
+[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
+the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
+The Group Lead determines whether consensus has been reached.
+
+Editorial changes (changes that only affect the description of HotSpot
+style, not its substance) do not require the full consensus gathering
+process.  The normal HotSpot pull request process may be used for
+editorial changes, with the additional requirement that the requisite
+reviewers are also HotSpot Group Members.
+
 ### Why Care About Style?
 
 Some programmers seem to have lexers and even C preprocessors
@@ -38,7 +56,7 @@ reformatting the whole thing.  Also consider separating changes that
 make extensive stylistic updates from those which make functional
 changes.
 
-### Counterexamples and Updates
+### Counterexamples
 
 Many of the guidelines mentioned here have (sometimes widespread)
 counterexamples in the HotSpot code base. Finding a counterexample is
@@ -53,22 +71,6 @@ bring it up for discussion and possible change. The architectural
 rule, of course, is "When in Rome do as the Romans". Sometimes in the
 suburbs of Rome the rules are a little different; these differences
 can be pointed out here.
-
-Proposed changes should be discussed on the
-[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
-list.  Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.
-
-Substantive changes are approved by
-[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
-the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
-The Group Lead determines whether consensus has been reached.
-
-Editorial changes (changes that only affect the description of HotSpot
-style, not its substance) do not require the full consensus gathering
-process.  The normal HotSpot pull request process may be used for
-editorial changes, with the additional requirement that the requisite
-reviewers are also HotSpot Group Members.
 
 ## Structure and Formatting
 
@@ -138,7 +140,10 @@ change should be done with a "setter" accessor matched to the simple
 * All source files must have a globally unique basename. The build
 system depends on this uniqueness.
 
-* Keep the include lines within a section alphabetically sorted.
+* Keep the include lines within a section alphabetically sorted by their
+lowercase value. If an include must be out of order for correctness,
+suffix with it a comment such as `// do not reorder`. Source code
+processing tools can also use this hint.
 
 * Put conditional inclusions (`#if ...`) at the end of the section of HotSpot
 include lines. This also applies to macro-expanded includes of platform
@@ -765,6 +770,32 @@ ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
 
+### Initializing variables with static storage duration
+
+Variables with static storage duration and _dynamic initialization_
+[C++14 3.6.2](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+should be avoided, unless an implementation is permitted to perform the
+initialization as a static initialization. The order in which dynamic
+initializations occur is incompletely specified.  Initialization order
+problems can be difficult to deal with and lead to surprises.
+
+Variables with static storage duration and non-trivial destructors should be
+avoided. HotSpot doesn't generally try to cleanup on exit, and running
+destructors at exit can lead to problems.
+
+Some of the approaches used in HotSpot to avoid dynamic initialization
+include:
+
+* Use the `Deferred<T>` class template. Add a call to its initialization
+function at an appropriate place during VM initialization. The underlying
+object is never destroyed.
+
+* For objects of class type, use a variable whose value is a pointer to the
+class, initialized to `nullptr`. Provide an initialization function that sets
+the variable to a dynamically allocated object. Add a call to that function at
+an appropriate place during VM initialization. Such objects are usually never
+destroyed.
+
 ### Uniform Initialization
 
 The use of _uniform initialization_
@@ -1099,6 +1130,57 @@ The following attributes are expressly forbidden:
 * `[[carries_dependency]]` - Related to `memory_order_consume`.
 * `[[deprecated]]` - Not relevant in HotSpot code.
 
+### noexcept
+
+Use of `noexcept` exception specifications
+([n3050](http://wg21.link/n3050))
+are permitted with restrictions described below.
+
+* Only the argument-less form of `noexcept` exception specifications are
+permitted.
+* Allocation functions that may return `nullptr` to indicate allocation
+failure must be declared `noexcept`.
+* All other uses of `noexcept` exception specifications are forbidden.
+* `noexcept` expressions are forbidden.
+* Dynamic exception specifications are forbidden.
+
+HotSpot is built with exceptions disabled, e.g. compile with `-fno-exceptions`
+(gcc, clang) or no `/EH` option (MSVC++). So why do we need to consider
+`noexcept` at all? It's because `noexcept` exception specifications serve two
+distinct purposes.
+
+The first is to allow the compiler to avoid generating code or data in support
+of exceptions being thrown by a function. But this is unnecessary, because
+exceptions are disabled.
+
+The second is to allow the compiler and library code to choose different
+algorithms, depending on whether some function may throw exceptions. This is
+only relevant to a certain set of functions.
+
+* Some allocation functions (`operator new` and `operator new[]`) return
+`nullptr` to indicate allocation failure. If a `new` expression calls such an
+allocation function, it must check for and handle that possibility. Declaring
+such a function `noexcept` informs the compiler that `nullptr` is a possible
+result. If an allocation function is not declared `noexcept` then the compiler
+may elide that checking and handling for a `new` expression calling that
+function.
+
+* Certain Standard Library facilities (notably containers) provide different
+guarantees for some operations (and may choose different algorithms to
+implement those operations), depending on whether certain functions
+(constructors, copy/move operations, swap) are nothrow or not. They detect
+this using type traits that test whether a function is declared `noexcept`.
+This can have a significant performance impact if, for example, copying is
+chosen over a potentially throwing move. But this isn't relevant, since
+HotSpot forbids the use of most Standard Library facilities.
+
+HotSpot code can assume no exceptions will ever be thrown, even from functions
+not declared `noexcept`. So HotSpot code doesn't ever need to check, either
+with conditional exception specifications or with `noexcept` expressions.
+
+Dynamic exception specifications were deprecated in C++11. C++17 removed all
+but `throw()`, with that remaining a deprecated equivalent to `noexcept`.
+
 ### Additional Permitted Features
 
 * `alignof`
@@ -1193,13 +1275,6 @@ namespace std;` to avoid needing to qualify Standard Library names.
 * Propagating exceptions
 ([n2179](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html)) &mdash;
 HotSpot does not permit the use of exceptions, so this feature isn't useful.
-
-* Avoid non-local variables with non-constexpr initialization.
-In particular, avoid variables with types requiring non-trivial
-initialization or destruction.  Initialization order problems can be
-difficult to deal with and lead to surprises, as can destruction
-ordering.  HotSpot doesn't generally try to cleanup on exit, and
-running destructors at exit can also lead to problems.
 
 * Avoid most operator overloading, preferring named functions.  When
 operator overloading is used, ensure the semantics conform to the

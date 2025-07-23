@@ -23,15 +23,63 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "runtime/flags/flagSetting.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/icache.hpp"
 
 #define __ _masm->
 
+void x86_generate_icache_fence(MacroAssembler* _masm) {
+  switch (X86ICacheSync) {
+    case 0:
+      break;
+    case 1:
+      __ mfence();
+      break;
+    case 2:
+    case 3:
+      __ sfence();
+      break;
+    case 4:
+      __ push_ppx(rax);
+      __ push_ppx(rbx);
+      __ push_ppx(rcx);
+      __ push_ppx(rdx);
+      __ xorptr(rax, rax);
+      __ cpuid();
+      __ pop_ppx(rdx);
+      __ pop_ppx(rcx);
+      __ pop_ppx(rbx);
+      __ pop_ppx(rax);
+      break;
+    case 5:
+      __ serialize();
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void x86_generate_icache_flush_insn(MacroAssembler* _masm, Register addr) {
+  switch (X86ICacheSync) {
+    case 1:
+      __ clflush(Address(addr, 0));
+      break;
+    case 2:
+      __ clflushopt(Address(addr, 0));
+      break;
+    case 3:
+      __ clwb(Address(addr, 0));
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
-  StubCodeMark mark(this, "ICache", "flush_icache_stub");
+  StubCodeMark mark(this, "ICache", _stub_name);
 
   address start = __ pc();
-#ifdef AMD64
 
   const Register addr  = c_rarg0;
   const Register lines = c_rarg1;
@@ -40,31 +88,45 @@ void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flu
   Label flush_line, done;
 
   __ testl(lines, lines);
-  __ jcc(Assembler::zero, done);
+  __ jccb(Assembler::zero, done);
 
-  // Force ordering wrt cflush.
-  // Other fence and sync instructions won't do the job.
-  __ mfence();
+  x86_generate_icache_fence(_masm);
 
-  __ bind(flush_line);
-  __ clflush(Address(addr, 0));
-  __ addptr(addr, ICache::line_size);
-  __ decrementl(lines);
-  __ jcc(Assembler::notZero, flush_line);
+  if (1 <= X86ICacheSync && X86ICacheSync <= 3) {
+    __ bind(flush_line);
+    x86_generate_icache_flush_insn(_masm, addr);
+    __ addptr(addr, ICache::line_size);
+    __ decrementl(lines);
+    __ jccb(Assembler::notZero, flush_line);
 
-  __ mfence();
+    x86_generate_icache_fence(_masm);
+  }
 
   __ bind(done);
 
-#else
-  const Address magic(rsp, 3*wordSize);
-  __ lock(); __ addl(Address(rsp, 0), 0);
-#endif // AMD64
   __ movptr(rax, magic); // Handshake with caller to make sure it happened!
   __ ret(0);
 
   // Must be set here so StubCodeMark destructor can call the flush stub.
   *flush_icache_stub = (ICache::flush_icache_stub_t)start;
+}
+
+void ICache::initialize(int phase) {
+  switch (phase) {
+    case 1: {
+      // Initial phase, we assume only CLFLUSH is available.
+      IntFlagSetting fs(X86ICacheSync, 1);
+      AbstractICache::initialize(phase);
+      break;
+    }
+    case 2: {
+      // Final phase, generate the stub again.
+      AbstractICache::initialize(phase);
+      break;
+    }
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 #undef __

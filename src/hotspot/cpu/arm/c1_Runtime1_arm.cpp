@@ -64,26 +64,26 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   reset_last_Java_frame(Rtemp);
 
   assert(frame_size() != no_frame_size, "frame must be fixed");
-  if (_stub_id != (int)C1StubId::forward_exception_id) {
+  if (_stub_id != (int)StubId::c1_forward_exception_id) {
     ldr(R3, Address(Rthread, Thread::pending_exception_offset()));
   }
 
   if (oop_result1->is_valid()) {
     assert_different_registers(oop_result1, R3, Rtemp);
-    get_vm_result(oop_result1, Rtemp);
+    get_vm_result_oop(oop_result1, Rtemp);
   }
   if (metadata_result->is_valid()) {
     assert_different_registers(metadata_result, R3, Rtemp);
-    get_vm_result_2(metadata_result, Rtemp);
+    get_vm_result_metadata(metadata_result, Rtemp);
   }
 
   // Check for pending exception
   // unpack_with_exception_in_tls path is taken through
   // Runtime1::exception_handler_for_pc
-  if (_stub_id != (int)C1StubId::forward_exception_id) {
+  if (_stub_id != (int)StubId::c1_forward_exception_id) {
     assert(frame_size() != no_frame_size, "cannot directly call forward_exception_id");
     cmp(R3, 0);
-    jump(Runtime1::entry_for(C1StubId::forward_exception_id), relocInfo::runtime_call_type, Rtemp, ne);
+    jump(Runtime1::entry_for(StubId::c1_forward_exception_id), relocInfo::runtime_call_type, Rtemp, ne);
   } else {
 #ifdef ASSERT
     // Should not have pending exception in forward_exception stub
@@ -283,7 +283,7 @@ static void restore_sp_for_method_handle(StubAssembler* sasm) {
 }
 
 
-OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler* sasm) {
+OopMapSet* Runtime1::generate_handle_exception(StubId id, StubAssembler* sasm) {
   __ block_comment("generate_handle_exception");
 
   bool save_fpu_registers = false;
@@ -293,7 +293,7 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler* sasm)
   OopMap* oop_map = nullptr;
 
   switch (id) {
-  case C1StubId::forward_exception_id: {
+  case StubId::c1_forward_exception_id: {
     save_fpu_registers = HaveVFP;
     oop_map = generate_oop_map(sasm);
     __ ldr(Rexception_obj, Address(Rthread, Thread::pending_exception_offset()));
@@ -302,14 +302,14 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler* sasm)
     __ str(zero, Address(Rthread, Thread::pending_exception_offset()));
     break;
   }
-  case C1StubId::handle_exception_id:
+  case StubId::c1_handle_exception_id:
     save_fpu_registers = HaveVFP;
     // fall-through
-  case C1StubId::handle_exception_nofpu_id:
+  case StubId::c1_handle_exception_nofpu_id:
     // At this point all registers MAY be live.
     oop_map = save_live_registers(sasm, save_fpu_registers);
     break;
-  case C1StubId::handle_exception_from_callee_id:
+  case StubId::c1_handle_exception_from_callee_id:
     // At this point all registers except exception oop (R4/R19) and
     // exception pc (R5/R20) are dead.
     oop_map = save_live_registers(sasm);  // TODO it's not required to save all registers
@@ -331,13 +331,13 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler* sasm)
   // Restore the registers that were saved at the beginning, remove
   // frame and jump to the exception handler.
   switch (id) {
-  case C1StubId::forward_exception_id:
-  case C1StubId::handle_exception_nofpu_id:
-  case C1StubId::handle_exception_id:
+  case StubId::c1_forward_exception_id:
+  case StubId::c1_handle_exception_nofpu_id:
+  case StubId::c1_handle_exception_id:
     restore_live_registers(sasm, save_fpu_registers);
     // Note: the restore live registers includes the jump to LR (patched to R0)
     break;
-  case C1StubId::handle_exception_from_callee_id:
+  case StubId::c1_handle_exception_from_callee_id:
     restore_live_registers_without_return(sasm); // must not jump immediately to handler
     restore_sp_for_method_handle(sasm);
     __ ret();
@@ -406,7 +406,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 }
 
 
-OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
+OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
   const bool must_gc_arguments = true;
   const bool dont_gc_arguments = false;
 
@@ -414,16 +414,16 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
   bool save_fpu_registers = HaveVFP;
 
   switch (id) {
-    case C1StubId::forward_exception_id:
+    case StubId::c1_forward_exception_id:
       {
         oop_maps = generate_handle_exception(id, sasm);
         // does not return on ARM
       }
       break;
 
-    case C1StubId::new_instance_id:
-    case C1StubId::fast_new_instance_id:
-    case C1StubId::fast_new_instance_init_check_id:
+    case StubId::c1_new_instance_id:
+    case StubId::c1_fast_new_instance_id:
+    case StubId::c1_fast_new_instance_init_check_id:
       {
         const Register result = R0;
         const Register klass  = R1;
@@ -439,7 +439,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::counter_overflow_id:
+    case StubId::c1_counter_overflow_id:
       {
         OopMap* oop_map = save_live_registers(sasm);
         __ ldr(R1, Address(SP, arg1_offset));
@@ -451,10 +451,10 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::new_type_array_id:
-    case C1StubId::new_object_array_id:
+    case StubId::c1_new_type_array_id:
+    case StubId::c1_new_object_array_id:
       {
-        if (id == C1StubId::new_type_array_id) {
+        if (id == StubId::c1_new_type_array_id) {
           __ set_info("new_type_array", dont_gc_arguments);
         } else {
           __ set_info("new_object_array", dont_gc_arguments);
@@ -466,7 +466,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
         OopMap* map = save_live_registers(sasm);
         int call_offset;
-        if (id == C1StubId::new_type_array_id) {
+        if (id == StubId::c1_new_type_array_id) {
           call_offset = __ call_RT(result, noreg, CAST_FROM_FN_PTR(address, new_type_array), klass, length);
         } else {
           call_offset = __ call_RT(result, noreg, CAST_FROM_FN_PTR(address, new_object_array), klass, length);
@@ -480,7 +480,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::new_multi_array_id:
+    case StubId::c1_new_multi_array_id:
       {
         __ set_info("new_multi_array", dont_gc_arguments);
 
@@ -503,7 +503,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::register_finalizer_id:
+    case StubId::c1_register_finalizer_id:
       {
         __ set_info("register_finalizer", dont_gc_arguments);
 
@@ -524,78 +524,78 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::throw_range_check_failed_id:
+    case StubId::c1_throw_range_check_failed_id:
       {
         __ set_info("range_check_failed", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_range_check_exception), true);
       }
       break;
 
-    case C1StubId::throw_index_exception_id:
+    case StubId::c1_throw_index_exception_id:
       {
         __ set_info("index_range_check_failed", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_index_exception), true);
       }
       break;
 
-    case C1StubId::throw_div0_exception_id:
+    case StubId::c1_throw_div0_exception_id:
       {
         __ set_info("throw_div0_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_div0_exception), false);
       }
       break;
 
-    case C1StubId::throw_null_pointer_exception_id:
+    case StubId::c1_throw_null_pointer_exception_id:
       {
         __ set_info("throw_null_pointer_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_null_pointer_exception), false);
       }
       break;
 
-    case C1StubId::handle_exception_nofpu_id:
-    case C1StubId::handle_exception_id:
+    case StubId::c1_handle_exception_nofpu_id:
+    case StubId::c1_handle_exception_id:
       {
         __ set_info("handle_exception", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
-    case C1StubId::handle_exception_from_callee_id:
+    case StubId::c1_handle_exception_from_callee_id:
       {
         __ set_info("handle_exception_from_callee", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
-    case C1StubId::unwind_exception_id:
+    case StubId::c1_unwind_exception_id:
       {
         __ set_info("unwind_exception", dont_gc_arguments);
         generate_unwind_exception(sasm);
       }
       break;
 
-    case C1StubId::throw_array_store_exception_id:
+    case StubId::c1_throw_array_store_exception_id:
       {
         __ set_info("throw_array_store_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_array_store_exception), true);
       }
       break;
 
-    case C1StubId::throw_class_cast_exception_id:
+    case StubId::c1_throw_class_cast_exception_id:
       {
         __ set_info("throw_class_cast_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_class_cast_exception), true);
       }
       break;
 
-    case C1StubId::throw_incompatible_class_change_error_id:
+    case StubId::c1_throw_incompatible_class_change_error_id:
       {
         __ set_info("throw_incompatible_class_cast_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_incompatible_class_change_error), false);
       }
       break;
 
-    case C1StubId::slow_subtype_check_id:
+    case StubId::c1_slow_subtype_check_id:
       {
         // (in)  R0 - sub, destroyed,
         // (in)  R1 - super, not changed
@@ -628,10 +628,10 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::monitorenter_nofpu_id:
+    case StubId::c1_monitorenter_nofpu_id:
       save_fpu_registers = false;
       // fall through
-    case C1StubId::monitorenter_id:
+    case StubId::c1_monitorenter_id:
       {
         __ set_info("monitorenter", dont_gc_arguments);
         const Register obj  = R1;
@@ -646,10 +646,10 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::monitorexit_nofpu_id:
+    case StubId::c1_monitorexit_nofpu_id:
       save_fpu_registers = false;
       // fall through
-    case C1StubId::monitorexit_id:
+    case StubId::c1_monitorexit_id:
       {
         __ set_info("monitorexit", dont_gc_arguments);
         const Register lock = R1;
@@ -662,7 +662,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::deoptimize_id:
+    case StubId::c1_deoptimize_id:
       {
         __ set_info("deoptimize", dont_gc_arguments);
         OopMap* oop_map = save_live_registers(sasm);
@@ -678,35 +678,35 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case C1StubId::access_field_patching_id:
+    case StubId::c1_access_field_patching_id:
       {
         __ set_info("access_field_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, access_field_patching));
       }
       break;
 
-    case C1StubId::load_klass_patching_id:
+    case StubId::c1_load_klass_patching_id:
       {
         __ set_info("load_klass_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_klass_patching));
       }
       break;
 
-    case C1StubId::load_appendix_patching_id:
+    case StubId::c1_load_appendix_patching_id:
       {
         __ set_info("load_appendix_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_appendix_patching));
       }
       break;
 
-    case C1StubId::load_mirror_patching_id:
+    case StubId::c1_load_mirror_patching_id:
       {
         __ set_info("load_mirror_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_mirror_patching));
       }
       break;
 
-    case C1StubId::predicate_failed_trap_id:
+    case StubId::c1_predicate_failed_trap_id:
       {
         __ set_info("predicate_failed_trap", dont_gc_arguments);
 

@@ -35,17 +35,18 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
-#include "opto/callnode.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/callnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/rangeinference.hpp"
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
-#include "runtime/stubRoutines.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -428,7 +429,6 @@ int Type::uhash( const Type *const t ) {
   return (int)t->hash();
 }
 
-#define SMALLINT ((juint)3)  // a value too insignificant to consider widening
 #define POSITIVE_INFINITE_F 0x7f800000 // hex representation for IEEE 754 single precision positive infinite
 #define POSITIVE_INFINITE_D 0x7ff0000000000000 // hex representation for IEEE 754 double precision positive infinite
 
@@ -487,44 +487,47 @@ void Type::Initialize_shared(Compile* current) {
 
   TypeInt::MAX = TypeInt::make(max_jint); // Int MAX
   TypeInt::MIN = TypeInt::make(min_jint); // Int MIN
-  TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
-  TypeInt::ZERO    = TypeInt::make( 0);  //  0
-  TypeInt::ONE     = TypeInt::make( 1);  //  1
-  TypeInt::BOOL    = TypeInt::make(0,1,   WidenMin);  // 0 or 1, FALSE or TRUE.
-  TypeInt::CC      = TypeInt::make(-1, 1, WidenMin);  // -1, 0 or 1, condition codes
-  TypeInt::CC_LT   = TypeInt::make(-1,-1, WidenMin);  // == TypeInt::MINUS_1
-  TypeInt::CC_GT   = TypeInt::make( 1, 1, WidenMin);  // == TypeInt::ONE
-  TypeInt::CC_EQ   = TypeInt::make( 0, 0, WidenMin);  // == TypeInt::ZERO
-  TypeInt::CC_LE   = TypeInt::make(-1, 0, WidenMin);
-  TypeInt::CC_GE   = TypeInt::make( 0, 1, WidenMin);  // == TypeInt::BOOL
-  TypeInt::BYTE    = TypeInt::make(-128,127,     WidenMin); // Bytes
-  TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin); // Unsigned Bytes
-  TypeInt::CHAR    = TypeInt::make(0,65535,      WidenMin); // Java chars
-  TypeInt::SHORT   = TypeInt::make(-32768,32767, WidenMin); // Java shorts
-  TypeInt::POS     = TypeInt::make(0,max_jint,   WidenMin); // Non-neg values
-  TypeInt::POS1    = TypeInt::make(1,max_jint,   WidenMin); // Positive values
-  TypeInt::INT     = TypeInt::make(min_jint,max_jint, WidenMax); // 32-bit integers
-  TypeInt::SYMINT  = TypeInt::make(-max_jint,max_jint,WidenMin); // symmetric range
-  TypeInt::TYPE_DOMAIN  = TypeInt::INT;
+  TypeInt::MINUS_1  = TypeInt::make(-1);  // -1
+  TypeInt::ZERO     = TypeInt::make( 0);  //  0
+  TypeInt::ONE      = TypeInt::make( 1);  //  1
+  TypeInt::BOOL     = TypeInt::make( 0, 1, WidenMin);  // 0 or 1, FALSE or TRUE.
+  TypeInt::CC       = TypeInt::make(-1, 1, WidenMin);  // -1, 0 or 1, condition codes
+  TypeInt::CC_LT    = TypeInt::make(-1,-1, WidenMin);  // == TypeInt::MINUS_1
+  TypeInt::CC_GT    = TypeInt::make( 1, 1, WidenMin);  // == TypeInt::ONE
+  TypeInt::CC_EQ    = TypeInt::make( 0, 0, WidenMin);  // == TypeInt::ZERO
+  TypeInt::CC_NE    = TypeInt::make_or_top(TypeIntPrototype<jint, juint>{{-1, 1}, {1, max_juint}, {0, 1}}, WidenMin)->is_int();
+  TypeInt::CC_LE    = TypeInt::make(-1, 0, WidenMin);
+  TypeInt::CC_GE    = TypeInt::make( 0, 1, WidenMin);  // == TypeInt::BOOL
+  TypeInt::BYTE     = TypeInt::make(-128, 127,     WidenMin); // Bytes
+  TypeInt::UBYTE    = TypeInt::make(0, 255,        WidenMin); // Unsigned Bytes
+  TypeInt::CHAR     = TypeInt::make(0, 65535,      WidenMin); // Java chars
+  TypeInt::SHORT    = TypeInt::make(-32768, 32767, WidenMin); // Java shorts
+  TypeInt::NON_ZERO = TypeInt::make_or_top(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {1, max_juint}, {0, 0}}, WidenMin)->is_int();
+  TypeInt::POS      = TypeInt::make(0, max_jint,   WidenMin); // Non-neg values
+  TypeInt::POS1     = TypeInt::make(1, max_jint,   WidenMin); // Positive values
+  TypeInt::INT      = TypeInt::make(min_jint, max_jint, WidenMax); // 32-bit integers
+  TypeInt::SYMINT   = TypeInt::make(-max_jint, max_jint, WidenMin); // symmetric range
+  TypeInt::TYPE_DOMAIN = TypeInt::INT;
   // CmpL is overloaded both as the bytecode computation returning
-  // a trinary (-1,0,+1) integer result AND as an efficient long
+  // a trinary (-1, 0, +1) integer result AND as an efficient long
   // compare returning optimizer ideal-type flags.
-  assert( TypeInt::CC_LT == TypeInt::MINUS_1, "types must match for CmpL to work" );
-  assert( TypeInt::CC_GT == TypeInt::ONE,     "types must match for CmpL to work" );
-  assert( TypeInt::CC_EQ == TypeInt::ZERO,    "types must match for CmpL to work" );
-  assert( TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
-  assert( (juint)(TypeInt::CC->_hi - TypeInt::CC->_lo) <= SMALLINT, "CC is truly small");
+  assert(TypeInt::CC_LT == TypeInt::MINUS_1, "types must match for CmpL to work" );
+  assert(TypeInt::CC_GT == TypeInt::ONE,     "types must match for CmpL to work" );
+  assert(TypeInt::CC_EQ == TypeInt::ZERO,    "types must match for CmpL to work" );
+  assert(TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
 
-  TypeLong::MAX = TypeLong::make(max_jlong);  // Long MAX
-  TypeLong::MIN = TypeLong::make(min_jlong);  // Long MIN
-  TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
-  TypeLong::ZERO    = TypeLong::make( 0);        //  0
-  TypeLong::ONE     = TypeLong::make( 1);        //  1
-  TypeLong::POS     = TypeLong::make(0,max_jlong, WidenMin); // Non-neg values
-  TypeLong::LONG    = TypeLong::make(min_jlong,max_jlong,WidenMax); // 64-bit integers
-  TypeLong::INT     = TypeLong::make((jlong)min_jint,(jlong)max_jint,WidenMin);
-  TypeLong::UINT    = TypeLong::make(0,(jlong)max_juint,WidenMin);
-  TypeLong::TYPE_DOMAIN  = TypeLong::LONG;
+  TypeLong::MAX = TypeLong::make(max_jlong); // Long MAX
+  TypeLong::MIN = TypeLong::make(min_jlong); // Long MIN
+  TypeLong::MINUS_1  = TypeLong::make(-1);   // -1
+  TypeLong::ZERO     = TypeLong::make( 0);   //  0
+  TypeLong::ONE      = TypeLong::make( 1);   //  1
+  TypeLong::NON_ZERO = TypeLong::make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {1, max_julong}, {0, 0}}, WidenMin)->is_long();
+  TypeLong::POS      = TypeLong::make(0, max_jlong, WidenMin); // Non-neg values
+  TypeLong::NEG      = TypeLong::make(min_jlong, -1, WidenMin);
+  TypeLong::LONG     = TypeLong::make(min_jlong, max_jlong, WidenMax); // 64-bit integers
+  TypeLong::INT      = TypeLong::make((jlong)min_jint, (jlong)max_jint,WidenMin);
+  TypeLong::UINT     = TypeLong::make(0, (jlong)max_juint, WidenMin);
+  TypeLong::TYPE_DOMAIN = TypeLong::LONG;
 
   const Type **fboth =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fboth[0] = Type::CONTROL;
@@ -756,7 +759,7 @@ void Type::Initialize(Compile* current) {
 // delete the current Type and return the existing Type.  Otherwise stick the
 // current Type in the Type table.
 const Type *Type::hashcons(void) {
-  debug_only(base());           // Check the assertion in Type::base().
+  DEBUG_ONLY(base());           // Check the assertion in Type::base().
   // Look up the Type in the Type dictionary
   Dict *tdic = type_dict();
   Type* old = (Type*)(tdic->Insert(this, this, false));
@@ -1699,6 +1702,10 @@ const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   return TypeLong::make(lo, hi, w);
 }
 
+const TypeInteger* TypeInteger::make(jlong con, BasicType bt) {
+  return make(con, con, WidenMin, bt);
+}
+
 jlong TypeInteger::get_con_as_long(BasicType bt) const {
   if (bt == T_INT) {
     return is_int()->get_con();
@@ -1741,218 +1748,124 @@ const TypeInteger* TypeInteger::minus_1(BasicType bt) {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeInt *TypeInt::MAX;    // INT_MAX
-const TypeInt *TypeInt::MIN;    // INT_MIN
-const TypeInt *TypeInt::MINUS_1;// -1
-const TypeInt *TypeInt::ZERO;   // 0
-const TypeInt *TypeInt::ONE;    // 1
-const TypeInt *TypeInt::BOOL;   // 0 or 1, FALSE or TRUE.
-const TypeInt *TypeInt::CC;     // -1,0 or 1, condition codes
-const TypeInt *TypeInt::CC_LT;  // [-1]  == MINUS_1
-const TypeInt *TypeInt::CC_GT;  // [1]   == ONE
-const TypeInt *TypeInt::CC_EQ;  // [0]   == ZERO
-const TypeInt *TypeInt::CC_LE;  // [-1,0]
-const TypeInt *TypeInt::CC_GE;  // [0,1] == BOOL (!)
-const TypeInt *TypeInt::BYTE;   // Bytes, -128 to 127
-const TypeInt *TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
-const TypeInt *TypeInt::CHAR;   // Java chars, 0-65535
-const TypeInt *TypeInt::SHORT;  // Java shorts, -32768-32767
-const TypeInt *TypeInt::POS;    // Positive 32-bit integers or zero
-const TypeInt *TypeInt::POS1;   // Positive 32-bit integers
-const TypeInt *TypeInt::INT;    // 32-bit integers
-const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
-const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
+const TypeInt* TypeInt::MAX;    // INT_MAX
+const TypeInt* TypeInt::MIN;    // INT_MIN
+const TypeInt* TypeInt::MINUS_1;// -1
+const TypeInt* TypeInt::ZERO;   // 0
+const TypeInt* TypeInt::ONE;    // 1
+const TypeInt* TypeInt::BOOL;   // 0 or 1, FALSE or TRUE.
+const TypeInt* TypeInt::CC;     // -1,0 or 1, condition codes
+const TypeInt* TypeInt::CC_LT;  // [-1]  == MINUS_1
+const TypeInt* TypeInt::CC_GT;  // [1]   == ONE
+const TypeInt* TypeInt::CC_EQ;  // [0]   == ZERO
+const TypeInt* TypeInt::CC_NE;
+const TypeInt* TypeInt::CC_LE;  // [-1,0]
+const TypeInt* TypeInt::CC_GE;  // [0,1] == BOOL (!)
+const TypeInt* TypeInt::BYTE;   // Bytes, -128 to 127
+const TypeInt* TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
+const TypeInt* TypeInt::CHAR;   // Java chars, 0-65535
+const TypeInt* TypeInt::SHORT;  // Java shorts, -32768-32767
+const TypeInt* TypeInt::NON_ZERO;
+const TypeInt* TypeInt::POS;    // Positive 32-bit integers or zero
+const TypeInt* TypeInt::POS1;   // Positive 32-bit integers
+const TypeInt* TypeInt::INT;    // 32-bit integers
+const TypeInt* TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
+const TypeInt* TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
-//------------------------------TypeInt----------------------------------------
-TypeInt::TypeInt( jint lo, jint hi, int w ) : TypeInteger(Int, w), _lo(lo), _hi(hi) {
+TypeInt::TypeInt(const TypeIntPrototype<jint, juint>& t, int widen, bool dual)
+  : TypeInteger(Int, t.normalize_widen(widen), dual), _lo(t._srange._lo), _hi(t._srange._hi),
+    _ulo(t._urange._lo), _uhi(t._urange._hi), _bits(t._bits) {
+  DEBUG_ONLY(t.verify_constraints());
 }
 
-//------------------------------make-------------------------------------------
-const TypeInt *TypeInt::make( jint lo ) {
-  return (TypeInt*)(new TypeInt(lo,lo,WidenMin))->hashcons();
-}
-
-static int normalize_int_widen( jint lo, jint hi, int w ) {
-  // Certain normalizations keep us sane when comparing types.
-  // The 'SMALLINT' covers constants and also CC and its relatives.
-  if (lo <= hi) {
-    if (((juint)hi - lo) <= SMALLINT)  w = Type::WidenMin;
-    if (((juint)hi - lo) >= max_juint) w = Type::WidenMax; // TypeInt::INT
-  } else {
-    if (((juint)lo - hi) <= SMALLINT)  w = Type::WidenMin;
-    if (((juint)lo - hi) >= max_juint) w = Type::WidenMin; // dual TypeInt::INT
+const Type* TypeInt::make_or_top(const TypeIntPrototype<jint, juint>& t, int widen, bool dual) {
+  auto canonicalized_t = t.canonicalize_constraints();
+  if (canonicalized_t.empty()) {
+    return dual ? Type::BOTTOM : Type::TOP;
   }
-  return w;
+  return (new TypeInt(canonicalized_t._data, widen, dual))->hashcons()->is_int();
 }
 
-const TypeInt *TypeInt::make( jint lo, jint hi, int w ) {
-  w = normalize_int_widen(lo, hi, w);
-  return (TypeInt*)(new TypeInt(lo,hi,w))->hashcons();
+const TypeInt* TypeInt::make(jint con) {
+  juint ucon = con;
+  return (new TypeInt(TypeIntPrototype<jint, juint>{{con, con}, {ucon, ucon}, {~ucon, ucon}},
+                      WidenMin, false))->hashcons()->is_int();
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type representation object
-// with reference count equal to the number of Types pointing at it.
-// Caller should wrap a Types around it.
-const Type *TypeInt::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type?
+const TypeInt* TypeInt::make(jint lo, jint hi, int widen) {
+  assert(lo <= hi, "must be legal bounds");
+  return make_or_top(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, widen)->is_int();
+}
 
-  // Currently "this->_base" is a TypeInt
-  switch (t->base()) {          // Switch on original type
-  case AnyPtr:                  // Mixing with oops happens when javac
-  case RawPtr:                  // reuses local variables
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-  case Long:
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  default:                      // All else is a mistake
-    typerr(t);
-  case Top:                     // No change
+const Type* TypeInt::make_or_top(const TypeIntPrototype<jint, juint>& t, int widen) {
+  return make_or_top(t, widen, false);
+}
+
+bool TypeInt::contains(jint i) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
+  juint u = i;
+  return i >= _lo && i <= _hi &&
+         u >= _ulo && u <= _uhi &&
+         _bits.is_satisfied_by(u);
+}
+
+bool TypeInt::contains(const TypeInt* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t);
+}
+
+const Type* TypeInt::xmeet(const Type* t) const {
+  return TypeIntHelper::int_type_xmeet(this, t);
+}
+
+const Type* TypeInt::xdual() const {
+  return new TypeInt(TypeIntPrototype<jint, juint>{{_lo, _hi}, {_ulo, _uhi}, _bits},
+                     _widen, !_is_dual);
+}
+
+const Type* TypeInt::widen(const Type* old, const Type* limit) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_widen(this, old->isa_int(), limit->isa_int());
+}
+
+const Type* TypeInt::narrow(const Type* old) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
+  if (old == nullptr) {
     return this;
-  case Int:                     // Int vs Int?
-    break;
   }
 
-  // Expand covered set
-  const TypeInt *r = t->is_int();
-  return make( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) );
-}
-
-//------------------------------xdual------------------------------------------
-// Dual: reverse hi & lo; flip widen
-const Type *TypeInt::xdual() const {
-  int w = normalize_int_widen(_hi,_lo, WidenMax-_widen);
-  return new TypeInt(_hi,_lo,w);
-}
-
-//------------------------------widen------------------------------------------
-// Only happens for optimistic top-down optimizations.
-const Type *TypeInt::widen( const Type *old, const Type* limit ) const {
-  // Coming from TOP or such; no widening
-  if( old->base() != Int ) return this;
-  const TypeInt *ot = old->is_int();
-
-  // If new guy is equal to old guy, no widening
-  if( _lo == ot->_lo && _hi == ot->_hi )
-    return old;
-
-  // If new guy contains old, then we widened
-  if( _lo <= ot->_lo && _hi >= ot->_hi ) {
-    // New contains old
-    // If new guy is already wider than old, no widening
-    if( _widen > ot->_widen ) return this;
-    // If old guy was a constant, do not bother
-    if (ot->_lo == ot->_hi)  return this;
-    // Now widen new guy.
-    // Check for widening too far
-    if (_widen == WidenMax) {
-      int max = max_jint;
-      int min = min_jint;
-      if (limit->isa_int()) {
-        max = limit->is_int()->_hi;
-        min = limit->is_int()->_lo;
-      }
-      if (min < _lo && _hi < max) {
-        // If neither endpoint is extremal yet, push out the endpoint
-        // which is closer to its respective limit.
-        if (_lo >= 0 ||                 // easy common case
-            ((juint)_lo - min) >= ((juint)max - _hi)) {
-          // Try to widen to an unsigned range type of 31 bits:
-          return make(_lo, max, WidenMax);
-        } else {
-          return make(min, _hi, WidenMax);
-        }
-      }
-      return TypeInt::INT;
-    }
-    // Returned widened new guy
-    return make(_lo,_hi,_widen+1);
-  }
-
-  // If old guy contains new, then we probably widened too far & dropped to
-  // bottom.  Return the wider fellow.
-  if ( ot->_lo <= _lo && ot->_hi >= _hi )
-    return old;
-
-  //fatal("Integer value range is not subset");
-  //return this;
-  return TypeInt::INT;
-}
-
-//------------------------------narrow---------------------------------------
-// Only happens for pessimistic optimizations.
-const Type *TypeInt::narrow( const Type *old ) const {
-  if (_lo >= _hi)  return this;   // already narrow enough
-  if (old == nullptr)  return this;
-  const TypeInt* ot = old->isa_int();
-  if (ot == nullptr)  return this;
-  jint olo = ot->_lo;
-  jint ohi = ot->_hi;
-
-  // If new guy is equal to old guy, no narrowing
-  if (_lo == olo && _hi == ohi)  return old;
-
-  // If old guy was maximum range, allow the narrowing
-  if (olo == min_jint && ohi == max_jint)  return this;
-
-  if (_lo < olo || _hi > ohi)
-    return this;                // doesn't narrow; pretty weird
-
-  // The new type narrows the old type, so look for a "death march".
-  // See comments on PhaseTransform::saturate.
-  juint nrange = (juint)_hi - _lo;
-  juint orange = (juint)ohi - olo;
-  if (nrange < max_juint - 1 && nrange > (orange >> 1) + (SMALLINT*2)) {
-    // Use the new type only if the range shrinks a lot.
-    // We do not want the optimizer computing 2^31 point by point.
-    return old;
-  }
-
-  return this;
+  return TypeIntHelper::int_type_narrow(this, old->isa_int());
 }
 
 //-----------------------------filter------------------------------------------
-const Type *TypeInt::filter_helper(const Type *kills, bool include_speculative) const {
+const Type* TypeInt::filter_helper(const Type* kills, bool include_speculative) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
   const TypeInt* ft = join_helper(kills, include_speculative)->isa_int();
-  if (ft == nullptr || ft->empty())
+  if (ft == nullptr) {
     return Type::TOP;           // Canonical empty value
+  }
+  assert(!ft->_is_dual, "dual types should only be used for join calculation");
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.
-    ft = TypeInt::make(ft->_lo, ft->_hi, this->_widen);
+    return (new TypeInt(TypeIntPrototype<jint, juint>{{ft->_lo, ft->_hi}, {ft->_ulo, ft->_uhi}, ft->_bits},
+                        this->_widen, false))->hashcons();
   }
   return ft;
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
-bool TypeInt::eq( const Type *t ) const {
-  const TypeInt *r = t->is_int(); // Handy access
-  return r->_lo == _lo && r->_hi == _hi && r->_widen == _widen;
+bool TypeInt::eq(const Type* t) const {
+  const TypeInt* r = t->is_int();
+  return TypeIntHelper::int_type_is_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypeInt::hash(void) const {
-  return (uint)_lo + (uint)_hi + (uint)_widen + (uint)Type::Int;
+  return (uint)_lo + (uint)_hi + (uint)_ulo + (uint)_uhi +
+         (uint)_bits._zeros + (uint)_bits._ones + (uint)_widen + (uint)_is_dual + (uint)Type::Int;
 }
 
 //------------------------------is_finite--------------------------------------
@@ -1961,267 +1874,126 @@ bool TypeInt::is_finite() const {
   return true;
 }
 
-//------------------------------dump2------------------------------------------
-// Dump TypeInt
-#ifndef PRODUCT
-static const char* intname(char* buf, size_t buf_size, jint n) {
-  if (n == min_jint)
-    return "min";
-  else if (n < min_jint + 10000)
-    os::snprintf_checked(buf, buf_size, "min+" INT32_FORMAT, n - min_jint);
-  else if (n == max_jint)
-    return "max";
-  else if (n > max_jint - 10000)
-    os::snprintf_checked(buf, buf_size, "max-" INT32_FORMAT, max_jint - n);
-  else
-    os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
-  return buf;
-}
-
-void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
-  char buf[40], buf2[40];
-  if (_lo == min_jint && _hi == max_jint)
-    st->print("int");
-  else if (is_con())
-    st->print("int:%s", intname(buf, sizeof(buf), get_con()));
-  else if (_lo == BOOL->_lo && _hi == BOOL->_hi)
-    st->print("bool");
-  else if (_lo == BYTE->_lo && _hi == BYTE->_hi)
-    st->print("byte");
-  else if (_lo == CHAR->_lo && _hi == CHAR->_hi)
-    st->print("char");
-  else if (_lo == SHORT->_lo && _hi == SHORT->_hi)
-    st->print("short");
-  else if (_hi == max_jint)
-    st->print("int:>=%s", intname(buf, sizeof(buf), _lo));
-  else if (_lo == min_jint)
-    st->print("int:<=%s", intname(buf, sizeof(buf), _hi));
-  else
-    st->print("int:%s..%s", intname(buf, sizeof(buf), _lo), intname(buf2, sizeof(buf2), _hi));
-
-  if (_widen != 0 && this != TypeInt::INT)
-    st->print(":%.*s", _widen, "wwww");
-}
-#endif
-
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants.
 bool TypeInt::singleton(void) const {
-  return _lo >= _hi;
+  return _lo == _hi;
 }
 
 bool TypeInt::empty(void) const {
-  return _lo > _hi;
+  return false;
 }
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeLong *TypeLong::MAX;
-const TypeLong *TypeLong::MIN;
-const TypeLong *TypeLong::MINUS_1;// -1
-const TypeLong *TypeLong::ZERO; // 0
-const TypeLong *TypeLong::ONE;  // 1
-const TypeLong *TypeLong::POS;  // >=0
-const TypeLong *TypeLong::LONG; // 64-bit integers
-const TypeLong *TypeLong::INT;  // 32-bit subrange
-const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
-const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
+const TypeLong* TypeLong::MAX;
+const TypeLong* TypeLong::MIN;
+const TypeLong* TypeLong::MINUS_1;// -1
+const TypeLong* TypeLong::ZERO; // 0
+const TypeLong* TypeLong::ONE;  // 1
+const TypeLong* TypeLong::NON_ZERO;
+const TypeLong* TypeLong::POS;  // >=0
+const TypeLong* TypeLong::NEG;
+const TypeLong* TypeLong::LONG; // 64-bit integers
+const TypeLong* TypeLong::INT;  // 32-bit subrange
+const TypeLong* TypeLong::UINT; // 32-bit unsigned subrange
+const TypeLong* TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
-//------------------------------TypeLong---------------------------------------
-TypeLong::TypeLong(jlong lo, jlong hi, int w) : TypeInteger(Long, w), _lo(lo), _hi(hi) {
+TypeLong::TypeLong(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual)
+  : TypeInteger(Long, t.normalize_widen(widen), dual), _lo(t._srange._lo), _hi(t._srange._hi),
+    _ulo(t._urange._lo), _uhi(t._urange._hi), _bits(t._bits) {
+  DEBUG_ONLY(t.verify_constraints());
 }
 
-//------------------------------make-------------------------------------------
-const TypeLong *TypeLong::make( jlong lo ) {
-  return (TypeLong*)(new TypeLong(lo,lo,WidenMin))->hashcons();
-}
-
-static int normalize_long_widen( jlong lo, jlong hi, int w ) {
-  // Certain normalizations keep us sane when comparing types.
-  // The 'SMALLINT' covers constants.
-  if (lo <= hi) {
-    if (((julong)hi - lo) <= SMALLINT)   w = Type::WidenMin;
-    if (((julong)hi - lo) >= max_julong) w = Type::WidenMax; // TypeLong::LONG
-  } else {
-    if (((julong)lo - hi) <= SMALLINT)   w = Type::WidenMin;
-    if (((julong)lo - hi) >= max_julong) w = Type::WidenMin; // dual TypeLong::LONG
+const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual) {
+  auto canonicalized_t = t.canonicalize_constraints();
+  if (canonicalized_t.empty()) {
+    return dual ? Type::BOTTOM : Type::TOP;
   }
-  return w;
+  return (new TypeLong(canonicalized_t._data, widen, dual))->hashcons()->is_long();
 }
 
-const TypeLong *TypeLong::make( jlong lo, jlong hi, int w ) {
-  w = normalize_long_widen(lo, hi, w);
-  return (TypeLong*)(new TypeLong(lo,hi,w))->hashcons();
+const TypeLong* TypeLong::make(jlong con) {
+  julong ucon = con;
+  return (new TypeLong(TypeIntPrototype<jlong, julong>{{con, con}, {ucon, ucon}, {~ucon, ucon}},
+                       WidenMin, false))->hashcons()->is_long();
 }
 
+const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {
+  assert(lo <= hi, "must be legal bounds");
+  return make_or_top(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
+}
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type representation object
-// with reference count equal to the number of Types pointing at it.
-// Caller should wrap a Types around it.
-const Type *TypeLong::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type?
+const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen) {
+  return make_or_top(t, widen, false);
+}
 
-  // Currently "this->_base" is a TypeLong
-  switch (t->base()) {          // Switch on original type
-  case AnyPtr:                  // Mixing with oops happens when javac
-  case RawPtr:                  // reuses local variables
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-  case Int:
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  default:                      // All else is a mistake
-    typerr(t);
-  case Top:                     // No change
+bool TypeLong::contains(jlong i) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
+  julong u = i;
+  return i >= _lo && i <= _hi &&
+         u >= _ulo && u <= _uhi &&
+         _bits.is_satisfied_by(u);
+}
+
+bool TypeLong::contains(const TypeLong* t) const {
+  assert(!_is_dual && !t->_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_is_subset(this, t);
+}
+
+const Type* TypeLong::xmeet(const Type* t) const {
+  return TypeIntHelper::int_type_xmeet(this, t);
+}
+
+const Type* TypeLong::xdual() const {
+  return new TypeLong(TypeIntPrototype<jlong, julong>{{_lo, _hi}, {_ulo, _uhi}, _bits},
+                      _widen, !_is_dual);
+}
+
+const Type* TypeLong::widen(const Type* old, const Type* limit) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
+  return TypeIntHelper::int_type_widen(this, old->isa_long(), limit->isa_long());
+}
+
+const Type* TypeLong::narrow(const Type* old) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
+  if (old == nullptr) {
     return this;
-  case Long:                    // Long vs Long?
-    break;
   }
 
-  // Expand covered set
-  const TypeLong *r = t->is_long(); // Turn into a TypeLong
-  return make( MIN2(_lo,r->_lo), MAX2(_hi,r->_hi), MAX2(_widen,r->_widen) );
-}
-
-//------------------------------xdual------------------------------------------
-// Dual: reverse hi & lo; flip widen
-const Type *TypeLong::xdual() const {
-  int w = normalize_long_widen(_hi,_lo, WidenMax-_widen);
-  return new TypeLong(_hi,_lo,w);
-}
-
-//------------------------------widen------------------------------------------
-// Only happens for optimistic top-down optimizations.
-const Type *TypeLong::widen( const Type *old, const Type* limit ) const {
-  // Coming from TOP or such; no widening
-  if( old->base() != Long ) return this;
-  const TypeLong *ot = old->is_long();
-
-  // If new guy is equal to old guy, no widening
-  if( _lo == ot->_lo && _hi == ot->_hi )
-    return old;
-
-  // If new guy contains old, then we widened
-  if( _lo <= ot->_lo && _hi >= ot->_hi ) {
-    // New contains old
-    // If new guy is already wider than old, no widening
-    if( _widen > ot->_widen ) return this;
-    // If old guy was a constant, do not bother
-    if (ot->_lo == ot->_hi)  return this;
-    // Now widen new guy.
-    // Check for widening too far
-    if (_widen == WidenMax) {
-      jlong max = max_jlong;
-      jlong min = min_jlong;
-      if (limit->isa_long()) {
-        max = limit->is_long()->_hi;
-        min = limit->is_long()->_lo;
-      }
-      if (min < _lo && _hi < max) {
-        // If neither endpoint is extremal yet, push out the endpoint
-        // which is closer to its respective limit.
-        if (_lo >= 0 ||                 // easy common case
-            ((julong)_lo - min) >= ((julong)max - _hi)) {
-          // Try to widen to an unsigned range type of 32/63 bits:
-          if (max >= max_juint && _hi < max_juint)
-            return make(_lo, max_juint, WidenMax);
-          else
-            return make(_lo, max, WidenMax);
-        } else {
-          return make(min, _hi, WidenMax);
-        }
-      }
-      return TypeLong::LONG;
-    }
-    // Returned widened new guy
-    return make(_lo,_hi,_widen+1);
-  }
-
-  // If old guy contains new, then we probably widened too far & dropped to
-  // bottom.  Return the wider fellow.
-  if ( ot->_lo <= _lo && ot->_hi >= _hi )
-    return old;
-
-  //  fatal("Long value range is not subset");
-  // return this;
-  return TypeLong::LONG;
-}
-
-//------------------------------narrow----------------------------------------
-// Only happens for pessimistic optimizations.
-const Type *TypeLong::narrow( const Type *old ) const {
-  if (_lo >= _hi)  return this;   // already narrow enough
-  if (old == nullptr)  return this;
-  const TypeLong* ot = old->isa_long();
-  if (ot == nullptr)  return this;
-  jlong olo = ot->_lo;
-  jlong ohi = ot->_hi;
-
-  // If new guy is equal to old guy, no narrowing
-  if (_lo == olo && _hi == ohi)  return old;
-
-  // If old guy was maximum range, allow the narrowing
-  if (olo == min_jlong && ohi == max_jlong)  return this;
-
-  if (_lo < olo || _hi > ohi)
-    return this;                // doesn't narrow; pretty weird
-
-  // The new type narrows the old type, so look for a "death march".
-  // See comments on PhaseTransform::saturate.
-  julong nrange = (julong)_hi - _lo;
-  julong orange = (julong)ohi - olo;
-  if (nrange < max_julong - 1 && nrange > (orange >> 1) + (SMALLINT*2)) {
-    // Use the new type only if the range shrinks a lot.
-    // We do not want the optimizer computing 2^31 point by point.
-    return old;
-  }
-
-  return this;
+  return TypeIntHelper::int_type_narrow(this, old->isa_long());
 }
 
 //-----------------------------filter------------------------------------------
-const Type *TypeLong::filter_helper(const Type *kills, bool include_speculative) const {
+const Type* TypeLong::filter_helper(const Type* kills, bool include_speculative) const {
+  assert(!_is_dual, "dual types should only be used for join calculation");
   const TypeLong* ft = join_helper(kills, include_speculative)->isa_long();
-  if (ft == nullptr || ft->empty())
+  if (ft == nullptr) {
     return Type::TOP;           // Canonical empty value
+  }
+  assert(!ft->_is_dual, "dual types should only be used for join calculation");
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.
-    ft = TypeLong::make(ft->_lo, ft->_hi, this->_widen);
+    return (new TypeLong(TypeIntPrototype<jlong, julong>{{ft->_lo, ft->_hi}, {ft->_ulo, ft->_uhi}, ft->_bits},
+                         this->_widen, false))->hashcons();
   }
   return ft;
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
-bool TypeLong::eq( const Type *t ) const {
-  const TypeLong *r = t->is_long(); // Handy access
-  return r->_lo == _lo &&  r->_hi == _hi  && r->_widen == _widen;
+bool TypeLong::eq(const Type* t) const {
+  const TypeLong* r = t->is_long();
+  return TypeIntHelper::int_type_is_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypeLong::hash(void) const {
-  return (uint)_lo + (uint)_hi + (uint)_widen + (uint)Type::Long;
+  return (uint)_lo + (uint)_hi + (uint)_ulo + (uint)_uhi +
+         (uint)_bits._zeros + (uint)_bits._ones + (uint)_widen + (uint)_is_dual + (uint)Type::Long;
 }
 
 //------------------------------is_finite--------------------------------------
@@ -2230,71 +2002,35 @@ bool TypeLong::is_finite() const {
   return true;
 }
 
-//------------------------------dump2------------------------------------------
-// Dump TypeLong
-#ifndef PRODUCT
-static const char* longnamenear(jlong x, const char* xname, char* buf, size_t buf_size, jlong n) {
-  if (n > x) {
-    if (n >= x + 10000)  return nullptr;
-    os::snprintf_checked(buf, buf_size, "%s+" JLONG_FORMAT, xname, n - x);
-  } else if (n < x) {
-    if (n <= x - 10000)  return nullptr;
-    os::snprintf_checked(buf, buf_size, "%s-" JLONG_FORMAT, xname, x - n);
-  } else {
-    return xname;
-  }
-  return buf;
-}
-
-static const char* longname(char* buf, size_t buf_size, jlong n) {
-  const char* str;
-  if (n == min_jlong)
-    return "min";
-  else if (n < min_jlong + 10000)
-    os::snprintf_checked(buf, buf_size, "min+" JLONG_FORMAT, n - min_jlong);
-  else if (n == max_jlong)
-    return "max";
-  else if (n > max_jlong - 10000)
-    os::snprintf_checked(buf, buf_size, "max-" JLONG_FORMAT, max_jlong - n);
-  else if ((str = longnamenear(max_juint, "maxuint", buf, buf_size, n)) != nullptr)
-    return str;
-  else if ((str = longnamenear(max_jint, "maxint", buf, buf_size, n)) != nullptr)
-    return str;
-  else if ((str = longnamenear(min_jint, "minint", buf, buf_size, n)) != nullptr)
-    return str;
-  else
-    os::snprintf_checked(buf, buf_size, JLONG_FORMAT, n);
-  return buf;
-}
-
-void TypeLong::dump2( Dict &d, uint depth, outputStream *st ) const {
-  char buf[80], buf2[80];
-  if (_lo == min_jlong && _hi == max_jlong)
-    st->print("long");
-  else if (is_con())
-    st->print("long:%s", longname(buf, sizeof(buf), get_con()));
-  else if (_hi == max_jlong)
-    st->print("long:>=%s", longname(buf, sizeof(buf), _lo));
-  else if (_lo == min_jlong)
-    st->print("long:<=%s", longname(buf, sizeof(buf), _hi));
-  else
-    st->print("long:%s..%s", longname(buf, sizeof(buf), _lo), longname(buf2,sizeof(buf2),  _hi));
-
-  if (_widen != 0 && this != TypeLong::LONG)
-    st->print(":%.*s", _widen, "wwww");
-}
-#endif
-
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants
 bool TypeLong::singleton(void) const {
-  return _lo >= _hi;
+  return _lo == _hi;
 }
 
 bool TypeLong::empty(void) const {
-  return _lo > _hi;
+  return false;
 }
+
+//------------------------------dump2------------------------------------------
+#ifndef PRODUCT
+void TypeInt::dump2(Dict& d, uint depth, outputStream* st) const {
+  TypeIntHelper::int_type_dump(this, st, false);
+}
+
+void TypeInt::dump_verbose() const {
+  TypeIntHelper::int_type_dump(this, tty, true);
+}
+
+void TypeLong::dump2(Dict& d, uint depth, outputStream* st) const {
+  TypeIntHelper::int_type_dump(this, st, false);
+}
+
+void TypeLong::dump_verbose() const {
+  TypeIntHelper::int_type_dump(this, tty, true);
+}
+#endif
 
 //=============================================================================
 // Convenience common pre-built types.
@@ -2547,10 +2283,15 @@ const Type *TypeAry::xmeet( const Type *t ) const {
     typerr(t);
 
   case Array: {                 // Meeting 2 arrays?
-    const TypeAry *a = t->is_ary();
+    const TypeAry* a = t->is_ary();
+    const Type* size = _size->xmeet(a->_size);
+    const TypeInt* isize = size->isa_int();
+    if (isize == nullptr) {
+      assert(size == Type::TOP || size == Type::BOTTOM, "");
+      return size;
+    }
     return TypeAry::make(_elem->meet_speculative(a->_elem),
-                         _size->xmeet(a->_size)->is_int(),
-                         _stable && a->_stable);
+                         isize, _stable && a->_stable);
   }
   case Top:
     break;
@@ -3679,6 +3420,12 @@ const Type* TypeInterfaces::xmeet(const Type* t) const {
 bool TypeInterfaces::singleton(void) const {
   ShouldNotReachHere();
   return Type::singleton();
+}
+
+bool TypeInterfaces::has_non_array_interface() const {
+  assert(TypeAryPtr::_array_interfaces != nullptr, "How come Type::Initialize_shared wasn't called yet?");
+
+  return !TypeAryPtr::_array_interfaces->contains(this);
 }
 
 //------------------------------TypeOopPtr-------------------------------------
@@ -4974,10 +4721,12 @@ const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
     chg = true;
   }
   // Negative length arrays will produce weird intermediate dead fast-path code
-  if (lo > hi)
+  if (lo > hi) {
     return TypeInt::ZERO;
-  if (!chg)
+  }
+  if (!chg) {
     return size;
+  }
   return TypeInt::make(lo, hi, Type::WidenMin);
 }
 
@@ -5142,7 +4891,12 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
   case AryPtr: {                // Meeting 2 references?
     const TypeAryPtr *tap = t->is_aryptr();
     int off = meet_offset(tap->offset());
-    const TypeAry *tary = _ary->meet_speculative(tap->_ary)->is_ary();
+    const Type* tm = _ary->meet_speculative(tap->_ary);
+    const TypeAry* tary = tm->isa_ary();
+    if (tary == nullptr) {
+      assert(tm == Type::TOP || tm == Type::BOTTOM, "");
+      return tm;
+    }
     PTR ptr = meet_ptr(tap->ptr());
     int instance_id = meet_instance_id(tap->instance_id());
     const TypePtr* speculative = xmeet_speculative(tap);
@@ -6191,6 +5945,19 @@ template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instan
   }
 
   return this_one->klass()->is_subtype_of(other->klass()) && this_one->_interfaces->contains(other->_interfaces);
+}
+
+bool TypeInstKlassPtr::might_be_an_array() const {
+  if (!instance_klass()->is_java_lang_Object()) {
+    // TypeInstKlassPtr can be an array only if it is java.lang.Object: the only supertype of array types.
+    return false;
+  }
+  if (interfaces()->has_non_array_interface()) {
+    // Arrays only implement Cloneable and Serializable. If we see any other interface, [this] cannot be an array.
+    return false;
+  }
+  // Cannot prove it's not an array.
+  return true;
 }
 
 bool TypeInstKlassPtr::is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const {
