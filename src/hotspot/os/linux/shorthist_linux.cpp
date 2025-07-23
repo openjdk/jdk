@@ -32,22 +32,15 @@
 // all memory sizes in KB
 #define btokb(s) ( (s) / K)
 
-static int num_open_files(int upper_limit) {
-  // Below a certain limit, we iterate fd in proc and return the exact number.
-  // Beyond that, we just return the file descriptor array size.
-  constexpr int limit = 1024;
-  if ()
-}
-
 void ShortHistoryData_pd::measure() {
   // Process memory info
   os::Linux::process_info_t mi;
   os::Linux::query_process_info(&mi);
   _vmsize = mi.vmsize;
   _vmrss = mi.vmrss;
+  _vmhwm = mi.vmhwm;
   _vmswap = mi.vmswap;
   _threads = mi.threads;
-  _fdsize = mi.fdsize;
 
   // Glibc memory info
 #ifdef __GLIBC__
@@ -70,9 +63,9 @@ void ShortHistoryData_pd::measure() {
 #endif
 }
 
-#define HEADER1 "|-------------- process ------------------||--------- glibc ---------|"
-#define HEADER2 "     vsize       rss      swap   thr    fd       live  retained  trim "
-//               |.........|.........|.........|.....|.....||.........|.........|.....|
+#define HEADER1 "|------------------- process -----------------||--------- glibc ---------|"
+#define HEADER2 "     vsize       rss       hwm      swap   thr       live  retained  trim "
+//               |.........|.........|.........|.........|.....||.........|.........|.....|
 
 void ShortHistoryData_pd::print_header_1(outputStream* st) {
   st->print_raw(HEADER1);
@@ -82,6 +75,6 @@ void ShortHistoryData_pd::print_header_2(outputStream* st) {
 }
 
 void ShortHistoryData_pd::print_on(outputStream* st) const {
-  st->print(" %9zu %9zu %9zu %5d %5d ", _vmsize, _vmrss, _vmswap, _threads, _fdsize);
+  st->print(" %9zu %9zu %9zu %9zu %5d ", _vmsize, _vmrss, _vmhwm, _vmswap, _threads);
   st->print(" %9zu %9zu %5u ", _glibc_heap_allocated, _glibc_heap_retained, _glibc_num_trims);
 }

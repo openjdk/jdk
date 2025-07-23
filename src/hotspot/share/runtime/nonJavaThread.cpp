@@ -46,11 +46,13 @@ class NonJavaThread::List {
 public:
   NonJavaThread* volatile _head;
   SingleWriterSynchronizer _protect;
+  static volatile int _count;
 
   List() : _head(nullptr), _protect() {}
 };
 
 NonJavaThread::List NonJavaThread::_the_list;
+volatile int NonJavaThread::List::_count = 0;
 
 NonJavaThread::Iterator::Iterator() :
   _protect_enter(_the_list._protect.enter()),
@@ -78,6 +80,7 @@ void NonJavaThread::add_to_the_list() {
   BarrierSet::barrier_set()->on_thread_attach(this);
   Atomic::release_store(&_next, _the_list._head);
   Atomic::release_store(&_the_list._head, this);
+  Atomic::inc(&_the_list._count);
 }
 
 void NonJavaThread::remove_from_the_list() {
@@ -99,6 +102,11 @@ void NonJavaThread::remove_from_the_list() {
   MutexLocker ml(NonJavaThreadsListSync_lock, Mutex::_no_safepoint_check_flag);
   _the_list._protect.synchronize();
   _next = nullptr;                 // Safe to drop the link now.
+  Atomic::dec(&_the_list._count);
+}
+
+int NonJavaThread::count() {
+  return Atomic::load(&_the_list._count);
 }
 
 void NonJavaThread::pre_run() {

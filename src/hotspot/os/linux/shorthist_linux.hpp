@@ -31,6 +31,7 @@
 class ShortHistoryData_pd {
   size_t _vmsize;
   size_t _vmrss;
+  size_t _vmhwm;
   size_t _vmswap;
   int _threads;
   int _fdsize;
