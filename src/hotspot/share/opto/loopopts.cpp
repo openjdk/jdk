@@ -1100,7 +1100,7 @@ bool PhaseIdealLoop::would_split_lshift_through_phi(const Node* n, const Node* n
   if (n_blk->is_BaseCountedLoop()) {
     const BaseCountedLoopNode* cloop = n_blk->as_BaseCountedLoop();
     return n->Opcode() == Op_LShift(cloop->bt()) && phi == cloop->phi();
-  } else if (n_blk->is_Loop()) {
+  } else if (n_blk->is_Loop() && UseNewCode) {
     // In some cases, we have not been able to detect a counted loop before
     // PhaseIdeal loop attempts to split ifs. Often, this is due to the loop
     // iv not being loop invariant in after one pass of beautify loops. In this
