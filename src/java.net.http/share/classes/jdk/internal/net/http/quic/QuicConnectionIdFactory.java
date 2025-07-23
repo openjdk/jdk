@@ -306,7 +306,7 @@ public class QuicConnectionIdFactory {
         if (cid != null) {
             var localToken = statelessTokenFor(cid);
             assert localToken != null;
-            ByteBuffer buf = ByteBuffer.allocateDirect(length);
+            ByteBuffer buf = ByteBuffer.allocate(length);
             buf.put((byte)(0x40 + RANDOM.nextInt(0x40)));
             byte[] random = new byte[length - 17];
             RANDOM.nextBytes(random);
