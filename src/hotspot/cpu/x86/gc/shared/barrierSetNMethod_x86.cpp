@@ -54,6 +54,11 @@ public:
 
   jint get_immediate() const { return int_at(imm_offset); }
   void set_immediate(jint imm, int bit_mask) {
+    if (bit_mask == ~0) {
+      set_int_at(imm_offset, imm);
+      return;
+    }
+
     assert((imm & ~bit_mask) == 0, "trying to set bits outside the mask");
     imm &= bit_mask;
 

@@ -48,14 +48,21 @@ public:
   }
 
   void release_set_guard_value(int value, int bit_mask) {
-    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
-    value &= bit_mask;
     // Patching is not atomic.
     // Stale observations of the "armed" state is okay as invoking the barrier stub in that case has no
     // unwanted side effects. Disarming is thus a non-critical operation.
     // The visibility of the "armed" state must be ensured by safepoint/handshake.
 
     OrderAccess::release(); // Release modified oops
+
+    if (bit_mask == ~0) {
+      // Set the guard value (naming of 'offset' function is misleading).
+      get_patchable_instruction_handle()->set_offset(value);
+      return;
+    }
+
+    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+    value &= bit_mask;
 
     NativeMovRegMem* mov = get_patchable_instruction_handle();
     assert(align_up(mov->instruction_address(), sizeof(uint64_t)) ==

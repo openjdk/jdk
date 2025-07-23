@@ -118,6 +118,10 @@ public:
   }
 
   void set_value(int value, int bit_mask) {
+    if (bit_mask == ~0) {
+      Atomic::release_store(guard_addr(), value);
+      return;
+    }
     assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
     value &= bit_mask;
     int old_value = Atomic::load(guard_addr());
