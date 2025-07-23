@@ -2582,16 +2582,12 @@ class StubGenerator: public StubCodeGenerator {
     const Register saved_encrypted_ctr = c_rarg5;
     const Register used_ptr = c_rarg6;
 
-    // used temp register name for convinence
-    const Register vlen = x28;
-    const Register keylen = x29;
-    const Register ctr = x14;
-    const Register used = x15;
-    const Register block_size = x16;
-    const Register len = x17;
-    const Register len32 = x18;
-    const Register rscratch1 = t0;
-    const Register rscratch2 = t1;
+    const Register keylen = x31;
+    const Register used = x30;
+    const Register len = x29;
+    const Register len32 = x28;
+    const Register vl = x17;
+    const Register ctr = t1;
 
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
@@ -2601,25 +2597,26 @@ class StubGenerator: public StubCodeGenerator {
     const address start = __ pc();
     __ enter();
 
-    Label L_tail, L_exit, L_loop, L_first_loop, L_ctr_group_loop;
+    Label L_exit, L_loop, L_first_loop;
     __ lw(used, Address(used_ptr));
     __ beqz(input_len, L_exit);
     __ mv(len, input_len);
-    __ mv(block_size, 16); // 16 Byte a block for keys
 
     // encrypt bytes left with last encryptedCounter
-    Label L_judge_used, L_encrypt_slow, L_main_loop, L_inner_loop, L_store_Large_counter;
-    __ bind(L_judge_used);
+    Label L_judge_used, L_encrypt_slow, L_main_loop;
+
     __ beqz(used, L_main_loop);
-    __ blt(used, block_size, L_encrypt_slow);
+    __ bind(L_judge_used);
+    __ mv(t2, 16);
+    __ blt(used, t2, L_encrypt_slow);
     __ j(L_main_loop);
 
     __ bind(L_encrypt_slow);
-    __ add(rscratch2, saved_encrypted_ctr, used);
-    __ lbu(rscratch1, Address(rscratch2)); // TODO change to __ lb(rscratch1, Address(saved_encrypted_ctr, used));
-    __ lbu(rscratch2, Address(in));
-    __ xorr(rscratch1, rscratch2, rscratch1);
-    __ sb(rscratch1, Address(out));
+    __ add(t1, saved_encrypted_ctr, used);
+    __ lb(t0, Address(t1)); // TODO change to __ lb(rscratch1, Address(saved_encrypted_ctr, used));
+    __ lb(t1, Address(in));
+    __ xorr(t0, t0, t1);
+    __ sb(t0, Address(out));
     __ addi(in, in, 1);
     __ addi(out, out, 1);
     __ addi(used, used, 1);
@@ -2628,6 +2625,13 @@ class StubGenerator: public StubCodeGenerator {
     __ j(L_judge_used);
 
     __ bind(L_main_loop);
+    __ srli(t0, len, 4);
+    __ slli(len32, t0, 2);
+    __ slli(t0, len32, 2);
+    __ sub(len, len, t0); // ensure len < 16
+
+    Label L_calculate_one_next;
+    __ beqz(len32, L_calculate_one_next);
 
     // generate_aes_loadkeys
     Label L_aes128, L_aes192, L_exit_loadkey;
@@ -2648,38 +2652,29 @@ class StubGenerator: public StubCodeGenerator {
     generate_aes_loadkeys(key, working_vregs, 11);
     __ bind(L_exit_loadkey);
 
-    // CTR_large_block (4 * 16 Bytes once a time)
+    // CTR_large_block
     uint64_t maskIndex = 0x00000088ul; // 0b10001000
-    __ mv(t0, 64); // we used bulk_width = 4, and should compare len > 64 (Byte)
-    __ blt(len, t0, L_inner_loop);
-
     // init aes_ctr counter input
-    __ srli(len32, len, 2);
     __ li(t0, maskIndex);
     __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
     __ vmv_v_x(v0, t0);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(v31, counter);
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::ta);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // Convert the big-endian counter into little-endian. for viota
     __ vsetvli(x0, len32, Assembler::e32, Assembler::m4);
     __ vmv_v_i(v16, 0);
     __ vaesz_vs(v16, v31);
     __ viota_m(v20, v0, Assembler::VectorMask::v0_t);
-    __ vsetvli(vlen, len32, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::ta);
+    __ vsetvli(vl, len32, Assembler::e32, Assembler::m4);
     __ vadd_vv(v16, v16, v20, Assembler::VectorMask::v0_t);
     __ j(L_first_loop);
 
     __ bind(L_loop);
-    __ mv(t0, 64); // we used bulk_width = 4, so we should compare len > 64 (Byte)
-    __ blt(len, t0, L_store_Large_counter);
-    __ srli(len32, len, 2);
-    __ vsetvli(vlen, len32, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::ta);
+    __ vsetvli(vl, len32, Assembler::e32, Assembler::m4);
     __ vadd_vx(v16, v16, ctr, Assembler::VectorMask::v0_t);
 
     __ bind(L_first_loop);
-    __ vle32_v(v20, in);
-
     __ vmv_v_v(v24, v16);
     __ vrev8_v(v24, v24, Assembler::VectorMask::v0_t); // convert the little-endian to big-endian
     __ vaesz_vs(v24, working_vregs[0]);
@@ -2712,69 +2707,79 @@ class StubGenerator: public StubCodeGenerator {
     __ vaesef_vs(v24, working_vregs[10]);
     __ bind(L_exit_aes_loop);
 
-    __ slli(t0, vlen, 2);
-    __ srli(ctr, vlen, 2);
-    __ sub(len, len, t0);
+    __ vle32_v(v20, in);
+    __ slli(t0, vl, 2);
+    __ srli(ctr, vl, 2);
+    __ sub(len32, len32, vl);
     __ add(in, in, t0);
 
     __ vxor_vv(v24, v24, v20);
     __ vse32_v(v24, out);
     __ add(out, out, t0);
-    __ j(L_loop);
+    __ bnez(len32, L_loop);
 
-    // store counter after large block CTR
-    __ bind(L_store_Large_counter);
-    __ vrev8_v(v16, v16, Assembler::VectorMask::v0_t); // convert little-endian to big-endian
+    // save counter and encrypted_counter
+    Label L_save_v16_v24, L_save_v17_v25, L_save_v18_v26;
+    __ mv(used, 16);
+    __ vrev8_v(v16, v16, Assembler::VectorMask::v0_t);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vse32_v(v19, counter);
+    __ mv(t0, 4);
+    __ beq(vl, t0, L_save_v16_v24);
+    __ mv(t0, 8);
+    __ beq(vl, t0, L_save_v17_v25);
+    __ mv(t0, 12);
+    __ beq(vl, t0, L_save_v18_v26);
 
-    // inner loop
-    __ bind(L_inner_loop);
+    __ vse32_v(v19, counter);
+    __ vse32_v(v27, saved_encrypted_ctr);
+    __ j(L_calculate_one_next);
+
+    __ bind(L_save_v18_v26);
+    __ vse32_v(v18, counter);
+    __ vse32_v(v26, saved_encrypted_ctr);
+    __ j(L_calculate_one_next);
+
+    __ bind(L_save_v17_v25);
+    __ vse32_v(v17, counter);
+    __ vse32_v(v25, saved_encrypted_ctr);
+    __ j(L_calculate_one_next);
+
+    __ bind(L_save_v16_v24);
+    __ vse32_v(v16, counter);
+    __ vse32_v(v24, saved_encrypted_ctr);
+
+    __ bind(L_calculate_one_next);
+    __ beqz(used, L_encrypt_slow); // when first len32 == 0, and used == 0
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(v31, counter);
+    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // Convert the big-endian counter into little-endian. for increment
+    __ vmv_v_i(v16, 0);
+    __ vaesz_vs(v16, v31);
+    __ vadd_vi(v16, v16, 1, Assembler::VectorMask::v0_t);
+    __ vmv_v_v(v24, v16);
+    __ vrev8_v(v24, v24, Assembler::VectorMask::v0_t);
+    __ vse32_v(v24, counter);
+
+    Label L_aes128_loop_last, L_aes192_loop_last, L_exit_aes_loop_last;
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_aes128_loop_last);
+    __ beq(keylen, t2, L_aes192_loop_last);
+
+    generate_aes_encrypt(v24, working_vregs, 15);
+    __ j(L_exit_aes_loop_last);
+
+    __ bind(L_aes192_loop_last);
+    generate_aes_encrypt(v24, working_vregs, 13);
+    __ j(L_exit_aes_loop_last);
+
+    __ bind(L_aes128_loop_last);
+    generate_aes_encrypt(v24, working_vregs, 11);
+    __ bind(L_exit_aes_loop_last);
+
+    __ vse32_v(v24, saved_encrypted_ctr);
     __ beqz(len, L_exit);
     __ mv(used, 0);
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vle32_v(v20, in);
-
-    // calculate and store out the next counter
-    __ vle32_v(v31, counter);
-    __ li(t0, maskIndex);
-    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
-    __ vmv_v_x(v0, t0);
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // convert big-endien to little-endian
-    __ vadd_vi(v31, v31, 1, Assembler::VectorMask::v0_t);
-    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // convert little-endian to big-endian
-    __ vse32_v(v31, counter);
-
-    // inner encrypt
-    Label L_aes128_inner, L_aes192_inner, L_fin_encrypt;
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128_inner);
-    __ beq(keylen, t2, L_aes192_inner);
-
-    generate_aes_encrypt(v31, working_vregs, 15);
-    __ j(L_fin_encrypt);
-
-    __ bind(L_aes192_inner);
-    generate_aes_encrypt(v31, working_vregs, 13);
-    __ j(L_fin_encrypt);
-
-    __ bind(L_aes128_inner);
-    generate_aes_encrypt(v31, working_vregs, 11);
-    __ bind(L_fin_encrypt);
-
-    __ vse32_v(v31, saved_encrypted_ctr);
-    __ blt(len, block_size, L_encrypt_slow);
-
-    __ vxor_vv(v31, v31, v20);
-    __ vse32_v(v31, out);
-    __ add(out, out, block_size);
-    __ sub(len, len, block_size);
-    __ add(in, in, block_size);
-    __ mv(used, block_size);
-
-    __ beqz(len, L_exit);
-    __ j(L_inner_loop);
+    __ j(L_encrypt_slow);
 
     __ bind(L_exit);
     __ sw(used, Address(used_ptr));
