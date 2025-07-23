@@ -643,7 +643,8 @@ void VM_Version::initialize() {
 
   // Construct the "features" string
   char buf[512];
-  int buf_used_len = os::snprintf_checked(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  int buf_used_len = os::snprintf(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  assert(buf_used_len < (int)sizeof(buf), "unexpected os::snprintf error - return value: %d", buf_used_len);
   if (_model2) {
     os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
   }

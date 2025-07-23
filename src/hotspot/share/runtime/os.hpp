@@ -803,7 +803,7 @@ class os: AllStatic {
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Delegates to snprintf and asserts that the output was not truncated.
-  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+  static void snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);

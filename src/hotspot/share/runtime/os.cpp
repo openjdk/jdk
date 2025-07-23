@@ -108,13 +108,12 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
-int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
+void os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   int result = os::vsnprintf(buf, len, fmt, args);
   va_end(args);
   assert(static_cast<size_t>(result) < len, "os::snprintf truncated");
-  return result;
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
