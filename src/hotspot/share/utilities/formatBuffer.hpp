@@ -48,43 +48,78 @@ class FormatBufferResource : public FormatBufferBase {
 
 class FormatBufferDummy {};
 
-// Use stack for buffer
+// Simple class to format the ctor arguments into a fixed-sized buffer.
+// Uses stack for the buffer. If the buffer is not sufficient to store the formatted string,
+// then the _overflow flag is set. In such scenario buffer will hold the truncated string.
 template <size_t bufsz = FormatBufferBase::BufferSize>
 class FormatBuffer : public FormatBufferBase {
  public:
   inline FormatBuffer(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  inline FormatBuffer();
   // since va_list is unspecified type (can be char*), we use FormatBufferDummy to disambiguate these constructors
   inline FormatBuffer(FormatBufferDummy dummy, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0);
-  inline void append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
+  inline int append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   inline void print(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   inline void printv(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
 
   char* buffer() { return _buf; }
+  // returns total size of the buffer
   int size() { return bufsz; }
+  // returns size of the buffer currently used
+  int length() { return _len; }
+  // if the buffer is full and contains truncated string, overflow is set
+  bool overflow() { return _overflow; }
+
+  // Appends comma separated strings obtained by mapping given range of numbers to strings
+  template<typename FN>
+  void insert_string_list(int start, int limit, FN fn) {
+    bool first = true;
+    for (int i = start; i < limit; i++) {
+      const char* str = fn(i);
+      if (str == nullptr) {
+        continue;
+      }
+      const char* comma = first ? "" : ", ";
+      int result = append("%s%s", comma, str);
+      if (result < 0) {
+        return;
+      }
+      first = false;
+    }
+    return;
+  }
 
  private:
   NONCOPYABLE(FormatBuffer);
   char _buffer[bufsz];
+  int _len;
+  bool _overflow;
 
- protected:
-  inline FormatBuffer();
+  bool check_overflow(int result) {
+    if (result == -1) {
+      _overflow = true;
+    }
+    return _overflow;
+  }
 };
 
 template <size_t bufsz>
-FormatBuffer<bufsz>::FormatBuffer(const char * format, ...) : FormatBufferBase(_buffer) {
+FormatBuffer<bufsz>::FormatBuffer(const char * format, ...) : FormatBufferBase(_buffer), _len(0), _overflow(false) {
   va_list argp;
   va_start(argp, format);
-  jio_vsnprintf(_buf, bufsz, format, argp);
+  int result = jio_vsnprintf(_buf, bufsz, format, argp);
   va_end(argp);
+  _len = check_overflow(result) ? bufsz-1 : result;
 }
 
 template <size_t bufsz>
-FormatBuffer<bufsz>::FormatBuffer(FormatBufferDummy dummy, const char * format, va_list ap) : FormatBufferBase(_buffer) {
-  jio_vsnprintf(_buf, bufsz, format, ap);
+FormatBuffer<bufsz>::FormatBuffer(FormatBufferDummy dummy, const char * format, va_list ap) : FormatBufferBase(_buffer), _len(0), _overflow(false) {
+  int result = jio_vsnprintf(_buf, bufsz, format, ap);
+  _len = check_overflow(result) ? bufsz-1 : result;
 }
 
 template <size_t bufsz>
-FormatBuffer<bufsz>::FormatBuffer() : FormatBufferBase(_buffer) {
+FormatBuffer<bufsz>::FormatBuffer() : FormatBufferBase(_buffer), _len(0), _overflow(false) {
   _buf[0] = '\0';
 }
 
@@ -92,26 +127,33 @@ template <size_t bufsz>
 void FormatBuffer<bufsz>::print(const char * format, ...) {
   va_list argp;
   va_start(argp, format);
-  jio_vsnprintf(_buf, bufsz, format, argp);
+  int result = jio_vsnprintf(_buf, bufsz, format, argp);
   va_end(argp);
+  _len = check_overflow(result) ? bufsz-1 : result;
 }
 
 template <size_t bufsz>
 void FormatBuffer<bufsz>::printv(const char * format, va_list argp) {
-  jio_vsnprintf(_buf, bufsz, format, argp);
+  int result = jio_vsnprintf(_buf, bufsz, format, argp);
+  _len = check_overflow(result) ? bufsz-1 : result;
 }
 
 template <size_t bufsz>
-void FormatBuffer<bufsz>::append(const char* format, ...) {
+int FormatBuffer<bufsz>::append(const char* format, ...) {
+  if (_overflow) {
+    return -1;
+  }
   // Given that the constructor does a vsnprintf we can assume that
   // _buf is already initialized.
-  size_t len = strlen(_buf);
-  char* buf_end = _buf + len;
+  assert(_buf != nullptr, "sanity check");
+  char* buf_end = _buf + _len;
 
   va_list argp;
   va_start(argp, format);
-  jio_vsnprintf(buf_end, bufsz - len, format, argp);
+  int result = jio_vsnprintf(buf_end, bufsz - _len, format, argp);
   va_end(argp);
+  _len = check_overflow(result) ? bufsz-1 : _len+result;
+  return result;
 }
 
 // Used to format messages.

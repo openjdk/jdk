@@ -38,6 +38,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/virtualizationSupport.hpp"
 
@@ -1100,21 +1101,17 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  char buf[2048];
-  size_t cpu_info_size = jio_snprintf(
-              buf, sizeof(buf),
-              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
-              cores_per_cpu(), threads_per_core(),
-              cpu_family(), _model, _stepping, os::cpu_microcode_revision());
-  assert(cpu_info_size > 0, "not enough temporary space allocated");
+  CpuInfoBuffer info_buffer("(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
+                            cores_per_cpu(), threads_per_core(),
+                            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
+  assert(!info_buffer.overflow(), "not enough buffer size");
+  info_buffer.append(", ");
+  assert(!info_buffer.overflow(), "not enough buffer size");
+  int features_offset = info_buffer.length();
+  insert_features_names(_features, info_buffer);
 
-  insert_features_names(_features, buf + cpu_info_size, sizeof(buf) - cpu_info_size);
-
-  _cpu_info_string = os::strdup(buf);
-
-  _features_string = extract_features_string(_cpu_info_string,
-                                             strnlen(_cpu_info_string, sizeof(buf)),
-                                             cpu_info_size);
+  _cpu_info_string = os::strdup(info_buffer);
+  _features_string = _cpu_info_string + features_offset;
 
   // Use AES instructions if available.
   if (supports_aes()) {
@@ -3296,13 +3293,13 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   return true;
 }
 
-void VM_Version::insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen) {
-  for (int i = 0; i < MAX_CPU_FEATURES; i++) {
+void VM_Version::insert_features_names(VM_Version::VM_Features features, CpuInfoBuffer& info_buffer) {
+  info_buffer.insert_string_list(0, MAX_CPU_FEATURES, [&](int i) {
+    const char* result = nullptr;
     if (features.supports_feature((VM_Version::Feature_Flag)i)) {
-      int res = jio_snprintf(buf, buflen, ", %s", _features_names[i]);
-      assert(res > 0, "not enough temporary space allocated");
-      buf += res;
-      buflen -= res;
+      result = _features_names[i];
     }
-  }
+    return result;
+  });
+  assert(!info_buffer.overflow(), "not enough buffer size");
 }

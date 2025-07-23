@@ -78,4 +78,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define USE_TRAMPOLINE_STUB_FIX_OWNER
 
+#define CPU_INFO_BUF_SIZE 512
+
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
