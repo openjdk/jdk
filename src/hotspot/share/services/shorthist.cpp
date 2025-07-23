@@ -101,6 +101,7 @@ struct Data {
   void measure_nmt() {
     if (MemTracker::enabled()) {
       _d.nmt_malloc_total = btokb(MallocTracker::total_malloc());
+      _d.nmt_malloc_peak = btokb(MallocTracker::total_peak_malloc());
       _d.nmt_malloc_gcdata = btokb(MallocTracker::malloc_size(MemTag::mtGC));
       _d.nmt_malloc_unsafe = btokb(MallocTracker::malloc_size(MemTag::mtOther));
     }

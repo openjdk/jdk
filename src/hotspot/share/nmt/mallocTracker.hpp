@@ -268,6 +268,10 @@ class MallocMemorySummary : AllStatic {
     return as_snapshot()->total();
   }
 
+  static size_t total_peak_malloc() {
+    return as_snapshot()->total_peak();
+  }
+
   static size_t malloc_size(MemTag mem_tag) {
     return as_snapshot()->malloc_size(mem_tag);
   }
@@ -336,6 +340,11 @@ class MallocTracker : AllStatic {
   // Total malloc'd memory amount
   static size_t total_malloc() {
     return MallocMemorySummary::total();
+  }
+
+  // Total malloc'd memory amount
+  static size_t total_peak_malloc() {
+    return MallocMemorySummary::total_peak_malloc();
   }
 
   static size_t malloc_size(MemTag mem_tag) {
