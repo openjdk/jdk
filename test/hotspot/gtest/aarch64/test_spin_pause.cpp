@@ -21,33 +21,13 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
-#define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#if defined(AARCH64) && !defined(ZERO)
 
-class SpinWait {
-public:
-  enum Inst {
-    NONE = -1,
-    NOP,
-    ISB,
-    YIELD,
-    SB
-  };
+#include "utilities/spinYield.hpp"
+#include "unittest.hpp"
 
-private:
-  Inst _inst;
-  int _count;
+TEST_VM(SpinPause, sanity) {
+  ASSERT_EQ(SpinPause(), 1);
+}
 
-  Inst from_name(const char *name);
-
-public:
-  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(inst == NONE ? 0 : count) {}
-  SpinWait(const char *name, int count) : SpinWait(from_name(name), count) {}
-
-  Inst inst() const { return _inst; }
-  int inst_count() const { return _count; }
-
-  static bool supports(const char *name);
-};
-
-#endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#endif  // AARCH64
