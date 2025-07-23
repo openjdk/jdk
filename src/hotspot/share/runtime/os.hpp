@@ -795,11 +795,14 @@ class os: AllStatic {
 
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
-  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+
+  // Performs vsnprintf and asserts the result is non-negative (so there was not
+  // an encoding error or any other kind of usage error).
+  [[nodiscard]] static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+  // Delegates to vsnprintf.
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
-  // Performs snprintf and asserts the result is non-negative (so there was not
-  // an encoding error) and that the output was not truncated.
+  // Delegates to snprintf and asserts that the output was not truncated.
   static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided

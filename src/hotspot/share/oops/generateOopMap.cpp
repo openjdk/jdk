@@ -2150,7 +2150,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
 void GenerateOopMap::error_work(const char *format, va_list ap) {
   _got_error = true;
   char msg_buffer[512];
-  os::vsnprintf(msg_buffer, sizeof(msg_buffer), format, ap);
+  (void) os::vsnprintf(msg_buffer, sizeof(msg_buffer), format, ap);
   // Append method name
   char msg_buffer2[512];
   os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
