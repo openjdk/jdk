@@ -291,7 +291,7 @@ static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
 }
 
 TRACE_REQUEST_FUNC(JavaAgent) {
-  const JvmtiAgentList::Iterator it =JvmtiAgentList::java_agents();
+  JvmtiAgentList::Iterator it = JvmtiAgentList::java_agents();
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     assert(agent->is_jplis(), "invariant");
@@ -300,7 +300,7 @@ TRACE_REQUEST_FUNC(JavaAgent) {
   }
 }
 
-static void send_native_agent_events(const JvmtiAgentList::Iterator& it) {
+static void send_native_agent_events(JvmtiAgentList::Iterator& it) {
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     assert(!agent->is_jplis(), "invariant");
@@ -311,15 +311,19 @@ static void send_native_agent_events(const JvmtiAgentList::Iterator& it) {
 }
 
 TRACE_REQUEST_FUNC(NativeAgent) {
-  const JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
+  JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
   send_native_agent_events(native_agents_it);
-  const JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
+  JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
   send_native_agent_events(xrun_agents_it);
 }
 #else  // INCLUDE_JVMTI
 TRACE_REQUEST_FUNC(JavaAgent)   {}
 TRACE_REQUEST_FUNC(NativeAgent) {}
 #endif // INCLUDE_JVMTI
+
+TRACE_REQUEST_FUNC(MethodTiming) {
+  // Emitted in Java, but defined in native to have Method type field.
+}
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   double rate = 0.0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -822,7 +822,12 @@ public abstract class URLConnection {
      * @throws    IOException if the computation of the permission
      * requires network or file I/O and an exception occurs while
      * computing it.
+     *
+     * @deprecated
+     * Permissions can no longer be used for controlling access to resources
+     * as the Security Manager is no longer supported.
      */
+    @Deprecated(since = "25", forRemoval = true)
     public Permission getPermission() throws IOException {
         return SecurityConstants.ALL_PERMISSION;
     }

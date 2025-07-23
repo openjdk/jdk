@@ -68,7 +68,7 @@ public final class JRSUIControl {
     }
 
     private static final int NIO_BUFFER_SIZE = 128;
-    private static class ThreadLocalByteBuffer {
+    private static final class ThreadLocalByteBuffer {
         final ByteBuffer buffer;
         final long ptr;
 
@@ -114,6 +114,7 @@ public final class JRSUIControl {
         changes.putAll(other.changes);
     }
 
+    @Override
     @SuppressWarnings("removal")
     protected synchronized void finalize() throws Throwable {
         if (cfDictionaryPtr == 0) return;
@@ -324,7 +325,7 @@ public final class JRSUIControl {
 
     @Override
     public int hashCode() {
-        int bits = (int)(currentEncodedProperties ^ (currentEncodedProperties >>> 32));
+        int bits = Long.hashCode(currentEncodedProperties);
         bits ^= nativeMap.hashCode();
         bits ^= changes.hashCode();
         return bits;

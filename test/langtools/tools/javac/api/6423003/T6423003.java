@@ -25,7 +25,7 @@
  * @test
  * @bug     6423003
  * @summary JSR 199: confusing help message with compiler API
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler
@@ -41,11 +41,12 @@ public class T6423003 extends ToolTester {
     void test(String... args) {
         task = tool.getTask(null, fm, null, Arrays.asList("-Xlint:all"), null, null);
         try {
+            // no need to check the result of JavacTask::call, reevaluate if the test is modified
             task.call();
+            throw new AssertionError("Expected IllegalStateException not thrown");
         } catch (IllegalStateException ex) {
             return;
         }
-        throw new AssertionError("Expected IllegalStateException not thrown");
     }
     public static void main(String... args) throws IOException {
         try (T6423003 t = new T6423003()) {

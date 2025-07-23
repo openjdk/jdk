@@ -117,16 +117,9 @@
       </li><li>Application-modal dialogs<br>
         An application-modal dialog blocks all windows from the same
         application except for those from its child hierarchy.
-        If there are several applets launched in a browser, they can be
-        treated either as separate applications or a single application.
-	This behavior is implementation-dependent.
       </li><li>Toolkit-modal dialogs<br>
         A toolkit-modal dialog blocks all windows that run in the same
-        toolkit except those from its child hierarchy. If there
-        are several applets launched all of them run with the same toolkit,
-        so a toolkit-modal dialog shown from an applet may affect other
-        applets and all windows of the browser instance which embeds the
-        Java runtime environment for this toolkit.
+        toolkit except those from its child hierarchy.
     </li></ol>
     <p>
       Modality priority is arranged by the strength of blocking: modeless,
@@ -356,8 +349,8 @@
       calls: <code>Dialog.setModal(true)</code>,
       <code>Dialog(owner, true)</code>, etc. Prior to JDK 6
       the default type was toolkit-modal,
-      but the only distinction between application- and toolkit-modality is for
-      applets and applications launched from Java Web Start.
+      and now with single application per-VM there is no
+      distinction between application- and toolkit-modality.
 
     <a id="Examples"></a>
     </p><h2>Examples</h2>

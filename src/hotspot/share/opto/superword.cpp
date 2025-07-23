@@ -25,10 +25,10 @@
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/memnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
-#include "opto/movenode.hpp"
 
 SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
@@ -1605,12 +1605,31 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     int opc = p0->Opcode();
     if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
-      // Length 2 reductions of INT/LONG do not offer performance benefits
-      if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
-        retValue = false;
-      } else {
-        retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
+      // This heuristic predicts that 2-element reductions for INT/LONG are not
+      // profitable. This heuristic was added in JDK-8078563. The argument
+      // was that reductions are not just a single instruction, but multiple, and
+      // hence it is not directly clear that they are profitable. If we only have
+      // two elements per vector, then the performance gains from non-reduction
+      // vectors are at most going from 2 scalar instructions to 1 vector instruction.
+      // But a 2-element reduction vector goes from 2 scalar instructions to
+      // 3 instructions (1 shuffle and two reduction ops).
+      // However, this optimization assumes that these reductions stay in the loop
+      // which may not be true any more in most cases after the introduction of:
+      // PhaseIdealLoop::move_unordered_reduction_out_of_loop
+      // Hence, this heuristic has room for improvement.
+      bool is_two_element_int_or_long_reduction = (size == 2) &&
+                                                  (arith_type->basic_type() == T_INT ||
+                                                   arith_type->basic_type() == T_LONG);
+      if (is_two_element_int_or_long_reduction && AutoVectorizationOverrideProfitability != 2) {
+#ifndef PRODUCT
+        if (is_trace_superword_rejections()) {
+          tty->print_cr("\nPerformance heuristic: 2-element INT/LONG reduction not profitable.");
+          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
+        }
+#endif
+        return false;
       }
+      retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
     } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
@@ -1756,9 +1775,29 @@ bool SuperWord::profitable(const Node_List* p) const {
   if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = get_pack(second_in);
-    if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // No parent pack or not enough work
-      // to cover reduction expansion overhead
+    if (second_pk == nullptr) {
+      // The second input has to be the vector we wanted to reduce,
+      // but it was not packed.
+      return false;
+    } else if (_num_work_vecs == _num_reductions && AutoVectorizationOverrideProfitability != 2) {
+      // This heuristic predicts that the reduction is not profitable.
+      // Reduction vectors can be expensive, because they require multiple
+      // operations to fold all the lanes together. Hence, vectorizing the
+      // reduction is not profitable on its own. Hence, we need a lot of
+      // other "work vectors" that deliver performance improvements to
+      // balance out the performance loss due to reductions.
+      // This heuristic is a bit simplistic, and assumes that the reduction
+      // vector stays in the loop. But in some cases, we can move the
+      // reduction out of the loop, replacing it with a single vector op.
+      // See: PhaseIdealLoop::move_unordered_reduction_out_of_loop
+      // Hence, this heuristic has room for improvement.
+#ifndef PRODUCT
+        if (is_trace_superword_rejections()) {
+          tty->print_cr("\nPerformance heuristic: not enough vectors in the loop to make");
+          tty->print_cr("  reduction profitable.");
+          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
+        }
+#endif
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -1914,6 +1953,16 @@ bool SuperWord::schedule_and_apply() const {
 
   if (!vtransform.schedule()) { return false; }
   if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
+
+  if (AutoVectorizationOverrideProfitability == 0) {
+#ifndef PRODUCT
+    if (is_trace_superword_any()) {
+      tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
+    }
+#endif
+    return false;
+  }
+
   vtransform.apply();
   return true;
 }
@@ -2486,6 +2535,84 @@ VStatus VLoopBody::construct() {
   return VStatus::make_success();
 }
 
+// Returns true if the given operation can be vectorized with "truncation" where the upper bits in the integer do not
+// contribute to the result. This is true for most arithmetic operations, but false for operations such as
+// leading/trailing zero count.
+static bool can_subword_truncate(Node* in, const Type* type) {
+  if (in->is_Load() || in->is_Store() || in->is_Convert() || in->is_Phi()) {
+    return true;
+  }
+
+  int opc = in->Opcode();
+
+  // If the node's base type is a subword type, check an additional set of nodes.
+  if (type == TypeInt::SHORT || type == TypeInt::CHAR) {
+    switch (opc) {
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
+      return true;
+    }
+  }
+
+  // Can be truncated:
+  switch (opc) {
+  case Op_AddI:
+  case Op_SubI:
+  case Op_MulI:
+  case Op_AndI:
+  case Op_OrI:
+  case Op_XorI:
+    return true;
+  }
+
+#ifdef ASSERT
+  // While shifts have subword vectorized forms, they require knowing the precise type of input loads so they are
+  // considered non-truncating.
+  if (VectorNode::is_shift_opcode(opc)) {
+    return false;
+  }
+
+  // Vector nodes should not truncate.
+  if (type->isa_vect() != nullptr || type->isa_vectmask() != nullptr || in->is_Reduction()) {
+    return false;
+  }
+
+  // Cannot be truncated:
+  switch (opc) {
+  case Op_AbsI:
+  case Op_DivI:
+  case Op_ModI:
+  case Op_MinI:
+  case Op_MaxI:
+  case Op_CMoveI:
+  case Op_Conv2B:
+  case Op_RotateRight:
+  case Op_RotateLeft:
+  case Op_PopCountI:
+  case Op_ReverseBytesI:
+  case Op_ReverseI:
+  case Op_CountLeadingZerosI:
+  case Op_CountTrailingZerosI:
+  case Op_IsFiniteF:
+  case Op_IsFiniteD:
+  case Op_IsInfiniteF:
+  case Op_IsInfiniteD:
+  case Op_ExtractS:
+  case Op_ExtractC:
+  case Op_ExtractB:
+    return false;
+  default:
+    // If this assert is hit, that means that we need to determine if the node can be safely truncated,
+    // and then add it to the list of truncating nodes or the list of non-truncating ones just above.
+    // In product, we just return false, which is always correct.
+    assert(false, "Unexpected node in SuperWord truncation: %s", NodeClassNames[in->Opcode()]);
+  }
+#endif
+
+  // Default to disallowing vector truncation
+  return false;
+}
+
 void VLoopTypes::compute_vector_element_type() {
 #ifndef PRODUCT
   if (_vloop.is_trace_vector_element_type()) {
@@ -2540,18 +2667,19 @@ void VLoopTypes::compute_vector_element_type() {
             // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
+            if (!can_subword_truncate(in, vt)) {
               Node* load = in->in(1);
-              if (load->is_Load() &&
+              // For certain operations such as shifts and abs(), use the size of the load if it exists
+              if ((VectorNode::is_shift_opcode(op) || op == Op_AbsI) && load->is_Load() &&
                   _vloop.in_bb(load) &&
                   (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
                 vt = velt_type(load);
               } else if (op != Op_LShiftI) {
-                // Widen type to int to avoid the creation of vector nodes. Note
+                // Widen type to the node type to avoid the creation of vector nodes. Note
                 // that left shifts work regardless of the signedness.
-                vt = TypeInt::INT;
+                vt = container_type(in);
               }
             }
             set_velt_type(in, vt);
@@ -2665,7 +2793,18 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
     int vw = p0->memory_size() * vtn->nodes().length();
-    if (vw > max_aw) {
+    // Generally, we prefer to align with the largest memory op (load or store).
+    // If there are multiple, then SuperWordAutomaticAlignment determines if we
+    // prefer loads or stores.
+    // When a load or store is misaligned, this can lead to the load or store
+    // being split, when it goes over a cache line. Most CPUs can schedule
+    // more loads than stores per cycle (often 2 loads and 1 store). Hence,
+    // it is worse if a store is split, and less bad if a load is split.
+    // By default, we have SuperWordAutomaticAlignment=1, i.e. we align with a
+    // store if possible, to avoid splitting that store.
+    bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
+    bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
+    if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
       max_aw = vw;
       mem_ref = p0;
     }
@@ -2692,6 +2831,16 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
   const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
   const int aw                = _aw_for_main_loop_alignment;
+
+  if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
+#ifdef ASSERT
+    if (_trace._align_vector) {
+      tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: disabled.");
+    }
+#endif
+    return;
+  }
+
   assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
@@ -2912,6 +3061,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   p.for_each_invar_summand([&] (const MemPointerSummand& s) {
     Node* invar_variable = s.variable();
     jint  invar_scale    = s.scale().value();
+    TRACE_ALIGN_VECTOR_NODE(invar_variable);
     if (igvn().type(invar_variable)->isa_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
@@ -2921,6 +3071,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
     Node* invar_scale_con = igvn().intcon(invar_scale);
+    TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(invar_summand);

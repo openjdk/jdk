@@ -1138,7 +1138,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // Mark phase midway, which might have also left stale marks in old generation regions.
       // There might actually have been scheduled multiple collections, but at that point we do
       // not care that much about performance and just do the work multiple times if needed.
-      return (_g1h->collector_state()->clearing_bitmap() ||
+      return (_g1h->collector_state()->clear_bitmap_in_progress() ||
               _g1h->concurrent_mark_is_terminating()) &&
               hr->is_old();
     }
@@ -1432,7 +1432,7 @@ void G1RemSet::print_merge_heap_roots_stats() {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     size_t total_old_region_cards =
-      (g1h->num_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * G1HeapRegion::CardsPerRegion;
+      (g1h->num_committed_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * G1HeapRegion::CardsPerRegion;
 
     ls.print_cr("Visited cards %zu Total dirty %zu (%.2lf%%) Total old %zu (%.2lf%%)",
                 num_visited_cards,

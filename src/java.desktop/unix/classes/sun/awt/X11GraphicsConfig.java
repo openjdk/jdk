@@ -314,6 +314,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
         return aData;
     }
 
+    @Override
     public String toString() {
         return ("X11GraphicsConfig[dev="+device+
                 ",vis=0x"+Integer.toHexString(visual)+
@@ -335,7 +336,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
         return device.getBounds();
     }
 
-    private static class XDBECapabilities extends BufferCapabilities {
+    private static final class XDBECapabilities extends BufferCapabilities {
         public XDBECapabilities() {
             super(imageCaps, imageCaps, FlipContents.UNDEFINED);
         }
@@ -364,7 +365,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
 
     private static native void dispose(long x11ConfigData);
 
-    private static class X11GCDisposerRecord implements DisposerRecord {
+    private static final class X11GCDisposerRecord implements DisposerRecord {
         private long x11ConfigData;
         public X11GCDisposerRecord(long x11CfgData) {
             this.x11ConfigData = x11CfgData;

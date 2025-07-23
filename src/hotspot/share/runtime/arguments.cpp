@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLogging.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"
@@ -85,6 +86,9 @@ int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
 unsigned int Arguments::_addmods_count          = 0;
+#if INCLUDE_JVMCI
+bool   Arguments::_jvmci_module_added           = false;
+#endif
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -131,6 +135,11 @@ static bool xshare_auto_cmd_line = false;
 
 // True if -Xint/-Xmixed/-Xcomp were specified
 static bool mode_flag_cmd_line = false;
+
+struct VMInitArgsGroup {
+  const JavaVMInitArgs* _args;
+  JVMFlagOrigin _origin;
+};
 
 bool PathString::set_value(const char *value, AllocFailType alloc_failmode) {
   char* new_value = AllocateHeap(strlen(value)+1, mtArguments, alloc_failmode);
@@ -331,8 +340,7 @@ bool Arguments::is_incompatible_cds_internal_module_property(const char* propert
 bool Arguments::internal_module_property_helper(const char* property, bool check_for_cds) {
   if (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
-    if (matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
-        matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
+    if (matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
         matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN)) {
@@ -343,6 +351,7 @@ bool Arguments::internal_module_property_helper(const char* property, bool check
       // CDS notes: these properties are supported by CDS archived full module graph.
       if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
           matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
+          matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
           matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
           matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
           matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
@@ -519,22 +528,44 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-#ifdef LINUX
-  { "UseLinuxPosixThreadCPUClocks", JDK_Version::jdk(24), JDK_Version::jdk(25), JDK_Version::jdk(26) },
-  { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
-#endif
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(26), JDK_Version::undefined() },
 #endif
+  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
+#ifdef LINUX
+  { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+#endif
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
   { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
+#if defined(AARCH64)
+  { "NearCpool",                    JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
+#endif
+
+  { "AdaptiveSizeMajorGCDecayTimeScale",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizePolicyInitializingSteps",              JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizePolicyOutputInterval",                 JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveSizeThroughPutPolicy",                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "AdaptiveTimeWeight",                               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "PausePadding",                                     JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "SurvivorPadding",                                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeIncrement",                   JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeSupplement",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "TenuredGenerationSizeSupplementDecay",             JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveGenerationSizePolicyAtMajorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveGenerationSizePolicyAtMinorCollection", JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizeDecayMajorGCCost",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizePolicyFootprintGoal",               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UseAdaptiveSizePolicyWithSystemGC",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "UsePSAdaptiveSurvivorSizePolicy",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1362,7 +1393,7 @@ void Arguments::set_mode_flags(Mode mode) {
 // incompatible command line options were chosen.
 void Arguments::no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
-    log_error(cds)("%s is incompatible with other specified options.",
+    aot_log_error(aot)("%s is incompatible with other specified options.",
                    CDSConfig::new_aot_flags_used() ? "AOT cache" : "CDS");
     if (CDSConfig::new_aot_flags_used()) {
       vm_exit_during_initialization("Unable to use AOT cache", message);
@@ -1371,9 +1402,9 @@ void Arguments::no_shared_spaces(const char* message) {
     }
   } else {
     if (CDSConfig::new_aot_flags_used()) {
-      log_warning(cds)("Unable to use AOT cache: %s", message);
+      log_warning(aot)("Unable to use AOT cache: %s", message);
     } else {
-      log_info(cds)("Unable to use shared archive: %s", message);
+      aot_log_info(aot)("Unable to use shared archive: %s", message);
     }
     UseSharedSpaces = false;
   }
@@ -1562,7 +1593,7 @@ void Arguments::set_heap_size() {
       // was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
-          log_info(cds)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
+          aot_log_info(aot)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
             " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
@@ -1798,9 +1829,9 @@ bool Arguments::check_vm_args_consistency() {
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
-    PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
-        AddProperty, UnwriteableProperty, InternalProperty);
-    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
+    // Add the JVMCI module if not using libjvmci or EnableJVMCI
+    // was explicitly set on the command line or in the jimage.
+    if ((!UseJVMCINativeLibrary || FLAG_IS_CMDLINE(EnableJVMCI) || FLAG_IS_JIMAGE_RESOURCE(EnableJVMCI)) && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
@@ -1820,15 +1851,6 @@ bool Arguments::check_vm_args_consistency() {
   if (StackReservedPages != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
     warning("Reserved Stack Area not supported on this platform");
-  }
-#endif
-
-#ifndef _LP64
-  if (LockingMode == LM_LEGACY) {
-    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
-    // Self-forwarding in bit 3 of the mark-word conflicts
-    // with 4-byte-aligned stack-locks.
-    warning("Legacy locking not supported on this platform");
   }
 #endif
 
@@ -1945,12 +1967,7 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
   return check_memory_size(*long_arg, min_size, max_size);
 }
 
-// Parse JavaVMInitArgs structure
-
-jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
-                                   const JavaVMInitArgs *java_tool_options_args,
-                                   const JavaVMInitArgs *java_options_args,
-                                   const JavaVMInitArgs *cmd_line_args) {
+jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args) {
   // Save default settings for some mode flags
   Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
@@ -1963,30 +1980,12 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   // Setup flags for mixed which is the default
   set_mode_flags(_mixed);
 
-  // Parse args structure generated from java.base vm options resource
-  jint result = parse_each_vm_init_arg(vm_options_args, JVMFlagOrigin::JIMAGE_RESOURCE);
-  if (result != JNI_OK) {
-    return result;
-  }
-
-  // Parse args structure generated from JAVA_TOOL_OPTIONS environment
-  // variable (if present).
-  result = parse_each_vm_init_arg(java_tool_options_args, JVMFlagOrigin::ENVIRON_VAR);
-  if (result != JNI_OK) {
-    return result;
-  }
-
-  // Parse args structure generated from the command line flags.
-  result = parse_each_vm_init_arg(cmd_line_args, JVMFlagOrigin::COMMAND_LINE);
-  if (result != JNI_OK) {
-    return result;
-  }
-
-  // Parse args structure generated from the _JAVA_OPTIONS environment
-  // variable (if present) (mimics classic VM)
-  result = parse_each_vm_init_arg(java_options_args, JVMFlagOrigin::ENVIRON_VAR);
-  if (result != JNI_OK) {
-    return result;
+  jint result;
+  for (int i = 0; i < all_args->length(); i++) {
+    result = parse_each_vm_init_arg(all_args->at(i)._args, all_args->at(i)._origin);
+    if (result != JNI_OK) {
+      return result;
+    }
   }
 
   // Disable CDS for exploded image
@@ -2247,6 +2246,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
+#if INCLUDE_JVMCI
+      if (!_jvmci_module_added) {
+        const char *jvmci_module = strstr(tail, "jdk.internal.vm.ci");
+        if (jvmci_module != nullptr) {
+          char before = *(jvmci_module - 1);
+          char after  = *(jvmci_module + strlen("jdk.internal.vm.ci"));
+          if ((before == '=' || before == ',') && (after == '\0' || after == ',')) {
+            FLAG_SET_DEFAULT(EnableJVMCI, true);
+            _jvmci_module_added = true;
+          }
+        }
+      }
+#endif
     } else if (match_option(option, "--enable-native-access=", &tail)) {
       if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
         return JNI_ENOMEM;
@@ -2447,7 +2459,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
                     "Invalid maximum code cache size: %s.\n", option->optionString);
         return JNI_EINVAL;
       }
-      if (FLAG_SET_CMDLINE(ReservedCodeCacheSize, (uintx)long_ReservedCodeCacheSize) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(ReservedCodeCacheSize, (size_t)long_ReservedCodeCacheSize) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -green
@@ -3075,6 +3087,50 @@ jint Arguments::parse_java_tool_options_environment_variable(ScopedVMInitArgs* a
   return parse_options_environment_variable("JAVA_TOOL_OPTIONS", args);
 }
 
+static JavaVMOption* get_last_aotmode_arg(const JavaVMInitArgs* args) {
+  for (int index = args->nOptions - 1; index >= 0; index--) {
+    JavaVMOption* option = args->options + index;
+    if (strstr(option->optionString, "-XX:AOTMode=") == option->optionString) {
+      return option;
+    }
+  }
+
+  return nullptr;
+}
+
+jint Arguments::parse_jdk_aot_vm_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
+                                                            ScopedVMInitArgs* jdk_aot_vm_options_args) {
+  // Don't bother scanning all the args if this env variable is not set
+  if (::getenv("JDK_AOT_VM_OPTIONS") == nullptr) {
+    return JNI_OK;
+  }
+
+  // Scan backwards and find the last occurrence of -XX:AOTMode=xxx, which will decide the value
+  // of AOTMode.
+  JavaVMOption* option = nullptr;
+  for (int i = all_args->length() - 1; i >= 0; i--) {
+    if ((option = get_last_aotmode_arg(all_args->at(i)._args)) != nullptr) {
+      break;
+    }
+  }
+
+  if (option != nullptr) {
+    // We have found the last -XX:AOTMode=xxx. At this point <option> has NOT been parsed yet,
+    // so its value is not reflected inside the global variable AOTMode.
+    if (strcmp(option->optionString, "-XX:AOTMode=create") != 0) {
+      return JNI_OK; // Do not parse JDK_AOT_VM_OPTIONS
+    }
+  } else {
+    // -XX:AOTMode is not specified in any of 4 options_args, let's check AOTMode,
+    // which would have been set inside process_settings_file();
+    if (AOTMode == nullptr || strcmp(AOTMode, "create") != 0) {
+      return JNI_OK; // Do not parse JDK_AOT_VM_OPTIONS
+    }
+  }
+
+  return parse_options_environment_variable("JDK_AOT_VM_OPTIONS", jdk_aot_vm_options_args);
+}
+
 jint Arguments::parse_options_environment_variable(const char* name,
                                                    ScopedVMInitArgs* vm_args) {
   char *buffer = ::getenv(name);
@@ -3453,19 +3509,23 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   ScopedVMInitArgs initial_vm_options_args("");
   ScopedVMInitArgs initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs initial_java_options_args("env_var='_JAVA_OPTIONS'");
+  ScopedVMInitArgs initial_jdk_aot_vm_options_args("env_var='JDK_AOT_VM_OPTIONS'");
 
   // Pointers to current working set of containers
   JavaVMInitArgs* cur_cmd_args;
   JavaVMInitArgs* cur_vm_options_args;
   JavaVMInitArgs* cur_java_options_args;
   JavaVMInitArgs* cur_java_tool_options_args;
+  JavaVMInitArgs* cur_jdk_aot_vm_options_args;
 
   // Containers for modified/expanded options
   ScopedVMInitArgs mod_cmd_args("cmd_line_args");
   ScopedVMInitArgs mod_vm_options_args("vm_options_args");
   ScopedVMInitArgs mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs mod_java_options_args("env_var='_JAVA_OPTIONS'");
+  ScopedVMInitArgs mod_jdk_aot_vm_options_args("env_var='_JDK_AOT_VM_OPTIONS'");
 
+  GrowableArrayCHeap<VMInitArgsGroup, mtArguments> all_args;
 
   jint code =
       parse_java_tool_options_environment_variable(&initial_java_tool_options_args);
@@ -3473,6 +3533,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return code;
   }
 
+  // Yet another environment variable: _JAVA_OPTIONS. This mimics the classic VM.
+  // This is an undocumented feature.
   code = parse_java_options_environment_variable(&initial_java_options_args);
   if (code != JNI_OK) {
     return code;
@@ -3519,23 +3581,17 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   const char* flags_file = Arguments::get_jvm_flags_file();
   settings_file_specified = (flags_file != nullptr);
 
-  if (IgnoreUnrecognizedVMOptions) {
-    cur_cmd_args->ignoreUnrecognized = true;
-    cur_java_tool_options_args->ignoreUnrecognized = true;
-    cur_java_options_args->ignoreUnrecognized = true;
-  }
-
-  // Parse specified settings file
+  // Parse specified settings file (s) -- the effects are applied immediately into the JVM global flags.
   if (settings_file_specified) {
     if (!process_settings_file(flags_file, true,
-                               cur_cmd_args->ignoreUnrecognized)) {
+                               IgnoreUnrecognizedVMOptions)) {
       return JNI_EINVAL;
     }
   } else {
 #ifdef ASSERT
     // Parse default .hotspotrc settings file
     if (!process_settings_file(".hotspotrc", false,
-                               cur_cmd_args->ignoreUnrecognized)) {
+                               IgnoreUnrecognizedVMOptions)) {
       return JNI_EINVAL;
     }
 #else
@@ -3546,17 +3602,59 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #endif
   }
 
+  // The settings in the args are applied in this order to the the JVM global flags.
+  // For historical reasons, the order is DIFFERENT than the scanning order of
+  // the above expand_vm_options_as_needed() calls.
+  all_args.append({cur_vm_options_args, JVMFlagOrigin::JIMAGE_RESOURCE});
+  all_args.append({cur_java_tool_options_args, JVMFlagOrigin::ENVIRON_VAR});
+  all_args.append({cur_cmd_args, JVMFlagOrigin::COMMAND_LINE});
+  all_args.append({cur_java_options_args, JVMFlagOrigin::ENVIRON_VAR});
+
+  // JDK_AOT_VM_OPTIONS are parsed only if -XX:AOTMode=create has been detected from all
+  // the options that have been gathered above.
+  code = parse_jdk_aot_vm_options_environment_variable(&all_args, &initial_jdk_aot_vm_options_args);
+  if (code != JNI_OK) {
+    return code;
+  }
+  code = expand_vm_options_as_needed(initial_jdk_aot_vm_options_args.get(),
+                                     &mod_jdk_aot_vm_options_args,
+                                     &cur_jdk_aot_vm_options_args);
+  if (code != JNI_OK) {
+    return code;
+  }
+
+  for (int index = 0; index < cur_jdk_aot_vm_options_args->nOptions; index++) {
+    JavaVMOption* option = cur_jdk_aot_vm_options_args->options + index;
+    const char* optionString = option->optionString;
+    if (strstr(optionString, "-XX:AOTMode=") == optionString &&
+        strcmp(optionString, "-XX:AOTMode=create") != 0) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Option %s cannot be specified in JDK_AOT_VM_OPTIONS\n", optionString);
+      return JNI_ERR;
+    }
+  }
+
+  all_args.append({cur_jdk_aot_vm_options_args, JVMFlagOrigin::ENVIRON_VAR});
+
+  if (IgnoreUnrecognizedVMOptions) {
+    // Note: unrecognized options in cur_vm_options_arg cannot be ignored. They are part of
+    // the JDK so it shouldn't have bad options.
+    cur_cmd_args->ignoreUnrecognized = true;
+    cur_java_tool_options_args->ignoreUnrecognized = true;
+    cur_java_options_args->ignoreUnrecognized = true;
+    cur_jdk_aot_vm_options_args->ignoreUnrecognized = true;
+  }
+
   if (PrintVMOptions) {
+    // For historical reasons, options specified in cur_vm_options_arg and -XX:Flags are not printed.
     print_options(cur_java_tool_options_args);
     print_options(cur_cmd_args);
     print_options(cur_java_options_args);
+    print_options(cur_jdk_aot_vm_options_args);
   }
 
-  // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
-  jint result = parse_vm_init_args(cur_vm_options_args,
-                                   cur_java_tool_options_args,
-                                   cur_java_options_args,
-                                   cur_cmd_args);
+  // Apply the settings in these args to the JVM global flags.
+  jint result = parse_vm_init_args(&all_args);
 
   if (result != JNI_OK) {
     return result;
@@ -3615,10 +3713,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return JNI_ERR;
   }
   if ((CDSConfig::is_using_archive() && xshare_auto_cmd_line) ||
-      log_is_enabled(Info, cds)) {
+      log_is_enabled(Info, cds) || log_is_enabled(Info, aot)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;
     LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
+    LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(aot));
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
@@ -3679,9 +3778,6 @@ void Arguments::set_compact_headers_flags() {
     } else {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
     }
-  }
-  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
-    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.jfr.Label;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Name;
 import jdk.jfr.Timespan;
+import jdk.jfr.Throttle;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
@@ -38,6 +39,11 @@ import jdk.jfr.internal.Type;
 @Label("Socket Read")
 @Category("Java Application")
 @Description("Reading data from a socket")
+@StackFilter({"java.io.InputStream",
+              "java.net.Socket$SocketInputStream",
+              "java.nio.channels.SocketChannel",
+              "sun.nio.ch.SocketInputStream"})
+@Throttle
 public final class SocketReadEvent extends MirrorEvent {
 
     @Label("Remote Host")

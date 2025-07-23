@@ -444,10 +444,10 @@ void ErrorContext::details(outputStream* ss, const Method* method) const {
 }
 
 void ErrorContext::reason_details(outputStream* ss) const {
-  streamIndentor si(ss);
-  ss->indent().print_cr("Reason:");
-  streamIndentor si2(ss);
-  ss->indent().print("%s", "");
+  StreamIndentor si(ss, 2);
+  ss->print_cr("Reason:");
+
+  StreamIndentor si2(ss, 2);
   switch (_fault) {
     case INVALID_BYTECODE:
       ss->print("Error exists in the bytecode");
@@ -505,7 +505,6 @@ void ErrorContext::reason_details(outputStream* ss) const {
 
 void ErrorContext::location_details(outputStream* ss, const Method* method) const {
   if (_bci != -1 && method != nullptr) {
-    streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
     if (method->validate_bci(_bci) != -1) {
       Bytecodes::Code code = Bytecodes::code_or_bp_at(method->bcp_from(_bci));
@@ -516,46 +515,50 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
       }
     }
     InstanceKlass* ik = method->method_holder();
-    ss->indent().print_cr("Location:");
-    streamIndentor si2(ss);
-    ss->indent().print_cr("%s.%s%s @%d: %s",
+
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Location:");
+
+    StreamIndentor si2(ss, 2);
+    ss->print_cr("%s.%s%s @%d: %s",
         ik->name()->as_C_string(), method->name()->as_C_string(),
         method->signature()->as_C_string(), _bci, bytecode_name);
   }
 }
 
 void ErrorContext::frame_details(outputStream* ss) const {
-  streamIndentor si(ss);
+  StreamIndentor si(ss, 2);
   if (_type.is_valid() && _type.frame() != nullptr) {
-    ss->indent().print_cr("Current Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Current Frame:");
+    StreamIndentor si2(ss, 2);
     _type.frame()->print_on(ss);
   }
   if (_expected.is_valid() && _expected.frame() != nullptr) {
-    ss->indent().print_cr("Stackmap Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Stackmap Frame:");
+    StreamIndentor si2(ss, 2);
     _expected.frame()->print_on(ss);
   }
 }
 
 void ErrorContext::bytecode_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Bytecode:");
-    streamIndentor si2(ss);
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Bytecode:");
+    StreamIndentor si2(ss, 2);
     ss->print_data(method->code_base(), method->code_size(), false);
   }
 }
 
 void ErrorContext::handler_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
+    StreamIndentor si(ss, 2);
+
     ExceptionTable table(method);
     if (table.length() > 0) {
-      ss->indent().print_cr("Exception Handler Table:");
-      streamIndentor si2(ss);
+      ss->print_cr("Exception Handler Table:");
+      StreamIndentor si2(ss, 2);
       for (int i = 0; i < table.length(); ++i) {
-        ss->indent().print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
+        ss->print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
             table.end_pc(i), table.handler_pc(i));
       }
     }
@@ -564,17 +567,16 @@ void ErrorContext::handler_details(outputStream* ss, const Method* method) const
 
 void ErrorContext::stackmap_details(outputStream* ss, const Method* method) const {
   if (method != nullptr && method->has_stackmap_table()) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Stackmap Table:");
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Stackmap Table:");
     Array<u1>* data = method->stackmap_data();
     stack_map_table* sm_table =
         stack_map_table::at((address)data->adr_at(0));
     stack_map_frame* sm_frame = sm_table->entries();
-    streamIndentor si2(ss);
+    StreamIndentor si2(ss, 2);
     int current_offset = -1;
     address end_of_sm_table = (address)sm_table + method->stackmap_data()->length();
     for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {
-      ss->indent();
       if (!sm_frame->verify((address)sm_frame, end_of_sm_table)) {
         sm_frame->print_truncated(ss, current_offset);
         return;
@@ -2889,26 +2891,43 @@ void ClassVerifier::verify_invoke_instructions(
           "Illegal call to internal method");
       return;
     }
-  } else if (opcode == Bytecodes::_invokespecial
-             && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-             && !ref_class_type.equals(VerificationType::reference_type(
-                  current_class()->super()->name()))) {
-    bool subtype = false;
-    bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
-    subtype = ref_class_type.is_assignable_from(
-               current_type(), this, false, CHECK_VERIFY(this));
-    if (!subtype) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "current class isn't assignable to reference class.");
-       return;
-    } else if (have_imr_indirect) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "interface method reference is in an indirect superinterface.");
-      return;
-    }
+  }
+  // invokespecial, when not <init>, must be to a method in the current class, a direct superinterface,
+  // or any superclass (including Object).
+  else if (opcode == Bytecodes::_invokespecial
+           && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
 
+    // We know it is not current class, direct superinterface or immediate superclass. That means it
+    // could be:
+    // - a totally unrelated class or interface
+    // - an indirect superinterface
+    // - an indirect superclass (including Object)
+    // We use the assignability test to see if it is a superclass, or else an interface, and keep track
+    // of the latter. Note that subtype can be true if we are dealing with an interface that is not actually
+    // implemented as assignability treats all interfaces as Object.
+
+    bool is_interface = false; // This can only be set true if the assignability check will return true
+                               // and we loaded the class. For any other "true" returns (e.g. same class
+                               // or Object) we either can't get here (same class already excluded above)
+                               // or we know it is not an interface (i.e. Object).
+    bool subtype = ref_class_type.is_reference_assignable_from(current_type(), this, false,
+                                                               &is_interface, CHECK_VERIFY(this));
+    if (!subtype) {  // Totally unrelated class
+      verify_error(ErrorContext::bad_code(bci),
+                   "Bad invokespecial instruction: "
+                   "current class isn't assignable to reference class.");
+      return;
+    } else {
+      // Indirect superclass (including Object), indirect interface, or unrelated interface.
+      // Any interface use is an error.
+      if (is_interface) {
+        verify_error(ErrorContext::bad_code(bci),
+                     "Bad invokespecial instruction: "
+                     "interface method to invoke is not in a direct superinterface.");
+        return;
+      }
+    }
   }
 
   // Get the verification types for the method's arguments.

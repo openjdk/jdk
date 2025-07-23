@@ -53,6 +53,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
@@ -126,8 +127,8 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public PackageTest setExpectedInstallExitCode(int v) {
-        expectedInstallExitCode = v;
+    public PackageTest setExpectedInstallExitCode(int... v) {
+        expectedInstallExitCodes = IntStream.of(v).mapToObj(Integer::valueOf).collect(Collectors.toSet());
         return this;
     }
 
@@ -483,11 +484,15 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     private record PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
-            int expectedInstallExitCode, PackageHandlers packageHandlers, Handler handler,
+            Set<Integer> expectedInstallExitCodes, PackageHandlers packageHandlers, Handler handler,
             JPackageCommand cmd, State state) implements Consumer<Action> {
 
         PackageTypePipeline {
             Objects.requireNonNull(type);
+            Objects.requireNonNull(expectedInstallExitCodes);
+            if (expectedInstallExitCodes.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
             Objects.requireNonNull(packageHandlers);
             Objects.requireNonNull(handler);
             Objects.requireNonNull(cmd);
@@ -495,9 +500,9 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
-                int expectedInstallExitCode, PackageHandlers packageHandlers,
+                Set<Integer> expectedInstallExitCodes, PackageHandlers packageHandlers,
                 Handler handler, JPackageCommand cmd) {
-            this(type, expectedJPackageExitCode, expectedInstallExitCode,
+            this(type, expectedJPackageExitCode, expectedInstallExitCodes,
                     packageHandlers, handler, cmd, new State());
         }
 
@@ -532,9 +537,10 @@ public final class PackageTest extends RunnablePackageTest {
 
                 case INSTALL -> {
                     cmd.setUnpackedPackageLocation(null);
-                    final int installExitCode = packageHandlers.install(cmd);
-                    TKit.assertEquals(expectedInstallExitCode, installExitCode,
-                            String.format("Check installer exited with %d code", expectedInstallExitCode));
+                    final int actualInstallExitCode = packageHandlers.install(cmd);
+                    state.actualInstallExitCode = Optional.of(actualInstallExitCode);
+                    TKit.assertTrue(expectedInstallExitCodes.contains(actualInstallExitCode),
+                            String.format("Check installer exit code %d is one of %s", actualInstallExitCode, expectedInstallExitCodes));
                 }
 
                 case UNINSTALL -> {
@@ -624,7 +630,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         private boolean installFailed() {
-            return processed(Action.INSTALL) && expectedInstallExitCode != 0;
+            return processed(Action.INSTALL) && state.actualInstallExitCode.orElseThrow() != 0;
         }
 
         private boolean jpackageFailed() {
@@ -636,6 +642,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         private static final class State {
+            private Optional<Integer> actualInstallExitCode = Optional.empty();
             private final Set<Action> packageActions = new HashSet<>();
             private final List<Path> deleteUnpackDirs = new ArrayList<>();
         }
@@ -649,7 +656,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
         type.applyTo(cmd);
         return new PackageTypePipeline(type, expectedJPackageExitCode,
-                expectedInstallExitCode, getPackageHandlers(type), handler.copy(), cmd);
+                expectedInstallExitCodes, getPackageHandlers(type), handler.copy(), cmd);
     }
 
     private record Handler(List<Consumer<JPackageCommand>> initializers,
@@ -929,7 +936,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Collection<PackageType> currentTypes;
     private Set<PackageType> excludeTypes;
     private int expectedJPackageExitCode;
-    private int expectedInstallExitCode;
+    private Set<Integer> expectedInstallExitCodes;
     private final Map<PackageType, Handler> handlers;
     private final Set<String> namedInitializers;
     private final Map<PackageType, PackageHandlers> packageHandlers;

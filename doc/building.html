@@ -282,6 +282,11 @@ possible, use an SSD. The build process is very disk intensive, and
 having slow disk access will significantly increase build times. If you
 need to use a network share for the source code, see below for
 suggestions on how to keep the build artifacts on a local disk.</p></li>
+<li><p>UTF-8 support is needed to compile the JDK. On Unix systems, this
+typically means that the <code>C.UTF-8</code> or
+<code>en_US.UTF-8</code> locale needs to be available. For Windows
+users, please see the section on <a href="#locale-requirements">Locale
+Requirements</a> below.</p></li>
 <li><p>On Windows, extra care must be taken to have a smooth building
 experience:</p>
 <ul>
@@ -305,14 +310,6 @@ using
 <li><p>If using <a href="#cygwin">Cygwin</a>, you must make sure the
 file permissions and attributes between Windows and Cygwin are
 consistent. It is recommended that you follow this procedure:</p>
-<li><p>UTF-8 support is needed to compile the JDK. On Unix systems, this
-typically means that the <code>C.UTF-8</code> or
-<code>en_US.UTF-8</code> locale needs to be available. For Windows
-users, please see the section on <a href="#locale-requirements">Locale
-Requirements</a> below.</p></li>
-<li><p>On Windows, if using <a href="#cygwin">Cygwin</a>, extra care
-must be taken to make sure the environment is consistent. It is
-recommended that you follow this procedure:</p>
 <ul>
 <li><p>Create the directory that is going to contain the top directory
 of the JDK clone by using the <code>mkdir</code> command in the Cygwin

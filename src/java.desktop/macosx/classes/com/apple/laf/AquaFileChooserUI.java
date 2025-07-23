@@ -113,7 +113,7 @@ import javax.swing.table.TableColumnModel;
 
 import sun.swing.SwingUtilities2;
 
-public class AquaFileChooserUI extends FileChooserUI {
+public final class AquaFileChooserUI extends FileChooserUI {
     /* FileView icons */
     protected Icon directoryIcon = null;
     protected Icon fileIcon = null;
@@ -204,6 +204,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         super();
     }
 
+    @Override
     public void installUI(final JComponent c) {
         accessoryPanel = new JPanel(new BorderLayout());
         filechooser = (JFileChooser)c;
@@ -217,6 +218,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         AquaUtils.enforceComponentOrientation(filechooser, ComponentOrientation.getOrientation(Locale.getDefault()));
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         uninstallListeners(filechooser);
         uninstallComponents(filechooser);
@@ -564,11 +566,13 @@ public class AquaFileChooserUI extends FileChooserUI {
         // PENDING(jeff) - set the name in the directory combobox
     }
 
+    @Override
     public void rescanCurrentDirectory(final JFileChooser fc) {
         getModel().invalidateFileCache();
         getModel().validateFileCache();
     }
 
+    @Override
     public void ensureFileIsVisible(final JFileChooser fc, final File f) {
         if (f == null) {
             fFileList.requestFocusInWindow();
@@ -609,6 +613,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         return fSubPanel.getApproveButtonToolTipText(fc);
     }
 
+    @Override
     public String getApproveButtonText(final JFileChooser fc) {
         return fSubPanel.getApproveButtonText(fc);
     }
@@ -642,7 +647,8 @@ public class AquaFileChooserUI extends FileChooserUI {
         return new SelectionListener();
     }
 
-    protected class SelectionListener implements ListSelectionListener {
+    protected final class SelectionListener implements ListSelectionListener {
+        @Override
         public void valueChanged(final ListSelectionEvent e) {
             if (e.getValueIsAdjusting()) return;
 
@@ -689,12 +695,14 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // When the Save textfield has the focus, the button should say "Save"
     // Otherwise, it depends on the list selection
-    protected class SaveTextFocusListener implements FocusListener {
+    protected final class SaveTextFocusListener implements FocusListener {
+        @Override
         public void focusGained(final FocusEvent e) {
             updateButtonState(getFileChooser());
         }
 
         // Do nothing, we might be losing focus due to window deactivation
+        @Override
         public void focusLost(final FocusEvent e) {
 
         }
@@ -702,15 +710,18 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // When the Save textfield is empty and the button says "Save", it should be disabled
     // Otherwise, it depends on the list selection
-    protected class SaveTextDocumentListener implements DocumentListener {
+    protected final class SaveTextDocumentListener implements DocumentListener {
+        @Override
         public void insertUpdate(final DocumentEvent e) {
             textChanged();
         }
 
+        @Override
         public void removeUpdate(final DocumentEvent e) {
             textChanged();
         }
 
+        @Override
         public void changedUpdate(final DocumentEvent e) {
 
         }
@@ -734,13 +745,14 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     // From Basic
-    protected class DoubleClickListener extends MouseAdapter {
+    protected final class DoubleClickListener extends MouseAdapter {
         JTableExtension list;
 
         public DoubleClickListener(final JTableExtension list) {
             this.list = list;
         }
 
+        @Override
         public void mouseClicked(final MouseEvent e) {
             if (e.getClickCount() != 2) return;
 
@@ -764,19 +776,23 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     // listens for drag events onto the JFileChooser and sets the selected file or directory
-    class DnDHandler extends DropTargetAdapter {
+    final class DnDHandler extends DropTargetAdapter {
+        @Override
         public void dragEnter(final DropTargetDragEvent dtde) {
             tryToAcceptDrag(dtde);
         }
 
+        @Override
         public void dragOver(final DropTargetDragEvent dtde) {
             tryToAcceptDrag(dtde);
         }
 
+        @Override
         public void dropActionChanged(final DropTargetDragEvent dtde) {
             tryToAcceptDrag(dtde);
         }
 
+        @Override
         public void drop(final DropTargetDropEvent dtde) {
             if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 handleFileDropEvent(dtde);
@@ -884,10 +900,12 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Returns the default accept all file filter
      */
+    @Override
     public FileFilter getAcceptAllFileFilter(final JFileChooser fc) {
         return acceptAllFileFilter;
     }
 
+    @Override
     public FileView getFileView(final JFileChooser fc) {
         return fileView;
     }
@@ -895,6 +913,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Returns the title of this dialog
      */
+    @Override
     public String getDialogTitle(final JFileChooser fc) {
         if (fc.getDialogTitle() == null) {
             if (getFileChooser().getDialogType() == JFileChooser.OPEN_DIALOG) {
@@ -938,7 +957,8 @@ public class AquaFileChooserUI extends FileChooserUI {
     // Action to attach to the file list so we can override the default action
     // of the table for the return key, which is to select the next line.
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class DefaultButtonAction extends AbstractAction {
+    protected final class DefaultButtonAction extends AbstractAction {
+        @Override
         public void actionPerformed(final ActionEvent e) {
             final JRootPane root = AquaFileChooserUI.this.getFileChooser().getRootPane();
             final JFileChooser fc = AquaFileChooserUI.this.getFileChooser();
@@ -956,6 +976,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             }
         }
 
+        @Override
         public boolean isEnabled() {
             return true;
         }
@@ -965,7 +986,7 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Creates a new folder.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class NewFolderAction extends AbstractAction {
+    protected final class NewFolderAction extends AbstractAction {
         protected NewFolderAction() {
             super(newFolderAccessibleName);
         }
@@ -992,6 +1013,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             return pane.getInputValue();
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             final JFileChooser fc = getFileChooser();
             final File currentDirectory = fc.getCurrentDirectory();
@@ -1028,7 +1050,8 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Responds to an Open, Save, or Choose request
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class ApproveSelectionAction extends AbstractAction {
+    protected final class ApproveSelectionAction extends AbstractAction {
+        @Override
         public void actionPerformed(final ActionEvent e) {
             fSubPanel.approveSelection(getFileChooser());
         }
@@ -1038,7 +1061,8 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Responds to an OpenDirectory request
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class OpenSelectionAction extends AbstractAction {
+    protected final class OpenSelectionAction extends AbstractAction {
+        @Override
         public void actionPerformed(final ActionEvent e) {
             final int index = fFileList.getSelectedRow();
             if (index >= 0) {
@@ -1052,11 +1076,13 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Responds to a cancel request.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class CancelSelectionAction extends AbstractAction {
+    protected final class CancelSelectionAction extends AbstractAction {
+        @Override
         public void actionPerformed(final ActionEvent e) {
             getFileChooser().cancelSelection();
         }
 
+        @Override
         public boolean isEnabled() {
             return getFileChooser().isEnabled();
         }
@@ -1066,7 +1092,8 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Rescans the files in the current directory
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class UpdateAction extends AbstractAction {
+    protected final class UpdateAction extends AbstractAction {
+        @Override
         public void actionPerformed(final ActionEvent e) {
             final JFileChooser fc = getFileChooser();
             fc.setCurrentDirectory(fc.getFileSystemView().createFileObject(getDirectoryName()));
@@ -1077,14 +1104,16 @@ public class AquaFileChooserUI extends FileChooserUI {
     // *****************************************
     // ***** default AcceptAll file filter *****
     // *****************************************
-    private static class AcceptAllFileFilter extends FileFilter {
+    private static final class AcceptAllFileFilter extends FileFilter {
         public AcceptAllFileFilter() {
         }
 
+        @Override
         public boolean accept(final File f) {
             return true;
         }
 
+        @Override
         public String getDescription() {
             return UIManager.getString("FileChooser.acceptAllFileFilterText");
         }
@@ -1101,6 +1130,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             setIconTextGap(10);
         }
 
+        @Override
         public Component getTableCellRendererComponent(final JTable list, final Object value, final boolean isSelected, final boolean cellHasFocus, final int index, final int col) {
             super.getTableCellRendererComponent(list, value, isSelected, false, index, col); // No focus border, thanks
             fIsSelected = isSelected;
@@ -1115,6 +1145,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             return SwingUtilities.layoutCompoundLabel(label, fontMetrics, text, icon, label.getVerticalAlignment(), label.getHorizontalAlignment(), label.getVerticalTextPosition(), label.getHorizontalTextPosition(), viewR, iconR, textR, label.getIconTextGap());
         }
 
+        @Override
         protected void paintComponent(final Graphics g) {
             final String text = getText();
             Icon icon = getIcon();
@@ -1173,11 +1204,12 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class FileRenderer extends MacFCTableCellRenderer {
+    protected final class FileRenderer extends MacFCTableCellRenderer {
         public FileRenderer(final Font f) {
             super(f);
         }
 
+        @Override
         public Component getTableCellRendererComponent(final JTable list,
                                                        final Object value,
                                                        final boolean isSelected,
@@ -1192,16 +1224,20 @@ public class AquaFileChooserUI extends FileChooserUI {
             setText(fc.getName(file));
             setIcon(fc.getIcon(file));
             setEnabled(isSelectableInList(file));
+
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
             return this;
         }
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class DateRenderer extends MacFCTableCellRenderer {
+    protected final class DateRenderer extends MacFCTableCellRenderer {
         public DateRenderer(final Font f) {
             super(f);
         }
 
+        @Override
         public Component getTableCellRendererComponent(final JTable list,
                                                        final Object value,
                                                        final boolean isSelected,
@@ -1256,6 +1292,9 @@ public class AquaFileChooserUI extends FileChooserUI {
                 final JFileChooser chooser = getFileChooser();
                 setText(chooser.getName(directory));
                 setIcon(chooser.getIcon(directory));
+
+                putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
                 return this;
             }
         };
@@ -1272,7 +1311,7 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
+    protected final class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> fDirectories = new Vector<File>();
         int topIndex = -1;
         int fPathCount = 0;
@@ -1334,19 +1373,23 @@ public class AquaFileChooserUI extends FileChooserUI {
             // dump();
         }
 
+        @Override
         public void setSelectedItem(final Object selectedDirectory) {
             this.fSelectedDirectory = (File)selectedDirectory;
             fireContentsChanged(this, -1, -1);
         }
 
+        @Override
         public Object getSelectedItem() {
             return fSelectedDirectory;
         }
 
+        @Override
         public int getSize() {
             return fDirectories.size();
         }
 
+        @Override
         public File getElementAt(final int index) {
             return fDirectories.elementAt(index);
         }
@@ -1380,7 +1423,7 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
+    protected final class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
             PropertyChangeListener {
         protected FileFilter[] filters;
         Object oldFileFilter = getFileChooser().getFileFilter();
@@ -1390,6 +1433,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             filters = getFileChooser().getChoosableFileFilters();
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String prop = e.getPropertyName();
             if(prop == JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY) {
@@ -1400,6 +1444,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             }
         }
 
+        @Override
         public void setSelectedItem(Object filter) {
             if (filter != null && !isSelectedFileFilterInModel(filter)) {
                 oldFileFilter = filter;
@@ -1412,6 +1457,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             return Objects.equals(filter, oldFileFilter);
         }
 
+        @Override
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
             // NOTE: we shouldn't have to do this, since JFileChooser adds
@@ -1433,6 +1479,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             return getFileChooser().getFileFilter();
         }
 
+        @Override
         public int getSize() {
             if(filters != null) {
                 return filters.length;
@@ -1441,6 +1488,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             }
         }
 
+        @Override
         public FileFilter getElementAt(int index) {
             if(index > getSize() - 1) {
                 // This shouldn't happen. Try to recover gracefully.
@@ -1462,11 +1510,12 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Acts when FilterComboBox has changed the selected item.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class FilterComboBoxAction extends AbstractAction {
+    protected final class FilterComboBoxAction extends AbstractAction {
         protected FilterComboBoxAction() {
             super("FilterComboBoxAction");
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             Object selectedFilter = filterComboBox.getSelectedItem();
             if (!containsFileFilter(selectedFilter)) {
@@ -1479,11 +1528,12 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Acts when DirectoryComboBox has changed the selected item.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class DirectoryComboBoxAction extends AbstractAction {
+    protected final class DirectoryComboBoxAction extends AbstractAction {
         protected DirectoryComboBoxAction() {
             super("DirectoryComboBoxAction");
         }
 
+        @Override
         public void actionPerformed(final ActionEvent e) {
             getFileChooser().setCurrentDirectory((File)directoryComboBox.getSelectedItem());
         }
@@ -1491,7 +1541,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // Sorting Table operations
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class JSortingTableHeader extends JTableHeader {
+    final class JSortingTableHeader extends JTableHeader {
         public JSortingTableHeader(final TableColumnModel cm) {
             super(cm);
             setReorderingAllowed(true); // This causes mousePress to call setDraggedColumn
@@ -1501,6 +1551,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         final boolean[] fSortAscending = {true, true};
 
         // Instead of dragging, it selects which one to sort by
+        @Override
         public void setDraggedColumn(final TableColumn aColumn) {
             if (!getFileChooser().isEnabled()) {
                 return;
@@ -1520,10 +1571,12 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // This stops mouseDrags from moving the column
+        @Override
         public TableColumn getDraggedColumn() {
             return null;
         }
 
+        @Override
         protected TableCellRenderer createDefaultRenderer() {
             final DefaultTableCellRenderer label = new AquaTableCellRenderer();
             label.setHorizontalAlignment(SwingConstants.LEFT);
@@ -1531,7 +1584,8 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         @SuppressWarnings("serial") // Superclass is not serializable across versions
-        class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
+        final class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
+            @Override
             public Component getTableCellRendererComponent(final JTable localTable, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 if (localTable != null) {
                     final JTableHeader header = localTable.getTableHeader();
@@ -1835,7 +1889,8 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // Consistent with the AppKit NSSavePanel, clicks on a file (not a directory) should populate the text field
     // with that file's display name.
-    protected class FileListMouseListener extends MouseAdapter {
+    protected final class FileListMouseListener extends MouseAdapter {
+        @Override
         public void mouseClicked(final MouseEvent e) {
             final Point p = e.getPoint();
             final int row = fFileList.rowAtPoint(p);
@@ -1911,9 +1966,10 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class ScrollPaneCornerPanel extends JPanel {
+    protected final class ScrollPaneCornerPanel extends JPanel {
         final Border border = UIManager.getBorder("TableHeader.cellBorder");
 
+        @Override
         protected void paintComponent(final Graphics g) {
             border.paintBorder(this, g, 0, 0, getWidth() + 1, getHeight());
         }
@@ -2089,6 +2145,7 @@ public class AquaFileChooserUI extends FileChooserUI {
      List - everything is enabled
      */
     class CustomFilePanel extends FCSubpanel {
+        @Override
         void installPanel(final JFileChooser fc, final boolean controlButtonsAreShown) {
             fTextfieldPanel.setVisible(true); // do we really want one in multi-select?  It's confusing
             fOpenButton.setVisible(false);
@@ -2107,6 +2164,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // The approve button is overloaded to mean OpenDirectory or Save
+        @Override
         void approveSelection(final JFileChooser fc) {
             File f = getFirstSelectedItem();
             if (inOpenDirectoryMode(fc, f)) {
@@ -2125,6 +2183,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         // The approve button should be enabled
         // - if something in the list can be opened
         // - if the textfield has something in it
+        @Override
         void updateButtonState(final JFileChooser fc, final File f) {
             boolean enabled = true;
             if (!inOpenDirectoryMode(fc, f)) {
@@ -2140,11 +2199,13 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // everything's enabled, because we don't know what they're doing with them
+        @Override
         boolean isSelectableInList(final JFileChooser fc, final File f) {
             if (f == null) return false;
             return fc.accept(f);
         }
 
+        @Override
         String getApproveButtonToolTipText(final JFileChooser fc) {
             // The approve Button should have openDirectoryButtonToolTipText when the selection is a folder...
             if (inOpenDirectoryMode(fc, getFirstSelectedItem())) return openDirectoryButtonToolTipText;
@@ -2164,7 +2225,8 @@ public class AquaFileChooserUI extends FileChooserUI {
      List is always SINGLE_SELECT
      */
     // Subclasses CustomFilePanel because they look alike and have some common behavior
-    class SaveFilePanel extends CustomFilePanel {
+    final class SaveFilePanel extends CustomFilePanel {
+        @Override
         void installPanel(final JFileChooser fc, final boolean controlButtonsAreShown) {
             fTextfieldPanel.setVisible(true);
             fOpenButton.setVisible(false);
@@ -2173,11 +2235,13 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         // only traversables are enabled, regardless of mode
         // because all you can do is select the next folder to open
+        @Override
         boolean isSelectableInList(final JFileChooser fc, final File f) {
             return fc.accept(f) && fc.isTraversable(f);
         }
 
         // The approve button means 'approve the file name in the text field.'
+        @Override
         void approveSelection(final JFileChooser fc) {
             final File f = makeFile(fc, getFileName());
             if (f != null) {
@@ -2189,26 +2253,31 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // The approve button should be enabled if the textfield has something in it
+        @Override
         void updateButtonState(final JFileChooser fc, final File f) {
             final boolean enabled = textfieldIsValid();
             getApproveButton(fc).setEnabled(enabled);
         }
 
+        @Override
         String getApproveButtonText(final JFileChooser fc) {
             // Get the custom text, or fallback to "Save"
             return this.getApproveButtonText(fc, saveButtonText);
         }
 
+        @Override
         int getApproveButtonMnemonic(final JFileChooser fc) {
             return saveButtonMnemonic;
         }
 
+        @Override
         String getApproveButtonToolTipText(final JFileChooser fc) {
             // The approve Button should have openDirectoryButtonToolTipText when the selection is a folder...
             if (inOpenDirectoryMode(fc, getFirstSelectedItem())) return openDirectoryButtonToolTipText;
             return this.getApproveButtonToolTipText(fc, saveButtonToolTipText);
         }
 
+        @Override
         String getCancelButtonToolTipText(final JFileChooser fc) {
             return cancelSaveButtonToolTipText;
         }
@@ -2223,7 +2292,8 @@ public class AquaFileChooserUI extends FileChooserUI {
      No NewFolder button
      List - all items are enabled
      */
-    class OpenFilePanel extends FCSubpanel {
+    final class OpenFilePanel extends FCSubpanel {
+        @Override
         void installPanel(final JFileChooser fc, final boolean controlButtonsAreShown) {
             fTextfieldPanel.setVisible(false);
             fOpenButton.setVisible(false);
@@ -2236,10 +2306,12 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // Default to the list
+        @Override
         JComponent getFocusComponent(final JFileChooser fc) {
             return fFileList;
         }
 
+        @Override
         void updateButtonState(final JFileChooser fc, final File f) {
             // Button is disabled if there's nothing selected
             final boolean enabled = (f != null) && !fc.isTraversable(f);
@@ -2247,23 +2319,28 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // all items are enabled
+        @Override
         boolean isSelectableInList(final JFileChooser fc, final File f) {
             return f != null && fc.accept(f);
         }
 
+        @Override
         String getApproveButtonText(final JFileChooser fc) {
             // Get the custom text, or fallback to "Open"
             return this.getApproveButtonText(fc, openButtonText);
         }
 
+        @Override
         int getApproveButtonMnemonic(final JFileChooser fc) {
             return openButtonMnemonic;
         }
 
+        @Override
         String getApproveButtonToolTipText(final JFileChooser fc) {
             return this.getApproveButtonToolTipText(fc, openButtonToolTipText);
         }
 
+        @Override
         String getCancelButtonToolTipText(final JFileChooser fc) {
             return cancelOpenButtonToolTipText;
         }
@@ -2271,14 +2348,17 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // used by open and custom panels for Directory only or files and directories
     abstract class DirOrAnyPanel extends FCSubpanel {
+        @Override
         void installPanel(final JFileChooser fc, final boolean controlButtonsAreShown) {
             fOpenButton.setVisible(false);
         }
 
+        @Override
         JButton getDefaultButton(final JFileChooser fc) {
             return getApproveButton(fc);
         }
 
+        @Override
         void updateButtonState(final JFileChooser fc, final File f) {
             // Button is disabled if there's nothing selected
             // Approve button is handled by the subclasses
@@ -2301,7 +2381,8 @@ public class AquaFileChooserUI extends FileChooserUI {
      No text field
      List - files are disabled in DIRECTORIES_ONLY
      */
-    class OpenDirOrAnyPanel extends DirOrAnyPanel {
+    final class OpenDirOrAnyPanel extends DirOrAnyPanel {
+        @Override
         void installPanel(final JFileChooser fc, final boolean controlButtonsAreShown) {
             super.installPanel(fc, controlButtonsAreShown);
             fTextfieldPanel.setVisible(false);
@@ -2309,14 +2390,17 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // Default to the list
+        @Override
         JComponent getFocusComponent(final JFileChooser fc) {
             return fFileList;
         }
 
+        @Override
         int getApproveButtonMnemonic(final JFileChooser fc) {
             return chooseButtonMnemonic;
         }
 
+        @Override
         String getApproveButtonToolTipText(final JFileChooser fc) {
             String fallbackText;
             if (fc.getFileSelectionMode() == JFileChooser.DIRECTORIES_ONLY) fallbackText = chooseFolderButtonToolTipText;
@@ -2324,6 +2408,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             return this.getApproveButtonToolTipText(fc, fallbackText);
         }
 
+        @Override
         void updateButtonState(final JFileChooser fc, final File f) {
             // Button is disabled if there's nothing selected
             getApproveButton(fc).setEnabled(f != null);
@@ -2341,7 +2426,8 @@ public class AquaFileChooserUI extends FileChooserUI {
      Has NewFolder button (by text field)
      List - files are disabled in DIRECTORIES_ONLY
      */
-    class CustomDirOrAnyPanel extends DirOrAnyPanel {
+    final class CustomDirOrAnyPanel extends DirOrAnyPanel {
+        @Override
         void installPanel(final JFileChooser fc, final boolean controlButtonsAreShown) {
             super.installPanel(fc, controlButtonsAreShown);
             fTextfieldPanel.setVisible(true);
@@ -2349,6 +2435,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         // If there's text, make a file and select it
+        @Override
         void approveSelection(final JFileChooser fc) {
             final File f = makeFile(fc, getFileName());
             if (f != null) {
@@ -2359,6 +2446,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             getFileChooser().approveSelection();
         }
 
+        @Override
         void updateButtonState(final JFileChooser fc, final File f) {
             // Button is disabled if there's nothing selected
             getApproveButton(fc).setEnabled(f != null || textfieldIsValid());
@@ -2368,7 +2456,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // See FileRenderer - documents in Save dialogs draw disabled, so they shouldn't be selected
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class MacListSelectionModel extends DefaultListSelectionModel {
+    final class MacListSelectionModel extends DefaultListSelectionModel {
         AquaFileSystemModel fModel;
 
         MacListSelectionModel(final AquaFileSystemModel model) {
@@ -2421,14 +2509,17 @@ public class AquaFileChooserUI extends FileChooserUI {
             } while (start <= index1);
         }
 
+        @Override
         public void setAnchorSelectionIndex(final int anchorIndex) {
             if (isSelectableInListIndex(anchorIndex)) super.setAnchorSelectionIndex(anchorIndex);
         }
 
+        @Override
         public void setLeadSelectionIndex(final int leadIndex) {
             if (isSelectableInListIndex(leadIndex)) super.setLeadSelectionIndex(leadIndex);
         }
 
+        @Override
         public void setSelectionInterval(final int index0, final int index1) {
             if (index0 == -1 || index1 == -1) { return; }
 
@@ -2439,6 +2530,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             }
         }
 
+        @Override
         public void addSelectionInterval(final int index0, final int index1) {
             if (index0 == -1 || index1 == -1) { return; }
 
@@ -2459,7 +2551,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     // Convenience, to translate from the JList directory view to the Mac-style JTable
     //   & minimize diffs between this and BasicFileChooserUI
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class JTableExtension extends JTable {
+    static final class JTableExtension extends JTable {
         public void setSelectedIndex(final int index) {
             getSelectionModel().setSelectionInterval(index, index);
         }

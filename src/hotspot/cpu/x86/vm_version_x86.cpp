@@ -49,7 +49,7 @@ VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
 #define DECLARE_CPU_FEATURE_NAME(id, name, bit) name,
 const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
-#undef DECLARE_CPU_FEATURE_FLAG
+#undef DECLARE_CPU_FEATURE_NAME
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = nullptr;
@@ -440,7 +440,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits apx_f
     __ jcc(Assembler::equal, vector_save_restore);
 
-#ifndef PRODUCT
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -457,7 +456,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
-#endif
     __ bind(vector_save_restore);
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
@@ -909,7 +907,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Check if processor has Intel Ecore
-  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
+  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
     (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF ||
       _model == 0xCC || _model == 0xDD)) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
@@ -1022,8 +1020,6 @@ void VM_Version::get_processor_features() {
   if (UseAPX && !apx_supported) {
     warning("UseAPX is not supported on this CPU, setting it to false");
     FLAG_SET_DEFAULT(UseAPX, false);
-  } else if (FLAG_IS_DEFAULT(UseAPX)) {
-    FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
   }
 
   if (!UseAPX) {
@@ -1247,6 +1243,20 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
+  // Kyber Intrinsics
+  // Currently we only have them for AVX512
+#ifdef _LP64
+  if (supports_evex() && supports_avx512bw()) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else
+#endif
+  if (UseKyberIntrinsics) {
+     warning("Intrinsics for ML-KEM are not available on this CPU.");
+     FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
   // Dilithium Intrinsics
   // Currently we only have them for AVX512
   if (supports_evex() && supports_avx512bw()) {
@@ -1467,16 +1477,6 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
         }
       }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
-      }
     }
 
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
@@ -1520,16 +1520,6 @@ void VM_Version::get_processor_features() {
       } else {
         UseXmmI2D = false;
       }
-    }
-    if (supports_sse4_2()) {
-      if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-      }
-    } else {
-      if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-      }
-      FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
 
     // some defaults for AMD family 15h
@@ -1580,7 +1570,7 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
       UseStoreImmI16 = false; // don't use it on Intel cpus
     }
-    if (cpu_family() == 6 || cpu_family() == 15) {
+    if (is_intel_server_family() || cpu_family() == 15) {
       if (FLAG_IS_DEFAULT(UseAddressNop)) {
         // Use it on all Intel cpus starting from PentiumPro
         UseAddressNop = true;
@@ -1596,7 +1586,7 @@ void VM_Version::get_processor_features() {
         UseXmmRegToRegMoveAll = false;
       }
     }
-    if (cpu_family() == 6 && supports_sse3()) { // New Intel cpus
+    if (is_intel_server_family() && supports_sse3()) { // New Intel cpus
 #ifdef COMPILER2
       if (FLAG_IS_DEFAULT(MaxLoopPad)) {
         // For new Intel cpus do the next optimization:
@@ -1618,16 +1608,6 @@ void VM_Version::get_processor_features() {
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
-      }
-      if (supports_sse4_2()) {
-        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
-        }
-      } else {
-        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
       }
     }
     if (is_atom_family() || is_knights_family()) {
@@ -1689,7 +1669,16 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif
-
+  if (supports_sse4_2()) {
+    if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
+    }
+  } else {
+    if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+      warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+    }
+    FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
+  }
   if (UseSSE42Intrinsics) {
     if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       UseVectorizedMismatchIntrinsic = true;
@@ -1834,7 +1823,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, allocate_prefetch_distance(use_watermark_prefetch));
   }
 
-  if (is_intel() && cpu_family() == 6 && supports_sse3()) {
+  if (is_intel() && is_intel_server_family() && supports_sse3()) {
     if (FLAG_IS_DEFAULT(AllocatePrefetchLines) &&
         supports_sse4_2() && supports_ht()) { // Nehalem based cpus
       FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
@@ -2097,7 +2086,7 @@ bool VM_Version::is_intel_cascade_lake() {
 // has improved implementation of 64-byte load/stores and so the default
 // threshold is set to 0 for these platforms.
 int VM_Version::avx3_threshold() {
-  return (is_intel_family_core() &&
+  return (is_intel_server_family() &&
           supports_serialize() &&
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
@@ -3137,17 +3126,11 @@ bool VM_Version::os_supports_apx_egprs() {
   if (!supports_apx_f()) {
     return false;
   }
-  // Enable APX support for product builds after
-  // completion of planned features listed in JDK-8329030.
-#if !defined(PRODUCT)
   if (_cpuid_info.apx_save[0] != egpr_test_value() ||
       _cpuid_info.apx_save[1] != egpr_test_value()) {
     return false;
   }
   return true;
-#else
-  return false;
-#endif
 }
 
 uint VM_Version::cores_per_cpu() {
@@ -3248,7 +3231,7 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
       return 128; // Athlon
     }
   } else { // Intel
-    if (supports_sse3() && cpu_family() == 6) {
+    if (supports_sse3() && is_intel_server_family()) {
       if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
         return 192;
       } else if (use_watermark_prefetch) { // watermark prefetching on Core
@@ -3256,7 +3239,7 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
       }
     }
     if (supports_sse2()) {
-      if (cpu_family() == 6) {
+      if (is_intel_server_family()) {
         return 256; // Pentium M, Core, Core2
       } else {
         return 512; // Pentium 4

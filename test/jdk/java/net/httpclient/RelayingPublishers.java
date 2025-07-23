@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @summary Verifies that some of the standard BodyPublishers relay exception
  *          rather than throw it
- * @bug 8226303
+ * @bug 8226303 8358688
  * @library /test/lib
  * @run testng/othervm RelayingPublishers
  */
