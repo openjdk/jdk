@@ -68,7 +68,7 @@ Symbol* ObjArrayKlass::create_element_klass_array_name(JavaThread* current, Klas
   if (element_klass->is_instance_klass()) {
     new_str[idx++] = JVM_SIGNATURE_ENDCLASS;
   }
-  new_str[idx++] = '\0';
+  new_str[idx] = '\0';
   return SymbolTable::new_symbol(new_str);
 }
 
