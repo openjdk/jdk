@@ -528,12 +528,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3><a id="legacy_language_codes">Legacy language codes</a></h3>
  *
- * <p>Locale's constructors have always converted three language codes to
- * their earlier, obsoleted forms: {@code he} maps to {@code iw},
- * {@code yi} maps to {@code ji}, and {@code id} maps to
- * {@code in}. Since Java SE 17, this is no longer the case. Each
- * language maps to its new form; {@code iw} maps to {@code he}, {@code ji}
- * maps to {@code yi}, and {@code in} maps to {@code id}.
+ * <p>For compatibility, a {@code Locale} created with one of the
+ * three obsolete language codes, {@code iw}, {@code ji}, or {@code in},
+ * will map the language to its modern equivalent, {@code he}, {@code yi},
+ * or {@code id}, respectively.
  * <p>The default resource bundle lookup mechanism also implements
  * this mapping, so that resources can be named using either convention,
  * see {@link ResourceBundle.Control}.
