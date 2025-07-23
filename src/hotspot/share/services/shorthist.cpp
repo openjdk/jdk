@@ -47,6 +47,16 @@
 
 #include OS_HEADER(shorthist)
 
+#ifdef HAVE_NO_SHORTHISTORYDATA_PD
+struct ShortHistoryData_pd {
+  void measure() {}
+  void reset() {}
+  static void print_header_1(outputStream* st)  {}
+  static void print_header_2(outputStream* st) {}
+  void print_on(outputStream* st) const {}
+};
+#endif // HAVE_NO_SHORTHISTORYDATA_PD
+
 // all memory sizes in KB
 #define btokb(s) ( (s) / K)
 
@@ -54,20 +64,28 @@ struct Data {
   struct {
     time_t time;
     ShortHistoryData_pd pd;       // os-dependend data
-    size_t heap_committed;
-    size_t heap_used;
-    size_t meta_nclass_used;      // non-class metaspace used
-    size_t meta_class_used;       // class space used
-    size_t meta_gc_threshold;     // metaspace gc threshold
-    size_t nmt_malloc_total;      // NMT: outstanding mallocs, total
-    size_t nmt_malloc_peak;       // NMT: outstanding mallocs, peak
-    size_t nmt_malloc_gcdata;     // NMT: outstanding mallocs, gc structures
-    size_t nmt_malloc_unsafe;     // NMT: outstanding mallocs, Unsafe::allocate
+    ssize_t heap_committed;
+    ssize_t heap_used;
+    ssize_t meta_nclass_used;     // non-class metaspace used
+    ssize_t meta_class_used;      // class space used
+    ssize_t meta_gc_threshold;    // metaspace gc threshold
+    ssize_t nmt_malloc_total;     // NMT: outstanding mallocs, total
+    ssize_t nmt_malloc_peak;      // NMT: outstanding mallocs, peak
+    ssize_t nmt_malloc_gcdata;    // NMT: outstanding mallocs, gc structures
+    ssize_t nmt_malloc_unsafe;    // NMT: outstanding mallocs, Unsafe::allocate
     int threads_java;             // number of JavaThread
     int threads_nonjava;          // number of NonJavaThread
     int cldg_loaders;             // Number of CLDs
     int cldg_ik;                  // Number of loaded InstanceKlass
     int cldg_ak;                  // Number of loaded ArrayKlass
+
+    void reset () {
+      heap_committed = heap_used = meta_nclass_used = meta_class_used =
+                       meta_gc_threshold = nmt_malloc_total = nmt_malloc_peak =
+                       nmt_malloc_gcdata = nmt_malloc_unsafe = -1;
+      threads_java = threads_nonjava = cldg_loaders = cldg_ik = cldg_ak = -1;
+      pd.reset();
+    }
   } _d;
   unsigned _id;
 
@@ -88,9 +106,9 @@ struct Data {
     _d.meta_nclass_used = btokb(MetaspaceUtils::used_bytes(Metaspace::NonClassType));
     _d.meta_class_used = btokb(UseCompressedClassPointers ? MetaspaceUtils::used_bytes(Metaspace::ClassType) : 0);
     _d.meta_gc_threshold = btokb(MetaspaceGC::capacity_until_GC());
-    _d.cldg_loaders = (int)ClassLoaderDataGraph::num_class_loaders();
-    _d.cldg_ik = (int)ClassLoaderDataGraph::num_instance_classes();
-    _d.cldg_ak = (int)ClassLoaderDataGraph::num_array_classes();
+    _d.cldg_loaders = checked_cast<int>(ClassLoaderDataGraph::num_class_loaders());
+    _d.cldg_ik = checked_cast<int>(ClassLoaderDataGraph::num_instance_classes());
+    _d.cldg_ak = checked_cast<int>(ClassLoaderDataGraph::num_array_classes());
   }
 
   void measure_java_threads() {
@@ -108,7 +126,7 @@ struct Data {
   }
 
   void measure() {
-    memset(&_d, 0, sizeof(_d));
+    _d.reset();
     time(&_d.time);
     measure_heap();
     measure_meta();
@@ -137,11 +155,11 @@ struct Data {
     strftime(buf, sizeof(buf), timefmt, &local_time);
     st->print("%s ", buf);
     _d.pd.print_on(st);
-    st->print(" %9zu %9zu ", _d.heap_committed, _d.heap_used);
+    st->print(" %9zd %9zd ", _d.heap_committed, _d.heap_used);
     st->print(" %5d %5d %5d ", _d.cldg_loaders, _d.cldg_ik, _d.cldg_ak);
-    st->print(" %9zu %9zu %9zu ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
+    st->print(" %9zd %9zd %9zd ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
     st->print(" %5d %5d ", _d.threads_java, _d.threads_nonjava);
-    st->print(" %9zu %9zu %9zu %9zu ", _d.nmt_malloc_total, _d.nmt_malloc_peak, _d.nmt_malloc_gcdata, _d.nmt_malloc_unsafe);
+    st->print(" %9zd %9zd %9zd %9zd ", _d.nmt_malloc_total, _d.nmt_malloc_peak, _d.nmt_malloc_gcdata, _d.nmt_malloc_unsafe);
     st->cr();
   }
 };
@@ -258,7 +276,7 @@ void ShortHistory::initialize() {
 
 void ShortHistory::cleanup() {
   if (UseHistory) {
-    g_task->disenroll(); // is this even necessary?
+    g_task->disenroll();
     log_info(os)("History task disenrolled");
   }
 }
