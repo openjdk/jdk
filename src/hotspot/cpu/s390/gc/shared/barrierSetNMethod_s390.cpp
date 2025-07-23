@@ -55,7 +55,10 @@ class NativeMethodBarrier: public NativeInstruction {
 
     void set_guard_value(int value, int bit_mask) {
       if (bit_mask == ~0) {
-        Atomic::release_store(guard_addr(), value);
+        int32_t* data_addr = (int32_t*)get_patchable_data_address();
+  
+        // Set guard instruction value
+        *data_addr = value;
         return;
       }
       assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
