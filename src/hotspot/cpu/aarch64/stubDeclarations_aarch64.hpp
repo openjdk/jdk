@@ -30,7 +30,7 @@
                                           do_arch_blob,                 \
                                           do_arch_entry,                \
                                           do_arch_entry_init)           \
-  do_arch_blob(preuniverse, 32)                                         \
+  do_arch_blob(preuniverse, 0)                                          \
 
 
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \

@@ -304,6 +304,9 @@ public:
     return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
   }
 
+  static address crc_table_addr();
+  static address crc32c_table_addr();
+
   typedef void (*DataCacheWritebackStub)(void *);
   static DataCacheWritebackStub DataCacheWriteback_stub()         { return CAST_TO_FN_PTR(DataCacheWritebackStub,  _data_cache_writeback); }
   typedef void (*DataCacheWritebackSyncStub)(bool);

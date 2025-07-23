@@ -6661,12 +6661,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 
   // Initialization
   void generate_preuniverse_stubs() {
-    // Initialize runtime addresses needed by AOTCodeAddressTable.
-    // Note, they are not stubs and not located in CodeCache.
-    if (UseCRC32Intrinsics) {
-      // set table address before stub generation which use it
-      StubRoutines::_crc_table_addr = (address)StubRoutines::riscv::_crc_table;
-    }
+    // preuniverse stubs are not needed for riscv
   }
 
   void generate_initial_stubs() {

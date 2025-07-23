@@ -4051,19 +4051,7 @@ void StubGenerator::create_control_words() {
 // Initialization
 void StubGenerator::generate_preuniverse_stubs() {
   // atomic calls
-  StubRoutines::_fence_entry = generate_orderaccess_fence();
-
-  // Initialize runtime addresses needed by AOTCodeAddressTable.
-  // Note, they are not stubs and not located in CodeCache.
-  if (UseCRC32Intrinsics) {
-    // set table address before stub generation which use it
-    StubRoutines::_crc_table_addr = (address)StubRoutines::x86::_crc_table;
-  }
-  if (UseCRC32CIntrinsics) {
-    bool supports_clmul = VM_Version::supports_clmul();
-    StubRoutines::x86::generate_CRC32C_table(supports_clmul);
-    StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
-  }
+  StubRoutines::_fence_entry                = generate_orderaccess_fence();
 }
 
 void StubGenerator::generate_initial_stubs() {

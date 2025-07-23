@@ -4960,14 +4960,7 @@ void generate_lookup_secondary_supers_table_stub() {
 
   // Initialization
   void generate_preuniverse_stubs() {
-    // Initialize runtime addresses needed by AOTCodeAddressTable.
-    // Note, they are not stubs and not located in CodeCache.
-    if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
-    }
-    if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
-    }
+    // preuniverse stubs are not needed for ppc
   }
 
   void generate_initial_stubs() {
