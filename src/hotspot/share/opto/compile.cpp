@@ -47,7 +47,6 @@
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
-#include "opto/c2_globals.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
@@ -737,8 +736,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion ||
-      StressUnstableIfTraps || StressBailout || StressLoopPeeling) {
+      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout ||
+      StressLoopPeeling) {
     initialize_stress_seed(directive);
   }
 
