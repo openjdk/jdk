@@ -56,7 +56,7 @@ class NativeMethodBarrier: public NativeInstruction {
     void set_guard_value(int value, int bit_mask) {
       if (bit_mask == ~0) {
         int32_t* data_addr = (int32_t*)get_patchable_data_address();
-  
+
         // Set guard instruction value
         *data_addr = value;
         return;
