@@ -172,7 +172,7 @@ class SharedRuntime: AllStatic {
   }
 
   // TODO name does not make sense anymore
-  static void print_primitive(oop x) {
+  static void print_primitive(oopDesc* x) {
     x->print();
   }
 
