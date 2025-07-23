@@ -49,6 +49,7 @@
 
 volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
 volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
+volatile size_t ClassLoaderDataGraph::_num_class_loaders = 0;
 
 void ClassLoaderDataGraph::clear_claimed_marks() {
   // The claimed marks of the CLDs in the ClassLoaderDataGraph are cleared
@@ -163,6 +164,8 @@ ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool has_clas
     // it's added to the Graph
     java_lang_ClassLoader::release_set_loader_data(loader(), cld);
   }
+
+  Atomic::inc(&_num_class_loaders);
 
   // Lastly log, if requested
   LogTarget(Trace, class, loader, data) lt;
@@ -433,6 +436,7 @@ bool ClassLoaderDataGraph::do_unloading() {
     }
   }
 
+  Atomic::sub(&_num_class_loaders, loaders_removed);
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
 
   return loaders_removed != 0;

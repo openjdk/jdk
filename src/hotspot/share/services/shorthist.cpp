@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025, IBM Corporation. All rights reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,39 +43,39 @@
 #include "utilities/deferredStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 
 #include OS_HEADER(shorthist)
-
-// milliseconds
-constexpr unsigned min_interval = 5000;
 
 // all memory sizes in KB
 #define btokb(s) ( (s) / K)
 
 struct Data {
-  unsigned _id;
   struct {
     time_t time;
     ShortHistoryData_pd pd;       // os-dependend data
     size_t heap_committed;
     size_t heap_used;
-    size_t cldg_ik;               // Number of loaded InstanceKlass
-    size_t cldg_ak;               // Number of loaded ArrayKlass
     size_t meta_nclass_used;      // non-class metaspace used
     size_t meta_class_used;       // class space used
     size_t meta_gc_threshold;     // metaspace gc threshold
-    int    threads_java;          // number of JavaThread
-    int    threads_nonjava;       // number of NonJavaThread
     size_t nmt_malloc_total;      // NMT: outstanding mallocs, total
+    size_t nmt_malloc_peak;       // NMT: outstanding mallocs, peak
     size_t nmt_malloc_gcdata;     // NMT: outstanding mallocs, gc structures
     size_t nmt_malloc_unsafe;     // NMT: outstanding mallocs, Unsafe::allocate
+    int threads_java;             // number of JavaThread
+    int threads_nonjava;          // number of NonJavaThread
+    int cldg_loaders;             // Number of CLDs
+    int cldg_ik;                  // Number of loaded InstanceKlass
+    int cldg_ak;                  // Number of loaded ArrayKlass
   } _d;
+  unsigned _id;
 
 #define HEADER1_a "                         "
 #define HEADER2_a "  id                time "
-#define HEADER1_b "|---- java heap ----||-- cldg ---||--------- metaspace ---------||- threads -||--------- nmt malloc --------|"
-#define HEADER2_b "      comm      used     ik    ak     nclass     class  threshld   jthr njthr      total    gcdata    unsafe "
-  //               |.........|.........||.....|.....||.........|.........|.........||.....|.....||.........|.........|.........||
+#define HEADER1_b "|---- java heap ----||---- classes ----||--------- metaspace ---------||- threads -||-------------- nmt malloc -------------|"
+#define HEADER2_b "      comm      used    cld    ik    ak     nclass     class  threshld   jthr njthr      total      peak    gcdata    unsafe "
+  //               |.........|.........||.....|.....|.....||.........|.........|.........||.....|.....||.........|.........|.........|.........||
 
   void measure_heap() {
     _d.heap_committed = btokb(Universe::heap()->capacity());
@@ -88,8 +88,9 @@ struct Data {
     _d.meta_nclass_used = btokb(MetaspaceUtils::used_bytes(Metaspace::NonClassType));
     _d.meta_class_used = btokb(UseCompressedClassPointers ? MetaspaceUtils::used_bytes(Metaspace::ClassType) : 0);
     _d.meta_gc_threshold = btokb(MetaspaceGC::capacity_until_GC());
-    _d.cldg_ik = ClassLoaderDataGraph::num_instance_classes();
-    _d.cldg_ak = ClassLoaderDataGraph::num_array_classes();
+    _d.cldg_loaders = (int)ClassLoaderDataGraph::num_class_loaders();
+    _d.cldg_ik = (int)ClassLoaderDataGraph::num_instance_classes();
+    _d.cldg_ak = (int)ClassLoaderDataGraph::num_array_classes();
   }
 
   void measure_java_threads() {
@@ -115,14 +116,11 @@ struct Data {
     _d.pd.measure();
   }
 
-  static void print_header_1(outputStream* st) {
+  static void print_header(outputStream* st) {
     st->print_raw(HEADER1_a);
     ShortHistoryData_pd::print_header_1(st);
     st->print_raw(HEADER1_b);
     st->cr();
-  }
-
-  static void print_header_2(outputStream* st) {
     st->print_raw(HEADER2_a);
     ShortHistoryData_pd::print_header_2(st);
     st->print_raw(HEADER2_b);
@@ -131,42 +129,39 @@ struct Data {
 
   void print_on(outputStream* st) const {
     st->print("%4u ", _id);
-    char buf[64] = "                Now";
-    if (_d.time > 0) {
-      const char* const timefmt = "%Y-%m-%d %H-%M-%S";
-      struct tm local_time;
-      os::localtime_pd(&_d.time, &local_time);
-      strftime(buf, sizeof(buf), timefmt, &local_time);
-    }
+    char buf[64] = "";
+    const char* const timefmt = "%Y-%m-%d %H-%M-%S";
+    struct tm local_time;
+    os::localtime_pd(&_d.time, &local_time);
+    strftime(buf, sizeof(buf), timefmt, &local_time);
     st->print("%s ", buf);
     _d.pd.print_on(st);
     st->print(" %9zu %9zu ", _d.heap_committed, _d.heap_used);
-    st->print(" %5zu %5zu ", _d.cldg_ik, _d.cldg_ak);
+    st->print(" %5d %5d %5d ", _d.cldg_loaders, _d.cldg_ik, _d.cldg_ak);
     st->print(" %9zu %9zu %9zu ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
     st->print(" %5d %5d ", _d.threads_java, _d.threads_nonjava);
-    st->print(" %9zu %9zu %9zu ", _d.nmt_malloc_total, _d.nmt_malloc_gcdata, _d.nmt_malloc_unsafe);
+    st->print(" %9zu %9zu %9zu %9zu ", _d.nmt_malloc_total, _d.nmt_malloc_peak, _d.nmt_malloc_gcdata, _d.nmt_malloc_unsafe);
     st->cr();
   }
 };
 
+template <int capacity>
 class DataBuffer {
   // a fixed-sized FIFO buffer of Data
-  const int _max;
   int _pos;
-  Data* _table;
+  Data _table[capacity];
+
+  bool has_data() const { return _pos > 0; }
 
 public:
 
-  DataBuffer(int max) :
-    _max(max), _pos(0), _table(nullptr)
-  {
-    _table = NEW_C_HEAP_ARRAY(Data, _max, mtInternal);
-    memset(_table, 0, sizeof(Data) * _max);
+  DataBuffer() : _pos(0) {
+    memset(_table, 0, sizeof(Data) * capacity);
   }
 
   void store(const Data& data) {
     assert(_pos >= 0, "Sanity");
-    const int slot = _pos % _max;
+    const int slot = _pos % capacity;
     Data* const p = &_table[slot];
     p->_id = 0;
     OrderAccess::storestore();
@@ -176,76 +171,62 @@ public:
     _pos++;
   }
 
-  bool has_data() const {
-    return _pos > 0;
-  }
-
-  void print_on(outputStream* st) const {
-    const int start_pos = _pos;
-    const int end_pos = MAX2(start_pos - _max, 0);
-    for (int pos = start_pos - 1; pos >= end_pos; pos--) {
-      const int slot = pos % _max;
-      if (_table[slot]._id > 0) {
-        OrderAccess::loadload();
-        _table[slot].print_on(st);
+  void print_on(outputStream* st, const char* title) const {
+    st->print_cr("%s", title);
+    if (has_data()) {
+      Data::print_header(st);
+      const int start_pos = _pos;
+      const int end_pos = MAX2(start_pos - capacity, 0);
+      for (int pos = start_pos - 1; pos >= end_pos; pos--) {
+        const int slot = pos % capacity;
+        if (_table[slot]._id > 0) {
+          OrderAccess::loadload();
+          _table[slot].print_on(st);
+        }
       }
+    } else {
+      st->print_cr("No data");
     }
-  }
-
-  void print_state(outputStream* st) const {
-    st->print_cr("max %u pos %u wrapped %d", _max, _pos, _pos >= _max);
   }
 };
 
 class ShortHistoryStore {
+public:
 
-  // Spanning 10 minutes (with default interval time of 10 seconds)
-  static constexpr int _short_term_buffer_size = 60;
-  // Spanning 3 hours (with default interval time of 1 minute)
-  static constexpr int _long_term_buffer_size = 180;
+  // We keep a short-term buffer spanning the last 10 minutes and
+  // a long-term buffer spanning the last 5 hours (if we run with the
+  // default interval of 10 seconds). We feed the long term buffer
+  // every five minutes (so, twice during the short-term buffer time span).
+  static constexpr int default_interval = 10;
+  static constexpr int timespan_short = 10 * 60;
+  static constexpr int timespan_long = 5 * 60 * 60;
+  static constexpr int interval_long = timespan_short / 2;
+  static constexpr int capacity_short = timespan_short / default_interval;
+  static constexpr int capacity_long = timespan_long / interval_long;
+  static constexpr int ratio_long_short = interval_long / default_interval;
 
-  DataBuffer _short_term_buffer;
-  DataBuffer _long_term_buffer;
+private:
+
+  DataBuffer<capacity_short> _short_term_buffer;
+  DataBuffer<capacity_long> _long_term_buffer;
+  int _num_stored;
 
 public:
 
-  ShortHistoryStore(unsigned interval) :
-    _short_term_buffer(_short_term_buffer_size),
-    _long_term_buffer(_long_term_buffer_size)
-  {}
+  ShortHistoryStore() : _num_stored(0) {}
 
   void store(const Data& data) {
+    _num_stored ++;
     _short_term_buffer.store(data);
-
-    assert(_pos >= 0, "Sanity");
-    const int slot = _pos % _max;
-    Data* const p = &_table[slot];
-    p->_id = 0;
-    OrderAccess::storestore();
-    p->_d = data._d;
-    OrderAccess::storestore();
-    p->_id = _pos + 1;
-    _pos++;
-  }
-
-  bool has_data() const {
-    return _pos > 0;
+    if ((_num_stored % ratio_long_short) == 0) {
+      _long_term_buffer.store(data);
+    }
+    _num_stored++;
   }
 
   void print_on(outputStream* st) const {
-    const int start_pos = _pos;
-    const int end_pos = MAX2(start_pos - _max, 0);
-    for (int pos = start_pos - 1; pos >= end_pos; pos--) {
-      const int slot = pos % _max;
-      if (_table[slot]._id > 0) {
-        OrderAccess::loadload();
-        _table[slot].print_on(st);
-      }
-    }
-  }
-
-  void print_state(outputStream* st) const {
-    st->print_cr("ShortHistory store: max %u pos %u wrapped %d", _max, _pos, _pos >= _max);
+    _short_term_buffer.print_on(st, "short-term");
+    _long_term_buffer.print_on(st, "long-term");
   }
 };
 
@@ -266,52 +247,37 @@ struct ShortHistoryTask : public PeriodicTask {
 DeferredStatic<ShortHistoryTask> g_task;
 
 void ShortHistory::initialize() {
-  if (enabled()) {
-    FLAG_SET_ERGO(ShortHistoryInterval, MAX2(ShortHistoryInterval, min_interval));
-    g_store.initialize(ShortHistoryInterval);
-    g_task.initialize(ShortHistoryInterval);
+  if (UseHistory) {
+    g_store.initialize();
+    g_task.initialize(HistoryInterval);
     g_task->enroll();
-    log_info(os)("ShortHistory task enrolled (interval: %u ms)", ShortHistoryInterval);
+    log_info(os)("History task enrolled (interval: %u ms)", HistoryInterval);
   }
 }
 
 void ShortHistory::cleanup() {
-  if (enabled()) {
+  if (UseHistory) {
     g_task->disenroll(); // is this even necessary?
-    log_info(os)("ShortHistory task disenrolled");
+    log_info(os)("History task disenrolled");
   }
 }
 
-void ShortHistory::print_state(outputStream* st) {
-  if (g_store.is_initialized()) {
-    st->print_cr("enabled");
-    g_store->print_state(st);
+void ShortHistory::print(outputStream* st) {
+  st->print_cr("History:");
+  if (UseHistory) {
+    // Measure current values to show in case this is called during a crash
+    if (VMError::is_error_reported_in_current_thread()) {
+      Data d_now;
+      d_now._id = 0;
+      d_now.measure();
+      st->print("now:");
+      Data::print_header(st);
+      d_now.print_on(st);
+    }
+    // Print history
+    g_store->print_on(st);
   } else {
-    st->print_cr("disabled");
-  }
-}
-
-void ShortHistory::print(outputStream* st, bool measure_now) {
-  st->print_cr("ShortHistory:");
-  st->cr();
-  if (!g_store.is_initialized()) {
     st->print_cr("(inactive)");
     return;
   }
-  if (!g_store->has_data()) {
-    st->print_cr("(no data)");
-    return;
-  }
-  Data::print_header_1(st);
-  Data::print_header_2(st);
-  // Measure now, to have current values
-  if (measure_now) {
-    Data d_now;
-    d_now._id = 0;
-    d_now.measure();
-    d_now._d.time = 0;
-    d_now.print_on(st);
-  }
-  // Print history
-  g_store->print_on(st);
 }

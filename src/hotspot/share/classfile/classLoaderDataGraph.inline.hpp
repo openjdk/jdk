@@ -51,6 +51,10 @@ size_t ClassLoaderDataGraph::num_array_classes() {
   return Atomic::load(&_num_array_classes);
 }
 
+size_t ClassLoaderDataGraph::num_class_loaders() {
+  return Atomic::load(&_num_class_loaders);
+}
+
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
   Atomic::add(&_num_instance_classes, count, memory_order_relaxed);
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025, IBM Corporation. All rights reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@ class ShortHistoryData_pd {
   size_t _vmrss;
   size_t _vmhwm;
   size_t _vmswap;
-  int _threads;
-  int _fdsize;
   size_t _glibc_heap_allocated;
   size_t _glibc_heap_retained;
   int _glibc_num_trims;
+  int _threads;
+  int _fdsize;
 
   int num_open_files(bool& is_exact) const {
     if (_fdsize > 0) {
