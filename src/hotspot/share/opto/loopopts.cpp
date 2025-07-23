@@ -41,6 +41,7 @@
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 //=============================================================================
@@ -66,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  int wins = 0;
+  SplitWins wins = SplitWins();
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -119,7 +120,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (singleton) {
-      wins++;
+      wins.add_win(region, i);
       x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -134,7 +135,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       x->raise_bottom_type(t);
       Node* y = x->Identity(&_igvn);
       if (y != x) {
-        wins++;
+        wins.add_win(region, i);
         x = y;
       } else {
         y = _igvn.hash_find(x);
@@ -142,7 +143,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
           y = similar_subtype_check(x, region->in(i));
         }
         if (y) {
-          wins++;
+          wins.add_win(region, i);
           x = y;
         } else {
           // Else x is a new node we are keeping
@@ -165,12 +166,12 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
       // this edge case can only happen for Load nodes
-      wins = 0;
+      wins.reset();
       break;
     }
   }
   // Too few wins?
-  if (wins <= policy) {
+  if (!wins.profitable(policy)) {
     _igvn.remove_dead_node(phi);
     return nullptr;
   }
@@ -225,6 +226,18 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       if (!new_loop->_child)
         new_loop->_body.push(x);  // Collect body info
     }
+  }
+
+  if (TraceLoopOpts) {
+    tty->print("Split N%d through Phi N%d in ", n->_idx, phi->_idx);
+    if (region->is_CountedLoop()) {
+      tty->print("CountedLoop ");
+    } else if (region->is_Loop()) {
+      tty->print("Loop ");
+    } else {
+      tty->print("Region ");
+    }
+    tty->print_cr("N%d", region->_idx);
   }
 
   return phi;
@@ -1186,7 +1199,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // policy before it is considered profitable.  Policy is usually 0,
   // so 1 win is considered profitable.  Big merges will require big
   // cloning, so get a larger policy.
-  int policy = n_blk->req() >> 2;
+  int policy = checked_cast<int>(n_blk->req() >> 2);
 
   // If the loop is a candidate for range check elimination,
   // delay splitting through it's phi until a later loop optimization
