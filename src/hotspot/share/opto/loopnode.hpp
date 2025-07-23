@@ -1633,6 +1633,36 @@ public:
   // same block.  Split thru the Region.
   void do_split_if(Node *iff, RegionNode** new_false_region = nullptr, RegionNode** new_true_region = nullptr);
 
+private:
+  class SplitWins {
+  private:
+    uint _total_wins;
+    uint _entry_wins;
+    uint _backedge_wins;
+
+  public:
+    SplitWins() :
+      _total_wins(0),
+      _entry_wins(0),
+      _backedge_wins(0) {};
+
+    void reset() {_total_wins = 0; _entry_wins = 0; _backedge_wins = 0;}
+    void add_win(Node* region, int ctrl_index) {
+      if (region->is_Loop() && ctrl_index == LoopNode::EntryControl) {
+        _entry_wins++;
+      }
+      if (region->is_Loop() && ctrl_index == LoopNode::LoopBackControl) {
+        _backedge_wins++;
+      }
+      _total_wins++;
+    }
+    bool profitable(uint policy) const {
+      return _total_wins >= policy && !(_backedge_wins == 0 && _entry_wins > 0);
+    }
+  };
+
+public:
+
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();
   bool intrinsify_fill(IdealLoopTree* lpt);

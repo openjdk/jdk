@@ -66,7 +66,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, uint policy) {
     return nullptr;
   }
 
-  int wins = 0;
+  SplitWins wins = SplitWins();
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -119,7 +119,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, uint policy) {
     }
 
     if (singleton) {
-      wins++;
+      wins.add_win(region, i);
       x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -134,7 +134,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, uint policy) {
       x->raise_bottom_type(t);
       Node* y = x->Identity(&_igvn);
       if (y != x) {
-        wins++;
+        wins.add_win(region, i);
         x = y;
       } else {
         y = _igvn.hash_find(x);
@@ -142,7 +142,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, uint policy) {
           y = similar_subtype_check(x, region->in(i));
         }
         if (y) {
-          wins++;
+          wins.add_win(region, i);
           x = y;
         } else {
           // Else x is a new node we are keeping
@@ -165,12 +165,12 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, uint policy) {
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
       // this edge case can only happen for Load nodes
-      wins = 0;
+      wins.reset();
       break;
     }
   }
   // Too few wins?
-  if (wins <= policy) {
+  if (!wins.profitable(policy)) {
     _igvn.remove_dead_node(phi);
     return nullptr;
   }
