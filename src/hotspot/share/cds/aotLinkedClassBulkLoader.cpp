@@ -123,7 +123,7 @@ void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* c
 
 #ifdef ASSERT
 void AOTLinkedClassBulkLoader::validate_module_of_preloaded_classes() {
-  oop javabase_module_oop = ModuleEntryTable::javabase_moduleEntry()->module();
+  oop javabase_module_oop = ModuleEntryTable::javabase_moduleEntry()->module_oop();
   for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
     TypeArrayKlass* tak = Universe::typeArrayKlass((BasicType)i);
     validate_module(tak, "boot1", javabase_module_oop);
@@ -151,9 +151,9 @@ void AOTLinkedClassBulkLoader::validate_module_of_preloaded_classes_in_table(Arr
     PackageEntry* pkg_entry = ik->package();
     oop module_oop;
     if (pkg_entry == nullptr) {
-      module_oop = loader_data->unnamed_module()->module();
+      module_oop = loader_data->unnamed_module()->module_oop();
     } else {
-      module_oop = pkg_entry->module()->module();
+      module_oop = pkg_entry->module()->module_oop();
     }
 
     validate_module(ik, category_name, module_oop);
