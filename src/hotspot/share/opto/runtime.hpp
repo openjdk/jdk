@@ -739,21 +739,77 @@ private:
     return _dtrace_object_alloc_Type;
   }
 
-  template <class ...Args>
-  struct ArgWriter;
+  static void put_type(const Type** fields, int* argp, Node *parm) {
+    switch (parm->bottom_type()->basic_type()) {
+      case T_BOOLEAN:
+        fields[(*argp)++] = TypeInt::BOOL;
+        break;
+      case T_CHAR:
+        fields[(*argp)++] = TypeInt::CHAR;
+        break;
+      case T_FLOAT:
+        fields[(*argp)++] = Type::FLOAT;
+        break;
+      case T_DOUBLE:
+        fields[(*argp)++] = Type::DOUBLE;
+        fields[(*argp)++] = Type::HALF;
+        break;
+      case T_BYTE:
+        fields[(*argp)++] = TypeInt::BYTE;
+        break;
+      case T_SHORT:
+        fields[(*argp)++] = TypeInt::SHORT;
+        break;
+      case T_INT:
+        fields[(*argp)++] = TypeInt::INT;
+        break;
+      case T_LONG:
+        fields[(*argp)++] = TypeLong::LONG;
+        fields[(*argp)++] = Type::HALF;
+        break;
+      case T_OBJECT:
+        fields[(*argp)++] = TypePtr::NOTNULL;
+        break;
+      // TODO what about other cases?
+      case T_ARRAY:
+      case T_VOID:
+      case T_ADDRESS:
+      case T_NARROWOOP:
+      case T_METADATA:
+      case T_NARROWKLASS:
+      case T_CONFLICT:
+      case T_ILLEGAL:
+        break;
+    }
+  }
 
-  template <class ...Args>
-  struct ArgCounter;
+  static const TypeFunc* debug_print_Type(Node* parm0 = nullptr, Node* parm1 = nullptr,
+                                          Node* parm2 = nullptr, Node* parm3 = nullptr,
+                                          Node* parm4 = nullptr, Node* parm5 = nullptr,
+                                          Node* parm6 = nullptr) {
+    int argcnt = 1;
+    if (parm0 != nullptr) { argcnt++;
+    if (parm1 != nullptr) { argcnt++;
+    if (parm2 != nullptr) { argcnt++;
+    if (parm3 != nullptr) { argcnt++;
+    if (parm4 != nullptr) { argcnt++;
+    if (parm5 != nullptr) { argcnt++;
+    if (parm6 != nullptr) { argcnt++;
+    /* close each nested if ===> */  } } } } } } }
 
-  template <typename... TT>
-  static const TypeFunc* debug_print_Type() {
     // create input type (domain)
-    int num_args      = 1 + ArgCounter<TT...>::count();
-    int argcnt = num_args;
     const Type** fields = TypeTuple::fields(argcnt);
     int argp = TypeFunc::Parms;
     fields[argp++] = TypePtr::NOTNULL;    // static string pointer
-    ArgWriter<TT...>::put(fields, &argp);
+
+    if (parm0 != nullptr) { put_type(fields, &argp, parm0);
+    if (parm1 != nullptr) { put_type(fields, &argp, parm1);
+    if (parm2 != nullptr) { put_type(fields, &argp, parm2);
+    if (parm3 != nullptr) { put_type(fields, &argp, parm3);
+    if (parm4 != nullptr) { put_type(fields, &argp, parm4);
+    if (parm5 != nullptr) { put_type(fields, &argp, parm5);
+    if (parm6 != nullptr) { put_type(fields, &argp, parm6);
+    /* close each nested if ===> */  } } } } } } }
 
     assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
     const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
@@ -777,100 +833,6 @@ private:
  static void          print_named_counters();
 
  static void          initialize_types();
-};
-
-template <typename T>
-struct TypeMap;
-
-template <>
-struct TypeMap<jint> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = TypeInt::INT;
-  }
-  static uint arg_width() { return 1; }
-};
-
-template <>
-struct TypeMap<jchar> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = TypeInt::CHAR;
-  }
-  static uint arg_width() { return 1; }
-};
-
-template <>
-struct TypeMap<jshort> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = TypeInt::SHORT;
-  }
-  static uint arg_width() { return 1; }
-};
-
-template <>
-struct TypeMap<jboolean> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = TypeInt::BOOL;
-  }
-  static uint arg_width() { return 1; }
-};
-
-template <>
-struct TypeMap<jlong> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = TypeLong::LONG;
-    fields[(*argp)++] = Type::HALF;
-  }
-  static uint arg_width() { return 2; }
-};
-
-template <>
-struct TypeMap<jfloat> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = Type::FLOAT;
-  }
-  static uint arg_width() { return 1; }
-};
-
-template <>
-struct TypeMap<jdouble> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = Type::DOUBLE;
-    fields[(*argp)++] = Type::HALF;
-  }
-  static uint arg_width() { return 2; }
-};
-
-template <>
-struct TypeMap<oop> {
-  static void put(const Type** fields, int* argp) {
-    fields[(*argp)++] = TypePtr::NOTNULL;
-  }
-  static uint arg_width() { return 1; }
-};
-
-template <>
-struct OptoRuntime::ArgWriter<> {
-  static void put(const Type** fields, int* argp) {}
-};
-
-template <class T, class ...Args>
-struct OptoRuntime::ArgWriter<T, Args...> {
-  static void put(const Type** fields, int* argp) {
-    TypeMap<T>::put(fields, argp);
-    ArgWriter<Args...>::put(fields, argp);
-  }
-};
-
-template <>
-struct OptoRuntime::ArgCounter<> {
-  static uint count() { return 0; }
-};
-
-template <class T, class ...Args>
-struct OptoRuntime::ArgCounter<T, Args...> {
-  static uint count() {
-    return TypeMap<T>::arg_width() + ArgCounter<Args...>::count();
-  }
 };
 
 #endif // SHARE_OPTO_RUNTIME_HPP

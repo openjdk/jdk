@@ -780,7 +780,7 @@ class GraphKit : public Phase {
     address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print_tt<TT...>);
 
     Node* str_node = new ConPNode(TypeRawPtr::make(((address) str)));
-    Node* call = make_runtime_call(flags, OptoRuntime::debug_print_Type<TT...>(), call_addr, "debug_print", TypeRawPtr::BOTTOM, str_node, in...);
+    Node* call = make_runtime_call(flags, OptoRuntime::debug_print_Type(in...), call_addr, "debug_print", TypeRawPtr::BOTTOM, str_node, in...);
 
     return call;
   }
