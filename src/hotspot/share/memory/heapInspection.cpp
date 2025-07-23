@@ -267,6 +267,16 @@ public:
   bool success() { return _success; }
 };
 
+void KlassInfoTable::clear_entries() {
+  if (_buckets != nullptr) {
+    for (int index = 0; index < _num_buckets; index++) {
+      _buckets[index].empty();
+      _buckets[index].initialize();
+    }
+    _size_of_instances_in_words = 0;
+  }
+}
+
 // merge from table
 bool KlassInfoTable::merge(KlassInfoTable* table) {
   KlassInfoTableMergeClosure closure(this);

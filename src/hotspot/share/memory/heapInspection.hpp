@@ -130,7 +130,8 @@ class KlassInfoTable: public StackObj {
   size_t size_of_instances_in_words() const;
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
-
+  // Clears entries in the table
+  void clear_entries();
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
 };

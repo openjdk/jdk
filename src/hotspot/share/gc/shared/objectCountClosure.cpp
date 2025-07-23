@@ -15,9 +15,9 @@ void ObjectCountClosure::reset_table() {
     if (!check_table_exists()) {
         return;
     }
-    cit.~KlassInfoTable();
-    ::new((void*)&cit) KlassInfoTable(false);
-}
+    cit.clear_entries();
+  }
+
 
 bool ObjectCountClosure::check_table_exists() {
     return !cit.allocation_failed();
