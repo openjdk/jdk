@@ -34,20 +34,21 @@ import java.nio.file.DirectoryNotEmptyException;
 public class MaxPathLength {
     private static String sep = File.separator;
     private static String pathComponent = sep +
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static String fileName =
-                 "areallylongfilenamethatsforsur";
+            "areallylongfilenamethatsforsur";
     private static boolean isWindows = false;
 
     private static final int MAX_LENGTH = 256;
 
+    private static final int FILE_EXISTS_SLEEP = 100;
+
+    private static final int MAX_PATH_COMPONENTS_WINDOWS = 20;
+
     private static int counter = 0;
 
     public static void main(String[] args) throws Exception {
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Windows")) {
-            isWindows = true;
-        }
+        setIsWindows();
 
         for (int i = 4; i < 7; i++) {
             String name = fileName;
@@ -59,13 +60,22 @@ public class MaxPathLength {
         }
 
         // test long paths on windows
-        // And these long pathes cannot be handled on Solaris and Mac platforms
-        testLongPathOnWindows();
+        // And these long paths cannot be handled on Linux and Mac platforms
+        if (isWindows) {
+            testLongPath();
+        }
+    }
+
+    private static void setIsWindows() {
+        String osName = System.getProperty("os.name");
+        if (osName.startsWith("Windows")) {
+            isWindows = true;
+        }
     }
 
     private static String getNextName(String fName) {
         return (fName.length() < MAX_LENGTH/2) ? fName + fName
-                                               : fName + "A";
+                : fName + "A";
     }
 
     static void testLongPath(int max, String fn,
@@ -140,7 +150,7 @@ public class MaxPathLength {
                 throw new RuntimeException ("File.listFiles() failed");
 
             if (isWindows &&
-                !fu.getCanonicalPath().equals(f.getCanonicalPath()))
+                    !fu.getCanonicalPath().equals(f.getCanonicalPath()))
                 throw new RuntimeException ("getCanonicalPath() failed");
 
             char[] cc = tPath.toCharArray();
@@ -154,9 +164,9 @@ public class MaxPathLength {
                 */
                 String abPath = f.getAbsolutePath();
                 if (!abPath.startsWith("\\\\") ||
-                    abPath.length() < 1093) {
-                    throw new RuntimeException ("File.renameTo() failed for lenth="
-                                                + abPath.length());
+                        abPath.length() < 1093) {
+                    throw new RuntimeException ("File.renameTo() failed for length="
+                            + abPath.length());
                 }
             } else {
                 if (!nf.canRead())
@@ -182,7 +192,7 @@ public class MaxPathLength {
                     Files.deleteIfExists(p);
                     // Test if the file is really deleted and wait for 1 second at most
                     for (int j = 0; j < 10 && Files.exists(p); j++) {
-                        Thread.sleep(100);
+                        Thread.sleep(FILE_EXISTS_SLEEP);
                     }
                 } catch (DirectoryNotEmptyException ex) {
                     // Give up the clean-up, let jtreg handle it.
@@ -193,14 +203,13 @@ public class MaxPathLength {
         }
     }
 
-    private static void testLongPathOnWindows () throws Exception {
-        if (isWindows) {
-            String name = fileName;
-            while (name.length() < MAX_LENGTH) {
-                testLongPath (20, name, false);
-                testLongPath (20, name, true);
-                name = getNextName(name);
-            }
+    private static void testLongPath () throws Exception {
+        String name = fileName;
+        while (name.length() < MAX_LENGTH) {
+            testLongPath(MAX_PATH_COMPONENTS_WINDOWS, name, false);
+            testLongPath(MAX_PATH_COMPONENTS_WINDOWS, name, true);
+            name = getNextName(name);
         }
     }
 }
+
