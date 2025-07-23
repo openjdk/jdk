@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8361842
  * @summary Verify the effectiveness of the `VerifyIntrinsicChecks` VM flag
  *          through (bypassing `StringCoding::encodeAsciiArray`, and) feeding
  *          invalid input to an intrinsified `StringCoding::encodeAsciiArray0`

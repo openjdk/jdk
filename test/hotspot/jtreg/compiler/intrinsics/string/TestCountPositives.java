@@ -50,6 +50,7 @@
 
 /*
  * @test
+ * @bug 8281146
  * @summary Verify `StringCoding::countPositives` intrinsic Java wrapper checks
  *          by enabling the ones in the compiler intrinsic using
  *          `-XX:+VerifyIntrinsicChecks`

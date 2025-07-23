@@ -49,6 +49,7 @@
 
 /*
  * @test
+ * @bug 8054307
  * @summary Verify `StringCoding::hasNegatives` intrinsic Java wrapper checks
  *          by enabling the ones in the compiler intrinsic using
  *          `-XX:+VerifyIntrinsicChecks`
