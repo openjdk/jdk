@@ -1939,77 +1939,77 @@ class MutableBigInteger {
             return new MutableBigInteger[] { new MutableBigInteger(1), rem };
         }
 
-        MutableBigInteger r;
+        MutableBigInteger s;
         if (bitLength <= Long.SIZE) {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
             // Use fp arithmetic to get an upper bound of the root
-            long rLong = (long) nthRootUpper(Math.nextUp(x >= 0 ? x : x + 0x1p64), n);
+            long sLong = (long) nthRootUpper(Math.nextUp(x >= 0 ? x : x + 0x1p64), n);
 
-            if (BigInteger.bitLengthForLong(rLong) * (n - 1) <= Long.SIZE) {
+            if (BigInteger.bitLengthForLong(sLong) * (n - 1) <= Long.SIZE) {
                 // Refine the estimate.
-                long r1 = rLong, rToN1;
+                long u = sLong, sToN1;
                 do {
-                    rLong = r1;
-                    rToN1 = BigInteger.unsignedLongPow(rLong, n - 1);
-                    r1 = ((n - 1) * rLong + Long.divideUnsigned(x, rToN1)) / n;
-                } while (r1 < rLong); // Terminate when non-decreasing.
+                    sLong = u;
+                    sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
+                    u = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
+                } while (u < sLong); // Terminate when non-decreasing.
 
                 return new MutableBigInteger[] {
-                        new MutableBigInteger(rLong), new MutableBigInteger(x - rToN1 * rLong)
+                        new MutableBigInteger(sLong), new MutableBigInteger(x - sToN1 * sLong)
                 };
-            } else { // r^(n - 1) could overflow long range, use MutableBigInteger loop instead
-                r = new MutableBigInteger(rLong);
+            } else { // s^(n - 1) could overflow long range, use MutableBigInteger loop instead
+                s = new MutableBigInteger(sLong);
             }
         } else {
             /* Since the following equality holds:
-             * nthRoot(x, n) == nthRoot(x/2^s, n) * 2^(s/n),
+             * nthRoot(x, n) == nthRoot(x/2^sh, n) * 2^(sh/n),
              *
-             * to get an upper bound of the root of x, it suffices to find an integer s
-             * and a real r such that r >= nthRoot(x/2^s, n) and s % n == 0.
-             * The uppper bound will be r * 2^(s/n), indeed:
-             * r * 2^(s/n) >= nthRoot(x/2^s, n) * 2^(s/n) == nthRoot(x, n).
-             * To achieve this, we right shift the input of s bits into finite double range,
+             * to get an upper bound of the root of x, it suffices to find an integer sh
+             * and a real s such that s >= nthRoot(x/2^sh, n) and sh % n == 0.
+             * The uppper bound will be s * 2^(sh/n), indeed:
+             * s * 2^(sh/n) >= nthRoot(x/2^sh, n) * 2^(sh/n) == nthRoot(x, n).
+             * To achieve this, we right shift the input of sh bits into finite double range,
              * rounding up the result.
              *
-             * The value of the shift s is chosen in order to have the smallest number of
-             * trailing zeros in the double value of r after the significand (minimizing
+             * The value of the shift sh is chosen in order to have the smallest number of
+             * trailing zeros in the double value of s after the significand (minimizing
              * non-significant bits), and the shift is performed in order to lose
              * the smallest number of bits in the significand if necessary (minimizing loss of precision).
              */
             // Set up the initial estimate of the iteration.
             // Determine a right shift that is a multiple of n into finite double range.
-            long shift = bitLength - Double.PRECISION;
-            int shiftExcess = (int) (shift % n);
+            long sh = bitLength - Double.PRECISION;
+            int shExcess = (int) (sh % n);
             double rad;
 
             // Try to shift as many bits as possible
             // without losing precision in double's representation.
-            if (bitLength - (shift - shiftExcess) <= Double.MAX_EXPONENT) {
-                shift -= shiftExcess; // Adjust shift to a multiple of n
+            if (bitLength - (sh - shExcess) <= Double.MAX_EXPONENT) {
+                sh -= shExcess; // Adjust shift to a multiple of n
                 // Shift the value into finite double range
-                rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
-            } else { // this >> (shift - shiftExcess) could exceed finite double range, may lose precision
+                rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
+            } else { // this >> (sh - shExcess) could exceed finite double range, may lose precision
                 // Shift the value into finite double range
-                rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
+                rad = this.toBigInteger().shiftRight((int) sh).doubleValue();
                 // Complete the shift to a multiple of n,
                 // avoiding to lose more bits than necessary.
-                if (shiftExcess != 0) {
-                    int shiftLack = n - shiftExcess;
-                    shift += shiftLack; // shift is long, no overflow
-                    rad /= Double.parseDouble("0x1p" + shiftLack);
+                if (shExcess != 0) {
+                    int shLack = n - shExcess;
+                    sh += shLack; // sh is long, no overflow
+                    rad = Math.scalb(rad, -shLack);
                 }
             }
 
             // Use the root of the shifted value as an estimate.
             rad = Math.nextUp(rad);
             double approx = nthRootUpper(rad, n);
-            int rootShift = (int) (shift / n);
-            if (rootShift == 0) {
-                r = valueOf(approx);
+            int rootSh = (int) (sh / n);
+            if (rootSh == 0) {
+                s = valueOf(approx);
             } else {
                 // Allocate sufficient space to store the final root
-                r = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
+                s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
 
                 // Discard wrong bits from the initial estimate
                 int radExp = Math.getExponent(rad);
@@ -2018,45 +2018,45 @@ class MutableBigInteger {
 
                 if (radExp >= Double.PRECISION - 1) { // Discard wrong integer bits
                     int wrongBits = ((radExp + 1) - Double.PRECISION) / n;
-                    rootShift += wrongBits;
-                    approx /= Double.parseDouble("0x1p" + wrongBits);
+                    rootSh += wrongBits;
+                    approx = Math.scalb(approx, -wrongBits);
                 } else { // Avoid to discard correct fraction bits
                     int correctBits = ((Double.PRECISION - 1) - radExp - 1) / n + 1;
-                    rootShift -= correctBits;
-                    approx *= Double.parseDouble("0x1p" + correctBits);
+                    rootSh -= correctBits;
+                    approx = Math.scalb(approx, correctBits);
                 }
-                r.copyValue(valueOf(Math.ceil(approx)));
+                s.copyValue(valueOf(Math.ceil(approx)));
 
                 // Refine the estimate, avoiding to compute non-significant bits
                 final int trailingZeros = this.getLowestSetBit();
-                for (int rootBits = (int) r.bitLength(); rootShift >= rootBits; rootBits <<= 1) {
-                    r.leftShift(rootBits);
-                    rootShift -= rootBits;
+                for (int rootBits = (int) s.bitLength(); rootSh >= rootBits; rootBits <<= 1) {
+                    s.leftShift(rootBits);
+                    rootSh -= rootBits;
 
                     // Remove useless bits from the radicand
                     MutableBigInteger x = new MutableBigInteger(this);
-                    int removedBits = rootShift * n;
+                    int removedBits = rootSh * n;
                     x.rightShift(removedBits);
                     if (removedBits > trailingZeros)
-                        x.add(ONE); // round up to ensure r is an upper bound of the root
+                        x.add(ONE); // round up to ensure s is an upper bound of the root
 
-                    newtonRecurrenceNthRoot(x, r, n, r.toBigInteger().pow(n - 1));
+                    newtonRecurrenceNthRoot(x, s, n, s.toBigInteger().pow(n - 1));
                 }
 
                 // Shift the approximate root back into the original range.
-                r.safeLeftShift(rootShift);
+                s.safeLeftShift(rootSh);
             }
         }
 
         // Refine the estimate.
         do {
-            BigInteger rBig = r.toBigInteger();
-            BigInteger rToN1 = rBig.pow(n - 1);
-            MutableBigInteger rem = new MutableBigInteger(rToN1.multiply(rBig).mag);
+            BigInteger sBig = s.toBigInteger();
+            BigInteger sToN1 = sBig.pow(n - 1);
+            MutableBigInteger rem = new MutableBigInteger(sToN1.multiply(sBig).mag);
             if (rem.subtract(this) <= 0)
-                return new MutableBigInteger[] { r, rem };
+                return new MutableBigInteger[] { s, rem };
 
-            newtonRecurrenceNthRoot(this, r, n, rToN1);
+            newtonRecurrenceNthRoot(this, s, n, sToN1);
         } while (true);
     }
 
@@ -2067,16 +2067,16 @@ class MutableBigInteger {
     }
 
     /**
-     * Computes {@code ((n-1)*r + x/rToN1)/n} and places the result in {@code r}.
+     * Computes {@code ((n-1)*s + x/sToN1)/n} and places the result in {@code s}.
      */
     private static void newtonRecurrenceNthRoot(
-            MutableBigInteger x, MutableBigInteger r, int n, BigInteger rToN1) {
+            MutableBigInteger x, MutableBigInteger s, int n, BigInteger sToN1) {
         MutableBigInteger dividend = new MutableBigInteger();
-        r.mul(n - 1, dividend);
-        MutableBigInteger xDivRToN1 = new MutableBigInteger();
-        x.divide(new MutableBigInteger(rToN1.mag), xDivRToN1, false);
-        dividend.add(xDivRToN1);
-        dividend.divideOneWord(n, r);
+        s.mul(n - 1, dividend);
+        MutableBigInteger xDivSToN1 = new MutableBigInteger();
+        x.divide(new MutableBigInteger(sToN1.mag), xDivSToN1, false);
+        dividend.add(xDivSToN1);
+        dividend.divideOneWord(n, s);
     }
 
     /**
