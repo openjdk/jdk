@@ -159,7 +159,6 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
                         "focus");
             }
             clickAndBlink(robot, lLoc);
-            Util.waitForIdle(robot);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
