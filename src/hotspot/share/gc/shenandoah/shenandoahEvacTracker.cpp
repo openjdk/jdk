@@ -108,8 +108,8 @@ void ShenandoahEvacuationStats::ShenandoahEvacuations::print_on(outputStream* st
 
 void ShenandoahEvacuationStats::print_on(outputStream* st) const {
   st->print("Young: "); _young.print_on(st);
-  st->print("Old: "); _old.print_on(st);
   st->print("Promotion: "); _promotion.print_on(st);
+  st->print("Old: "); _old.print_on(st);
 
   if (_use_age_table) {
     _age_table->print_on(st);

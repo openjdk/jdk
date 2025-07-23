@@ -74,7 +74,10 @@ private:
 
   AgeTable* age_table() const;
 
+  // Record that the current thread is attempting to copy this many bytes.
   void begin_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
+
+  // Record that the current thread has completed copying this many bytes.
   void end_evacuation(size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
   void record_age(size_t bytes, uint age);
 
@@ -97,7 +100,11 @@ private:
 public:
   ShenandoahEvacuationTracker() = default;
 
+  // Record that the given thread has begun to evacuate an object of this size.
   void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
+
+  // Multiple threads may attempt to evacuate the same object, but only the succeeding thread will end the evacuation.
+  // Evacuations that were begun, but not ended are considered 'abandoned'.
   void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
   void record_age(Thread* thread, size_t bytes, uint age);
 
