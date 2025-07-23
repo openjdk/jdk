@@ -3,6 +3,7 @@
 
 #include "gc/shared/gcId.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/mutex.hpp"
 #include "memory/heapInspection.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"

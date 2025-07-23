@@ -1,4 +1,5 @@
 #include "gc/shared/gcId.hpp"
+#include "runtime/mutex.hpp"
 #include "gc/shared/objectCountClosure.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
