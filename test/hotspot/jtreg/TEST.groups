@@ -396,6 +396,7 @@ tier1_runtime = \
  -runtime/cds/SharedBaseAddress.java \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
+ -runtime/Thread/ThreadCountLimit.java \
  -runtime/Unsafe/RangeCheck.java \
   sanity/ \
  -:tier1_runtime_appcds_exclude \
