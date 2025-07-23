@@ -21,33 +21,32 @@
  * questions.
  */
 
-#ifndef CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
-#define CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+#include "spin_wait_aarch64.hpp"
+#include "utilities/debug.hpp"
 
-class SpinWait {
-public:
-  enum Inst {
-    NONE = -1,
-    NOP,
-    ISB,
-    YIELD,
-    SB
-  };
+#include <string.h>
 
-private:
-  Inst _inst;
-  int _count;
+bool SpinWait::supports(const char *name) {
+  return name != nullptr &&
+         (strcmp(name, "nop")   == 0 ||
+          strcmp(name, "isb")   == 0 ||
+          strcmp(name, "yield") == 0 ||
+          strcmp(name, "sb")    == 0 ||
+          strcmp(name, "none")  == 0);
+}
 
-  Inst from_name(const char *name);
+SpinWait::Inst SpinWait::from_name(const char* name) {
+  assert(supports(name), "checked by OnSpinWaitInstNameConstraintFunc");
 
-public:
-  SpinWait(Inst inst = NONE, int count = 0) : _inst(inst), _count(inst == NONE ? 0 : count) {}
-  SpinWait(const char *name, int count) : SpinWait(from_name(name), count) {}
+  if (strcmp(name, "nop") == 0) {
+    return SpinWait::NOP;
+  } else if (strcmp(name, "isb") == 0) {
+    return SpinWait::ISB;
+  } else if (strcmp(name, "yield") == 0) {
+    return SpinWait::YIELD;
+  } else if (strcmp(name, "sb") == 0) {
+    return SpinWait::SB;
+  }
 
-  Inst inst() const { return _inst; }
-  int inst_count() const { return _count; }
-
-  static bool supports(const char *name);
-};
-
-#endif // CPU_AARCH64_SPIN_WAIT_AARCH64_HPP
+  return SpinWait::NONE;
+}
