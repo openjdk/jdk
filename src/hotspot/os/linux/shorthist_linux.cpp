@@ -32,6 +32,11 @@
 // all memory sizes in KB
 #define btokb(s) ( (s) / K)
 
+void ShortHistoryData_pd::reset() {
+  _vmsize = _vmrss = _vmhwm = _vmswap = _glibc_heap_allocated = _glibc_heap_retained = -1;
+  _glibc_num_trims = _threads = _fdsize = -1;
+}
+
 void ShortHistoryData_pd::measure() {
   // Process memory info
   os::Linux::process_info_t mi;
@@ -48,19 +53,13 @@ void ShortHistoryData_pd::measure() {
   os::Linux::glibc_mallinfo mai;
   os::Linux::get_mallinfo(&mai, &might_have_wrapped);
   might_have_wrapped = NOT_LP64(false)
-                       LP64_ONLY(might_have_wrapped && _vmsize > (UINT_MAX / K));
-  if (might_have_wrapped) {
-    _glibc_heap_allocated = _glibc_heap_retained = 0;
-    _glibc_num_trims = 0;
-  } else {
-    _glibc_heap_allocated = btokb(mai.uordblks + mai.hblkhd);
-    _glibc_heap_retained = btokb(mai.fordblks);
-    _glibc_num_trims = mai.num_trims;
+                       LP64_ONLY(might_have_wrapped && (size_t)_vmsize > (UINT_MAX / K));
+  if (!might_have_wrapped) {
+    _glibc_heap_allocated = checked_cast<ssize_t>(btokb(mai.uordblks + mai.hblkhd));
+    _glibc_heap_retained = checked_cast<ssize_t>(btokb(mai.fordblks));
+    _glibc_num_trims = checked_cast<int>(mai.num_trims);
   }
-#else
-  _glibc_heap_allocated = _glibc_heap_retained = 0; // muslc
-  _glibc_num_trims = 0;
-#endif
+#endif // __GLIBC__
 }
 
 #define HEADER1 "|------------------- process -----------------||--------- glibc ---------|"
@@ -75,6 +74,6 @@ void ShortHistoryData_pd::print_header_2(outputStream* st) {
 }
 
 void ShortHistoryData_pd::print_on(outputStream* st) const {
-  st->print(" %9zu %9zu %9zu %9zu %5d ", _vmsize, _vmrss, _vmhwm, _vmswap, _threads);
-  st->print(" %9zu %9zu %5u ", _glibc_heap_allocated, _glibc_heap_retained, _glibc_num_trims);
+  st->print(" %9zd %9zd %9zd %9zd %5d ", _vmsize, _vmrss, _vmhwm, _vmswap, _threads);
+  st->print(" %9zd %9zd %5d ", _glibc_heap_allocated, _glibc_heap_retained, _glibc_num_trims);
 }

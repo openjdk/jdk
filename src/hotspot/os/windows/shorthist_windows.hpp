@@ -23,37 +23,9 @@
  *
  */
 
-#ifndef OS_LINUX_SHORTHIST_LINUX_HPP
-#define OS_LINUX_SHORTHIST_LINUX_HPP
+#ifndef OS_LINUX_SHORTHIST_WINDOWS_HPP
+#define OS_LINUX_SHORTHIST_WINDOWS_HPP
 
-#include "utilities/globalDefinitions.hpp"
+#define HAVE_NO_SHORTHISTORYDATA_PD
 
-class ShortHistoryData_pd {
-  ssize_t _vmsize;
-  ssize_t _vmrss;
-  ssize_t _vmhwm;
-  ssize_t _vmswap;
-  ssize_t _glibc_heap_allocated;
-  ssize_t _glibc_heap_retained;
-  int _glibc_num_trims;
-  int _threads;
-  int _fdsize;
-
-  int num_open_files(bool& is_exact) const {
-    if (_fdsize > 0) {
-      is_exact = false;
-      return -_fdsize;
-    } else {
-      is_exact = true;
-      return _fdsize;
-    }
-  }
-public:
-  void measure();
-  void reset();
-  static void print_header_1(outputStream* st);
-  static void print_header_2(outputStream* st);
-  void print_on(outputStream* st) const;
-};
-
-#endif // OS_LINUX_SHORTHIST_LINUX_HPP
+#endif // OS_WINDOWS_SHORTHIST_AIX_HPP
