@@ -34,3 +34,12 @@ bool ObjectCountClosure::record_object(oop o) {
 KlassInfoTable* ObjectCountClosure::get_table() {
     return check_table_exists() ? &cit : nullptr;
 }
+
+template <class Event>
+bool ObjectCountClosure::should_send_event() {
+    return ObjectCountEventSender::should_send_event<Event>();
+}
+
+template bool ObjectCountClosure::should_send_event<EventObjectCount>();
+template bool ObjectCountClosure::should_send_event<EventObjectCountAfterGC>();
+

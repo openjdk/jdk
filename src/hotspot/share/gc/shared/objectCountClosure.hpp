@@ -21,9 +21,7 @@ public:
     static void reset_table();
 
     template <class Event>
-    static bool should_send_event() {
-        return ObjectCountEventSender::should_send_event<Event>();
-    }
+    static bool should_send_event();
 };
 
 #endif // SHARE_GC_SHARED_OBJECTCOUNTCLOSURE_HPP

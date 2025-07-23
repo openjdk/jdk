@@ -366,11 +366,12 @@ inline void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
     marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
   }
   if (marked) {
-    if (ObjectCountClosure::should_send_event<EventObjectCountAfterGC>()) {
-      ObjectCountClosure::record_object(obj);
-    }
     bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
     assert(pushed, "overflow queue should always succeed pushing");
+    bool should_record = ObjectCountClosure::should_send_event<EventObjectCountAfterGC>();
+    if (should_record) {
+      ObjectCountClosure::record_object(obj);
+    }
   }
 }
 
