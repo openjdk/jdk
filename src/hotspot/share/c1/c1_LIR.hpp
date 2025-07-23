@@ -1282,7 +1282,7 @@ public:
   int flags() const                              { return _flags; }
   ciArrayKlass* expected_type() const            { return _expected_type; }
   ArrayCopyStub* stub() const                    { return _stub; }
-  static int get_initial_copy_flags() const      { return LIR_OpArrayCopy::unaligned |
+  static int get_initial_copy_flags()            { return LIR_OpArrayCopy::unaligned |
                                                           LIR_OpArrayCopy::overlapping; }
 
   virtual void emit_code(LIR_Assembler* masm);
