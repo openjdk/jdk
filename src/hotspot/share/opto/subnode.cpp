@@ -1373,6 +1373,10 @@ const Type *BoolTest::cc2logical( const Type *CC ) const {
     if( _test == le ) return TypeInt::ONE;
     if( _test == gt ) return TypeInt::ZERO;
   }
+  if( CC == TypeInt::CC_NE ) {
+    if( _test == ne ) return TypeInt::ONE;
+    if( _test == eq ) return TypeInt::ZERO;
+  }
 
   return TypeInt::BOOL;
 }
