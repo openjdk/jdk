@@ -23,6 +23,7 @@
  *
  */
 
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "logging/log.hpp"
@@ -33,8 +34,10 @@
 #include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/task.hpp"
+#include "runtime/threads.hpp"
 #include "services/shorthist.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/deferredStatic.hpp"
@@ -53,22 +56,26 @@ struct Data {
   unsigned _id;
   struct {
     time_t time;
-    ShortHistoryData_pd pd;
+    ShortHistoryData_pd pd;       // os-dependend data
     size_t heap_committed;
     size_t heap_used;
-    size_t meta_nclass_used;
-    size_t meta_class_used;
-    size_t meta_gc_threshold;
-    size_t nmt_malloc_total;
-    size_t nmt_malloc_gcdata;
-    size_t nmt_malloc_unsafe;
+    size_t cldg_ik;               // Number of loaded InstanceKlass
+    size_t cldg_ak;               // Number of loaded ArrayKlass
+    size_t meta_nclass_used;      // non-class metaspace used
+    size_t meta_class_used;       // class space used
+    size_t meta_gc_threshold;     // metaspace gc threshold
+    int    threads_java;          // number of JavaThread
+    int    threads_nonjava;       // number of NonJavaThread
+    size_t nmt_malloc_total;      // NMT: outstanding mallocs, total
+    size_t nmt_malloc_gcdata;     // NMT: outstanding mallocs, gc structures
+    size_t nmt_malloc_unsafe;     // NMT: outstanding mallocs, Unsafe::allocate
   } _d;
 
 #define HEADER1_a "                         "
 #define HEADER2_a "  id                time "
-#define HEADER1_b "|---- java heap ----||--------- metaspace ---------||----------- nmt -------------|"
-#define HEADER2_b "      comm      used     nclass     class     gcthr     malloc    gcdata    unsafe "
-  //               |.........|.........||.........|.........|.........||.........|.........|.........||
+#define HEADER1_b "|---- java heap ----||-- cldg ---||--------- metaspace ---------||- threads -||--------- nmt malloc --------|"
+#define HEADER2_b "      comm      used     ik    ak     nclass     class  threshld   jthr njthr      total    gcdata    unsafe "
+  //               |.........|.........||.....|.....||.........|.........|.........||.....|.....||.........|.........|.........||
 
   void measure_heap() {
     _d.heap_committed = btokb(Universe::heap()->capacity());
@@ -77,10 +84,17 @@ struct Data {
     _d.heap_used = btokb(used);
   }
 
-  void measure_metaspace() {
+  void measure_meta() {
     _d.meta_nclass_used = btokb(MetaspaceUtils::used_bytes(Metaspace::NonClassType));
     _d.meta_class_used = btokb(UseCompressedClassPointers ? MetaspaceUtils::used_bytes(Metaspace::ClassType) : 0);
     _d.meta_gc_threshold = btokb(MetaspaceGC::capacity_until_GC());
+    _d.cldg_ik = ClassLoaderDataGraph::num_instance_classes();
+    _d.cldg_ak = ClassLoaderDataGraph::num_array_classes();
+  }
+
+  void measure_java_threads() {
+    _d.threads_java = Threads::number_of_threads();
+    _d.threads_nonjava = NonJavaThread::count();
   }
 
   void measure_nmt() {
@@ -92,10 +106,12 @@ struct Data {
   }
 
   void measure() {
+    memset(&_d, 0, sizeof(_d));
     time(&_d.time);
     measure_heap();
-    measure_metaspace();
+    measure_meta();
     measure_nmt();
+    measure_java_threads();
     _d.pd.measure();
   }
 
@@ -125,32 +141,82 @@ struct Data {
     st->print("%s ", buf);
     _d.pd.print_on(st);
     st->print(" %9zu %9zu ", _d.heap_committed, _d.heap_used);
+    st->print(" %5zu %5zu ", _d.cldg_ik, _d.cldg_ak);
     st->print(" %9zu %9zu %9zu ", _d.meta_nclass_used, _d.meta_class_used, _d.meta_gc_threshold);
+    st->print(" %5d %5d ", _d.threads_java, _d.threads_nonjava);
     st->print(" %9zu %9zu %9zu ", _d.nmt_malloc_total, _d.nmt_malloc_gcdata, _d.nmt_malloc_unsafe);
     st->cr();
   }
 };
 
-class ShortHistoryStore {
+class DataBuffer {
   // a fixed-sized FIFO buffer of Data
-  int _max;
+  const int _max;
   int _pos;
   Data* _table;
 
 public:
 
-  ShortHistoryStore(unsigned interval) :
-    _max(0), _pos(0), _table(nullptr)
+  DataBuffer(int max) :
+    _max(max), _pos(0), _table(nullptr)
   {
-    assert(interval != 0, "Only call if enabled");
-    assert(interval >= min_interval, "Interval too short");
-    constexpr unsigned ms_per_hour = 1000 * 60 * 60;
-    _max = ms_per_hour / interval;
     _table = NEW_C_HEAP_ARRAY(Data, _max, mtInternal);
     memset(_table, 0, sizeof(Data) * _max);
   }
 
   void store(const Data& data) {
+    assert(_pos >= 0, "Sanity");
+    const int slot = _pos % _max;
+    Data* const p = &_table[slot];
+    p->_id = 0;
+    OrderAccess::storestore();
+    p->_d = data._d;
+    OrderAccess::storestore();
+    p->_id = _pos + 1;
+    _pos++;
+  }
+
+  bool has_data() const {
+    return _pos > 0;
+  }
+
+  void print_on(outputStream* st) const {
+    const int start_pos = _pos;
+    const int end_pos = MAX2(start_pos - _max, 0);
+    for (int pos = start_pos - 1; pos >= end_pos; pos--) {
+      const int slot = pos % _max;
+      if (_table[slot]._id > 0) {
+        OrderAccess::loadload();
+        _table[slot].print_on(st);
+      }
+    }
+  }
+
+  void print_state(outputStream* st) const {
+    st->print_cr("max %u pos %u wrapped %d", _max, _pos, _pos >= _max);
+  }
+};
+
+class ShortHistoryStore {
+
+  // Spanning 10 minutes (with default interval time of 10 seconds)
+  static constexpr int _short_term_buffer_size = 60;
+  // Spanning 3 hours (with default interval time of 1 minute)
+  static constexpr int _long_term_buffer_size = 180;
+
+  DataBuffer _short_term_buffer;
+  DataBuffer _long_term_buffer;
+
+public:
+
+  ShortHistoryStore(unsigned interval) :
+    _short_term_buffer(_short_term_buffer_size),
+    _long_term_buffer(_long_term_buffer_size)
+  {}
+
+  void store(const Data& data) {
+    _short_term_buffer.store(data);
+
     assert(_pos >= 0, "Sanity");
     const int slot = _pos % _max;
     Data* const p = &_table[slot];
