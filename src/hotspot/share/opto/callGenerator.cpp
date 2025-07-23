@@ -470,7 +470,10 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
   virtual void do_late_inline();
 
   virtual void set_callee_method(ciMethod* m) {
-    assert(_callee == nullptr || _callee == m, "repeated inline attempt with different callee");
+    if (_callee != nullptr && _callee != m) {
+      Compile::current()->record_failure("call site target change while repeated late inlining");
+      return;
+    }
     _callee = m;
   }
 

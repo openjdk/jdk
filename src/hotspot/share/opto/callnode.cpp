@@ -1238,6 +1238,9 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (!call_does_dispatch) {
         // Register for late inlining.
         cg->set_callee_method(callee);
+        if (phase->C->failing()) {
+          return nullptr;
+        }
         register_for_late_inline(); // MH late inlining prepends to the list, so do the same
       }
     } else {

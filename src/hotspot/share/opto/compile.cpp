@@ -47,6 +47,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
@@ -736,8 +737,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout ||
-      StressLoopPeeling) {
+      StressIncrementalInlining || StressMacroExpansion ||
+      StressUnstableIfTraps || StressBailout || StressLoopPeeling) {
     initialize_stress_seed(directive);
   }
 
@@ -2103,6 +2104,7 @@ bool Compile::inline_incrementally_one() {
 
   set_inlining_progress(false);
   set_do_cleanup(false);
+  bool should_stress = false;
 
   for (int i = 0; i < _late_inlines.length(); i++) {
     _late_inlines_pos = i+1;
@@ -2110,6 +2112,12 @@ bool Compile::inline_incrementally_one() {
     bool is_scheduled_for_igvn_before = C->igvn_worklist()->member(cg->call_node());
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
     if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
+      if (should_stress_inlining()) {
+        cg->call_node()->set_generator(cg);
+        C->igvn_worklist()->push(cg->call_node());
+        should_stress = true;
+        break;
+      }
       cg->do_late_inline();
       assert(_late_inlines.at(i) == cg, "no insertions before current position allowed");
       if (failing()) {
@@ -2138,7 +2146,7 @@ bool Compile::inline_incrementally_one() {
   _late_inlines.remove_till(_late_inlines_pos);
   _late_inlines_pos = 0;
 
-  assert(inlining_progress() || _late_inlines.length() == 0, "no progress");
+  assert(should_stress || inlining_progress() || _late_inlines.length() == 0, "no progress");
 
   bool needs_cleanup = do_cleanup() || over_inlining_cutoff();
 
