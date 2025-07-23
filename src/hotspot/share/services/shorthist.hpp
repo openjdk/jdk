@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025, IBM Corporation. All rights reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,9 @@ class outputStream;
 
 class ShortHistory : public AllStatic {
 public:
-  static bool enabled() { return ShortHistoryInterval > 0; }
   static void initialize();
   static void cleanup();
-  static void print_state(outputStream* st);
-  static void print(outputStream* st, bool measure_now);
+  static void print(outputStream* st);
 };
 
 #endif // SHARE_RUNTIME_SHORTHIST_HPP

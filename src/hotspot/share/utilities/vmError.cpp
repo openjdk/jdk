@@ -1298,7 +1298,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("ShortHistory", _verbose)
-    ShortHistory::print(st, true);
+    ShortHistory::print(st);
     st->cr();
 
   STEP_IF("printing system", _verbose)
@@ -1501,7 +1501,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
   // STEP("ShortHistory")
-  ShortHistory::print(st, false);
+  ShortHistory::print(st);
   st->cr();
 
   // STEP("printing system")
