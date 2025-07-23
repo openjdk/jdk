@@ -32,8 +32,10 @@
 #include "memory/allocation.hpp"
 #include "services/memoryUsage.hpp"
 
+class G1AbstractSubTask;
 class G1HeapRegion;
 class G1HeapRegionClaimer;
+class G1HeapRegionBoolClosure;
 class G1HeapRegionClosure;
 class G1FreeRegionList;
 class WorkerThreads;
@@ -72,6 +74,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 class G1HeapRegionManager: public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class G1HeapRegionClaimer;
+  friend class G1RebuildFreeListTask;
 
   G1RegionToSpaceMapper* _bot_mapper;
   G1RegionToSpaceMapper* _cardtable_mapper;
@@ -191,8 +194,7 @@ public:
   // Insert the given region into the free region list.
   inline void insert_into_free_list(G1HeapRegion* hr);
 
-  // Rebuild the free region list from scratch.
-  void rebuild_free_list(WorkerThreads* workers);
+  G1AbstractSubTask* rebuild_free_list_task(G1HeapRegionBoolClosure* will_be_free);
 
   // Insert the given region list into the global free region list.
   void insert_list_into_free_list(G1FreeRegionList* list) {

@@ -32,11 +32,9 @@ uint G1FreeRegionList::_unrealistically_long_length = 0;
 #ifndef PRODUCT
 void G1HeapRegionSetBase::verify_region(G1HeapRegion* hr) {
   assert(hr->containing_set() == this, "Inconsistent containing set for %u", hr->hrm_index());
-  assert(!hr->is_young(), "Adding young region %u", hr->hrm_index()); // currently we don't use these sets for young regions
   assert(_checker == nullptr || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
          hr->hrm_index(), hr->get_type_str(), name());
   assert(!hr->is_free() || hr->is_empty(), "Free region %u is not empty for set %s", hr->hrm_index(), name());
-  assert(!hr->is_empty() || hr->is_free(), "Empty region %u is not free or old for set %s", hr->hrm_index(), name());
 }
 #endif
 

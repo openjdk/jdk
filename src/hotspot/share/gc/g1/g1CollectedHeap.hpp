@@ -193,7 +193,6 @@ private:
   G1BlockOffsetTable* _bot;
 
 public:
-  void rebuild_free_region_list();
   // Start a new incremental collection set for the next pause.
   void start_new_collection_set();
 
@@ -1003,6 +1002,7 @@ public:
     return _hrm.is_free(hr);
   }
 #endif // ASSERT
+  G1AbstractSubTask* rebuild_free_list_task(G1HeapRegionBoolClosure* will_be_free);
 
   inline void old_set_add(G1HeapRegion* hr);
   inline void old_set_remove(G1HeapRegion* hr);

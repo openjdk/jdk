@@ -2718,12 +2718,6 @@ void G1CollectedHeap::clear_collection_set() {
   collection_set()->clear();
 }
 
-void G1CollectedHeap::rebuild_free_region_list() {
-  Ticks start = Ticks::now();
-  _hrm.rebuild_free_list(workers());
-  phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - start).seconds() * 1000.0);
-}
-
 class G1AbandonCollectionSetClosure : public G1HeapRegionClosure {
 public:
   virtual bool do_heap_region(G1HeapRegion* r) {
@@ -2740,6 +2734,10 @@ void G1CollectedHeap::abandon_collection_set(G1CollectionSet* collection_set) {
 
   collection_set->clear();
   collection_set->stop_incremental_building();
+}
+
+G1AbstractSubTask* G1CollectedHeap::rebuild_free_list_task(G1HeapRegionBoolClosure* will_be_free) {
+  return _hrm.rebuild_free_list_task(will_be_free);
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {

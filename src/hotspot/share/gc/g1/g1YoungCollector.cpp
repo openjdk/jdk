@@ -1049,8 +1049,6 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   assert_used_and_recalculate_used_equal(_g1h);
 
-  _g1h->rebuild_free_region_list();
-
   _g1h->record_obj_copy_mem_stats();
 
   evacuation_info->set_bytes_used(_g1h->bytes_used_during_gc());
