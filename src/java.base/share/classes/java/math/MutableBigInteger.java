@@ -1944,8 +1944,7 @@ class MutableBigInteger {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
             // Use fp arithmetic to get an upper bound of the root
-            final double rad = Math.nextUp(x >= 0 ? x : x + 0x1p64);
-            long rLong = (long) Math.ceil(nthRootUpper(rad, n));
+            long rLong = (long) nthRootUpper(Math.nextUp(x >= 0 ? x : x + 0x1p64), n);
 
             if (BigInteger.bitLengthForLong(rLong) * (n - 1) <= Long.SIZE) {
                 // Refine the estimate.
