@@ -769,15 +769,7 @@ private:
       case T_OBJECT:
         fields[(*argp)++] = TypePtr::NOTNULL;
         break;
-      // TODO what about other cases?
-      case T_ARRAY:
-      case T_VOID:
-      case T_ADDRESS:
-      case T_NARROWOOP:
-      case T_METADATA:
-      case T_NARROWKLASS:
-      case T_CONFLICT:
-      case T_ILLEGAL:
+      default:
         break;
     }
   }
