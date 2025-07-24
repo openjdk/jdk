@@ -27,7 +27,6 @@
  * @summary C2: assert(is_dominator(compute_early_ctrl(limit, limit_ctrl), pre_end)) failed: node pinned on loop exit test?
   *
  * @run main/othervm -XX:CompileCommand=compileonly,*TestSunkRangeFromPreLoopRCE2*::* -Xbatch TestSunkRangeFromPreLoopRCE2
- *
  */
 
 public class TestSunkRangeFromPreLoopRCE2 {
