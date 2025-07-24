@@ -1077,7 +1077,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
       STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
       char* tmp_path = os::strdup(filename);
       size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
-      os::snprintf(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
+      os::snprintf_checked(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
       result = dll_load_library(tmp_path, &eno, ebuf, ebuflen);
       os::free(tmp_path);
     }

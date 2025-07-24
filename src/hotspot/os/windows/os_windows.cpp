@@ -1434,7 +1434,7 @@ void  os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     if (tl == 0) {
-      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+      os::snprintf_checked(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
     }
     JFR_ONLY(unload_event.set_error_msg(buf);)
   }
@@ -1831,14 +1831,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load %s-bit .dll on a %s-bit platform",
-                 lib_arch_str, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load %s-bit .dll on a %s-bit platform",
+                         lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                 lib_arch, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                         lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
