@@ -147,6 +147,7 @@
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
   static_field(CompilerToVM::Data,             dpow,                                   address)                                      \
+  static_field(CompilerToVM::Data,             crc_table_addr,                         address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
   static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
