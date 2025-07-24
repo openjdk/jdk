@@ -103,7 +103,7 @@ public:
   // Record that the given thread has begun to evacuate an object of this size.
   void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
 
-  // Multiple threads may attempt to evacuate the same object, but only the succeeding thread will end the evacuation.
+  // Multiple threads may attempt to evacuate the same object, but only the successful thread will end the evacuation.
   // Evacuations that were begun, but not ended are considered 'abandoned'.
   void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to);
   void record_age(Thread* thread, size_t bytes, uint age);
