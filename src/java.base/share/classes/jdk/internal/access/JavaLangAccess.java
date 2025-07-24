@@ -328,32 +328,32 @@ public interface JavaLangAccess {
     String uncheckedNewString(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
-     * Encode the given string into a sequence of bytes using the specified
-     * {@linkplain java.nio.charset.Charset charset}.
+     * {@return the sequence of bytes obtained by encoding the given string in
+     * the specified {@linkplain java.nio.charset.Charset charset}}
      * <p>
      * <b>WARNING: This method returns the {@code byte[]} backing the provided
      * {@code String}, if the input is ASCII. Hence, the returned byte array
      * must not be modified.</b>
-     * <p>
-     * This method throws {@code CharacterCodingException} instead of replacing
-     * when malformed input or unmappable characters are encountered.
      *
      * @param s the string to encode
      * @param cs the charset
-     * @return the encoded bytes
-     * @throws CharacterCodingException for malformed input or unmappable characters
+     * @throws NullPointerException If {@code s} or {@code cs} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
     byte[] uncheckedGetBytes(String s, Charset cs) throws CharacterCodingException;
 
     /**
-     * Returns a new string by decoding from the given UTF-8 bytes array.
+     * {@return a new string by decoding from the given UTF-8 bytes array}
      *
-     * @param off the index of the first byte to decode
-     * @param len the number of bytes to decode
-     * @return the newly created string
-     * @throws IllegalArgumentException for malformed or unmappable bytes.
+     * @param offset the index of the first byte to decode
+     * @param length the number of bytes to decode
+     * @throws NullPointerException If {@code bytes} is null
+     * @throws StringIndexOutOfBoundsException If {@code offset} is negative,
+     *         {@code length} is negative, or {@code offset} is greater than
+     *         {@code bytes.length - length}
+     * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    String newStringUTF8(byte[] bytes, int off, int len) throws CharacterCodingException;
+    String newStringUTF8(byte[] bytes, int offset, int length) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -379,11 +379,11 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * Encode the given string into a sequence of bytes using utf-8.
+     * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
      *
      * @param s the string to encode
-     * @return the encoded bytes in utf-8
-     * @throws IllegalArgumentException for malformed surrogates
+     * @throws NullPointerException If {@code s} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
     byte[] getBytesUTF8(String s) throws CharacterCodingException;
 

@@ -717,14 +717,22 @@ public final class String
     }
 
     /*
-     * Throws iae, instead of replacing, if malformed or unmappable.
+     * {@return a new string by decoding from the given UTF-8 bytes array}
      *
+     * @param offset the index of the first byte to decode
+     * @param length the number of bytes to decode
      * @param  noShare
      *         {@code true} if the resulting string MUST NOT share the byte array,
      *         {@code false} if the byte array can be exclusively used to construct
      *         the string and is not modified or used for any other purpose.
+     * @throws NullPointerException If {@code bytes} is null
+     * @throws StringIndexOutOfBoundsException If {@code offset} is negative,
+     *         {@code length} is negative, or {@code offset} is greater than
+     *         {@code bytes.length - length}
+     * @throws CharacterCodingException for malformed input or unmappable characters
      */
     static String newStringUTF8(byte[] bytes, int offset, int length, boolean noShare) throws CharacterCodingException {
+        Objects.requireNonNull(bytes, "bytes");
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
@@ -922,10 +930,15 @@ public final class String
         return trimArray(ba, bb.position());
     }
 
-    /*
-     * Throws iae, instead of replacing, if unmappable.
+    /**
+     * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
+     *
+     * @param s the string to encode
+     * @throws NullPointerException If {@code s} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
     static byte[] getBytesUTF8(String s) throws CharacterCodingException {
+        Objects.requireNonNull(s, "s");
         return encodeUTF8(s.coder(), s.value(), false);
     }
 
@@ -933,10 +946,22 @@ public final class String
         return !StringCoding.hasNegatives(src, 0, src.length);
     }
 
-    /*
-     * Throws CCE, instead of replacing, if unmappable.
+    /**
+     * {@return the sequence of bytes obtained by encoding the given string in
+     * the specified {@linkplain java.nio.charset.Charset charset}}
+     * <p>
+     * <b>WARNING: This method returns the {@code byte[]} backing the provided
+     * {@code String}, if the input is ASCII. Hence, the returned byte array
+     * must not be modified.</b>
+     *
+     * @param s the string to encode
+     * @param cs the charset
+     * @throws NullPointerException If {@code s} or {@code cs} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
     static byte[] getBytes(String s, Charset cs) throws CharacterCodingException {
+        Objects.requireNonNull(s, "s");
+        Objects.requireNonNull(cs, "cs");
         byte[] val = s.value();
         byte coder = s.coder();
         if (cs == UTF_8.INSTANCE) {
@@ -1826,8 +1851,8 @@ public final class String
             throws UnsupportedEncodingException {
         try {
             return encode(lookupCharset(charsetName), coder(), value);
-        } catch (CharacterCodingException uce) {
-            throw cce2iae(uce);
+        } catch (CharacterCodingException cce) {
+            throw cce2iae(cce);
         }
     }
 
@@ -1853,8 +1878,8 @@ public final class String
         if (charset == null) throw new NullPointerException();
         try {
             return encode(charset, coder(), value);
-        } catch (CharacterCodingException uce) {
-            throw cce2iae(uce);
+        } catch (CharacterCodingException cce) {
+            throw cce2iae(cce);
         }
     }
 
@@ -1875,8 +1900,8 @@ public final class String
     public byte[] getBytes() {
         try {
             return encode(Charset.defaultCharset(), coder(), value);
-        } catch (CharacterCodingException uce) {
-            throw cce2iae(uce);
+        } catch (CharacterCodingException cce) {
+            throw cce2iae(cce);
         }
     }
 
