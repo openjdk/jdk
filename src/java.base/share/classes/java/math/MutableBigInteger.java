@@ -1943,12 +1943,23 @@ class MutableBigInteger {
         if (bitLength <= Long.SIZE) {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
-            // Use fp arithmetic to get an upper bound of the root
-            long sLong = (long) nthRootUpper(Math.nextUp(x >= 0 ? x : x + 0x1p64), n);
+            long sLong = (long) nthRootApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n);
 
             if (BigInteger.bitLengthForLong(sLong) * (n - 1) <= Long.SIZE) {
+                /* The integer-valued recurrence formula in the algorithm of Brent&Zimmermann
+                 * simply discards the fraction part of the real-valued Newton recurrence
+                 * on the function f discussed in the referenced work.
+                 * Indeed, for real x and integer n > 0, the equality ⌊x/n⌋ == ⌊⌊x⌋/n⌋ holds,
+                 * from which the claim follows.
+                 * As a consequence, an initial underestimate (not discussed in BZ)
+                 * will immediately lead to a (weak) overestimate during the 1st iteration,
+                 * thus meeting BZ requirements for termination and correctness.
+                 */
+                long sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
+                sLong = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
+
                 // Refine the estimate.
-                long u = sLong, sToN1;
+                long u = sLong;
                 do {
                     sLong = u;
                     sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
@@ -2003,7 +2014,7 @@ class MutableBigInteger {
 
             // Use the root of the shifted value as an estimate.
             rad = Math.nextUp(rad);
-            double approx = nthRootUpper(rad, n);
+            double approx = nthRootApprox(rad, n);
             int rootSh = (int) (sh / n);
             if (rootSh == 0) {
                 s = valueOf(approx);
@@ -2048,6 +2059,8 @@ class MutableBigInteger {
             }
         }
 
+        // Do the 1st iteration outside the loop to ensure an overestimate
+        newtonRecurrenceNthRoot(this, s, n, s.toBigInteger().pow(n - 1));
         // Refine the estimate.
         do {
             BigInteger sBig = s.toBigInteger();
@@ -2060,10 +2073,8 @@ class MutableBigInteger {
         } while (true);
     }
 
-    private static double nthRootUpper(double x, int n) {
-        return Math.nextUp(n == 3
-                ? Math.cbrt(x)
-                : Math.exp(Math.nextUp(Math.nextUp(Math.log(x)) / n)));
+    private static double nthRootApprox(double x, int n) {
+        return Math.nextUp(n == 3 ? Math.cbrt(x) : Math.pow(x, Math.nextUp(1.0 / n)));
     }
 
     /**
