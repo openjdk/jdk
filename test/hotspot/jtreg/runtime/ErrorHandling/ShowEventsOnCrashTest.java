@@ -45,10 +45,15 @@ public class ShowEventsOnCrashTest {
 
     public static void main(String[] args) throws Exception {
 
+        if (args.length > 0 && args[0].equals("sleep")) {
+            Thread.sleep(20000);
+            throw new RuntimeException("Was not killed?");
+        }
+
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions", "-Xmx100M", "-XX:-CreateCoredumpOnCrash",
-            "-XX:ErrorHandlerTest=2",
-            "-version");
+            "-XX:ErrorHandlerTest=2", "-XX:ErrorHandlerTestDelay=1000",
+            ShowEventsOnCrashTest.class.getName(), "sleep");
 
         OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
 
@@ -63,6 +68,7 @@ public class ShowEventsOnCrashTest {
             Pattern.compile("GC Heap Usage History \\([0-9]* events\\):"),
             Pattern.compile("Metaspace Usage History \\([0-9]* events\\):"),
             Pattern.compile("Dll operation events \\([0-9]* events\\):"),
+            Pattern.compile(".*Loaded shared library.*java.*"),
             Pattern.compile("Deoptimization events \\([0-9]* events\\):"),
             Pattern.compile("Classes loaded \\([0-9]* events\\):"),
             Pattern.compile("Classes unloaded \\([0-9]* events\\):"),
