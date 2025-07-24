@@ -800,7 +800,7 @@ class os: AllStatic {
   // an encoding error or any other kind of usage error).
   [[nodiscard]] static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
   // Delegates to vsnprintf.
-  static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+  [[nodiscard]] static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Delegates to snprintf and asserts that the output was not truncated.
   static void snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);

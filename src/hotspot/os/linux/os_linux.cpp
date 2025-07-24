@@ -4797,7 +4797,7 @@ uint os::processor_id() {
 void os::set_native_thread_name(const char *name) {
   if (Linux::_pthread_setname_np) {
     char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
-    snprintf(buf, sizeof(buf), "%s", name);
+    (void) os::snprintf(buf, sizeof(buf), "%s", name);
     buf[sizeof(buf) - 1] = '\0';
     const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
     // ERANGE should not happen; all other errors should just be ignored.
@@ -5395,7 +5395,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+      os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
     }
   }
 

@@ -2156,7 +2156,7 @@ void os::set_native_thread_name(const char *name) {
   if (name != nullptr) {
     // Add a "Java: " prefix to the name
     char buf[MAXTHREADNAMESIZE];
-    snprintf(buf, sizeof(buf), "Java: %s", name);
+    (void) os::snprintf(buf, sizeof(buf), "Java: %s", name);
     pthread_setname_np(buf);
   }
 #endif
