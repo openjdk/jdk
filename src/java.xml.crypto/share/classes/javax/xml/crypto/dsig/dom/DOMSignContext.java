@@ -52,7 +52,7 @@ import org.w3c.dom.Node;
  *
  * @implNote
  * The JDK implementation supports the following property that can be set
- * using the {@link #setProperty} method.
+ * using the {@link #setProperty setProperty} method.
  * <ul>
  *   <li><code>jdk.xmldsig.SecureRandom</code>: value must be a
  *       {@link SecureRandom}. If specified, this object will be
