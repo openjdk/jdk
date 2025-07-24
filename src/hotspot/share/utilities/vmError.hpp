@@ -201,7 +201,7 @@ public:
   // Returns true if the current thread reported a fatal error.
   static bool is_error_reported_in_current_thread();
 
-  DEBUG_ONLY(static void controlled_crash(int how);)
+  DEBUG_ONLY(static void controlled_crash(int how, int delay);)
 
   // Non-null address guaranteed to generate a SEGV mapping error on read, for test purposes.
   static const intptr_t segfault_address;

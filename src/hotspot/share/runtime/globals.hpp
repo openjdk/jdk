@@ -504,6 +504,11 @@ const int ObjectAlignmentInBytes = 8;
           "in vmError.cpp.")                                                \
           range(0, 17)                                                      \
                                                                             \
+  develop(int, ErrorHandlerTestDelay, 0,                                    \
+          "If ErrorHandlerTest > 0, delay, in ms, after which the JVM is"   \
+          "ended abnormally.")                                              \
+          range(0, 60000)                                                   \
+                                                                            \
   develop(uint, TestCrashInErrorHandler, 0,                                 \
           "If > 0, provokes an error inside VM error handler (a secondary " \
           "crash). see controlled_crash() in vmError.cpp")                  \

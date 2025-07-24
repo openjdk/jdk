@@ -54,6 +54,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/trimNativeHeap.hpp"
@@ -64,6 +65,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -233,7 +235,7 @@ void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
     // remove the allocation.
     static_cast<void>(stack_buffer[allocation_size - 1] == '\0');
   }
-  controlled_crash(14);
+  controlled_crash(14, 0);
 }
 PRAGMA_DIAG_POP
 #endif // ASSERT
@@ -691,19 +693,19 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("test secondary crash 1", _verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH)
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
       TestCrashInErrorHandler);
-    controlled_crash(TestCrashInErrorHandler);
+    controlled_crash(TestCrashInErrorHandler, 0);
 
   STEP_IF("test secondary crash 2", _verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH)
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
       TestCrashInErrorHandler);
-    controlled_crash(TestCrashInErrorHandler);
+    controlled_crash(TestCrashInErrorHandler, 0);
 
   // See corresponding test in test/runtime/ErrorHandling/ReattemptErrorTest.java
   STEP_IF("test reattempt secondary crash",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
       TestCrashInErrorHandler);
-    controlled_crash(14);
+    controlled_crash(14, 0);
 
   REATTEMPT_STEP_IF("test reattempt secondary crash, attempt 2",
       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
@@ -2116,12 +2118,30 @@ static void ALWAYSINLINE crash_with_segfault() {
 
 } // end: crash_with_segfault
 
+class DelayedCrashTask: public PeriodicTask {
+  const int _how;
+public:
+  DelayedCrashTask(int how, int delay) :
+    PeriodicTask(delay), _how(how) {
+    enroll();
+  }
+  void task() override {
+    VMError::controlled_crash(_how, 0);
+  }
+};
+DeferredStatic<DelayedCrashTask> g_delayed_crash_task;
+
 // crash in a controlled way:
 // 1  - assert
 // 2  - guarantee
 // 14 - SIGSEGV
 // 15 - SIGFPE
-void VMError::controlled_crash(int how) {
+void VMError::controlled_crash(int how, int delay) {
+
+  if (delay > 0) {
+    g_delayed_crash_task.initialize(how, delay);
+    return;
+  }
 
   // Case 14 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SafeFetchInErrorHandlingTest.java.
   // Case 15 is tested by test/hotspot/jtreg/runtime/ErrorHandling/SecondaryErrorTest.java.
