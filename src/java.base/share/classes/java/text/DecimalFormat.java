@@ -2391,10 +2391,8 @@ public class DecimalFormat extends NumberFormat {
         boolean gotPositive, gotNegative;
 
         // check for positivePrefix; take longest
-        gotPositive = text.regionMatches(position, positivePrefix, 0,
-                positivePrefix.length());
-        gotNegative = text.regionMatches(position, negativePrefix, 0,
-                negativePrefix.length());
+        gotPositive = matchAffix(text, position, positivePrefix);
+        gotNegative = matchAffix(text, position, negativePrefix);
 
         if (gotPositive && gotNegative) {
             if (positivePrefix.length() > negativePrefix.length()) {
@@ -2430,15 +2428,13 @@ public class DecimalFormat extends NumberFormat {
         // When lenient, text only needs to contain the suffix.
         if (!isExponent) {
             if (gotPositive) {
-                boolean containsPosSuffix =
-                        text.regionMatches(position, positiveSuffix, 0, positiveSuffix.length());
+                boolean containsPosSuffix = matchAffix(text, position, positiveSuffix);
                 boolean endsWithPosSuffix =
                         containsPosSuffix && text.length() == position + positiveSuffix.length();
                 gotPositive = parseStrict ? endsWithPosSuffix : containsPosSuffix;
             }
             if (gotNegative) {
-                boolean containsNegSuffix =
-                        text.regionMatches(position, negativeSuffix, 0, negativeSuffix.length());
+                boolean containsNegSuffix = matchAffix(text, position, negativeSuffix);
                 boolean endsWithNegSuffix =
                         containsNegSuffix && text.length() == position + negativeSuffix.length();
                 gotNegative = parseStrict ? endsWithNegSuffix : containsNegSuffix;
@@ -3505,6 +3501,22 @@ public class DecimalFormat extends NumberFormat {
             }
         }
         if (needQuote) buffer.append('\'');
+    }
+
+    /**
+     * {@return if the text matches the affix} In lenient mode, it matches
+     * lenient minus signs as well. Package access from CompactNumberFormat
+     */
+    boolean matchAffix(String text, int position, String affix) {
+        var t = text;
+        var a = affix;
+
+        // Normalize signs before matching
+        if (!parseStrict && !symbols.lenientMinusSign.isEmpty()) {
+            t = t.replaceFirst(symbols.lenientMinusSign, "-");
+            a = a.replaceFirst(symbols.lenientMinusSign, "-");
+        }
+        return t.regionMatches(position, a, 0, a.length());
     }
 
     /**

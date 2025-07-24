@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -854,6 +854,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         // maybe filled with previously cached values, or null.
         intlCurrencySymbol = (String) data[1];
         currencySymbol = (String) data[2];
+
+        // lenient minus sign
+        lenientMinusSign = adapter.getLocaleResources(override).getParseLenient("number", "-").orElse("");
     }
 
     /**
@@ -1166,6 +1169,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @since 15
      */
     private  char    monetaryGroupingSeparator;
+
+    // lenient sign patterns. package private access
+    transient String  lenientMinusSign;
 
     // currency; only the ISO code is serialized.
     private transient Currency currency;

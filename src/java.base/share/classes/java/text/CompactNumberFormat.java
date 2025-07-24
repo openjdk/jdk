@@ -1693,14 +1693,12 @@ public final class CompactNumberFormat extends NumberFormat {
         // Given text does not match the non empty valid compact prefixes
         // check with the default prefixes
         if (!gotPositive && !gotNegative) {
-            if (text.regionMatches(pos.index, defaultPosPrefix, 0,
-                    defaultPosPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultPosPrefix)) {
                 // Matches the default positive prefix
                 matchedPosPrefix = defaultPosPrefix;
                 gotPositive = true;
             }
-            if (text.regionMatches(pos.index, defaultNegPrefix, 0,
-                    defaultNegPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultNegPrefix)) {
                 // Matches the default negative prefix
                 matchedNegPrefix = defaultNegPrefix;
                 gotNegative = true;
@@ -1924,11 +1922,15 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!affix.isEmpty() && !affix.equals(defaultAffix)) {
             // Look ahead only for the longer match than the previous match
             if (matchedAffix.length() < affix.length()) {
-                return text.regionMatches(position, affix, 0, affix.length());
+                // delegate matching to DecimalFormat, which allows lenient
+                // parsing of affixes
+                return decimalFormat.matchAffix(text, position, affix);
             }
         }
         return false;
     }
+
+
 
     /**
      * Attempts to match given {@code prefix} and {@code suffix} in
@@ -2026,8 +2028,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!gotPos && !gotNeg) {
             String positiveSuffix = defaultDecimalFormat.getPositiveSuffix();
             String negativeSuffix = defaultDecimalFormat.getNegativeSuffix();
-            boolean containsPosSuffix = text.regionMatches(position,
-                    positiveSuffix, 0, positiveSuffix.length());
+            boolean containsPosSuffix = decimalFormat.matchAffix(text, position, positiveSuffix);
             boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
                     position + positiveSuffix.length();
             if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
@@ -2035,8 +2036,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
             }
-            boolean containsNegSuffix = text.regionMatches(position,
-                    negativeSuffix, 0, negativeSuffix.length());
+            boolean containsNegSuffix = decimalFormat.matchAffix(text, position, negativeSuffix);
             boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
                     position + negativeSuffix.length();
             if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {

@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
@@ -99,6 +100,7 @@ public class LocaleResources {
     private static final String RULES_CACHEKEY = "RULE";
     private static final String SKELETON_PATTERN = "SP.";
     private static final String LIST_PATTERN = "LP.";
+    private static final String PARSE_LENIENT = "PL.";
 
     // ResourceBundle key names for skeletons
     private static final String SKELETON_INPUT_REGIONS_KEY = "DateFormatItemInputRegions";
@@ -877,6 +879,41 @@ public class LocaleResources {
         }
 
         return lpArray;
+    }
+
+    /**
+     * {@return the parse lenient characters}
+     * @param scope "generic", "date", "number", etc.
+     * @param sample "-", ",", etc.
+     */
+    @SuppressWarnings("unchecked")
+    public Optional<String> getParseLenient(String scope, String sample) {
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(sample);
+        Optional<String> lenient = Optional.empty();
+        String cacheKey = PARSE_LENIENT + scope + "." + sample;
+
+        removeEmptyReferences();
+        ResourceReference data = cache.get(cacheKey);
+
+        if (data == null || ((lenient = (Optional<String>) data.get()) == null)) {
+            var rbKey = "ParseLenient_" + scope;
+            var rb = localeData.getDateFormatData(locale);
+            if (rb.containsKey(rbKey)) {
+                lenient = Arrays.stream(rb.getStringArray(rbKey))
+                    .peek(e -> {
+                        var kv = e.split(":", 2);
+                        var key = PARSE_LENIENT + scope + "." + kv[0];
+                        cache.put(key, new ResourceReference(key, Optional.of(kv[1]), referenceQueue));
+                    })
+                    .filter(e -> e.startsWith(sample))
+                    .map(e -> e.replaceFirst("\\" + sample + ":", ""))
+                    .findFirst();
+            } else {
+                cache.put(cacheKey, new ResourceReference(cacheKey, lenient, referenceQueue));
+            }
+        }
+        return lenient;
     }
 
     private static class ResourceReference extends SoftReference<Object> {

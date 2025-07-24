@@ -55,6 +55,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     private String currentContext = ""; // "format"/"stand-alone"
     private String currentWidth = ""; // "wide"/"narrow"/"abbreviated"
     private String currentStyle = ""; // short, long for decimalFormat
+    private String currentLeniencyScope = "";
+    private int leniencyIndex = 0;
 
     LDMLParseHandler(String id) {
         this.id = id;
@@ -618,7 +620,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                             case "long":
                                 pushStringListElement(qName, attributes,
                                     (int) Math.log10(Double.parseDouble(attributes.getValue("type"))),
-                                    attributes.getValue("count"));
+                                    attributes.getValue("count"),
+                                    "' '");
                                 break;
                             default:
                                 pushIgnoredContainer(qName);
@@ -842,6 +845,23 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                         """.formatted(type)
                     );
                 });
+            break;
+
+        // Lenient parsing
+        case "parseLenients":
+            {
+                String level = attributes.getValue("level");
+                if (level != null && level.equals("lenient")) {
+                    currentLeniencyScope = attributes.getValue("scope");
+                    pushStringListEntry(qName, attributes, "ParseLenient_" + currentLeniencyScope);
+                } else {
+                    pushIgnoredContainer(qName);
+                }
+            }
+            break;
+
+        case "parseLenient":
+            pushStringListElement(qName, attributes, leniencyIndex++, attributes.getValue("sample"), "");
             break;
 
         default:
@@ -1148,6 +1168,11 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             break;
         case "listPattern":
             currentStyle = "";
+            putIfEntry();
+            break;
+        case "parseLenients":
+            currentLeniencyScope = "";
+            leniencyIndex = 0;
             putIfEntry();
             break;
         default:

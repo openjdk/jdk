@@ -114,6 +114,12 @@ class Bundle {
             "ListPatterns_unit",
     };
 
+    static final String[] PARSE_LENIENT_KEYS = {
+        "ParseLenient_general",
+        "ParseLenient_date",
+        "ParseLenient_number",
+    };
+
     // DateFormatItem prefix
     static final String DATEFORMATITEM_KEY_PREFIX = "DateFormatItem.";
     static final String DATEFORMATITEM_INPUT_REGIONS_PREFIX = "DateFormatItemInputRegions.";
@@ -266,6 +272,13 @@ class Bundle {
                     })
                     .toArray(String[]::new);
                 myMap.put(k, arrPatterns);
+            }
+        }
+
+        for (String k : PARSE_LENIENT_KEYS) {
+            if (myMap.remove(k) instanceof List<?> lenients) {
+                // convert to array
+                myMap.put(k, lenients.toArray(new String[0]));
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,23 @@ package build.tools.cldrconverter;
 class StringListElement extends Container {
 
     StringListEntry list;
-    String count;
+    String key;
+    String spaceRepl;
     int index;
 
-    StringListElement(String qName, Container parent, int index, String count) {
+    StringListElement(String qName, Container parent, int index, String key, String spaceRepl) {
         super(qName, parent);
         while (!(parent instanceof StringListEntry)) {
             parent = parent.getParent();
         }
         list = (StringListEntry) parent;
         this.index = index;
-        this.count = count;
+        this.key = key;
+        this.spaceRepl = spaceRepl;
     }
 
     @Override
     void addCharacters(char[] characters, int start, int length) {
-        list.addCharacters(index, count, characters, start, length);
+        list.addCharacters(index, key, spaceRepl, characters, start, length);
     }
-
 }
