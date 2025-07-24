@@ -25,7 +25,6 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -42,6 +41,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/deferredStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
@@ -97,8 +97,7 @@ struct Data {
 
   void measure_heap() {
     _d.heap_committed = btokb(Universe::heap()->capacity());
-    const size_t used = UseG1GC ? ((G1CollectedHeap*)Universe::heap())->used_unlocked() :  // avoid locking
-                                  Universe::heap()->used();
+    const size_t used = Universe::heap()->used_unlocked();
     _d.heap_used = btokb(used);
   }
 

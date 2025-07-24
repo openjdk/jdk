@@ -170,6 +170,7 @@ public:
 
   size_t capacity() const override;
   size_t used() const override;
+  size_t used_unlocked() const override { return used(); }
 
   void register_nmethod(nmethod* nm) override;
   void unregister_nmethod(nmethod* nm) override;
