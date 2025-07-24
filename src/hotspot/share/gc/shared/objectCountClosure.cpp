@@ -1,5 +1,4 @@
 #include "gc/shared/gcId.hpp"
-#include "runtime/mutex.hpp"
 #include "gc/shared/objectCountClosure.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -10,19 +9,22 @@
 class KlassInfoEntry;
 class Klass;
 
-
-static KlassInfoTable _static_table(false);
-KlassInfoTable* ObjectCountClosure::cit = &_static_table;
+KlassInfoTable* ObjectCountClosure::cit = nullptr;
 
 void ObjectCountClosure::reset_table() {
     if (!check_table_exists()) {
         return;
     }
     cit->clear_entries();
-}
+  }
+
 
 bool ObjectCountClosure::check_table_exists() {
-    return cit != nullptr && !cit->allocation_failed();
+    if (cit == nullptr && Universe::is_fully_initialized()) {
+        static KlassInfoTable temp_table(false);
+        cit = &temp_table;
+    }
+    return !cit->allocation_failed();
 }
 
 bool ObjectCountClosure::record_object(oop o) {
@@ -35,7 +37,6 @@ bool ObjectCountClosure::record_object(oop o) {
 KlassInfoTable* ObjectCountClosure::get_table() {
     return check_table_exists() ? cit : nullptr;
 }
-
 
 
 #if INCLUDE_SERVICES
