@@ -70,6 +70,7 @@ public:
   size_t max_capacity() const override;
   size_t capacity() const override;
   size_t used() const override;
+  size_t used_unlocked() const override { return used(); }
   size_t unused() const override;
 
   bool is_in(const void* p) const override;

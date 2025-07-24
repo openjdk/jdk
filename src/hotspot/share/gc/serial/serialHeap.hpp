@@ -135,6 +135,7 @@ public:
 
   size_t capacity() const override;
   size_t used() const override;
+  size_t used_unlocked() const override { return used(); }
 
   size_t max_capacity() const override;
 
