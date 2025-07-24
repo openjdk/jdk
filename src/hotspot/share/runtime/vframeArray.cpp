@@ -238,7 +238,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       // Yes, special-case _athrow and _return_register_finalizer
       pc = Interpreter::deopt_reexecute_entry(method(), bcp);
     }
-    assert(reexecute, "must be");
   } else {
     bcp = method()->bcp_from(bci());
     assert(!reexecute, "must be");
