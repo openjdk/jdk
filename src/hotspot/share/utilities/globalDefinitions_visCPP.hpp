@@ -31,23 +31,24 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
-# include <ctype.h>
-# include <stdarg.h>
-# include <stdint.h>
-# include <stdlib.h>
-# include <string.h>
-# include <stddef.h>// for offsetof
-# include <sys/stat.h>
-# include <io.h>    // for stream.cpp
-# include <float.h> // for _isnan
-# include <stdio.h> // for va_list
-# include <fcntl.h>
-# include <inttypes.h>
-# include <limits.h>
-# include <time.h>
 // Need this on windows to get the math constants (e.g., M_PI).
 #define _USE_MATH_DEFINES
+
+# include <ctype.h>
+# include <fcntl.h>
+# include <float.h> // for _isnan
+# include <inttypes.h>
+# include <io.h>.   // for stream.cpp
+# include <limits.h>
 # include <math.h>
+# include <stdarg.h>
+# include <stddef.h>// for offsetof
+# include <stdint.h>
+# include <stdio.h> // for va_list
+# include <stdlib.h>
+# include <string.h>
+# include <sys/stat.h>
+# include <time.h>
 
 // Only 64-bit Windows is supported
 #ifndef _LP64
