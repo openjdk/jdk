@@ -429,7 +429,7 @@ public class TestCompatibleUseDefTypeSize {
     @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
-    // Missing support for needs CmpD and CMove
+    // Missing support to vectorize CmpD and CMove
     static Object[] test8(long[] a, double[] b) {
         for (int i = 0; i < a.length; i++) {
             a[i] = Double.doubleToLongBits(b[i]);
