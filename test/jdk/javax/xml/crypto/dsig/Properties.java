@@ -31,7 +31,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.Base64;
-import java.util.logging.*;
 
 /**
  * @test
