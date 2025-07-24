@@ -82,6 +82,7 @@ public class GTestWrapper {
         command.add(execPath.toAbsolutePath().toString());
         command.add("-jdk");
         command.add(Utils.TEST_JDK);
+        command.add("-Xmx200m");
         command.add("--gtest_output=xml:" + resultFile);
         command.add("--gtest_catch_exceptions=0");
         for (String a : args) {
