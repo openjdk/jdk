@@ -22,12 +22,12 @@
  *
  */
 
-#include "libadt/dict.hpp"
-#include "utilities/powerOfTwo.hpp"
-
 // Dictionaries - An Abstract Data Type
 
 // %%%%% includes not needed with AVM framework - Ungar
+
+#include "libadt/dict.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #include <assert.h>
 
