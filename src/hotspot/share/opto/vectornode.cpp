@@ -1517,12 +1517,11 @@ Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, bool is_mask, const TypeVect* vt) {
   uint vlen = vt->length();
   BasicType bt = vt->element_basic_type();
-  int opc = is_mask ? Op_MaskAll : Op_Replicate;
   // The "maskAll" API uses the corresponding integer types for floating-point data.
   BasicType maskall_bt = (bt == T_FLOAT) ? T_INT : (bt == T_DOUBLE) ? T_LONG : bt;
 
   if (VectorNode::is_maskall_type(bits_type, vlen) &&
-      Matcher::match_rule_supported_vector(opc, vlen, maskall_bt)) {
+      Matcher::match_rule_supported_vector(Op_Replicate, vlen, maskall_bt)) {
     Node* con = nullptr;
     jlong con_value = bits_type->get_con() == 0L ? 0L : -1L;
     if (maskall_bt == T_LONG) {
