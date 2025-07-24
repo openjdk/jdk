@@ -148,7 +148,7 @@ struct Data {
   void print_on(outputStream* st) const {
     st->print("%4u ", _id);
     char buf[64] = "";
-    const char* const timefmt = "%Y-%m-%d %H-%M-%S";
+    const char* const timefmt = "%Y-%m-%d %H:%M:%S";
     struct tm local_time;
     os::localtime_pd(&_d.time, &local_time);
     strftime(buf, sizeof(buf), timefmt, &local_time);
