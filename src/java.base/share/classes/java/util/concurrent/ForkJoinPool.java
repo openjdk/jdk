@@ -1293,7 +1293,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
                 if (pool != null && a != null &&
-                    U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null)
+                    U.getReferenceVolatile(a, slotOffset(m & (s - 1))) == null)
                     pool.signalWork(a, m & s);   // may have appeared empty
             }
         }
@@ -2040,10 +2040,10 @@ public class ForkJoinPool extends AbstractExecutorService
         long e; WorkQueue[] qs; int n;
         int p = phase | IDLE, activePhase = phase + (IDLE << 1);
         long pc = ctl, qc = (activePhase & LMASK) | ((pc - RC_UNIT) & UMASK);
-        int sp = w.stackPred = (int)pc;       // set ctl stack link
+        w.stackPred = (int)pc;                // set ctl stack link
         w.phase = p;
         if (!compareAndSetCtl(pc, qc))        // try to enqueue
-            p = w.phase = activePhase;        // back out on possible signal
+            p = w.phase = activePhase;        // advance on possible signal
         else if (((e = runState) & STOP) != 0L ||
                  ((e & SHUTDOWN) != 0L && (qc >> RC_SHIFT) <= 0L &&
                   quiescent() > 0) ||
@@ -2058,7 +2058,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((q = qs[j & (n - 1)]) != null && q.top - q.base > 0) {
                     if ((p = w.phase) != activePhase &&
                         (int)(c = ctl) == activePhase &&
-                        compareAndSetCtl(c, ((sp & LMASK) |
+                        compareAndSetCtl(c, ((pc & LMASK) |
                                              ((c + RC_UNIT) & UMASK))))
                         p = w.phase = activePhase; // reactivate
                     break;
@@ -2069,8 +2069,9 @@ public class ForkJoinPool extends AbstractExecutorService
                     Thread.onSpinWait();      // reduce flailing
             }
         }
-        return (p == activePhase) ? p :
-            awaitWork(w, p);                  // block, drop, or exit
+        if (p != activePhase)
+            p = awaitWork(w, p);              // block, drop, or exit
+        return p;
     }
 
     /**
