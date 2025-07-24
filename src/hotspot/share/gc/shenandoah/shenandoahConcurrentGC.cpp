@@ -29,8 +29,6 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/objectCountEventSender.hpp"
-#include "gc/shared/objectCountClosure.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -776,8 +774,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
   // Efficient implementation:
   {
-    KlassInfoTable* cit = ObjectCountClosure::get_table();
-    heap->tracer()->report_object_count(cit);
+    heap->tracer()->report_object_count();
   }
 
   // Naive implementation:

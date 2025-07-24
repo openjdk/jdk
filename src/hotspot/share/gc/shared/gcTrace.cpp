@@ -104,7 +104,12 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-void GCTracer::report_object_count(KlassInfoTable* cit) {
+void GCTracer::report_object_count() {
+  KlassInfoTable* cit = ObjectCountClosure::get_table();
+  if (cit == nullptr) {
+    return;
+  }
+
   ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now());
   cit->iterate(&event_sender);
   ObjectCountClosure::reset_table();
