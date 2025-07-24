@@ -36,7 +36,7 @@ public class MaxPathLength {
     private static String pathComponent = sep +
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static String fileName =
-            "areallylongfilenamethatsforsur";
+                "areallylongfilenamethatsforsur";
     private static boolean isWindows = false;
 
     private static final int MAX_LENGTH = 256;
@@ -166,7 +166,7 @@ public class MaxPathLength {
                 if (!abPath.startsWith("\\\\") ||
                     abPath.length() < 1093) {
                     throw new RuntimeException ("File.renameTo() failed for length="
-                            + abPath.length());
+                                                + abPath.length());
                 }
             } else {
                 if (!nf.canRead())
