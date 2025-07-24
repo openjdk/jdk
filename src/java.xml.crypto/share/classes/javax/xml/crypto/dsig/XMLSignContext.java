@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@
  */
 package javax.xml.crypto.dsig;
 
+import javax.xml.crypto.KeySelector;
 import javax.xml.crypto.XMLCryptoContext;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Signature;
 
 /**
  * Contains context information for generating XML Signatures. This interface
@@ -55,16 +53,6 @@ import java.security.Signature;
  *      {@link Reference#getDigestInputStream Reference.getDigestInputStream}
  *      methods. The default value if not specified is
  *      <code>Boolean.FALSE</code>.
- * </ul>
- *
- * @implNote
- * The reference implementation also supports the following property:
- * <ul>
- *   <li><code>jdk.xmldsig.SecureRandom</code>: value must be a
- *       {@link SecureRandom}. If specified, this object will be
- *       used to initialize the underlying {@code Signature} during signing
- *       using the {@link Signature#initSign(PrivateKey, SecureRandom)}
- *       method.
  * </ul>
  *
  * @author Sean Mullan
