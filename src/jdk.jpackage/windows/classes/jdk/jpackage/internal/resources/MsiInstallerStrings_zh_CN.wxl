@@ -16,5 +16,5 @@
 
   <String Id="ContextMenuCommandLabel">使用 [ProductName] 打开</String>
 
-  <String Id="OsConditionMessage">[ProductName][ProductVersion] is not supported on this version of Windows</String>
+  <String Id="OsConditionMessage">此版本的 Windows 不支持 [ProductName][ProductVersion]</String>
 </WixLocalization>
