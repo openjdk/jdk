@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1943,7 +1943,7 @@ class MutableBigInteger {
         if (bitLength <= Long.SIZE) {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
-            long sLong = (long) nthRootApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n);
+            long sLong = (long) Math.ceil(nthRootApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n));
 
             if (BigInteger.bitLengthForLong(sLong) * (n - 1) <= Long.SIZE) {
                 /* The integer-valued recurrence formula in the algorithm of Brent&Zimmermann
@@ -2017,7 +2017,7 @@ class MutableBigInteger {
             double approx = nthRootApprox(rad, n);
             int rootSh = (int) (sh / n);
             if (rootSh == 0) {
-                s = valueOf(approx);
+                s = valueOf(Math.ceil(approx));
             } else {
                 // Allocate sufficient space to store the final root
                 s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
