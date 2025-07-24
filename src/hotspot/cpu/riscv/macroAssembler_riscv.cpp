@@ -2679,7 +2679,7 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
+    os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
     block_comment(buffer);
   }
 #endif

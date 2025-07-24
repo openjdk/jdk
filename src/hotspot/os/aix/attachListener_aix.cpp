@@ -419,8 +419,8 @@ bool AttachListener::is_init_trigger() {
   RESTARTABLE(::stat(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
-    snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
-             os::get_temp_directory(), os::current_process_id());
+    os::snprintf_checked(fn, sizeof(fn), "%s/.attach_pid%d",
+                         os::get_temp_directory(), os::current_process_id());
     RESTARTABLE(::stat(fn, &st), ret);
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);

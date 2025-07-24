@@ -1418,7 +1418,7 @@ void os::die() {
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
-    snprintf(name, MAX_PATH, "<not available>");
+    os::snprintf_checked(name, MAX_PATH, "<not available>");
   }
 
   JFR_ONLY(NativeLibraryUnloadEvent unload_event(name);)
