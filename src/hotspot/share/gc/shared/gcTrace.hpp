@@ -35,7 +35,6 @@
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-#include "memory/heapInspection.hpp"
 
 class GCHeapSummary;
 class MetaspaceChunkFreeListSummary;
