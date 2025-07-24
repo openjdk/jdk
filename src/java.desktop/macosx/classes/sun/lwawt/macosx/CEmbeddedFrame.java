@@ -35,7 +35,7 @@ import sun.awt.EmbeddedFrame;
 import sun.lwawt.LWWindowPeer;
 
 @SuppressWarnings("serial") // JDK implementation class
-public class CEmbeddedFrame extends EmbeddedFrame {
+public final class CEmbeddedFrame extends EmbeddedFrame {
 
     private CPlatformResponder responder;
     private static final Object classLock = new Object();
@@ -47,6 +47,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         show();
     }
 
+    @Override
     public void addNotify() {
         if (!isDisplayable()) {
             LWCToolkit toolkit = (LWCToolkit)Toolkit.getDefaultToolkit();
@@ -57,8 +58,10 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         super.addNotify();
     }
 
+    @Override
     public void registerAccelerator(AWTKeyStroke stroke) {}
 
+    @Override
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 
     protected long getLayerPtr() {

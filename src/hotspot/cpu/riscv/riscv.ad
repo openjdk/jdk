@@ -1985,17 +1985,31 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  int max_size = max_vector_size(bt);
-  // Limit the min vector size to 8 bytes.
-  int size = 8 / type2aelembytes(bt);
-  if (bt == T_BYTE) {
-    // To support vector api shuffle/rearrange.
-    size = 4;
-  } else if (bt == T_BOOLEAN) {
-    // To support vector api load/store mask.
-    size = 2;
+  int size;
+  switch(bt) {
+    case T_BOOLEAN:
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
+      size = 2;
+      break;
+    case T_BYTE:
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
+      size = 4;
+      break;
+    case T_SHORT:
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
+      size = 2;
+      break;
+    default:
+      // Limit the min vector length to 64-bit.
+      size = 8 / type2aelembytes(bt);
+      // The number of elements in a vector should be at least 2.
+      size = MAX2(size, 2);
   }
-  if (size < 2) size = 2;
+
+  int max_size = max_vector_size(bt);
   return MIN2(size, max_size);
 }
 
@@ -2260,10 +2274,6 @@ encode %{
   enc_class riscv_enc_mov_p1(iRegP dst) %{
     Register dst_reg = as_Register($dst$$reg);
     __ mv(dst_reg, 1);
-  %}
-
-  enc_class riscv_enc_mov_byte_map_base(iRegP dst) %{
-    __ load_byte_map_base($dst$$Register);
   %}
 
   enc_class riscv_enc_mov_n(iRegN dst, immN src) %{
@@ -2813,21 +2823,6 @@ operand immP0()
 operand immP_1()
 %{
   predicate(n->get_ptr() == 1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Card Table Byte Map Base
-operand immByteMapBase()
-%{
-  // Get base of card map
-  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
-            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
-            (CardTable::CardValue*)n->get_ptr() ==
-             ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);
@@ -4790,18 +4785,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   format %{ "mv  $dst, $con\t# load ptr constant one, #@loadConP1" %}
 
   ins_encode(riscv_enc_mov_p1(dst));
-
-  ins_pipe(ialu_imm);
-%}
-
-// Load Byte Map Base Constant
-instruct loadByteMapBase(iRegPNoSp dst, immByteMapBase con)
-%{
-  match(Set dst con);
-  ins_cost(ALU_COST);
-  format %{ "mv  $dst, $con\t# Byte Map Base, #@loadByteMapBase" %}
-
-  ins_encode(riscv_enc_mov_byte_map_base(dst));
 
   ins_pipe(ialu_imm);
 %}

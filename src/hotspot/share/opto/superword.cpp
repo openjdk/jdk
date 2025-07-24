@@ -2581,6 +2581,7 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   switch (opc) {
   case Op_AbsI:
   case Op_DivI:
+  case Op_ModI:
   case Op_MinI:
   case Op_MaxI:
   case Op_CMoveI:
@@ -2592,6 +2593,8 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_ReverseI:
   case Op_CountLeadingZerosI:
   case Op_CountTrailingZerosI:
+  case Op_IsFiniteF:
+  case Op_IsFiniteD:
   case Op_IsInfiniteF:
   case Op_IsInfiniteD:
   case Op_ExtractS:

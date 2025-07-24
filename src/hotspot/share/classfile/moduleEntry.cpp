@@ -29,9 +29,11 @@
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "jni.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -317,6 +319,15 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
   // corresponding unnamed module can be found in the java.lang.ClassLoader object.
   oop module = java_lang_ClassLoader::unnamedModule(cld->class_loader());
 
+#if INCLUDE_CDS_JAVA_HEAP
+  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_unnamed_module(cld);
+  if (archived_unnamed_module != nullptr) {
+    archived_unnamed_module->load_from_archive(cld);
+    archived_unnamed_module->restore_archived_oops(cld);
+    return archived_unnamed_module;
+  }
+#endif
+
   // Ensure that the unnamed module was correctly set when the class loader was constructed.
   // Guarantee will cause a recognizable crash if the user code has circumvented calling the ClassLoader constructor.
   ResourceMark rm;
@@ -333,6 +344,16 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
 }
 
 ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
+#if INCLUDE_CDS_JAVA_HEAP
+  ModuleEntry* archived_unnamed_module = ClassLoaderDataShared::archived_boot_unnamed_module();
+  if (archived_unnamed_module != nullptr) {
+    archived_unnamed_module->load_from_archive(cld);
+    // It's too early to call archived_unnamed_module->restore_archived_oops(cld).
+    // We will do it inside Modules::set_bootloader_unnamed_module()
+    return archived_unnamed_module;
+  }
+#endif
+
   // For the boot loader, the java.lang.Module for the unnamed module
   // is not known until a call to JVM_SetBootLoaderUnnamedModule is made. At
   // this point initially create the ModuleEntry for the unnamed module.
@@ -345,7 +366,6 @@ ModuleEntry* ModuleEntry::create_boot_unnamed_module(ClassLoaderData* cld) {
 // This is okay because the unnamed module gets created before the ClassLoaderData
 // is available to other threads.
 ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld) {
-
   ModuleEntry* entry = new ModuleEntry(module_handle, /*is_open*/true, /*name*/nullptr,
                                        /*version*/ nullptr, /*location*/ nullptr,
                                        cld);
@@ -395,17 +415,17 @@ static int _num_archived_module_entries = 0;
 static int _num_inited_module_entries = 0;
 #endif
 
+bool ModuleEntry::should_be_archived() const {
+  return SystemDictionaryShared::is_builtin_loader(loader_data());
+}
+
 ModuleEntry* ModuleEntry::allocate_archived_entry() const {
-  assert(is_named(), "unnamed packages/modules are not archived");
+  precond(should_be_archived());
+  precond(CDSConfig::is_dumping_full_module_graph());
   ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    archived_entry->_archived_module_index = HeapShared::append_root(module_oop());
-  } else {
-    archived_entry->_archived_module_index = -1;
-  }
-
+  archived_entry->_archived_module_index = HeapShared::append_root(module_oop());
   if (_archive_modules_entries == nullptr) {
     _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
   }
@@ -489,10 +509,14 @@ void ModuleEntry::init_as_archived_entry() {
   set_archived_reads(write_growable_array(reads()));
 
   _loader_data = nullptr;  // re-init at runtime
-  _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(_location);
   if (name() != nullptr) {
+    _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(_location);
     _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
+  } else {
+    // _shared_path_index is used only by SystemDictionary::is_shared_class_visible_impl()
+    // for checking classes in named modules.
+    _shared_path_index = -1;
   }
   if (_version != nullptr) {
     _version = ArchiveBuilder::get_buffered_symbol(_version);
@@ -741,7 +765,7 @@ void ModuleEntryTable::modules_do(ModuleClosure* closure) {
   _table.iterate_all(do_f);
 }
 
-void ModuleEntry::print(outputStream* st) {
+void ModuleEntry::print(outputStream* st) const {
   st->print_cr("entry " PTR_FORMAT " name %s module " PTR_FORMAT " loader %s version %s location %s strict %s",
                p2i(this),
                name_as_C_string(),

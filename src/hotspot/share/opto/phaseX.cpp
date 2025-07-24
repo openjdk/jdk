@@ -2549,6 +2549,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // If changed AndI/AndL inputs, check RShift users for "(x & mask) >> shift" optimization opportunity
+  if (use_op == Op_AndI || use_op == Op_AndL) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL) {
+        worklist.push(u);
+      }
+    }
+  }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
   // - if the changed input is the offset, check constant-offset AddP users for
@@ -2851,6 +2860,7 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_and(worklist, parent, use);
   push_cast_ii(worklist, parent, use);
   push_opaque_zero_trip_guard(worklist, use);
+  push_bool_with_cmpu_and_mask(worklist, use);
 }
 
 
@@ -2893,6 +2903,57 @@ void PhaseCCP::push_cmpu(Unique_Node_List& worklist, const Node* use) const {
         // Got a CmpU or CmpU3 which might need the new type information from node n.
         push_if_not_bottom_type(worklist, cmpu);
       }
+    }
+  }
+}
+
+// Look for the following shape, which can be optimized by BoolNode::Value_cmpu_and_mask() (i.e. corresponds to case
+// (1b): "(m & x) <u (m + 1))".
+// If any of the inputs on the level (%%) change, we need to revisit Bool because we could have prematurely found that
+// the Bool is constant (i.e. case (1b) can be applied) which could become invalid with new type information during CCP.
+//
+//  m    x  m    1  (%%)
+//   \  /    \  /
+//   AndI    AddI
+//      \    /
+//       CmpU
+//        |
+//       Bool
+//
+void PhaseCCP::push_bool_with_cmpu_and_mask(Unique_Node_List& worklist, const Node* use) const {
+  uint use_op = use->Opcode();
+  if (use_op != Op_AndI && (use_op != Op_AddI || use->in(2)->find_int_con(0) != 1)) {
+    // Not "m & x" or "m + 1"
+    return;
+  }
+  for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+    Node* cmpu = use->fast_out(i);
+    if (cmpu->Opcode() == Op_CmpU) {
+      push_bool_matching_case1b(worklist, cmpu);
+    }
+  }
+}
+
+// Push any Bool below 'cmpu' that matches case (1b) of BoolNode::Value_cmpu_and_mask().
+void PhaseCCP::push_bool_matching_case1b(Unique_Node_List& worklist, const Node* cmpu) const {
+  assert(cmpu->Opcode() == Op_CmpU, "must be");
+  for (DUIterator_Fast imax, i = cmpu->fast_outs(imax); i < imax; i++) {
+    Node* bol = cmpu->fast_out(i);
+    if (!bol->is_Bool() || bol->as_Bool()->_test._test != BoolTest::lt) {
+      // Not a Bool with "<u"
+      continue;
+    }
+    Node* andI = cmpu->in(1);
+    Node* addI = cmpu->in(2);
+    if (andI->Opcode() != Op_AndI || addI->Opcode() != Op_AddI || addI->in(2)->find_int_con(0) != 1) {
+      // Not "m & x" and "m + 1"
+      continue;
+    }
+
+    Node* m = addI->in(1);
+    if (m == andI->in(1) || m == andI->in(2)) {
+      // Is "m" shared? Matched (1b) and thus we revisit Bool.
+      push_if_not_bottom_type(worklist, bol);
     }
   }
 }

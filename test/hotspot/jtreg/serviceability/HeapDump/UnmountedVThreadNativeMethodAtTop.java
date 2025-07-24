@@ -27,7 +27,7 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED UnmountedVThreadNativeMethodAtTop
  */
 
 import java.lang.management.ManagementFactory;
@@ -38,6 +38,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,6 +49,15 @@ import jdk.test.lib.hprof.parser.Reader;
 public class UnmountedVThreadNativeMethodAtTop {
 
     boolean done;
+
+    /**
+     * The tests accumulate previous heap dumps. Trigger GC before each test to get rid of them.
+     * This makes dumps smaller, processing faster, and avoids OOMs
+     */
+    @BeforeEach
+    void doGC() {
+        System.gc();
+    }
 
     /**
      * Test dumping the heap while a virtual thread is blocked entering a synchronized native method.

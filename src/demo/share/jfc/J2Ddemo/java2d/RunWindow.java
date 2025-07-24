@@ -362,7 +362,7 @@ public class RunWindow extends JPanel implements Runnable, ActionListener {
     /**
      * This class contains initial values for instance variables of 'RunWindow' class,
      * and its instance is used in creation of 'RunWindow' object. Values parsed from
-     * certain command line options of the demo or from the demo applet parameters are
+     * certain command line options of the demo
      * set to the fields of this class instance. It is a part of the fix which changed
      * static variables for instance variables in certain demo classes.
      *
