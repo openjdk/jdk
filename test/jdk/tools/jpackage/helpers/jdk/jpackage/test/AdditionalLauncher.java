@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -392,21 +393,15 @@ public class AdditionalLauncher {
     public static final class PropertyFile {
 
         PropertyFile(Map<String, String> data) {
-            this.data = Map.copyOf(data);
+            this.data = new Properties();
+            data.putAll(data);
         }
 
         PropertyFile(Path path) throws IOException {
-            data = Files.readAllLines(path).stream().map(str -> {
-                return str.split("=", 2);
-            }).collect(toMap(tokens -> tokens[0], tokens -> {
-                if (tokens.length == 1) {
-                    return "";
-                } else {
-                    return tokens[1];
-                }
-            }, (oldValue, newValue) -> {
-                return newValue;
-            }));
+            data = new Properties();
+            try (var reader = Files.newBufferedReader(path)) {
+                data.load(reader);
+            }
         }
 
         public boolean isPropertySet(String name) {
@@ -414,17 +409,16 @@ public class AdditionalLauncher {
             return data.containsKey(name);
         }
 
-        public Optional<String> getPropertyValue(String name) {
+        public Optional<String> findPropertyValue(String name) {
             Objects.requireNonNull(name);
-            return Optional.of(data.get(name));
+            return Optional.ofNullable(data.getProperty(name));
         }
 
-        public Optional<Boolean> getPropertyBooleanValue(String name) {
-            Objects.requireNonNull(name);
-            return Optional.ofNullable(data.get(name)).map(Boolean::parseBoolean);
+        public Optional<Boolean> findPropertyBooleanValue(String name) {
+            return findPropertyValue(name).map(Boolean::parseBoolean);
         }
 
-        private final Map<String, String> data;
+        private final Properties data;
     }
 
     private static String resolveVariables(JPackageCommand cmd, String str) {
