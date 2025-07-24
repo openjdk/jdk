@@ -29,8 +29,8 @@
 // Standard include file for ADLC parser
 //
 
-// standard library constants
 #include <ctype.h>
+// standard library constants
 #include <iostream>
 #include <stdarg.h>
 #include <stdio.h>
