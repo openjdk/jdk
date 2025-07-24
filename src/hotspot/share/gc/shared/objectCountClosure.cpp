@@ -1,3 +1,4 @@
+#include "runtime/mutex.hpp"
 #include "memory/heapInspection.hpp"
 #include "gc/shared/objectCountClosure.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
