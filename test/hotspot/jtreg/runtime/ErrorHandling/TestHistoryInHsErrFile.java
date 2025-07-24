@@ -36,6 +36,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
 
 import java.io.File;
 import java.util.regex.Pattern;
@@ -63,10 +64,32 @@ public class TestHistoryInHsErrFile {
     output.shouldMatch("# +SIGSEGV.*");
     File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output);
 
-    Pattern[] patterns = new Pattern[] {
-            Pattern.compile("History:"),
-            Pattern.compile("sss"),
-    };
-    HsErrFileUtils.checkHsErrFileContent(hs_err_file, patterns, false);
+    // now:                     |------------------- process -----------------||--------- glibc ---------||---- java heap ----||---- classes ----||--------- metaspace ---------||- threads -||-------------- nmt malloc -------------|
+    //                time      vsize       rss       hwm      swap   thr       live  retained  trim       comm      used    cld    ik    ak     nclass     class  threshld   jthr njthr      total      peak    gcdata    unsafe
+    // 2025-07-24 11-17-32    2895928    119716    119716         0    18      62515      2628     0     102400      1153      2   411    95         94         5     21504     10     7      62421     61540     47779         0
+    //
+    Pattern[] patterns;
+    String patternHeaderGeneric = " +comm +used +cld +ik +ak +nclass +class +threshld +jthr +njthr +total +peak +gcdata +unsafe";
+    String patternGeneric = " +\\d+ +\\d+ +\\d+ +\\d+" +
+                            " +\\d+ +\\d+ +\\d+ +\\d+" +
+                            " +\\d+ +\\d+ +\\d+ +\\d+" +
+                            " +\\d+ +\\d+ +"; // 14 numbers
+    if (Platform.isLinux() && !Platform.isMusl()) {
+      String patternHeaderLinux = " +vsize +rss +hwm +swap +thr +live +retained +trim";
+      String patternLinux = " +\\d+ +\\d+ +\\d+ +\\d+" +
+                            " +\\d+ +\\d+ +\\d+ +\\d+"; // 8 numbers
+      patterns = new Pattern[] {
+              Pattern.compile("History:"),
+              Pattern.compile(".*" + patternHeaderLinux + patternHeaderGeneric + ".*"),
+              Pattern.compile(".*20..-..-.. ..:..:.." + patternLinux + patternGeneric + ".*"),
+      };
+    } else {
+      patterns = new Pattern[] {
+              Pattern.compile("History:"),
+              Pattern.compile(".*" + patternHeaderGeneric + ".*"),
+              Pattern.compile(".*20..-..-.. ..:..:.." + ".*" + patternGeneric + ".*"),
+      };
+    }
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, patterns, true);
   }
 }
