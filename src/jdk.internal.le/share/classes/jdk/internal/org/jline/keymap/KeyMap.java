@@ -315,7 +315,7 @@ public class KeyMap<T> {
         if (keySeq != null && keySeq.length() > 0) {
             char c = keySeq.charAt(0);
             if (c >= mapping.length) {
-                remaining[0] = Character.codePointCount(keySeq, 0, keySeq.length());
+                remaining[0] = Character.codePointCount(keySeq);
                 return null;
             } else {
                 if (mapping[c] instanceof KeyMap) {

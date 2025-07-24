@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1906,7 +1906,7 @@ public final class NormalizerImpl {
                 pStart = 0;
                 p = norm.toCharArray();
                 length = p.length;
-                int cpNum = norm.codePointCount(0, length);
+                int cpNum = norm.codePointCount();
                 cc= UCharacter.getCombiningClass(norm.codePointAt(0));
                 trailCC= UCharacter.getCombiningClass(norm.codePointAt(cpNum-1));
                 if (length == 1) {

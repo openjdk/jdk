@@ -1715,6 +1715,21 @@ public final class String
     }
 
     /**
+     * Returns the number of Unicode code points in
+     * this {@code String}. Unpaired surrogates count
+     * as one code point each.
+     *
+     * @return the number of Unicode code points in this String
+     * @since  26
+     */
+    public int codePointCount() {
+        if (isLatin1()) {
+            return value.length;
+        }
+        return StringUTF16.codePointCount(value, 0, value.length >> 1);
+    }
+
+    /**
      * Returns the index within this {@code String} that is
      * offset from the given {@code index} by
      * {@code codePointOffset} code points. Unpaired surrogates

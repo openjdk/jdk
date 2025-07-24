@@ -9953,6 +9953,29 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     }
 
     /**
+     * Returns the number of Unicode code points in the text range of
+     * the specified char sequence. Unpaired surrogates count as one
+     * code point each.
+     *
+     * @param seq the char sequence
+     * @return the number of Unicode code points in the char sequence
+     * @throws NullPointerException if {@code seq} is null.
+     * @since  26
+     */
+    public static int codePointCount(CharSequence seq) {
+        final int length = seq.length();
+        int n = length;
+        for (int i = 0; i < length; ) {
+            if (isHighSurrogate(seq.charAt(i++)) && i < length &&
+                isLowSurrogate(seq.charAt(i))) {
+                n--;
+                i++;
+            }
+        }
+        return n;
+    }
+
+    /**
      * Returns the number of Unicode code points in a subarray of the
      * {@code char} array argument. The {@code offset}
      * argument is the index of the first {@code char} of the
@@ -9974,6 +9997,20 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     public static int codePointCount(char[] a, int offset, int count) {
         Objects.checkFromIndexSize(offset, count, a.length);
         return codePointCountImpl(a, offset, count);
+    }
+
+    /**
+     * Returns the number of Unicode code points in the
+     * {@code char} array argument. Unpaired
+     * surrogates count as one code point each.
+     *
+     * @param a the {@code char} array
+     * @return the number of Unicode code points in the char array
+     * @throws NullPointerException if {@code a} is null.
+     * @since  26
+     */
+    public static int codePointCount(char[] a) {
+        return codePointCountImpl(a, 0, a.length);
     }
 
     static int codePointCountImpl(char[] a, int offset, int count) {

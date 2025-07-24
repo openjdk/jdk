@@ -215,11 +215,11 @@ public class Supplementary {
     }
 
     /**
-     * Test codePointCount(int, int)
+     * Test codePointCount(int, int) & codePointCount()
      *
      * This test case assumes that
-     * Character.codePointCount(CharSequence, int, int) works
-     * correctly.
+     * Character.codePointCount(CharSequence, int, int) &
+     * Character.codePointCount(CharSequence) works correctly.
      */
     static void test5() {
         for (int i = 0; i < input.length; i++) {
@@ -238,6 +238,11 @@ public class Supplementary {
                 check(result != expected, "codePointCount(input["+i+"], 0, "+j+")",
                       result, expected);
             }
+
+
+            int result = sb.codePointCount();
+            int expected = Character.codePointCount(sb);
+            check(result != expected, "codePointCount()", result, expected);
 
             // test exceptions
             testCodePointCount(null, 0, 0, NullPointerException.class);
