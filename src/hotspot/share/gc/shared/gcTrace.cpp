@@ -93,7 +93,6 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
       ObjectCountEventSender::send<Event>(entry, _timestamp);
-      // Event::send(entry, _timestamp);
     }
   }
 
@@ -106,7 +105,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
 
 void GCTracer::report_object_count() {
   KlassInfoTable* cit = ObjectCountClosure::get_table();
-  if (cit == nullptr) {
+  if (cit == nullptr || !ObjectCountEventSender::should_send_event<EventObjectCountAfterGC>()) {
     return;
   }
 

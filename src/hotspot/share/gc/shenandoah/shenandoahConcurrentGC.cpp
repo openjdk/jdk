@@ -772,16 +772,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
     heap->verifier()->verify_roots_no_forwarded();
   }
 
-  // Efficient implementation:
   {
     heap->tracer()->report_object_count();
   }
-
-  // Naive implementation:
-  // {
-  //   ShenandoahIsAliveClosure is_alive;
-  //   heap->tracer()->report_object_count_after_gc(&is_alive, heap->workers());
-  // }
 
 
   if (!heap->cancelled_gc()) {

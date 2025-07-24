@@ -47,4 +47,5 @@ bool ObjectCountClosure::should_send_event() {
 
 template bool ObjectCountClosure::should_send_event<EventObjectCount>();
 template bool ObjectCountClosure::should_send_event<EventObjectCountAfterGC>();
+
 #endif // INCLUDE_SERVICES
