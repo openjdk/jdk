@@ -232,10 +232,8 @@ public class BigIntegerTest {
             if (!y.equals(z))
                 failCount1++;
 
-            if (!y.nthRoot(power).equals(x)) {
-                failCount1++;
-                System.err.println("BigInteger.pow() inconsistent with BigInteger.nthRoot()");
-            }
+            failCount1 += checkResult(x, y.nthRoot(power),
+                    "BigInteger.pow() inconsistent with BigInteger.nthRoot()");
         }
         report("pow for " + order + " bits", failCount1);
     }
