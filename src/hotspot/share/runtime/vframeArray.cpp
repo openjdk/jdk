@@ -188,11 +188,13 @@ bool vframeArrayElement::should_reexecute(bool is_top_frame, int exec_mode) cons
   }
   bool reexec = should_reexecute();
   assert(is_top_frame || reexec == false, "unexepected should_reexecute()");
+#ifdef ASSERT
   if (!reexec) {
     address bcp = method()->bcp_from(bci());
     Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
     assert(!Interpreter::bytecode_should_reexecute(code), "should_reexecute mismatch");
   }
+#endif
   return reexec;
 }
 
