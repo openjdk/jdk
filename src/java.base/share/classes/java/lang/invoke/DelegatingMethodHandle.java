@@ -40,6 +40,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * @author jrose
  */
 @AOTSafeClassInitializer
+/*non-public*/
 abstract sealed class DelegatingMethodHandle extends MethodHandle
     permits MethodHandleImpl.AsVarargsCollector,
             MethodHandleImpl.WrappedMember,

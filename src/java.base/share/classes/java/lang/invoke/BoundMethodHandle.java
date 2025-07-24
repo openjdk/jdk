@@ -46,6 +46,7 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
  * All bound arguments are encapsulated in dedicated species.
  */
 @AOTSafeClassInitializer
+/*non-public*/
 abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
     /*non-public*/
@@ -315,6 +316,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     //
 
     @AOTSafeClassInitializer
+    /*non-public*/
     static final class SpeciesData
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData>.SpeciesData {
         // This array is filled in lazily, as new species come into being over time.
@@ -405,6 +407,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     }
 
     @AOTSafeClassInitializer
+    /*non-public*/
     static final class Specializer
             extends ClassSpecializer<BoundMethodHandle, String, SpeciesData> {
 

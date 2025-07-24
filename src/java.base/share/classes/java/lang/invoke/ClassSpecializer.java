@@ -66,6 +66,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * @param <S> species data type.
  */
 @AOTSafeClassInitializer
+/*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
 
     private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
