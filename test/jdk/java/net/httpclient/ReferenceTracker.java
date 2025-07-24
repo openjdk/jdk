@@ -217,14 +217,10 @@ public class ReferenceTracker {
 
     private void printThreads(String why, PrintStream out) {
         out.println(why);
-        try {
-            Arrays.stream(ManagementFactory.getThreadMXBean()
-                            .dumpAllThreads(true, true))
-                    .map(ReferenceTracker::toString)
-                    .forEach(out::println);
-        } catch (SecurityException ex) {
-            out.println("ReferenceTracker: can't print threads: " + ex);
-        }
+        Arrays.stream(ManagementFactory.getThreadMXBean()
+                        .dumpAllThreads(true, true))
+                .map(ReferenceTracker::toString)
+                .forEach(out::println);
     }
 
     public Tracker getTracker(HttpClient client) {
