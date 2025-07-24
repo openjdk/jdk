@@ -767,7 +767,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_doubleToRawLongBits:
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
   case vmIntrinsics::_Reference_refersTo0:
   case vmIntrinsics::_PhantomReference_refersTo0:
   case vmIntrinsics::_Reference_clear0:

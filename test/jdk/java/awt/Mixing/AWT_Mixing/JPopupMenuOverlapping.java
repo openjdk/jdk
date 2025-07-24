@@ -67,7 +67,7 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
         }
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.setLayout(new SpringLayout());
-        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        frame.setSize(200, 200);
 
         popup = new JPopupMenu();
         ActionListener menuListener = new ActionListener() {

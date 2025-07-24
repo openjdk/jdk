@@ -36,6 +36,9 @@ class ShenandoahGenerationalControlThread;
 class ShenandoahAgeCensus;
 
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
+  void print_tracing_info() const override;
+  void stop() override;
+
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
@@ -53,7 +56,6 @@ public:
   }
 
   void print_init_logger() const override;
-  void print_tracing_info() const override;
 
   size_t unsafe_max_tlab_alloc(Thread *thread) const override;
 
@@ -125,8 +127,6 @@ public:
   ShenandoahRegulatorThread* regulator_thread() const { return _regulator_thread;  }
 
   void gc_threads_do(ThreadClosure* tcl) const override;
-
-  void stop() override;
 
   bool requires_barriers(stackChunkOop obj) const override;
 
