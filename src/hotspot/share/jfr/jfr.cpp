@@ -152,9 +152,9 @@ void Jfr::on_resolution(const Method* caller, const Method* target, TRAPS) {
 }
 #endif
 
-void Jfr::on_vm_shutdown(bool exception_handler, bool halt) {
+void Jfr::on_vm_shutdown(bool is_oom, bool halt) {
   if (!halt && JfrRecorder::is_recording()) {
-    JfrEmergencyDump::on_vm_shutdown(exception_handler);
+    JfrEmergencyDump::on_vm_shutdown(is_oom);
   }
 }
 

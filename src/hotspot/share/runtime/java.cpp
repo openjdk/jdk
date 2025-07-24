@@ -463,7 +463,7 @@ void before_exit(JavaThread* thread, bool halt) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
+  JFR_ONLY(Jfr::on_vm_shutdown(true, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
