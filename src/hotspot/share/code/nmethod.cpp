@@ -1519,9 +1519,9 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   // Locks required to be held by caller to ensure the nmethod
   // is not modified or purged from code cache during relocation
-  assert_lock_strong(CompiledIC_lock);
-  assert_lock_strong(Compile_lock);
   assert_lock_strong(CodeCache_lock);
+  assert_lock_strong(Compile_lock);
+  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
 
   if (!is_relocatable()) {
     return nullptr;
