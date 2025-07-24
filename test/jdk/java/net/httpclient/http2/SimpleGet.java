@@ -25,25 +25,6 @@
  * @test
  * @bug 8087112
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext
- *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm -XX:+CrashOnOutOfMemoryError SimpleGet
- * @run testng/othervm -XX:+CrashOnOutOfMemoryError
- *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
- *                     SimpleGet
- * @run testng/othervm -Dsimpleget.requests=150
- *                     -Dsimpleget.chunks=16384
- *                     -Djdk.httpclient.redirects.retrylimit=5
- *                     -Djdk.httpclient.HttpClient.log=errors
- *                     -XX:+CrashOnOutOfMemoryError
- *                     -XX:+HeapDumpOnOutOfMemoryError
- *                      SimpleGet
- */
-
-/*
- * @test
- * @bug 8087112
- * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm -XX:+CrashOnOutOfMemoryError SimpleGet
@@ -58,6 +39,7 @@
  *                     -XX:+HeapDumpOnOutOfMemoryError
  *                      SimpleGet
  */
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
