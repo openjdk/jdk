@@ -34,7 +34,7 @@ import java.nio.file.DirectoryNotEmptyException;
 public class MaxPathLength {
     private static String sep = File.separator;
     private static String pathComponent = sep +
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static String fileName =
             "areallylongfilenamethatsforsur";
     private static boolean isWindows = false;
@@ -75,7 +75,7 @@ public class MaxPathLength {
 
     private static String getNextName(String fName) {
         return (fName.length() < MAX_LENGTH/2) ? fName + fName
-                : fName + "A";
+                                               : fName + "A";
     }
 
     static void testLongPath(int max, String fn,
@@ -150,7 +150,7 @@ public class MaxPathLength {
                 throw new RuntimeException ("File.listFiles() failed");
 
             if (isWindows &&
-                    !fu.getCanonicalPath().equals(f.getCanonicalPath()))
+                !fu.getCanonicalPath().equals(f.getCanonicalPath()))
                 throw new RuntimeException ("getCanonicalPath() failed");
 
             char[] cc = tPath.toCharArray();
@@ -164,7 +164,7 @@ public class MaxPathLength {
                 */
                 String abPath = f.getAbsolutePath();
                 if (!abPath.startsWith("\\\\") ||
-                        abPath.length() < 1093) {
+                    abPath.length() < 1093) {
                     throw new RuntimeException ("File.renameTo() failed for length="
                             + abPath.length());
                 }
@@ -212,4 +212,5 @@ public class MaxPathLength {
         }
     }
 }
+
 
