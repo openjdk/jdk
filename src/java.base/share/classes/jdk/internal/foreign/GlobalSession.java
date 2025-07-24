@@ -43,14 +43,15 @@ non-sealed class GlobalSession extends MemorySessionImpl {
 
     @Override
     @ForceInline
-    public void release0() {
+    public void release0(int ticket) {
         // do nothing
     }
 
     @Override
     @ForceInline
-    public void acquire0() {
+    public int acquire0() {
         // do nothing
+        return 0;
     }
 
     @Override

@@ -878,19 +878,20 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public void acquireSession(Buffer buffer) {
+                public int acquireSession(Buffer buffer) {
                     var scope = buffer.session();
                     if (scope != null) {
-                        scope.acquire0();
+                        return scope.acquire0();
                     }
+                    return 0;
                 }
 
                 @Override
-                public void releaseSession(Buffer buffer) {
+                public void releaseSession(Buffer buffer, int ticket) {
                     try {
                         var scope = buffer.session();
                         if (scope != null) {
-                            scope.release0();
+                            scope.release0(ticket);
                         }
                     } finally {
                         Reference.reachabilityFence(buffer);

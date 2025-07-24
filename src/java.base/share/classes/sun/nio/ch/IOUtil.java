@@ -129,7 +129,7 @@ public final class IOUtil {
         int written = 0;
         if (rem == 0)
             return 0;
-        acquireScope(bb, async);
+        int ticket = acquireScope(bb, async);
         try {
             if (position != -1) {
                 written = nd.pwrite(fd, bufferAddress(bb) + pos, rem, position);
@@ -137,7 +137,7 @@ public final class IOUtil {
                 written = nd.write(fd, bufferAddress(bb) + pos, rem);
             }
         } finally {
-            releaseScope(bb);
+            releaseScope(bb, ticket);
         }
         if (written > 0)
             bb.position(pos + written);
@@ -182,9 +182,9 @@ public final class IOUtil {
             int i = offset;
             while (i < count && iov_len < IOV_MAX && writevLen < WRITEV_MAX) {
                 ByteBuffer buf = bufs[i];
-                acquireScope(buf, async);
+                int ticket = acquireScope(buf, async);
                 if (NIO_ACCESS.hasSession(buf)) {
-                    handleReleasers = LinkedRunnable.of(Releaser.of(buf), handleReleasers);
+                    handleReleasers = LinkedRunnable.of(Releaser.of(buf, ticket), handleReleasers);
                 }
                 int pos = buf.position();
                 int lim = buf.limit();
@@ -333,7 +333,7 @@ public final class IOUtil {
         if (rem == 0)
             return 0;
         int n = 0;
-        acquireScope(bb, async);
+        int ticket = acquireScope(bb, async);
         try {
             if (position != -1) {
                 n = nd.pread(fd, bufferAddress(bb) + pos, rem, position);
@@ -341,7 +341,7 @@ public final class IOUtil {
                 n = nd.read(fd, bufferAddress(bb) + pos, rem);
             }
         } finally {
-            releaseScope(bb);
+            releaseScope(bb, ticket);
         }
         if (n > 0)
             bb.position(pos + n);
@@ -395,9 +395,9 @@ public final class IOUtil {
                 ByteBuffer buf = bufs[i];
                 if (buf.isReadOnly())
                     throw new IllegalArgumentException("Read-only buffer");
-                acquireScope(buf, async);
+                int ticket = acquireScope(buf, async);
                 if (NIO_ACCESS.hasSession(buf)) {
-                    handleReleasers = LinkedRunnable.of(Releaser.of(buf), handleReleasers);
+                    handleReleasers = LinkedRunnable.of(Releaser.of(buf, ticket), handleReleasers);
                 }
                 int pos = buf.position();
                 int lim = buf.limit();
@@ -477,16 +477,16 @@ public final class IOUtil {
 
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
-    static void acquireScope(ByteBuffer bb, boolean async) {
+    static int acquireScope(ByteBuffer bb, boolean async) {
         if (async && NIO_ACCESS.isThreadConfined(bb)) {
             throw new IllegalArgumentException("Buffer is thread confined");
         }
-        NIO_ACCESS.acquireSession(bb);
+        return NIO_ACCESS.acquireSession(bb);
     }
 
-    static void releaseScope(ByteBuffer bb) {
+    static void releaseScope(ByteBuffer bb, int ticket) {
         try {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseSession(bb, ticket);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -499,14 +499,14 @@ public final class IOUtil {
     static Runnable acquireScopes(ByteBuffer buf, ByteBuffer[] buffers) {
         if (buffers == null) {
             assert buf != null;
-            IOUtil.acquireScope(buf, true);
-            return IOUtil.Releaser.of(buf);
+            int ticket = IOUtil.acquireScope(buf, true);
+            return IOUtil.Releaser.of(buf, ticket);
         } else {
             assert buf == null;
             Runnable handleReleasers = null;
             for (var b : buffers) {
-                IOUtil.acquireScope(b, true);
-                handleReleasers = IOUtil.LinkedRunnable.of(IOUtil.Releaser.of(b), handleReleasers);
+                int ticket = IOUtil.acquireScope(b, true);
+                handleReleasers = IOUtil.LinkedRunnable.of(IOUtil.Releaser.of(b, ticket), handleReleasers);
             }
             return handleReleasers;
         }
@@ -537,22 +537,21 @@ public final class IOUtil {
         }
     }
 
-    record Releaser(ByteBuffer bb) implements Runnable {
+    record Releaser(ByteBuffer bb, int ticket) implements Runnable {
         Releaser {
             Objects.requireNonNull(bb);
         }
 
         @Override
         public void run() {
-            releaseScope(bb);
+            releaseScope(bb, ticket);
         }
 
-        static Runnable of(ByteBuffer bb) {
+        static Runnable of(ByteBuffer bb, int ticket) {
             return NIO_ACCESS.hasSession(bb)
-                    ? new Releaser(bb)
+                    ? new Releaser(bb, ticket)
                     : () -> {};
         }
-
     }
 
     static long bufferAddress(ByteBuffer buf) {

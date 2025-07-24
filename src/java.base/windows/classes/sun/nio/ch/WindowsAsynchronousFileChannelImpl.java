@@ -393,6 +393,7 @@ public class WindowsAsynchronousFileChannelImpl
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
         private volatile boolean released;
+        private int ticket;             // to release buffer scope
 
         // set to dst if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -412,7 +413,7 @@ public class WindowsAsynchronousFileChannelImpl
 
         void releaseScopeOrCacheSubstitute() {
             if (buf == dst) {
-                IOUtil.releaseScope(dst);
+                IOUtil.releaseScope(dst, ticket);
             } else if (RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
             }
@@ -448,7 +449,7 @@ public class WindowsAsynchronousFileChannelImpl
             // Substitute a native buffer if not direct
             if (dst.isDirect()) {
                 buf = dst;
-                IOUtil.acquireScope(dst, true);
+                ticket = IOUtil.acquireScope(dst, true);
                 address = IOUtil.bufferAddress(dst) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
@@ -586,6 +587,7 @@ public class WindowsAsynchronousFileChannelImpl
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
         private volatile boolean released;
+        private int ticket;             // to release buffer scope
 
         // set to src if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -605,7 +607,7 @@ public class WindowsAsynchronousFileChannelImpl
 
         void releaseScopeOrCacheSubstitute() {
             if (buf == src) {
-                IOUtil.releaseScope(src);
+                IOUtil.releaseScope(src, ticket);
             } else if (RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
             }
@@ -631,7 +633,7 @@ public class WindowsAsynchronousFileChannelImpl
             // Substitute a native buffer if not direct
             if (src.isDirect()) {
                 buf = src;
-                IOUtil.acquireScope(src, true);
+                ticket = IOUtil.acquireScope(src, true);
                 address = IOUtil.bufferAddress(src) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);

@@ -167,14 +167,14 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (dst.isDirect()) {
-            NIO_ACCESS.acquireSession(dst);
+            int ticket = NIO_ACCESS.acquireSession(dst);
             try {
                 long address = NIO_ACCESS.getBufferAddress(dst) + pos;
                 int n = read(name, address, rem);
                 dst.position(pos + n);
                 return n;
             } finally {
-                NIO_ACCESS.releaseSession(dst);
+                NIO_ACCESS.releaseSession(dst, ticket);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
@@ -226,14 +226,14 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src.isDirect()) {
-            NIO_ACCESS.acquireSession(src);
+            int ticket = NIO_ACCESS.acquireSession(src);
             try {
                 long address = NIO_ACCESS.getBufferAddress(src) + pos;
                 write(name, address, rem);
                 src.position(pos + rem);
                 return rem;
             } finally {
-                NIO_ACCESS.releaseSession(src);
+                NIO_ACCESS.releaseSession(src, ticket);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {

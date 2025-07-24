@@ -327,7 +327,7 @@ public class SimpleAsynchronousFileChannelImpl
             return null;
         }
 
-        IOUtil.acquireScope(dst, true);
+        int ticket = IOUtil.acquireScope(dst, true);
 
         final PendingFuture<Integer,A> result = (handler == null) ?
             new PendingFuture<Integer,A>(this) : null;
@@ -351,7 +351,7 @@ public class SimpleAsynchronousFileChannelImpl
                 } finally {
                     end();
                     threads.remove(ti);
-                    IOUtil.releaseScope(dst);
+                    IOUtil.releaseScope(dst, ticket);
                 }
                 if (handler == null) {
                     result.setResult(n, exc);
@@ -384,7 +384,7 @@ public class SimpleAsynchronousFileChannelImpl
             return null;
         }
 
-        IOUtil.acquireScope(src, true);
+        int ticket = IOUtil.acquireScope(src, true);
 
         final PendingFuture<Integer,A> result = (handler == null) ?
             new PendingFuture<Integer,A>(this) : null;
@@ -408,7 +408,7 @@ public class SimpleAsynchronousFileChannelImpl
                 } finally {
                     end();
                     threads.remove(ti);
-                    IOUtil.releaseScope(src);
+                    IOUtil.releaseScope(src, ticket);
                 }
                 if (handler == null) {
                     result.setResult(n, exc);
