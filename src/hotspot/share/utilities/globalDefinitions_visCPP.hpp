@@ -38,7 +38,7 @@
 # include <fcntl.h>
 # include <float.h> // for _isnan
 # include <inttypes.h>
-# include <io.h>.   // for stream.cpp
+# include <io.h>    // for stream.cpp
 # include <limits.h>
 # include <math.h>
 # include <stdarg.h>
