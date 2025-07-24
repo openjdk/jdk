@@ -38,7 +38,7 @@ import sun.awt.image.MultiResolutionCachedImage;
 
 import sun.awt.image.SunWritableRaster;
 
-public class CImage extends CFRetainedResource {
+public final class CImage extends CFRetainedResource {
     private static native long nativeCreateNSImageFromArray(int[] buffer, int w, int h);
     private static native long nativeCreateNSImageFromBytes(byte[] buffer);
     private static native long nativeCreateNSImageFromArrays(int[][] buffers, int[] w, int[] h);
@@ -82,7 +82,7 @@ public class CImage extends CFRetainedResource {
         return getCreator().createFromImage(image, observer);
     }
 
-    public static class Creator {
+    public static final class Creator {
         CTrayIcon.IconObserver observer;
 
         Creator() { }

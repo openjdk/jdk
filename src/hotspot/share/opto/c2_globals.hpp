@@ -265,6 +265,10 @@
   develop(bool, OptoCoalesce, true,                                         \
           "Use Conservative Copy Coalescing in the Register Allocator")     \
                                                                             \
+  product(uint, IFGEdgesLimit, 10000000, DIAGNOSTIC,                        \
+          "Maximum allowed edges in the interference graphs")               \
+          range(0, max_juint)                                               \
+                                                                            \
   develop(bool, UseUniqueSubclasses, true,                                  \
           "Narrow an abstract reference to the unique concrete subclass")   \
                                                                             \

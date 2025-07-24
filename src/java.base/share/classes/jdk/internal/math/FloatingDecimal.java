@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1874,26 +1874,19 @@ public class FloatingDecimal{
             ++i;
         }
 
-        /*
-         * In some places the idiom
-         *      (ch | 0b10_0000) == lowercase-letter
-         * is used as a shortcut for
-         *      ch == lowercase-letter || ch == that-same-letter-as-uppercase
-         *
-         * Determine whether we are facing a symbolic value or hex notation.
-         */
+        /* Determine whether we are facing a symbolic value or hex notation. */
         boolean isDec = true;  // decimal input until proven to the contrary
         if (i < len) {
             ch = in.charAt(i);
             if (ch == 'I') {
-                scanSymbolic(in, i, "Infinity");
+                scanSymbolic(in, i, INFINITY_REP);
                 return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
             }
             if (ch == 'N') {
-                scanSymbolic(in, i, "NaN");
+                scanSymbolic(in, i, NAN_REP);
                 return A2BC_NOT_A_NUMBER;  // ignore sign
             }
-            if (ch == '0' && i < len - 1 && (in.charAt(i + 1) | 0b10_0000) == 'x') {
+            if (ch == '0' && i + 1 < len && toLowerCase(in.charAt(i + 1)) == 'x') {
                 isDec = false;
                 i += 2;
             }
@@ -1931,7 +1924,7 @@ public class FloatingDecimal{
         /* Scan exponent part, optional for dec, mandatory for hex. */
         long ep = 0;  // exponent, implicitly 0
         boolean hasExp = false;
-        if (i < len && ((ch = in.charAt(i) | 0b10_0000) == 'e' && isDec
+        if (i < len && ((ch = toLowerCase(in.charAt(i))) == 'e' && isDec
                 || ch == 'p' && !isDec)) {
             ++i;
 
@@ -1961,7 +1954,7 @@ public class FloatingDecimal{
         check(in, isDec | hasExp);
 
         /* Skip opt [FfDd]? suffix. */
-        if (i < len && (((ch = in.charAt(i) | 0b10_0000)) == 'f' || ch == 'd')) {
+        if (i < len && ((ch = toLowerCase(in.charAt(i))) == 'f' || ch == 'd')) {
             ++i;
         }
 
@@ -2062,21 +2055,21 @@ public class FloatingDecimal{
                 ep += 4L * (n - le);
             }
 
-            int bl = Long.SIZE - Long.numberOfLeadingZeros(c);  // bit length
+            int bl = Long.SIZE - Long.numberOfLeadingZeros(c);  // bitlength
             /*
              * Let x = c 2^ep, so 2^(ep+bl-1) <= x < 2^(ep+bl)
              * When ep + bl < Q_MIN then x certainly rounds to zero.
-             * When ep + bl - 1 > E_MAX then x surely rounds to infinity.
+             * When ep + bl > QE_MAX then x surely rounds to infinity.
              */
             if (ep < Q_MIN[ix] - bl) {
-                return buildZero(ix, ssign);
+                return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
             }
-            if (ep > E_MAX[ix] - bl + 1) {
-                return buildInfinity(ix, ssign);
+            if (ep > QE_MAX[ix] - bl) {
+                return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
             }
             int q = (int) ep;  // narrowing conversion is safe
             int shr;  // (sh)ift to (r)ight iff shr > 0
-            if (q > E_MIN[ix] - bl) {
+            if (q >= QE_MIN[ix] - bl) {
                 shr = bl - P[ix];
                 q += shr;
             } else {
@@ -2112,19 +2105,18 @@ public class FloatingDecimal{
          * For decimal inputs, we copy an appropriate prefix of the input and
          * rely on another method to do the (sometimes intensive) math conversion.
          *
-         * Define e' = n + ep, which leads to
-         *      x = <0 . f_1 ... f_n> 10^e', 10^(e'-1) <= x < 10^e'
-         * If e' <= EP_MIN then x rounds to zero.
-         * Similarly, if e' >= EP_MAX then x rounds to infinity.
-         * (See the comments on the fields for their semantics.)
+         * Define e = n + ep, which leads to
+         *      x = 0.d_1 ... d_n 10^e, 10^(e-1) <= x < 10^e
+         * If e <= E_THR_Z then x rounds to zero.
+         * Similarly, if e >= E_THR_I then x rounds to infinity.
          * We return immediately in these cases.
-         * Otherwise, e' fits in an int named e.
+         * Otherwise, e fits in an int, aptly named e as well.
          */
-        int e = Math.clamp(ep + n, EP_MIN[ix], EP_MAX[ix]);
-        if (e == EP_MIN[ix]) {  // e' <= E_MIN
+        int e = Math.clamp(ep + n, E_THR_Z[ix], E_THR_I[ix]);
+        if (e == E_THR_Z[ix]) {  // true e <= E_THR_Z
             return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
         }
-        if (e == EP_MAX[ix]) {  // e' >= E_MAX
+        if (e == E_THR_I[ix]) {  // true e >= E_THR_I
             return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
         }
 
@@ -2132,8 +2124,10 @@ public class FloatingDecimal{
          * For further considerations, x also needs to be seen as
          *      x = beta 2^q
          * with real beta and integer q meeting
-         *      2^(P-1) <= beta < 2^P and q >= Q_MIN
-         *      0 < beta < 2^(P-1) and q = Q_MIN
+         *      q >= Q_MIN
+         * and
+         *      either  2^(P-1) <= beta < 2^P
+         *      or      0 < beta < 2^(P-1) and q = Q_MIN
          * The (unique) solution is
          *      q = max(floor(log2(x)) - (P-1), Q_MIN), beta = x 2^(-q)
          * It's usually costly to determine q as here.
@@ -2146,10 +2140,10 @@ public class FloatingDecimal{
          *      ql <= q <= qh, and qh - ql <= 4
          * Since by now e is relatively small, we can leverage flog2pow10().
          *
-         * When q >= Q_MIN, consider the interval [ 2^(P-1+q), 2^(P+q) ).
+         * Consider the half-open interval [ 2^(P-1+q), 2^(P+q) ).
          * It contains all floating-point values of the form
          *      c 2^q, c integer, 2^(P-1) <= c < 2^P (normal values)
-         * When q = Q_MIN also consider the interval [0, 2^(P-1+q) )
+         * When q = Q_MIN also consider the interval half-open [0, 2^(P-1+q) ),
          * which contains all floating-point values of the form
          *      c 2^q, c integer, 0 <= c < 2^(P-1) (subnormal values and zero)
          * For these c values, all numbers of the form
@@ -2160,14 +2154,15 @@ public class FloatingDecimal{
          *
          * First assume ql > 0, so q > 0.
          * All rounding boundaries (c + 1/2) 2^q are integers.
+         *
          * Hence, to correctly round x, it's enough to retain its integer part,
          * +1 non-zero sticky digit iff the fractional part is non-zero.
          * (Well, the sticky digit is only needed when the integer part
          * coincides with a boundary, but that's hard to detect at this stage.
          * Adding the sticky digit is always safe.)
-         * If n > e we pass the digits <f_1 ... f_e 3> (3 is as good as any other
+         * If n > e we pass the digits d_1...d_e 3 (3 is as good as any other
          * non-zero sticky digit) and the exponent e to the conversion routine.
-         * If n <= e we pass all the digits <f_1 ... f_n> (no sticky digit,
+         * If n <= e we pass all the digits d_1...d_n (no sticky digit,
          * as the fractional part is empty) and the exponent e to the converter.
          *
          * Now assume qh <= 0, so q <= 0.
@@ -2189,6 +2184,7 @@ public class FloatingDecimal{
          * Again, since q is not known exactly, we proceed as in the previous
          * case, with ql as a safe replacement for q.
          */
+        // TODO insert logic for small n: 9 for float, 18 for double
         int ql = Math.max(MathUtils.flog2pow10(e - 1) - (P[ix] - 1), Q_MIN[ix]);
         int np = e + Math.max(2 - ql, 1);
         byte[] digits = new byte[Math.min(n, np)];
@@ -2201,34 +2197,8 @@ public class FloatingDecimal{
         return new ASCIIToBinaryBuffer(ssign == '-', e, digits, digits.length);
     }
 
-    private static PreparedASCIIToBinaryBuffer buildZero(int ix, int ssign) {
-        /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
-        return switch (ix) {
-            case BINARY_32_IX ->
-                new PreparedASCIIToBinaryBuffer(
-                        Double.NaN,
-                        ssign != '-' ? 0.0f : -0.0f);
-            case BINARY_64_IX ->
-                new PreparedASCIIToBinaryBuffer(
-                        ssign != '-' ? 0.0d : -0.0d,
-                        Float.NaN);
-            default -> throw new AssertionError("unexpected");
-        };
-    }
-
-    private static PreparedASCIIToBinaryBuffer buildInfinity(int ix, int ssign) {
-        /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
-        return switch (ix) {
-            case BINARY_32_IX ->
-                new PreparedASCIIToBinaryBuffer(
-                        Double.NaN,
-                        ssign != '-' ? Float.POSITIVE_INFINITY : Float.NEGATIVE_INFINITY);
-            case BINARY_64_IX ->
-                new PreparedASCIIToBinaryBuffer(
-                        ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY,
-                        Float.NaN);
-            default -> throw new AssertionError("unexpected");
-        };
+    private static int toLowerCase(int ch) {
+        return ch | 0b10_0000;
     }
 
     private static double buildDouble(int ssign, int q, long c) {
@@ -2270,12 +2240,12 @@ public class FloatingDecimal{
     private static boolean isDigit(int ch, boolean isDec) {
         int lch;  // lowercase ch
         return '0' <= ch && ch <= '9' ||
-                !isDec && 'a' <= (lch = ch | 0b10_0000) && lch <= 'f';
+                !isDec && 'a' <= (lch = toLowerCase(ch)) && lch <= 'f';
     }
 
     /* Returns the numeric value of ch, assuming it is a hexdigit. */
     private static int digitFor(int ch) {
-        return ch <= '9' ? ch - '0' : (ch | 0b10_0000) - ('a' - 10);
+        return ch <= '9' ? ch - '0' : toLowerCase(ch) - ('a' - 10);
     }
 
     /*
@@ -2327,25 +2297,24 @@ public class FloatingDecimal{
 
     /*
      * According to IEEE 754-2019, a finite positive binary floating-point
-     * of precision P is (uniquely) expressed as
+     * value of precision P is (uniquely) expressed as
      *      c 2^q
      * where integers c and q meet
      *      Q_MIN <= q <= Q_MAX
-     *      either      2^(P-1) <= c < 2^P  (normal)
-     *      or          0 < c < 2^(P-1)  &  q = Q_MIN  (subnormal)
-     *      c = <d_0 d_1 ... d_(P-1)>, d_i in [0, 2)
+     *      either      2^(P-1) <= c < 2^P                  (normal)
+     *      or          0 < c < 2^(P-1)  &  q = Q_MIN       (subnormal)
+     *      c = b_1...b_P  (b_i in [0, 2))
      *
-     * Equivalently, the fp value can be (uniquely) expressed as
+     * Equivalently, the floating-point value can be (uniquely) expressed as
      *      m 2^ep
-     * where integer ep and real f meet
-     *      ep = q + P - 1
-     *      m = c 2^(1-P)
+     * where integer qe and real f meet
+     *      qe = q + P
+     *      m = c 2^(-P)
      * Hence,
-     *      E_MIN = Q_MIN + P - 1, E_MAX = Q_MAX + P - 1,
-     *      1 <= m < 2      (normal)
-     *      m < 1           (subnormal)
-     *      m = <d_0 . d_1 ... d_(P-1)>
-     * with a (binary) point between d_0 and d_1
+     *      QE_MIN = Q_MIN + P, QE_MAX = Q_MAX + P,
+     *      2^(-1) <= m < 1     (normal)
+     *      m < 2^(-1)          (subnormal)
+     *      m = 0.b_1...b_P
      */
 
     /*
@@ -2358,72 +2327,70 @@ public class FloatingDecimal{
 //    private static final int BINARY_128_IX = 3;
 //    private static final int BINARY_256_IX = 4;
 
-    /* The precision of the format. */
     @Stable
     private static final int[] P = {
-            11, 24, 53, // 113, 237,
+            11,
+            FloatToDecimal.P,
+            DoubleToDecimal.P,
+            // 113,
+            // 237,
     };
 
-    /*
-     * EP_MIN = max{e : 10^e <= MIN_VALUE/2}.
-     * Note that MIN_VALUE/2 is the 0 threshold.
-     * Less or equal values round to 0 when using roundTiesToEven.
-     * Equivalently, EP_MIN = floor(log10(2^(Q_MIN-1))).
-     */
-    @Stable
-    private static final int[] EP_MIN = {
-            -8, -46, -324, // -4_966, -78_985,
-    };
-
-    /*
-     * EP_MAX = min{e : MAX_VALUE + ulp(MAX_VALUE)/2 <= 10^(e-1)}.
-     * Note that MAX_VALUE + ulp(MAX_VALUE)/2 is the infinity threshold.
-     * Greater or equal values round to infinity when using roundTiesToEven.
-     * Equivalently, EP_MAX = ceil(log10((2^P - 1/2) 2^Q_MAX)) + 1.
-     */
-    @Stable
-    private static final int[] EP_MAX = {
-            6, 40, 310, // 4_934, 78_915,
-    };
-
-    /* Exponent width. */
     @Stable
     private static final int[] W = {
-            (1 << 4 + BINARY_16_IX) - P[BINARY_16_IX],
-            (1 << 4 + BINARY_32_IX) - P[BINARY_32_IX],
-            (1 << 4 + BINARY_64_IX) - P[BINARY_64_IX],
+            5,
+            FloatToDecimal.W,
+            DoubleToDecimal.W,
 //            (1 << 4 + BINARY_128_IX) - P[BINARY_128_IX],
 //            (1 << 4 + BINARY_256_IX) - P[BINARY_256_IX],
     };
 
-    /* Maximum exponent in the m 2^e representation. */
-    @Stable
-    private static final int[] E_MAX = {
-            (1 << W[BINARY_16_IX] - 1) - 1,
-            (1 << W[BINARY_32_IX] - 1) - 1,
-            (1 << W[BINARY_64_IX] - 1) - 1,
-//            (1 << W[BINARY_128_IX] - 1) - 1,
-//            (1 << W[BINARY_256_IX] - 1) - 1,
-    };
-
     /* Minimum exponent in the m 2^e representation. */
-    @Stable
-    private static final int[] E_MIN = {
-            1 - E_MAX[BINARY_16_IX],
-            1 - E_MAX[BINARY_32_IX],
-            1 - E_MAX[BINARY_64_IX],
-//            1 - E_MAX[BINARY_128_IX],
-//            1 - E_MAX[BINARY_256_IX],
-    };
-
     /* Minimum exponent in the c 2^q representation. */
     @Stable
     private static final int[] Q_MIN = {
-            E_MIN[BINARY_16_IX] - (P[BINARY_16_IX] - 1),
-            E_MIN[BINARY_32_IX] - (P[BINARY_32_IX] - 1),
-            E_MIN[BINARY_64_IX] - (P[BINARY_64_IX] - 1),
-//            E_MIN[BINARY_128_IX] - (P[BINARY_128_IX] - 1),
-//            E_MIN[BINARY_256_IX] - (P[BINARY_256_IX] - 1),
+            -24,  // Float16ToDecimal.Q_MIN,
+            FloatToDecimal.Q_MIN,
+            DoubleToDecimal.Q_MIN,
+//            QE_MIN[BINARY_128_IX] - (P[BINARY_128_IX] - 1),
+//            QE_MIN[BINARY_256_IX] - (P[BINARY_256_IX] - 1),
+    };
+
+    @Stable
+    private static final int[] QE_MIN = {
+            Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],
+            FloatToDecimal.Q_MIN + FloatToDecimal.P,
+            DoubleToDecimal.Q_MIN + DoubleToDecimal.P,
+//            Q_MIN[BINARY_128_IX] + P[BINARY_128_IX],
+//            Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],
+    };
+
+    /* Maximum exponent in the m 2^e representation. */
+    @Stable
+    private static final int[] QE_MAX = {
+            3 - QE_MIN[BINARY_16_IX],
+            FloatToDecimal.Q_MAX + FloatToDecimal.P,
+            DoubleToDecimal.Q_MAX + DoubleToDecimal.P,
+//            3 - QE_MIN[BINARY_128_IX],
+//            3 - QE_MIN[BINARY_256_IX],
+    };
+
+    @Stable
+    private static final int[] E_THR_Z = {
+            -8,
+            FloatToDecimal.E_THR_Z,
+            DoubleToDecimal.E_THR_Z,
+            // -4_966,
+            // -78_985,
+    };
+
+    @Stable
+    private static final int[] E_THR_I = {
+            6,
+            FloatToDecimal.E_THR_I,
+            DoubleToDecimal.E_THR_I,
+            // 4_934,
+            // 78_915,
     };
 
     /*

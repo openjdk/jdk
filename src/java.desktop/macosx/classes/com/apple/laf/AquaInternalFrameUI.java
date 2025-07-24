@@ -52,7 +52,7 @@ import sun.lwawt.macosx.CPlatformWindow;
  * so be very careful about subclassing so you know you get what you want
  *
  */
-public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingConstants {
+public final class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingConstants {
     protected static final String IS_PALETTE_PROPERTY = "JInternalFrame.isPalette";
     private static final String FRAME_TYPE = "JInternalFrame.frameType";
     private static final String NORMAL_FRAME = "normal";
@@ -177,7 +177,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         return zoomIcon.get();
     }
 
-    static class AquaInternalFrameButtonIcon extends AquaIcon.JRSUIIcon {
+    static final class AquaInternalFrameButtonIcon extends AquaIcon.JRSUIIcon {
         public AquaInternalFrameButtonIcon(final Widget widget) {
             painter.state.set(widget);
         }
@@ -385,7 +385,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     /**
      * Listens for border adjustments.
      */
-    protected class AquaBorderListener extends MouseInputAdapter {
+    protected final class AquaBorderListener extends MouseInputAdapter {
         // _x & _y are the mousePressed location in absolute coordinate system
         int _x, _y;
         // __x & __y are the mousePressed location in source view's coordinate system
@@ -697,7 +697,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         }
     }
 
-    class PropertyListener implements PropertyChangeListener {
+    final class PropertyListener implements PropertyChangeListener {
         @Override
         public void propertyChange(final PropertyChangeEvent e) {
             final String name = e.getPropertyName();
@@ -794,7 +794,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     };
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class CompoundUIBorder extends CompoundBorder implements UIResource {
+    static final class CompoundUIBorder extends CompoundBorder implements UIResource {
         public CompoundUIBorder(final Border inside, final Border outside) { super(inside, outside); }
     }
 
