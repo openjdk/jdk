@@ -491,8 +491,9 @@ public:
     _needs_bitmap_reset = false;
   }
 
-private:
   void decrement_humongous_waste() const;
+
+private:
   void do_commit();
   void do_uncommit();
 
