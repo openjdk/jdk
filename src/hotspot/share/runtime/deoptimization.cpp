@@ -944,13 +944,10 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       methodHandle mh(thread, iframe->interpreter_frame_method());
       bool reexecute = el->should_reexecute();
 
-      // Get the oop map for this bci
-      InterpreterOopMap mask;
       int cur_invoke_parameter_size = 0;
       int top_frame_expression_stack_adjustment = 0;
-      int bci = iframe->interpreter_frame_bci();
       int max_bci = mh->code_size();
-      BytecodeStream str(mh, bci);
+      BytecodeStream str(mh, iframe->interpreter_frame_bci());
       assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
       Bytecodes::Code cur_code = str.next();
 
@@ -976,6 +973,9 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
 
       assert(cur_code != Bytecodes::_illegal, "illegal bytecode");
       assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
+
+      // Get the oop map for this bci
+      InterpreterOopMap mask;
       OopMapCache::compute_one_oop_map(mh, str.bci(), &mask);
       // Check to see if we can grab the number of outgoing arguments
       // at an uncommon trap for an invoke (where the compiler
