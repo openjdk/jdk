@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- * @test
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahPacing -Xmx128m TestPacing
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahPacing -Xmx128m TestPacing
- */
+#if defined(AARCH64) && !defined(ZERO)
 
-public class TestPacing {
-    static final long TARGET_MB = Long.getLong("target", 1000); // 1 Gb allocation
+#include "utilities/spinYield.hpp"
+#include "unittest.hpp"
 
-    static volatile Object sink;
-
-    public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 16;
-        for (long c = 0; c < count; c++) {
-            sink = new Object();
-        }
-    }
+TEST_VM(SpinPause, sanity) {
+  ASSERT_EQ(SpinPause(), 1);
 }
+
+#endif  // AARCH64
