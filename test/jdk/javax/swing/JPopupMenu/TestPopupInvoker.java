@@ -83,7 +83,7 @@ public class TestPopupInvoker {
                 isVisible = jpm.isVisible();
             });
             if (isVisible) {
-                throw new RuntimeException("poup is visible after component is removed");
+                throw new RuntimeException("popup is visible after component is removed");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
