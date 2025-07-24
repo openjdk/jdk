@@ -44,7 +44,7 @@
 # include <stdarg.h>
 # include <stddef.h>// for offsetof
 # include <stdint.h>
-# include <stdio.h> // for va_list
+# include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
 # include <sys/stat.h>
