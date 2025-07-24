@@ -207,8 +207,8 @@ final class WinShortcutVerifier {
             }).orElseGet(() -> {
                 return AdditionalLauncher.getAdditionalLauncherProperties(cmd, launcherName);
             });
-            isWinMenu = props.getPropertyBooleanValue("win-menu").orElseGet(() -> cmd.hasArgument("--win-menu"));
-            isDesktop = props.getPropertyBooleanValue("win-shortcut").orElseGet(() -> cmd.hasArgument("--win-shortcut"));
+            isWinMenu = props.findBooleanProperty("win-menu").orElseGet(() -> cmd.hasArgument("--win-menu"));
+            isDesktop = props.findBooleanProperty("win-shortcut").orElseGet(() -> cmd.hasArgument("--win-shortcut"));
         }
 
         var isUserLocalInstall = WindowsHelper.isUserLocalInstall(cmd);
