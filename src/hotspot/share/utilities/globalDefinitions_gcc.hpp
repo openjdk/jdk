@@ -45,7 +45,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 // In stdlib.h on AIX malloc is defined as a macro causing
 // compiler errors when resolving them in different depths as it
 // happens in the log tags. This avoids the macro.
@@ -54,6 +53,7 @@
   #undef malloc
   extern void *malloc(size_t) asm("vec_malloc");
 #endif
+#include <string.h>
 #include <time.h>
 #include <wchar.h>
 
