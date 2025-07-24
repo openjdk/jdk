@@ -162,4 +162,12 @@ public:
   inline ~ShenandoahEvacOOMScope();
 };
 
+class ShenandoahEvacOOMScopeLeaver : public StackObj {
+  Thread* const _thread;
+
+public:
+  inline ShenandoahEvacOOMScopeLeaver();
+  inline ShenandoahEvacOOMScopeLeaver(Thread* t);
+  inline ~ShenandoahEvacOOMScopeLeaver();
+};
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHEVACOOMHANDLER_HPP

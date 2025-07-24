@@ -91,7 +91,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(!is_in(r), "Already in collection set");
   assert(!r->is_humongous(), "Only add regular regions to the collection set");
 
-  _cset_map[r->index()] = 1;
+  _cset_map[r->index()] = IN_CSET;
   size_t live    = r->get_live_data_bytes();
   size_t garbage = r->garbage();
   size_t free    = r->free();
@@ -113,6 +113,11 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   _live += live;
   // Update the region status too. State transition would be checked internally.
   r->make_cset();
+}
+
+void ShenandoahCollectionSet::switch_to_forward_table(ShenandoahHeapRegion* r) {
+  assert(is_in(r), "Must be in collection set");
+  Atomic::store(&_cset_map[r->index()], FWD_TABLE);
 }
 
 void ShenandoahCollectionSet::clear() {

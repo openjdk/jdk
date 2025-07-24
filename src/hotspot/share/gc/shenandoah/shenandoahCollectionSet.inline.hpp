@@ -34,7 +34,7 @@
 
 bool ShenandoahCollectionSet::is_in(size_t region_idx) const {
   assert(region_idx < _heap->num_regions(), "Sanity");
-  return _cset_map[region_idx] == 1;
+  return _cset_map[region_idx] != 0;
 }
 
 bool ShenandoahCollectionSet::is_in(ShenandoahHeapRegion* r) const {
@@ -51,7 +51,13 @@ bool ShenandoahCollectionSet::is_in_loc(void* p) const {
   uintx index = ((uintx) p) >> _region_size_bytes_shift;
   // no need to subtract the bottom of the heap from p,
   // _biased_cset_map is biased
-  return _biased_cset_map[index] == 1;
+  return _biased_cset_map[index] != 0;
+}
+
+bool ShenandoahCollectionSet::use_forward_table(oop obj) const {
+  void* p_loc = cast_from_oop<void*>(obj);
+  uintptr_t index = reinterpret_cast<uintptr_t>(p_loc) >> _region_size_bytes_shift;
+  return _biased_cset_map[index] == FWD_TABLE;
 }
 
 size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() {

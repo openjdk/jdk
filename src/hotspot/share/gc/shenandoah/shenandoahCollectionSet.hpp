@@ -80,10 +80,15 @@ private:
   shenandoah_padding(1);
 
 public:
+  static const char IN_CSET = 1;
+  static const char FWD_TABLE = 3;
+
   ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base);
 
   // Add region to collection set
   void add_region(ShenandoahHeapRegion* r);
+
+  void switch_to_forward_table(ShenandoahHeapRegion* r);
 
   // MT version
   ShenandoahHeapRegion* claim_next();
@@ -102,6 +107,8 @@ public:
   inline bool is_in(size_t region_idx)       const;
   inline bool is_in(oop obj)                 const;
   inline bool is_in_loc(void* loc)           const;
+
+  inline bool use_forward_table(oop obj) const;
 
   void print_on(outputStream* out) const;
 

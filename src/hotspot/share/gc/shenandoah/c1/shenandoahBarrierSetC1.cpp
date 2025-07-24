@@ -272,6 +272,14 @@ public:
   }
 };
 
+class C1ShenandoahCmpXChgOopCodeGenClosure : public StubAssemblerCodeGenClosure {
+  OopMapSet* generate_code(StubAssembler* sasm) override {
+    ShenandoahBarrierSetAssembler* bs = (ShenandoahBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->generate_c1_cmpxchg_oop_runtime_stub(sasm);
+    return nullptr;
+  }
+};
+
 bool ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1ShenandoahPreBarrierCodeGenClosure pre_code_gen_cl;
   _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
@@ -309,7 +317,17 @@ bool ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
     _load_reference_barrier_phantom_rt_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
                                                                            "shenandoah_load_reference_barrier_phantom_slow",
                                                                            false, &lrb_phantom_code_gen_cl);
-    return (_load_reference_barrier_phantom_rt_code_blob != nullptr);
+    if (_load_reference_barrier_phantom_rt_code_blob == nullptr) {
+      return false;
+    }
+
+    C1ShenandoahCmpXChgOopCodeGenClosure cmpxchg_oop_code_gen_cl;
+    _cmpxchg_oop_rt_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID,
+                                               "shenandoah_load_reference_barrier_phantom_slow",
+                                               false, &cmpxchg_oop_code_gen_cl);
+    if (_cmpxchg_oop_rt_code_blob == nullptr) {
+      return false;
+    }
   }
   return true;
 }

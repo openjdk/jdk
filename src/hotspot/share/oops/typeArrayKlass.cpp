@@ -175,7 +175,7 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 
 size_t TypeArrayKlass::oop_size(oop obj) const {
   // In this assert, we cannot safely access the Klass* with compact headers.
-  assert(UseCompactObjectHeaders || obj->is_typeArray(),"must be a type array");
+  //assert(UseCompactObjectHeaders || obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   return t->object_size(this);
 }

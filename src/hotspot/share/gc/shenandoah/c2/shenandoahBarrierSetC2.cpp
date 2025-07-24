@@ -49,7 +49,9 @@ ShenandoahBarrierSetC2* ShenandoahBarrierSetC2::bsc2() {
 }
 
 ShenandoahBarrierSetC2State::ShenandoahBarrierSetC2State(Arena* comp_arena)
-  : _load_reference_barriers(new (comp_arena) GrowableArray<ShenandoahLoadReferenceBarrierNode*>(comp_arena, 8,  0, nullptr)) {
+  : _load_reference_barriers(new (comp_arena) GrowableArray<ShenandoahLoadReferenceBarrierNode*>(comp_arena, 8,  0, nullptr)),
+    _stubs(new (comp_arena) GrowableArray<ShenandoahBarrierStub*>(comp_arena, 8,  0, nullptr)),
+    _stubs_start_offset(0) {
 }
 
 int ShenandoahBarrierSetC2State::load_reference_barriers_count() const {
@@ -1321,4 +1323,61 @@ bool ShenandoahBarrierSetC2::matcher_is_store_load_barrier(Node* x, uint xop) co
          xop == Op_ShenandoahWeakCompareAndSwapN ||
          xop == Op_ShenandoahCompareAndSwapN ||
          xop == Op_ShenandoahCompareAndSwapP;
+}
+
+static ShenandoahBarrierSetC2State* barrier_set_state() {
+  return reinterpret_cast<ShenandoahBarrierSetC2State*>(Compile::current()->barrier_set_state());
+}
+
+int ShenandoahBarrierSetC2::estimate_stub_size() const {
+  Compile* const C = Compile::current();
+  BufferBlob* const blob = C->output()->scratch_buffer_blob();
+  GrowableArray<ShenandoahBarrierStub*>* const stubs = barrier_set_state()->stubs();
+  int size = 0;
+
+  for (int i = 0; i < stubs->length(); i++) {
+    CodeBuffer cb(blob->content_begin(), checked_cast<CodeBuffer::csize_t>((address)C->output()->scratch_locs_memory() - blob->content_begin()));
+    MacroAssembler masm(&cb);
+    stubs->at(i)->emit_code(masm);
+    size += cb.insts_size();
+  }
+
+  return size;
+}
+
+void ShenandoahBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
+  MacroAssembler masm(&cb);
+  GrowableArray<ShenandoahBarrierStub*>* const stubs = barrier_set_state()->stubs();
+  barrier_set_state()->set_stubs_start_offset(masm.offset());
+
+  for (int i = 0; i < stubs->length(); i++) {
+    // Make sure there is enough space in the code buffer
+    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == nullptr) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+
+    stubs->at(i)->emit_code(masm);
+  }
+
+  masm.flush();
+
+}
+
+void ShenandoahBarrierStub::register_stub() {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    barrier_set_state()->stubs()->append(this);
+  }
+}
+
+ShenandoahCASBarrierSlowStub* ShenandoahCASBarrierSlowStub::create(const MachNode* node, Register addr, Register expected, Register new_val, Register result) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierSlowStub(node, addr, expected, new_val, result);
+  stub->register_stub();
+  return stub;
+}
+
+ShenandoahCASBarrierMidStub* ShenandoahCASBarrierMidStub::create(const MachNode* node, ShenandoahCASBarrierSlowStub* slow_stub, Register tmp) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahCASBarrierMidStub(node, slow_stub, tmp);
+  stub->register_stub();
+  return stub;
 }

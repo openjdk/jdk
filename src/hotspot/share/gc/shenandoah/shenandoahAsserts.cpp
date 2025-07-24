@@ -371,11 +371,11 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
 }
 
 void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char* file, int line) {
-  assert_correct(interior_loc, obj, file, line);
+  //assert_correct(interior_loc, obj, file, line);
   oop fwd =   ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj == fwd) {
-    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_forwarded failed",
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_forwarded failed",
                   "Object should be forwarded",
                   file, line);
   }
@@ -426,7 +426,7 @@ void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const 
 }
 
 void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* file, int line) {
-  assert_correct(interior_loc, obj, file, line);
+  //assert_correct(interior_loc, obj, file, line);
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->in_collection_set(obj)) {

@@ -144,22 +144,25 @@ private:
   LIR_Opr _new_value;
   LIR_Opr _tmp1;
   LIR_Opr _tmp2;
+  LIR_Opr _tmp3;
 
 public:
   LIR_OpShenandoahCompareAndSwap(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
-                                 LIR_Opr t1, LIR_Opr t2, LIR_Opr result)
+                                 LIR_Opr t1, LIR_Opr t2, LIR_Opr t3, LIR_Opr result)
     : LIR_Op(lir_none, result, nullptr)  // no info
     , _addr(addr)
     , _cmp_value(cmp_value)
     , _new_value(new_value)
     , _tmp1(t1)
-    , _tmp2(t2)                                  { }
+    , _tmp2(t2)
+    , _tmp3(t3)                                  { }
 
   LIR_Opr addr()        const                    { return _addr;  }
   LIR_Opr cmp_value()   const                    { return _cmp_value; }
   LIR_Opr new_value()   const                    { return _new_value; }
   LIR_Opr tmp1()        const                    { return _tmp1;      }
   LIR_Opr tmp2()        const                    { return _tmp2;      }
+  LIR_Opr tmp3()        const                    { return _tmp3;      }
 
   virtual void visit(LIR_OpVisitState* state) {
     if (_info)                              state->do_info(_info);
@@ -169,9 +172,11 @@ public:
                                             state->do_temp(_cmp_value);
     assert(_new_value->is_valid(), "used"); state->do_input(_new_value);
                                             state->do_temp(_new_value);
+    assert (_result->is_valid(), "used");   state->do_output(_result);
+                                            state->do_temp(_result);
     if (_tmp1->is_valid())                  state->do_temp(_tmp1);
     if (_tmp2->is_valid())                  state->do_temp(_tmp2);
-    if (_result->is_valid())                state->do_output(_result);
+    if (_tmp3->is_valid())                  state->do_temp(_tmp3);
   }
 
   virtual void emit_code(LIR_Assembler* masm);
@@ -197,6 +202,7 @@ private:
   CodeBlob* _load_reference_barrier_strong_native_rt_code_blob;
   CodeBlob* _load_reference_barrier_weak_rt_code_blob;
   CodeBlob* _load_reference_barrier_phantom_rt_code_blob;
+  CodeBlob* _cmpxchg_oop_rt_code_blob;
 
   void pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val);
 
@@ -232,6 +238,11 @@ public:
   CodeBlob* load_reference_barrier_phantom_rt_code_blob() {
     assert(_load_reference_barrier_phantom_rt_code_blob != nullptr, "");
     return _load_reference_barrier_phantom_rt_code_blob;
+  }
+
+  CodeBlob* cmpxchg_oop_rt_code_blob() {
+    assert(_cmpxchg_oop_rt_code_blob != nullptr, "");
+    return _cmpxchg_oop_rt_code_blob;
   }
 
 protected:
