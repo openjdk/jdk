@@ -2943,7 +2943,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-  __ push(rklass_tmp); // rdi is callee-save on Windows
+  __ push_ppx(rklass_tmp); // rdi is callee-save on Windows
 #endif
 
   // bump this on entry, not on exit:
@@ -3077,7 +3077,7 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ andl(rax_lh, Klass::_lh_log2_element_size_mask); // rax_lh -> rax_elsize
 
 #ifdef _WIN64
-  __ pop(rklass_tmp); // Restore callee-save rdi
+  __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
 
   // next registers should be set before the jump to corresponding stub
@@ -3149,7 +3149,7 @@ __ BIND(L_objArray);
   __ movl2ptr(count, r11_length); // length
 __ BIND(L_plain_copy);
 #ifdef _WIN64
-  __ pop(rklass_tmp); // Restore callee-save rdi
+  __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
   __ jump(RuntimeAddress(oop_copy_entry));
 
@@ -3191,7 +3191,7 @@ __ BIND(L_checkcast_copy);
     assert_clean_int(sco_temp, rax);
 
 #ifdef _WIN64
-    __ pop(rklass_tmp); // Restore callee-save rdi
+    __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
 
     // the checkcast_copy loop needs two extra arguments:
@@ -3204,7 +3204,7 @@ __ BIND(L_checkcast_copy);
 
 __ BIND(L_failed);
 #ifdef _WIN64
-  __ pop(rklass_tmp); // Restore callee-save rdi
+  __ pop_ppx(rklass_tmp); // Restore callee-save rdi
 #endif
   __ xorptr(rax, rax);
   __ notptr(rax); // return -1
