@@ -354,7 +354,7 @@ public class Supplementary {
         checkCodePointCount(str, n, m);
         n = Character.codePointCount(a);
         checkCodePointCount(a, n, m);
-        
+
         // test special cases
         length = str.length();
         n = Character.codePointCount(str, 0, 0);
