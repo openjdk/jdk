@@ -32,7 +32,7 @@
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
- *      -XX:+ShenandoahVerify -Xlog:aot
+ *      -XX:+ShenandoahVerify -Xlog:aot -XX:-ClassUnloading
  *      TestAllocIntArrays
  */
 
