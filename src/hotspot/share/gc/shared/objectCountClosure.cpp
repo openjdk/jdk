@@ -1,6 +1,7 @@
 #include "gc/shared/objectCountClosure.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/universe.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
