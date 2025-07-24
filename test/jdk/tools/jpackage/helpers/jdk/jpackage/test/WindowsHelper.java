@@ -39,11 +39,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
@@ -270,12 +270,7 @@ public class WindowsHelper {
 
     static void verifyDeployedDesktopIntegration(JPackageCommand cmd, boolean installed) {
         WinShortcutVerifier.verifyDeployedShortcuts(cmd, installed);
-        // Check the main launcher
-        new DesktopIntegrationVerifier(cmd, installed, null);
-        // Check additional launchers
-        cmd.addLauncherNames().forEach(name -> {
-            new DesktopIntegrationVerifier(cmd, installed, name);
-        });
+        DesktopIntegrationVerifier.verify(cmd, installed);
     }
 
     public static String getMsiProperty(JPackageCommand cmd, String propertyName) {
@@ -404,141 +399,42 @@ public class WindowsHelper {
         return path.toString().length() > WIN_MAX_PATH;
     }
 
+
     private static class DesktopIntegrationVerifier {
 
-        DesktopIntegrationVerifier(JPackageCommand cmd, boolean installed, String launcherName) {
+        static void verify(JPackageCommand cmd, boolean installed) {
             cmd.verifyIsOfType(PackageType.WINDOWS);
-
-            name = Optional.ofNullable(launcherName).orElseGet(cmd::name);
-
-            isUserLocalInstall = isUserLocalInstall(cmd);
-
-            this.appInstalled = installed;
-
-            desktopShortcutPath = Path.of(name + ".lnk");
-
-            startMenuShortcutPath = Path.of(cmd.getArgumentValue(
-                    "--win-menu-group", () -> "Unknown"), name + ".lnk");
-
-            if (name.equals(cmd.name())) {
-                isWinMenu = cmd.hasArgument("--win-menu");
-                isDesktop = cmd.hasArgument("--win-shortcut");
-            } else {
-                var props = AdditionalLauncher.getAdditionalLauncherProperties(cmd,
-                        launcherName);
-                isWinMenu = props.getPropertyBooleanValue("win-menu").orElseGet(
-                        () -> cmd.hasArgument("--win-menu"));
-                isDesktop = props.getPropertyBooleanValue("win-shortcut").orElseGet(
-                        () -> cmd.hasArgument("--win-shortcut"));
-            }
-
-            verifyStartMenuShortcut();
-
-            verifyDesktopShortcut();
-
-            Stream.of(cmd.getAllArgumentValues("--file-associations")).map(
-                    Path::of).forEach(this::verifyFileAssociationsRegistry);
-        }
-
-        private void verifyDesktopShortcut() {
-            if (isDesktop) {
-                if (isUserLocalInstall) {
-                    verifyUserLocalDesktopShortcut(appInstalled);
-                    verifySystemDesktopShortcut(false);
-                } else {
-                    verifySystemDesktopShortcut(appInstalled);
-                    verifyUserLocalDesktopShortcut(false);
-                }
-            } else {
-                verifySystemDesktopShortcut(false);
-                verifyUserLocalDesktopShortcut(false);
+            for (var faFile : cmd.getAllArgumentValues("--file-associations")) {
+                verifyFileAssociationsRegistry(Path.of(faFile), installed);
             }
         }
 
-        private void verifyShortcut(Path path, boolean exists) {
-            if (exists) {
-                TKit.assertFileExists(path);
-            } else {
-                TKit.assertPathExists(path, false);
-            }
-        }
+        private static void verifyFileAssociationsRegistry(Path faFile, boolean installed) {
 
-        private void verifySystemDesktopShortcut(boolean exists) {
-            Path dir = SpecialFolder.COMMON_DESKTOP.getPath();
-            verifyShortcut(dir.resolve(desktopShortcutPath), exists);
-        }
+            TKit.trace(String.format(
+                    "Get file association properties from [%s] file",
+                    faFile));
 
-        private void verifyUserLocalDesktopShortcut(boolean exists) {
-            Path dir = SpecialFolder.USER_DESKTOP.getPath();
-            verifyShortcut(dir.resolve(desktopShortcutPath), exists);
-        }
+            var faProps = new Properties();
 
-        private void verifyStartMenuShortcut() {
-            if (isWinMenu) {
-                if (isUserLocalInstall) {
-                    verifyUserLocalStartMenuShortcut(appInstalled);
-                    verifySystemStartMenuShortcut(false);
-                } else {
-                    verifySystemStartMenuShortcut(appInstalled);
-                    verifyUserLocalStartMenuShortcut(false);
-                }
-            } else {
-                verifySystemStartMenuShortcut(false);
-                verifyUserLocalStartMenuShortcut(false);
-            }
-        }
-
-        private void verifyStartMenuShortcut(Path shortcutsRoot, boolean exists) {
-            Path shortcutPath = shortcutsRoot.resolve(startMenuShortcutPath);
-            verifyShortcut(shortcutPath, exists);
-            if (!exists) {
-                final var parentDir = shortcutPath.getParent();
-                if (Files.isDirectory(parentDir)) {
-                    TKit.assertDirectoryNotEmpty(parentDir);
-                } else {
-                    TKit.assertPathExists(parentDir, false);
-                }
-            }
-        }
-
-        private void verifySystemStartMenuShortcut(boolean exists) {
-            verifyStartMenuShortcut(SpecialFolder.COMMON_START_MENU_PROGRAMS.getPath(), exists);
-
-        }
-
-        private void verifyUserLocalStartMenuShortcut(boolean exists) {
-            verifyStartMenuShortcut(SpecialFolder.USER_START_MENU_PROGRAMS.getPath(), exists);
-        }
-
-        private void verifyFileAssociationsRegistry(Path faFile) {
-            try {
-                TKit.trace(String.format(
-                        "Get file association properties from [%s] file",
-                        faFile));
-                Map<String, String> faProps = Files.readAllLines(faFile).stream().filter(
-                        line -> line.trim().startsWith("extension=") || line.trim().startsWith(
-                        "mime-type=")).map(
-                                line -> {
-                                    String[] keyValue = line.trim().split("=", 2);
-                                    return Map.entry(keyValue[0], keyValue[1]);
-                                }).collect(Collectors.toMap(
-                                entry -> entry.getKey(),
-                                entry -> entry.getValue()));
-                String suffix = faProps.get("extension");
-                String contentType = faProps.get("mime-type");
+            try (var reader = Files.newBufferedReader(faFile)) {
+                faProps.load(reader);
+                String suffix = faProps.getProperty("extension");
+                String contentType = faProps.getProperty("mime-type");
                 TKit.assertNotNull(suffix, String.format(
                         "Check file association suffix [%s] is found in [%s] property file",
                         suffix, faFile));
                 TKit.assertNotNull(contentType, String.format(
                         "Check file association content type [%s] is found in [%s] property file",
                         contentType, faFile));
-                verifyFileAssociations(appInstalled, "." + suffix, contentType);
+                verifyFileAssociations(installed, "." + suffix, contentType);
+
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                throw new UncheckedIOException(ex);
             }
         }
 
-        private void verifyFileAssociations(boolean exists, String suffix,
+        private static void verifyFileAssociations(boolean exists, String suffix,
                 String contentType) {
             String contentTypeFromRegistry = queryRegistryValue(Path.of(
                     "HKLM\\Software\\Classes", suffix).toString(),
@@ -559,15 +455,8 @@ public class WindowsHelper {
                         "Check content type in registry not found");
             }
         }
-
-        private final Path desktopShortcutPath;
-        private final Path startMenuShortcutPath;
-        private final boolean isUserLocalInstall;
-        private final boolean appInstalled;
-        private final boolean isWinMenu;
-        private final boolean isDesktop;
-        private final String name;
     }
+
 
     static String queryRegistryValue(String keyPath, String valueName) {
         var status = Executor.of("reg", "query", keyPath, "/v", valueName)
