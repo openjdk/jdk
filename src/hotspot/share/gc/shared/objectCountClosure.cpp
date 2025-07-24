@@ -4,11 +4,11 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/universe.hpp"
-#include "runtime/os.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 
+#if INCLUDE_SERVICES
 
 KlassInfoTable* ObjectCountClosure::cit = nullptr;
 
@@ -40,7 +40,6 @@ KlassInfoTable* ObjectCountClosure::get_table() {
 }
 
 
-#if INCLUDE_SERVICES
 template <class Event>
 bool ObjectCountClosure::should_send_event() {
     return ObjectCountEventSender::should_send_event<Event>();
