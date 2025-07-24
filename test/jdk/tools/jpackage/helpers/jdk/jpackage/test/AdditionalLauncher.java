@@ -23,7 +23,7 @@
 package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.toMap;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -179,11 +179,12 @@ public class AdditionalLauncher {
         PropertyFile shell[] = new PropertyFile[1];
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {
             if (name.equals(launcherName)) {
-                shell[0] = toFunction(PropertyFile::new).apply(
-                        propertiesFilePath);
+                shell[0] = toSupplier(() -> {
+                    return new PropertyFile(propertiesFilePath);
+                }).get();
             }
         });
-        return Optional.of(shell[0]).get();
+        return Objects.requireNonNull(shell[0]);
     }
 
     private void initialize(JPackageCommand cmd) throws IOException {
@@ -389,6 +390,10 @@ public class AdditionalLauncher {
     }
 
     public static final class PropertyFile {
+
+        PropertyFile(Map<String, String> data) {
+            this.data = Map.copyOf(data);
+        }
 
         PropertyFile(Path path) throws IOException {
             data = Files.readAllLines(path).stream().map(str -> {
