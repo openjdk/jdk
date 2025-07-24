@@ -24,7 +24,8 @@
 /*
  * @test
  * @key headful
- * @summary To check proper WINDOW_EVENTS are triggered when Frame gains or losses the focus
+ * @summary To check proper WINDOW_EVENTS are triggered when Frame gains
+ * or looses the focus
  * @library /lib/client
  * @build ExtendedRobot
  * @run main ActiveAWTWindowTest
@@ -44,15 +45,18 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 public class ActiveAWTWindowTest {
 
     private Frame frame, frame2;
     private Button button, button2;
     private TextField textField, textField2;
     private volatile int eventType;
-    private final Object lock1 = new Object();
-    private final Object lock2 = new Object();
-    private final Object lock3 = new Object();
+    private static final CountDownLatch windowActivatedLatch = new CountDownLatch(1);
+    private static final CountDownLatch windowDeactivatedLatch = new CountDownLatch(1);
+    private static final CountDownLatch windowFocusGainedLatch = new CountDownLatch(1);
     private boolean passed = true;
     private final int delay = 150;
 
@@ -93,13 +97,7 @@ public class ActiveAWTWindowTest {
         frame.addWindowFocusListener(new WindowFocusListener() {
             public void windowGainedFocus(WindowEvent event) {
                 System.out.println("Frame Focus gained");
-                synchronized (lock3) {
-                    try {
-                        lock3.notifyAll();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
+                windowFocusGainedLatch.countDown();
             }
 
             public void windowLostFocus(WindowEvent event) {
@@ -110,25 +108,13 @@ public class ActiveAWTWindowTest {
             public void windowActivated(WindowEvent e) {
                 eventType = WindowEvent.WINDOW_ACTIVATED;
                 System.out.println("Undecorated Frame is activated\n");
-                synchronized (lock1) {
-                    try {
-                        lock1.notifyAll();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
+                windowActivatedLatch.countDown();
             }
 
             public void windowDeactivated(WindowEvent e) {
                 eventType = WindowEvent.WINDOW_DEACTIVATED;
                 System.out.println("Undecorated Frame got Deactivated\n");
-                synchronized (lock2) {
-                    try {
-                        lock2.notifyAll();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
+                windowDeactivatedLatch.countDown();
             }
         });
         textField = new TextField("TextField");
@@ -183,12 +169,10 @@ public class ActiveAWTWindowTest {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_ACTIVATED) {
-            synchronized (lock1) {
-                try {
-                    lock1.wait(delay * 10);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            try {
+                windowActivatedLatch.await(delay * 10, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
         if (eventType != WindowEvent.WINDOW_ACTIVATED) {
@@ -205,11 +189,9 @@ public class ActiveAWTWindowTest {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
-            synchronized (lock2) {
-                try {
-                    lock2.wait(delay * 10);
-                } catch (Exception e) {
-                }
+            try {
+                windowDeactivatedLatch.await(delay * 10, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
             }
         }
         if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
