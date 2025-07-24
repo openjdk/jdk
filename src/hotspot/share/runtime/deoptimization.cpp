@@ -936,8 +936,9 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
     rm.set_include_argument_oops(false);
     bool is_top_frame = true;
     int callee_size_of_parameters = 0;
-    for (int i = 0; i < cur_array->frames(); i++) {
-      vframeArrayElement* el = cur_array->element(i);
+    for (int frame_idx = 0; frame_idx < cur_array->frames(); frame_idx++) {
+      assert(is_top_frame == (frame_idx == 0), "must be");
+      vframeArrayElement* el = cur_array->element(frame_idx);
       frame* iframe = el->iframe();
       guarantee(iframe->is_interpreted_frame(), "Wrong frame type");
       methodHandle mh(thread, iframe->interpreter_frame_method());
@@ -982,7 +983,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       if (Bytecodes::is_invoke(cur_code)) {
         Bytecode_invoke invoke(mh, str.bci());
         cur_invoke_parameter_size = invoke.size_of_parameters();
-        if (i != 0 && invoke.has_member_arg()) {
+        if (!is_top_frame && invoke.has_member_arg()) {
           callee_size_of_parameters++;
         }
       }
@@ -998,7 +999,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
             ))) {
         // Print out some information that will help us debug the problem
         tty->print_cr("Wrong number of expression stack elements during deoptimization");
-        tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", i, cur_array->frames() - 1);
+        tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", frame_idx, cur_array->frames() - 1);
         tty->print_cr("  Current code %s", Bytecodes::name(cur_code));
         tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
                       iframe->interpreter_frame_expression_stack_size());
