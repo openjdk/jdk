@@ -1061,17 +1061,12 @@ class MethodIteratorHost {
   bool operator()(KlassPtr klass) {
     if (_method_used_predicate(klass)) {
       const InstanceKlass* ik = InstanceKlass::cast(klass);
-      while (ik != nullptr) {
-        const int len = ik->methods()->length();
-        for (int i = 0; i < len; ++i) {
-          MethodPtr method = ik->methods()->at(i);
-          if (_method_flag_predicate(method)) {
-            _method_cb(method);
-          }
+      const int len = ik->methods()->length();
+      for (int i = 0; i < len; ++i) {
+        MethodPtr method = ik->methods()->at(i);
+        if (_method_flag_predicate(method)) {
+          _method_cb(method);
         }
-        // There can be multiple versions of the same method running
-        // due to redefinition. Need to inspect the complete set of methods.
-        ik = ik->previous_versions();
       }
     }
     return _klass_used_predicate(klass) ? _klass_cb(klass) : true;
