@@ -989,14 +989,13 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       }
 
       // Verify stack depth and oops in frame
-      int iframe_expr_size = iframe->interpreter_frame_expression_stack_size();
-      int expr_stack_size_before = iframe_expr_size + (is_top_frame ? top_frame_expression_stack_adjustment : 0);
-
-      if (!((is_top_frame && exec_mode == Unpack_exception && iframe_expr_size == 0) ||
-            (reexecute ?
-             (expr_stack_size_before == mask.expression_stack_size() + cur_invoke_parameter_size) :
-             (iframe_expr_size == mask.expression_stack_size() + callee_size_of_parameters)
-            ))) {
+      int iframe_expr_ssize = iframe->interpreter_frame_expression_stack_size();
+      int map_expr_invoke_ssize = mask.expression_stack_size() + cur_invoke_parameter_size;
+      int expr_ssize_before = iframe_expr_ssize + (is_top_frame ? top_frame_expression_stack_adjustment : 0);
+      int map_expr_callee_ssize = mask.expression_stack_size() + callee_size_of_parameters;
+      if (!((is_top_frame && exec_mode == Unpack_exception && iframe_expr_ssize == 0) ||
+            (reexecute ? expr_ssize_before == map_expr_invoke_ssize :
+                         iframe_expr_ssize == map_expr_callee_ssize))) {
         // Print out some information that will help us debug the problem
         tty->print_cr("Wrong number of expression stack elements during deoptimization");
         tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", frame_idx, cur_array->frames() - 1);
