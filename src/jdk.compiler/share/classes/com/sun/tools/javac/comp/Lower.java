@@ -2128,7 +2128,7 @@ public class Lower extends TreeTranslator {
 
     public void visitModuleDef(JCModuleDecl tree) {
         FlagsEnum.assertNoUnexpectedFlags(tree.sym.flags_field,
-                                          FlagsEnum.MASK_TYPE_FLAGS);
+                                          FlagsEnum.MASK_MODULE_FLAGS);
 
         ModuleSymbol msym = tree.sym;
         ClassSymbol c = msym.module_info;
@@ -2149,7 +2149,11 @@ public class Lower extends TreeTranslator {
 
     public void visitClassDef(JCClassDecl tree) {
         FlagsEnum.assertNoUnexpectedFlags(tree.sym.flags_field,
-                                          FlagsEnum.MASK_TYPE_FLAGS);
+                                          FlagsEnum.MASK_CLASS_FLAGS);
+        tree.sym
+            .getTypeParameters()
+            .forEach(tv -> FlagsEnum.assertNoUnexpectedFlags(tv.flags_field,
+                                                             FlagsEnum.MASK_TYPE_VAR_FLAGS));
 
         Env<AttrContext> prevEnv = attrEnv;
         ClassSymbol currentClassPrev = currentClass;
@@ -2636,6 +2640,10 @@ public class Lower extends TreeTranslator {
     public void visitMethodDef(JCMethodDecl tree) {
         FlagsEnum.assertNoUnexpectedFlags(tree.sym.flags_field,
                                           FlagsEnum.MASK_METHOD_FLAGS);
+        tree.sym
+            .getTypeParameters()
+            .forEach(tv -> FlagsEnum.assertNoUnexpectedFlags(tv.flags_field,
+                                                             FlagsEnum.MASK_TYPE_VAR_FLAGS));
 
         if (tree.name == names.init && (currentClass.flags_field&ENUM) != 0) {
             // Add "String $enum$name, int $enum$ordinal" to the beginning of the
@@ -4362,7 +4370,7 @@ public class Lower extends TreeTranslator {
      */
     public List<JCTree> translateTopLevelClass(Env<AttrContext> env, JCTree cdef, TreeMaker make) {
         FlagsEnum.assertNoUnexpectedFlags(env.toplevel.packge.flags_field,
-                                          FlagsEnum.MASK_TYPE_FLAGS);
+                                          FlagsEnum.MASK_PACKAGE_FLAGS);
 
         ListBuffer<JCTree> translated = null;
         try {

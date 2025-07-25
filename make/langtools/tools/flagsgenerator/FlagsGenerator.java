@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -98,6 +99,10 @@ public class FlagsGenerator {
                 }
             }
 
+            String masks = Arrays.stream(FlagTarget.values())
+                                 .map(target -> "    public static final long MASK_" + target.name() + "_FLAGS = " + getMask(target2FlagBit2Fields, target) + ";")
+                                 .collect(Collectors.joining("\n"));
+
             try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(Paths.get(args[1])))) {
                 out.println("""
                             package com.sun.tools.javac.code;
@@ -117,9 +122,7 @@ public class FlagsGenerator {
                 out.println("""
                                 ;
 
-                                public static final long MASK_TYPE_FLAGS = ${TYPE_FLAGS};
-                                public static final long MASK_METHOD_FLAGS = ${METHOD_FLAGS};
-                                public static final long MASK_VARIABLE_FLAGS = ${VARIABLE_FLAGS};
+                                ${masks}
 
                                 private final long value;
                                 private final String toString;
@@ -139,9 +142,7 @@ public class FlagsGenerator {
                                                        Flags.asFlagSet(flags & ~mask) + ")");
                                 }
                             }
-                            """.replace("${METHOD_FLAGS}", getMask(target2FlagBit2Fields, FlagTarget.METHOD))
-                               .replace("${TYPE_FLAGS}", getMask(target2FlagBit2Fields, FlagTarget.TYPE))
-                               .replace("${VARIABLE_FLAGS}", getMask(target2FlagBit2Fields, FlagTarget.VARIABLE)));
+                            """.replace("${masks}", masks));
             }
         }
     }
@@ -167,8 +168,11 @@ public class FlagsGenerator {
 
     public enum FlagTarget {
         BLOCK,
+        CLASS,
         METHOD,
-        TYPE,
+        MODULE,
+        PACKAGE,
+        TYPE_VAR,
         VARIABLE;
     }
 }

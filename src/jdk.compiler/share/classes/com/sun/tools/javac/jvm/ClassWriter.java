@@ -1542,7 +1542,7 @@ public class ClassWriter extends ClassFile {
         throws IOException, PoolOverflow, StringOverflow
     {
         FlagsEnum.assertNoUnexpectedFlags(c.flags_field,
-                                          FlagsEnum.MASK_TYPE_FLAGS);
+                                          FlagsEnum.MASK_CLASS_FLAGS);
 
         String name = (c.owner.kind == MDL ? c.name : c.flatname).toString();
         Location outLocn;

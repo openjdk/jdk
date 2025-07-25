@@ -52,13 +52,11 @@ public class FlagsTest {
     private static void findFreeFlags() throws Throwable {
         Map<FlagTarget, Map<Long, List<Field>>> target2Flag2Fields = computeTarget2Flag2Fields();
 
-        long freeTypeFlags = ~collectFlags(target2Flag2Fields, FlagTarget.TYPE);
-        long freeMethodFlags = ~collectFlags(target2Flag2Fields, FlagTarget.METHOD);
-        long freeVariableFlags = ~collectFlags(target2Flag2Fields, FlagTarget.VARIABLE);
+        for (FlagTarget target : FlagTarget.values()) {
+            long freeFlags = ~collectFlags(target2Flag2Fields, target);
 
-        printFreeFlags("TYPE", freeTypeFlags);
-        printFreeFlags("METHOD", freeMethodFlags);
-        printFreeFlags("VARIABLE", freeVariableFlags);
+            printFreeFlags(target.name(), freeFlags);
+        }
     }
 
     private static Map<FlagTarget, Map<Long, List<Field>>> computeTarget2Flag2Fields() throws Throwable {
