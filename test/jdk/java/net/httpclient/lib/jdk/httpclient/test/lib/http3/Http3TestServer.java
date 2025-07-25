@@ -45,7 +45,7 @@ import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.RequestPathMatcherUtil;
 import jdk.httpclient.test.lib.common.RequestPathMatcherUtil.Resolved;
-import jdk.httpclient.test.lib.common.ThrowingConsumer;
+import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.quic.QuicServer;
 import jdk.httpclient.test.lib.quic.QuicServerConnection;
@@ -91,8 +91,8 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
 
     private final QuicServer quicServer;
     private volatile boolean stopping;
-    private final Map<String, ThrowingConsumer<Http2TestExchange, IOException>> handlers = new ConcurrentHashMap<>();
-    private final Function<String, ThrowingConsumer<Http2TestExchange, IOException>> handlerProvider;
+    private final Map<String, Http2Handler> handlers = new ConcurrentHashMap<>();
+    private final Function<String, Http2Handler> handlerProvider;
     private final Logger debug;
     private final InetSocketAddress serverAddr;
     private volatile ConnectionSettings ourSettings;
@@ -137,7 +137,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
     }
 
     public Http3TestServer(final QuicServer quicServer,
-                           final Function<String, ThrowingConsumer<Http2TestExchange, IOException>> handlerProvider)
+                           final Function<String, Http2Handler> handlerProvider)
             throws IOException {
         Objects.requireNonNull(quicServer);
         this.debug = Utils.getDebugLogger(quicServer::name);
@@ -176,7 +176,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         return h + ":" + inetSockAddr.getPort();
     }
 
-    public void addHandler(final String path, final ThrowingConsumer<Http2TestExchange, IOException> handler) {
+    public void addHandler(final String path, final Http2Handler handler) {
         if (this.handlerProvider != null) {
             throw new IllegalStateException("Cannot add handler to H3 server which uses a handler provider");
         }
@@ -232,11 +232,11 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
                 exchange.getRequestURI(), Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().freeMemory(), Runtime.getRuntime().totalMemory());
         final String reqPath = exchange.getRequestURI().getPath();
-        final ThrowingConsumer<Http2TestExchange, IOException> handler;
+        final Http2Handler handler;
         if (this.handlerProvider != null) {
             handler = this.handlerProvider.apply(reqPath);
         } else {
-            Optional<Resolved<ThrowingConsumer<Http2TestExchange, IOException>>> match =
+            Optional<Resolved<Http2Handler>> match =
                     RequestPathMatcherUtil.findHandler(reqPath, this.handlers);
             handler = match.isPresent() ? match.get().handler() : null;
         }
@@ -258,7 +258,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
                 //     it can safely run on the same thread.
                 // assert Thread.currentThread() != currentThread
                 //        : "HTTP/3 server executor must have at least one thread";
-                handler.accept(exchange);
+                handler.handle(exchange);
             } catch (Throwable failure) {
                 System.err.println("Failed to handle exchange: " + failure);
                 failure.printStackTrace();
