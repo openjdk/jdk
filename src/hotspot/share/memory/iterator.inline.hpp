@@ -55,8 +55,7 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   if (cld != nullptr) {
     ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
   } else {
-    ResourceMark rm;
-    assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity: %s", k->external_name());
+    assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
   }
 }
 
