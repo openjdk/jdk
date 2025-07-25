@@ -70,12 +70,40 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
   log_info(aot, map)("[End of AOT cache map]");
 };
 
+// This class is used to find the location and type of all the
+// archived metaspace objects.
+class AOTMapLogger::GatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
+  GrowableArray<ArchivedObjInfo> _objs;
 
-class GatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
+  static int compare_objs_by_addr(ArchivedObjInfo* a, ArchivedObjInfo* b) {
+    intx diff = a->_src_addr - b->_src_addr;
+    if (diff < 0) {
+      return -1;
+    } else if (diff == 0) {
+      return 0;
+    } else {
+      return 1;
+    }
+  }
+
 public:
+  GrowableArray<ArchivedObjInfo>* objs() { return &_objs; }
+
   virtual bool do_unique_ref(Ref* ref, bool read_only) {
-    tty->print_cr("%p = %d", ref->obj(), ref->size());
-    return true;
+    ArchivedObjInfo info;
+    info._src_addr = ref->obj();
+    info._buffered_addr = ref->obj();
+    info._requested_addr = ref->obj();
+    info._bytes = ref->size() * BytesPerWord;
+    info._type = ref->msotype();
+    _objs.append(info);
+
+    return true; // keep iterating
+  }
+
+  void finish() {
+    UniqueMetaspaceClosure::finish();
+    _objs.sort(compare_objs_by_addr);
   }
 };
 
@@ -86,16 +114,54 @@ void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
   log_header(mapinfo);
   log_as_hex(header, header_end, nullptr);
 
+  FileMapRegion* rw = mapinfo->region_at(MetaspaceShared::rw);
+  FileMapRegion* ro = mapinfo->region_at(MetaspaceShared::ro);
+
+  address rw_base = address(rw->mapped_base());
+  address rw_end  = address(rw->mapped_end());
+  address ro_base = address(ro->mapped_base());
+  address ro_end  = address(ro->mapped_end());
+
   ResourceMark rm;
-  GrowableArray<Klass*> klasses;
-  SystemDictionaryShared::get_all_archived_classes(mapinfo->is_static(), &klasses);
+  GatherArchivedMetaspaceObjs gatherer;
+  GrowableArray<ArchivedObjInfo>* objs = nullptr;
+  int first_ro_index = 0;
 
+  if (log_is_enabled(Debug, aot, map)) {
+    // The metaspace objects in the AOT cache are stored as a stream of bytes. For space
+    // saving, we don't store a complete index that tells us where one object ends and
+    // another object starts. There's also no type information.
+    //
+    // However, we can rebuild our index by iterating over all the objects using
+    // MetaspaceClosure, starting from the dictionary of Klasses in SystemDictionaryShared.
+    GrowableArray<Klass*> klasses;
+    SystemDictionaryShared::get_all_archived_classes(mapinfo->is_static(), &klasses);
+    for (int i = 0; i < klasses.length(); i++) {
+      gatherer.push(klasses.adr_at(i));
+    }
+    gatherer.finish();
 
-  GatherArchivedMetaspaceObjs gamo;
-  for (int i = 0; i < klasses.length(); i++) {
-    gamo.push(klasses.adr_at(i));
+    // Divide the objects into two parts: RW and RO
+    objs = gatherer.objs();
+    int i = 0;
+    for (; i < objs->length(); i++) {
+      if (objs->at(i)._src_addr >= ro_base) {
+        break;
+      }
+    }
+    // i is now the index of the first object in the ro region. TODO: this doesn't work for dynamic archive yet ...
+    first_ro_index = i;
   }
-  gamo.finish();
+
+  log_region("rw", rw_base, rw_end, rw_base);
+  if (log_is_enabled(Debug, aot, map)) {
+    log_metaspace_objects(rw_base, rw_end, objs, 0, first_ro_index);
+  }
+
+  log_region("ro", ro_base, ro_end, ro_base);
+  if (log_is_enabled(Debug, aot, map)) {
+    log_metaspace_objects(ro_base, ro_end, objs, first_ro_index, objs->length());
+  }
 }
 
 void AOTMapLogger::log_header(FileMapInfo* mapinfo) {
@@ -150,13 +216,12 @@ void AOTMapLogger::log_metaspace_objects(DumpRegion* region, const ArchiveBuilde
     objs.append(info);
   }
 
-  log_metaspace_objects(region, &objs, 0, objs.length());
+  log_metaspace_objects(address(region->base()), address(region->end()), &objs, 0, objs.length());
 }
 
-void AOTMapLogger::log_metaspace_objects(DumpRegion* region, GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx) {
-  address last_obj_base = address(region->base());
-  address last_obj_end  = address(region->base());
-  address region_end    = address(region->end());
+void AOTMapLogger::log_metaspace_objects(address region_base, address region_end, GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx) {
+  address last_obj_base = region_base;
+  address last_obj_end  = region_base;
   Thread* current = Thread::current();
 
   for (int i = start_idx; i < end_idx; i++) {
@@ -212,6 +277,11 @@ void AOTMapLogger::log_constant_pool(ConstantPool* cp, address requested_addr,
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
                       cp->pool_holder()->external_name());
+
+  LogStreamHandle(Trace, aot, map) lsh;
+  if (lsh.is_enabled()) {
+    cp->print_on(&lsh);
+  }
 }
 
 void AOTMapLogger::log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,

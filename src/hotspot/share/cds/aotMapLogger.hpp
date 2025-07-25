@@ -56,6 +56,8 @@ class AOTMapLogger : AllStatic {
     MetaspaceObj::Type _type;
   };
 
+  class GatherArchivedMetaspaceObjs;
+
   // Translate the buffers used by the RW/RO regions to their requested locations
   // at runtime.
   static intx _buffer_to_requested_delta;
@@ -65,7 +67,8 @@ class AOTMapLogger : AllStatic {
   static void log_metaspace_region(const char* name, DumpRegion* region,
                                    const ArchiveBuilder::SourceObjList* src_objs);
   static void log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs);
-  static void log_metaspace_objects(DumpRegion* region, GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx);
+  static void log_metaspace_objects(address region_base, address region_end,
+                                    GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx);
 
   static void log_constant_pool(ConstantPool* cp, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
