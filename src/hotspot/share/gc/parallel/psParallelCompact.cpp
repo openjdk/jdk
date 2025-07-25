@@ -978,10 +978,6 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   IsSTWGCActiveMark mark;
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  clear_all_soft_refs = clear_all_soft_refs
-                     || heap->soft_ref_policy()->should_clear_all_soft_refs();
-
   return PSParallelCompact::invoke_no_policy(clear_all_soft_refs);
 }
 
@@ -1000,11 +996,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   GCCause::Cause gc_cause = heap->gc_cause();
   PSOldGen* old_gen = heap->old_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
-
-  // The scope of casr should end after code that can change
-  // SoftRefPolicy::_should_clear_all_soft_refs.
-  ClearedAllSoftRefs casr(clear_all_soft_refs,
-                          heap->soft_ref_policy());
 
   // Make sure data structures are sane, make the heap parsable, and do other
   // miscellaneous bookkeeping.
