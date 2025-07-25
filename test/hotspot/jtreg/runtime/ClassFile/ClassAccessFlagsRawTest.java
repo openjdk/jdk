@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class ClassAccessFlagsRawTest {
 
     public static void main(String argv[]) throws Throwable {
         Class<?> cl = java.lang.Class.class;
-        m = cl.getDeclaredMethod("getClassAccessFlagsRaw", new Class[0]);
+        m = cl.getDeclaredMethod("getRawClassAccessFlags", new Class[0]);
         m.setAccessible(true);
 
         testIt("SUPERset", 0x21);  // ACC_SUPER 0x20 + ACC_PUBLIC 0x1

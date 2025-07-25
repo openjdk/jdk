@@ -81,8 +81,12 @@ public class Reflection {
         to compatibility reasons; see 4471811. Only the values of the
         low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
         valid. */
-    @IntrinsicCandidate
-    public static native int getClassAccessFlags(Class<?> c);
+    public static int getClassAccessFlags(Class<?> c) {
+        class Holder {
+            static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+        }
+        return Holder.JLA.getRawClassAccessFlags(c);
+    }
 
 
     /**

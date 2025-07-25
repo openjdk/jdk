@@ -2022,6 +2022,9 @@ public final class System {
             public byte[] getRawExecutableTypeAnnotations(Executable executable) {
                 return Class.getExecutableTypeAnnotationBytes(executable);
             }
+            public int getRawClassAccessFlags(Class<?> klass) {
+                return klass.getRawClassAccessFlags();
+            }
             public <E extends Enum<E>>
             E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
