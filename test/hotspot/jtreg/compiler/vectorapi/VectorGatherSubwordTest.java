@@ -36,11 +36,20 @@ import jdk.test.lib.Asserts;
  * @library /test/lib /
  * @modules jdk.incubator.vector
  *
+ * @run driver compiler.vectorapi.VectorGatherSubwordTest MaxVectorSize_16
+ * @run driver compiler.vectorapi.VectorGatherSubwordTest MaxVectorSize_32
+ * @run driver compiler.vectorapi.VectorGatherSubwordTest MaxVectorSize_64
  * @run driver compiler.vectorapi.VectorGatherSubwordTest
  */
 public class VectorGatherSubwordTest {
-    private static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_PREFERRED;
-    private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_PREFERRED;
+    private static final VectorSpecies<Byte> BSPEC_64 = ByteVector.SPECIES_64;
+    private static final VectorSpecies<Byte> BSPEC_128 = ByteVector.SPECIES_128;
+    private static final VectorSpecies<Byte> BSPEC_256 = ByteVector.SPECIES_256;
+    private static final VectorSpecies<Byte> BSPEC_512 = ByteVector.SPECIES_512;
+    private static final VectorSpecies<Short> SSPEC_64 = ShortVector.SPECIES_64;
+    private static final VectorSpecies<Short> SSPEC_128 = ShortVector.SPECIES_128;
+    private static final VectorSpecies<Short> SSPEC_256 = ShortVector.SPECIES_256;
+    private static final VectorSpecies<Short> SSPEC_512 = ShortVector.SPECIES_512;
 
     private static int LENGTH = 128;
     private static final Generators random = Generators.G;
@@ -58,7 +67,7 @@ public class VectorGatherSubwordTest {
         sa = new short[LENGTH];
         sr = new short[LENGTH];
         m = new boolean[LENGTH];
-        indexes = new int[2][];
+        indexes = new int[5][];
 
         Generator<Integer> byteGen = random.uniformInts(Byte.MIN_VALUE, Byte.MAX_VALUE);
         Generator<Integer> shortGen = random.uniformInts(Short.MIN_VALUE, Short.MAX_VALUE);
@@ -68,91 +77,322 @@ public class VectorGatherSubwordTest {
             m[i] = i % 2 == 0;
         }
 
-        int[] nums = {B_SPECIES.length(), S_SPECIES.length()};
-        for (int i = 0; i < 2; i++) {
+        int[] nums = {4, 8, 16, 32, 64};
+        for (int i = 0; i < 5; i++) {
             indexes[i] = new int[nums[i]];
             random.fill(random.uniformInts(0, nums[i] - 1), indexes[i]);
         }
     }
 
-    @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER, " >0 "}, applyIfCPUFeature = {"sve", "true"})
-    public void testLoadGatherByte() {
-        for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
-            ByteVector.fromArray(B_SPECIES, ba, i, indexes[0], 0)
-                      .intoArray(br, i);
-        }
-    }
-
-    @Check(test = "testLoadGatherByte")
-    public void verifyLoadGatherByte() {
-        for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
-            for (int j = 0; j < B_SPECIES.length(); j++) {
-                Asserts.assertEquals(ba[i + indexes[0][j]], br[i + j]);
-            }
-        }
-    }
+    // Tests for gather load of byte vector with different vector species.
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER, " >0 "}, applyIfCPUFeature = {"sve", "true"})
-    public void testLoadGatherShort() {
-        for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
-            ShortVector.fromArray(S_SPECIES, sa, i, indexes[1], 0)
-                       .intoArray(sr, i);
-        }
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherByte64() {
+        ByteVector.fromArray(BSPEC_64, ba, 0, indexes[1], 0)
+                  .intoArray(br, 0);
     }
 
-    @Check(test = "testLoadGatherShort")
-    public void verifyLoadGatherShort() {
-        for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
-            for (int j = 0; j < S_SPECIES.length(); j++) {
-                Asserts.assertEquals(sa[i + indexes[1][j]], sr[i + j]);
-            }
+    @Check(test = "testLoadGatherByte64")
+    public void verifyLoadGatherByte64() {
+        for (int i = 0; i < BSPEC_64.length(); i++) {
+            Asserts.assertEquals(ba[indexes[1][i]], br[i]);
         }
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, " >0 "}, applyIfCPUFeature = {"sve", "true"})
-    public void testLoadGatherMaskedByte() {
-        VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
-        for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
-            ByteVector.fromArray(B_SPECIES, ba, i, indexes[0], 0, mask)
-                      .intoArray(br, i);
-        }
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "4"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherByte128() {
+        ByteVector.fromArray(BSPEC_128, ba, 0, indexes[2], 0)
+                  .intoArray(br, 0);
     }
 
-    @Check(test = "testLoadGatherMaskedByte")
-    public void verifyLoadGatherMaskedByte() {
-        for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
-            for (int j = 0; j < B_SPECIES.length(); j++) {
-                Asserts.assertEquals(m[j] ? ba[i + indexes[0][j]] : 0, br[i + j]);
-            }
+    @Check(test = "testLoadGatherByte128")
+    public void verifyLoadGatherByte128() {
+        for (int i = 0; i < BSPEC_128.length(); i++) {
+            Asserts.assertEquals(ba[indexes[2][i]], br[i]);
         }
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, " >0 "}, applyIfCPUFeature = {"sve", "true"})
-    public void testLoadGatherMaskedShort() {
-        VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
-        for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
-            ShortVector.fromArray(S_SPECIES, sa, i, indexes[1], 0, mask)
-                       .intoArray(sr, i);
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "4"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherByte256() {
+        ByteVector.fromArray(BSPEC_256, ba, 0, indexes[3], 0)
+                  .intoArray(br, 0);
+    }
+
+    @Check(test = "testLoadGatherByte256")
+    public void verifyLoadGatherByte256() {
+        for (int i = 0; i < BSPEC_256.length(); i++) {
+            Asserts.assertEquals(ba[indexes[3][i]], br[i]);
         }
     }
 
-    @Check(test = "testLoadGatherMaskedShort")
-    public void verifyLoadGatherMaskedShort() {
-        for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
-            for (int j = 0; j < S_SPECIES.length(); j++) {
-                Asserts.assertEquals(m[j] ? sa[i + indexes[1][j]] : 0, sr[i + j]);
-            }
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "4"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherByte512() {
+        ByteVector.fromArray(BSPEC_512, ba, 0, indexes[4], 0)
+                  .intoArray(br, 0);
+    }
+
+    @Check(test = "testLoadGatherByte512")
+    public void verifyLoadGatherByte512() {
+        for (int i = 0; i < BSPEC_512.length(); i++) {
+            Asserts.assertEquals(ba[indexes[4][i]], br[i]);
+        }
+    }
+
+    // Tests for gather load of short vector with different vector species.
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 32"})
+    public void testLoadGatherShort64() {
+        ShortVector.fromArray(SSPEC_64, sa, 0, indexes[0], 0)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherShort64")
+    public void verifyLoadGatherShort64() {
+        for (int i = 0; i < SSPEC_64.length(); i++) {
+            Asserts.assertEquals(sa[indexes[0][i]], sr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherShort128() {
+        ShortVector.fromArray(SSPEC_128, sa, 0, indexes[1], 0)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherShort128")
+    public void verifyLoadGatherShort128() {
+        for (int i = 0; i < SSPEC_128.length(); i++) {
+            Asserts.assertEquals(sa[indexes[1][i]], sr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherShort256() {
+        ShortVector.fromArray(SSPEC_256, sa, 0, indexes[2], 0)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherShort256")
+    public void verifyLoadGatherShort256() {
+        for (int i = 0; i < SSPEC_256.length(); i++) {
+            Asserts.assertEquals(sa[indexes[2][i]], sr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherShort512() {
+        ShortVector.fromArray(SSPEC_512, sa, 0, indexes[3], 0)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherShort512")
+    public void verifyLoadGatherShort512() {
+        for (int i = 0; i < SSPEC_512.length(); i++) {
+            Asserts.assertEquals(sa[indexes[3][i]], sr[i]);
+        }
+    }
+
+    // Tests for masked gather load of byte vector with different vector species.
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 32"})
+    public void testLoadGatherMaskedByte64() {
+        VectorMask<Byte> mask = VectorMask.fromArray(BSPEC_64, m, 0);
+        ByteVector.fromArray(BSPEC_64, ba, 0, indexes[1], 0, mask)
+                  .intoArray(br, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedByte64")
+    public void verifyLoadGatherMaskedByte64() {
+        for (int i = 0; i < BSPEC_64.length(); i++) {
+            Asserts.assertEquals(m[i] ? ba[indexes[1][i]] : 0, br[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "4"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherMaskedByte128() {
+        VectorMask<Byte> mask = VectorMask.fromArray(BSPEC_128, m, 0);
+        ByteVector.fromArray(BSPEC_128, ba, 0, indexes[2], 0, mask)
+                  .intoArray(br, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedByte128")
+    public void verifyLoadGatherMaskedByte128() {
+        for (int i = 0; i < BSPEC_128.length(); i++) {
+            Asserts.assertEquals(m[i] ? ba[indexes[2][i]] : 0, br[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "4"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherMaskedByte256() {
+        VectorMask<Byte> mask = VectorMask.fromArray(BSPEC_256, m, 0);
+        ByteVector.fromArray(BSPEC_256, ba, 0, indexes[3], 0, mask)
+                  .intoArray(br, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedByte256")
+    public void verifyLoadGatherMaskedByte256() {
+        for (int i = 0; i < BSPEC_256.length(); i++) {
+            Asserts.assertEquals(m[i] ? ba[indexes[3][i]] : 0, br[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "4"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherMaskedByte512() {
+        VectorMask<Byte> mask = VectorMask.fromArray(BSPEC_512, m, 0);
+        ByteVector.fromArray(BSPEC_512, ba, 0, indexes[4], 0, mask)
+                  .intoArray(br, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedByte512")
+    public void verifyLoadGatherMaskedByte512() {
+        for (int i = 0; i < BSPEC_512.length(); i++) {
+            Asserts.assertEquals(m[i] ? ba[indexes[4][i]] : 0, br[i]);
+        }
+    }
+
+    // Tests for masked gather load of short vector with different vector species.
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 16"})
+    public void testLoadGatherMaskedShort64() {
+        VectorMask<Short> mask = VectorMask.fromArray(SSPEC_64, m, 0);
+        ShortVector.fromArray(SSPEC_64, sa, 0, indexes[0], 0, mask)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedShort64")
+    public void verifyLoadGatherMaskedShort64() {
+        for (int i = 0; i < SSPEC_64.length(); i++) {
+            Asserts.assertEquals(m[i] ? sa[indexes[0][i]] : 0, sr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">= 32"})
+    public void testLoadGatherMaskedShort128() {
+        VectorMask<Short> mask = VectorMask.fromArray(SSPEC_128, m, 0);
+        ShortVector.fromArray(SSPEC_128, sa, 0, indexes[1], 0, mask)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedShort128")
+    public void verifyLoadGatherMaskedShort128() {
+        for (int i = 0; i < SSPEC_128.length(); i++) {
+            Asserts.assertEquals(m[i] ? sa[indexes[1][i]] : 0, sr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "1"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherMaskedShort256() {
+        VectorMask<Short> mask = VectorMask.fromArray(SSPEC_256, m, 0);
+        ShortVector.fromArray(SSPEC_256, sa, 0, indexes[2], 0, mask)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedShort256")
+    public void verifyLoadGatherMaskedShort256() {
+        for (int i = 0; i < SSPEC_256.length(); i++) {
+            Asserts.assertEquals(m[i] ? sa[indexes[2][i]] : 0, sr[i]);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_GATHER_MASKED, "2"},
+        applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", "64"})
+    public void testLoadGatherMaskedShort512() {
+        VectorMask<Short> mask = VectorMask.fromArray(SSPEC_512, m, 0);
+        ShortVector.fromArray(SSPEC_512, sa, 0, indexes[3], 0, mask)
+                   .intoArray(sr, 0);
+    }
+
+    @Check(test = "testLoadGatherMaskedShort512")
+    public void verifyLoadGatherMaskedShort512() {
+        for (int i = 0; i < SSPEC_512.length(); i++) {
+            Asserts.assertEquals(m[i] ? sa[indexes[3][i]] : 0, sr[i]);
         }
     }
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(5000)
-                     .addFlags("--add-modules=jdk.incubator.vector")
-                     .start();
+                     .addFlags("--add-modules=jdk.incubator.vector",
+                               "-XX:-TieredCompilation");
+        // Set MaxVectorSize for tests.
+        if (args != null && args.length > 0) {
+            String vmFlags = "";
+            switch (args[0]) {
+                case "MaxVectorSize_16":
+                    vmFlags = "-XX:MaxVectorSize=16";
+                    break;
+                case "MaxVectorSize_32":
+                    vmFlags = "-XX:MaxVectorSize=32";
+                    break;
+                case "MaxVectorSize_64":
+                    vmFlags = "-XX:MaxVectorSize=64";
+                    break;
+                default:
+                    throw new RuntimeException("Unexpected args");
+            }
+            testFramework.addFlags(vmFlags);
+        }
+        testFramework.start();
     }
 }

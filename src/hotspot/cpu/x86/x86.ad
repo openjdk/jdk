@@ -2247,12 +2247,6 @@ uint Matcher::vector_ideal_reg(int size) {
   return 0;
 }
 
-// Vector ideal reg size corresponding to the specified len in bytes
-uint Matcher::vector_ideal_reg_size(int size) {
-  assert(MaxVectorSize >= size, "");
-  return size;
-}
-
 // Check for shift by small constant as well
 static bool clone_shift(Node* shift, Matcher* matcher, Matcher::MStack& mstack, VectorSet& address_visited) {
   if (shift->Opcode() == Op_LShiftX && shift->in(2)->is_Con() &&

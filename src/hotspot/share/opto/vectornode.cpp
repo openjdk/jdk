@@ -1041,31 +1041,19 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   uint vlen = vt->length();
   BasicType bt = vt->element_basic_type();
 
-  BasicType mask_bt = bt;
-  uint mask_vlen = vlen;
-  if (vopc == Op_LoadVectorGather && is_subword_type(bt)) {
-    // It uses the index vector's type as the mask type for subword gather load.
-    const TypeVect* index_vt = node->in(MemNode::ValueIn)->bottom_type()->isa_vect();
-    if (index_vt == nullptr) {
-      return nullptr;
-    }
-    mask_bt = index_vt->element_basic_type();
-    mask_vlen = index_vt->length();
-  }
-
   // Predicated vectors do not need to add another mask input
   if (node->is_predicated_vector() || !Matcher::has_predicated_vectors() ||
       !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt) ||
-      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, mask_vlen, mask_bt)) {
+      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt)) {
     return nullptr;
   }
 
   Node* mask = nullptr;
   // Generate a vector mask for vector operation whose vector length is lower than the
   // hardware supported max vector length.
-  if (mask_vlen * type2aelembytes(mask_bt) < (uint)MaxVectorSize) {
-    Node* length = gvn->transform(new ConvI2LNode(gvn->makecon(TypeInt::make(mask_vlen))));
-    mask = gvn->transform(VectorMaskGenNode::make(length, mask_bt, mask_vlen));
+  if (vt->length_in_bytes() < (uint)MaxVectorSize) {
+    Node* length = gvn->transform(new ConvI2LNode(gvn->makecon(TypeInt::make(vlen))));
+    mask = gvn->transform(VectorMaskGenNode::make(length, bt, vlen));
   } else {
     return nullptr;
   }
@@ -1080,7 +1068,8 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   case Op_LoadVectorGather:
     return new LoadVectorGatherMaskedNode(node->in(0), node->in(1), node->in(2),
                                           node->as_LoadVector()->adr_type(), vt,
-                                          node->in(3), mask);
+                                          node->in(3), mask,
+                                          node->as_LoadVectorGather()->mem_bt());
   case Op_StoreVector:
     return new StoreVectorMaskedNode(node->in(0), node->in(1), node->in(2), node->in(3),
                                      node->as_StoreVector()->adr_type(), mask);

@@ -1037,12 +1037,6 @@ uint Matcher::vector_ideal_reg(int size) {
   return 0;
 }
 
-// Vector ideal reg size corresponding to the specified size in bytes
-uint Matcher::vector_ideal_reg_size(int size) {
-  assert(MaxVectorSize >= size, "");
-  return size;
-}
-
 // Limits on vector size (number of elements) loaded into vector.
 int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");

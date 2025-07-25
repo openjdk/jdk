@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2012,12 +2012,6 @@ uint Matcher::vector_ideal_reg(int len) {
 
   ShouldNotReachHere();
   return 0;
-}
-
-// Vector ideal reg size corresponding to the specified len in bytes
-uint Matcher::vector_ideal_reg_size(int len) {
-  assert(MaxVectorSize >= len, "");
-  return MaxVectorSize;
 }
 
 int Matcher::scalable_vector_reg_size(const BasicType bt) {

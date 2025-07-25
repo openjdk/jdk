@@ -1116,14 +1116,20 @@ class LoadVectorNode : public LoadNode {
 //------------------------------LoadVectorGatherNode------------------------------
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
+ private:
+  // The basic type of memory, which might be different with the vector element type
+  // when it is a subword type loading.
+  BasicType _mem_bt;
+
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, BasicType mem_bt = T_ILLEGAL)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
     DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
     assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
+    _mem_bt = mem_bt != T_ILLEGAL ? mem_bt : vt->element_basic_type();
   }
 
   virtual int Opcode() const;
@@ -1134,6 +1140,8 @@ class LoadVectorGatherNode : public LoadVectorNode {
     // Ensure it is different from any store opcode to avoid folding when indices are used
     return -1;
   }
+  virtual uint size_of() const { return sizeof(*this); }
+  BasicType mem_bt() const { return _mem_bt; }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -1246,14 +1254,21 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
+ private:
+  // The basic type of memory, which might be different with the vector element type when it
+  // is a subword type loading.
+  BasicType _mem_bt;
+
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt,
+                             Node* indices, Node* mask, BasicType mem_bt = T_ILLEGAL)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
     assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
+    _mem_bt = mem_bt != T_ILLEGAL ? mem_bt : vt->element_basic_type();
   }
 
   virtual int Opcode() const;
@@ -1264,6 +1279,8 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
     // Ensure it is different from any store opcode to avoid folding when indices and mask are used
     return -1;
   }
+  virtual uint size_of() const { return sizeof(*this); }
+  BasicType mem_bt() const { return _mem_bt; }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
@@ -1739,20 +1756,19 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
-// Generate a vector by slicing the two source vectors based on an index.
+// Concatenate elements from two source vectors by narrowing the elements to half size. Put
+// the narrowed elements from the first source vector to the lower half of the destination
+// vector, and the narrowed elements from the second source vector to the upper half.
 //
-// Copy the indexed byte up to the last byte of the first source vector
-// to the bottom of the result vector, then fill the remainder of the
-// result starting from the first byte of the second source vector.
+// e.g. vec1 = [0d 0c 0b 0a], vec2 = [0h 0g 0f 0e]
+//      dst = [h g f e d c b a]
 //
-// E.g. src1 = [hgfedcba] src2 = [ponmlkji] index = 3
-//      dst = [kjihgfed]
-class VectorSliceNode : public VectorNode {
+class VectorConcatenateNode : public VectorNode {
  public:
-  VectorSliceNode(Node* vec1, Node* vec2, Node* index)
-    : VectorNode(vec1, vec2, index, vec1->bottom_type()->is_vect()) {
-    assert(index->bottom_type()->isa_int(), "index must be an integral value");
-    assert(index->is_Con(), "index must be a constant");
+  VectorConcatenateNode(Node* vec1, Node* vec2, const TypeVect* vt)
+    : VectorNode(vec1, vec2, vt) {
+    assert(type2aelembytes(vec1->bottom_type()->is_vect()->element_basic_type()) ==
+           type2aelembytes(vt->element_basic_type()) * 2, "must be half size");
   }
 
   virtual int Opcode() const;
@@ -1819,23 +1835,31 @@ class VectorMaskCastNode : public VectorNode {
 // Unpack the elements to twice size.
 class VectorMaskWidenNode : public VectorNode {
  private:
-  // "_is_lo" is used to denote whether the lower half or
-  // the upper half of the elements are widened.
+  // "_is_hi" is used to denote whether the upper or lower half of the elements
+  // are widened. Widen the upper half part if it is true, otherwise widen the
+  // lower half part.
+  //
   // E.g. src = [1111 0101]
-  //      _is_lo = true, dst = [0001 0001]
-  //      _is_lo = false, dst = [0101 0101]
-  bool _is_lo;
+  //      _is_hi = false, dst = [0001 0001]
+  //      _is_hi = true, dst = [0101 0101]
+  bool _is_hi;
 
  public:
-  VectorMaskWidenNode(Node* in, const TypeVect* vt, bool is_lo) : VectorNode(in, vt), _is_lo(is_lo) {
+  VectorMaskWidenNode(Node* in, const TypeVect* vt, bool is_hi)
+    : VectorNode(in, vt), _is_hi(is_hi) {
     init_class_id(Class_VectorMaskWiden);
     const TypeVect* in_vt = in->bottom_type()->is_vect();
-    assert(type2aelembytes(in_vt->element_basic_type()) == type2aelembytes(vt->element_basic_type()) / 2, "must be half size");
+    assert(type2aelembytes(in_vt->element_basic_type()) ==
+           type2aelembytes(vt->element_basic_type()) / 2, "must be half size");
   }
 
-  bool is_lo() const { return _is_lo; }
+  bool is_hi() const { return _is_hi; }
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
+  virtual uint hash() const { return Node::hash() + _is_hi; }
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _is_hi == ((VectorMaskWidenNode&)n).is_hi();
+  }
 };
 
 // This is intended for use as a simple reinterpret node that has no cast.

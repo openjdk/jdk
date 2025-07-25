@@ -2440,7 +2440,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(4);
       break;
     }
-    case Op_VectorSlice:
     case Op_SelectFromTwoVector:
     case Op_LoopLimit: {
       Node* pair1 = new BinaryNode(n->in(1), n->in(2));

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2024 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1845,12 +1845,6 @@ uint Matcher::vector_ideal_reg(int size) {
     assert(MaxVectorSize == 8 && size == 8, "");
     return Op_RegL;
   }
-}
-
-// Vector ideal reg size corresponding to the specified size in bytes
-uint Matcher::vector_ideal_reg_size(int size) {
-  assert(MaxVectorSize == size, "");
-  return size;
 }
 
 // Limits on vector size (number of elements) loaded into vector.
