@@ -253,15 +253,18 @@ source %{
         // For vector length of 16B, generate SVE2 "tbl" instruction if SVE2 is supported, else
         // generate Neon "tbl" instruction to select from two vectors.
         // This operation is disabled for doubles and longs on machines with SVE < 2 and instead
-        // the default VectorRearrange + VectorBlend is generated as the performance of the default
-        // implementation was slightly better/similar than the implementation for SelectFromTwoVector.
+        // the default VectorRearrange + VectorBlend is generated because the performance of the default
+        // implementation was better than or equal to the implementation for SelectFromTwoVector.
         if (UseSVE < 2 && (type2aelembytes(bt) == 8 || length_in_bytes > 16)) {
           return false;
         }
 
         // Because the SVE2 "tbl" instruction is unpredicated and partial operations cannot be generated
-        // using masks, we currently disable this operation on machines where length_in_bytes <
-        // MaxVectorSize on that machine with the only exception of 8B vector length.
+        // using masks, we disable this operation on machines where length_in_bytes < MaxVectorSize
+        // on that machine with the only exception of 8B vector length. This is because at the time of
+        // writing this, there is no SVE2 machine available with length_in_bytes > 8 and
+        // length_in_bytes < MaxVectorSize to test this operation on (for example - there isn't an
+        // SVE2 machine available with MaxVectorSize = 32 to test a case with length_in_bytes = 16).
         if (UseSVE == 2 && length_in_bytes > 8 && length_in_bytes < MaxVectorSize) {
           return false;
         }
@@ -5200,7 +5203,6 @@ instruct vselect_from_two_vectors_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-
 SELECT_FROM_TWO_VECTORS(10, 11)
 SELECT_FROM_TWO_VECTORS(12, 13)
 SELECT_FROM_TWO_VECTORS(17, 18)
