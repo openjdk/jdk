@@ -127,6 +127,7 @@ class SharedRuntime: AllStatic {
   static jfloat  frem(jfloat  x, jfloat  y);
   static jdouble drem(jdouble x, jdouble y);
 
+
 #ifdef _WIN64
   // Workaround for fmod issue in the Windows x64 CRT
   static double fmod_winx64(double x, double y);
