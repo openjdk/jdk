@@ -127,59 +127,6 @@ class SharedRuntime: AllStatic {
   static jfloat  frem(jfloat  x, jfloat  y);
   static jdouble drem(jdouble x, jdouble y);
 
-  template <typename... TT>
-  static void debug_print_tt(const char *format, TT... args) {
-    DEBUG_ONLY(NoHandleMark __hm;)
-    os::verify_stack_alignment();
-    DEBUG_ONLY(NoSafepointVerifier __nsv;)
-
-    tty->print("%s", format);
-    debug_print_t(args...);
-    tty->print_cr("");
-  }
-
-  static void print_primitive(jfloat x) {
-    tty->print("[%f] ", x);
-  }
-
-  static void print_primitive(jdouble x) {
-    tty->print("[%lf] ", x);
-  }
-
-  static void print_primitive(jchar x) {
-    tty->print("[%c] ", x);
-  }
-
-  static void print_primitive(jshort x) {
-    tty->print("[%d] ", x);
-  }
-
-  static void print_primitive(jboolean x) {
-    tty->print("[%d] ", x);
-  }
-
-  static void print_primitive(jint x) {
-    tty->print("[%d] ", x);
-  }
-
-  static void print_primitive(jlong x) {
-    tty->print("[%ld] ", x);
-  }
-
-  // TODO name does not make sense anymore
-  static void print_primitive(oopDesc* x) {
-    x->print();
-  }
-
-  template <typename T, typename... Rest>
-  static void debug_print_t(T arg, Rest... args) {
-    print_primitive(arg);
-    debug_print_t(args...);
-  }
-
-  static void debug_print_t() {}
-
-
 #ifdef _WIN64
   // Workaround for fmod issue in the Windows x64 CRT
   static double fmod_winx64(double x, double y);
@@ -690,6 +637,37 @@ class SharedRuntime: AllStatic {
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
   static void print_ic_miss_histogram();
+
+  // Runtime methods for printf-style debug nodes
+  static void debug_print_value(jfloat x);
+  static void debug_print_value(jdouble x);
+  static void debug_print_value(jchar x);
+  static void debug_print_value(jshort x);
+  static void debug_print_value(jboolean x);
+  static void debug_print_value(jint x);
+  static void debug_print_value(jlong x);
+  static void debug_print_value(oopDesc* x);
+
+  template <typename T, typename... Rest>
+  static void debug_print_rec(T arg, Rest... args) {
+    print_arg(arg);
+    debug_print_rec(args...);
+  }
+
+  static void debug_print_rec() {}
+
+  // template is required here as we need to know the exact signature at compile-time
+  template <typename... TT>
+  static void debug_print(const char *format, TT... args) {
+    // these three lines are the manual expansion of JRT_LEAF ... JRT_END, does not work well with templates
+    DEBUG_ONLY(NoHandleMark __hm;)
+    os::verify_stack_alignment();
+    DEBUG_ONLY(NoSafepointVerifier __nsv;)
+
+    tty->print("%s", format);
+    debug_print_rec(args...);
+    tty->print_cr("");
+  }
 
 #endif // PRODUCT
 
