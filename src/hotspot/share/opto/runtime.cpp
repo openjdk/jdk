@@ -1812,6 +1812,8 @@ void OptoRuntime::debug_print_convert_type(const Type** fields, int* argp, Node 
     case T_OBJECT:
       fields[(*argp)++] = TypePtr::NOTNULL;
       break;
+    case T_VOID: // half of long/double
+      break;
     default:
       ShouldNotReachHere();
       break;

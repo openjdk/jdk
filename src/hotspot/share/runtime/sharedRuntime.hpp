@@ -651,7 +651,7 @@ class SharedRuntime: AllStatic {
 
   template <typename T, typename... Rest>
   static void debug_print_rec(T arg, Rest... args) {
-    print_arg(arg);
+    debug_print_value(arg);
     debug_print_rec(args...);
   }
 
