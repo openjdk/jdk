@@ -316,13 +316,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
-        verifyMutable();
         prerequisiteActions.add(action);
         return this;
     }
 
     JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
-        verifyMutable();
         verifyActions.add(action);
         return this;
     }
@@ -820,6 +818,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public Executor.Result execute(int expectedExitCode) {
+        verifyMutable();
         executePrerequisiteActions();
 
         if (hasArgument("--dest")) {
@@ -1046,6 +1045,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setReadOnlyPathAsserts(ReadOnlyPathAssert... asserts) {
+        verifyMutable();
         readOnlyPathAsserts = Set.of(asserts);
         return this;
     }
@@ -1115,6 +1115,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setAppLayoutAsserts(AppLayoutAssert ... asserts) {
+        verifyMutable();
         appLayoutAsserts = Set.of(asserts);
         return this;
     }
@@ -1258,6 +1259,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand setUnpackedPackageLocation(Path path) {
+        verifyMutable();
         verifyIsOfType(PackageType.NATIVE);
         if (path != null) {
             setArgumentValue(UNPACKED_PATH_ARGNAME, path);
@@ -1268,6 +1270,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand winMsiLogFile(Path v) {
+        verifyMutable();
         if (!TKit.isWindows()) {
             throw new UnsupportedOperationException();
         }
@@ -1290,6 +1293,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     private JPackageCommand adjustArgumentsBeforeExecution() {
+        verifyMutable();
         if (!isWithToolProvider()) {
             // if jpackage is launched as a process then set the jlink.debug system property
             // to allow the jlink process to print exception stacktraces on any failure
