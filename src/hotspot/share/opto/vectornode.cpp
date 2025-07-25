@@ -1985,8 +1985,8 @@ Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
   Node* in1 = in(1);
   // VectorMaskToLong follows a VectorStoreMask if predicate is not supported.
   if (in1->Opcode() == Op_VectorStoreMask) {
+    assert(!in1->in(1)->bottom_type()->isa_vectmask(), "sanity");
     in1 = in1->in(1);
-    assert(!in1->bottom_type()->isa_vectmask(), "sanity");
   }
   if (VectorNode::is_all_ones_vector(in1)) {
     int vlen = in1->bottom_type()->is_vect()->length();
