@@ -24,7 +24,18 @@
 
 
 /*
- * @test
+ * @test id=static
+ * @bug 8361725
+ * @summary -javaagent should be disabled with -Xshare:dump -XX:+AOTClassLinking
+ * @requires vm.cds.supports.aot.class.linking
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build JavaAgent JavaAgentTransformer Util
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp JavaAgentApp$ShouldBeTransformed
+ * @run driver JavaAgent STATIC
+ */
+
+/*
+ * @test id=aot
  * @summary -javaagent should be allowed in AOT workflow. However, classes transformed/redefined by agents will not
  *          be cached.
  * @requires vm.cds.supports.aot.class.linking
@@ -68,7 +79,13 @@ public class JavaAgent {
 
         @Override
         public String[] vmArgs(RunMode runMode) {
-            return new String[] { "-javaagent:" + agentJar, "-Xlog:aot,cds"};
+            return new String[] {
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+AllowArchivingWithJavaAgent",
+                "-javaagent:" + agentJar,
+                "-Xlog:aot,cds",
+                "-XX:+AOTClassLinking",
+            };
         }
 
         @Override
@@ -80,7 +97,18 @@ public class JavaAgent {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            String agentLoadedMsg = "JavaAgentTransformer.premain() is called";
+            if (isAOTWorkflow()) {
+                checkExecutionForAOTWorkflow(out, runMode);
+            } else {
+                checkExecutionForStaticWorkflow(out, runMode);
+            }
+        }
+
+        static String agentLoadedMsg = "JavaAgentTransformer.premain() is called";
+        static String agentPremainFinished = "JavaAgentTransformer::premain() is finished";
+
+        public void checkExecutionForAOTWorkflow(OutputAnalyzer out, RunMode runMode) throws Exception {
+
             if (runMode.isApplicationExecuted()) {
                 out.shouldContain(agentLoadedMsg);
                 out.shouldContain("Transforming: JavaAgentApp$ShouldBeTransformed; Class<?> = null");
@@ -91,12 +119,26 @@ public class JavaAgent {
 
             switch (runMode) {
             case RunMode.TRAINING:
+                out.shouldContain(agentPremainFinished);
                 out.shouldContain("Skipping JavaAgentApp$ShouldBeTransformed: From ClassFileLoadHook");
                 out.shouldContain("Skipping JavaAgentTransformer: Unsupported location");
                 break;
             case RunMode.ASSEMBLY:
                 out.shouldContain("Disabled all JVMTI agents during -XX:AOTMode=create");
+                out.shouldNotContain(agentPremainFinished);
                 break;
+            }
+
+        }
+
+        public void checkExecutionForStaticWorkflow(OutputAnalyzer out, RunMode runMode) throws Exception {
+            switch (runMode) {
+            case RunMode.DUMP_STATIC:
+                out.shouldContain("Disabled all JVMTI agents with -Xshare:dump -XX:+AOTClassLinking");
+                out.shouldNotContain(agentPremainFinished);
+                break;
+            default:
+                out.shouldContain(agentPremainFinished);
             }
         }
     }
