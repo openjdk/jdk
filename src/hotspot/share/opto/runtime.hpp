@@ -199,7 +199,6 @@ class OptoRuntime : public AllStatic {
 #endif // INCLUDE_JVMTI
   static const TypeFunc* _dtrace_method_entry_exit_Type;
   static const TypeFunc* _dtrace_object_alloc_Type;
-  static const TypeFunc* _debug_print_Type;
 
   // define stubs
   static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, StubId stub_id, int is_fancy_jump, bool pass_tls, bool return_pc);
@@ -738,79 +737,19 @@ private:
     return _dtrace_object_alloc_Type;
   }
 
-  static void put_type(const Type** fields, int* argp, Node *parm) {
-    switch (parm->bottom_type()->basic_type()) {
-      case T_BOOLEAN:
-        fields[(*argp)++] = TypeInt::BOOL;
-        break;
-      case T_CHAR:
-        fields[(*argp)++] = TypeInt::CHAR;
-        break;
-      case T_FLOAT:
-        fields[(*argp)++] = Type::FLOAT;
-        break;
-      case T_DOUBLE:
-        fields[(*argp)++] = Type::DOUBLE;
-        fields[(*argp)++] = Type::HALF;
-        break;
-      case T_BYTE:
-        fields[(*argp)++] = TypeInt::BYTE;
-        break;
-      case T_SHORT:
-        fields[(*argp)++] = TypeInt::SHORT;
-        break;
-      case T_INT:
-        fields[(*argp)++] = TypeInt::INT;
-        break;
-      case T_LONG:
-        fields[(*argp)++] = TypeLong::LONG;
-        fields[(*argp)++] = Type::HALF;
-        break;
-      case T_OBJECT:
-        fields[(*argp)++] = TypePtr::NOTNULL;
-        break;
-      default:
-        break;
-    }
-  }
+#ifndef PRODUCT
+  private:
+  static void debug_print_convert_type(const Type** fields, int* argp, Node *parm);
 
+  public:
+  // Signature for runtime calls in debug printing nodes, which depends on which nodes are actually passed
+  // Note: we do not allow more than 7 node arguments as GraphKit::make_runtime_call only allows 8, and we need
+  // one for the static string
   static const TypeFunc* debug_print_Type(Node* parm0 = nullptr, Node* parm1 = nullptr,
                                           Node* parm2 = nullptr, Node* parm3 = nullptr,
                                           Node* parm4 = nullptr, Node* parm5 = nullptr,
-                                          Node* parm6 = nullptr) {
-    int argcnt = 1;
-    if (parm0 != nullptr) { argcnt++;
-    if (parm1 != nullptr) { argcnt++;
-    if (parm2 != nullptr) { argcnt++;
-    if (parm3 != nullptr) { argcnt++;
-    if (parm4 != nullptr) { argcnt++;
-    if (parm5 != nullptr) { argcnt++;
-    if (parm6 != nullptr) { argcnt++;
-    /* close each nested if ===> */  } } } } } } }
-
-    // create input type (domain)
-    const Type** fields = TypeTuple::fields(argcnt);
-    int argp = TypeFunc::Parms;
-    fields[argp++] = TypePtr::NOTNULL;    // static string pointer
-
-    if (parm0 != nullptr) { put_type(fields, &argp, parm0);
-    if (parm1 != nullptr) { put_type(fields, &argp, parm1);
-    if (parm2 != nullptr) { put_type(fields, &argp, parm2);
-    if (parm3 != nullptr) { put_type(fields, &argp, parm3);
-    if (parm4 != nullptr) { put_type(fields, &argp, parm4);
-    if (parm5 != nullptr) { put_type(fields, &argp, parm5);
-    if (parm6 != nullptr) { put_type(fields, &argp, parm6);
-    /* close each nested if ===> */  } } } } } } }
-
-    assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
-    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
-
-    // no result type needed
-    fields = TypeTuple::fields(1);
-    fields[TypeFunc::Parms+0] = nullptr; // void
-    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
-    return TypeFunc::make(domain, range);
-  }
+                                          Node* parm6 = nullptr);
+#endif // PRODUCT
 
  private:
  static NamedCounter * volatile _named_counters;

@@ -774,6 +774,8 @@ class GraphKit : public Phase {
                           Node* parm4 = nullptr, Node* parm5 = nullptr,
                           Node* parm6 = nullptr, Node* parm7 = nullptr);
 
+#ifndef PRODUCT
+  // Creates a CallLeafNode that prints a static string and the values of the nodes passed as arguments
   template <typename... TT, typename... NN>
   Node* make_debug_print(const char* str, NN... in) {
     int flags = RC_LEAF;
@@ -784,6 +786,7 @@ class GraphKit : public Phase {
 
     return call;
   }
+#endif // PRODUCT
 
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);

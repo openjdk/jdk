@@ -1781,6 +1781,83 @@ static const TypeFunc* make_osr_end_Type() {
   return TypeFunc::make(domain, range);
 }
 
+#ifndef PRODUCT
+void OptoRuntime::debug_print_convert_type(const Type** fields, int* argp, Node *parm) {
+  switch (parm->bottom_type()->basic_type()) {
+    case T_BOOLEAN:
+      fields[(*argp)++] = TypeInt::BOOL;
+      break;
+    case T_CHAR:
+      fields[(*argp)++] = TypeInt::CHAR;
+      break;
+    case T_FLOAT:
+      fields[(*argp)++] = Type::FLOAT;
+      break;
+    case T_DOUBLE:
+      fields[(*argp)++] = Type::DOUBLE;
+      fields[(*argp)++] = Type::HALF;
+      break;
+    case T_BYTE:
+      fields[(*argp)++] = TypeInt::BYTE;
+      break;
+    case T_SHORT:
+      fields[(*argp)++] = TypeInt::SHORT;
+      break;
+    case T_INT:
+      fields[(*argp)++] = TypeInt::INT;
+      break;
+    case T_LONG:
+      fields[(*argp)++] = TypeLong::LONG;
+      fields[(*argp)++] = Type::HALF;
+      break;
+    case T_OBJECT:
+      fields[(*argp)++] = TypePtr::NOTNULL;
+      break;
+    default:
+      ShouldNotReachHere();
+      break;
+  }
+}
+
+const TypeFunc* OptoRuntime::debug_print_Type(Node* parm0, Node* parm1,
+                                        Node* parm2, Node* parm3,
+                                        Node* parm4, Node* parm5,
+                                        Node* parm6) {
+  int argcnt = 1;
+  if (parm0 != nullptr) { argcnt++;
+  if (parm1 != nullptr) { argcnt++;
+  if (parm2 != nullptr) { argcnt++;
+  if (parm3 != nullptr) { argcnt++;
+  if (parm4 != nullptr) { argcnt++;
+  if (parm5 != nullptr) { argcnt++;
+  if (parm6 != nullptr) { argcnt++;
+  /* close each nested if ===> */  } } } } } } }
+
+  // create input type (domain)
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // static string pointer
+
+  if (parm0 != nullptr) { debug_print_convert_type(fields, &argp, parm0);
+  if (parm1 != nullptr) { debug_print_convert_type(fields, &argp, parm1);
+  if (parm2 != nullptr) { debug_print_convert_type(fields, &argp, parm2);
+  if (parm3 != nullptr) { debug_print_convert_type(fields, &argp, parm3);
+  if (parm4 != nullptr) { debug_print_convert_type(fields, &argp, parm4);
+  if (parm5 != nullptr) { debug_print_convert_type(fields, &argp, parm5);
+  if (parm6 != nullptr) { debug_print_convert_type(fields, &argp, parm6);
+  /* close each nested if ===> */  } } } } } } }
+
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+#endif // PRODUCT
+
 //-------------------------------------------------------------------------------------
 // register policy
 
@@ -2291,7 +2368,6 @@ void OptoRuntime::initialize_types() {
 #endif // INCLUDE_JVMTI
   _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
   _dtrace_object_alloc_Type           = make_dtrace_object_alloc_Type();
-  // _debug_print_Type                   = make_debug_print_Type();
 }
 
 int trace_exception_counter = 0;
