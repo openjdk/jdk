@@ -738,9 +738,27 @@ private:
     return _dtrace_object_alloc_Type;
   }
 
-  static inline const TypeFunc* debug_print_Type() {
-    assert(_debug_print_Type != nullptr, "should be initialized");
-    return _debug_print_Type;
+  template <class ...Args>
+  struct ArgWriter;
+
+  template <typename... TT>
+  static const TypeFunc* debug_print_Type() {
+    // create input type (domain)
+    int num_args      = 1 + sizeof...(TT);
+    int argcnt = num_args;
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;    // static string pointer
+    ArgWriter<TT...>::put(fields, &argp);
+
+    assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+    // no result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms+0] = nullptr; // void
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+    return TypeFunc::make(domain, range);
   }
 
  private:
@@ -755,6 +773,19 @@ private:
  static void          print_named_counters();
 
  static void          initialize_types();
+};
+
+template <>
+struct OptoRuntime::ArgWriter<> {
+  static void put(const Type** fields, int* argp) {}
+};
+
+template <class T, class ...Args>
+struct OptoRuntime::ArgWriter<T, Args...> {
+  static void put(const Type** fields, int* argp) {
+    fields[(*argp)++] = TypeInt::INT; // TODO replace by a polymorphic version
+    ArgWriter<Args...>::put(fields, argp);
+  }
 };
 
 #endif // SHARE_OPTO_RUNTIME_HPP

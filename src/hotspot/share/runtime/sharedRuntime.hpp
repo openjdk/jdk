@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
+#include "safepointVerifiers.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
@@ -128,6 +129,28 @@ class SharedRuntime: AllStatic {
 
   // TODO probably not the right location, let's move it later
   static void debug_print(const char* msg, int arg);
+
+  static void debug_printf(const char* format, ...);
+
+  template <typename... TT>
+  static void debug_print_tt(const char *format, TT... args) {
+    DEBUG_ONLY(NoHandleMark __hm;)
+    os::verify_stack_alignment();
+    DEBUG_ONLY(NoSafepointVerifier __nsv;)
+
+    tty->print("%s", format);
+    debug_print_t(args...);
+    tty->print_cr("");
+  }
+
+  template <typename T, typename... Rest>
+  static void debug_print_t(T arg, Rest... args) {
+    // TODO we could use a polymorphic function here to have a different behavior depending on type
+    tty->print("[%d] ", arg);
+    debug_print_t(args...);
+  }
+
+  static void debug_print_t() {}
 
 
 #ifdef _WIN64

@@ -2557,16 +2557,6 @@ Node* GraphKit::make_runtime_call(int flags,
 
 }
 
-Node* GraphKit::make_debug_print(const char* str, Node* in) {
-  int flags = RC_LEAF;
-  address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print);
-
-  Node* str_node = new ConPNode(TypeRawPtr::make(((address) str)));
-  Node* call = make_runtime_call(flags, OptoRuntime::debug_print_Type(), call_addr, "debug_print", TypeRawPtr::BOTTOM, str_node, in);
-
-  return call;
-}
-
 // i2b
 Node* GraphKit::sign_extend_byte(Node* in) {
   Node* tmp = _gvn.transform(new LShiftINode(in, _gvn.intcon(24)));
