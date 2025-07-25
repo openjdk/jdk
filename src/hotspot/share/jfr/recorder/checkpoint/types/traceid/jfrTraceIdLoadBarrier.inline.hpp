@@ -94,6 +94,11 @@ inline const Method* latest_version(const Klass* klass, const Method* method) {
   const InstanceKlass* const ik = InstanceKlass::cast(klass);
   assert(ik->has_been_redefined(), "invariant");
   const Method* const latest_version = ik->method_with_orig_idnum(method->orig_method_idnum());
+  if (latest_version == nullptr) {
+    assert(AllowRedefinitionToAddDeleteMethods, "invariant");
+    // method has been removed. Return old version.
+    return method;
+  }
   assert(latest_version != nullptr, "invariant");
   assert(latest_version != method, "invariant");
   assert(!latest_version->is_old(), "invariant");

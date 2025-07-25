@@ -533,8 +533,9 @@ static void clear_method_tracer_klasses() {
 static void do_unloading_klass(Klass* klass) {
   assert(klass != nullptr, "invariant");
   assert(_subsystem_callback != nullptr, "invariant");
-  if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
-    return;
+  if (!used(klass) && klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
+    SET_TRANSIENT(klass);
+    assert(used(klass), "invariant");
   }
   if (JfrKlassUnloading::on_unload(klass)) {
     if (JfrTraceId::has_sticky_bit(klass)) {
@@ -1061,12 +1062,17 @@ class MethodIteratorHost {
   bool operator()(KlassPtr klass) {
     if (_method_used_predicate(klass)) {
       const InstanceKlass* ik = InstanceKlass::cast(klass);
-      const int len = ik->methods()->length();
-      for (int i = 0; i < len; ++i) {
-        MethodPtr method = ik->methods()->at(i);
-        if (_method_flag_predicate(method)) {
-          _method_cb(method);
+      while (ik != nullptr) {
+        const int len = ik->methods()->length();
+        for (int i = 0; i < len; ++i) {
+          MethodPtr method = ik->methods()->at(i);
+          if (_method_flag_predicate(method)) {
+            _method_cb(method);
+          }
         }
+        // There can be multiple versions of the same method running
+        // due to redefinition. Need to inspect the complete set of methods.
+        ik = ik->previous_versions();
       }
     }
     return _klass_used_predicate(klass) ? _klass_cb(klass) : true;

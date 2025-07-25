@@ -138,7 +138,11 @@ void JfrTraceTagging::on_klass_redefinition(const InstanceKlass* ik, const Insta
     const Method* const nm = new_methods->at(i);
     assert(nm != nullptr, "invariant");
     const Method* const om = scratch_klass->method_with_orig_idnum(nm->orig_method_idnum());
-    assert(om != nullptr, "invariant");
+    if (om == nullptr) {
+      assert(AllowRedefinitionToAddDeleteMethods, "invariant");
+      // nm is a newly added Method.
+      continue;
+    }
     assert(nm != om, "invariant");
     assert(om->is_old(), "invariant");
     assert(nm->orig_method_idnum() == om->orig_method_idnum(), "invariant");
@@ -168,4 +172,3 @@ void JfrTraceTagging::on_klass_redefinition(const InstanceKlass* ik, const Insta
     JfrMethodTracer::on_klass_redefinition(ik, JfrTraceId::has_timing_bit(scratch_klass));
   }
 }
-
