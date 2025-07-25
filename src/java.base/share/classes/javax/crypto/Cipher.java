@@ -506,7 +506,7 @@ public class Cipher {
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
      *         or if no provider supports a {@code CipherSpi}
-     *         implementation for the specified algorithm
+     *         implementation for the specified {@code transformation}
      *
      * @throws NoSuchPaddingException if {@code transformation}
      *         contains a padding scheme that is not available
@@ -601,13 +601,15 @@ public class Cipher {
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
      *         or if a {@code CipherSpi} implementation for the
-     *         specified algorithm is not available from the specified
-     *         provider
+     *         specified {@code transformation} is not available from
+     *         the {@code provider} due to causes not covered by the
+     *         {@code NoSuchPaddingException}
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} object
+     *         from the {@code provider} is found using the algorithm
+     *         and mode but not the padding scheme
      *
-     * @throws NoSuchProviderException if the specified provider is not
+     * @throws NoSuchProviderException if the specified {@code provider} is not
      *         registered in the security provider list
      *
      * @see java.security.Provider
@@ -674,11 +676,13 @@ public class Cipher {
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
      *         or if a {@code CipherSpi} implementation for the
-     *         specified algorithm is not available from the specified
-     *         {@code provider} object
+     *         specified {@code transformation} is not available from
+     *         the specified {@code provider} due to causes not covered
+     *         by the {@code NoSuchPaddingException}
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if the {@code CipherSpi} object
+     *         from the {@code provider} is found using the algorithm
+     *         and mode but not the padding scheme
      *
      * @see java.security.Provider
      */
