@@ -243,6 +243,7 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
 // !! Note: this may invalidate the chunk. Do not access the chunk after
 //    this function returns !!
 void ChunkManager::return_chunk(Metachunk* c) {
+  DEBUG_ONLY(c->zap();)
   // It is valid to poison the chunk payload area at this point since its physically separated from
   // the chunk meta info.
   ASAN_POISON_MEMORY_REGION(c->base(), c->word_size() * BytesPerWord);
