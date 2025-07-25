@@ -49,7 +49,7 @@ public:
 
   // Can this VM map archived heap region? Currently only G1+compressed{oops,cp}
   static bool can_map() {
-    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedClassPointers);)
+    CDS_JAVA_HEAP_ONLY(return (UseG1GC && USES_COMPRESSED_KLASS_POINTERS);)
     NOT_CDS_JAVA_HEAP(return false;)
   }
 

@@ -680,13 +680,11 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     }
     // Allocate space for the future InstanceKlass with proper alignment
     const size_t alignment =
-#ifdef _LP64
-      UseCompressedClassPointers ?
-        nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()) :
-        SharedSpaceObjectAlignment;
+#if USES_COMPRESSED_KLASS_POINTERS
+        nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
 #else
       SharedSpaceObjectAlignment;
-#endif
+#endif // USES_COMPRESSED_KLASS_POINTERS
     dest = dump_region->allocate(bytes, alignment);
   } else {
     dest = dump_region->allocate(bytes);
@@ -1143,7 +1141,7 @@ class RelocateBufferToRequested : public BitMapClosure {
   }
 };
 
-#ifdef _LP64
+#if USES_COMPRESSED_KLASS_POINTERS
 int ArchiveBuilder::precomputed_narrow_klass_shift() {
   // Legacy Mode:
   //    We use 32 bits for narrowKlass, which should cover the full 4G Klass range. Shift can be 0.
@@ -1153,10 +1151,9 @@ int ArchiveBuilder::precomputed_narrow_klass_shift() {
   //
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.
-  assert(UseCompressedClassPointers, "Only needed for compressed class pointers");
   return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
-#endif // _LP64
+#endif // USES_COMPRESSED_KLASS_POINTERS
 
 void ArchiveBuilder::relocate_to_requested() {
   if (!ro_region()->is_packed()) {

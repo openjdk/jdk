@@ -244,10 +244,12 @@ static bool shared_base_too_high(char* specified_base, char* aligned_base, size_
 
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
-  size_t alignment = MetaspaceShared::core_region_alignment();
-  if (UseCompressedClassPointers) {
-    alignment = MAX2(alignment, Metaspace::reserve_alignment());
-  }
+  const size_t alignment =
+#if USES_COMPRESSED_KLASS_POINTERS
+    MAX2(MetaspaceShared::core_region_alignment(), Metaspace::reserve_alignment());
+#else
+  MetaspaceShared::core_region_alignment();
+#endif
 
   if (SharedBaseAddress == 0) {
     // Special meaning of -XX:SharedBaseAddress=0 -> Always map archive at os-selected address.
@@ -1660,8 +1662,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 // (The gap may result from different alignment requirements between metaspace
 //  and CDS)
 //
-// If UseCompressedClassPointers is disabled, only one address space will be
-//  reserved:
+// If uncompressed class pointers are used (USES_COMPRESSED_KLASS_POINTERS=0, 32-bit), only one
+//  address space will be reserved:
 //
 // +-- Base address             End
 // |                            |
@@ -1675,27 +1677,21 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 //  use_archive_base_addr address is false, this base address is determined
 //  by the platform.
 //
-// If UseCompressedClassPointers=1, the range encompassing both spaces will be
-//  suitable to en/decode narrow Klass pointers: the base will be valid for
+// If compressed class pointers are used (64-bit), the range encompassing both spaces
+//  will be suitable to en/decode narrow Klass pointers: the base will be valid for
 //  encoding, the range [Base, End) and not surpass the max. range for that encoding.
 //
 // Return:
 //
 // - On success:
-//    - total_space_rs will be reserved as whole for archive_space_rs and
-//      class_space_rs if UseCompressedClassPointers is true.
-//      On Windows, try reserve archive_space_rs and class_space_rs
-//      separately first if use_archive_base_addr is true.
-//    - archive_space_rs will be reserved and large enough to host static and
-//      if needed dynamic archive: [Base, A).
-//      archive_space_rs.base and size will be aligned to CDS reserve
-//      granularity.
-//    - class_space_rs: If UseCompressedClassPointers=1, class_space_rs will
-//      be reserved. Its start address will be aligned to metaspace reserve
-//      alignment, which may differ from CDS alignment. It will follow the cds
-//      archive space, close enough such that narrow class pointer encoding
-//      covers both spaces.
-//      If UseCompressedClassPointers=0, class_space_rs remains unreserved.
+//    - on 64-bit, with compressed class pointers: archive_space_rs and class_space_rs
+//      will both be reserved, and adjacent to each other (possibly with an alignment
+//      gap between them). archive_space_rs will be large enough to host static and - if
+//      needed - dynamic archive: [Base, A). total_space_rs will be covering both
+//      archive_space_rs and class_space_rs (hence, on error, be a handy shortcut to
+//      unmapping everything on platforms that allow unmapping multiple regions (POSIX).
+//    - on 32-bit, with uncompressed class pointers: archive_space_rs will be reserved;
+//      class_space_rs and total_space_rs will remain unreserved.
 // - On error: null is returned and the spaces remain unreserved.
 char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                           FileMapInfo* dynamic_mapinfo,
@@ -1711,32 +1707,34 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   size_t archive_end_offset  = (dynamic_mapinfo == nullptr) ? static_mapinfo->mapping_end_offset() : dynamic_mapinfo->mapping_end_offset();
   size_t archive_space_size = align_up(archive_end_offset, archive_space_alignment);
 
-  if (!Metaspace::using_class_space()) {
-    // Get the simple case out of the way first:
-    // no compressed class space, simple allocation.
+#if !USES_COMPRESSED_KLASS_POINTERS
+  // 32-bit:
+  // Get the simple case out of the way first:
+  // no compressed class space, simple allocation.
 
-    // When running without class space, requested archive base should be aligned to cds core alignment.
-    assert(is_aligned(base_address, archive_space_alignment),
-             "Archive base address unaligned: " PTR_FORMAT ", needs alignment: %zu.",
-             p2i(base_address), archive_space_alignment);
+  // When running without class space, requested archive base should be aligned to cds core alignment.
+  assert(is_aligned(base_address, archive_space_alignment),
+           "Archive base address unaligned: " PTR_FORMAT ", needs alignment: %zu.",
+           p2i(base_address), archive_space_alignment);
 
-    archive_space_rs = MemoryReserver::reserve((char*)base_address,
-                                               archive_space_size,
-                                               archive_space_alignment,
-                                               os::vm_page_size(),
-                                               mtNone);
-    if (archive_space_rs.is_reserved()) {
-      assert(base_address == nullptr ||
-             (address)archive_space_rs.base() == base_address, "Sanity");
-      // Register archive space with NMT.
-      MemTracker::record_virtual_memory_tag(archive_space_rs, mtClassShared);
-      return archive_space_rs.base();
-    }
-    return nullptr;
+  archive_space_rs = MemoryReserver::reserve((char*)base_address,
+                                             archive_space_size,
+                                             archive_space_alignment,
+                                             os::vm_page_size(),
+                                             mtNone);
+  if (archive_space_rs.is_reserved()) {
+    assert(base_address == nullptr ||
+           (address)archive_space_rs.base() == base_address, "Sanity");
+    // Register archive space with NMT.
+    MemTracker::record_virtual_memory_tag(archive_space_rs, mtClassShared);
+    return archive_space_rs.base();
   }
+  return nullptr;
 
-#ifdef _LP64
+#else
 
+  // 64-bit:
+  //
   // Complex case: two spaces adjacent to each other, both to be addressable
   //  with narrow class pointers.
   // We reserve the whole range spanning both spaces, then split that range up.
@@ -1845,13 +1843,9 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   assert(is_aligned(class_space_rs.base(), class_space_alignment), "Sanity");
   assert(is_aligned(class_space_rs.size(), class_space_alignment), "Sanity");
 
-
   return archive_space_rs.base();
 
-#else
-  ShouldNotReachHere();
-  return nullptr;
-#endif
+#endif // USES_COMPRESSED_KLASS_POINTERS
 
 }
 
