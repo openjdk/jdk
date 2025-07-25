@@ -45,15 +45,13 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * An adapter for {@link BasicImageReader} to present jimage resources in a
- * file system friendly way. The jimage entries (resources, module and package
+ * A view over the entries of a jimage file with a unified namespace suitable
+ * for file system use. The jimage entries (resources, module and package
  * information) are mapped into a unified hierarchy of named nodes, which serve
- * as the underlying structure for the {@code JrtFileSystem} and other utilities.
+ * as the underlying structure for {@code JrtFileSystem} and other utilities.
  *
- * <p>This class is not a conceptual subtype of {@code BasicImageReader} and
- * deliberately hides types such as {@code ImageLocation} to give a focused API
- * based only on the {@link Node} type. Entries in jimage are expressed as one
- * of three {@link Node} types resource nodes, directory nodes and link nodes.
+ * <p>Entries in jimage are expressed as one of three {@link Node} types;
+ * resource nodes, directory nodes and link nodes.
  *
  * <p>When remapping jimage entries, jimage location names (e.g. {@code
  * "/java.base/java/lang/Integer.class"}) are prefixed with {@code "/modules"}
@@ -67,6 +65,10 @@ import java.util.stream.Stream;
  * Unlike other nodes, the jimage file does not contain explicit entries for
  * link nodes, and their existence is derived only from the contents of the
  * parent directory.
+ *
+ * <p>While similar to {@code BasicImageReader}, this class is not a conceptual
+ * subtype of, it and deliberately hides types such as {@code ImageLocation} to
+ * give a focused API based only on nodes.
  *
  * @implNote This class needs to maintain JDK 8 source compatibility.
  *
@@ -124,10 +126,10 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
-     * Finds the node for the given JRT file system name.
+     * Finds the node with the given name.
      *
-     * @param name a JRT file system name (path) of the form
-     * {@code "/modules/<module>/...} or {@code "/packages/<package>/...}.
+     * @param name a node name of the form {@code "/modules/<module>/...} or
+     *     {@code "/packages/<package>/...}.
      * @return a node representing a resource, directory or symbolic link.
      */
     public Node findNode(String name) throws IOException {
@@ -268,8 +270,8 @@ public final class ImageReader implements AutoCloseable {
             }
         }
 
-        /// Returns a node in the JRT filesystem namespace, or null if no resource or
-        /// directory of that name exists.
+        /// Returns a node with the given name, or null if no resource or directory of
+        /// that name exists.
         ///
         /// This is the only public API by which anything outside this class can access
         /// `Node` instances either directly, or by resolving symbolic links.
@@ -383,8 +385,7 @@ public final class ImageReader implements AutoCloseable {
                 if (isModulesSubdirectory(childLoc)) {
                     return nodes.computeIfAbsent(childLoc.getFullName(), this::newDirectory);
                 } else {
-                    // Add the "/modules" prefix to image location paths to get
-                    // Jrt file system names.
+                    // Add "/modules" prefix to image location paths to get node names.
                     String resourceName = childLoc.getFullName(true);
                     return nodes.computeIfAbsent(resourceName, n -> newResource(n, childLoc));
                 }
@@ -451,7 +452,7 @@ public final class ImageReader implements AutoCloseable {
         }
 
         /// Determines if an image location is a directory in the `/modules`
-        /// namespace (if so, the location name is the Jrt filesystem name).
+        /// namespace (if so, the location name is the node name).
         ///
         /// In jimage, every `ImageLocation` under `/modules/` is a directory
         /// and has the same value for `getModule()`, and `getModuleOffset()`.
@@ -460,7 +461,7 @@ public final class ImageReader implements AutoCloseable {
         }
 
         /// Determines if an image location is a directory in the `/packages``
-        /// namespace (if so, the location name is the Jrt filesystem name).
+        /// namespace (if so, the location name is the node name).
         ///
         /// In jimage, every `ImageLocation` under `/packages/` is a directory
         /// and has the same value for `getModule()`, and `getModuleOffset()`.
@@ -507,7 +508,7 @@ public final class ImageReader implements AutoCloseable {
     }
 
     /**
-     * A directory, resource or symbolic link in the JRT file system namespace.
+     * A directory, resource or symbolic link.
      *
      * <h3 id="node_equality">Node Equality</h3>
      *
@@ -547,9 +548,12 @@ public final class ImageReader implements AutoCloseable {
         }
 
         /**
-         * Returns the JRT file system compatible name of this node (e.g.
-         * {@code "/modules/java.base/java/lang/Object.class"} or {@code
+         * Returns the name of this node (e.g. {@code
+         * "/modules/java.base/java/lang/Object.class"} or {@code
          * "/packages/java.lang"}).
+         *
+         * <p>Note that for resource nodes this is NOT the underlying jimage
+         * resource name (it is prefixed with {@code "/modules"}).
          */
         public final String getName() {
             return name;
