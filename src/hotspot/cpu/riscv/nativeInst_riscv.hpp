@@ -111,7 +111,7 @@ NativeCall* nativeCall_before(address return_address);
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
 // DSO calls, etc.).
-// On riscv, NativeCall is a reloc call.
+// NativeCall is reloc call on RISC-V. See MacroAssembler::reloc_call.
 class NativeCall: private NativeInstruction {
  // private: when common code is using byte_size()
  private:

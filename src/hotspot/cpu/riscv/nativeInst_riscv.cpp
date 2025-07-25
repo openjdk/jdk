@@ -47,8 +47,7 @@ bool NativeInstruction::is_call_at(address addr) {
 
 //-----------------------------------------------------------------------------
 // NativeCall
-//
-// Implements direct far calling loading an address from the stub section version of reloc call.
+
 address NativeCall::destination() const {
   address addr = instruction_address();
   assert(NativeCall::is_at(addr), "unexpected code at call site");
