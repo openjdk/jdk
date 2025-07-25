@@ -93,6 +93,8 @@ constexpr size_t SharedSpaceObjectAlignment = Metaspace::min_allocation_alignmen
 //    buffered_address + _buffer_to_requested_delta == requested_address
 //
 class ArchiveBuilder : public StackObj {
+  friend class AOTMapLogger;
+
 protected:
   DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
@@ -200,8 +202,6 @@ private:
     // convenience accessor
     SourceObjInfo* at(int i) const { return objs()->at(i); }
   };
-
-  class CDSMapLogger;
 
   static const int INITIAL_TABLE_SIZE = 15889;
   static const int MAX_TABLE_SIZE     = 1000000;
