@@ -7134,8 +7134,7 @@ void C2_MacroAssembler::vector_slice_32B_op(XMMRegister dst, XMMRegister src1, X
      // Result lanes
      // res[127:0]   = {src1[255:128] , src1[127:0]}    >> SHIFT
      // res[255:128] = {src2[127:0]   , src1[255:128]}  >> SHIFT
-     vextracti128_high(xtmp, src1);
-     vinserti128_high(xtmp, src2);
+     vperm2i128(xtmp, src1, src2, 0x21);
      vpalignr(dst, xtmp, src1, origin, Assembler::AVX_256bit);
    } else {
      assert(origin > 16 && origin <= 32, "");
@@ -7149,8 +7148,7 @@ void C2_MacroAssembler::vector_slice_32B_op(XMMRegister dst, XMMRegister src1, X
      // Result lanes
      // res[127:0]   = {src2[127:0]   , src1[255:127]}  >> SHIFT
      // res[255:128] = {src2[255:128] , src2[127:0]}    >> SHIFT
-     vextracti128_high(xtmp, src1);
-     vinserti128_high(xtmp, src2);
+     vperm2i128(xtmp, src1, src2, 0x21);
      vpalignr(dst, src2, xtmp, origin, Assembler::AVX_256bit);
    }
 }

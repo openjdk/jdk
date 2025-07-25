@@ -450,8 +450,16 @@ class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
     LateInlineCallGenerator(method, intrinsic_cg) , _inline_cg(inline_cg) {}
 
   CallGenerator* inline_cg2() const { return _inline_cg; }
-  virtual bool      is_vector_late_inline() const  { return true; }
+  bool inline_fallback();
+  virtual bool is_vector_late_inline() const { return true; }
 };
+
+bool LateInlineVectorCallGenerator::inline_fallback() {
+  switch (method()->intrinsic_id()) {
+    case vmIntrinsics::_VectorSlice: return true;
+    default : return false;
+  }
+}
 
 CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) {
   return new LateInlineVectorCallGenerator(m, intrinsic_cg, inline_cg);
@@ -690,8 +698,14 @@ void CallGenerator::do_late_inline_helper() {
 
     // Now perform the inlining using the synthesized JVMState
     JVMState* new_jvms = inline_cg()->generate(jvms);
-    new_jvms = new_jvms == nullptr && is_vector_late_inline() ?
-        static_cast<const LateInlineVectorCallGenerator*>(this)->inline_cg2()->generate(jvms) : new_jvms;
+    // Attempt inlining fallback implementation in case of
+    // intrinsification failure.
+    if (new_jvms == nullptr && is_vector_late_inline()) {
+      LateInlineVectorCallGenerator* late_inline_vec_cg =  static_cast<LateInlineVectorCallGenerator*>(this);
+      if (late_inline_vec_cg->inline_fallback()) {
+        new_jvms = late_inline_vec_cg->inline_cg2()->generate(jvms);
+      }
+    }
     if (new_jvms == nullptr)  return;  // no change
     if (C->failing())      return;
 
