@@ -86,10 +86,6 @@ public final class ImageReader implements AutoCloseable {
     /**
      * Opens an image reader for a jimage file at the specified path, using the
      * given byte order.
-     *
-     * <p>Almost all callers should use {@link #open(Path)} to obtain a reader
-     * with the platform native byte ordering. Using a non-native ordering is
-     * extremely unusual.
      */
     public static ImageReader open(Path imagePath, ByteOrder byteOrder) throws IOException {
         Objects.requireNonNull(imagePath);
@@ -101,9 +97,6 @@ public final class ImageReader implements AutoCloseable {
     /**
      * Opens an image reader for a jimage file at the specified path, using the
      * platform native byte order.
-     *
-     * <p>This is the expected was to open an {@code ImageReader}, and it should
-     * be rare for anything other than the native byte order to be needed.
      */
     public static ImageReader open(Path imagePath) throws IOException {
         return open(imagePath, ByteOrder.nativeOrder());

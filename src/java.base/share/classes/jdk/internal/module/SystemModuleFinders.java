@@ -256,13 +256,18 @@ public final class SystemModuleFinders {
         // System reader is a singleton and should not be closed by callers.
         ImageReader reader = SystemImage.reader();
         try {
-            return reader.findNode("/modules").getChildNames().map(mn -> readModuleAttributes(reader, mn));
+            return reader.findNode("/modules")
+                    .getChildNames()
+                    .map(mn -> readModuleAttributes(reader, mn));
         } catch (IOException e) {
             throw new Error("Error reading root /modules entry", e);
         }
     }
 
-    // Every module is required to have a valid module-info.class.
+    /**
+     * Returns the module's "module-info", returning a holder for its class file
+     * attributes. Every module is required to have a valid {@code module-info.class}.
+     */
     private static ModuleInfo.Attributes readModuleAttributes(ImageReader reader, String moduleName) {
         Exception err = null;
         try {
@@ -454,20 +459,21 @@ public final class SystemModuleFinders {
          * Returns the node for the given resource if found. If the name references
          * a non-resource node, then {@code null} is returned.
          */
-        private ImageReader.Node findResourceNode(ImageReader reader, String name) throws IOException {
+        private ImageReader.Node findResource(ImageReader reader, String name) throws IOException {
             Objects.requireNonNull(name);
             if (closed) {
                 throw new IOException("ModuleReader is closed");
             }
             String nodeName = "/modules/" + module + "/" + name;
             ImageReader.Node node = reader.findNode(nodeName);
-            return node != null && node.isResource() ? node : null;
+            return (node != null && node.isResource()) ? node : null;
         }
 
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
             ImageReader reader = SystemImage.reader();
-            return Optional.ofNullable(findResourceNode(reader, name)).map(reader::getResourceBuffer);
+            return Optional.ofNullable(findResource(reader, name))
+                    .map(reader::getResourceBuffer);
         }
 
         @Override
