@@ -45,8 +45,6 @@ public class TestPopupInvoker {
     static JFrame frame;
     static JLabel label;
     static Container pane;
-    static volatile Point pt;
-    static volatile Rectangle size;
     static volatile boolean isVisible;
 
     private static void createUI() {
@@ -60,23 +58,23 @@ public class TestPopupInvoker {
         frame.setVisible(true);
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
-            SwingUtilities.invokeAndWait(() -> createUI());
+            SwingUtilities.invokeAndWait(TestPopupInvoker::createUI);
             robot.waitForIdle();
             robot.delay(1000);
+
             SwingUtilities.invokeAndWait(() -> {
                 jpm = new JPopupMenu("Popup");
                 jpm.add("One");
                 jpm.add("Two");
                 jpm.add("Three");
                 jpm.show(label, 0, 0);
-                pt = label.getLocationOnScreen();
-                size = label.getBounds();
             });
             robot.waitForIdle();
-            robot.delay(2000);
+            robot.delay(1000);
+
             SwingUtilities.invokeAndWait(() -> {
                 pane.remove(label);
                 pane.repaint();

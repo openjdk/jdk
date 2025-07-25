@@ -126,7 +126,20 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     transient  Popup popup;
     transient  Frame frame;
     private    int desiredLocationX,desiredLocationY;
-    transient private PropertyChangeListener propListener;
+    transient private PropertyChangeListener propListener =
+        new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent e) {
+                String propertyName = e.getPropertyName();
+                if (propertyName == "ancestor") {
+                    if (e.getOldValue() != null &&
+                            e.getNewValue() == null) {
+                        if (isVisible()) {
+                            setVisible(false);
+                        }
+                    }
+                }
+            }
+        };
 
     private    String     label                   = null;
     private    boolean   paintBorder              = true;
@@ -949,21 +962,6 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             if (oldInvoker != null) {
                 oldInvoker.removePropertyChangeListener(oldPropListener);
             }
-            propListener = new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent e) {
-                    String propertyName = e.getPropertyName();
-                    if (propertyName == "ancestor") {
-                        if (e.getOldValue() != null &&
-                                e.getNewValue() == null) {
-                            if (popup != null) {
-                                popup.dispose();
-                                popup = null;
-                            }
-
-                        }
-                    }
-                }
-            };
             invoker.addPropertyChangeListener(propListener);
             ui.installUI(this);
         }
