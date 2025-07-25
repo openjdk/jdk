@@ -53,7 +53,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
   template <class OopClosureType>
-  void do_metadata(oop obj, OopClosureType* closure);
+  inline void do_metadata(oop obj, OopClosureType* closure);
 
  public:
   InstanceMirrorKlass();
