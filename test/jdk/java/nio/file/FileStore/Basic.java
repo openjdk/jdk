@@ -67,6 +67,16 @@ public class Basic {
         }
     }
 
+    static <V extends FileAttributeView> void testFileAttributes(Path file,
+                                                                 Class<V> viewClass,
+                                                                 String viewName) throws IOException {
+        FileStore store = Files.getFileStore(file);
+        boolean supported = store.supportsFileAttributeView(viewClass);
+        assertTrue(store.supportsFileAttributeView(viewName) == supported);
+        boolean haveView = Files.getFileAttributeView(file, viewClass) != null;
+        assertTrue(haveView == supported);
+    }
+
     static void doTests(Path dir) throws IOException {
         /**
          * Test: Directory should be on FileStore that is writable
@@ -97,21 +107,11 @@ public class Basic {
          * Test: File and FileStore attributes
          */
         assertTrue(store1.supportsFileAttributeView("basic"));
-        assertTrue(store1.supportsFileAttributeView(BasicFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("posix") ==
-            store1.supportsFileAttributeView(PosixFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("dos") ==
-            store1.supportsFileAttributeView(DosFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("acl") ==
-            store1.supportsFileAttributeView(AclFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("user") ==
-            store1.supportsFileAttributeView(UserDefinedFileAttributeView.class));
-
-        // check if getFileAttributeView behaves as specified if the user defined view is unsupported
-        if (!store1.supportsFileAttributeView(UserDefinedFileAttributeView.class) &&
-            Files.getFileAttributeView(dir, UserDefinedFileAttributeView.class) != null) {
-            throw new RuntimeException("UserDefinedFileAttributeView not supported, getFileAttributeView should return null");
-        }
+        testFileAttributes(dir, BasicFileAttributeView.class, "basic");
+        testFileAttributes(dir, PosixFileAttributeView.class, "posix");
+        testFileAttributes(dir, DosFileAttributeView.class, "dos");
+        testFileAttributes(dir, AclFileAttributeView.class, "acl");
+        testFileAttributes(dir, UserDefinedFileAttributeView.class, "user");
 
         /**
          * Test: Space atributes

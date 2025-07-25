@@ -2363,6 +2363,14 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       ShouldNotReachHere();
     }
 
+#if INCLUDE_JVMCI
+    // Deoptimization count is used by the CompileBroker to reason about compilations
+    // it requests so do not pollute the count for deoptimizations in non-default (i.e.
+    // non-CompilerBroker) compilations.
+    if (nm->jvmci_skip_profile_deopt()) {
+      update_trap_state = false;
+    }
+#endif
     // Setting +ProfileTraps fixes the following, on all platforms:
     // The result is infinite heroic-opt-uncommon-trap/deopt/recompile cycles, since the
     // recompile relies on a MethodData* to record heroic opt failures.
@@ -2473,7 +2481,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         trap_mdo->inc_tenure_traps();
       }
     }
-
     if (inc_recompile_count) {
       trap_mdo->inc_overflow_recompile_count();
       if ((uint)trap_mdo->overflow_recompile_count() >
@@ -2760,8 +2767,8 @@ const char* Deoptimization::_trap_reason_name[] = {
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",
+  "short_running_loop" JVMCI_ONLY("_or_aliasing"),
 #if INCLUDE_JVMCI
-  "aliasing",
   "transfer_to_interpreter",
   "not_compiled_exception_handler",
   "unresolved",
