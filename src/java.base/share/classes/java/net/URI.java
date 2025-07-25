@@ -3726,7 +3726,13 @@ public final class URI
         }
 
     }
+
     static {
+        runtimeSetup();
+    }
+
+    // Also called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         SharedSecrets.setJavaNetUriAccess(
             new JavaNetUriAccess() {
                 public URI create(String scheme, String path) {

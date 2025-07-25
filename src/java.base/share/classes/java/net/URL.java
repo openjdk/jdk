@@ -1758,6 +1758,11 @@ public final class URL implements java.io.Serializable {
     }
 
     static {
+        runtimeSetup();
+    }
+
+    // Called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         SharedSecrets.setJavaNetURLAccess(
                 new JavaNetURLAccess() {
                     @Override
