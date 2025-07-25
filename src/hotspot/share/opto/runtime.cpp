@@ -265,7 +265,6 @@ const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
 #endif // INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
-const TypeFunc* OptoRuntime::_debug_print_Type = nullptr;
 
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
