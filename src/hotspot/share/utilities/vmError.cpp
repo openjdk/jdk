@@ -32,13 +32,6 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
-#endif
-#include "jvm.h"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 #include "logging/logConfiguration.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -76,6 +69,13 @@
 #include "utilities/nativeStackPrinter.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
+#include "jvm.h"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 #ifndef PRODUCT
 #include <signal.h>
