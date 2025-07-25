@@ -360,7 +360,7 @@
     </event>
 
     <event name="jdk.ObjectCountAfterGC">
-      <setting name="enabled">true</setting>
+      <setting name="enabled">false</setting>
     </event>
 
     <event name="jdk.GCHeapMemoryUsage">

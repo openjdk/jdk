@@ -5,7 +5,6 @@
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/mutex.hpp"
 #include "memory/heapInspection.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
