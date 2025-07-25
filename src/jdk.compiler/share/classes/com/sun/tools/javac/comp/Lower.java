@@ -2127,9 +2127,6 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitModuleDef(JCModuleDecl tree) {
-        FlagsEnum.assertNoUnexpectedFlags(tree.sym.flags_field,
-                                          FlagsEnum.MASK_MODULE_FLAGS);
-
         ModuleSymbol msym = tree.sym;
         ClassSymbol c = msym.module_info;
         c.setAttributes(msym);
@@ -2148,13 +2145,6 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitClassDef(JCClassDecl tree) {
-        FlagsEnum.assertNoUnexpectedFlags(tree.sym.flags_field,
-                                          FlagsEnum.MASK_CLASS_FLAGS);
-        tree.sym
-            .getTypeParameters()
-            .forEach(tv -> FlagsEnum.assertNoUnexpectedFlags(tv.flags_field,
-                                                             FlagsEnum.MASK_TYPE_VAR_FLAGS));
-
         Env<AttrContext> prevEnv = attrEnv;
         ClassSymbol currentClassPrev = currentClass;
         MethodSymbol currentMethodSymPrev = currentMethodSym;
@@ -2638,13 +2628,6 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitMethodDef(JCMethodDecl tree) {
-        FlagsEnum.assertNoUnexpectedFlags(tree.sym.flags_field,
-                                          FlagsEnum.MASK_METHOD_FLAGS);
-        tree.sym
-            .getTypeParameters()
-            .forEach(tv -> FlagsEnum.assertNoUnexpectedFlags(tv.flags_field,
-                                                             FlagsEnum.MASK_TYPE_VAR_FLAGS));
-
         if (tree.name == names.init && (currentClass.flags_field&ENUM) != 0) {
             // Add "String $enum$name, int $enum$ordinal" to the beginning of the
             // argument list for each constructor of an enum.
@@ -3732,9 +3715,6 @@ public class Lower extends TreeTranslator {
         }
 
     public void visitVarDef(JCVariableDecl tree) {
-        FlagsEnum.assertNoUnexpectedFlags(tree.sym.flags_field,
-                                          FlagsEnum.MASK_VARIABLE_FLAGS);
-
         MethodSymbol oldMethodSym = currentMethodSym;
         int prevVariableIndex = variableIndex;
         tree.mods = translate(tree.mods);
@@ -4369,9 +4349,6 @@ public class Lower extends TreeTranslator {
      *  @param cdef  The tree representing the class definition.
      */
     public List<JCTree> translateTopLevelClass(Env<AttrContext> env, JCTree cdef, TreeMaker make) {
-        FlagsEnum.assertNoUnexpectedFlags(env.toplevel.packge.flags_field,
-                                          FlagsEnum.MASK_PACKAGE_FLAGS);
-
         ListBuffer<JCTree> translated = null;
         try {
             attrEnv = env;

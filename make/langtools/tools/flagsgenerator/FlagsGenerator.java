@@ -33,7 +33,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -105,15 +104,9 @@ public class FlagsGenerator {
                 }
             }
 
-            String masks = Arrays.stream(FlagTarget.values())
-                                 .map(target -> "    public static final long MASK_" + target.name() + "_FLAGS = " + getMask(target2FlagBit2Fields, target) + ";")
-                                 .collect(Collectors.joining("\n"));
-
             try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(Paths.get(args[1])))) {
                 out.println("""
                             package com.sun.tools.javac.code;
-
-                            import com.sun.tools.javac.util.Assert;
 
                             public enum FlagsEnum {
                             """);
@@ -129,8 +122,6 @@ public class FlagsGenerator {
                 out.println("""
                                 ;
 
-                                ${masks}
-
                                 private final long value;
                                 private final String toString;
                                 private FlagsEnum(long value, String toString) {
@@ -143,26 +134,10 @@ public class FlagsGenerator {
                                 public String toString() {
                                     return toString;
                                 }
-                                public static void assertNoUnexpectedFlags(long flags, long mask) {
-                                    Assert.check((flags & ~mask) == 0,
-                                                 () -> "Unexpected flags: 0x" + Long.toHexString(flags & ~mask) + "L (" +
-                                                       Flags.asFlagSet(flags & ~mask) + ")");
-                                }
                             }
-                            """.replace("${masks}", masks));
+                            """);
             }
         }
-    }
-
-    private static String getMask(Map<FlagTarget, Map<Integer, List<String>>> target2FlagBit2Fields,
-                                FlagTarget target) {
-        long mask = target2FlagBit2Fields.get(target)
-                                        .keySet()
-                                        .stream()
-                                        .mapToLong(bit -> 1L << bit)
-                                        .reduce(0, (l, r) -> l | r);
-
-        return "0x" + Long.toHexString(mask) + "L";
     }
 
     private static Object valueOfValueAttribute(AnnotationMirror am) {
@@ -173,7 +148,7 @@ public class FlagsGenerator {
                  .getValue();
     }
 
-    public enum FlagTarget {
+    private enum FlagTarget {
         BLOCK,
         CLASS,
         METHOD,
