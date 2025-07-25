@@ -41,10 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
+ * @bug 8343110 8361299
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @summary tests the CharBuffer implementations behaving as CharSequence in various states (postion, limit, offset)
+ * @summary tests the CharBuffer implementations behaving as CharSequence in various states (position, limit, offset)
  * @run junit CharBufferAsCharSequenceTest
  */
 public class CharBufferAsCharSequenceTest {
@@ -104,12 +105,15 @@ public class CharBufferAsCharSequenceTest {
 
         addCases("StringCharBuffer over String", randomChars, CharBuffer.wrap(new String(randomChars)), args);
 
+        // nothing magic about 1273, it is just larger than 1k and an odd number - eliminating any alignment assumptions
         char[] buf = new char[1273];
         for (int i = 0; i < buf.length; ++i) {
             buf[i] = (char) i;
         }
         String stringBuf = new String(buf);
 
+        // nothing magic about 7, it is simply an odd number to advance - making sure no expectations of alignment
+        // comparing to 29 results in 5 loops (0, 7, 14, 21, 28), giving decent coverage of offset and limits
         for (int i = 0; i < 29; i += 7) {
             CharBuffer buffer = CharBuffer.wrap(buf, i, buf.length - i);
             args.add(Arguments.of(buffer, buf, i, buf.length, "HeapCharBuffer index " + i + " to end"));
