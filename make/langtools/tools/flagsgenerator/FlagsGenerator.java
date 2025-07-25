@@ -59,6 +59,7 @@ public class FlagsGenerator {
 
             TypeElement clazz = (TypeElement) trees.getElement(new TreePath(new TreePath(cut), cut.getTypeDecls().get(0)));
             Map<Integer, List<String>> flag2Names = new TreeMap<>();
+            Map<FlagTarget, Map<Integer, List<String>>> target2FlagBit2Fields = new HashMap<>();
             Map<String, String> customToString = new HashMap<>();
 
             for (VariableElement field : ElementFilter.fieldsIn(clazz.getEnclosedElements())) {
@@ -67,12 +68,18 @@ public class FlagsGenerator {
                     switch (am.getAnnotationType().toString()) {
                         case "com.sun.tools.javac.code.Flags.Use" -> {
                             long flagValue = ((Number) field.getConstantValue()).longValue();
+                            int flagBit = 63 - Long.numberOfLeadingZeros(flagValue);
 
-                            flag2Names.computeIfAbsent(63 - Long.numberOfLeadingZeros(flagValue), _ -> new ArrayList<>())
+                            flag2Names.computeIfAbsent(flagBit, _ -> new ArrayList<>())
                                       .add(flagName);
+
+                            List<?> originalTargets = (List<?>) valueOfValueAttribute(am);
+                            originalTargets.stream()
+                                           .map(value -> FlagTarget.valueOf(value.toString()))
+                                           .forEach(target -> target2FlagBit2Fields.computeIfAbsent(target, _ -> new HashMap<>())
+                                                                                   .computeIfAbsent(flagBit, _ -> new ArrayList<>())
+                                                                                   .add(flagName));
                         }
-
-
                         case "com.sun.tools.javac.code.Flags.CustomToStringValue" -> {
                             customToString.put(flagName, (String) valueOfValueAttribute(am));
                         }
@@ -80,9 +87,22 @@ public class FlagsGenerator {
                 }
             }
 
+            //verify there are no flag overlaps:
+            for (Entry<FlagTarget, Map<Integer, List<String>>> targetAndFlag : target2FlagBit2Fields.entrySet()) {
+                for (Entry<Integer, List<String>> flagAndFields : targetAndFlag.getValue().entrySet()) {
+                    if (flagAndFields.getValue().size() > 1) {
+                        throw new AssertionError("duplicate flag for target: " + targetAndFlag.getKey() +
+                                                 ", flag: " + flagAndFields.getKey() +
+                                                 ", flags fields: " + flagAndFields.getValue());
+                    }
+                }
+            }
+
             try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(Paths.get(args[1])))) {
                 out.println("""
                             package com.sun.tools.javac.code;
+
+                            import com.sun.tools.javac.util.Assert;
 
                             public enum FlagsEnum {
                             """);
@@ -97,6 +117,10 @@ public class FlagsGenerator {
                 out.println("""
                                 ;
 
+                                public static final long MASK_TYPE_FLAGS = ${TYPE_FLAGS};
+                                public static final long MASK_METHOD_FLAGS = ${METHOD_FLAGS};
+                                public static final long MASK_VARIABLE_FLAGS = ${VARIABLE_FLAGS};
+
                                 private final long value;
                                 private final String toString;
                                 private FlagsEnum(long value, String toString) {
@@ -109,10 +133,28 @@ public class FlagsGenerator {
                                 public String toString() {
                                     return toString;
                                 }
+                                public static void assertNoUnexpectedFlags(long flags, long mask) {
+                                    Assert.check((flags & ~mask) == 0,
+                                                 () -> "Unexpected flags: 0x" + Long.toHexString(flags & ~mask) + "L (" +
+                                                       Flags.asFlagSet(flags & ~mask) + ")");
+                                }
                             }
-                            """);
+                            """.replace("${METHOD_FLAGS}", getMask(target2FlagBit2Fields, FlagTarget.METHOD))
+                               .replace("${TYPE_FLAGS}", getMask(target2FlagBit2Fields, FlagTarget.TYPE))
+                               .replace("${VARIABLE_FLAGS}", getMask(target2FlagBit2Fields, FlagTarget.VARIABLE)));
             }
         }
+    }
+
+    private static String getMask(Map<FlagTarget, Map<Integer, List<String>>> target2FlagBit2Fields,
+                                FlagTarget target) {
+        long mask = target2FlagBit2Fields.get(target)
+                                        .keySet()
+                                        .stream()
+                                        .mapToLong(bit -> 1L << bit)
+                                        .reduce(0, (l, r) -> l | r);
+
+        return "0x" + Long.toHexString(mask) + "L";
     }
 
     private static Object valueOfValueAttribute(AnnotationMirror am) {
@@ -121,5 +163,12 @@ public class FlagsGenerator {
                  .iterator()
                  .next()
                  .getValue();
+    }
+
+    public enum FlagTarget {
+        BLOCK,
+        METHOD,
+        TYPE,
+        VARIABLE;
     }
 }

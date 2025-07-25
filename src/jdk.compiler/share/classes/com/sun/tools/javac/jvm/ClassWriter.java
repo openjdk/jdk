@@ -973,6 +973,9 @@ public class ClassWriter extends ClassFile {
     /** Write field symbol, entering all references into constant pool.
      */
     void writeField(VarSymbol v) {
+        FlagsEnum.assertNoUnexpectedFlags(v.flags_field,
+                                          FlagsEnum.MASK_VARIABLE_FLAGS);
+
         int flags = adjustFlags(v.flags());
         databuf.appendChar(flags);
         if (dumpFieldModifiers) {
@@ -998,6 +1001,9 @@ public class ClassWriter extends ClassFile {
     /** Write method symbol, entering all references into constant pool.
      */
     void writeMethod(MethodSymbol m) {
+        FlagsEnum.assertNoUnexpectedFlags(m.flags_field,
+                                          FlagsEnum.MASK_METHOD_FLAGS);
+
         int flags = adjustFlags(m.flags());
         databuf.appendChar(flags);
         if (dumpMethodModifiers) {
@@ -1535,6 +1541,9 @@ public class ClassWriter extends ClassFile {
     public JavaFileObject writeClass(ClassSymbol c)
         throws IOException, PoolOverflow, StringOverflow
     {
+        FlagsEnum.assertNoUnexpectedFlags(c.flags_field,
+                                          FlagsEnum.MASK_TYPE_FLAGS);
+
         String name = (c.owner.kind == MDL ? c.name : c.flatname).toString();
         Location outLocn;
         if (multiModuleMode) {

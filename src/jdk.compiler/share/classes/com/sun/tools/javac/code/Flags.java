@@ -96,7 +96,7 @@ public class Flags {
     public static final int INTERFACE    = 1<<9;
     @Use({FlagTarget.METHOD, FlagTarget.TYPE})
     public static final int ABSTRACT     = 1<<10;
-    @Use({FlagTarget.TYPE})
+    @Use({FlagTarget.METHOD, FlagTarget.TYPE})
     public static final int STRICTFP     = 1<<11;
 
     /* Flag that marks a symbol synthetic, added in classfile v49.0. */
@@ -109,7 +109,7 @@ public class Flags {
 
     /** An enumeration type or an enumeration constant, added in
      *  classfile v49.0. */
-    @Use({FlagTarget.TYPE})
+    @Use({FlagTarget.TYPE, FlagTarget.VARIABLE})
     public static final int ENUM         = 1<<14;
 
     /** Added in SE8, represents constructs implicitly declared in source. */
@@ -242,7 +242,7 @@ public class Flags {
 
     /** Flag that marks varargs methods.
      */
-    @Use({FlagTarget.METHOD})
+    @Use({FlagTarget.METHOD, FlagTarget.VARIABLE})
     public static final long VARARGS   = 1L<<34;
 
     /** Flag for annotation type symbols to indicate it has been

@@ -29,7 +29,7 @@
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.code
  * @compile FlagsTest.java
- * @run main FlagsTest
+ * @run main/manual FlagsTest
  */
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Flags.FlagTarget;
@@ -40,25 +40,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class FlagsTest {
 
+    private static final int U2_SIZE = 16;
+
     public static void main(String[] args) throws Throwable {
-        verifyFlagsNonOverlapping();
         findFreeFlags();
-    }
-
-    private static void verifyFlagsNonOverlapping() throws Throwable {
-        Map<FlagTarget, Map<Long, List<Field>>> target2Flag2Fields = computeTarget2Flag2Fields();
-
-        for (Entry<FlagTarget, Map<Long, List<Field>>> targetAndFlag : target2Flag2Fields.entrySet()) {
-            for (Entry<Long, List<Field>> flagAndFields : targetAndFlag.getValue().entrySet()) {
-                if (flagAndFields.getValue().size() > 1) {
-                    throw new AssertionError("duplicate flag for target: " + targetAndFlag.getKey() + ", flag: " + flagAndFields.getKey() + ", flags fields: " + flagAndFields.getValue());
-                }
-            }
-        }
     }
 
     private static void findFreeFlags() throws Throwable {
@@ -73,7 +61,7 @@ public class FlagsTest {
         printFreeFlags("VARIABLE", freeVariableFlags);
     }
 
-    private static Map<FlagTarget, Map<Long, List<Field>>> computeTarget2Flag2Fields() throws IllegalArgumentException, IllegalAccessException, AssertionError {
+    private static Map<FlagTarget, Map<Long, List<Field>>> computeTarget2Flag2Fields() throws Throwable {
         Map<FlagTarget, Map<Long, List<Field>>> target2Flag2Fields = new HashMap<>();
         for (Field f : Flags.class.getFields()) {
             if (f.isAnnotationPresent(NotFlag.class)) {
@@ -99,7 +87,7 @@ public class FlagsTest {
 
     private static void printFreeFlags(String comment, long freeFlags) {
             System.err.print("free flags for " + comment + ": ");
-            for (int bit = 16; bit < 64; bit++) { //lowest 16 bits are used in classfiles, never suggest adding anything there
+            for (int bit = U2_SIZE; bit < Long.SIZE; bit++) { //lowest 16 bits are used in classfiles, never suggest adding anything there
                 if ((freeFlags & (1L << bit)) != 0) {
                     System.err.print("1L<<" + bit + " ");
                 }
