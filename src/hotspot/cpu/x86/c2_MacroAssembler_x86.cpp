@@ -7149,7 +7149,7 @@ void C2_MacroAssembler::vector_slice_32B_op(XMMRegister dst, XMMRegister src1, X
      // res[127:0]   = {src2[127:0]   , src1[255:127]}  >> SHIFT
      // res[255:128] = {src2[255:128] , src2[127:0]}    >> SHIFT
      vperm2i128(xtmp, src1, src2, 0x21);
-     vpalignr(dst, src2, xtmp, origin, Assembler::AVX_256bit);
+     vpalignr(dst, src2, xtmp, origin - 16, Assembler::AVX_256bit);
    }
 }
 
@@ -7197,7 +7197,7 @@ void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, X
     // src1 = {v2, v3, v4, v5} and src2 = {v3, v4, v5, v6}
      evalignd(xtmp, src2, src1, 4, vlen_enc);
      evalignd(dst, src2, src1, 8, vlen_enc);
-     vpalignr(dst, dst, xtmp, origin, vlen_enc);
+     vpalignr(dst, dst, xtmp, origin - 16, vlen_enc);
    } else if (origin > 32 && origin <= 48) {
     // For SHIFT between 32 and 48 bytes
     // result will be sliced out of src1 and lower
@@ -7211,7 +7211,7 @@ void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, X
     // src1 = {v3, v4, v5, v6} and src2 = {v4, v5, v6, v7}
      evalignd(xtmp, src2, src1, 8, vlen_enc);
      evalignd(dst, src2, src1, 12, vlen_enc);
-     vpalignr(dst, dst, xtmp, origin, vlen_enc);
+     vpalignr(dst, dst, xtmp, origin - 32, vlen_enc);
    } else {
     // Finally, for SHIFT greater than 48 bytes
     // result will be sliced out of upper 128 bit lane of src1 and
@@ -7225,7 +7225,7 @@ void C2_MacroAssembler::vector_slice_64B_op(XMMRegister dst, XMMRegister src1, X
     // src1 = {v4, v5, v6, v7} and src2 = {v5, v6, v7, v8}
      assert(origin > 48 && origin <= 64, "");
      evalignd(xtmp, src2, src1, 12, vlen_enc);
-     vpalignr(dst, src2, xtmp, origin, vlen_enc);
+     vpalignr(dst, src2, xtmp, origin - 48, vlen_enc);
    }
 }
 
