@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8361748
- * @summary Tests XBM size limits and if XBMImageDecoder.produceImage()
+ * @summary Tests XBM image size limits and if XBMImageDecoder.produceImage()
  *          throws appropriate error when parsing invalid XBM image data.
- * @run main SwingIconRead
+ * @run main XBMDecoderTest
  */
 
 import java.io.ByteArrayOutputStream;
@@ -35,7 +35,7 @@ import java.io.FileInputStream;
 import java.io.PrintStream;
 import javax.swing.ImageIcon;
 
-public class SwingIconRead {
+public class XBMDecoderTest {
 
     public static void main(String[] args) throws Exception {
         String dir = System.getProperty("test.src");
