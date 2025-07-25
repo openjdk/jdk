@@ -2733,7 +2733,7 @@ WB_ENTRY(void, WB_ControlledCrash(JNIEnv* env, jobject o, jint how))
 #ifdef ASSERT
   DEBUG_ONLY(VMError::controlled_crash(how);)
 #else
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "Only available in debug builds");
+  THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(), "Only available in debug builds");
 #endif
 WB_END
 
