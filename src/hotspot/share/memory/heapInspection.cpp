@@ -246,10 +246,9 @@ bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
   // elt may be null if it's a new klass for which we
   // could not allocate space for a new entry in the hashtable.
   if (elt != nullptr) {
-    elt->atomic_add_count(cie->count());
-    size_t words_to_add = cie->words();
-    elt->atomic_add_words(words_to_add);
-    Atomic::add(&_size_of_instances_in_words, words_to_add);
+    elt->set_count(elt->count() + cie->count());
+    elt->set_words(elt->words() + cie->words());
+    _size_of_instances_in_words += cie->words();
     return true;
   }
   return false;
