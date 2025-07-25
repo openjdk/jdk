@@ -585,7 +585,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *    time. If tasks do not not engage in unbounded loops based on
      *    the actions of other workers with unknown dependencies loop,
      *    this form of proagation can be limited to one signal per
-     *    activation (phase change). 
+     *    activation (phase change).
      *
      * * Because we don't know about usage patterns (or most commonly,
      *    mixtures), we use both approaches, which present even more
