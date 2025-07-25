@@ -32,7 +32,7 @@ get the specified build is to download the prebuilt JAR from
 [here](https://builds.shipilev.net/jcstress/).
 You should specific the JAR location with jtreg option such as
 -javaoption:-Djdk.test.lib.artifacts.jcstress-tests-all=
-jcstress-tests-all-20241217-2035.jar when start jcstress tests in jtreg.
+jcstress-tests-all-20241217-2035.jar when starting jcstress tests in jtreg.
 
 When the used version of org.openjdk.jcstress:jcstress-tests-all needs to be
 changed, one should make corresponding changes to the artifact description in
