@@ -22,23 +22,25 @@
  *
  */
 
-
 #include "cds/aotMapLogger.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "utilities/growableArray.hpp"
 
 intx AOTMapLogger::_buffer_to_requested_delta;
 
-void AOTMapLogger::log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                       ArchiveHeapInfo* heap_info,
-                       char* bitmap, size_t bitmap_size_in_bytes) {
+void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
+                                ArchiveHeapInfo* heap_info,
+                                char* bitmap, size_t bitmap_size_in_bytes) {
   _buffer_to_requested_delta =  ArchiveBuilder::current()->buffer_to_requested_delta();
 
   log_info(aot, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
@@ -67,6 +69,34 @@ void AOTMapLogger::log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 
   log_info(aot, map)("[End of AOT cache map]");
 };
+
+
+class GatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
+public:
+  virtual bool do_unique_ref(Ref* ref, bool read_only) {
+    tty->print_cr("%p = %d", ref->obj(), ref->size());
+    return true;
+  }
+};
+
+void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
+  address header = address(mapinfo->header());
+  address header_end = header + mapinfo->header()->header_size();
+  log_region("header", header, header_end, nullptr);
+  log_header(mapinfo);
+  log_as_hex(header, header_end, nullptr);
+
+  ResourceMark rm;
+  GrowableArray<Klass*> klasses;
+  SystemDictionaryShared::get_all_archived_classes(mapinfo->is_static(), &klasses);
+
+
+  GatherArchivedMetaspaceObjs gamo;
+  for (int i = 0; i < klasses.length(); i++) {
+    gamo.push(klasses.adr_at(i));
+  }
+  gamo.finish();
+}
 
 void AOTMapLogger::log_header(FileMapInfo* mapinfo) {
   LogStreamHandle(Info, aot, map) lsh;
@@ -107,20 +137,38 @@ void AOTMapLogger::log_metaspace_region(const char* name, DumpRegion* region,
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
 
 void AOTMapLogger::log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs) {
+  GrowableArray<ArchivedObjInfo> objs;
+
+  for (int i = 0; i < src_objs->objs()->length(); i++) {
+    ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
+    ArchivedObjInfo info;
+    info._src_addr = src_info->source_addr();
+    info._buffered_addr = src_info->buffered_addr();
+    info._requested_addr = info._buffered_addr + _buffer_to_requested_delta;
+    info._bytes = src_info->size_in_bytes();
+    info._type = src_info->msotype();
+    objs.append(info);
+  }
+
+  log_metaspace_objects(region, &objs, 0, objs.length());
+}
+
+void AOTMapLogger::log_metaspace_objects(DumpRegion* region, GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx) {
   address last_obj_base = address(region->base());
   address last_obj_end  = address(region->base());
   address region_end    = address(region->end());
   Thread* current = Thread::current();
-  for (int i = 0; i < src_objs->objs()->length(); i++) {
-    ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
-    address src = src_info->source_addr();
-    address buffered_addr = src_info->buffered_addr();
-    log_as_hex(last_obj_base, buffered_addr, last_obj_base + _buffer_to_requested_delta);
-    address requested_addr = buffered_addr + _buffer_to_requested_delta;
-    int bytes = src_info->size_in_bytes();
 
-    MetaspaceObj::Type type = src_info->msotype();
+  for (int i = start_idx; i < end_idx; i++) {
+    ArchivedObjInfo& info = objs->at(i);
+    address src = info._src_addr;
+    address buffered_addr = info._buffered_addr;
+    address requested_addr = info._requested_addr;
+    int bytes = info._bytes;
+    MetaspaceObj::Type type = info._type;
     const char* type_name = MetaspaceObj::type_name(type);
+
+    log_as_hex(last_obj_base, buffered_addr, last_obj_base + _buffer_to_requested_delta);
 
     switch (type) {
     case MetaspaceObj::ClassType:

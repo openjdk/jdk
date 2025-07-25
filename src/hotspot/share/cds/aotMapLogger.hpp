@@ -26,6 +26,7 @@
 #define SHARE_CDS_AOTMAPLOGGER_HPP
 
 #include "cds/archiveBuilder.hpp"
+#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -47,6 +48,14 @@ class outputStream;
 // picked by the OS. At runtime, we try to map at a fixed location (SharedBaseAddress). For
 // consistency, we log everything using runtime addresses.
 class AOTMapLogger : AllStatic {
+  struct ArchivedObjInfo {
+    address _src_addr;
+    address _buffered_addr;
+    address _requested_addr;
+    int _bytes;
+    MetaspaceObj::Type _type;
+  };
+
   // Translate the buffers used by the RW/RO regions to their requested locations
   // at runtime.
   static intx _buffer_to_requested_delta;
@@ -56,6 +65,7 @@ class AOTMapLogger : AllStatic {
   static void log_metaspace_region(const char* name, DumpRegion* region,
                                    const ArchiveBuilder::SourceObjList* src_objs);
   static void log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs);
+  static void log_metaspace_objects(DumpRegion* region, GrowableArray<ArchivedObjInfo>* objs, int start_idx, int end_idx);
 
   static void log_constant_pool(ConstantPool* cp, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
@@ -80,9 +90,10 @@ class AOTMapLogger : AllStatic {
 
 public:
 
-  static void log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                  ArchiveHeapInfo* heap_info,
-                  char* bitmap, size_t bitmap_size_in_bytes);
+  static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
+                           ArchiveHeapInfo* heap_info,
+                           char* bitmap, size_t bitmap_size_in_bytes);
+  static void runtime_log(FileMapInfo* mapinfo);
 };
 
 #endif // SHARE_CDS_AOTMAPLOGGER_HPP

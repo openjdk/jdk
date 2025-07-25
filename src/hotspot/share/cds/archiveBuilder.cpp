@@ -1214,8 +1214,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   }
 
   if (log_is_enabled(Info, aot, map)) {
-    AOTMapLogger::log(this, mapinfo, heap_info,
-                      bitmap, bitmap_size_in_bytes);
+    AOTMapLogger::dumptime_log(this, mapinfo, heap_info, bitmap, bitmap_size_in_bytes);
   }
   CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
   FREE_C_HEAP_ARRAY(char, bitmap);
