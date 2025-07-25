@@ -169,6 +169,21 @@ public class HugePageConfiguration {
         return 0;
     }
 
+    public static long readAvailableHugePageNumberFromOS() {
+        Pattern pat = Pattern.compile("HugePages_Free: *(\\d+)$");
+        try (Scanner scanner = new Scanner(new File("/proc/meminfo"))) {
+            while (scanner.hasNextLine()) {
+                Matcher mat = pat.matcher(scanner.nextLine());
+                if (mat.matches()) {
+                    return Long.parseLong(mat.group(1));
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Could not open /proc/meminfo");
+        }
+        return 0;
+    }
+
     private static Set<ExplicitHugePageConfig> readSupportedHugePagesFromOS() throws IOException {
         TreeSet<ExplicitHugePageConfig> hugePageConfigs = new TreeSet<>();
         Pattern pat = Pattern.compile("hugepages-(\\d+)kB");
