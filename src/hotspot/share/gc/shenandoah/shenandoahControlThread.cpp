@@ -210,6 +210,12 @@ void ShenandoahControlThread::run_service() {
           ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
+#ifdef NOT_PRODUCT
+          ShenandoahEvacuationTracker* evac_tracker = heap->evac_tracker();
+          ShenandoahCycleStats         evac_stats   = evac_tracker->flush_cycle_to_global();
+          evac_tracker->print_evacuations_on(&ls, &evac_stats.workers,
+                                                  &evac_stats.mutators);
+#endif
         }
       }
 
