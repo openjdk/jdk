@@ -2601,9 +2601,34 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(input_len, L_exit);
     __ mv(len, input_len);
 
-    // encrypt bytes left with last encryptedCounter
     Label L_judge_used, L_encrypt_slow, L_main_loop, L_calculate_one_next;
 
+    // init aes_ctr counter increase mask
+    uint64_t maskIndex = 0x00000088ul; // 0b10001000
+    __ li(t0, maskIndex);
+    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
+    __ vmv_v_x(v0, t0);
+
+    // generate_aes_loadkeys
+    Label L_aes128, L_aes192, L_exit_loadkey;
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
+
+    generate_aes_loadkeys(key, working_vregs, 15);
+    __ j(L_exit_loadkey);
+
+    __ bind(L_aes192);
+    generate_aes_loadkeys(key, working_vregs, 13);
+    __ j(L_exit_loadkey);
+
+    __ bind(L_aes128);
+    generate_aes_loadkeys(key, working_vregs, 11);
+    __ bind(L_exit_loadkey);
+
+    // encrypt bytes left with last encryptedCounter
     __ bind(L_judge_used);
     __ mv(t2, 16);
     __ bge(used, t2, L_main_loop);
@@ -2629,34 +2654,10 @@ class StubGenerator: public StubCodeGenerator {
 
     __ beqz(len32, L_calculate_one_next);
 
-    // generate_aes_loadkeys
-    Label L_aes128, L_aes192, L_exit_loadkey;
-    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
-    __ beq(keylen, t2, L_aes192);
-
-    generate_aes_loadkeys(key, working_vregs, 15);
-    __ j(L_exit_loadkey);
-
-    __ bind(L_aes192);
-    generate_aes_loadkeys(key, working_vregs, 13);
-    __ j(L_exit_loadkey);
-
-    __ bind(L_aes128);
-    generate_aes_loadkeys(key, working_vregs, 11);
-    __ bind(L_exit_loadkey);
-
     // CTR_large_block
-    uint64_t maskIndex = 0x00000088ul; // 0b10001000
-    // init aes_ctr counter input
-    __ li(t0, maskIndex);
-    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
-    __ vmv_v_x(v0, t0);
+    // init aes-ctr large_block counter group
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(v31, counter);
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // Convert the big-endian counter into little-endian. for viota
     __ vsetvli(x0, len32, Assembler::e32, Assembler::m4);
     __ vmv_v_i(v16, 0);
@@ -2742,9 +2743,6 @@ class StubGenerator: public StubCodeGenerator {
     __ vse32_v(v16, counter);
 
     __ bind(L_calculate_one_next);
-    __ li(t0, maskIndex);
-    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
-    __ vmv_v_x(v0, t0);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(v24, counter);
 
