@@ -2573,7 +2573,6 @@ class StubGenerator: public StubCodeGenerator {
     StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
 
-    // input parm
     const Register in = c_rarg0;
     const Register out = c_rarg1;
     const Register key = c_rarg2;
@@ -2603,17 +2602,15 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(len, input_len);
 
     // encrypt bytes left with last encryptedCounter
-    Label L_judge_used, L_encrypt_slow, L_main_loop;
+    Label L_judge_used, L_encrypt_slow, L_main_loop, L_calculate_one_next;
 
-    __ beqz(used, L_main_loop);
     __ bind(L_judge_used);
     __ mv(t2, 16);
-    __ blt(used, t2, L_encrypt_slow);
-    __ j(L_main_loop);
+    __ bge(used, t2, L_main_loop);
 
     __ bind(L_encrypt_slow);
     __ add(t1, saved_encrypted_ctr, used);
-    __ lb(t0, Address(t1)); // TODO change to __ lb(rscratch1, Address(saved_encrypted_ctr, used));
+    __ lb(t0, Address(t1));
     __ lb(t1, Address(in));
     __ xorr(t0, t0, t1);
     __ sb(t0, Address(out));
@@ -2628,9 +2625,8 @@ class StubGenerator: public StubCodeGenerator {
     __ srli(t0, len, 4);
     __ slli(len32, t0, 2);
     __ slli(t0, len32, 2);
-    __ sub(len, len, t0); // ensure len < 16
+    __ sub(len, len, t0);
 
-    Label L_calculate_one_next;
     __ beqz(len32, L_calculate_one_next);
 
     // generate_aes_loadkeys
@@ -2719,46 +2715,38 @@ class StubGenerator: public StubCodeGenerator {
     __ bnez(len32, L_loop);
 
     // save counter and encrypted_counter
-    Label L_save_v16_v24, L_save_v17_v25, L_save_v18_v26;
+    Label L_save_v16, L_save_v17, L_save_v18;
     __ mv(used, 16);
+    __ vadd_vi(v16, v16, 1, Assembler::VectorMask::v0_t);
     __ vrev8_v(v16, v16, Assembler::VectorMask::v0_t);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ mv(t0, 4);
-    __ beq(vl, t0, L_save_v16_v24);
+    __ beq(vl, t0, L_save_v16);
     __ mv(t0, 8);
-    __ beq(vl, t0, L_save_v17_v25);
+    __ beq(vl, t0, L_save_v17);
     __ mv(t0, 12);
-    __ beq(vl, t0, L_save_v18_v26);
+    __ beq(vl, t0, L_save_v18);
 
     __ vse32_v(v19, counter);
-    __ vse32_v(v27, saved_encrypted_ctr);
     __ j(L_calculate_one_next);
 
-    __ bind(L_save_v18_v26);
+    __ bind(L_save_v18);
     __ vse32_v(v18, counter);
-    __ vse32_v(v26, saved_encrypted_ctr);
     __ j(L_calculate_one_next);
 
-    __ bind(L_save_v17_v25);
+    __ bind(L_save_v17);
     __ vse32_v(v17, counter);
-    __ vse32_v(v25, saved_encrypted_ctr);
     __ j(L_calculate_one_next);
 
-    __ bind(L_save_v16_v24);
+    __ bind(L_save_v16);
     __ vse32_v(v16, counter);
-    __ vse32_v(v24, saved_encrypted_ctr);
 
     __ bind(L_calculate_one_next);
-    __ beqz(used, L_encrypt_slow); // when first len32 == 0, and used == 0
+    __ li(t0, maskIndex);
+    __ vsetvli(x1, x0, Assembler::e8, Assembler::m1);
+    __ vmv_v_x(v0, t0);
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ vle32_v(v31, counter);
-    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // Convert the big-endian counter into little-endian. for increment
-    __ vmv_v_i(v16, 0);
-    __ vaesz_vs(v16, v31);
-    __ vadd_vi(v16, v16, 1, Assembler::VectorMask::v0_t);
-    __ vmv_v_v(v24, v16);
-    __ vrev8_v(v24, v24, Assembler::VectorMask::v0_t);
-    __ vse32_v(v24, counter);
+    __ vle32_v(v24, counter);
 
     Label L_aes128_loop_last, L_aes192_loop_last, L_exit_aes_loop_last;
     __ mv(t2, 52);
@@ -2777,8 +2765,16 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_exit_aes_loop_last);
 
     __ vse32_v(v24, saved_encrypted_ctr);
-    __ beqz(len, L_exit);
     __ mv(used, 0);
+    // increase counter and save for next
+    __ vle32_v(v31, counter);
+    __ vrev8_v(v31, v31, Assembler::VectorMask::v0_t); // Convert the big-endian counter into little-endian. for increment
+    __ vmv_v_i(v16, 0);
+    __ vaesz_vs(v16, v31);
+    __ vadd_vi(v16, v16, 1, Assembler::VectorMask::v0_t);
+    __ vrev8_v(v16, v16, Assembler::VectorMask::v0_t);
+    __ vse32_v(v16, counter);
+    __ beqz(len, L_exit);
     __ j(L_encrypt_slow);
 
     __ bind(L_exit);
