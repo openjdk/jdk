@@ -1918,6 +1918,7 @@ class MutableBigInteger {
      * where {@code nthRoot(., n)} denotes the mathematical {@code n}th root.
      * The contents of {@code this} are <em>not</em> changed. The value of {@code this}
      * is assumed to be non-negative and the root degree {@code n >= 3}.
+     * Assumes {@code bitLength() <= Integer.MAX_VALUE}.
      *
      * @implNote The implementation is based on the material in Richard P. Brent
      * and Paul Zimmermann, <a href="https://maths-people.anu.edu.au/~brent/pd/mca-cup-0.5.9.pdf">
@@ -1926,7 +1927,7 @@ class MutableBigInteger {
      * @param n the root degree
      * @return the integer {@code n}th root of {@code this} and the remainder
      */
-    MutableBigInteger[] nthRootRem(final int n) {
+    MutableBigInteger[] nthRootRem(int n) {
         // Special cases.
         if (this.isZero() || this.isOne())
             return new MutableBigInteger[] { this, new MutableBigInteger() };
@@ -1943,18 +1944,18 @@ class MutableBigInteger {
         if (bitLength <= Long.SIZE) {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
-            long sLong = (long) Math.ceil(nthRootApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n));
-
+            long sLong = (long) nthRootApprox(Math.nextUp(x >= 0 ? x : x + 0x1p64), n) + 1L;
+            /* The integer-valued recurrence formula in the algorithm of Brent&Zimmermann
+             * simply discards the fraction part of the real-valued Newton recurrence
+             * on the function f discussed in the referenced work.
+             * Indeed, for real x and integer n > 0, the equality ⌊x/n⌋ == ⌊⌊x⌋/n⌋ holds,
+             * from which the claim follows.
+             * As a consequence, an initial underestimate (not discussed in BZ)
+             * will immediately lead to a (weak) overestimate during the 1st iteration,
+             * thus meeting BZ requirements for termination and correctness.
+             */
             if (BigInteger.bitLengthForLong(sLong) * (n - 1) <= Long.SIZE) {
-                /* The integer-valued recurrence formula in the algorithm of Brent&Zimmermann
-                 * simply discards the fraction part of the real-valued Newton recurrence
-                 * on the function f discussed in the referenced work.
-                 * Indeed, for real x and integer n > 0, the equality ⌊x/n⌋ == ⌊⌊x⌋/n⌋ holds,
-                 * from which the claim follows.
-                 * As a consequence, an initial underestimate (not discussed in BZ)
-                 * will immediately lead to a (weak) overestimate during the 1st iteration,
-                 * thus meeting BZ requirements for termination and correctness.
-                 */
+                // Do the 1st iteration outside the loop to ensure an overestimate
                 long sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
                 sLong = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
 
