@@ -52,7 +52,7 @@ void InstanceMirrorKlass::do_metadata(oop obj, OopClosureType* closure) {
   if (klass != nullptr) {
     if (klass->class_loader_data() == nullptr) {
       // This is a mirror that belongs to a shared class that has not been loaded yet.
-      assert(klass->is_shared(), "must be");
+      assert(klass->is_shared(), "Must be");
     } else if (klass->is_instance_klass() && klass->class_loader_data()->has_class_mirror_holder()) {
       // A non-strong hidden class doesn't have its own class loader,
       // so when handling the java mirror for the class we need to make sure its class
@@ -66,7 +66,7 @@ void InstanceMirrorKlass::do_metadata(oop obj, OopClosureType* closure) {
   } else {
     // Klass is null means this has been a mirror for a primitive type
     // that we do not need to follow as they are always strong roots.
-    assert(java_lang_Class::is_primitive(obj), "Sanity check");
+    assert(java_lang_Class::is_primitive(obj), "Sanity");
   }
 }
 
