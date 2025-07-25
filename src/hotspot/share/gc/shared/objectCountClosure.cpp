@@ -21,7 +21,7 @@ void ObjectCountClosure::reset_table() {
 
 
 bool ObjectCountClosure::check_table_exists() {
-    if (cit == nullptr && Universe::is_fully_initialized()) {
+    if (cit == nullptr) {
         static KlassInfoTable temp_table(false);
         cit = &temp_table;
     }
