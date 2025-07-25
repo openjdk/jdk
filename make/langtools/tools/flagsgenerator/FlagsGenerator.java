@@ -35,10 +35,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.lang.model.element.AnnotationMirror;
@@ -62,6 +64,7 @@ public class FlagsGenerator {
             Map<Integer, List<String>> flag2Names = new TreeMap<>();
             Map<FlagTarget, Map<Integer, List<String>>> target2FlagBit2Fields = new HashMap<>();
             Map<String, String> customToString = new HashMap<>();
+            Set<String> noToString = new HashSet<>();
 
             for (VariableElement field : ElementFilter.fieldsIn(clazz.getEnclosedElements())) {
                 String flagName = field.getSimpleName().toString();
@@ -83,6 +86,9 @@ public class FlagsGenerator {
                         }
                         case "com.sun.tools.javac.code.Flags.CustomToStringValue" -> {
                             customToString.put(flagName, (String) valueOfValueAttribute(am));
+                        }
+                        case "com.sun.tools.javac.code.Flags.NoToStringValue" -> {
+                            noToString.add(flagName);
                         }
                     }
                 }
@@ -115,6 +121,7 @@ public class FlagsGenerator {
                     String constantName = e.getValue().stream().collect(Collectors.joining("_OR_"));
                     String toString = e.getValue()
                                        .stream()
+                                       .filter(n -> !noToString.contains(n))
                                        .map(n -> customToString.getOrDefault(n, n.toLowerCase(Locale.US)))
                                        .collect(Collectors.joining(" or "));
                     out.println("    " + constantName + "(1L<<" + e.getKey() + ", \"" + toString + "\"),");

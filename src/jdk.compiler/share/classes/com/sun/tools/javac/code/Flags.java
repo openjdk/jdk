@@ -124,12 +124,16 @@ public class Flags {
     // files into unique bits positions: ACC_SYNTHETIC <-> SYNTHETIC,
     // for example.
     @Use({FlagTarget.CLASS})
+    @NoToStringValue
     public static final int ACC_SUPER    = 1<<5;
     @Use({FlagTarget.METHOD})
+    @NoToStringValue
     public static final int ACC_BRIDGE   = 1<<6;
     @Use({FlagTarget.METHOD})
+    @NoToStringValue
     public static final int ACC_VARARGS  = 1<<7;
     @Use({FlagTarget.CLASS})
+    @NoToStringValue
     public static final int ACC_MODULE   = 1<<15;
 
     /* ***************************************
@@ -610,5 +614,9 @@ public class Flags {
     @Retention(RetentionPolicy.RUNTIME)
     public @interface CustomToStringValue {
         public String value();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface NoToStringValue {
     }
 }
