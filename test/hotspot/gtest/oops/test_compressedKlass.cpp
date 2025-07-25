@@ -27,10 +27,8 @@
 
 #include "unittest.hpp"
 
+#if USES_COMPRESSED_KLASS_POINTERS
 TEST_VM(CompressedKlass, basics) {
-  if (!UseCompressedClassPointers) {
-    return;
-  }
   ASSERT_LE((address)0, CompressedKlassPointers::base());
   ASSERT_LE(CompressedKlassPointers::base(), CompressedKlassPointers::klass_range_start());
   ASSERT_LT(CompressedKlassPointers::klass_range_start(), CompressedKlassPointers::klass_range_end());
@@ -49,22 +47,7 @@ TEST_VM(CompressedKlass, basics) {
   }
 }
 
-TEST_VM(CompressedKlass, ccp_off) {
-  if (UseCompressedClassPointers) {
-    return;
-  }
-  ASSERT_EQ(CompressedKlassPointers::klass_range_start(), (address)nullptr);
-  ASSERT_EQ(CompressedKlassPointers::klass_range_end(), (address)nullptr);
-  // We should be able to call CompressedKlassPointers::is_encodable, and it should
-  // always return false
-  ASSERT_FALSE(CompressedKlassPointers::is_encodable((address)0x12345));
-}
-
-
 TEST_VM(CompressedKlass, test_too_low_address) {
-  if (!UseCompressedClassPointers) {
-    return;
-  }
   address really_low = (address) 32;
   ASSERT_FALSE(CompressedKlassPointers::is_encodable(really_low));
   address low = CompressedKlassPointers::klass_range_start() - 1;
@@ -72,9 +55,6 @@ TEST_VM(CompressedKlass, test_too_low_address) {
 }
 
 TEST_VM(CompressedKlass, test_too_high_address) {
-  if (!UseCompressedClassPointers) {
-    return;
-  }
   address really_high = (address) UINTPTR_MAX;
   ASSERT_FALSE(CompressedKlassPointers::is_encodable(really_high));
   address high = CompressedKlassPointers::klass_range_end();
@@ -82,9 +62,6 @@ TEST_VM(CompressedKlass, test_too_high_address) {
 }
 
 TEST_VM(CompressedKlass, test_unaligned_address) {
-  if (!UseCompressedClassPointers) {
-    return;
-  }
   const size_t alignment = CompressedKlassPointers::klass_alignment_in_bytes();
   address addr = CompressedKlassPointers::klass_range_start() + alignment - 1;
   ASSERT_FALSE(CompressedKlassPointers::is_encodable(addr));
@@ -98,12 +75,20 @@ TEST_VM(CompressedKlass, test_unaligned_address) {
 }
 
 TEST_VM(CompressedKlass, test_good_address) {
-  if (!UseCompressedClassPointers) {
-    return;
-  }
   const size_t alignment = CompressedKlassPointers::klass_alignment_in_bytes();
   address addr = CompressedKlassPointers::klass_range_start();
   ASSERT_TRUE(CompressedKlassPointers::is_encodable(addr));
   addr = CompressedKlassPointers::klass_range_end() - alignment;
   ASSERT_TRUE(CompressedKlassPointers::is_encodable(addr));
 }
+
+#else
+
+TEST_VM(CompressedKlass, ccp_off) {
+  ASSERT_EQ(CompressedKlassPointers::klass_range_start(), (address)nullptr);
+  ASSERT_EQ(CompressedKlassPointers::klass_range_end(), (address)nullptr);
+  // We should be able to call CompressedKlassPointers::is_encodable, and it should
+  // always return false
+  ASSERT_FALSE(CompressedKlassPointers::is_encodable((address)0x12345));
+}
+#endif // USES_COMPRESSED_KLASS_POINTERS

@@ -36,10 +36,8 @@ TEST_VM(metaspace, MetaspaceUtils_reserved) {
   EXPECT_LE(reserved_metadata, reserved);
 }
 
+#if USES_COMPRESSED_KLASS_POINTERS
 TEST_VM(metaspace, MetaspaceUtils_reserved_compressed_class_pointers) {
-  if (!UseCompressedClassPointers) {
-    return;
-  }
   size_t reserved = MetaspaceUtils::reserved_bytes();
   EXPECT_GT(reserved, 0UL);
 
@@ -47,6 +45,7 @@ TEST_VM(metaspace, MetaspaceUtils_reserved_compressed_class_pointers) {
   EXPECT_GT(reserved_class, 0UL);
   EXPECT_LE(reserved_class, reserved);
 }
+#endif // USES_COMPRESSED_KLASS_POINTERS
 
 TEST_VM(metaspace, MetaspaceUtils_committed) {
   size_t committed = MetaspaceUtils::committed_bytes();
@@ -60,10 +59,8 @@ TEST_VM(metaspace, MetaspaceUtils_committed) {
   EXPECT_LE(committed_metadata, committed);
 }
 
+#if USES_COMPRESSED_KLASS_POINTERS
 TEST_VM(metaspace, MetaspaceUtils_committed_compressed_class_pointers) {
-  if (!UseCompressedClassPointers) {
-    return;
-  }
   size_t committed = MetaspaceUtils::committed_bytes();
   EXPECT_GT(committed, 0UL);
 
@@ -72,11 +69,9 @@ TEST_VM(metaspace, MetaspaceUtils_committed_compressed_class_pointers) {
   EXPECT_LE(committed_class, committed);
 }
 
-TEST_VM(metaspace, MetaspaceUtils_non_compressed_class_pointers) {
-  if (UseCompressedClassPointers) {
-    return;
-  }
+#else
 
+TEST_VM(metaspace, MetaspaceUtils_non_compressed_class_pointers) {
   size_t committed_class = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
   EXPECT_EQ(committed_class, 0UL);
 
@@ -86,6 +81,7 @@ TEST_VM(metaspace, MetaspaceUtils_non_compressed_class_pointers) {
   size_t reserved_class = MetaspaceUtils::reserved_bytes(Metaspace::ClassType);
   EXPECT_EQ(reserved_class, 0UL);
 }
+#endif // USES_COMPRESSED_KLASS_POINTERS
 
 static void check_metaspace_stats_are_consistent(const MetaspaceStats& stats) {
   EXPECT_LE(stats.committed(), stats.reserved());
@@ -105,13 +101,13 @@ TEST_VM(MetaspaceUtils, MetaspaceUtils_get_statistics) {
   check_metaspace_stats_are_not_null(combined_stats.non_class_space_stats());
   check_metaspace_stats_are_consistent(combined_stats.non_class_space_stats());
 
-  if (UseCompressedClassPointers) {
-    check_metaspace_stats_are_not_null(combined_stats.class_space_stats());
-    check_metaspace_stats_are_consistent(combined_stats.class_space_stats());
-  } else {
-    // if we don't have a class space, combined stats should equal non-class stats
-    EXPECT_EQ(combined_stats.non_class_space_stats().reserved(), combined_stats.reserved());
-    EXPECT_EQ(combined_stats.non_class_space_stats().committed(), combined_stats.committed());
-    EXPECT_EQ(combined_stats.non_class_space_stats().used(), combined_stats.used());
-  }
+#if USES_COMPRESSED_KLASS_POINTERS
+  check_metaspace_stats_are_not_null(combined_stats.class_space_stats());
+  check_metaspace_stats_are_consistent(combined_stats.class_space_stats());
+#else
+  // if we don't have a class space, combined stats should equal non-class stats
+  EXPECT_EQ(combined_stats.non_class_space_stats().reserved(), combined_stats.reserved());
+  EXPECT_EQ(combined_stats.non_class_space_stats().committed(), combined_stats.committed());
+  EXPECT_EQ(combined_stats.non_class_space_stats().used(), combined_stats.used());
+#endif // USES_COMPRESSED_KLASS_POINTERS
 }

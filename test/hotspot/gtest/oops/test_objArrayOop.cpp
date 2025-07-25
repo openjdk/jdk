@@ -31,20 +31,14 @@ TEST_VM(objArrayOop, osize) {
   } x[] = {
 //    ObjAligInB, UseCCP, UseCoops, UseCOH, object size in heap words
 #ifdef _LP64
-    { 8,          false,  false, false,   4 },  // 20 byte header, 8 byte oops
-    { 8,          false,  true,  false,   3 },  // 20 byte header, 4 byte oops
     { 8,          true,   false, false,   3 },  // 16 byte header, 8 byte oops
     { 8,          true,   true,  false,   3 },  // 16 byte header, 4 byte oops
     { 8,          true,   false, true,    3 },  // 12 byte header, 8 byte oops
     { 8,          true,   true,  true,    2 },  // 12 byte header, 4 byte oops
-    { 16,         false,  false, false,   4 },  // 20 byte header, 8 byte oops, 16-byte align
-    { 16,         false,  true,  false,   4 },  // 20 byte header, 4 byte oops, 16-byte align
     { 16,         true,   false, false,   4 },  // 16 byte header, 8 byte oops, 16-byte align
     { 16,         true,   true,  false,   4 },  // 16 byte header, 4 byte oops, 16-byte align
     { 16,         true,   false, true,    4 },  // 12 byte header, 8 byte oops, 16-byte align
     { 16,         true,   true,  true,    2 },  // 12 byte header, 4 byte oops, 16-byte align
-    { 256,        false,  false, false,  32 }, // 20 byte header, 8 byte oops, 256-byte align
-    { 256,        false,  true,  false,  32 }, // 20 byte header, 4 byte oops, 256-byte align
     { 256,        true,   false, false,  32 }, // 16 byte header, 8 byte oops, 256-byte align
     { 256,        true,   true,  false,  32 }, // 16 byte header, 4 byte oops, 256-byte align
     { 256,        true,   false, true,   32 }, // 12 byte header, 8 byte oops, 256-byte align
@@ -55,7 +49,7 @@ TEST_VM(objArrayOop, osize) {
     { -1,         false,  false, false,  -1 }
   };
   for (int i = 0; x[i].result != -1; i++) {
-    if (x[i].objal == (int)ObjectAlignmentInBytes && x[i].ccp == UseCompressedClassPointers && x[i].coops == UseCompressedOops &&
+    if (x[i].objal == (int)ObjectAlignmentInBytes && x[i].ccp == (bool)USES_COMPRESSED_KLASS_POINTERS && x[i].coops == UseCompressedOops &&
         x[i].coh == UseCompactObjectHeaders) {
       EXPECT_EQ(objArrayOopDesc::object_size(1), (size_t)x[i].result);
     }

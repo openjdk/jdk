@@ -643,7 +643,7 @@
 #define INCLUDE_ASAN 0
 #endif
 
-#if _LP64
+#ifdef _LP64
 #define USES_COMPRESSED_KLASS_POINTERS 1
 #else
 // 32-bit still uses uncompressed class pointers
