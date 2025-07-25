@@ -29,7 +29,6 @@ package java.lang;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
-import java.util.Objects;
 import java.util.function.BiFunction;
 
 /**
@@ -98,7 +97,10 @@ class StringCoding {
      *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
     static int countPositives(byte[] ba, int off, int len) {
-        Preconditions.checkFromIndexSize(off, len, Objects.requireNonNull(ba, "ba").length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(
+                off, len,
+                ba.length,      // Implicit null check on `ba`
+                Preconditions.AIOOBE_FORMATTER);
         return countPositives0(ba, off, len);
     }
 
@@ -143,13 +145,11 @@ class StringCoding {
      */
     static int encodeISOArray(byte[] sa, int sp,
                               byte[] da, int dp, int len) {
-        Objects.requireNonNull(sa, "sa");
-        Objects.requireNonNull(da, "da");
         int sl;
         if ((sp | dp | len) < 0 ||
                 // Halving the length of `sa` to obtain the number of characters:
-                sp >= (sl = sa.length >>> 1) ||
-                dp >= da.length) {
+                sp >= (sl = sa.length >>> 1) ||     // Implicit null check on `sa`
+                dp >= da.length) {                  // Implicit null check on `da`
             return 0;
         }
         int minLen = Math.min(len, Math.min(sl - sp, da.length - dp));
@@ -184,9 +184,9 @@ class StringCoding {
      */
     static int encodeAsciiArray(char[] sa, int sp,
                                 byte[] da, int dp, int len) {
-        Objects.requireNonNull(sa, "sa");
-        Objects.requireNonNull(da, "da");
-        if ((sp | dp | len) < 0 || sp >= sa.length || dp >= da.length) {
+        if ((sp | dp | len) < 0 ||
+                sp >= sa.length ||      // Implicit null check on `sa`
+                dp >= da.length) {      // Implicit null check on `da`
             return 0;
         }
         int minLen = Math.min(len, Math.min(sa.length - sp, da.length - dp));

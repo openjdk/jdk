@@ -156,9 +156,9 @@ public class ISO_8859_1
          */
         private static int encodeISOArray(char[] sa, int sp,
                                           byte[] da, int dp, int len) {
-            Objects.requireNonNull(sa, "sa");
-            Objects.requireNonNull(da, "da");
-            if ((sp | dp | len) < 0 || sp >= sa.length || dp >= da.length) {
+            if ((sp | dp | len) < 0 ||
+                    sp >= sa.length ||      // Implicit null check on `sa`
+                    dp >= da.length) {      // Implicit null check on `da`
                 return 0;
             }
             int minLen = Math.min(len, Math.min(sa.length - sp, da.length - dp));
