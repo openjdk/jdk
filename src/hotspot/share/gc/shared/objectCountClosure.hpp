@@ -17,11 +17,16 @@ class ObjectCountClosure : public AllStatic {
     static KlassInfoTable* cit;
 
 public:
+    // Return false if allocation of KlassInfoTable failed.
     static bool check_table_exists();
+    // Return false if object could not be recorded in the KlassInfoTable.
     static bool record_object(oop o);
+    // Returns the KlassInfoTable if it exists, otherwise returns nullptr.
     static KlassInfoTable* get_table();
+    // Clear entries of the KlassInfoTable
     static void reset_table();
 
+    // Returns true if event is enabled
     template <class Event>
     static bool should_send_event();
 };
