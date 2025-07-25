@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8361748
- * @summary Tests XBMImageDecoder parsing logic
+ * @summary Tests XBM size limits and if XBMImageDecoder.produceImage()
+ *          throws appropriate error when parsing invalid XBM image data.
  * @run main SwingIconRead
  */
 
