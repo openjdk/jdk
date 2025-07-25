@@ -732,8 +732,7 @@ public final class String
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
     static String newStringUTF8(byte[] bytes, int offset, int length, boolean noShare) throws CharacterCodingException {
-        Objects.requireNonNull(bytes, "bytes");
-        checkBoundsOffCount(offset, length, bytes.length);
+        checkBoundsOffCount(offset, length, bytes.length);  // Implicit null check on `bytes`
         if (length == 0) {
             return "";
         }
@@ -938,8 +937,7 @@ public final class String
      * @throws CharacterCodingException For malformed input or unmappable characters
      */
     static byte[] getBytesUTF8(String s) throws CharacterCodingException {
-        Objects.requireNonNull(s, "s");
-        return encodeUTF8(s.coder(), s.value(), false);
+        return encodeUTF8(s.coder(), s.value(), false);  // Implicit null check on `s`
     }
 
     private static boolean isASCII(byte[] src) {
