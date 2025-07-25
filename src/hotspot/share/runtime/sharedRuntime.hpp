@@ -127,11 +127,6 @@ class SharedRuntime: AllStatic {
   static jfloat  frem(jfloat  x, jfloat  y);
   static jdouble drem(jdouble x, jdouble y);
 
-  // TODO probably not the right location, let's move it later
-  static void debug_print(const char* msg, int arg);
-
-  static void debug_printf(const char* format, ...);
-
   template <typename... TT>
   static void debug_print_tt(const char *format, TT... args) {
     DEBUG_ONLY(NoHandleMark __hm;)

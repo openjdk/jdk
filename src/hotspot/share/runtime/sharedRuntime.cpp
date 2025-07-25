@@ -280,11 +280,6 @@ JRT_LEAF(jlong, SharedRuntime::ldiv(jlong y, jlong x))
   }
 JRT_END
 
-JRT_LEAF(void, SharedRuntime::debug_print(const char *msg, int arg))
-  tty->print_cr("%s %d", msg, arg);
-JRT_END
-
-
 JRT_LEAF(jlong, SharedRuntime::lrem(jlong y, jlong x))
   if (x == min_jlong && y == CONST64(-1)) {
     return 0;
