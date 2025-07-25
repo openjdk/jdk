@@ -61,11 +61,11 @@ import sun.awt.AppContext;
  * from Images. Images that are created from a URL, filename or byte array
  * are preloaded using MediaTracker to monitor the loaded state
  * of the image.
- * If the image source parameter to a constructor is non-null,
+ * If the image source parameter to a constructor or method is non-null,
  * but does not reference valid accessible image data,
  * no exceptions will be thrown but the image will be 'effectively' null,
  * as it will have no dimensions and never be drawn, and
- * getImageLoadStatus() will report {@see java.awt.MediaTracker#ERRORED}.
+ * {@code getImageLoadStatus()} will report {@see java.awt.MediaTracker#ERRORED}.
  *
  * <p>
  * For further information and examples of using image icons, see

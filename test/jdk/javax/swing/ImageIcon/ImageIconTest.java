@@ -39,6 +39,7 @@ import javax.swing.ImageIcon;
 public class ImageIconTest {
 
     static enum ArgType { FILE, URL, BYTEARRAY, IMAGE };
+    static enum ArgVal { NULL, INVALIDDATA };
 
     public static void main(String[] args) throws Exception {
 
@@ -48,59 +49,51 @@ public class ImageIconTest {
         try (FileOutputStream fos = new FileOutputStream(imgName)) {
             fos.write(invalidData);
         }
-        File file = new File(System.getProperty("test.src", "."), imgName);
+        String fileName = (new File(System.getProperty("test.src", "."), imgName)).getName();
 
         for (ArgType a : ArgType.values()) {
-            for (final boolean invalid : new boolean[]{false, true}) {
-                System.out.println("Testing for ArgType " + a + " for nullcase " + invalid);
+            for (final ArgVal v : ArgVal.values()) {
+                System.out.println("Testing for ArgType " + a + " for case " + v);
                 boolean expected = true;
                 boolean passed = false;
                 try {
                     switch (a) {
                        case FILE :
                            expected = false;
-                           if (!invalid) {
-                               new ImageIcon((String)null);
-                           } else {
-                               new ImageIcon(file.getName(), "gif");
-                           }
+                           String s = (v == ArgVal.NULL) ? null : fileName;
+                           new ImageIcon(s);
                            passed = true; // no exception expected for this case
                            break;
                        case URL :
-                           if (!invalid) {
+                           if (v == ArgVal.NULL) {
                                new ImageIcon((URL)null);
-                           } else {
+                           } else if (v == ArgVal.INVALIDDATA) {
                                expected = false;
                                new ImageIcon("file://" + imgName, "gif");
                                passed = true; // no exception expected for this case
                            }
                            break;
                        case BYTEARRAY :
-                           if (!invalid) {
+                           if (v == ArgVal.NULL) {
                                byte[] bytes = null;
                                new ImageIcon(bytes);
-                           } else {
+                           } else if (v == ArgVal.INVALIDDATA) {
                                expected = false;
                                new ImageIcon(new byte[0], "gif");
                                passed = true; // no exception expected for this case
                            }
                            break;
                        case IMAGE :
-                           if (!invalid) {
+                           if (v == ArgVal.NULL) {
                                new ImageIcon((Image)null);
-                           } else {
+                           } else if (v == ArgVal.INVALIDDATA) {
                                expected = false;
-                               new ImageIcon((Image)Toolkit.getDefaultToolkit().
-                                              createImage(file.getName()), "gif");
+                               new ImageIcon((Image)Toolkit.getDefaultToolkit().createImage(fileName), "gif");
                                passed = true; // no exception expected for this case
                            }
                            break;
                     }
                 } catch (NullPointerException e) {
-                    if (expected) {
-                        passed = true;
-                    }
-                } catch (Exception ex) {
                     if (expected) {
                         passed = true;
                     }
