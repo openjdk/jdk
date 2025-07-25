@@ -643,4 +643,19 @@
 #define INCLUDE_ASAN 0
 #endif
 
+#if _LP64
+#define USES_COMPRESSED_KLASS_POINTERS 1
+#else
+// 32-bit still uses uncompressed class pointers
+#define USES_COMPRESSED_KLASS_POINTERS 0
+#endif
+
+#if USES_COMPRESSED_KLASS_POINTERS
+#define COMPRESSED_KLASS_POINTERS_ONLY(code) code
+#define NOT_COMPRESSED_KLASS_POINTERS(code)
+#else
+#define COMPRESSED_KLASS_POINTERS_ONLY(code)
+#define NOT_COMPRESSED_KLASS_POINTERS(code) code
+#endif
+
 #endif // SHARE_UTILITIES_MACROS_HPP
