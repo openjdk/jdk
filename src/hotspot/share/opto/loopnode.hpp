@@ -1611,6 +1611,9 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
+  bool would_split_lshift_through_phi(const Node* lshift, const Node* n_blk) const;
+  bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
+
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
@@ -1625,10 +1628,40 @@ public:
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
   // Split Node 'n' through merge point if there is enough win.
-  Node *split_thru_phi( Node *n, Node *region, int policy );
+  Node *split_thru_phi(Node *n, Node *region, uint policy);
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
   void do_split_if(Node *iff, RegionNode** new_false_region = nullptr, RegionNode** new_true_region = nullptr);
+
+private:
+  class SplitWins {
+  private:
+    uint _total_wins;
+    uint _entry_wins;
+    uint _backedge_wins;
+
+  public:
+    SplitWins() :
+      _total_wins(0),
+      _entry_wins(0),
+      _backedge_wins(0) {};
+
+    void reset() {_total_wins = 0; _entry_wins = 0; _backedge_wins = 0;}
+    void add_win(Node* region, int ctrl_index) {
+      if (region->is_Loop() && ctrl_index == LoopNode::EntryControl) {
+        _entry_wins++;
+      }
+      if (region->is_Loop() && ctrl_index == LoopNode::LoopBackControl) {
+        _backedge_wins++;
+      }
+      _total_wins++;
+    }
+    bool profitable(uint policy) const {
+      return _total_wins >= policy && !(_backedge_wins == 0 && _entry_wins > 0);
+    }
+  };
+
+public:
 
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();
