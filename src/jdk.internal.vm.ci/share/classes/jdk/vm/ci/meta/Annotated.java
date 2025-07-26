@@ -32,31 +32,28 @@ import java.util.List;
 public interface Annotated {
 
     /**
-     * Constructs the annotations present on this element whose types are in the set composed of {@code type1},
-     * {@code type2} and {@code types}. All enum types referenced by the returned annotation are
-     * initialized. Class initialization is not triggered for enum types referenced by other
-     * annotations of this element.
+     * Gets the annotations present on this element whose types are in {@code types}.
+     * Class initialization is not triggered for enum types referenced by the returned
+     * annotations or any other annotations of this element.
      *
      * If this element is a class, then {@link Inherited} annotations are included in the set of
      * annotations considered.
      *
      * See {@link java.lang.reflect.AnnotatedElement} for the definition of <em>present</em>.
      *
-     * @param type1 an annotation type
-     * @param type2 an annotation type
-     * @param types more annotation types
-     * @return an immutable list of the annotations present on this element that match one of the
-     *         given types
-     * @throws IllegalArgumentException if any type in the set composed of {@code type1},
-     *             {@code type2} and {@code types} is not an annotation interface type
+     * @param types annotation types to select
+     * @return an immutable list of the annotations present on this element that match one {@code types}
+     * @throws IllegalArgumentException if any type in {@code types} is not an annotation interface type
      * @throws UnsupportedOperationException if this operation is not supported
      */
-    default List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+    default List<AnnotationData> getSelectedAnnotationData(ResolvedJavaType... types) {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * Constructs the annotation present on this element of type {@code type}.
+     * Gets the annotation present on this element of type {@code type}.
+     * Class initialization is not triggered for enum types referenced by the returned
+     * annotation.
      *
      * See {@link java.lang.reflect.AnnotatedElement} for the definition of <em>present</em>.
      *
