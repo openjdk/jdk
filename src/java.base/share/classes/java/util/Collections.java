@@ -1048,6 +1048,84 @@ public final class Collections {
     }
 
     /**
+     * Finds the index of the first element in the sorted list that is not less than the specified key,
+     * using the given comparator.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>   the element type
+     * @param list  the sorted list to be searched
+     * @param key   the target value
+     * @param comp  the comparator to determine order
+     * @return the index of the first element not less than key
+     */
+    public static <T> int lowerBound(List<T> list, T key, Comparator<? super T> comp) {
+        int low = 0, high = list.size() - 1, idx = list.size();
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(list.get(mid), key) >= 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Finds the index of the first element in the sorted list that is not less than the specified key,
+     * using natural ordering.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>  the element type, must be comparable
+     * @param list the sorted list to be searched
+     * @param key  the target value
+     * @return the index of the first element not less than key
+     */
+    public static <T extends Comparable<? super T>> int lowerBound(List<T> list, T key) {
+        return lowerBound(list, key, Comparator.naturalOrder());
+    }
+
+    /**
+     * Finds the index of the first element in the sorted list that is greater than the specified key,
+     * using the given comparator.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>   the element type
+     * @param list  the sorted list to be searched
+     * @param key   the target value
+     * @param comp  the comparator to determine order
+     * @return the index of the first element greater than key
+     */
+    public static <T> int upperBound(List<T> list, T key, Comparator<? super T> comp) {
+        int low = 0, high = list.size() - 1, idx = list.size();
+        while (low <= high) {
+            int mid = low + ((high - low) >> 1);
+            if (comp.compare(list.get(mid), key) > 0) {
+                idx = mid;
+                high = mid - 1;
+            } else low = mid + 1;
+        }
+        return idx;
+    }
+
+    /**
+     * Finds the index of the first element in the sorted list that is greater than the specified key,
+     * using natural ordering.
+     * @implNote This implementation uses binary search and runs in O(log n) time.
+     * Contributed by Adarsh Sharma.
+     *
+     * @param <T>  the element type, must be comparable
+     * @param list the sorted list to be searched
+     * @param key  the target value
+     * @return the index of the first element greater than key
+     */
+    public static <T extends Comparable<? super T>> int upperBound(List<T> list, T key) {
+        return upperBound(list, key, Comparator.naturalOrder());
+    }
+
+    /**
      * @serial include
      */
     static class UnmodifiableCollection<E> implements Collection<E>, Serializable {
