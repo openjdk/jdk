@@ -43,9 +43,11 @@
  * @library /test/lib
  *
  * @run main/othervm -Djdk.test.lib.random.seed=42
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+OptoScheduling
  *      HeapByteBufferTest
  * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+OptoScheduling
  *      HeapByteBufferTest
  */

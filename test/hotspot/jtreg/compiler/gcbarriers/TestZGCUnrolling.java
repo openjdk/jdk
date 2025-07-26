@@ -55,7 +55,8 @@ public class TestZGCUnrolling {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+UseZGC", "-XX:LoopUnrollLimit=24");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:+UseZGC", "-XX:LoopUnrollLimit=24");
     }
 
     @Test
