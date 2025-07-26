@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,17 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           tty->print_cr("trap: safepoint_poll at return at " INTPTR_FORMAT " (nmethod)", p2i(pc));
         }
         stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+      }
+
+      // SIGTRAP-based nmethod entry barriers.
+      else if (sig == SIGTRAP && TrapBasedNMethodEntryBarriers &&
+               nativeInstruction_at(pc)->is_sigtrap_nmethod_entry_barrier() &&
+               CodeCache::contains((void*) pc)) {
+        if (TraceTraps) {
+          tty->print_cr("trap: nmethod entry barrier at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
+        }
+        stub = StubRoutines::method_entry_barrier();
+        uc->uc_mcontext.regs->link = (uintptr_t)(pc + BytesPerInstWord); // emulate call by setting LR
       }
 
       // SIGTRAP-based ic miss check in compiled code.
