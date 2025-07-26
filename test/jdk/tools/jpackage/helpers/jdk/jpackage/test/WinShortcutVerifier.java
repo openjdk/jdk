@@ -87,7 +87,7 @@ final class WinShortcutVerifier {
         cmd.verifyIsOfType(PackageType.WINDOWS);
 
         verifyDeployedShortcutsInternal(cmd, installed);
-        var copyCmd = new JPackageCommand(cmd);
+        var copyCmd = cmd.createMutableCopy();
         if (copyCmd.hasArgument("--win-per-user-install")) {
             copyCmd.removeArgument("--win-per-user-install");
         } else {
