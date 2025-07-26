@@ -4572,8 +4572,7 @@ oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle
   NoSafepointVerifier nsv;
 
   if (method->is_old()) {
-    method = (method->is_deleted()) ? Universe::throw_no_such_method_error() :
-                                      method->get_new_method();
+    method = method->get_new_method();
   }
 
   InstanceKlass* holder = method->method_holder();
