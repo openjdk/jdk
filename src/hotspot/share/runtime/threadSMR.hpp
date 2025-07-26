@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,13 @@ class ThreadsList;
 // operation. It is no longer necessary to hold the Threads_lock to safely
 // perform an operation on a target thread.
 //
+// Virtual thread support:
+// By default ThreadsListHandle works only with platform threads.
+// There is a way to get carrier's JavaThread for mounted virtual thread,
+// but mount/unmount may happen at any time and it's the caller responsibility
+// to ensure the virtual thread is still mounted to the returned JavaThread
+// in handshake/VMOp.
+//
 // There are several different ways to refer to java.lang.Thread objects
 // so we have a few ways to get a protected JavaThread *:
 //
@@ -56,6 +63,18 @@ class ThreadsList;
 //   bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &jt, nullptr);
 //   if (is_alive) {
 //     :  // do stuff with 'jt'...
+//   }
+//
+// JNI jobject (if jthread can be platform or mounted virtual thread) example:
+//   jobject jthread = ...;
+//   :
+//   ThreadsListHandle tlh;
+//   JavaThread* jt = nullptr;
+//   oop vthread_oop = nullptr;
+//   bool has_java_thread = tlh.cv_internal_thread_to_JavaThread(jthread, &jt, &vthread_oop, true);
+//   if (has_java_thread) {
+//     :  // do stuff with 'jt'...
+//        // if jthread is a virtual thread, jt is its carrier's JavaThread
 //   }
 //
 // JVM/TI jthread example:
@@ -318,7 +337,8 @@ public:
   inline Iterator begin();
   inline Iterator end();
 
-  bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread ** jt_pp, oop * thread_oop_p);
+  // If use_carrier is true, returns carrier's JavaThread for mounted virtual thread.
+  bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread** jt_pp, oop* thread_oop_p, bool use_carrier = false);
 
   bool includes(JavaThread* p) {
     return list()->includes(p);
