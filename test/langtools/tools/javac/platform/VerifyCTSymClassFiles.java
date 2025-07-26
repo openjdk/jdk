@@ -27,12 +27,16 @@
  * @summary Verify classfile inside ct.sym
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.platform
  *          jdk.compiler/com.sun.tools.javac.util:+open
  * @build toolbox.ToolBox VerifyCTSymClassFiles
  * @run main VerifyCTSymClassFiles
  */
+
+import com.sun.tools.javac.file.FSInfo;
+import com.sun.tools.javac.util.Context;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -53,6 +57,8 @@ public class VerifyCTSymClassFiles {
         t.checkClassFiles();
     }
 
+    private final FSInfo fsInfo = FSInfo.instance(new Context());
+
     void checkClassFiles() throws IOException {
         Path ctSym = Paths.get(System.getProperty("java.home"), "lib", "ct.sym");
 
@@ -60,7 +66,8 @@ public class VerifyCTSymClassFiles {
             //no ct.sym, nothing to check:
             return ;
         }
-        try (FileSystem fs = FileSystems.newFileSystem(ctSym)) {
+        // Expected to always be a ZIP filesystem.
+        try (var fs = fsInfo.getJarFSProvider().newFileSystem(ctSym, fsInfo.readOnlyJarFSEnv(null))) {
             Files.walk(fs.getRootDirectories().iterator().next())
                  .filter(p -> Files.isRegularFile(p))
                  .forEach(p -> checkClassFile(p));
