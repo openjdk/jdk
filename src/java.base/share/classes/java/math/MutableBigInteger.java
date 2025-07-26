@@ -1971,12 +1971,10 @@ class MutableBigInteger {
                     return new MutableBigInteger[] {
                             new MutableBigInteger(sLong), new MutableBigInteger(x - sToN1 * sLong)
                     };
-                } else {
-                    s = new MutableBigInteger(sLong);
                 }
-            } else { // s^(n - 1) could overflow long range, use MutableBigInteger loop instead
-                s = new MutableBigInteger(sLong);
             }
+            // s^(n - 1) could overflow long range, use MutableBigInteger loop instead
+            s = new MutableBigInteger(sLong);
         } else {
             /* Since the following equality holds:
              * nthRoot(x, n) == nthRoot(x/2^sh, n) * 2^(sh/n),
