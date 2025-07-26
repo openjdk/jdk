@@ -283,7 +283,7 @@ public class WindowsHelper {
         return MsiDatabaseCache.INSTANCE.listShortcuts(cmd.outputBundle());
     }
 
-    public static String getExecutableDesciption(Path pathToExeFile) {
+    public static String getExecutableDescription(Path pathToExeFile) {
         Executor exec = Executor.of("powershell",
                 "-NoLogo",
                 "-NoProfile",
