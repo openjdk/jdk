@@ -36,6 +36,7 @@
 #include "jfr/support/jfrResolution.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/support/methodtracer/jfrMethodTracer.hpp"
+#include "jfr/support/methodtracer/jfrTraceTagging.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.hpp"
@@ -88,11 +89,9 @@ void Jfr::on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS) 
   }
 }
 
-void Jfr::on_klass_redefinition(const InstanceKlass* ik, Thread* thread) {
-  assert(JfrMethodTracer::in_use(), "invariant");
-  JfrMethodTracer::on_klass_redefinition(ik, thread);
+void Jfr::on_klass_redefinition(const InstanceKlass* ik, const InstanceKlass* scratch_klass) {
+  JfrTraceTagging::on_klass_redefinition(ik, scratch_klass);
 }
-
 
 bool Jfr::is_excluded(Thread* t) {
   return JfrJavaSupport::is_excluded(t);

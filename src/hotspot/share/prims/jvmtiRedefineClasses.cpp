@@ -67,6 +67,9 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 Array<Method*>* VM_RedefineClasses::_old_methods = nullptr;
 Array<Method*>* VM_RedefineClasses::_new_methods = nullptr;
@@ -1175,7 +1178,6 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
-      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -4406,7 +4408,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);
 
-  JFR_ONLY(ON_KLASS_REDEFINITION(the_class, current);)
+  JFR_ONLY(Jfr::on_klass_redefinition(the_class, scratch_class);)
 
   _timer_rsc_phase1.stop();
   if (log_is_enabled(Info, redefine, class, timer)) {
