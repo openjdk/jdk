@@ -30,24 +30,24 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 // Note: It would be possible to just use `StableMap::get` with some additional logic
 // instead of this class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
+
 /**
  * Implementation of a stable Function.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param values   a delegate map of inputs to StableValue mappings
- * @param original the original Function
- * @param <T>      the type of the input to the function
- * @param <R>      the type of the result of the function
+ * @param values           a delegate map of inputs to StableValue mappings
+ * @param underlyingHolder of the original underlying Function
+ * @param <T>              the type of the input to the function
+ * @param <R>              the type of the result of the function
  */
 public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
-                                   Function<? super T, ? extends R> original) implements Function<T, R> {
+                                   UnderlyingHolder<Function<? super T, ? extends R>> underlyingHolder) implements Function<T, R> {
 
     @ForceInline
     @Override
@@ -56,8 +56,7 @@ public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         if (stable == null) {
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
-        return stable.orElseSet(new Supplier<R>() {
-            @Override  public R get() { return original.apply(value); }});
+        return stable.orElseSet(value, underlyingHolder);
     }
 
     @Override
@@ -76,8 +75,8 @@ public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
     }
 
     public static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,
-                                                 Function<? super T, ? extends R> original) {
-        return new StableFunction<>(StableUtil.map(inputs), original);
+                                                 Function<? super T, ? extends R> underlying) {
+        return new StableFunction<>(StableUtil.map(inputs), new UnderlyingHolder<>(underlying, inputs.size()));
     }
 
 }

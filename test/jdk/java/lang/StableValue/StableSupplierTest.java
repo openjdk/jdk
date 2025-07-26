@@ -24,13 +24,16 @@
 /* @test
  * @summary Basic tests for StableSupplier methods
  * @enablePreview
- * @run junit StableSupplierTest
+ * @modules java.base/jdk.internal.lang.stable
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED StableSupplierTest
  */
 
+import jdk.internal.lang.stable.UnderlyingHolder;
 import org.junit.jupiter.api.Test;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -99,6 +102,39 @@ final class StableSupplierTest {
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());
+    }
+
+    @Test
+    void underlyingRef() {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(SUPPLIER);
+        var f1 = StableValue.supplier(cs);
+
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
+        assertEquals(1, holder.counter());
+        assertSame(cs, holder.underlying());
+        int v = f1.get();
+        int v2 = f1.get();
+        assertEquals(0, holder.counter());
+        assertNull(holder.underlying());
+    }
+
+    @Test
+    void underlyingRefException() {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
+            throw new UnsupportedOperationException();
+        });
+        var f1 = StableValue.supplier(cs);
+
+        UnderlyingHolder<?> holder = StableTestUtil.underlyingHolder(f1);
+        assertEquals(1, holder.counter());
+        assertSame(cs, holder.underlying());
+        try {
+            int v = f1.get();
+        } catch (UnsupportedOperationException _) {
+            // Expected
+        }
+        assertEquals(1, holder.counter());
+        assertSame(cs, holder.underlying());
     }
 
 }
