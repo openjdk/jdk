@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.nio.fs;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.InvalidPathException;
 
 /**
  * Utility methods to convert between Path and URIs.
@@ -157,11 +158,45 @@ class WindowsUriSupport {
             // reconstitute the UNC
             path = "\\\\" + host + path;
         } else {
-            if ((path.length() > 2) && (path.charAt(2) == ':')) {
+            int pathLen = path.length();
+            if ((pathLen > 2) && (path.charAt(2) == ':')) {
                 // "/c:/foo" --> "c:/foo"
                 path = path.substring(1);
+                pathLen--;
+            }
+
+            // set search start position
+            int fromIndex = pathLen > 1 && path.charAt(1) == ':' ? 2 : 0;
+
+            // check for redundant '/': if none, fast path is possible
+            if (path.indexOf("//", fromIndex) == -1) {
+                // check only for the illegal chars '*' and ':' as the
+                // other illegal chars, '<', '>', '"', '|', and '?'
+                // were vetted during URI construction
+                int illegalCharPos;
+                if ((illegalCharPos = path.indexOf(':', fromIndex)) == -1 &&
+                    (illegalCharPos = path.indexOf('*')) == -1) {
+                    // trim terminal '/' if present
+                    if (path.charAt(pathLen - 1) == '/') {
+                        path = path.substring(0, pathLen - 1);
+                        pathLen--;
+                    }
+                    // if there are no illegal chars and no redundant '/', then
+                    // simply replace slashes with backslashes
+                    String p = path.replace('/', '\\');
+                    return WindowsPath.createFromNormalizedPath(fs, p, null);
+                }
+
+                // fail if an illegal character was found
+                if (illegalCharPos != -1) {
+                    char c = path.charAt(illegalCharPos);
+                    throw new InvalidPathException(path,
+                                                   "Illegal char <" + c + ">",
+                                                   illegalCharPos);
+                }
             }
         }
+
         return WindowsPath.parse(fs, path);
     }
 }
