@@ -97,52 +97,52 @@ bool MacroAssembler::is_pc_relative_at(address instr) {
   // auipc + load
   // auipc + fload_load
   return (is_auipc_at(instr)) &&
-         (is_addi_at(instr + instruction_size) ||
-          is_jalr_at(instr + instruction_size) ||
-          is_load_at(instr + instruction_size) ||
-          is_float_load_at(instr + instruction_size)) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size) ||
+          is_load_at(instr + MacroAssembler::instruction_size) ||
+          is_float_load_at(instr + MacroAssembler::instruction_size)) &&
          check_pc_relative_data_dependency(instr);
 }
 
 // ie:ld(Rd, Label)
 bool MacroAssembler::is_load_pc_relative_at(address instr) {
   return is_auipc_at(instr) && // auipc
-         is_ld_at(instr + instruction_size) && // ld
+         is_ld_at(instr + MacroAssembler::instruction_size) && // ld
          check_load_pc_relative_data_dependency(instr);
 }
 
 bool MacroAssembler::is_movptr1_at(address instr) {
   return is_lui_at(instr) && // Lui
-         is_addi_at(instr + instruction_size) && // Addi
-         is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
-         is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
-         (is_addi_at(instr + instruction_size * 5) ||
-          is_jalr_at(instr + instruction_size * 5) ||
-          is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
+         is_addi_at(instr + MacroAssembler::instruction_size) && // Addi
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 11) && // Slli Rd, Rs, 11
+         is_addi_at(instr + MacroAssembler::instruction_size * 3) && // Addi
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 4, 6) && // Slli Rd, Rs, 6
+         (is_addi_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 5)) && // Addi/Jalr/Load
          check_movptr1_data_dependency(instr);
 }
 
 bool MacroAssembler::is_movptr2_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_lui_at(instr + instruction_size) && // lui
-         is_slli_shift_at(instr + instruction_size * 2, 18) && // slli Rd, Rs, 18
-         is_add_at(instr + instruction_size * 3) &&
-         (is_addi_at(instr + instruction_size * 4) ||
-          is_jalr_at(instr + instruction_size * 4) ||
-          is_load_at(instr + instruction_size * 4)) && // Addi/Jalr/Load
+         is_lui_at(instr + MacroAssembler::instruction_size) && // lui
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 18) && // slli Rd, Rs, 18
+         is_add_at(instr + MacroAssembler::instruction_size * 3) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size * 4) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 4) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 4)) && // Addi/Jalr/Load
          check_movptr2_data_dependency(instr);
 }
 
 bool MacroAssembler::is_li16u_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_srli_at(instr + instruction_size) && // srli
+         is_srli_at(instr + MacroAssembler::instruction_size) && // srli
          check_li16u_data_dependency(instr);
 }
 
 bool MacroAssembler::is_li32_at(address instr) {
   return is_lui_at(instr) && // lui
-         is_addiw_at(instr + instruction_size) && // addiw
+         is_addiw_at(instr + MacroAssembler::instruction_size) && // addiw
          check_li32_data_dependency(instr);
 }
 
@@ -5110,7 +5110,7 @@ address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_
 
 int MacroAssembler::max_reloc_call_address_stub_size() {
   // Max stub size: alignment nop, target address.
-  return 1 * instruction_size + wordSize;
+  return 1 * MacroAssembler::instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {
