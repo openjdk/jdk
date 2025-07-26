@@ -2182,6 +2182,36 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
+    public void testNonExhaustiveCapture(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S<T extends S<T>> permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S<A> {}
+                            """,
+                            """
+                            package lib;
+                            public final class B<T extends B<T>> implements S<T> {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                 public static void test(S<?> sealed) {
+                   switch (sealed) {
+                     case A one -> {}
+                   }
+                 }
+               }
+               """,
+               "Test.java:5:5: compiler.err.not.exhaustive.statement",
+               "1 error");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);
     }
