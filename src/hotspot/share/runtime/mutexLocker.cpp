@@ -74,7 +74,7 @@ Monitor* CGC_lock                     = nullptr;
 Monitor* STS_lock                     = nullptr;
 Monitor* G1OldGCCount_lock            = nullptr;
 Mutex*   G1RareEvent_lock             = nullptr;
-Mutex*   G1DetachedRefinementStats_lock = nullptr;
+Mutex*   G1ReviseYoungLength_lock     = nullptr;
 Mutex*   MarkStackFreeList_lock       = nullptr;
 Mutex*   MarkStackChunkList_lock      = nullptr;
 Mutex*   MonitoringSupport_lock       = nullptr;
@@ -212,8 +212,6 @@ void mutex_init() {
   if (UseG1GC) {
     MUTEX_DEFN(CGC_lock                      , PaddedMonitor, nosafepoint);
 
-    MUTEX_DEFN(G1DetachedRefinementStats_lock, PaddedMutex  , nosafepoint-2);
-
     MUTEX_DEFN(FreeList_lock                 , PaddedMutex  , service-1);
     MUTEX_DEFN(OldSets_lock                  , PaddedMutex  , nosafepoint);
     MUTEX_DEFN(Uncommit_lock                 , PaddedMutex  , service-2);
@@ -343,6 +341,7 @@ void mutex_init() {
   if (UseG1GC) {
     MUTEX_DEFL(G1OldGCCount_lock            , PaddedMonitor, Threads_lock, true);
     MUTEX_DEFL(G1RareEvent_lock             , PaddedMutex  , Threads_lock, true);
+    MUTEX_DEFL(G1ReviseYoungLength_lock     , PaddedMutex  , Threads_lock, true);
   }
 
   MUTEX_DEFL(CompileTaskWait_lock           , PaddedMonitor, MethodCompileQueue_lock);
