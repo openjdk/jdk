@@ -48,7 +48,8 @@ public class TestIncludesAreSorted {
                     "share/compiler",
                     "share/jvmci",
                     "share/oops",
-                    "share/opto"
+                    "share/opto",
+                    "share/utilities"
     };
 
     /**

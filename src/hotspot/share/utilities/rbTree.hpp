@@ -29,6 +29,7 @@
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <type_traits>
 
 // An intrusive red-black tree is constructed with two template parameters:
