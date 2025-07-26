@@ -28,6 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <type_traits>
 
 class PrimitiveConversions : public AllStatic {
