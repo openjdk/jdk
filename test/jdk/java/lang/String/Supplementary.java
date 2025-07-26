@@ -420,7 +420,7 @@ public class Supplementary {
             }
 
             int result = str.codePointCount();
-            int expected = Character.codePointCount();
+            int expected = Character.codePointCount(str);
             check(result != expected, "substring:codePointCount()", result, expected);
 
             // test exceptions
