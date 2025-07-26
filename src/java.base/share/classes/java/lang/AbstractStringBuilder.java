@@ -542,9 +542,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         byte[] value = this.value;
         if (isLatin1(coder)) {
-            return value.length;
+            return count;
         }
-        return StringUTF16.codePointCount(value, count, value.length >> 1);
+        return StringUTF16.codePointCount(value, 0, count);
     }
 
     /**
