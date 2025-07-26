@@ -39,7 +39,7 @@ class JfrEmergencyDump : AllStatic {
   static const char* chunk_path(const char* repository_path);
   static void on_vm_error(const char* repository_path);
   static void on_vm_error_report(outputStream* st, const char* repository_path);
-  static void on_vm_shutdown(bool is_oom);
+  static void on_vm_shutdown(bool emit_old_object_samples);
 };
 
 #endif // SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
