@@ -549,6 +549,14 @@ Node *Node::clone() const {
       to[i] = from[i]->clone();
     }
   }
+  if (this->is_MachProj()) {
+    // MachProjNodes contain register masks that may contain pointers to
+    // externally allocated memory. Make sure to use a proper constructor
+    // instead of just shallowly copying.
+    MachProjNode* mach = n->as_MachProj();
+    MachProjNode* mthis = this->as_MachProj();
+    new (&mach->_rout) RegMask(mthis->_rout);
+  }
   if (n->is_Call()) {
     // CallGenerator is linked to the original node.
     CallGenerator* cg = n->as_Call()->generator();
