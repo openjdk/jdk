@@ -504,6 +504,11 @@ const int ObjectAlignmentInBytes = 8;
           "in vmError.cpp.")                                                \
           range(0, 17)                                                      \
                                                                             \
+  develop(int, ErrorHandlerTestDelay, 0,                                    \
+          "If ErrorHandlerTest > 0, delay, in ms, after which the JVM is"   \
+          "ended abnormally.")                                              \
+          range(0, 60000)                                                   \
+                                                                            \
   develop(uint, TestCrashInErrorHandler, 0,                                 \
           "If > 0, provokes an error inside VM error handler (a secondary " \
           "crash). see controlled_crash() in vmError.cpp")                  \
@@ -2000,6 +2005,13 @@ const int ObjectAlignmentInBytes = 8;
   develop(uint, BinarySearchThreshold, 16,                                  \
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
+                                                                            \
+  product(bool, UseHistory, trueInDebug, DIAGNOSTIC,                        \
+          "Enable diagnostic history.")                                     \
+                                                                            \
+  product(int, HistoryInterval, 10000, DIAGNOSTIC,                          \
+          "Interval, in ms, at which history will be measured")             \
+          range(1000, 60000)                                                \
 
 // end of RUNTIME_FLAGS
 

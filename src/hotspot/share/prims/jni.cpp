@@ -3626,7 +3626,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // Some platforms (like Win*) need a wrapper around these test
     // functions in order to properly handle error conditions.
     if (ErrorHandlerTest != 0) {
-      VMError::controlled_crash(ErrorHandlerTest);
+      VMError::controlled_crash(ErrorHandlerTest, ErrorHandlerTestDelay);
     }
 #endif
 
