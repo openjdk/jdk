@@ -506,11 +506,15 @@ public abstract class SSLSocket extends Socket
      * a need to use new encryption keys, to change cipher suites, or to
      * initiate a new session.  To force complete reauthentication, the
      * current session could be invalidated before starting this handshake.
-     *
-     * <P> If data has already been sent on the connection, it continues
+     * <P>
+     * For TLSv1.3 and later versions calling this method after the connection
+     * has been established will force producing a KeyUpdate message. For prior
+     * TLS versions it will force a renegotiation (re-handshake).
+     * <P>
+     * If data has already been sent on the connection, it continues
      * to flow during this handshake.  When the handshake completes, this
      * will be signaled with an event.
-     *
+     * <P>
      * This method is synchronous for the initial handshake on a connection
      * and returns when the negotiated handshake is complete. Some
      * protocols may not support multiple handshakes on an existing socket
