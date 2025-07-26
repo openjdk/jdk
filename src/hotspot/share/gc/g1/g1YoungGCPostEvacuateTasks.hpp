@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 
 #include "gc/g1/g1BatchedTask.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 
 class FreeCSetStats;
 
@@ -54,6 +55,7 @@ public:
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
 // - Update Derived Pointers (s)
+// - Rebuild the Master Free List
 // - Clear Retained Region Data (on evacuation failure)
 // - Redirty Logged Cards
 // - Free Collection Set
@@ -70,6 +72,14 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class FreeCollectionSetTask;
   class ResizeTLABsTask;
   class ResetPartialArrayStateManagerTask;
+
+  class WillBeFreeHeapRegionClosure : public G1HeapRegionBoolClosure {
+    G1EvacFailureRegions* _evac_failure_regions;
+  public:
+    WillBeFreeHeapRegionClosure(G1EvacFailureRegions* evac_failure_regions);
+
+    bool do_heap_region(G1HeapRegion* r) const;
+  } _will_be_free_cl;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,

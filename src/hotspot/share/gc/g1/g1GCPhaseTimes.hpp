@@ -75,8 +75,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     FreeCollectionSet,
     YoungFreeCSet,
     NonYoungFreeCSet,
-    ResizeThreadLABs,
     RebuildFreeList,
+    ResizeThreadLABs,
     SampleCollectionSetCandidates,
     MergePSS,
     RestoreEvacuationFailedRegions,
@@ -205,10 +205,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_serial_free_cset_time_ms;
 
-  double _recorded_total_rebuild_freelist_time_ms;
-
-  double _recorded_serial_rebuild_freelist_time_ms;
-
   double _cur_region_register_time;
 
   // Not included in _gc_pause_time_ms
@@ -334,14 +330,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_serial_free_cset_time_ms = time_ms;
   }
 
-  void record_total_rebuild_freelist_time_ms(double time_ms) {
-    _recorded_total_rebuild_freelist_time_ms = time_ms;
-  }
-
-  void record_serial_rebuild_freelist_time_ms(double time_ms) {
-    _recorded_serial_rebuild_freelist_time_ms = time_ms;
-  }
-
   void record_register_regions(double time_ms) {
     _cur_region_register_time = time_ms;
   }
@@ -406,10 +394,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double young_cset_choice_time_ms() {
     return _recorded_young_cset_choice_time_ms;
-  }
-
-  double total_rebuild_freelist_time_ms() {
-    return _recorded_total_rebuild_freelist_time_ms;
   }
 
   double non_young_cset_choice_time_ms() {
