@@ -124,7 +124,7 @@ public class TestHugePageDecisionsAtVMStartup {
             out.shouldContain(warningNoTHP);
         } else if (useLP && !useTHP &&
                  configuration.supportsExplicitHugePages() && haveUsableExplicitHugePages) {
-            if (configuration.readAvailableHugePageNumberFromOS() == 0) {
+            if (configuration.getExplicitAvailableHugePageNumber() == 0) {
                 throw new SkippedException("No usable explicit hugepages configured on the system, skipping test");
             }
             out.shouldContain("[info][pagesize] Using the default large page size: " + buildSizeString(configuration.getExplicitDefaultHugePageSize()));
