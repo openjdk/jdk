@@ -1281,7 +1281,7 @@ public final class String
 
     private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
         if (coder == UTF16) {
-            return encodeUTF8_UTF16(val, doReplace);
+            return encodeUTF8_UTF16(val, 0, val.length >> 1, doReplace);
         }
 
         if (!StringCoding.hasNegatives(val, 0, val.length)) {
@@ -1304,10 +1304,33 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    private static byte[] encodeUTF8_UTF16(byte[] val, boolean doReplace) {
+    int encodeUTF8(int sp, int sl, byte[] dst, int dp) {
+        byte[] val = this.value;
+        if (!isLatin1()) {
+            return encodeUTF8_UTF16(val, sp, sl, true, dst, dp);
+        }
+
+        int count = StringCoding.countPositives(val, sp, sl - sp);
+        if (count != 0) {
+            System.arraycopy(val, sp, dst, dp, count);
+            dp += count;
+            sp += count;
+        }
+
+        while (sp < sl) {
+            byte c = val[sp++];
+            if (c < 0) {
+                dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
+                dst[dp++] = (byte) (0x80 | (c & 0x3f));
+            } else {
+                dst[dp++] = c;
+            }
+        }
+        return dp;
+    }
+
+    private static byte[] encodeUTF8_UTF16(byte[] val, int sp, int sl, boolean doReplace) {
         int dp = 0;
-        int sp = 0;
-        int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
         long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, doReplace) : sl * 3;
@@ -1315,6 +1338,14 @@ public final class String
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
         byte[] dst = new byte[(int) allocLen];
+        dp = encodeUTF8_UTF16(val, 0, sl, doReplace, dst, dp);
+        if (dp == dst.length) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    private static int encodeUTF8_UTF16(byte[] val, int sp, int sl, boolean doReplace, byte[] dst, int dp) {
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
@@ -1358,10 +1389,7 @@ public final class String
                 dst[dp++] = (byte)(0x80 | (c & 0x3f));
             }
         }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
+        return dp;
     }
 
     /**
