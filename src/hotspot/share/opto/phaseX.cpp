@@ -2364,27 +2364,6 @@ void PhaseIterGVN::add_users_to_worklist0(Node* n, Unique_Node_List& worklist) {
   }
 }
 
-// Return counted loop Phi if as a counted loop exit condition, cmp
-// compares the induction variable with n
-static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
-  for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
-    Node* bol = cmp->fast_out(i);
-    for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* iff = bol->fast_out(i2);
-      if (iff->is_BaseCountedLoopEnd()) {
-        BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
-        if (cle->limit() == n) {
-          PhiNode* phi = cle->phi();
-          if (phi != nullptr) {
-            return phi;
-          }
-        }
-      }
-    }
-  }
-  return nullptr;
-}
-
 void PhaseIterGVN::add_users_to_worklist(Node *n) {
   add_users_to_worklist0(n, _worklist);
 
@@ -2434,7 +2413,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
     if (use_op == Op_CmpI || use_op == Op_CmpL) {
-      Node* phi = countedloop_phi_from_cmp(use->as_Cmp(), n);
+      Node* phi = use->as_Cmp()->countedloop_phi(n);
       if (phi != nullptr) {
         // Input to the cmp of a loop exit check has changed, thus
         // the loop limit may have changed, which can then change the
@@ -2960,10 +2939,10 @@ void PhaseCCP::push_bool_matching_case1b(Unique_Node_List& worklist, const Node*
 
 // If n is used in a counted loop exit condition, then the type of the counted loop's Phi depends on the type of 'n'.
 // Seem PhiNode::Value().
-void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use) {
+void PhaseCCP::push_counted_loop_phi(Unique_Node_List& worklist, const Node* parent, const Node* use) {
   uint use_op = use->Opcode();
   if (use_op == Op_CmpI || use_op == Op_CmpL) {
-    PhiNode* phi = countedloop_phi_from_cmp(use->as_Cmp(), parent);
+    PhiNode* phi = use->as_Cmp()->countedloop_phi(parent);
     if (phi != nullptr) {
       worklist.push(phi);
     }
