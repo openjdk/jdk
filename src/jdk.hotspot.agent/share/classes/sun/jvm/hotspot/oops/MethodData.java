@@ -143,7 +143,7 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
       if (flag.getName().equals("TypeProfileWidth")) {
         TypeProfileWidth = (int)flag.getIntx();
       } else if (flag.getName().equals("BciProfileWidth")) {
-        BciProfileWidth = (int)flag.getIntx();
+        BciProfileWidth = (int)flag.getInt();
       } else if (flag.getName().equals("CompileThreshold")) {
         CompileThreshold = (int)flag.getIntx();
       }
