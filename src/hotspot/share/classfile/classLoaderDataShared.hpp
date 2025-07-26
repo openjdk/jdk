@@ -43,7 +43,9 @@ public:
   static void init_archived_tables();
   static void serialize(SerializeClosure* f);
   static void clear_archived_oops();
+#if INCLUDE_CDS_JAVA_HEAP
   static void restore_archived_entries_for_null_class_loader_data();
+#endif
   static oop  restore_archived_oops_for_null_class_loader_data();
   static void restore_java_platform_loader_from_archive(ClassLoaderData* loader_data);
   static void restore_java_system_loader_from_archive(ClassLoaderData* loader_data);

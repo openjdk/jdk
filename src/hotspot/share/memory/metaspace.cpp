@@ -746,7 +746,7 @@ void Metaspace::global_initialize() {
   }
 #endif // INCLUDE_CDS
 
-#ifdef _LP64
+#if NEEDS_CLASS_SPACE
 
   if (using_class_space() && !class_space_is_initialized()) {
     assert(!CDSConfig::is_using_archive(), "CDS archive is not mapped at this point");
@@ -834,14 +834,21 @@ void Metaspace::global_initialize() {
 
   }
 
-#endif // _LP64
+#else
+
+  // +UseCompressedClassPointers on 32-bit: does not need class space. Klass can live wherever.
+  if (UseCompressedClassPointers) {
+    const address start = (address)os::vm_min_address(); // but not in the NULL page
+    const address end = (address)CompressedKlassPointers::max_klass_range_size();
+    CompressedKlassPointers::initialize(start, end - start);
+  }
+#endif // NEEDS_CLASS_SPACE
 
   // Initialize non-class virtual space list, and its chunk manager:
   MetaspaceContext::initialize_nonclass_space_context();
 
   _tracer = new MetaspaceTracer();
 
-#ifdef _LP64
   if (UseCompressedClassPointers) {
     // Note: "cds" would be a better fit but keep this for backward compatibility.
     LogTarget(Info, gc, metaspace) lt;
@@ -852,8 +859,6 @@ void Metaspace::global_initialize() {
       CompressedKlassPointers::print_mode(&ls);
     }
   }
-#endif
-
 }
 
 void Metaspace::post_initialize() {

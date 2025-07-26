@@ -108,12 +108,6 @@ typedef juint  narrowKlass;
 #define NEEDS_CLASS_SPACE 1
 #else
 #define NEEDS_CLASS_SPACE 0
-// In various places we calculate max. sizes for ranges. On 32-bit, if the range covers the whole address space,
-// we run into the problem that size_t and end addresses can overflow.
-// In order to keep the logic of most of the existing 64-bit code - namely the fact that we use the common [a,b)
-// notation, with the end point of a range point being exclusive - we adapt the pragmatic solution of just slightly
-// decreasing those ranges on 64-bit.
-#define RANGE_OVERFLOW_SAFETY 4 * M // aligned to one metaspace chunk size on 32-bit
 #endif
 
 // For UseCompressedClassPointers.
