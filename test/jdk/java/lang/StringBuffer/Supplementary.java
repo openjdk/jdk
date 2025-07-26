@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 4533872 4915683 4985217 5017280 6937112
+ * @bug 4533872 4915683 4985217 5017280 6937112 8364007
  * @summary Unit tests for supplementary character support (JSR-204)
  */
 

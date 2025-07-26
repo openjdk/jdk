@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4533872 4985214 4985217 4993841 5017268 5017280 8298033
+ * @bug 4533872 4985214 4985217 4993841 5017268 5017280 8298033 8364007
  * @summary Unit tests for supplementary character support (JSR-204)
  * @compile Supplementary.java
  * @run main/timeout=600 Supplementary

@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 4533872 4915683 4922962 4985217 5017280 6242664 6588260
+ * @bug 4533872 4915683 4922962 4985217 5017280 6242664 6588260 8364007
  * @summary Unit tests for supplementary character support (JSR-204)
  */
 
@@ -386,7 +386,8 @@ public class Supplementary {
     }
 
     /**
-     * Test codePointCount(int, int)
+     * Test codePointCount(int, int) &
+     *      codePointCount()
      *
      * This test case assumes that Character.codePointCount() &
      * Character.codePointCount(CharSequence, int, int) works
