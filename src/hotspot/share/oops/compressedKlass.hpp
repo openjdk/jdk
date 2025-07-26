@@ -98,6 +98,24 @@ class Klass;
 // If compressed klass pointers then use narrowKlass.
 typedef juint  narrowKlass;
 
+// On 32-bit, we support traditional "compressed" class pointer mode with 32-bit narrowKlass, but that
+// is mostly the same as the old uncompressed mode:
+// we treat the uncompressed Klass* in the header as narrowKlass with unscaled encoding.
+// This means on 32-bit, we can set +UseCompressedClassPointers, but have no class space, since the purpose
+// of the class space is to confine Klass structures to an encoding range reachable by narrowKlass, and
+// with a 32-bit narrowKlass we can reach the whole 32-bit address space.
+#ifdef _LP64
+#define NEEDS_CLASS_SPACE 1
+#else
+#define NEEDS_CLASS_SPACE 0
+// In various places we calculate max. sizes for ranges. On 32-bit, if the range covers the whole address space,
+// we run into the problem that size_t and end addresses can overflow.
+// In order to keep the logic of most of the existing 64-bit code - namely the fact that we use the common [a,b)
+// notation, with the end point of a range point being exclusive - we adapt the pragmatic solution of just slightly
+// decreasing those ranges on 64-bit.
+#define RANGE_OVERFLOW_SAFETY 4 * M // aligned to one metaspace chunk size on 32-bit
+#endif
+
 // For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
@@ -137,12 +155,15 @@ class CompressedKlassPointers : public AllStatic {
   // Protection zone size (0 if not set up)
   static size_t _protection_zone_size;
 
+#if NEEDS_CLASS_SPACE
   // Helper function for common cases.
   static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
   static char* reserve_address_space_below_4G(size_t size, bool aslr);
   static char* reserve_address_space_for_unscaled_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_zerobased_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
+#endif //  NEEDS_CLASS_SPACE
+
   static void calc_lowest_highest_narrow_klass_id();
 
 #ifdef ASSERT
@@ -187,12 +208,14 @@ public:
   // The maximum possible shift; the actual shift employed later can be smaller (see initialize())
   static int max_shift()                 { check_init(_max_shift); return _max_shift; }
 
-  // Returns the maximum encoding range, given the current geometry (narrow klass bit size and shift)
-  static size_t max_encoding_range_size() { return nth_bit(narrow_klass_pointer_bits() + max_shift()); }
-
-  // Returns the maximum allowed klass range size.
+  // Returns the maximum allowed klass range size. It is calculated from the length of the encoding range
+  // resulting from the current encoding settings (base, shift), capped to a certain max. value.
   static size_t max_klass_range_size();
 
+  // 32-bit needs no class space.
+  static constexpr bool needs_class_space() { return NEEDS_CLASS_SPACE; }
+
+#if NEEDS_CLASS_SPACE
   // Reserve a range of memory that is to contain Klass strucutures which are referenced by narrow Klass IDs.
   // If optimize_for_zero_base is true, the implementation will attempt to reserve optimized for zero-based encoding.
   static char* reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base);
@@ -201,7 +224,9 @@ public:
   // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
   // archived heap objects. In this case, we don't have the freedom to choose base and shift; they are handed to
   // us from CDS.
+  // Note: CDS with +UCCP for 32-bit currently unsupported.
   static void initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift);
+#endif // NEEDS_CLASS_SPACE
 
   // Given an address range [addr, addr+len) which the encoding is supposed to
   //  cover, choose base, shift and range.
@@ -263,8 +288,10 @@ public:
         is_aligned(addr, klass_alignment_in_bytes());
   }
 
+#if NEEDS_CLASS_SPACE
   // Protect a zone a the start of the encoding range
   static void establish_protection_zone(address addr, size_t size);
+#endif // NEEDS_CLASS_SPACE
 
   // Returns true if address points into protection zone (for error reporting)
   static bool is_in_protection_zone(address addr);
