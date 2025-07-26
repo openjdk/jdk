@@ -1665,3 +1665,37 @@ pre.snippet .highlighted {
         display:none;
     }
 }
+
+nav.toc div.toc-header .toc-sort-toggle {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5em;
+    overflow-x: auto;
+}
+
+nav.toc div.toc-header input.filter-input {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 2em;
+    width: auto;
+    font-size: 1em;
+    background-size: 18px;
+}
+
+nav.toc div.toc-header button#toc-lexical-order-toggle {
+    flex: 0 0 auto;
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5em;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.main-grid nav.toc button > img {
+    vertical-align: middle;
+    width: 20px;
+    height: 20px;
+}

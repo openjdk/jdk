@@ -63,7 +63,8 @@ public class TestPassThruFiles extends JavadocTester {
                 "resource-files/stylesheet.css",
                 "script-files/script.js",
                 "script-files/search.js",
-                "script-files/search-page.js"
+                "script-files/search-page.js",
+                "script-files/toc.js"
         );
 
         for (var f : files) {
