@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1685,7 +1685,7 @@ public final class BasisLibrary {
      *  complementary characters
      */
     public static int getStringLength(String str) {
-        return str.codePointCount();
+        return str.codePointCount(0,str.length());
     }
 
     //-- End utility functions

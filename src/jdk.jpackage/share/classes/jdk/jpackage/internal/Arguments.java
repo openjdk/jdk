@@ -817,7 +817,7 @@ public class Arguments {
 
         // Use code points to preserve non-ASCII chars
         StringBuilder sb = new StringBuilder();
-        int codeLen = in.codePointCount();
+        int codeLen = in.codePointCount(0, in.length());
         int quoteChar = -1;
         for (int i = 0; i < codeLen; i++) {
             int code = in.codePointAt(i);
