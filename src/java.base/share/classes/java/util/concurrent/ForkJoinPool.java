@@ -1293,7 +1293,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
                 if (pool != null && a != null &&
-                    U.getReferenceVolatile(a, slotOffset(m & (s - 1))) == null)
+                    U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null)
                     pool.signalWork(a, m & s);   // may have appeared empty
             }
         }
