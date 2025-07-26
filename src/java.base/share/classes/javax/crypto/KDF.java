@@ -207,12 +207,21 @@ public final class KDF {
      * Returns a {@code KDF} object that implements the specified algorithm.
      *
      * @implNote The JDK Reference Implementation additionally uses the
-     *         {@code jdk.security.provider.preferred}
-     *         {@link Security#getProperty(String) Security} property to
-     *         determine the preferred provider order for the specified
-     *         algorithm. This may be different than the order of providers
-     *         returned by
-     *         {@link Security#getProviders() Security.getProviders()}.
+     *         following properties to customize the behavior of this method:
+     *         <ul>
+     *         <li> The {@code jdk.security.provider.preferred}
+     *         {@link Security#getProperty(String) Security} property determines
+     *         the preferred provider order for the specified algorithm.
+     *         This may be different from the order of providers returned by
+     *         {@link Security#getProviders() Security.getProviders()}.</li>
+     *         <li> The {@code jdk.security.providers.filter}
+     *         {@link System#getProperty(String) System} and
+     *         {@link Security#getProperty(String) Security} properties
+     *         determine which
+     *         {@linkplain java.security.Provider.Service services} are enabled.
+     *         A service that is not enabled by the filter will not make its
+     *         algorithm implementation available.</li>
+     *         </ul>
      *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
@@ -246,6 +255,15 @@ public final class KDF {
      * Returns a {@code KDF} object that implements the specified algorithm from
      * the specified security provider. The specified provider must be
      * registered in the security provider list.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
@@ -283,6 +301,15 @@ public final class KDF {
      * Returns a {@code KDF} object that implements the specified algorithm from
      * the specified security provider.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
+     *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
      *         in the <a href="{@docRoot}/../specs/security/standard-names.html#kdf-algorithms">
@@ -317,12 +344,21 @@ public final class KDF {
      * is initialized with the specified parameters.
      *
      * @implNote The JDK Reference Implementation additionally uses the
-     *         {@code jdk.security.provider.preferred}
-     *         {@link Security#getProperty(String) Security} property to
-     *         determine the preferred provider order for the specified
-     *         algorithm. This may be different than the order of providers
-     *         returned by
-     *         {@link Security#getProviders() Security.getProviders()}.
+     *         following properties to customize the behavior of this method:
+     *         <ul>
+     *         <li> The {@code jdk.security.provider.preferred}
+     *         {@link Security#getProperty(String) Security} property determines
+     *         the preferred provider order for the specified algorithm.
+     *         This may be different from the order of providers returned by
+     *         {@link Security#getProviders() Security.getProviders()}.</li>
+     *         <li> The {@code jdk.security.providers.filter}
+     *         {@link System#getProperty(String) System} and
+     *         {@link Security#getProperty(String) Security} properties
+     *         determine which
+     *         {@linkplain java.security.Provider.Service services} are enabled.
+     *         A service that is not enabled by the filter will not make its
+     *         algorithm implementation available.</li>
+     *         </ul>
      *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
@@ -365,6 +401,15 @@ public final class KDF {
      * Returns a {@code KDF} object that implements the specified algorithm from
      * the specified provider and is initialized with the specified parameters.
      * The specified provider must be registered in the security provider list.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
@@ -419,6 +464,15 @@ public final class KDF {
     /**
      * Returns a {@code KDF} object that implements the specified algorithm from
      * the specified provider and is initialized with the specified parameters.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which {@linkplain java.security.Provider.Service services} are enabled.
+     * A service that is not enabled by the filter will not make its algorithm
+     * implementation available.
      *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
