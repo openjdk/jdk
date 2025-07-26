@@ -95,8 +95,6 @@
   }
 
   static int adjust_reg_range(int range) {
-    // Reduce the number of available regs (to free Rheap_base) in case of compressed oops
-    if (UseCompressedOops || UseCompressedClassPointers) return range - 1;
     return range;
   }
 
