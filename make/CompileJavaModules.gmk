@@ -85,7 +85,7 @@ CreateHkTargets = \
 ################################################################################
 # Include module specific build settings
 
-THIS_SNIPPET := modules/$(MODULE)/Java.gmk
+THIS_SNIPPET := $(call GetModuleSnippetName, Java)
 
 ifneq ($(wildcard $(THIS_SNIPPET)), )
   include MakeSnippetStart.gmk
