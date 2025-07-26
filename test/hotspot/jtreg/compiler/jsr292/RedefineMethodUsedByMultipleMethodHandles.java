@@ -21,12 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8042235
  * @summary redefining method used by multiple MethodHandles crashes VM
  * @library /
- * @library /testlibrary/asm
  * @modules java.compiler
  *          java.instrument
  *          jdk.attach
@@ -37,15 +36,13 @@
 
 package compiler.jsr292;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.instruction.ConstantInstruction;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -159,28 +156,15 @@ public class RedefineMethodUsedByMultipleMethodHandles {
         public byte[] transform(ClassLoader cl, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
             if (Foo.class.equals(classBeingRedefined)) {
                 System.out.println("redefining " + classBeingRedefined);
-                ClassReader cr = new ClassReader(classfileBuffer);
-                ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
-                ClassVisitor adapter = new ClassVisitor(Opcodes.ASM5, cw) {
-                    @Override
-                    public MethodVisitor visitMethod(int access, String base, String desc, String signature, String[] exceptions) {
-                        MethodVisitor mv = cv.visitMethod(access, base, desc, signature, exceptions);
-                        if (mv != null) {
-                            mv = new MethodVisitor(Opcodes.ASM5, mv) {
-                                @Override
-                                public void visitLdcInsn(Object cst) {
-                                    System.out.println("replacing \"" + cst + "\" with \"bar\"");
-                                    mv.visitLdcInsn("bar");
-                                }
-                            };
-                        }
-                        return mv;
+                var cf = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(cl)));
+                return cf.transformClass(cf.parse(classfileBuffer), ClassTransform.transformingMethodBodies((cob, coe) -> {
+                    if (coe instanceof ConstantInstruction.LoadConstantInstruction ldc) {
+                        System.out.println("replacing \"" + ldc.constantEntry().constantValue() + "\" with \"bar\"");
+                        cob.ldc("bar");
+                    } else {
+                        cob.with(coe);
                     }
-                };
-
-                cr.accept(adapter, ClassReader.SKIP_FRAMES);
-                cw.visitEnd();
-                return cw.toByteArray();
+                }));
             }
             return classfileBuffer;
         }
