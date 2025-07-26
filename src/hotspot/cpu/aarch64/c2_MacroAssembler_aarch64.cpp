@@ -2858,3 +2858,124 @@ void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
     add(rfp, sp, framesize - 2 * wordSize);
   }
 }
+
+// Selects elements from two source vectors (src1, src2) based on index values in the index register
+// using Neon instructions and places it in the destination vector element corresponding to the
+// index vector element. Each index in the index register must be in the range - [0, 2 * NUM_ELEM),
+// where NUM_ELEM is the number of BasicType elements per vector.
+// If idx < NUM_ELEM --> selects src1[idx] (idx is an element of the index register)
+// Otherwise, selects src2[idx – NUM_ELEM]
+void C2_MacroAssembler::select_from_two_vectors_neon(FloatRegister dst, FloatRegister src1,
+                                                     FloatRegister src2, FloatRegister index,
+                                                     FloatRegister tmp, unsigned vector_length_in_bytes) {
+  assert_different_registers(dst, src1, src2, tmp);
+  SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
+
+  if (vector_length_in_bytes == 16) {
+    assert(UseSVE <= 1, "sve must be <= 1");
+    assert(src1->successor() == src2, "Source registers must be ordered");
+    // If the vector length is 16B, then use the Neon "tbl" instruction with two vector table
+    tbl(dst, size, src1, 2, index);
+  } else { // vector length == 8
+    assert(UseSVE == 0, "must be Neon only");
+    // We need to fit both the source vectors (src1, src2) in a 128-bit register because the
+    // Neon "tbl" instruction supports only looking up 16B vectors. We then use the Neon "tbl"
+    // instruction with one vector lookup
+    ins(tmp, D, src1, 0, 0);
+    ins(tmp, D, src2, 1, 0);
+    tbl(dst, size, tmp, 1, index);
+  }
+}
+
+// Selects elements from two source vectors (src1, src2) based on index values in the index register
+// using SVE/SVE2 instructions and places it in the destination vector element corresponding to the
+// index vector element. Each index in the index register must be in the range - [0, 2 * NUM_ELEM),
+// where NUM_ELEM is the number of BasicType elements per vector.
+// If idx < NUM_ELEM --> selects src1[idx] (idx is an element of the index register)
+// Otherwise, selects src2[idx – NUM_ELEM]
+void C2_MacroAssembler::select_from_two_vectors_sve(FloatRegister dst, FloatRegister src1,
+                                                    FloatRegister src2, FloatRegister index,
+                                                    FloatRegister tmp, SIMD_RegVariant T,
+                                                    unsigned vector_length_in_bytes) {
+  assert_different_registers(dst, src1, src2, index, tmp);
+
+  if (vector_length_in_bytes == 8) {
+    // We need to fit both the source vectors (src1, src2) in a single vector register because the
+    // SVE "tbl" instruction is unpredicated and works on the entire vector which can lead to
+    // incorrect results if each source vector is only partially filled. We then use the SVE "tbl"
+    // instruction with one vector lookup
+    assert(UseSVE >= 1, "sve must be >= 1");
+    ins(tmp, D, src1, 0, 0);
+    ins(tmp, D, src2, 1, 0);
+    sve_tbl(dst, T, tmp, index);
+  } else {  // UseSVE == 2 and vector_length_in_bytes > 8
+    // If the vector length is > 8, then use the SVE2 "tbl" instruction with the two vector table.
+    // The assertion - vector_length_in_bytes == MaxVectorSize ensures that this operation
+    // is not executed on machines where vector_length_in_bytes < MaxVectorSize
+    // with the only exception of 8B vector length.
+    assert(UseSVE == 2 && vector_length_in_bytes == MaxVectorSize, "must be");
+    assert(src1->successor() == src2, "Source registers must be ordered");
+    sve_tbl(dst, T, src1, src2, index);
+  }
+}
+
+void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister src1,
+                                                FloatRegister src2, FloatRegister index,
+                                                FloatRegister tmp, BasicType bt,
+                                                unsigned vector_length_in_bytes) {
+
+  assert_different_registers(dst, src1, src2, index, tmp);
+
+  // The cases that can reach this method are -
+  // - UseSVE = 0, vector_length_in_bytes = 8 or 16
+  // - UseSVE = 1, vector_length_in_bytes = 8 or 16
+  // - UseSVE = 2, vector_length_in_bytes >= 8
+  //
+  // SVE/SVE2 tbl instructions are generated when UseSVE = 1 with vector_length_in_bytes = 8
+  // and UseSVE = 2 with vector_length_in_bytes >= 8
+  //
+  // Neon instructions are generated when UseSVE = 0 with vector_length_in_bytes = 8 or 16 and
+  // UseSVE = 1 with vector_length_in_bytes = 16
+
+  if ((UseSVE == 1 && vector_length_in_bytes == 8) || UseSVE == 2) {
+    SIMD_RegVariant T = elemType_to_regVariant(bt);
+    select_from_two_vectors_sve(dst, src1, src2, index, tmp, T, vector_length_in_bytes);
+    return;
+  }
+
+  // The only BasicTypes that can reach here are T_SHORT, T_BYTE, T_INT and T_FLOAT
+  assert(bt != T_DOUBLE && bt != T_LONG, "unsupported basic type");
+  assert(vector_length_in_bytes <= 16, "length_in_bytes must be <= 16");
+
+  bool isQ = vector_length_in_bytes == 16;
+
+  SIMD_Arrangement size1 = isQ ? T16B : T8B;
+  SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
+
+  // Neon "tbl" instruction only supports byte tables, so we need to look at chunks of
+  // 2B for selecting shorts or chunks of 4B for selecting ints/floats from the table.
+  // The index values in "index" register are in the range of [0, 2 * NUM_ELEM) where NUM_ELEM
+  // is the number of elements that can fit in a vector. For ex. for T_SHORT with 64-bit vector length,
+  // the indices can range from [0, 8).
+  // As an example with 64-bit vector length and T_SHORT type - let index = [2, 5, 1, 0]
+  // Move a constant 0x02 in every byte of tmp - tmp = [0x0202, 0x0202, 0x0202, 0x0202]
+  // Multiply index vector with tmp to yield - dst = [0x0404, 0x0a0a, 0x0202, 0x0000]
+  // Move a constant 0x0100 in every 2B of tmp - tmp = [0x0100, 0x0100, 0x0100, 0x0100]
+  // Add the multiplied result to the vector in tmp to obtain the byte level
+  // offsets - dst = [0x0504, 0x0b0a, 0x0302, 0x0100]
+  // Use these offsets in the "tbl" instruction to select chunks of 2B.
+
+  if (bt == T_BYTE) {
+    select_from_two_vectors_neon(dst, src1, src2, index, tmp, vector_length_in_bytes);
+  } else {
+    int elem_size = (bt == T_SHORT) ? 2 : 4;
+    uint64_t tbl_offset = (bt == T_SHORT) ? 0x0100u : 0x03020100u;
+
+    mov(tmp, size1, elem_size);
+    mulv(dst, size2, index, tmp);
+    mov(tmp, size2, tbl_offset);
+    addv(dst, size1, dst, tmp); // "dst" now contains the processed index elements
+                                // to select a set of 2B/4B
+    select_from_two_vectors_neon(dst, src1, src2, dst, tmp, vector_length_in_bytes);
+  }
+}

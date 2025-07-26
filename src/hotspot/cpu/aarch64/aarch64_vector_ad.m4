@@ -247,6 +247,28 @@ source %{
           return false;
         }
         break;
+      case Op_SelectFromTwoVector:
+        // The "tbl" instruction for two vector table is supported only in Neon and SVE2. Return
+        // false if vector length > 16B but supported SVE version < 2.
+        // For vector length of 16B, generate SVE2 "tbl" instruction if SVE2 is supported, else
+        // generate Neon "tbl" instruction to select from two vectors.
+        // This operation is disabled for doubles and longs on machines with SVE < 2 and instead
+        // the default VectorRearrange + VectorBlend is generated because the performance of the default
+        // implementation was better than or equal to the implementation for SelectFromTwoVector.
+        if (UseSVE < 2 && (type2aelembytes(bt) == 8 || length_in_bytes > 16)) {
+          return false;
+        }
+
+        // Because the SVE2 "tbl" instruction is unpredicated and partial operations cannot be generated
+        // using masks, we disable this operation on machines where length_in_bytes < MaxVectorSize
+        // on that machine with the only exception of 8B vector length. This is because at the time of
+        // writing this, there is no SVE2 machine available with length_in_bytes > 8 and
+        // length_in_bytes < MaxVectorSize to test this operation on (for example - there isn't an
+        // SVE2 machine available with MaxVectorSize = 32 to test a case with length_in_bytes = 16).
+        if (UseSVE == 2 && length_in_bytes > 8 && length_in_bytes < MaxVectorSize) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -5154,3 +5176,34 @@ BITPERM(vcompressBits, CompressBitsV, sve_bext)
 
 // ----------------------------------- ExpandBitsV ---------------------------------
 BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
+
+// ------------------------------------- SelectFromTwoVector ------------------------------------
+// The Neon and SVE2 tbl instruction for two vector lookup requires both the source vectors to be
+// consecutive. The match rules for SelectFromTwoVector reserve two consecutive vector registers
+// for src1 and src2.
+// Four combinations of vector registers for vselect_from_two_vectors are chosen at random
+// (two from volatile and two from non-volatile set) which gives more freedom to the register
+// allocator to choose the best pair of source registers at that point.
+dnl
+dnl SELECT_FROM_TWO_VECTORS($1,        $2        )
+dnl SELECT_FROM_TWO_VECTORS(first_reg, second_reg)
+define(`SELECT_FROM_TWO_VECTORS', `
+instruct vselect_from_two_vectors_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+                                        vReg index, vReg tmp) %{
+  effect(TEMP_DEF dst, TEMP tmp);
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "vselect_from_two_vectors_$1_$2 $dst, $src1, $src2, $index\t# KILL $tmp" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister,
+                               $src2$$FloatRegister, $index$$FloatRegister,
+                               $tmp$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+SELECT_FROM_TWO_VECTORS(10, 11)
+SELECT_FROM_TWO_VECTORS(12, 13)
+SELECT_FROM_TWO_VECTORS(17, 18)
+SELECT_FROM_TWO_VECTORS(23, 24)
