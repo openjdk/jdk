@@ -49,16 +49,13 @@
 #if COMPILER2_OR_JVMCI
 
 // Returns true iff objects were reallocated and relocked because of access through JVMTI
-bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
+bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, compiledVFrame* cvf) {
   // first/oldest update holds the flag
-  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = cvf->get_deferred_locals();
   bool result = false;
   if (list != nullptr) {
     for (int i = 0; i < list->length(); i++) {
-      if (list->at(i)->matches(fr_id)) {
         result = list->at(i)->objects_are_deoptimized();
-        break;
-      }
     }
   }
   return result;
@@ -99,7 +96,7 @@ bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
         // Deoptimize frame and local objects if any exist.
         // If cvf is deeper than depth, then we deoptimize iff local objects are passed as args.
         bool should_deopt = cur_depth <= d2 ? cvf->has_ea_local_in_scope() : cvf->arg_escape();
-        if (should_deopt && !deoptimize_objects(cvf->fr().id())) {
+        if (should_deopt && !deoptimize_objects(cvf)) {
           // reallocation of scalar replaced objects failed because heap is exhausted
           return false;
         }
@@ -146,7 +143,7 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
         if (vf->is_compiled_frame()) {
           compiledVFrame* cvf = compiledVFrame::cast(vf);
           if ((cvf->has_ea_local_in_scope() || cvf->arg_escape()) &&
-              !deoptimize_objects_internal(jt, cvf->fr().id())) {
+              !deoptimize_objects_internal(jt, cvf)) {
             return false; // reallocation failure
           }
           // move to top frame
@@ -300,22 +297,15 @@ void EscapeBarrier::thread_removed(JavaThread* jt) {
 }
 
 // Remember that objects were reallocated and relocked for the compiled frame with the given id
-static void set_objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
+static void set_objs_are_deoptimized(JavaThread* thread, compiledVFrame* cvf) {
   // set in first/oldest update
-  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list =
-    JvmtiDeferredUpdates::deferred_locals(thread);
-  DEBUG_ONLY(bool found = false);
-  if (list != nullptr) {
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = cvf->get_deferred_locals();
+
+  assert(list != nullptr && list->length() != 0, "variable set should exist at least for one vframe");
     for (int i = 0; i < list->length(); i++) {
-      if (list->at(i)->matches(fr_id)) {
-        DEBUG_ONLY(found = true);
         list->at(i)->set_objs_are_deoptimized();
-        break;
-      }
     }
   }
-  assert(found, "variable set should exist at least for one vframe");
-}
 
 // Deoptimize the given frame and deoptimize objects with optimizations based on
 // escape analysis, i.e. reallocate scalar replaced objects on the heap and
@@ -323,13 +313,15 @@ static void set_objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
 // Deoptimized objects are kept as JVMTI deferred updates until the compiled
 // frame is replaced with interpreter frames.  Returns false iff at least one
 // reallocation failed.
-bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* fr_id) {
+bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, compiledVFrame* cvf) {
   assert(barrier_active(), "should not call");
 
   JavaThread* ct = calling_thread();
   bool realloc_failures = false;
 
-  if (!objs_are_deoptimized(deoptee, fr_id)) {
+  if (!objs_are_deoptimized(deoptee, cvf)) {
+    intptr_t* fr_id = cvf->fr().id();
+
     // Make sure the frame identified by fr_id is deoptimized and fetch its last vframe
     compiledVFrame* last_cvf;
     bool fr_is_deoptimized;
@@ -367,7 +359,7 @@ bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* f
         cvf = vfs->at(frame_index);
         cvf->create_deferred_updates_after_object_deoptimization();
       }
-      set_objs_are_deoptimized(deoptee, fr_id);
+      set_objs_are_deoptimized(deoptee, vfs->at(0));
     }
   }
   return !realloc_failures;

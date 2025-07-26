@@ -769,7 +769,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
         for (StackFrameStream fst(t, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
           frame* f = fst.current();
           if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
-            Deoptimization::deoptimize(t, *f);
+            Deoptimization::deoptimize(t, *f, fst.register_map());
             if (_make_not_entrant) {
                 nmethod* nm = CodeCache::find_nmethod(f->pc());
                 assert(nm != nullptr, "did not find nmethod");

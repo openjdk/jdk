@@ -114,7 +114,7 @@ inline void frame::init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, add
 inline void frame::setup(address pc) {
   adjust_unextended_sp();
 
-  address original_pc = get_deopt_original_pc();
+  address original_pc = get_deopt_original_pc(nullptr);
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
