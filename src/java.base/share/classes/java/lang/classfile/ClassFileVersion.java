@@ -25,6 +25,7 @@
 package java.lang.classfile;
 
 import java.lang.reflect.ClassFileFormatVersion;
+import java.util.Optional;
 
 import jdk.internal.classfile.impl.ClassFileVersionImpl;
 
@@ -75,6 +76,11 @@ public sealed interface ClassFileVersion
      * [0, 65535]}.
      */
     int minorVersion();
+
+    /**
+     * {@return a {@link ClassFileFormatVersion} element}.
+     */
+    Optional<ClassFileFormatVersion> formatVersion();
 
     /**
      * {@return a {@link ClassFileVersion} element}
