@@ -254,6 +254,31 @@ public interface CharSequence {
     }
 
     /**
+     * Returns the number of Unicode code points in
+     * this sequence. Unpaired surrogates count
+     * as one code point each.
+     *
+     * @return the number of Unicode code points in this sequence
+     * @since 26
+     */
+    public default int codePointCount() {
+        final int length = length();
+        int n = length;
+        final int lastIndex = length - 1;
+
+        // i < lastIndex works properly even for an empty sequence
+        // thank to the fact that the length/index type in Java is signed
+        for (int i = 0; i < lastIndex;) {
+            if (Character.isHighSurrogate(charAt(i++)) && Character.isLowSurrogate(charAt(i))) {
+                n--;
+                i++;
+            }
+        }
+
+        return n;
+    }
+
+    /**
      * Compares two {@code CharSequence} instances lexicographically. Returns a
      * negative value, zero, or a positive value if the first sequence is lexicographically
      * less than, equal to, or greater than the second, respectively.
