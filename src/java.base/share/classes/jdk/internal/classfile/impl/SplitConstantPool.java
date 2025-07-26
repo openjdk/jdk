@@ -594,6 +594,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference) {
+        Util.checkU1(refKind, "reference kind");
         reference = AbstractPoolEntry.maybeClone(this, reference);
         int hash = AbstractPoolEntry.hash2(TAG_METHOD_HANDLE, refKind, reference.index());
         EntryMap map1 = map();

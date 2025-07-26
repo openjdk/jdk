@@ -99,6 +99,8 @@ public sealed interface ModuleResolutionAttribute
      * {@return a {@code ModuleResolution} attribute}
      *
      * @param resolutionFlags the resolution flags
+     * @throws IllegalArgumentException if {@code resolutionFlags} is not in the
+     * range {@code [0, 65535]}
      */
     static ModuleResolutionAttribute of(int resolutionFlags) {
         return new UnboundAttribute.UnboundModuleResolutionAttribute(resolutionFlags);
