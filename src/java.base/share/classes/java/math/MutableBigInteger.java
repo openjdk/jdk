@@ -1959,17 +1959,21 @@ class MutableBigInteger {
                 long sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
                 sLong = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
 
-                // Refine the estimate.
-                long u = sLong;
-                do {
-                    sLong = u;
-                    sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
-                    u = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
-                } while (u < sLong); // Terminate when non-decreasing.
+                if (BigInteger.bitLengthForLong(sLong) * (n - 1) <= Long.SIZE) {
+                    // Refine the estimate.
+                    long u = sLong;
+                    do {
+                        sLong = u;
+                        sToN1 = BigInteger.unsignedLongPow(sLong, n - 1);
+                        u = ((n - 1) * sLong + Long.divideUnsigned(x, sToN1)) / n;
+                    } while (u < sLong); // Terminate when non-decreasing.
 
-                return new MutableBigInteger[] {
-                        new MutableBigInteger(sLong), new MutableBigInteger(x - sToN1 * sLong)
-                };
+                    return new MutableBigInteger[] {
+                            new MutableBigInteger(sLong), new MutableBigInteger(x - sToN1 * sLong)
+                    };
+                } else {
+                    s = new MutableBigInteger(sLong);
+                }
             } else { // s^(n - 1) could overflow long range, use MutableBigInteger loop instead
                 s = new MutableBigInteger(sLong);
             }
