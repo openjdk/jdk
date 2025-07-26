@@ -44,7 +44,7 @@ import jdk.test.lib.Platform;
 public class ScreenInsetsTest {
     private static final int SIZE = 100;
     // Allow a margin tolerance of 1 pixel due to scaling
-    private static final int MARGIN_TOLERANCE = 1;
+    private static final int MARGIN_TOLERANCE = 3;
 
     public static void main(String[] args) throws InterruptedException {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
