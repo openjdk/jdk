@@ -427,6 +427,7 @@ class LIR_Opr {
 
   int single_stack_ix() const  { assert(is_single_stack() && !is_virtual(), "type check"); return (int)data(); }
   int double_stack_ix() const  { assert(is_double_stack() && !is_virtual(), "type check"); return (int)data(); }
+  int stack_ix() const  { assert((is_double_stack() || is_single_stack()) && !is_virtual(), "type check"); return (int)data(); }
   RegNr cpu_regnr() const      { assert(is_single_cpu()   && !is_virtual(), "type check"); return (RegNr)data(); }
   RegNr cpu_regnrLo() const    { assert(is_double_cpu()   && !is_virtual(), "type check"); return (RegNr)lo_reg_half(); }
   RegNr cpu_regnrHi() const    { assert(is_double_cpu()   && !is_virtual(), "type check"); return (RegNr)hi_reg_half(); }
