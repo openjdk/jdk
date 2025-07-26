@@ -305,11 +305,11 @@ public:
     
     _used[int(which_partition)] -= bytes;
     _available[int(which_partition)] += bytes;
-#define KELVIN_USED_PARTITION
+#undef KELVIN_USED_PARTITION
 #ifdef KELVIN_USED_PARTITION
-    extern const char* partition_name(ShenandoahFreeSetPartitionId t);
+    extern const char* _shenandoah_partition_name(ShenandoahFreeSetPartitionId t);
     log_info(gc)("ShenRegionPartitions %s decrease_used(%zu) to %zu, available grows to %zu",
-                 partition_name(which_partition), bytes, _used[int(which_partition)], _available[int(which_partition)]);
+                 _shenandoah_partition_name(which_partition), bytes, _used[int(which_partition)], _available[int(which_partition)]);
 #endif
   }
 
@@ -320,12 +320,11 @@ public:
     shenandoah_assert_heaplocked();
     assert (which_partition < NumPartitions, "Partition must be valid");
     assert(_humongous_waste[int(which_partition)] >= bytes, "Cannot decrease waste beyond what is there");
-
     _humongous_waste[int(which_partition)] -= bytes;
 #undef KELVIN_HUMONGOUS_WASTE
 #ifdef KELVIN_HUMONGOUS_WASTE
-    extern const char* partition_name(ShenandoahFreeSetPartitionId t);
-    log_info(gc)("FreeSet<%s>::decrease_humongous_waste(%zu) yields: %zu", partition_name(which_partition),
+    extern const char* _shenandoah_humongous_partition_name(ShenandoahFreeSetPartitionId t);
+    log_info(gc)("FreeSet<%s>::decrease_humongous_waste(%zu) yields: %zu", _shenandoah_humongous_partition_name(which_partition),
                  bytes, _humongous_waste[int(which_partition)]);
 #endif
   }
@@ -470,7 +469,7 @@ private:
     size_t region_size_bytes = _partitions.region_size_bytes();
     _total_young_used = (_partitions.used_by(ShenandoahFreeSetPartitionId::Mutator) +
                          _partitions.used_by(ShenandoahFreeSetPartitionId::Collector));
-#define KELVIN_USED
+#undef KELVIN_USED
 #ifdef KELVIN_USED
     log_info(gc)(" recompute_total_young_used(): %zu from total regions M: %zu, C: %zu, allocatable regions M: %zu, C: %zu, "
                  "M used: %zu, C used: %zu", _total_young_used,

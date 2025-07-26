@@ -279,7 +279,8 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
 
   const size_t used_bytes = obj->size() * HeapWordSize;
   const size_t spanned_regions = ShenandoahHeapRegion::required_regions(used_bytes);
-  const size_t humongous_waste = spanned_regions * ShenandoahHeapRegion::region_size_bytes() - obj->size() * HeapWordSize;
+  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+  const size_t humongous_waste = spanned_regions * region_size_bytes - obj->size() * HeapWordSize;
   const size_t index_limit = region->index() + spanned_regions;
 
   ShenandoahOldGeneration* const old_gen = _heap->old_generation();
@@ -297,7 +298,7 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     log_info(gc)("Promoting humongous object, transferring %zu bytes of humongous waste", humongous_waste);
 #endif
 
-    young_gen->decrease_used(used_bytes);
+    young_gen->decrease_used(spanned_regions * region_size_bytes);
     young_gen->decrease_humongous_waste(humongous_waste);
     young_gen->decrease_affiliated_region_count(spanned_regions);
 
@@ -319,7 +320,7 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     freeset->transfer_humongous_regions_from_mutator_to_old_collector(spanned_regions, humongous_waste / HeapWordSize);
 
     old_gen->increase_affiliated_region_count(spanned_regions);
-    old_gen->increase_used(used_bytes);
+    old_gen->increase_used(spanned_regions * region_size_bytes);
     old_gen->increase_humongous_waste(humongous_waste);
   }
 

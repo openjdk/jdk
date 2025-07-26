@@ -149,7 +149,7 @@ private:
     }
 
     size_t original_result = Atomic::load(&_used);
-#define KELVIN_SCAFFOLDING
+#undef KELVIN_SCAFFOLDING
 #ifdef KELVIN_SCAFFOLDING
     static int problem_count = 0;
     if (result != original_result) {
@@ -176,7 +176,8 @@ private:
   size_t available() const override;
   size_t available_with_reserve() const;
   size_t used_including_humongous_waste() const {
-    return used() + get_humongous_waste();
+    // In the current implementation, used() includes humongous waste
+    return used();
   }
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
@@ -277,6 +278,10 @@ private:
 
   // Return the updated value of affiliated_region_count
   size_t decrease_affiliated_region_count(size_t delta);
+
+  size_t get_affiliated_region_count() const {
+    return Atomic::load(&_affiliated_region_count);
+  }
 
   void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
 

@@ -760,10 +760,8 @@ void ShenandoahHeap::increase_humongous_waste(ShenandoahGeneration* generation, 
 
 void ShenandoahHeap::decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
   generation->decrease_humongous_waste(bytes);
-  generation->decrease_used(bytes);
   if (!generation->is_global()) {
     global_generation()->decrease_humongous_waste(bytes);
-    global_generation()->decrease_used(bytes);
   }
 }
 

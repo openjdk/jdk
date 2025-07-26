@@ -882,7 +882,7 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   // a coherent value.
   auto affiliated_region_count = Atomic::sub(&_affiliated_region_count, (size_t) 1);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         (used() <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
 #ifdef KELVIN_AFFILIATED
   log_info(gc)("%s: decrement_affiliated_region_count() by 1: %zu", name(), affiliated_region_count);
@@ -913,7 +913,7 @@ size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
 
   auto const affiliated_region_count = Atomic::sub(&_affiliated_region_count, delta);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         (_used <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
 #ifdef KELVIN_AFFILIATED
   log_info(gc)("%s: decrease_affiliated_region_count() by %zu: %zu", name(), delta, affiliated_region_count);
@@ -934,7 +934,7 @@ void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes,
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
   Atomic::add(&_used, bytes);
-#define KELVIN_MONITOR_USED
+#undef KELVIN_MONITOR_USED
 #ifdef KELVIN_MONITOR_USED
   log_info(gc)("Generation %s increase_used(%zu) to %zu", shenandoah_generation_name(_type), bytes, _used);
 #endif
@@ -1036,7 +1036,7 @@ size_t ShenandoahGeneration::soft_available() const {
 }
 
 size_t ShenandoahGeneration::available(size_t capacity) const {
-  size_t in_use = used() + get_humongous_waste();
+  size_t in_use = used();
   return in_use > capacity ? 0 : capacity - in_use;
 }
 
