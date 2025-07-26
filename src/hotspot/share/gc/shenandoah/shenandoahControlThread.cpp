@@ -291,6 +291,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     log_info(gc)("Cancelled");
     return;
   }
+  heap->increment_total_collections(false);
 
   ShenandoahGCSession session(cause, heap->global_generation());
 
@@ -337,6 +338,8 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCSession session(cause, heap->global_generation());
 
+  heap->increment_total_collections(true);
+
   ShenandoahFullGC gc;
   gc.collect(cause);
 }
@@ -345,6 +348,8 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCSession session(cause, heap->global_generation());
+
+  heap->increment_total_collections(false);
 
   ShenandoahDegenGC gc(point, heap->global_generation());
   gc.collect(cause);
