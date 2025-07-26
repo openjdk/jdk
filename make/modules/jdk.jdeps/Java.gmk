@@ -25,6 +25,8 @@
 
 ################################################################################
 
+DISABLED_WARNINGS_java += suppression
+
 COPY += .txt
 
 CLEAN_FILES += $(wildcard \

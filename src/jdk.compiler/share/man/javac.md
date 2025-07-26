@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -647,6 +647,9 @@ file system locations may be directories, JAR files or JMOD files.
     -   `static`: Warns about the accessing a static member using an instance.
 
     -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
+
+    -   `suppression`: Warns about recognized `@SuppressWarnings` values that
+        don't actually suppress any warnings.
 
     -   `synchronization`: Warns about synchronization attempts on instances
         of value-based classes. This key is a deprecated alias for `identity`,
