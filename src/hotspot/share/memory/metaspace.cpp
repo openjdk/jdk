@@ -837,7 +837,7 @@ void Metaspace::global_initialize() {
 #else
   // +UseCompressedClassPointers on 32-bit: does not need class space. Klass can live wherever.
   if (UseCompressedClassPointers) {
-    const address start = (address)os::vm_min_address(); // but not in the NULL page
+    const address start = (address)os::vm_min_address(); // but not in the zero page
     const address end = (address)CompressedKlassPointers::max_klass_range_size();
     CompressedKlassPointers::initialize(start, end - start);
   }

@@ -294,6 +294,9 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     // 32-bit "compressed class pointer" mode
     _base = nullptr;
     _shift = 0;
+    // as our "protection zone", we just assume the lowest protected parts of
+    // the user address space.
+    _protection_zone_size = os::vm_min_address();
 #endif // LP64
   }
 
