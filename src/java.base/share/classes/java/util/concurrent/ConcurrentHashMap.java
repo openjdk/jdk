@@ -70,6 +70,7 @@ import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -602,7 +603,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         runtimeSetup();
     }
 
-    // Called from JVM when loading an AOT cache.
+    @AOTRuntimeSetup
     private static void runtimeSetup() {
         NCPU = Runtime.getRuntime().availableProcessors();
     }
