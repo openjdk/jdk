@@ -36,6 +36,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -781,6 +782,9 @@ public class TestFramework {
                                    .collect(Collectors.toList());
         List<String> nonWhiteListedFlags = new ArrayList();
         for (String flag : flags) {
+            if (flag.contains("agentpath")) {
+                throw new SkippedException("Can't run test with -javaagent");
+            }
             // Property flags (prefix -D), -ea and -esa are whitelisted.
             if (!flag.startsWith("-D") && !flag.startsWith("-e") && JTREG_WHITELIST_FLAGS.stream().noneMatch(flag::contains)) {
                 // Found VM flag that is not whitelisted
