@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_HPP
 #define SHARE_GC_SHARED_OBJECTCOUNTEVENTSENDER_HPP
 
-#include "gc/shared/gcTrace.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -39,16 +38,20 @@ class Klass;
 class ObjectCountEventSender : public AllStatic {
   static bool _should_send_requestable_event;
 
-  template <typename T>
+  template <typename Event>
   static void send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp);
 
  public:
   static void enable_requestable_event();
   static void disable_requestable_event();
 
+  template <class Event>
   static void send(const KlassInfoEntry* entry, const Ticks& timestamp);
+
+  template <class Event>
   static bool should_send_event();
 };
+
 
 #endif // INCLUDE_SERVICES
 

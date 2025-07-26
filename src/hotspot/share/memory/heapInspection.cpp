@@ -217,9 +217,10 @@ bool KlassInfoTable::record_instance(const oop obj) {
   // elt may be null if it's a new klass for which we
   // could not allocate space for a new entry in the hashtable.
   if (elt != nullptr) {
-    elt->set_count(elt->count() + 1);
-    elt->set_words(elt->words() + obj->size());
-    _size_of_instances_in_words += obj->size();
+    elt->atomic_inc_count();
+    size_t obj_size = obj->size();
+    elt->atomic_add_words(obj_size);
+    Atomic::add(&_size_of_instances_in_words, obj_size);
     return true;
   } else {
     return false;
@@ -264,6 +265,16 @@ public:
   }
   bool success() { return _success; }
 };
+
+void KlassInfoTable::clear_entries() {
+  if (_buckets != nullptr) {
+    for (int index = 0; index < _num_buckets; index++) {
+      _buckets[index].empty();
+      _buckets[index].initialize();
+    }
+    _size_of_instances_in_words = 0;
+  }
+}
 
 // merge from table
 bool KlassInfoTable::merge(KlassInfoTable* table) {
