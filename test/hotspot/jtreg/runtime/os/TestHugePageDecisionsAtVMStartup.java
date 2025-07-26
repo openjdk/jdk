@@ -29,7 +29,6 @@
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jtreg.SkippedException
  * @run driver TestHugePageDecisionsAtVMStartup
  */
 
@@ -40,7 +39,6 @@
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jtreg.SkippedException
  * @run driver TestHugePageDecisionsAtVMStartup -XX:+UseLargePages
  */
 
@@ -52,7 +50,6 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jtreg.SkippedException
  * @run driver TestHugePageDecisionsAtVMStartup -XX:+UseTransparentHugePages
  */
 
