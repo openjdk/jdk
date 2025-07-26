@@ -44,15 +44,19 @@ narrowKlass CompressedKlassPointers::_lowest_valid_narrow_klass_id = (narrowKlas
 narrowKlass CompressedKlassPointers::_highest_valid_narrow_klass_id = (narrowKlass)-1;
 size_t CompressedKlassPointers::_protection_zone_size = 0;
 
-#ifdef _LP64
-
 size_t CompressedKlassPointers::max_klass_range_size() {
-  // We disallow klass range sizes larger than 4GB even if the encoding
-  // range would allow for a larger Klass range (e.g. Base=zero, shift=3 -> 32GB).
-  // That is because many CPU-specific compiler decodings do not want the
-  // shifted narrow Klass to spill over into the third quadrant of the 64-bit target
-  // address, e.g. to use a 16-bit move for a simplified base addition.
-  return MIN2(4 * G, max_encoding_range_size());
+#ifdef _LP64
+  const size_t encoding_allows = nth_bit(narrow_klass_pointer_bits() + max_shift());
+  constexpr size_t cap = 4 * G;
+  return MIN2(encoding_allows, cap);
+#else
+  // 32-bit: only 32-bit "narrow" Klass pointers allowed. If we ever support smaller narrow
+  // Klass pointers here, coding needs to be revised.
+  // We keep one page safety zone free to guard against size_t overflows on 32-bit. In practice
+  // this is irrelevant, since these upper address space parts are not user-addressable on
+  // any of our 32-bit platforms.
+  return align_down(UINT_MAX, os::vm_page_size());
+#endif
 }
 
 void CompressedKlassPointers::pre_initialize() {
@@ -60,8 +64,13 @@ void CompressedKlassPointers::pre_initialize() {
     _narrow_klass_pointer_bits = narrow_klass_pointer_bits_coh;
     _max_shift = max_shift_coh;
   } else {
+#ifdef _LP64
     _narrow_klass_pointer_bits = narrow_klass_pointer_bits_noncoh;
     _max_shift = max_shift_noncoh;
+#else
+    _narrow_klass_pointer_bits = 32;
+    _max_shift = 0;
+#endif
   }
 }
 
@@ -84,6 +93,11 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
   ASSERT_HERE(_base != (address)-1);
   ASSERT_HERE(_shift != -1);
 
+  // COH only with class space
+  if (UseCompactObjectHeaders) {
+    ASSERT_HERE(NEEDS_CLASS_SPACE);
+  }
+
   const size_t klass_align = klass_alignment_in_bytes();
 
   // must be aligned enough hold 64-bit data
@@ -96,7 +110,9 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
 
   // Check that Klass range is fully engulfed in the encoding range
   const address encoding_start = _base;
-  const address encoding_end = (address)(p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift));
+  const address encoding_end = (address)
+      LP64_ONLY(p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift))
+      NOT_LP64(max_klass_range_size());
   ASSERT_HERE_2(_klass_range_start >= _base && _klass_range_end <= encoding_end,
                 "Resulting encoding range does not fully cover the class range");
 
@@ -151,6 +167,8 @@ void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
   _highest_valid_narrow_klass_id = (narrowKlass) ((uintptr_t)(highest_possible_klass_location - _base) >> _shift);
 }
 
+#if NEEDS_CLASS_SPACE
+
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
 // archived heap objects.
@@ -204,6 +222,7 @@ char* CompressedKlassPointers::reserve_address_space_for_zerobased_encoding(size
 char* CompressedKlassPointers::reserve_address_space_for_16bit_move(size_t size, bool aslr) {
   return reserve_address_space_X(nth_bit(32), nth_bit(48), size, nth_bit(32), aslr);
 }
+#endif // NEEDS_CLASS_SPACE
 
 void CompressedKlassPointers::initialize(address addr, size_t len) {
 
@@ -238,6 +257,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   } else {
 
+#ifdef _LP64
     // Traditional (non-compact) header mode
     const uintptr_t unscaled_max = nth_bit(narrow_klass_pointer_bits());
     const uintptr_t zerobased_max = nth_bit(narrow_klass_pointer_bits() + max_shift());
@@ -249,6 +269,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     address const end = addr + len;
     _base = (end <= (address)unscaled_max) ? nullptr : addr;
 #else
+
     // We try, in order of preference:
     // -unscaled    (base=0 shift=0)
     // -zero-based  (base=0 shift>0)
@@ -269,11 +290,19 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
       }
     }
 #endif // AARCH64
+#else
+    // 32-bit "compressed class pointer" mode
+    _base = nullptr;
+    _shift = 0;
+    // as our "protection zone", we just assume the lowest protected parts of
+    // the user address space.
+    _protection_zone_size = os::vm_min_address();
+#endif // LP64
   }
 
   calc_lowest_highest_narrow_klass_id();
 
-  // Initialize klass decode mode and check compability with decode instructions
+  // Initialize JIT-specific decoding settings
   if (!set_klass_decode_mode()) {
 
     // Give fatal error if this is a specified address
@@ -287,9 +316,8 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
             p2i(_base), _shift);
     }
   }
-#ifdef ASSERT
-  sanity_check_after_initialization();
-#endif
+
+  DEBUG_ONLY(sanity_check_after_initialization();)
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
@@ -314,7 +342,8 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
   }
 }
 
-// On AIX, we cannot mprotect archive space or class space since they are reserved with SystemV shm.
+#if NEEDS_CLASS_SPACE
+// On AIX, we cannot mprotect archive space or cwviedwlass space since they are reserved with SystemV shm.
 static constexpr bool can_mprotect_archive_space = NOT_AIX(true) AIX_ONLY(false);
 
 // Protect a zone a the start of the encoding range
@@ -334,10 +363,10 @@ void CompressedKlassPointers::establish_protection_zone(address addr, size_t siz
   }
   _protection_zone_size = size;
 }
+#endif // NEEDS_CLASS_SPACE
 
 bool CompressedKlassPointers::is_in_protection_zone(address addr) {
   return _protection_zone_size > 0 ?
       (addr >= base() && addr < base() + _protection_zone_size) : false;
 }
 
-#endif // _LP64

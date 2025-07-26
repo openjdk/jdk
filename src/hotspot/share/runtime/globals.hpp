@@ -124,10 +124,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit object references in 64-bit VM. "                     \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompressedClassPointers, true,                           \
-          "(Deprecated) Use 32-bit class pointers in 64-bit VM. "           \
-          "lp64_product means flag is always constant in 32 bit VM")        \
-                                                                            \
   product(bool, UseCompactObjectHeaders, false,                             \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
@@ -146,7 +142,6 @@ const size_t minimumSymbolTableSize = 1024;
                            range,                                           \
                            constraint)
 const bool UseCompressedOops = false;
-const bool UseCompressedClassPointers = false;
 const bool UseCompactObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
@@ -1397,6 +1392,9 @@ const int ObjectAlignmentInBytes = 8;
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
           constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
+                                                                            \
+  product(bool, UseCompressedClassPointers, true,                           \
+          "(Deprecated) Use 32-bit class pointers.")                        \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
