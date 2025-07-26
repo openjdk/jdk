@@ -409,12 +409,14 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jclass jvm))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
+  size_t phys_mem = 0;
 #ifdef LINUX
   // We want the host memory, not the container limit.
   // os::physical_memory() would return the container limit.
   return os::Linux::physical_memory();
 #else
-  return os::physical_memory();
+  os::physical_memory(phys_mem);
+  return static_cast<jlong>(phys_mem);
 #endif
 JVM_END
 
@@ -423,7 +425,9 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
   // We want the host swap memory, not the container value.
   return os::Linux::host_swap();
 #else
-  return os::total_swap_space();
+  size_t total_swap_space = 0;
+  os::total_swap_space(total_swap_space);
+  return static_cast<jlong>(total_swap_space);
 #endif
 JVM_END
 
