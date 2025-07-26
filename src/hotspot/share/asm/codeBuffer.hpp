@@ -33,6 +33,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
+#include "utilities/pair.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
@@ -541,9 +542,14 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
+  enum class TrampolineCallKind { Runtime, Static };
+  typedef Pair<TrampolineCallKind, address> SharedTrampolineRequestKey;
+  typedef ResizeableResourceHashtable<SharedTrampolineRequestKey, Offsets, AnyObj::C_HEAP,
+                                      mtCompiler>
+      SharedTrampolineRequests;
+
   enum {
     sect_bits = 2,      // assert (SECT_LIMIT <= (1<<sect_bits))
     sect_mask = (1<<sect_bits)-1
