@@ -29,7 +29,7 @@
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author yan
  * @library /lib/client /test/lib
- * @build ExtendedRobot jdk.test.lib.Platform
+ * @build jdk.test.lib.Platform
  * @run main RepaintTest
  */
 
@@ -45,6 +45,7 @@ import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.TextField;
 import javax.swing.JFrame;
 import javax.swing.JButton;
@@ -61,7 +62,7 @@ public class RepaintTest {
     private Frame frame;
     private Component button;
     private Component textField;
-    private ExtendedRobot robot;
+    private Robot robot;
     private final Object buttonLock = new Object();
     private volatile boolean buttonClicked = false;
     private final int MAX_TOLERANCE_LEVEL = 10;
@@ -133,7 +134,7 @@ public class RepaintTest {
 
     public void doTest(boolean swingControl) throws Exception {
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         robot.setAutoDelay(50);
 
         EventQueue.invokeAndWait(() -> initializeGUI(swingControl));

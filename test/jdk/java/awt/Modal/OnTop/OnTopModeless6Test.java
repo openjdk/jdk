@@ -30,9 +30,8 @@ import java.awt.Dialog;
  * @summary Check whether a modeless Dialog created with a visible Dialog
  *          constructor follows a normal Z order.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame

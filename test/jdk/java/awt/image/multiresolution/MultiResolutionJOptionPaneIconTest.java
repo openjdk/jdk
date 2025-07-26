@@ -29,7 +29,6 @@
   @summary Check if correct resolution variant is used
            for JOptionPane dialog / internal frame icons.
   @library /lib/client/
-  @build ExtendedRobot
   @run main/othervm/timeout=300 -Dsun.java2d.uiScale=1 MultiResolutionJOptionPaneIconTest
   @run main/othervm/timeout=300 -Dsun.java2d.uiScale=2 MultiResolutionJOptionPaneIconTest
 */
@@ -51,7 +50,7 @@ public class MultiResolutionJOptionPaneIconTest implements ActionListener {
     private final JDesktopPane parentPane = new JDesktopPane();
     private final JButton run = new JButton("run");
 
-    private final ExtendedRobot robot = new ExtendedRobot();
+    private final Robot robot = new Robot();
 
     private static BufferedImage getSquare(int sz, Color c) {
 
@@ -159,7 +158,7 @@ public class MultiResolutionJOptionPaneIconTest implements ActionListener {
         }
     }
 
-    public void clickButton(ExtendedRobot robot) {
+    public void clickButton(Robot robot) {
 
         Point pt = run.getLocationOnScreen();
         robot.mouseMove(pt.x + run.getWidth() / 2, pt.y + run.getHeight() / 2);

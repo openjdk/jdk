@@ -34,17 +34,16 @@ import java.awt.*;
  *          location of the jframe after restoration from zoom or icon.
  * @author Aruna Samji
  * @library /lib/client
- * @build ExtendedRobot
  * @run main TaskZoomJFrameChangeState
  */
 
 public class TaskZoomJFrameChangeState extends Task<GUIZoomFrame> {
 
     public static void main (String[] args) throws Exception {
-        new TaskZoomJFrameChangeState(GUIZoomFrame.class, new ExtendedRobot()).task();
+        new TaskZoomJFrameChangeState(GUIZoomFrame.class, new Robot()).task();
     }
 
-    TaskZoomJFrameChangeState(Class guiClass, ExtendedRobot robot) throws Exception {
+    TaskZoomJFrameChangeState(Class guiClass, Robot robot) throws Exception {
          super(guiClass, robot);
     }
 

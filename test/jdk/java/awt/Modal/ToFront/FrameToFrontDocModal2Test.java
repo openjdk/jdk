@@ -29,9 +29,8 @@ import java.awt.Dialog;
  * @bug 8050885
  * @summary Check if toFront method works correctly for a document modal dialog.
  *
- * @library ../helpers /lib/client/
+ * @library ../helpers
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame
