@@ -24,7 +24,7 @@ public:
     // Returns the KlassInfoTable if it exists, otherwise returns nullptr.
     static KlassInfoTable* get_table();
     // Clear entries of the KlassInfoTable
-    static void reset_table();
+    static void reset_table(KlassInfoEntry* entry);
 
     // Returns true if event is enabled
     template <class Event>

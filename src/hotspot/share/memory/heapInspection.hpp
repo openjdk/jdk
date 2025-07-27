@@ -67,6 +67,7 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
     _do_print(false), _subclasses(nullptr)
   {}
   ~KlassInfoEntry();
+  void set_next(KlassInfoEntry* next) { _next = next; }
   KlassInfoEntry* next() const   { return _next; }
   bool is_equal(const Klass* k)  { return k == _klass; }
   Klass* klass()  const          { return _klass; }
@@ -103,6 +104,7 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   KlassInfoEntry* lookup(Klass* k);
   void initialize() { _list = nullptr; }
   void empty();
+  void remove_from_list(KlassInfoEntry* entry);
   void iterate(KlassInfoClosure* cic);
 };
 
@@ -132,6 +134,7 @@ class KlassInfoTable: public StackObj {
   bool merge_entry(const KlassInfoEntry* cie);
   // Clears entries in the table
   void clear_entries();
+  void delete_entry(KlassInfoEntry* entry);
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
 };

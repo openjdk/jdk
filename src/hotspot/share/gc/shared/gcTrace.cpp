@@ -93,6 +93,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   virtual void do_cinfo(KlassInfoEntry* entry) {
     if (should_send_event(entry)) {
       ObjectCountEventSender::send<Event>(entry, _timestamp);
+      ObjectCountClosure::reset_table(entry);
     }
   }
 
@@ -111,7 +112,7 @@ void GCTracer::report_object_count() {
 
   ObjectCountEventSenderClosure<EventObjectCountAfterGC> event_sender(cit->size_of_instances_in_words(), Ticks::now());
   cit->iterate(&event_sender);
-  ObjectCountClosure::reset_table();
+  // ObjectCountClosure::reset_table();
 }
 
 void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkerThreads* workers) {

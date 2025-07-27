@@ -10,11 +10,11 @@
 
 KlassInfoTable* ObjectCountClosure::cit = nullptr;
 
-void ObjectCountClosure::reset_table() {
+void ObjectCountClosure::reset_table(KlassInfoEntry* entry) {
     if (!check_table_exists()) {
         return;
     }
-    cit->clear_entries();
+    cit->delete_entry(entry);
   }
 
 

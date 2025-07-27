@@ -155,6 +155,19 @@ void KlassInfoBucket::empty() {
   }
 }
 
+void KlassInfoBucket::remove_from_list(KlassInfoEntry* entry) {
+  KlassInfoEntry* elt = _list;
+  while (elt != nullptr) {
+    KlassInfoEntry* next = elt->next();
+    if (next == entry) {
+      elt->set_next(entry->next());
+      delete entry;
+      return;
+    }
+    elt = next;
+  }
+}
+
 class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
   KlassInfoTable *_table;
 public:
@@ -252,6 +265,11 @@ bool KlassInfoTable::merge_entry(const KlassInfoEntry* cie) {
     return true;
   }
   return false;
+}
+
+void KlassInfoTable::delete_entry(KlassInfoEntry* entry) {
+  uint idx = hash(entry->klass()) % _num_buckets;
+  _buckets[idx].remove_from_list(entry);
 }
 
 class KlassInfoTableMergeClosure : public KlassInfoClosure {
