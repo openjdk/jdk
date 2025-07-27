@@ -556,10 +556,11 @@ class JavaThreadInVMAndNative : public StackObj {
   }
 };
 
-static void post_events(bool emit_old_object_samples, Thread* thread) {
+static void post_events(bool emit_old_object_samples, bool emit_event_shutdown, Thread* thread) {
   if (emit_old_object_samples) {
     LeakProfiler::emit_events(max_jlong, false, false);
-  } else {
+  }
+  if (emit_event_shutdown) {
     EventShutdown e;
     e.set_reason("VM Error");
     e.commit();
@@ -570,7 +571,7 @@ static void post_events(bool emit_old_object_samples, Thread* thread) {
   event.commit();
 }
 
-void JfrEmergencyDump::on_vm_shutdown(bool emit_old_object_samples) {
+void JfrEmergencyDump::on_vm_shutdown(bool emit_old_object_samples, bool emit_event_shutdown) {
   if (!guard_reentrancy()) {
     return;
   }
@@ -583,7 +584,7 @@ void JfrEmergencyDump::on_vm_shutdown(bool emit_old_object_samples) {
   if (!prepare_for_emergency_dump(thread)) {
     return;
   }
-  post_events(emit_old_object_samples, thread);
+  post_events(emit_old_object_samples, emit_event_shutdown, thread);
   // if JavaThread, transition to _thread_in_native to issue a final flushpoint
   NoHandleMark nhm;
   jtivm.transition_to_native();
