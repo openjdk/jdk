@@ -271,8 +271,7 @@ public final class PackageTest extends RunnablePackageTest {
     PackageTest addHelloAppFileAssociationsVerifier(FileAssociations fa) {
         Objects.requireNonNull(fa);
 
-        // Setup test app to have valid jpackage command line before
-        // running check of type of environment.
+        // Setup test app to have valid jpackage command line before running the check.
         addHelloAppInitializer(null);
 
         forTypes(LINUX, () -> {
@@ -353,15 +352,14 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest configureHelloApp(String javaAppDesc) {
         addHelloAppInitializer(javaAppDesc);
-        addInstallVerifier(HelloApp::executeLauncherAndVerifyOutput);
+        addInstallVerifier(JPackageCommand::executeLaunchers);
         return this;
     }
 
     public PackageTest addHelloAppInitializer(String javaAppDesc) {
-        addInitializer(
-                cmd -> new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd),
-                "HelloApp");
-        return this;
+        return addInitializer(cmd -> {
+            new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd);
+        }, "HelloApp");
     }
 
     public static class Group extends RunnablePackageTest {
@@ -604,11 +602,7 @@ public final class PackageTest extends RunnablePackageTest {
                     }
                 }
                 case VERIFY_INSTALL -> {
-                    if (unpackNotSupported()) {
-                        return ActionAction.SKIP;
-                    }
-
-                    if (installFailed()) {
+                    if (unpackNotSupported() || installFailed()) {
                         return ActionAction.SKIP;
                     }
                 }
