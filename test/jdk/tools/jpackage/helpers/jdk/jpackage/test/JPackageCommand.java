@@ -72,7 +72,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         verifyActions = new Actions();
     }
 
-    public JPackageCommand(JPackageCommand cmd) {
+    private JPackageCommand(JPackageCommand cmd, boolean immutable) {
         args.addAll(cmd.args);
         withToolProvider = cmd.withToolProvider;
         saveConsoleOutput = cmd.saveConsoleOutput;
@@ -81,7 +81,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         suppressOutput = cmd.suppressOutput;
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
-        immutable = cmd.immutable;
+        this.immutable = immutable;
         dmgInstallDir = cmd.dmgInstallDir;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
@@ -93,9 +93,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand createImmutableCopy() {
-        JPackageCommand reply = new JPackageCommand(this);
-        reply.immutable = true;
-        return reply;
+        return new JPackageCommand(this, true);
+    }
+
+    JPackageCommand createMutableCopy() {
+        return new JPackageCommand(this, false);
     }
 
     public JPackageCommand setArgumentValue(String argName, String newValue) {
@@ -789,11 +791,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    public JPackageCommand executeVerifyActions() {
-        verifyActions.run();
-        return this;
-    }
-
     private Executor createExecutor() {
         Executor exec = new Executor()
                 .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
@@ -858,7 +855,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
-        final var copy = new JPackageCommand(this).adjustArgumentsBeforeExecution();
+        final var copy = createMutableCopy().adjustArgumentsBeforeExecution();
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
 
@@ -875,7 +872,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         if (result.exitCode() == 0) {
-            executeVerifyActions();
+            verifyActions.run();
         }
 
         return result;
@@ -883,7 +880,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public Executor.Result executeAndAssertHelloAppImageCreated() {
         Executor.Result result = executeAndAssertImageCreated();
-        HelloApp.executeLauncherAndVerifyOutput(this);
+        LauncherVerifier.executeMainLauncherAndVerifyOutput(this);
         return result;
     }
 
@@ -1059,18 +1056,19 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public static enum AppLayoutAssert {
         APP_IMAGE_FILE(JPackageCommand::assertAppImageFile),
         PACKAGE_FILE(JPackageCommand::assertPackageFile),
-        MAIN_LAUNCHER(cmd -> {
+        NO_MAIN_LAUNCHER_IN_RUNTIME(cmd -> {
             if (cmd.isRuntime()) {
                 TKit.assertPathExists(convertFromRuntime(cmd).appLauncherPath(), false);
-            } else {
-                TKit.assertExecutableFileExists(cmd.appLauncherPath());
             }
         }),
-        MAIN_LAUNCHER_CFG_FILE(cmd -> {
+        NO_MAIN_LAUNCHER_CFG_FILE_IN_RUNTIME(cmd -> {
             if (cmd.isRuntime()) {
                 TKit.assertPathExists(convertFromRuntime(cmd).appLauncherCfgPath(null), false);
-            } else {
-                TKit.assertFileExists(cmd.appLauncherCfgPath(null));
+            }
+        }),
+        MAIN_LAUNCHER_FILES(cmd -> {
+            if (!cmd.isRuntime()) {
+                new LauncherVerifier(cmd).verify(cmd, LauncherVerifier.Action.VERIFY_INSTALLED);
             }
         }),
         MAIN_JAR_FILE(cmd -> {
@@ -1097,7 +1095,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         private static JPackageCommand convertFromRuntime(JPackageCommand cmd) {
-            var copy = new JPackageCommand(cmd);
+            var copy = cmd.createMutableCopy();
             copy.immutable = false;
             copy.removeArgumentWithValue("--runtime-image");
             copy.dmgInstallDir = cmd.appInstallationDirectory();
