@@ -41,6 +41,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zMark.inline.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
@@ -441,6 +442,10 @@ public:
     OopMapCache::try_trigger_cleanup();
   }
 
+  virtual bool is_gc_operation() const {
+    return true;
+  }
+
   bool success() const {
     return _success;
   }
@@ -699,11 +704,10 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   uint last_populated_age = 0;
   size_t last_populated_live = 0;
 
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0) {
-      last_populated_age = i;
+      last_populated_age = untype(age);
       last_populated_live = young_live;
       if (young_live_last > 0) {
         young_life_expectancy_sum += double(young_live) / double(young_live_last);
@@ -842,8 +846,8 @@ void ZGenerationYoung::mark_start() {
 
   // Retire allocating pages
   ZAllocator::eden()->retire_pages();
-  for (ZPageAge i = ZPageAge::survivor1; i <= ZPageAge::survivor14; i = static_cast<ZPageAge>(static_cast<uint>(i) + 1)) {
-    ZAllocator::relocation(i)->retire_pages();
+  for (ZPageAge age : ZPageAgeRangeSurvivor) {
+    ZAllocator::relocation(age)->retire_pages();
   }
 
   // Reset allocated/reclaimed/used statistics
@@ -1305,6 +1309,10 @@ class ZRendezvousGCThreads: public VM_Operation {
 
   virtual bool skip_thread_oop_barriers() const {
     fatal("Concurrent VMOps should not call this");
+    return true;
+  }
+
+  virtual bool is_gc_operation() const {
     return true;
   }
 

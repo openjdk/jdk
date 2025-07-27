@@ -1605,7 +1605,7 @@ generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps
 generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
                "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
-               "eret", "drps", "isb",])
+               "eret", "drps", "isb", "sb",])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOp, ["wfi", "xpaclri"])

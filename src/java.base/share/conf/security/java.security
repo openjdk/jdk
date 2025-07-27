@@ -1012,6 +1012,7 @@ jdk.xml.dsig.secureValidationPolicy=\
     disallowAlg http://www.w3.org/2000/09/xmldsig#rsa-sha1,\
     disallowAlg http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1,\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1,\
+    disallowAlg http://www.w3.org/TR/1999/REC-xpath-19991116,\
     maxTransforms 5,\
     maxReferences 30,\
     disallowReferenceUriSchemes file http https,\
