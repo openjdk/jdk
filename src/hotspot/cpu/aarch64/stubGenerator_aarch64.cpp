@@ -11680,8 +11680,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      // set table address before stub generation which use it
-      StubRoutines::_crc_table_adr = (address)StubRoutines::aarch64::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
 

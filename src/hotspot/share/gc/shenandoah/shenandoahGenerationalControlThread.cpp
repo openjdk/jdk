@@ -240,6 +240,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
 
+    _heap->print_before_gc();
     switch (gc_mode()) {
       case concurrent_normal: {
         service_concurrent_normal_cycle(request);
@@ -261,6 +262,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
       default:
         ShouldNotReachHere();
     }
+    _heap->print_after_gc();
   }
 
   // If this cycle completed successfully, notify threads waiting for gc

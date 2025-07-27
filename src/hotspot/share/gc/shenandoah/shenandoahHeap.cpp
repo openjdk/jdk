@@ -567,7 +567,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _bitmap_region_special(false),
   _aux_bitmap_region_special(false),
   _liveness_cache(nullptr),
-  _collection_set(nullptr)
+  _collection_set(nullptr),
+  _evac_tracker(new ShenandoahEvacuationTracker())
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
@@ -1352,6 +1353,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Copy the object:
+  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
@@ -1361,6 +1363,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // Successfully evacuated. Our copy is now the public one!
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
+    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -1589,6 +1592,13 @@ void ShenandoahHeap::print_tracing_info() const {
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
+
+#ifdef NOT_PRODUCT
+    evac_tracker()->print_global_on(&ls);
+
+    ls.cr();
+    ls.cr();
+#endif
 
     phase_timings()->print_global_on(&ls);
 
