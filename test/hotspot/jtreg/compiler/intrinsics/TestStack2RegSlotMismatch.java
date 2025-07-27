@@ -25,7 +25,7 @@
  * @test
  * @bug 8359235
  * @summary Test C1 stack2reg after fixing incorrect use of T_LONG in intrinsic
- * @requires vm.debug
+ * @requires vm.debug == true & vm.compiler1.enabled
  * @run main/othervm -XX:TieredStopAtLevel=1 -XX:C1MaxInlineSize=200 -XX:CompileThreshold=10 compiler.intrinsics.TestStack2RegSlotMismatch
  */
 package compiler.intrinsics;
@@ -59,7 +59,7 @@ public class TestStack2RegSlotMismatch {
             argsList.remove(argsList.size() - 1);
             argsList.remove(argsList.size() - 1);
             if (i % 5 == 0) {
-                Thread.sleep(100);
+                Thread.sleep(1000);
             }
         }
 
