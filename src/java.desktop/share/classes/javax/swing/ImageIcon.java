@@ -378,8 +378,8 @@ public class ImageIcon implements Icon, Serializable, Accessible {
 
     /**
      * Sets the image displayed by this icon.
-     * Passing a {@code null} Image will result in {@code NullPointerException}.
      * @param image the image
+     * @throws {@code NullPointerException} if (@code null) Image is passed.
      */
     public void setImage(Image image) {
         this.image = image;
