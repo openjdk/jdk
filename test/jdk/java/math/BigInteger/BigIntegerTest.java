@@ -525,7 +525,7 @@ public class BigIntegerTest {
         report("nthRoot for long", longs.mapToObj(x ->
             BigInteger.valueOf(x)).collect(Collectors.summingInt(f)));
 
-        DoubleStream doubles = random.doubles(SIZE, Math.nextUp((double) Long.MAX_VALUE), Double.MAX_VALUE);
+        DoubleStream doubles = random.doubles(SIZE, 0x1p63, Double.MAX_VALUE);
         report("nthRoot for double", doubles.mapToObj(x ->
             BigDecimal.valueOf(x).toBigInteger()).collect(Collectors.summingInt(f)));
     }

@@ -2020,7 +2020,7 @@ class MutableBigInteger {
             double approx = nthRootApprox(rad, n);
             int rootSh = (int) (sh / n);
             if (rootSh == 0) {
-                s = valueOf(Math.ceil(approx));
+                s = valueOf(approx + 1.0);
             } else {
                 // Allocate sufficient space to store the final root
                 s = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
@@ -2039,7 +2039,7 @@ class MutableBigInteger {
                     rootSh -= correctBits;
                     approx = Math.scalb(approx, correctBits);
                 }
-                s.copyValue(valueOf(Math.ceil(approx)));
+                s.copyValue(valueOf(approx + 1.0));
 
                 // Refine the estimate, avoiding to compute non-significant bits
                 final int trailingZeros = this.getLowestSetBit();
