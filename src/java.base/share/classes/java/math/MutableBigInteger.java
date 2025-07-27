@@ -2058,7 +2058,7 @@ class MutableBigInteger {
                 }
 
                 // Shift the approximate root back into the original range.
-                s.leftShift(rootSh);
+                s.safeLeftShift(rootSh);
             }
         }
 
