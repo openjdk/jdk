@@ -38,7 +38,7 @@ import javax.swing.ImageIcon;
 
 public class ImageIconTest {
 
-    static enum ArgType { FILE, URL, BYTE_ARRAY, IMAGE, SETIMAGE };
+    static enum ArgType { FILE, URL, BYTE_ARRAY, IMAGE, SET_IMAGE };
     static enum ArgVal { NULL, INVALID_DATA };
 
     public static void main(String[] args) throws Exception {
@@ -92,7 +92,7 @@ public class ImageIconTest {
                                passed = true; // no exception expected for this case
                            }
                            break;
-                        case SETIMAGE :
+                        case SET_IMAGE :
                             ImageIcon ii = new ImageIcon();
                             if (v == ArgVal.NULL) {
                                 ii.setImage((Image)null);
