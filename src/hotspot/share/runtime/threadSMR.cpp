@@ -830,7 +830,7 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
       // make it past ensure_join() where the JavaThread* is cleared.
       return false;
     } else {
-      // For virtual thread's we need to extract the carrier's JavaThread - if any.
+      // For virtual threads we need to extract the carrier's JavaThread - if any.
        oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
        if (carrier_thread != nullptr) {
          java_thread = java_lang_Thread::thread(carrier_thread);

@@ -45,7 +45,7 @@ class ThreadsList;
 // operation. It is no longer necessary to hold the Threads_lock to safely
 // perform an operation on a target thread.
 //
-// There two ways to refer to java.lang.Thread objects so we have two ways
+// There are two ways to refer to java.lang.Thread objects so we have two ways
 // to get a protected JavaThread*:
 //
 // JNI jobject example:
@@ -69,7 +69,7 @@ class ThreadsList;
 //   }
 //   :  // do stuff with 'jt'...
 //
-// A JavaThread* that is included in the ThreadsList that is held by
+// A JavaThread * that is included in the ThreadsList that is held by
 // a ThreadsListHandle is protected as long as the ThreadsListHandle
 // remains in scope. The target JavaThread* may have logically exited,
 // but that target JavaThread* will not be deleted until it is no
