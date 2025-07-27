@@ -38,8 +38,8 @@ import javax.swing.ImageIcon;
 
 public class ImageIconTest {
 
-    static enum ArgType { FILE, URL, BYTEARRAY, IMAGE };
-    static enum ArgVal { NULL, INVALIDDATA };
+    static enum ArgType { FILE, URL, BYTE_ARRAY, IMAGE, SETIMAGE };
+    static enum ArgVal { NULL, INVALID_DATA };
 
     public static void main(String[] args) throws Exception {
 
@@ -67,17 +67,17 @@ public class ImageIconTest {
                        case URL :
                            if (v == ArgVal.NULL) {
                                new ImageIcon((URL)null);
-                           } else if (v == ArgVal.INVALIDDATA) {
+                           } else if (v == ArgVal.INVALID_DATA) {
                                expected = false;
                                new ImageIcon("file://" + imgName, "gif");
                                passed = true; // no exception expected for this case
                            }
                            break;
-                       case BYTEARRAY :
+                       case BYTE_ARRAY :
                            if (v == ArgVal.NULL) {
                                byte[] bytes = null;
                                new ImageIcon(bytes);
-                           } else if (v == ArgVal.INVALIDDATA) {
+                           } else if (v == ArgVal.INVALID_DATA) {
                                expected = false;
                                new ImageIcon(new byte[0], "gif");
                                passed = true; // no exception expected for this case
@@ -86,12 +86,22 @@ public class ImageIconTest {
                        case IMAGE :
                            if (v == ArgVal.NULL) {
                                new ImageIcon((Image)null);
-                           } else if (v == ArgVal.INVALIDDATA) {
+                           } else if (v == ArgVal.INVALID_DATA) {
                                expected = false;
                                new ImageIcon((Image)Toolkit.getDefaultToolkit().createImage(fileName), "gif");
                                passed = true; // no exception expected for this case
                            }
                            break;
+                        case SETIMAGE :
+                            ImageIcon ii = new ImageIcon();
+                            if (v == ArgVal.NULL) {
+                                ii.setImage((Image)null);
+                            } else if (v == ArgVal.INVALID_DATA) {
+                                expected = false;
+                                ii.setImage((Image)Toolkit.getDefaultToolkit().createImage(fileName));
+                                passed = true; // no exception expected for this case
+                            }
+                            break;
                     }
                 } catch (NullPointerException e) {
                     if (expected) {
@@ -109,13 +119,5 @@ public class ImageIconTest {
             }
         }
 
-        // test setter
-        try {
-            ImageIcon ii = new ImageIcon();
-            ii.setImage((Image)null);
-            throw new RuntimeException("No NPE");
-        } catch (NullPointerException e) {
-            // expected
-        }
     }
 }
