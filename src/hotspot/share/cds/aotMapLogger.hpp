@@ -56,6 +56,9 @@ class AOTMapLogger : AllStatic {
     MetaspaceObj::Type _type;
   };
 
+  class FakeOop;
+  class FakeMirror;
+
   class GatherArchivedMetaspaceObjs;
 
   // Translate the buffers used by the RW/RO regions to their requested locations
@@ -80,6 +83,8 @@ class AOTMapLogger : AllStatic {
 
   static void log_as_hex(address base, address top, address requested_base, bool is_heap = false);
 
+  static void runtime_log_metaspace_regions(FileMapInfo* mapinfo);
+
 #if INCLUDE_CDS_JAVA_HEAP
   static void log_heap_region(ArchiveHeapInfo* heap_info);
   static void log_oops(ArchiveHeapInfo* heap_info, address start, address end);
@@ -87,7 +92,10 @@ class AOTMapLogger : AllStatic {
   static void print_class_signature_for_mirror(outputStream* st, oop scratch_mirror);
   static void log_heap_roots();
   static void print_oop_info_cr(outputStream* st, oop source_oop, bool print_requested_addr = true);
+  static void new_print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr = true);
 
+  static void runtime_log_heap_region(FileMapInfo* mapinfo);
+  static void runtime_log_oops(address buf_start, address buf_end);
   class ArchivedFieldPrinter;
 #endif
 

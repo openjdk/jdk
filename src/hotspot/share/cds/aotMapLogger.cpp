@@ -27,6 +27,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -114,6 +115,16 @@ void AOTMapLogger::runtime_log(FileMapInfo* mapinfo) {
   log_header(mapinfo);
   log_as_hex(header, header_end, nullptr);
 
+  runtime_log_metaspace_regions(mapinfo);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (mapinfo->has_heap_region()) {
+    runtime_log_heap_region(mapinfo);
+  }
+#endif
+}
+
+void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo) {
   FileMapRegion* rw = mapinfo->region_at(MetaspaceShared::rw);
   FileMapRegion* ro = mapinfo->region_at(MetaspaceShared::ro);
 
@@ -278,10 +289,12 @@ void AOTMapLogger::log_constant_pool(ConstantPool* cp, address requested_addr,
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
                       cp->pool_holder()->external_name());
 
+/*
   LogStreamHandle(Trace, aot, map) lsh;
   if (lsh.is_enabled()) {
     cp->print_on(&lsh);
   }
+*/
 }
 
 void AOTMapLogger::log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
@@ -579,4 +592,227 @@ void AOTMapLogger::print_oop_info_cr(outputStream* st, oop source_oop, bool prin
     }
   }
 }
+
+class RequestedMetadataAddr {
+  static intx _requested_to_mapped_metadata_delta;
+
+  address _raw_addr;
+
+
+public:
+  static void init(FileMapInfo* mapinfo) {
+    _requested_to_mapped_metadata_delta = mapinfo->relocation_delta();
+  }
+
+  RequestedMetadataAddr(address raw_addr) : _raw_addr(raw_addr) {}
+
+  address raw_addr() const { return _raw_addr; }
+
+  Klass* to_real_klass() const {
+    if (_raw_addr == nullptr) {
+      return nullptr;
+    }
+    return (Klass*)(_raw_addr + _requested_to_mapped_metadata_delta);
+  }
+};
+
+intx RequestedMetadataAddr::_requested_to_mapped_metadata_delta;
+
+class FakeMirror;
+
+class AOTMapLogger::FakeOop {
+  static int _requested_shift;
+  static intx _buffer_to_requested_delta;
+  static address _buffer_base;
+  static address _buffer_start;
+  static address _buffer_end;
+
+  address _buffer_addr;
+  oop fake_oop() { return cast_to_oop(_buffer_addr); }
+
+  static void assert_range(address buffer_addr) {
+    assert(_buffer_start <= buffer_addr && buffer_addr < _buffer_end, "range check");
+  }
+
+  address* field_addr(int field_offset) {
+    return (address*)(_buffer_addr + field_offset);
+  }
+
+protected:
+  RequestedMetadataAddr metadata_field(int field_offset) {
+    return RequestedMetadataAddr(*(address*)(field_addr(field_offset)));
+  }
+
+public:
+  static void init(address requested_start, int requested_shift, address buffer_base, address buffer_start, address buffer_end) {
+    _requested_shift = requested_shift;
+    _buffer_to_requested_delta = requested_start - buffer_start;
+    _buffer_base = buffer_base;
+    _buffer_start = buffer_start;
+    _buffer_end = buffer_end;
+  }
+
+  FakeOop(address buffer_addr) : _buffer_addr(buffer_addr) {
+    assert_range(_buffer_addr);
+  }
+
+  Klass* real_klass() {
+    assert(UseCompressedClassPointers, "heap archiving requires UseCompressedClassPointers");
+    return fake_oop()->klass();
+  }
+  size_t size() {
+    return fake_oop()->size_given_klass(real_klass());
+
+  }
+  bool is_array() { return real_klass()->is_array_klass(); }
+  bool is_null() { return _buffer_addr == nullptr; }
+
+  int array_length() {
+    precond(is_array());
+    return arrayOop(fake_oop())->length();
+  }
+
+  address requested_addr() {
+    return _buffer_addr + _buffer_to_requested_delta;
+  }
+
+  uint32_t as_narrow_oop_value() {
+    precond(UseCompressedOops);
+    if (_buffer_addr == nullptr) {
+      return 0;
+    }
+    uint64_t pd = (uint64_t)(pointer_delta((void*)_buffer_addr, (void*)_buffer_base, 1));
+    return checked_cast<uint32_t>(pd >> _requested_shift);
+  }
+
+  void print_string_on(outputStream* st);
+  void print_class_signature_on(outputStream* st);
+
+  FakeMirror& as_mirror();
+};
+
+class AOTMapLogger::FakeMirror : public AOTMapLogger::FakeOop {
+public:
+  void print_class_signature_on(outputStream* st);
+};
+
+AOTMapLogger::FakeMirror& AOTMapLogger::FakeOop::as_mirror() {
+  precond(real_klass() == vmClasses::Class_klass());
+  return (FakeMirror&)*this;
+}
+
+void AOTMapLogger::FakeOop::print_string_on(outputStream* st) {
+
+}
+
+void AOTMapLogger::FakeMirror::print_class_signature_on(outputStream* st) {
+  ResourceMark rm;
+  RequestedMetadataAddr requested_klass = metadata_field(java_lang_Class::klass_offset());
+  Klass* real_klass = requested_klass.to_real_klass();
+
+  if (real_klass == nullptr) {
+    // This is a primitive mirror (Java expressions of int.class, long.class, void.class, etc);
+    RequestedMetadataAddr requested_array_klass = metadata_field(java_lang_Class::array_klass_offset());
+    Klass* real_array_klass = requested_array_klass.to_real_klass();
+    if (real_array_klass == nullptr) {
+      st->print(" V"); // The special mirror for void.class that doesn't have any representation in C++
+    } else {
+      precond(real_array_klass->is_typeArray_klass());
+      st->print(" %c", real_array_klass->name()->char_at(1));
+    }
+  } else {
+    const char* class_name = real_klass->name()->as_C_string();
+    if (real_klass->is_instance_klass()) {
+      st->print(" L%s;", class_name);
+    } else {
+      st->print(" %s", class_name);
+    }
+    if (real_klass->has_aot_initialized_mirror()) {
+      st->print(" (aot-inited)");
+    }
+  }
+}
+
+
+int AOTMapLogger::FakeOop::_requested_shift;
+intx AOTMapLogger::FakeOop::_buffer_to_requested_delta;
+address AOTMapLogger::FakeOop::_buffer_base;
+address AOTMapLogger::FakeOop::_buffer_start;
+address AOTMapLogger::FakeOop::_buffer_end;
+
+void AOTMapLogger::new_print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr) {
+  if (fake_oop.is_null()) {
+    st->print_cr("null");
+  } else {
+    ResourceMark rm;
+    Klass* real_klass = fake_oop.real_klass();
+    address requested_addr = fake_oop.requested_addr();
+    if (print_requested_addr) {
+      st->print(PTR_FORMAT " ", p2i(requested_addr));
+    }
+    if (UseCompressedOops) {
+      st->print("(0x%08x) ", fake_oop.as_narrow_oop_value());
+    }
+    if (fake_oop.is_array()) {
+      int array_len = fake_oop.array_length();
+      st->print_cr("%s length: %d", real_klass->external_name(), array_len);
+    } else {
+      st->print("%s", real_klass->external_name());
+
+      if (real_klass == vmClasses::String_klass()) {
+        st->print(" ");
+        fake_oop.print_string_on(st);
+      } else if (real_klass == vmClasses::Class_klass()) {
+        fake_oop.as_mirror().print_class_signature_on(st);
+      }
+
+      st->cr();
+    }
+  }
+}
+
+void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
+  ResourceMark rm;
+  int heap_region_index = MetaspaceShared::hp;
+  FileMapRegion* r = mapinfo->region_at(heap_region_index);
+  size_t alignment = ObjectAlignmentInBytes;
+
+  // Allocate a buffer and read the image of the archived heap region. This buffer is outside
+  // of the real Java heap, so we must use FakeOop to access the contents of the archived heap objects.
+  char* buffer = resource_allocate_bytes(r->used() + alignment);
+  address buffer_start = (address)align_up(buffer, alignment);
+  address buffer_end = buffer_start + r->used();
+  if (!mapinfo->read_region(heap_region_index, (char*)buffer_start, r->used(), /* do_commit = */ false)) {
+    log_error(aot)("Cannot read heap region; AOT map logging of heap objects failed");
+  }
+
+  address requested_base = (address)mapinfo->narrow_oop_base();
+  address requested_start = requested_base + r->mapping_offset();
+  address buffer_base = buffer_start - r->mapping_offset();
+
+  RequestedMetadataAddr::init(mapinfo);
+  FakeOop::init(requested_start, mapinfo->narrow_oop_shift(), buffer_base, buffer_start, buffer_end);
+
+  log_region("heap", buffer_start, buffer_end, requested_start);
+  runtime_log_oops(buffer_start, buffer_end);
+}
+
+
+void AOTMapLogger::runtime_log_oops(address buffer_start, address buffer_end) {
+  LogStreamHandle(Debug, aot, map) st;
+  if (!st.is_enabled()) {
+    return;
+  }
+
+  for (address fo = buffer_start; fo < buffer_end; ) {
+    FakeOop fake_oop(fo);
+    st.print(PTR_FORMAT ": @@ Object ", p2i(fake_oop.requested_addr()));
+    new_print_oop_info_cr(&st, fake_oop);
+
+    address next_fo = fo + fake_oop.size() * BytesPerWord;
+    log_as_hex(fo, next_fo, fake_oop.requested_addr(), /*is_heap=*/true);
+    fo = next_fo;
+  }
+}
+
 #endif // INCLUDE_CDS_JAVA_HEAP
