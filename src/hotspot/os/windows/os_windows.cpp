@@ -1194,19 +1194,36 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
-double os::elapsedVTime() {
-  FILETIME created;
-  FILETIME exited;
+double os::elapsed_process_cpu_time() {
+  FILETIME create;
+  FILETIME exit;
   FILETIME kernel;
   FILETIME user;
-  if (GetThreadTimes(GetCurrentThread(), &created, &exited, &kernel, &user) != 0) {
-    // the resolution of windows_to_java_time() should be sufficient (ms)
-    return (double) (windows_to_java_time(kernel) + windows_to_java_time(user)) / MILLIUNITS;
-  } else {
-    return elapsedTime();
+
+  if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
+    return -1;
   }
+
+  SYSTEMTIME user_total;
+  if (FileTimeToSystemTime(&user, &user_total) == 0) {
+    return -1;
+  }
+
+  SYSTEMTIME kernel_total;
+  if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
+    return -1;
+  }
+
+  double user_seconds =
+      double(user_total.wHour) * 3600.0 + double(user_total.wMinute) * 60.0 +
+      double(user_total.wSecond) + double(user_total.wMilliseconds) / 1000.0;
+
+  double kernel_seconds = double(kernel_total.wHour) * 3600.0 +
+                          double(kernel_total.wMinute) * 60.0 +
+                          double(kernel_total.wSecond) +
+                          double(kernel_total.wMilliseconds) / 1000.0;
+
+  return user_seconds + kernel_seconds;
 }
 
 jlong os::javaTimeMillis() {
@@ -1712,6 +1729,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s was successful", name);
     return result;
   }
+
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
+
   DWORD errcode = GetLastError();
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
@@ -2244,6 +2267,8 @@ void os::jvm_path(char *buf, jint buflen) {
 // from src/windows/hpi/src/system_md.c
 
 size_t os::lasterror(char* buf, size_t len) {
+  assert(buf != nullptr && len > 0, "invalid buffer passed");
+
   DWORD errval;
 
   if ((errval = GetLastError()) != 0) {
@@ -2623,14 +2648,12 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
-#endif
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT

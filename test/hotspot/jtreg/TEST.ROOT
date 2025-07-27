@@ -79,6 +79,7 @@ requires.properties= \
     vm.rtm.cpu \
     vm.rtm.compiler \
     vm.cds \
+    vm.cds.default.archive.available \
     vm.cds.custom.loaders \
     vm.cds.supports.aot.class.linking \
     vm.cds.supports.aot.code.caching \
