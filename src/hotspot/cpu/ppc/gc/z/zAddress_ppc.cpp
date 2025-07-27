@@ -93,10 +93,15 @@ static size_t probe_valid_max_address_bit() {
 size_t ZPlatformAddressOffsetBits() {
   static const size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
   const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
+#ifdef ADDRESS_SANITIZER
+  // The max supported value is 44 because of other internal data structures.
+  return MIN2(valid_max_address_offset_bits, (size_t)44);
+#else
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
   const size_t address_offset = ZGlobalsPointers::min_address_offset_request();
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
+#endif
 }
 
 size_t ZPlatformAddressHeapBaseShift() {

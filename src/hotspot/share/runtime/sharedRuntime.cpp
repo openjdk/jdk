@@ -95,59 +95,62 @@
 
 
 #define SHARED_STUB_FIELD_DEFINE(name, type) \
-  type        SharedRuntime::BLOB_FIELD_NAME(name);
+  type*       SharedRuntime::BLOB_FIELD_NAME(name);
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DEFINE)
 #undef SHARED_STUB_FIELD_DEFINE
 
 nmethod*            SharedRuntime::_cont_doYield_stub;
 
+#if 0
+// TODO tweak global stub name generation to match this
 #define SHARED_STUB_NAME_DECLARE(name, type) "Shared Runtime " # name "_blob",
 const char *SharedRuntime::_stub_names[] = {
   SHARED_STUBS_DO(SHARED_STUB_NAME_DECLARE)
 };
+#endif
 
 //----------------------------generate_stubs-----------------------------------
 void SharedRuntime::generate_initial_stubs() {
   // Build this early so it's available for the interpreter.
   _throw_StackOverflowError_blob =
-    generate_throw_exception(SharedStubId::throw_StackOverflowError_id,
+    generate_throw_exception(StubId::shared_throw_StackOverflowError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 }
 
 void SharedRuntime::generate_stubs() {
   _wrong_method_blob =
-    generate_resolve_blob(SharedStubId::wrong_method_id,
+    generate_resolve_blob(StubId::shared_wrong_method_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method));
   _wrong_method_abstract_blob =
-    generate_resolve_blob(SharedStubId::wrong_method_abstract_id,
+    generate_resolve_blob(StubId::shared_wrong_method_abstract_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_abstract));
   _ic_miss_blob =
-    generate_resolve_blob(SharedStubId::ic_miss_id,
+    generate_resolve_blob(StubId::shared_ic_miss_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_ic_miss));
   _resolve_opt_virtual_call_blob =
-    generate_resolve_blob(SharedStubId::resolve_opt_virtual_call_id,
+    generate_resolve_blob(StubId::shared_resolve_opt_virtual_call_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::resolve_opt_virtual_call_C));
   _resolve_virtual_call_blob =
-    generate_resolve_blob(SharedStubId::resolve_virtual_call_id,
+    generate_resolve_blob(StubId::shared_resolve_virtual_call_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C));
   _resolve_static_call_blob =
-    generate_resolve_blob(SharedStubId::resolve_static_call_id,
+    generate_resolve_blob(StubId::shared_resolve_static_call_id,
                           CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C));
 
   _throw_delayed_StackOverflowError_blob =
-    generate_throw_exception(SharedStubId::throw_delayed_StackOverflowError_id,
+    generate_throw_exception(StubId::shared_throw_delayed_StackOverflowError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError));
 
   _throw_AbstractMethodError_blob =
-    generate_throw_exception(SharedStubId::throw_AbstractMethodError_id,
+    generate_throw_exception(StubId::shared_throw_AbstractMethodError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
 
   _throw_IncompatibleClassChangeError_blob =
-    generate_throw_exception(SharedStubId::throw_IncompatibleClassChangeError_id,
+    generate_throw_exception(StubId::shared_throw_IncompatibleClassChangeError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
 
   _throw_NullPointerException_at_call_blob =
-    generate_throw_exception(SharedStubId::throw_NullPointerException_at_call_id,
+    generate_throw_exception(StubId::shared_throw_NullPointerException_at_call_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
 
 #if COMPILER2_OR_JVMCI
@@ -155,15 +158,15 @@ void SharedRuntime::generate_stubs() {
   bool support_wide = is_wide_vector(MaxVectorSize);
   if (support_wide) {
     _polling_page_vectors_safepoint_handler_blob =
-      generate_handler_blob(SharedStubId::polling_page_vectors_safepoint_handler_id,
+      generate_handler_blob(StubId::shared_polling_page_vectors_safepoint_handler_id,
                             CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
   }
 #endif // COMPILER2_OR_JVMCI
   _polling_page_safepoint_handler_blob =
-    generate_handler_blob(SharedStubId::polling_page_safepoint_handler_id,
+    generate_handler_blob(StubId::shared_polling_page_safepoint_handler_id,
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
   _polling_page_return_handler_blob =
-    generate_handler_blob(SharedStubId::polling_page_return_handler_id,
+    generate_handler_blob(StubId::shared_polling_page_return_handler_id,
                           CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception));
 
   generate_deopt_blob();
@@ -570,6 +573,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   if (StubRoutines::returns_to_call_stub(return_address)) {
     // The deferred StackWatermarkSet::after_unwind check will be performed in
     // JavaCallWrapper::~JavaCallWrapper
+    assert (StubRoutines::catch_exception_entry() != nullptr, "must be generated before");
     return StubRoutines::catch_exception_entry();
   }
   if (blob != nullptr && blob->is_upcall_stub()) {
@@ -2199,10 +2203,11 @@ class AdapterFingerPrint : public MetaspaceObj {
   }
 
   // Private construtor. Use allocate() to get an instance.
-  AdapterFingerPrint(int total_args_passed, BasicType* sig_bt) {
+  AdapterFingerPrint(int total_args_passed, BasicType* sig_bt, int len) {
     int* data = data_pointer();
     // Pack the BasicTypes with 8 per int
-    _length = length(total_args_passed);
+    assert(len == length(total_args_passed), "sanity");
+    _length = len;
     int sig_index = 0;
     for (int index = 0; index < _length; index++) {
       int value = 0;
@@ -2217,16 +2222,15 @@ class AdapterFingerPrint : public MetaspaceObj {
 
   // Call deallocate instead
   ~AdapterFingerPrint() {
-    FreeHeap(this);
+    ShouldNotCallThis();
   }
 
   static int length(int total_args) {
     return (total_args + (_basic_types_per_int-1)) / _basic_types_per_int;
   }
 
-  static int compute_size(int total_args_passed, BasicType* sig_bt) {
-    int len = length(total_args_passed);
-    return sizeof(AdapterFingerPrint) + (len * sizeof(int));
+  static int compute_size_in_words(int len) {
+    return (int)heap_word_size(sizeof(AdapterFingerPrint) + (len * sizeof(int)));
   }
 
   // Remap BasicTypes that are handled equivalently by the adapters.
@@ -2289,12 +2293,15 @@ class AdapterFingerPrint : public MetaspaceObj {
 
  public:
   static AdapterFingerPrint* allocate(int total_args_passed, BasicType* sig_bt) {
-    int size_in_bytes = compute_size(total_args_passed, sig_bt);
-    return new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt);
+    int len = length(total_args_passed);
+    int size_in_bytes = BytesPerWord * compute_size_in_words(len);
+    AdapterFingerPrint* afp = new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt, len);
+    assert((afp->size() * BytesPerWord) == size_in_bytes, "should match");
+    return afp;
   }
 
   static void deallocate(AdapterFingerPrint* fp) {
-    fp->~AdapterFingerPrint();
+    FreeHeap(fp);
   }
 
   int value(int index) {
@@ -2418,7 +2425,7 @@ class AdapterFingerPrint : public MetaspaceObj {
 
   // methods required by virtue of being a MetaspaceObj
   void metaspace_pointers_do(MetaspaceClosure* it) { return; /* nothing to do here */ }
-  int size() const { return (int)heap_word_size(sizeof(AdapterFingerPrint) + (_length * sizeof(int))); }
+  int size() const { return compute_size_in_words(_length); }
   MetaspaceObj::Type type() const { return AdapterFingerPrintType; }
 
   static bool equals(AdapterFingerPrint* const& fp1, AdapterFingerPrint* const& fp2) {

@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8167143 8174269
+ * @bug 8167143 8174269 8358170
  * @summary Test
  * Timezone parsing works for all locales for default providers preference
  * CLDR implicit locales are correctly reflected,
  * th_TH bundle is not wrongly cached in DateFormatSymbols,
  * correct candidate locale list is retrieved for
  * zh_Hant and zh_Hans and
- * Implicit COMPAT Locales nn-NO, nb-NO are reflected in available locales
+ * Implicit FALLBACK Locales nn-NO, nb-NO are reflected in available locales
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
  *          jdk.localedata
@@ -38,6 +38,7 @@
  * @run main Bug8167143 testCldr
  * @run main Bug8167143 testCache
  * @run main Bug8167143 testCandidateLocales
+ * @run main Bug8167143 testFallback
  */
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -64,7 +65,7 @@ public class Bug8167143 {
             Locale.forLanguageTag("zh-Hant-TW"),
             Locale.forLanguageTag("zh-Hant-MO"));
 
-    private static final List<Locale> COMPAT_IMPLICIT_LOCS = List.of(Locale.forLanguageTag("nn-NO"),
+    private static final List<Locale> FALLBACK_IMPLICIT_LOCS = List.of(Locale.forLanguageTag("nn-NO"),
             Locale.forLanguageTag("nb-NO"));
     /**
      * List of candidate locales for zh_Hant
@@ -97,8 +98,8 @@ public class Bug8167143 {
             case "testCandidateLocales":
                 testCandidateLocales();
                 break;
-            case "testCompat":
-                testImplicitCompatLocales();
+            case "testFallback":
+                testImplicitFallbackLocales();
                 break;
             default:
                 throw new RuntimeException("no test was specified.");
@@ -230,45 +231,26 @@ public class Bug8167143 {
     }
 
     /**
-     * checks that locales nn-NO  and nb-NO should be present in list of supported locales for
-     * all Providers for COMPAT.
+     * Checks that locales (nn-NO  and nb-NO) implicitly supported in FALLBACK
+     * provider should be present in output of getAvailableLocales() for
+     * BreakIteratorProvider and CollatorProvider.
      */
-    private static void testImplicitCompatLocales() {
-        LocaleProviderAdapter jre = LocaleProviderAdapter.forJRE();
-        checkPresenceCompat("BreakIteratorProvider",
-                jre.getBreakIteratorProvider().getAvailableLocales());
-        checkPresenceCompat("CollatorProvider",
-                jre.getCollatorProvider().getAvailableLocales());
-        checkPresenceCompat("DateFormatProvider",
-                jre.getDateFormatProvider().getAvailableLocales());
-        checkPresenceCompat("DateFormatSymbolsProvider",
-                jre.getDateFormatSymbolsProvider().getAvailableLocales());
-        checkPresenceCompat("DecimalFormatSymbolsProvider",
-                jre.getDecimalFormatSymbolsProvider().getAvailableLocales());
-        checkPresenceCompat("NumberFormatProvider",
-                jre.getNumberFormatProvider().getAvailableLocales());
-        checkPresenceCompat("CurrencyNameProvider",
-                jre.getCurrencyNameProvider().getAvailableLocales());
-        checkPresenceCompat("LocaleNameProvider",
-                jre.getLocaleNameProvider().getAvailableLocales());
-        checkPresenceCompat("TimeZoneNameProvider",
-                jre.getTimeZoneNameProvider().getAvailableLocales());
-        checkPresenceCompat("CalendarDataProvider",
-                jre.getCalendarDataProvider().getAvailableLocales());
-        checkPresenceCompat("CalendarNameProvider",
-                jre.getCalendarNameProvider().getAvailableLocales());
-        checkPresenceCompat("CalendarProvider",
-                jre.getCalendarProvider().getAvailableLocales());
+    private static void testImplicitFallbackLocales() {
+        LocaleProviderAdapter fallback = LocaleProviderAdapter.forType(Type.FALLBACK);
+        checkPresenceFallback("BreakIteratorProvider",
+                fallback.getBreakIteratorProvider().getAvailableLocales());
+        checkPresenceFallback("CollatorProvider",
+                fallback.getCollatorProvider().getAvailableLocales());
     }
 
-    private static void checkPresenceCompat(String testName, Locale[] got) {
+    private static void checkPresenceFallback(String testName, Locale[] got) {
         List<Locale> gotLocalesList = Arrays.asList(got);
         List<Locale> gotList = new ArrayList<>(gotLocalesList);
-        if (!gotList.removeAll(COMPAT_IMPLICIT_LOCS)) {
+        if (!gotList.removeAll(FALLBACK_IMPLICIT_LOCS)) {
             // check which Implicit locale are not present in retrievedLocales List.
-            List<Locale> implicitLocales = new ArrayList<>(COMPAT_IMPLICIT_LOCS);
+            List<Locale> implicitLocales = new ArrayList<>(FALLBACK_IMPLICIT_LOCS);
             implicitLocales.removeAll(gotList);
-            throw new RuntimeException("Locales those not correctly reflected are "
+            throw new RuntimeException("Locale(s) not correctly reflected are "
                     + implicitLocales + " for test " + testName);
         }
     }
