@@ -2043,7 +2043,7 @@ class MutableBigInteger {
 
                 // Refine the estimate, avoiding to compute non-significant bits
                 final int trailingZeros = this.getLowestSetBit();
-                for (int rootBits = (int) s.bitLength(); rootSh >= rootBits; rootBits <<= 1) {
+                for (int rootBits = (int) s.bitLength(); rootSh > rootBits; rootBits <<= 1) {
                     s.leftShift(rootBits);
                     rootSh -= rootBits;
 
@@ -2058,7 +2058,7 @@ class MutableBigInteger {
                 }
 
                 // Shift the approximate root back into the original range.
-                s.safeLeftShift(rootSh);
+                s.leftShift(rootSh);
             }
         }
 
