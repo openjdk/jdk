@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2508,7 +2508,10 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * @param direction less or equal to zero to scroll up/back,
      *                  greater than zero for down/forward
      * @return the "unit" increment for scrolling in the specified direction;
-     *         always positive
+     *         which is usually positive. But it can return 0
+     *         if {@code visibleRect} points to that row
+     *         which is completely visible without being scrolled
+     *         or {@code getCellBounds} returns {@code null}.
      * @see #getScrollableBlockIncrement
      * @see Scrollable#getScrollableUnitIncrement
      * @throws IllegalArgumentException if {@code visibleRect} is {@code null}, or
