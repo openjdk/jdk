@@ -55,9 +55,13 @@ class AOTMapLogger : AllStatic {
     int _bytes;
     MetaspaceObj::Type _type;
   };
+  static intx _requested_to_mapped_metadata_delta;
 
-  class FakeOop;
   class FakeMirror;
+  class FakeObjArray;
+  class FakeOop;
+
+  class RequestedMetadataAddr;
 
   class GatherArchivedMetaspaceObjs;
 
@@ -92,11 +96,14 @@ class AOTMapLogger : AllStatic {
   static void print_class_signature_for_mirror(outputStream* st, oop scratch_mirror);
   static void log_heap_roots();
   static void print_oop_info_cr(outputStream* st, oop source_oop, bool print_requested_addr = true);
+
   static void new_print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_requested_addr = true);
+  static void new_print_oop_details(FakeOop fake_oop, outputStream* st);
 
   static void runtime_log_heap_region(FileMapInfo* mapinfo);
   static void runtime_log_oops(address buf_start, address buf_end);
   class ArchivedFieldPrinter;
+  class ArchivedFieldPrinter2;
 #endif
 
 public:
