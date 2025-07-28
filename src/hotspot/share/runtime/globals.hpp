@@ -618,9 +618,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintAdapterHandlers, false, DIAGNOSTIC,                    \
           "Print code generated for i2c/c2i adapters")                      \
                                                                             \
-  product(bool, VerifyAdapterCalls, trueInDebug, DIAGNOSTIC,                \
-          "Verify that i2c/c2i adapters are called properly")               \
-                                                                            \
   develop(bool, VerifyAdapterSharing, false,                                \
           "Verify that the code for shared adapters is the equivalent")     \
                                                                             \

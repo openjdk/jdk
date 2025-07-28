@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,33 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8343780
- * @summary Test for `@since` in jdk.jsobject module
- * @library /test/lib /test/jdk/tools/sincechecker
- * @run main SinceChecker jdk.jsobject
+ * @bug 8342692
+ * @summary C2: long counted loop/long range checks: don't create loop-nest for short running loops
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestShortLoopLostLimit
+ * @run main/othervm TestShortLoopLostLimit
  */
+
+public class TestShortLoopLostLimit {
+    private static volatile int volatileField;
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test1(0, 100);
+            test2(0, 100);
+        }
+    }
+
+    private static void test1(int a, long b) {
+        for (long i = 0; i < a + b; i += 2) {
+            volatileField = 42;
+        }
+    }
+
+    private static void test2(int a, long b) {
+        for (long i = a + b; i > 0; i -= 2) {
+            volatileField = 42;
+        }
+    }
+}
