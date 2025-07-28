@@ -405,18 +405,25 @@ public:
     size_t bytes_used_in_region = _region_size_bytes - alloc_capacity;
     size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes();
 
-    _used += bytes_used_in_region;
-    _garbage += bytes_garbage_in_region;
+    if (r->is_cset() || r->is_trash()) {
+      // Count the entire cset or trashed (formerly cset) region as used
+      // Note: Immediate garbage trash regions were never in the cset.
+      _used += _region_size_bytes;
+      _garbage += bytes_garbage_in_region + r->free();
+      if (r->is_trash()) {
+        _trashed_regions++;
+        _trashed_used += _region_size_bytes;
+      }
+    } else {
+      _used += bytes_used_in_region;
+      _garbage += bytes_garbage_in_region;
+      if (r->is_humongous()) {
+        size_t waste_bytes = r->free();
+        _humongous_waste += waste_bytes;
+        _used += waste_bytes;     // humongous_waste is counted as part of _used
+      }
+    }
     _committed += r->is_committed() ? _region_size_bytes : 0;
-    if (r->is_humongous()) {
-      size_t waste_bytes = r->free();
-      _humongous_waste += waste_bytes;
-      _used += waste_bytes;     // humongous_waste is counted as part of _used
-    }
-    if (r->is_trash()) {
-      _trashed_regions++;
-      _trashed_used += bytes_used_in_region;
-    }
     _regions++;
 #ifdef KELVIN_STATS
     log_info(gc)(" _used: %zu, _garbage: %zu, _committed: %zu, _humongous_waste: %zu, _trashed_regions: %zu, _trashed_used: %zu",
