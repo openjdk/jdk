@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @summary tests the CharBuffer implementations behaving as CharSequence in various states (position, limit, offset)
+ * @summary Tests CharBuffer implementations of CharSequence
  * @run junit CharBufferAsCharSequenceTest
  */
 public class CharBufferAsCharSequenceTest {
@@ -83,21 +83,33 @@ public class CharBufferAsCharSequenceTest {
         cases.add(Arguments.of(cb, buf, 0, buf.length, type + " full"));
 
         CharBuffer rndRange = randomizeRange(cb.duplicate());
-        cases.add(Arguments.of(rndRange, buf, rndRange.position(), rndRange.limit(), type + "  at " + rndRange.position() + " through " + rndRange.limit()));
+        cases.add(Arguments.of(rndRange, buf, rndRange.position(), rndRange.limit(), type + " at " + rndRange.position() + " through " + rndRange.limit()));
         cases.add(Arguments.of(rndRange.slice(), buf, rndRange.position(), rndRange.limit(), type + " sliced at " + rndRange.position() + " through " + rndRange.limit()));
 
         CharBuffer rndSlicedRange = randomizeRange(rndRange.slice());
-        cases.add(Arguments.of(rndSlicedRange, buf, rndRange.position() + rndSlicedRange.position(), rndRange.position() + rndSlicedRange.limit(), type + " sliced at " + rndRange.position() + " with position " + rndSlicedRange.position() + " and limit " + rndSlicedRange.limit()));
+        cases.add(Arguments.of(rndSlicedRange, buf, rndRange.position() + rndSlicedRange.position(),
+                rndRange.position() + rndSlicedRange.limit(), type + " sliced at " + rndRange.position()
+                        + " with position " + rndSlicedRange.position() + " and limit " + rndSlicedRange.limit()));
     }
 
+    /**
+     * Returns a {@code List} of {@link Arguments}, with each entry representing a test case scenario.
+     * <ul>
+     * <li>CharBuffer - the instance to be tested</li>
+     * <li>char[] - the data expected to be backing the current state of the CharBuffer</li>
+     * <li>int start - index (inclusive) into char[] where the CharBuffer should be positioned</li>
+     * <li>int stop - index (exclusive) into char[] where the CharBuffer should be limited</li>
+     * <li>String - description of the test scenario</li>
+     * </ul>
+     */
     static List<Arguments> charBufferArguments() {
         List<Arguments> args = new ArrayList<>();
 
         populateAndAddCases("HeapCharBuffer", CharBuffer.allocate(SIZE), args);
-        populateAndAddCases("BEHeapByteBuffer", ByteBuffer.allocate(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
-        populateAndAddCases("LEHeapByteBuffer", ByteBuffer.allocate(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
-        populateAndAddCases("BEDirectByteBuffer", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
-        populateAndAddCases("LEDirectByteBuffer", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("HeapByteBuffer BE", ByteBuffer.allocate(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("HeapByteBuffer LE", ByteBuffer.allocate(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("DirectByteBuffer BE", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.BIG_ENDIAN).asCharBuffer(), args);
+        populateAndAddCases("DirectByteBuffer LE", ByteBuffer.allocateDirect(SIZE*2).order(ByteOrder.LITTLE_ENDIAN).asCharBuffer(), args);
 
         char[] randomChars = randomChars();
         CharBuffer cb = CharBuffer.wrap(randomChars);
@@ -130,7 +142,7 @@ public class CharBufferAsCharSequenceTest {
                                              .asCharBuffer()
                                              .put(buf)
                                              .position(i);
-            args.add(Arguments.of(lehbbAsCB, buf, i, buf.length, "LE HeapByteBuffer as CharBuffer index " + i + " to end"));
+            args.add(Arguments.of(lehbbAsCB, buf, i, buf.length, "HeapByteBuffer LE as CharBuffer index " + i + " to end"));
 
             CharBuffer behbdAsCB = ByteBuffer.allocateDirect(buf.length * 2)
                                              .order(ByteOrder.BIG_ENDIAN)
@@ -138,7 +150,7 @@ public class CharBufferAsCharSequenceTest {
                                              .put(buf)
                                              .position(i);
             args.add(Arguments.of(behbdAsCB, buf, i, buf.length,
-                    "BE DirectByteBuffer as CharBuffer index " + i + " to end"));
+                    "DirectByteBuffer BE as CharBuffer index " + i + " to end"));
 
             if (i > 0) {
                 buffer = CharBuffer.wrap(buf, 1, buf.length - 1).slice();
@@ -167,7 +179,7 @@ public class CharBufferAsCharSequenceTest {
                                                  .slice()
                                                  .position(i - 1)
                                                  .limit(end - 1);
-                args.add(Arguments.of(behbbAsCB, buf, i, buf.length - i, "BE HeapByteBuffer as CharBuffer index " + i + " to " + end));
+                args.add(Arguments.of(behbbAsCB, buf, i, buf.length - i, "HeapByteBuffer BE as CharBuffer index " + i + " to " + end));
 
                 CharBuffer ledbbAsCB = ByteBuffer.allocateDirect(buf.length * 2)
                                                  .order(ByteOrder.LITTLE_ENDIAN)
@@ -177,7 +189,7 @@ public class CharBufferAsCharSequenceTest {
                                                  .slice()
                                                  .position(i - 1)
                                                  .limit(end - 1);
-                args.add(Arguments.of(ledbbAsCB, buf, i, buf.length - i, "LE DirectByteBuffer as CharBuffer index " + i + " to " + end));
+                args.add(Arguments.of(ledbbAsCB, buf, i, buf.length - i, "DirectByteBuffer LE as CharBuffer index " + i + " to " + end));
             }
         }
         return args;
@@ -224,42 +236,42 @@ public class CharBufferAsCharSequenceTest {
 
     @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
-    void testGetCharsNegativeSourceBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsNegativeSrcBegin(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(-1, 4, val, 1));
     }
 
     @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
-    void testGetCharsNegativeSourceEnd(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsNegativeSrcEnd(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(0, -4, val, 1));
     }
 
     @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
-    void testGetCharsSourceEndBeforeBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsSrcEndBeforeBegin(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(3, 2, val, 1));
     }
 
     @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
-    void testGetCharsNegativeDestBeg(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsNegativeDstBegin(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 3, val, -1));
     }
 
     @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
-    void testGetCharsDestBegOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsDstBeginOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length + 1));
     }
 
     @ParameterizedTest(name="{4}")
     @MethodSource("charBufferArguments")
-    void testGetCharsDestLengthOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
+    void testGetCharsDstLengthOOB(CharSequence actual, char[] expected, int start, int stop, String description) {
         char[] val = new char[16];
         assertThrows(IndexOutOfBoundsException.class, () -> actual.getChars(1, 4, val, val.length - 2));
     }
