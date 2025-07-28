@@ -97,6 +97,7 @@ public class MinMaxRed_Int {
         applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MIN_REDUCTION_V, " > 0"})
     @IR(applyIfPlatform = {"ppc", "true"},
+        applyIf = {"SuperwordUseVSX", "true"},
         counts = {IRNode.MIN_REDUCTION_V, " > 0"})
     public static int minReductionImplement(int[] a, int[] b, int res) {
         for (int i = 0; i < a.length; i++) {
@@ -113,6 +114,7 @@ public class MinMaxRed_Int {
         applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MAX_REDUCTION_V, " > 0"})
     @IR(applyIfPlatform = {"ppc", "true"},
+        applyIf = {"SuperwordUseVSX", "true"},
         counts = {IRNode.MAX_REDUCTION_V, " > 0"})
     public static int maxReductionImplement(int[] a, int[] b, int res) {
         for (int i = 0; i < a.length; i++) {

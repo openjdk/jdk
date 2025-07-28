@@ -405,7 +405,7 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
 
   // Update statistics
   _size -= to_remove;
-  _min = MIN2(_size, _min);
+  _min_size_watermark = MIN2(_size, _min_size_watermark);
 
   postcond(to_remove == vmem.size());
   return vmem;
@@ -558,7 +558,7 @@ ZMappedCache::ZMappedCache()
   : _tree(),
     _size_class_lists(),
     _size(0),
-    _min(_size) {}
+    _min_size_watermark(_size) {}
 
 void ZMappedCache::insert(const ZVirtualMemory& vmem) {
   _size += vmem.size();
@@ -688,17 +688,15 @@ size_t ZMappedCache::remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* o
   return remove_discontiguous_with_strategy<RemovalStrategy::SizeClasses>(size, out);
 }
 
-size_t ZMappedCache::reset_min() {
-  const size_t old_min = _min;
-
-  _min = _size;
-
-  return old_min;
+void ZMappedCache::reset_min_size_watermark() {
+  _min_size_watermark = _size;
 }
 
-size_t ZMappedCache::remove_from_min(size_t max_size, ZArray<ZVirtualMemory>* out) {
-  const size_t size = MIN2(_min, max_size);
+size_t ZMappedCache::min_size_watermark() {
+  return _min_size_watermark;
+}
 
+size_t ZMappedCache::remove_for_uncommit(size_t size, ZArray<ZVirtualMemory>* out) {
   if (size == 0) {
     return 0;
   }

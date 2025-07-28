@@ -23,12 +23,12 @@
 
 #include "memory/allocation.inline.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
-#include "opto/convertnode.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //------------------------------VectorNode--------------------------------------
 
@@ -1722,8 +1722,7 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
       if (cnt->Opcode() == Op_ConvI2L) {
          cnt = cnt->in(1);
       } else {
-         assert(cnt->bottom_type()->isa_long() &&
-                cnt->bottom_type()->is_long()->is_con(), "Long constant expected");
+         assert(cnt->bottom_type()->isa_long(), "long type shift count expected");
          cnt = phase->transform(new ConvL2INode(cnt));
       }
     }

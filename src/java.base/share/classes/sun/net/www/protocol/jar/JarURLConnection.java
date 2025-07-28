@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import static jdk.internal.util.Exceptions.filterJarName;
+import static jdk.internal.util.Exceptions.formatMsg;
+
 
 /**
  * @author Benjamin Renaud
@@ -129,9 +132,10 @@ public class JarURLConnection extends java.net.JarURLConnection {
                         factory.closeIfNotCached(url, jarFile);
                     } catch (Exception e) {
                     }
-                    throw new FileNotFoundException("JAR entry " + entryName +
-                            " not found in " +
-                            jarFile.getName());
+                    throw new FileNotFoundException(
+                        formatMsg("JAR entry %s not found in jar file %s",
+                                  filterJarName(entryName),
+                                  filterJarName(jarFile.getName())));
                 }
             }
 
@@ -169,9 +173,10 @@ public class JarURLConnection extends java.net.JarURLConnection {
             throw new IOException("no entry name specified");
         } else {
             if (jarEntry == null) {
-                throw new FileNotFoundException("JAR entry " + entryName +
-                                                " not found in " +
-                                                jarFile.getName());
+                throw new FileNotFoundException(
+                    formatMsg("JAR entry %s not found in jar file %s",
+                              filterJarName(entryName),
+                              filterJarName(jarFile.getName())));
             }
             result = new JarURLInputStream (jarFile.getInputStream(jarEntry));
         }

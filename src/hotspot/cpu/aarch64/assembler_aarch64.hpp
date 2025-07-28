@@ -1136,6 +1136,10 @@ public:
     system(0b00, 0b011, 0b00011, SY, 0b110);
   }
 
+  void sb() {
+    system(0b00, 0b011, 0b00011, 0b0000, 0b111);
+  }
+
   void sys(int op1, int CRn, int CRm, int op2,
            Register rt = as_Register(0b11111)) {
     system(0b01, op1, CRn, CRm, op2, rt);
