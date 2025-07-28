@@ -109,12 +109,13 @@ const intptr_t    VMError::segfault_address = pd_segfault_address;
 static const char* env_list[] = {
   // All platforms
   "JAVA_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
-  "PATH", "USERNAME",
+  "JDK_AOT_VM_OPTIONS",
+  "JAVA_OPTS", "PATH", "USERNAME",
 
   "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "FC_LANG", "FONTCONFIG_USE_MMAP",
 
   // Env variables that are defined on Linux/BSD
-  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
+  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY", "WAYLAND_DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
   "LANG", "LC_ALL", "LC_CTYPE", "LC_NUMERIC", "LC_TIME",
   "TERM", "TMPDIR", "TZ",
