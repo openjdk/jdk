@@ -3308,12 +3308,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
       StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes();
     }
 
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes();
     }
 

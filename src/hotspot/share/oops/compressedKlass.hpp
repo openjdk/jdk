@@ -255,6 +255,9 @@ public:
     return (address)addr >= _klass_range_start && (address)addr < _klass_range_end;
   }
 
+  // Given a narrow Klass ID, returns true if it appears to be valid
+  inline static bool is_valid_narrow_klass_id(narrowKlass nk);
+
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.
   static inline bool is_encodable(const void* addr) {

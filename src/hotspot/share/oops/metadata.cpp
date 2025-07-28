@@ -22,8 +22,8 @@
  *
  */
 
-#include "oops/metadata.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/metadata.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/safefetch.hpp"
 
